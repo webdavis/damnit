@@ -5,7 +5,8 @@ use crate::error::CliError;
 
 const MIN_PREFIX: usize = 4;
 
-/// Called by every verb that takes an oid argument, wired in by Tasks 29 to 31.
+/// Resolves the oid argument every verb that takes one accepts: a full oid, or a
+/// hex prefix at least `MIN_PREFIX` characters long that matches exactly one object.
 pub fn resolve_oid(store: &dyn ObjectStore, text: &str) -> Result<Oid, CliError> {
     if let Ok(oid) = Oid::parse(text) {
         return Ok(oid);

@@ -10,13 +10,12 @@ pub enum CliError {
     Config(ConfigError),
     Open(OpenError),
     Usage(String),
-    /// Constructed by `oids::resolve_oid`, called once Tasks 29 to 31 wire the verbs that take an oid.
+    /// Constructed by `oids::resolve_oid` when a prefix or path names more than one object.
     Ambiguous {
         text: String,
         matches: Vec<Oid>,
     },
-    /// Constructed once prompting lands in a Task 29-31 verb; `TerminalPrompt` and
-    /// `ScriptedPrompt` already return it on EOF or an unscripted answer.
+    /// A prompt hit EOF or an unscripted answer; `TerminalPrompt` and `ScriptedPrompt` both return it.
     Cancelled,
     Io(String),
 }

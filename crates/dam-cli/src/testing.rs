@@ -1,4 +1,4 @@
-//! Test doubles for `Context`, consumed by the verb tests Tasks 29 to 31 add.
+//! Test doubles for `Context`, consumed by every verb's own test module.
 
 use std::cell::RefCell;
 
