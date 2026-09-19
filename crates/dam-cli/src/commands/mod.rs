@@ -10,6 +10,7 @@ mod rm;
 mod show;
 mod stage;
 mod status;
+mod sync;
 
 use crate::args::Command;
 use crate::context::Context;
@@ -31,6 +32,9 @@ pub fn dispatch(ctx: &mut Context, command: Command) -> Result<Report, CliError>
         Command::Status => status::run_status(ctx),
         Command::Diff(a) => status::run_diff(ctx, a),
         Command::Ls(a) => ls::run_ls(ctx, a),
-        other => Err(CliError::Usage(format!("{other:?} is not implemented yet"))),
+        Command::Remote(a) => remote::run_remote(ctx, a),
+        Command::Push(a) => sync::run_push(ctx, a),
+        Command::Pull(a) => sync::run_pull(ctx, a),
+        Command::Resolve(a) => sync::run_resolve(ctx, a),
     }
 }

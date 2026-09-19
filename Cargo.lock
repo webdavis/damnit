@@ -234,6 +234,7 @@ dependencies = [
  "dam-protocol",
  "jiff",
  "serde_json",
+ "tempfile",
  "toon-format",
 ]
 
