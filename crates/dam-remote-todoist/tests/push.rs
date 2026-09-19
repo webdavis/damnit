@@ -63,6 +63,30 @@ fn task_with_due_cleared(oid: &str) -> WireObject {
     }
 }
 
+/// Same shape, but the cleared field is the deadline, not the due date.
+fn task_with_deadline_cleared(oid: &str) -> WireObject {
+    WireObject {
+        oid: oid.into(),
+        remote_id: None,
+        kind: "task".into(),
+        subject: "unused".into(),
+        body: "b".into(),
+        path: "Work/".into(),
+        labels: vec!["errand".into()],
+        depends: vec![],
+        reminders: vec![],
+        recurrence: None,
+        task: Some(WireTask {
+            done: false,
+            priority: 1,
+            due: None,
+            deadline: None,
+            event: None,
+        }),
+        event: None,
+    }
+}
+
 #[test]
 fn creates_updates_and_deletes_become_the_right_requests() {
     let mut routes = HashMap::new();
@@ -72,6 +96,7 @@ fn creates_updates_and_deletes_become_the_right_requests() {
     routes.insert("POST /tasks/i1/close", (204, serde_json::Value::Null));
     routes.insert("DELETE /projects/p1", (204, serde_json::Value::Null));
     routes.insert("POST /tasks/i3", (200, serde_json::json!({"id": "i3"})));
+    routes.insert("POST /tasks/i4", (200, serde_json::json!({"id": "i4"})));
     let server = loopback::serve(routes);
     let api = TodoistApi::new(&server.base, "tok");
     let mutations = vec![
@@ -110,9 +135,16 @@ fn creates_updates_and_deletes_become_the_right_requests() {
             object: Some(task_with_due_cleared(&"5".repeat(40))),
             fields: vec!["due".into()],
         },
+        Mutation {
+            op: "update".into(),
+            oid: "6".repeat(40),
+            remote_id: Some("i:i4".into()),
+            object: Some(task_with_deadline_cleared(&"6".repeat(40))),
+            fields: vec!["deadline".into()],
+        },
     ];
     let response = push(&api, mutations).unwrap();
-    assert_eq!(response.results.len(), 5);
+    assert_eq!(response.results.len(), 6);
     assert!(response.results[0].ok);
     assert_eq!(response.results[0].remote_id.as_deref(), Some("i:i2"));
     assert!(response.results[1].ok);
@@ -120,6 +152,7 @@ fn creates_updates_and_deletes_become_the_right_requests() {
     assert!(!response.results[3].ok);
     assert!(response.results[3].why.as_deref().unwrap().contains("Nope"));
     assert!(response.results[4].ok);
+    assert!(response.results[5].ok);
     let seen = server.seen.lock().unwrap();
     let create = seen
         .iter()
@@ -149,4 +182,12 @@ fn creates_updates_and_deletes_become_the_right_requests() {
         .find(|s| s.path == "/tasks/i3" && s.method == "POST")
         .unwrap();
     assert_eq!(cleared.body, serde_json::json!({"due_string": "no date"}));
+    let deadline_cleared = seen
+        .iter()
+        .find(|s| s.path == "/tasks/i4" && s.method == "POST")
+        .unwrap();
+    assert_eq!(
+        deadline_cleared.body,
+        serde_json::json!({"deadline_date": null})
+    );
 }
