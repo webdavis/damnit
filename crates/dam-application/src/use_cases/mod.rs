@@ -1,6 +1,7 @@
 pub mod commit;
 pub mod complete;
 pub mod edit;
+pub mod list;
 pub mod new_object;
 pub mod relocate;
 pub mod remove;

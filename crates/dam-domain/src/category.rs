@@ -74,6 +74,10 @@ impl Categories {
         self.0.iter().find(|c| c.values.iter().any(|v| v == value))
     }
 
+    pub fn category_of_name(&self, name: &str) -> Option<&Category> {
+        self.0.iter().find(|c| c.name == name)
+    }
+
     pub fn is_free(&self, value: &str) -> bool {
         self.category_of(value).is_none()
     }
@@ -210,6 +214,13 @@ mod tests {
         );
         assert!(cats.is_free("errand"));
         assert!(!cats.is_free("deep"));
+    }
+
+    #[test]
+    fn category_of_name_finds_by_declared_name() {
+        let cats = Categories::new(vec![effort()]).unwrap();
+        assert!(cats.category_of_name("effort").is_some());
+        assert!(cats.category_of_name("mood").is_none());
     }
 
     #[test]
