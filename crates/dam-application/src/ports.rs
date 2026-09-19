@@ -57,6 +57,9 @@ pub trait ObjectStore {
     fn log(&self) -> Result<Vec<CommitRecord>, StoreError>;
     fn unpushed(&self, remote: &RemoteName) -> Result<Vec<CommitRecord>, StoreError>;
     fn mark_pushed(&self, remote: &RemoteName, id: &CommitId) -> Result<(), StoreError>;
+    /// Oids a previous push failed on, resent as updates until they succeed.
+    fn push_retries(&self, remote: &RemoteName) -> Result<Vec<Oid>, StoreError>;
+    fn set_push_retries(&self, remote: &RemoteName, oids: &[Oid]) -> Result<(), StoreError>;
     // remote tracking
     fn remote_id(&self, remote: &RemoteName, oid: &Oid) -> Result<Option<String>, StoreError>;
     fn oid_for_remote_id(

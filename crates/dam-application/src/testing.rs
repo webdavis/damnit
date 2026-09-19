@@ -1,9 +1,15 @@
 use std::cell::RefCell;
 use std::collections::BTreeMap;
+use std::rc::Rc;
 
 use dam_domain::{Change, CommitId, CommitRecord, Date, Object, Oid, Path, Timestamp, coalesce};
+use dam_protocol::{Capabilities, Mutation, MutationResult, PullResponse, PushResponse};
 
-use crate::ports::{Clock, Conflict, Notice, ObjectStore, Randomness, RemoteName, StoreError};
+use crate::config::{CredentialSpec, RemoteConfig};
+use crate::ports::{
+    Clock, Conflict, CredentialError, CredentialSource, HelperError, HelperLauncher, Notice,
+    ObjectStore, Randomness, RemoteHelper, RemoteName, StoreError,
+};
 
 pub(crate) fn oid(byte: u8) -> Oid {
     Oid::generate(&mut |b: &mut [u8]| b.fill(byte))
@@ -44,6 +50,7 @@ struct Inner {
     sync: BTreeMap<RemoteName, String>,
     conflicts: BTreeMap<Oid, Conflict>,
     notices: Vec<Notice>,
+    retries: BTreeMap<RemoteName, Vec<Oid>>,
 }
 
 #[derive(Default)]
@@ -216,6 +223,22 @@ impl ObjectStore for MemoryStore {
         };
         Ok(())
     }
+    fn push_retries(&self, remote: &RemoteName) -> Result<Vec<Oid>, StoreError> {
+        Ok(self
+            .0
+            .borrow()
+            .retries
+            .get(remote)
+            .cloned()
+            .unwrap_or_default())
+    }
+    fn set_push_retries(&self, remote: &RemoteName, oids: &[Oid]) -> Result<(), StoreError> {
+        self.0
+            .borrow_mut()
+            .retries
+            .insert(remote.clone(), oids.to_vec());
+        Ok(())
+    }
     fn mark_conflict(
         &self,
         remote: &RemoteName,
@@ -253,5 +276,80 @@ impl ObjectStore for MemoryStore {
     fn clear_notices(&self) -> Result<(), StoreError> {
         self.0.borrow_mut().notices.clear();
         Ok(())
+    }
+}
+
+type PushAnswer = Box<dyn Fn(&[Mutation]) -> Vec<MutationResult>>;
+type LaunchedWith = Rc<RefCell<Vec<Vec<(String, String)>>>>;
+
+/// A scripted helper: records what it was asked, answers what it was told.
+pub(crate) struct ScriptedHelper {
+    pub caps: Capabilities,
+    pub pull_answer: PullResponse,
+    pub push_answer: PushAnswer,
+    pub pushed: Rc<RefCell<Vec<Mutation>>>,
+    pub pulled_since: Rc<RefCell<Vec<Option<String>>>>,
+}
+
+impl RemoteHelper for ScriptedHelper {
+    fn capabilities(&mut self) -> Result<Capabilities, HelperError> {
+        Ok(self.caps.clone())
+    }
+    fn pull(&mut self, since: Option<&str>) -> Result<PullResponse, HelperError> {
+        self.pulled_since
+            .borrow_mut()
+            .push(since.map(|s| s.to_string()));
+        Ok(self.pull_answer.clone())
+    }
+    fn push(&mut self, mutations: Vec<Mutation>) -> Result<PushResponse, HelperError> {
+        let results = (self.push_answer)(&mutations);
+        self.pushed.borrow_mut().extend(mutations);
+        Ok(PushResponse { results })
+    }
+}
+
+pub(crate) struct ScriptedLauncher {
+    pub make: Box<dyn Fn() -> ScriptedHelper>,
+    pub launched_with: LaunchedWith,
+}
+
+impl HelperLauncher for ScriptedLauncher {
+    fn launch(
+        &self,
+        _remote: &RemoteConfig,
+        credentials: &[(String, String)],
+    ) -> Result<Box<dyn RemoteHelper>, HelperError> {
+        self.launched_with.borrow_mut().push(credentials.to_vec());
+        Ok(Box::new((self.make)()))
+    }
+}
+
+pub(crate) struct NoCredentials;
+impl CredentialSource for NoCredentials {
+    fn resolve(&self, spec: &CredentialSpec) -> Result<String, CredentialError> {
+        Ok(format!("value-of-{}", spec.name()))
+    }
+}
+
+pub(crate) fn task_caps() -> Capabilities {
+    Capabilities {
+        protocol: 1,
+        kinds: vec!["task".into()],
+        fields: [
+            "subject",
+            "body",
+            "path",
+            "labels",
+            "priority",
+            "due",
+            "deadline",
+            "done",
+            "recurrence",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect(),
+        credentials: vec!["api_token".into()],
+        incremental: true,
     }
 }

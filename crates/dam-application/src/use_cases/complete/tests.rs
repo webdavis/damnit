@@ -61,6 +61,12 @@ impl ObjectStore for FailingGetStore {
     fn mark_pushed(&self, _remote: &RemoteName, _id: &CommitId) -> Result<(), StoreError> {
         unimplemented!()
     }
+    fn push_retries(&self, _remote: &RemoteName) -> Result<Vec<Oid>, StoreError> {
+        unimplemented!()
+    }
+    fn set_push_retries(&self, _remote: &RemoteName, _oids: &[Oid]) -> Result<(), StoreError> {
+        unimplemented!()
+    }
     fn remote_id(&self, _remote: &RemoteName, _oid: &Oid) -> Result<Option<String>, StoreError> {
         unimplemented!()
     }
