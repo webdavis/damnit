@@ -15,11 +15,13 @@ use crate::wire::to_wire;
 use dam_domain::{Object, Task};
 use dam_protocol::{PullResponse, WireObject};
 
-fn remote() -> RemoteName {
+/// Shared with `tests_removals_and_notices`, split out by concern to keep
+/// each file under the size cap.
+pub(super) fn remote() -> RemoteName {
     RemoteName("todoist".into())
 }
 
-fn config() -> Config {
+pub(super) fn config() -> Config {
     Config {
         remotes: vec![RemoteConfig {
             name: remote(),
@@ -36,7 +38,7 @@ fn config() -> Config {
     }
 }
 
-fn launcher(answer: PullResponse) -> ScriptedLauncher {
+pub(super) fn launcher(answer: PullResponse) -> ScriptedLauncher {
     ScriptedLauncher {
         make: Box::new(move || ScriptedHelper {
             caps: task_caps(),
@@ -49,7 +51,7 @@ fn launcher(answer: PullResponse) -> ScriptedLauncher {
     }
 }
 
-fn wire(subject: &str, remote_id: &str) -> WireObject {
+pub(super) fn wire(subject: &str, remote_id: &str) -> WireObject {
     let mut w = to_wire(
         &Object::Task(Task::new(oid(0), subject)),
         Some(remote_id.into()),
@@ -254,246 +256,4 @@ fn uncommitted_local_work_stops_the_pull_before_anything_is_written() {
     );
     assert!(store.oid_for_remote_id(&remote(), "r2").unwrap().is_none());
     assert!(store.sync_token(&remote()).unwrap().is_none());
-}
-
-#[test]
-fn a_removal_upstream_is_a_notice_not_a_deletion() {
-    let store = MemoryStore::new();
-    store
-        .put(&Object::Task(Task::new(oid(1), "keep me")))
-        .unwrap();
-    store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
-    store
-        .set_remote_snapshot(&remote(), &Object::Task(Task::new(oid(1), "keep me")))
-        .unwrap();
-    let l = launcher(PullResponse {
-        objects: vec![],
-        removed: vec!["r1".into()],
-        sync: None,
-    });
-    let reports = pull(
-        &store,
-        &l,
-        &NoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(42),
-        &config(),
-        None,
-    )
-    .unwrap();
-    assert_eq!(reports[0].removed_upstream, 1);
-    assert!(store.get(&oid(1)).unwrap().is_some());
-    assert!(matches!(
-        store.notices().unwrap()[0],
-        Notice::RemovedUpstream { .. }
-    ));
-    assert!(store.oid_for_remote_id(&remote(), "r1").unwrap().is_none());
-    assert!(store.remote_snapshot(&remote(), &oid(1)).unwrap().is_none());
-}
-
-#[test]
-fn a_cancelled_event_with_attached_tasks_is_reported() {
-    let store = MemoryStore::new();
-    let event = dam_domain::Event::new(
-        oid(5),
-        "meeting",
-        dam_domain::When::Day(date(2026, 1, 1)),
-        dam_domain::When::Day(date(2026, 1, 2)),
-    );
-    store.put(&Object::Event(event.clone())).unwrap();
-    store.map_remote_id(&remote(), &oid(5), "e1").unwrap();
-    store
-        .set_remote_snapshot(&remote(), &Object::Event(event.clone()))
-        .unwrap();
-    let mut attached = Task::new(oid(6), "prep");
-    attached.event = Some(oid(5));
-    store.put(&Object::Task(attached)).unwrap();
-    let mut cancelled = event.clone();
-    cancelled.status = dam_domain::EventStatus::Cancelled;
-    let mut w = to_wire(&Object::Event(cancelled), Some("e1".into()));
-    w.oid = String::new();
-    let mut caps = task_caps();
-    caps.kinds = vec!["event".into()];
-    caps.fields = vec![
-        "subject".into(),
-        "status".into(),
-        "start".into(),
-        "end".into(),
-    ];
-    let l = ScriptedLauncher {
-        make: Box::new(move || ScriptedHelper {
-            caps: caps.clone(),
-            pull_answer: PullResponse {
-                objects: vec![w.clone()],
-                removed: vec![],
-                sync: None,
-            },
-            push_answer: Box::new(|_| vec![]),
-            pushed: Rc::new(RefCell::new(vec![])),
-            pulled_since: Rc::new(RefCell::new(vec![])),
-        }),
-        launched_with: Rc::new(RefCell::new(vec![])),
-    };
-    pull(
-        &store,
-        &l,
-        &NoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(42),
-        &config(),
-        None,
-    )
-    .unwrap();
-    assert!(matches!(
-        store.notices().unwrap().last(),
-        Some(Notice::EventCancelled { attached: 1, .. })
-    ));
-    assert!(store.get(&oid(6)).unwrap().is_some());
-}
-
-#[test]
-fn an_unrelated_staged_object_stays_staged_after_a_pull() {
-    let store = MemoryStore::new();
-    store.put(&Object::Task(Task::new(oid(1), "base"))).unwrap();
-    add_all(&store).unwrap();
-    commit(
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(9),
-        "m",
-    )
-    .unwrap();
-    store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
-    store
-        .set_remote_snapshot(&remote(), &Object::Task(Task::new(oid(1), "base")))
-        .unwrap();
-    store
-        .put(&Object::Task(Task::new(oid(2), "unrelated")))
-        .unwrap();
-    add_all(&store).unwrap();
-    let l = launcher(PullResponse {
-        objects: vec![wire("new", "r1")],
-        removed: vec![],
-        sync: None,
-    });
-    pull(
-        &store,
-        &l,
-        &NoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(42),
-        &config(),
-        None,
-    )
-    .unwrap();
-    assert_eq!(
-        store
-            .staged()
-            .unwrap()
-            .iter()
-            .map(|c| c.oid.clone())
-            .collect::<Vec<_>>(),
-        vec![oid(2)]
-    );
-}
-
-#[test]
-fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
-    let store = MemoryStore::new();
-    let event = dam_domain::Event::new(
-        oid(5),
-        "meeting",
-        dam_domain::When::Day(date(2026, 1, 1)),
-        dam_domain::When::Day(date(2026, 1, 2)),
-    );
-    store.put(&Object::Event(event.clone())).unwrap();
-    add_all(&store).unwrap();
-    commit(
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(20),
-        "m",
-    )
-    .unwrap();
-    store.map_remote_id(&remote(), &oid(5), "e1").unwrap();
-    store
-        .set_remote_snapshot(&remote(), &Object::Event(event.clone()))
-        .unwrap();
-
-    let mut edited = event.clone();
-    edited.base.subject = "moved".into();
-    store.put(&Object::Event(edited)).unwrap();
-    add_all(&store).unwrap();
-    commit(
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(21),
-        "m2",
-    )
-    .unwrap();
-
-    let mut attached = Task::new(oid(6), "prep");
-    attached.event = Some(oid(5));
-    store.put(&Object::Task(attached)).unwrap();
-
-    let mut cancelled = event.clone();
-    cancelled.status = dam_domain::EventStatus::Cancelled;
-    let mut w = to_wire(&Object::Event(cancelled), Some("e1".into()));
-    w.oid = String::new();
-    let mut caps = task_caps();
-    caps.kinds = vec!["event".into()];
-    caps.fields = vec![
-        "subject".into(),
-        "status".into(),
-        "start".into(),
-        "end".into(),
-    ];
-    let l = ScriptedLauncher {
-        make: Box::new(move || ScriptedHelper {
-            caps: caps.clone(),
-            pull_answer: PullResponse {
-                objects: vec![w.clone()],
-                removed: vec![],
-                sync: None,
-            },
-            push_answer: Box::new(|_| vec![]),
-            pushed: Rc::new(RefCell::new(vec![])),
-            pulled_since: Rc::new(RefCell::new(vec![])),
-        }),
-        launched_with: Rc::new(RefCell::new(vec![])),
-    };
-    let reports = pull(
-        &store,
-        &l,
-        &NoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(42),
-        &config(),
-        None,
-    )
-    .unwrap();
-    assert_eq!(reports[0].conflicts, 1);
-    assert_eq!(store.conflicts().unwrap().len(), 1);
-    assert!(matches!(
-        store.notices().unwrap().last(),
-        Some(Notice::EventCancelled { attached: 1, .. })
-    ));
-}
-
-#[test]
-fn a_pull_records_when_it_happened() {
-    let store = MemoryStore::new();
-    let l = launcher(PullResponse::default());
-    let clock = FixedClock(date(2026, 9, 18));
-    pull(
-        &store,
-        &l,
-        &NoCredentials,
-        &clock,
-        &mut FixedRandom(1),
-        &config(),
-        None,
-    )
-    .unwrap();
-    assert_eq!(store.last_pull(&remote()).unwrap(), Some(clock.now()));
 }
