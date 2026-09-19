@@ -331,7 +331,7 @@ interactive = true
 
 [remote.todoist]
 url = "todoist::"
-token_command = ["security", "find-generic-password", "-w", "-s", "Todoist API Token"]
+token_command = ["keepassxc-cli", "show", "-a", "Password", "~/vault.kdbx", "Todoist :: API Token"]
 stale = "15m"
 
 [remote.gcal]
@@ -350,6 +350,10 @@ query = "due:today | overdue"
 
 `stale` makes a read command pull that remote first when the last pull is older than the value.
 Absent, reads never pull.
+
+`token_command` inherits `dam`'s standard input. A vault CLI that prompts for a password works when
+`dam` runs in a terminal and fails when a client spawns `dam` with standard input closed; a keychain
+read works from both. Pick the command for how you will run it.
 
 Storage is `~/.local/share/dam/dam.db`, one SQLite file in WAL mode, mode 0600.
 
