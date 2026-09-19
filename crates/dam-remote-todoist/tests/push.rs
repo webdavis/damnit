@@ -240,3 +240,45 @@ fn a_path_change_moves_the_task_through_the_move_endpoint() {
         "a path-only change sends no plain update, only the move"
     );
 }
+
+#[test]
+fn a_path_and_subject_change_moves_first_then_updates_the_content() {
+    let mut routes = HashMap::new();
+    routes.insert("POST /sync", (200, sync_body_with_two_projects()));
+    routes.insert(
+        "POST /tasks/i1/move",
+        (200, serde_json::json!({"id": "i1"})),
+    );
+    routes.insert("POST /tasks/i1", (200, serde_json::json!({"id": "i1"})));
+    let server = loopback::serve(routes);
+    let api = TodoistApi::new(&server.base, "tok");
+    let mutations = vec![Mutation {
+        op: "update".into(),
+        oid: "8".repeat(40),
+        remote_id: Some("i:i1".into()),
+        object: Some(task(&"8".repeat(40), "Home/", "oat", false)),
+        fields: vec!["path".into(), "subject".into()],
+    }];
+    let response = push(&api, mutations).unwrap();
+    assert!(response.results[0].ok, "{:?}", response.results[0].why);
+    let seen = server.seen.lock().unwrap();
+    let task_calls: Vec<&loopback::Seen> = seen
+        .iter()
+        .filter(|s| s.path.starts_with("/tasks/i1"))
+        .collect();
+    assert_eq!(
+        task_calls.len(),
+        2,
+        "one move and one update, nothing else: {task_calls:?}"
+    );
+    assert_eq!(task_calls[0].method, "POST");
+    assert_eq!(task_calls[0].path, "/tasks/i1/move");
+    assert_eq!(
+        task_calls[0].body,
+        serde_json::json!({"project_id": "p2"}),
+        "move takes exactly one of project_id, section_id or parent_id"
+    );
+    assert_eq!(task_calls[1].method, "POST");
+    assert_eq!(task_calls[1].path, "/tasks/i1");
+    assert_eq!(task_calls[1].body["content"], "oat");
+}
