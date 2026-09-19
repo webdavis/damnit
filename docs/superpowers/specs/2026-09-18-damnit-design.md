@@ -272,7 +272,7 @@ One JSON object per line in each direction. The first exchange is always `capabi
 ```json
 {"cmd": "capabilities"}
 {"protocol": 1, "kinds": ["task"], "fields": ["subject", "body", "path", "labels", "priority",
- "due", "deadline", "done", "recurrence"], "incremental": true}
+ "due", "deadline", "done", "recurrence"], "credentials": ["todoist_api_token"], "incremental": true}
 ```
 
 `kinds` and `fields` are what the helper will accept on push and return on pull. A helper never
@@ -296,16 +296,21 @@ later `dam`.
 
 ### Credentials
 
-Each remote names its token one of three ways, tried in this order when more than one is set:
+A helper declares the credentials it needs by name in `capabilities`. `dam-remote-todoist` declares
+`todoist_api_token`; a Google helper declares a client id, a client secret and a refresh token. The
+remote's config table provides each one in one of three ways, tried in this order when more than one
+is set:
 
 | Key | Meaning |
 |---|---|
-| `token` | The value itself, in the config file. `dam status` warns when this is set. |
-| `token_command` | Argv of a command whose first line of standard output is the token. |
-| `token_env` | The name of an environment variable holding it. |
+| `<name>` | The value itself, in the config file. `dam status` warns when this is set. |
+| `<name>_command` | Argv of a command whose first line of standard output is the value. |
+| `<name>_env` | The name of an environment variable holding it. |
 
-`dam` resolves it and passes the value to the helper as `DAM_REMOTE_TOKEN` in its environment. The
-token never appears in an argument, a log line or a status message.
+`dam` resolves each and passes it to the helper as `DAM_<NAME>` in its environment, so
+`todoist_api_token` arrives as `DAM_TODOIST_API_TOKEN`. A declared credential with no source in
+config is a refusal that names the key. No value appears in an argument, a log line or a status
+message.
 
 ### Helpers in this repository
 
@@ -338,14 +343,16 @@ interactive = true
 
 [remote.todoist]
 url = "todoist::"
-token_command = ["keepassxc-cli", "show", "-a", "Password", "~/vault.kdbx", "Todoist :: API Token"]
-# or: token = "..."          the value itself, warned about by dam status
-# or: token_env = "TODOIST_API_TOKEN"
+todoist_api_token_command = ["keepassxc-cli", "show", "-a", "Password", "~/vault.kdbx", "Todoist :: API Token"]
+# or: todoist_api_token = "..."          the value itself, warned about by dam status
+# or: todoist_api_token_env = "TODOIST_API_TOKEN"
 stale = "15m"
 
 [remote.gcal]
 url = "gcal::"
-token_command = ["gog", "auth", "token"]
+gcal_client_id_command = ["keepassxc-cli", "show", "-a", "UserName", "~/vault.kdbx", "Google :: dam"]
+gcal_client_secret_command = ["keepassxc-cli", "show", "-a", "Password", "~/vault.kdbx", "Google :: dam"]
+gcal_refresh_token_command = ["keepassxc-cli", "show", "-a", "refresh", "~/vault.kdbx", "Google :: dam"]
 stale = "5m"
 path = "calendar/"
 
@@ -360,7 +367,7 @@ query = "due:today | overdue"
 `stale` makes a read command pull that remote first when the last pull is older than the value.
 Absent, reads never pull.
 
-`token_command` inherits `dam`'s standard input. A vault CLI that prompts for a password works when
+A `_command` inherits `dam`'s standard input. A vault CLI that prompts for a password works when
 `dam` runs in a terminal and fails when a client spawns `dam` with standard input closed; a keychain
 read works from both. Pick the command for how you will run it.
 
