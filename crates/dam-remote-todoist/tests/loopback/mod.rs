@@ -27,6 +27,9 @@ pub fn serve(routes: HashMap<&'static str, (u16, serde_json::Value)>) -> Loopbac
     let log = seen.clone();
     std::thread::spawn(move || {
         for stream in listener.incoming().flatten() {
+            // ureq already sets TCP_NODELAY on its side; match it here so neither side
+            // waits on Nagle's algorithm for a response this small.
+            let _ = stream.set_nodelay(true);
             let mut reader = BufReader::new(stream);
             let mut line = String::new();
             if reader.read_line(&mut line).is_err() || line.is_empty() {
