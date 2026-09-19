@@ -183,17 +183,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn display_never_includes_the_token() {
-        let http = ApiError::Http {
-            status: 404,
-            body: "not found".into(),
-        };
-        assert!(!http.to_string().contains("sentinel-token"));
-        let transport = ApiError::Transport("connection refused".into());
-        assert!(!transport.to_string().contains("sentinel-token"));
-    }
-
-    #[test]
     fn new_trims_a_trailing_slash_from_the_base() {
         let api = TodoistApi::new("http://example.test/", "tok");
         assert_eq!(api.base, "http://example.test");

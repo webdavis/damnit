@@ -36,28 +36,6 @@ fn sync_all_sends_the_token_and_decodes_the_three_resources() {
 }
 
 #[test]
-fn an_http_error_carries_status_and_body_and_never_the_token() {
-    let mut routes = HashMap::new();
-    routes.insert(
-        "POST /tasks",
-        (403, serde_json::json!({"error": "forbidden"})),
-    );
-    let server = loopback::serve(routes);
-    let api = TodoistApi::new(&server.base, "supersecret");
-    let err = api
-        .post("/tasks", &serde_json::json!({"content": "x"}))
-        .unwrap_err();
-    match &err {
-        ApiError::Http { status, body } => {
-            assert_eq!(*status, 403);
-            assert!(body.contains("forbidden"));
-        }
-        other => panic!("{other:?}"),
-    }
-    assert!(!err.to_string().contains("supersecret"));
-}
-
-#[test]
 fn delete_hits_the_path_with_the_method() {
     let mut routes = HashMap::new();
     routes.insert("DELETE /tasks/i1", (204, serde_json::Value::Null));
@@ -68,10 +46,31 @@ fn delete_hits_the_path_with_the_method() {
     assert_eq!(server.seen.lock().unwrap()[0].method, "DELETE");
 }
 
+/// Neither a rejected request nor one that never reaches the server may render the token.
 #[test]
-fn a_transport_error_and_an_http_error_never_show_the_token() {
-    let api = TodoistApi::new("http://127.0.0.1:1", "supersecret-transport");
-    let err = api.post("/tasks", &serde_json::json!({})).unwrap_err();
-    assert!(matches!(err, ApiError::Transport(_)));
-    assert!(!err.to_string().contains("supersecret-transport"));
+fn an_http_failure_and_a_transport_failure_never_show_the_token() {
+    let sentinel = "sentinel-token";
+    let mut routes = HashMap::new();
+    routes.insert(
+        "POST /tasks",
+        (403, serde_json::json!({"error": "forbidden"})),
+    );
+    let server = loopback::serve(routes);
+    let http_err = TodoistApi::new(&server.base, sentinel)
+        .post("/tasks", &serde_json::json!({"content": "x"}))
+        .unwrap_err();
+    match &http_err {
+        ApiError::Http { status, body } => {
+            assert_eq!(*status, 403);
+            assert!(body.contains("forbidden"));
+        }
+        other => panic!("{other:?}"),
+    }
+    assert!(!http_err.to_string().contains(sentinel));
+
+    let transport_err = TodoistApi::new("http://127.0.0.1:1", sentinel)
+        .post("/tasks", &serde_json::json!({}))
+        .unwrap_err();
+    assert!(matches!(transport_err, ApiError::Transport(_)));
+    assert!(!transport_err.to_string().contains(sentinel));
 }
