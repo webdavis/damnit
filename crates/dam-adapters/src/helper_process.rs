@@ -210,6 +210,23 @@ done
     }
 
     #[test]
+    fn a_non_executable_helper_is_not_found_by_name() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("dam-remote-t");
+        std::fs::write(&file, FAKE).unwrap();
+        std::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o644)).unwrap();
+        let launcher = ProcessLauncher::with_search_path(dir.path().as_os_str());
+        assert!(launcher.find("t").is_none());
+        let err = launcher.launch(&remote(), &[]).unwrap_err();
+        assert_eq!(
+            err,
+            HelperError::NotFound {
+                helper: "dam-remote-t".into()
+            }
+        );
+    }
+
+    #[test]
     fn a_missing_helper_is_not_found_by_name() {
         let launcher = ProcessLauncher::with_search_path("/nonexistent-dam-dir");
         let err = launcher.launch(&remote(), &[]).unwrap_err();
