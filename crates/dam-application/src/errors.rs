@@ -1,0 +1,135 @@
+use std::fmt;
+
+use dam_domain::{Blocker, LabelViolation, Oid};
+
+use crate::ports::{CredentialError, EditorError, HelperError, StoreError};
+
+/// A rule dam enforces, refused with the reason.
+#[derive(Debug, PartialEq, Eq)]
+pub enum Refusal {
+    Blocked { oid: Oid, blockers: Vec<Blocker> },
+    Cycle { oid: Oid, path: Vec<Oid> },
+    Labels(LabelViolation),
+    UnknownCategory(String),
+    NoSuchObject(String),
+    NoSuchRemote(String),
+    NotATask(Oid),
+    DirtyOnPull { oid: Oid },
+    UnresolvedConflicts(usize),
+    MissingCredential { remote: String, name: String },
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum UseCaseError {
+    Refused(Refusal),
+    Store(StoreError),
+    Helper(HelperError),
+    Credential(CredentialError),
+    Editor(EditorError),
+    Parse(String),
+}
+
+impl From<Refusal> for UseCaseError {
+    fn from(r: Refusal) -> UseCaseError {
+        UseCaseError::Refused(r)
+    }
+}
+impl From<StoreError> for UseCaseError {
+    fn from(e: StoreError) -> UseCaseError {
+        UseCaseError::Store(e)
+    }
+}
+impl From<HelperError> for UseCaseError {
+    fn from(e: HelperError) -> UseCaseError {
+        UseCaseError::Helper(e)
+    }
+}
+impl From<CredentialError> for UseCaseError {
+    fn from(e: CredentialError) -> UseCaseError {
+        UseCaseError::Credential(e)
+    }
+}
+impl From<EditorError> for UseCaseError {
+    fn from(e: EditorError) -> UseCaseError {
+        UseCaseError::Editor(e)
+    }
+}
+
+impl fmt::Display for Refusal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Refusal::Blocked { oid, blockers } => {
+                writeln!(f, "{} cannot be completed:", oid.short())?;
+                for b in blockers {
+                    match b {
+                        Blocker::OpenDependency(d) => {
+                            writeln!(f, "  depends on {} which is open", d.short())?
+                        }
+                        Blocker::OpenChild(c) => writeln!(f, "  child {} is open", c.short())?,
+                    }
+                }
+                f.write_str("use --force to complete it anyway, or --force --interactive to decide what happens to them")
+            }
+            Refusal::Cycle { oid, path } => {
+                let chain: Vec<&str> = path.iter().map(|o| o.short()).collect();
+                write!(
+                    f,
+                    "{} cannot depend on that: it would form a cycle through {}",
+                    oid.short(),
+                    chain.join(" -> ")
+                )
+            }
+            Refusal::Labels(v) => write!(f, "{v}"),
+            Refusal::UnknownCategory(n) => write!(f, "{n:?} is not a declared category"),
+            Refusal::NoSuchObject(s) => write!(f, "no object matches {s:?}"),
+            Refusal::NoSuchRemote(s) => write!(f, "no remote named {s:?}"),
+            Refusal::NotATask(o) => {
+                write!(f, "{} is an event; events are not completed", o.short())
+            }
+            Refusal::DirtyOnPull { oid } => write!(
+                f,
+                "{} changed upstream and has uncommitted local changes; commit or reset it, then pull again",
+                oid.short()
+            ),
+            Refusal::UnresolvedConflicts(n) => {
+                write!(f, "{n} conflicts are unresolved; run dam resolve")
+            }
+            Refusal::MissingCredential { remote, name } => {
+                write!(
+                    f,
+                    "remote {remote:?} needs {name}; set {name}, {name}_command or {name}_env in its config"
+                )
+            }
+        }
+    }
+}
+
+impl fmt::Display for UseCaseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            UseCaseError::Refused(r) => write!(f, "{r}"),
+            UseCaseError::Store(e) => write!(f, "storage: {}", e.0),
+            UseCaseError::Helper(HelperError::NotFound { helper }) => {
+                write!(f, "{helper} was not found on PATH")
+            }
+            UseCaseError::Helper(HelperError::Protocol(s)) => {
+                write!(f, "the helper answered something dam cannot read: {s}")
+            }
+            UseCaseError::Helper(HelperError::Io(s)) => write!(f, "talking to the helper: {s}"),
+            UseCaseError::Helper(HelperError::Remote(s)) => write!(f, "the remote refused: {s}"),
+            UseCaseError::Credential(CredentialError::Missing(n)) => {
+                write!(f, "credential {n} has no source")
+            }
+            UseCaseError::Credential(CredentialError::CommandFailed { name, why }) => {
+                write!(f, "the command for {name} failed: {why}")
+            }
+            UseCaseError::Credential(CredentialError::EnvUnset { name, var }) => {
+                write!(f, "{name}: the variable {var} is not set")
+            }
+            UseCaseError::Editor(e) => write!(f, "editor: {}", e.0),
+            UseCaseError::Parse(s) => write!(f, "{s}"),
+        }
+    }
+}
+
+impl std::error::Error for UseCaseError {}
