@@ -240,6 +240,41 @@ fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
 }
 
 #[test]
+fn one_unconvertible_object_is_skipped_with_a_notice_and_the_rest_still_pull() {
+    let store = MemoryStore::new();
+    let mut bad = wire("broken", "r-bad");
+    bad.path = "a//b/".into();
+    let l = launcher(PullResponse {
+        objects: vec![bad, wire("from todoist", "r-good")],
+        removed: vec![],
+        sync: Some("s1".into()),
+    });
+    let reports = pull(
+        &store,
+        &l,
+        &NoCredentials,
+        &FixedClock(date(2026, 9, 18)),
+        &mut FixedRandom(1),
+        &config(),
+        None,
+    )
+    .unwrap();
+    assert_eq!(reports[0].created, 1);
+    let notices = store.notices().unwrap();
+    assert!(
+        notices
+            .iter()
+            .any(|n| matches!(n, Notice::PullFailed { why, .. } if why.contains("r-bad")))
+    );
+    assert!(
+        store
+            .oid_for_remote_id(&remote(), "r-bad")
+            .unwrap()
+            .is_none()
+    );
+}
+
+#[test]
 fn a_pull_records_when_it_happened() {
     let store = MemoryStore::new();
     let l = launcher(PullResponse::default());

@@ -97,16 +97,24 @@ fn classify(
             .remote_id
             .clone()
             .ok_or_else(|| UseCaseError::Parse("a pulled object has no remote_id".into()))?;
-        let oid = match store.oid_for_remote_id(&remote.name, &remote_id)? {
-            Some(o) => o,
-            None => {
-                let o = Oid::generate(&mut |b| random.fill(b));
-                fresh.push((o.clone(), remote_id));
-                o
+        let existing = store.oid_for_remote_id(&remote.name, &remote_id)?;
+        let oid = existing
+            .clone()
+            .unwrap_or_else(|| Oid::generate(&mut |b| random.fill(b)));
+        wire.oid = oid.to_string();
+        let theirs_raw = match from_wire(&wire) {
+            Ok(o) => o,
+            Err(why) => {
+                store.add_notice(&Notice::PullFailed {
+                    remote: remote.name.clone(),
+                    why: format!("{remote_id}: {why}"),
+                })?;
+                continue;
             }
         };
-        wire.oid = oid.to_string();
-        let theirs_raw = from_wire(&wire).map_err(UseCaseError::Parse)?;
+        if existing.is_none() {
+            fresh.push((oid.clone(), remote_id));
+        }
         let local = store.get(&oid)?;
         let theirs = merge_fields(
             local.as_ref().unwrap_or(&theirs_raw),
