@@ -18,8 +18,6 @@ impl Randomness for FixedRandom {
     }
 }
 
-// Unused until a use case needs a clock; the double stays complete regardless.
-#[allow(dead_code)]
 pub(crate) struct FixedClock(pub Date);
 
 impl Clock for FixedClock {
