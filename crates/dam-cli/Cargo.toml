@@ -19,7 +19,7 @@ clap = { workspace = true, features = ["env"] }
 serde_json.workspace = true
 jiff.workspace = true
 toon-format.workspace = true
-ctrlc.workspace = true
+libc.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true

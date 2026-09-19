@@ -22,7 +22,7 @@ toml = { version = "1.1", default-features = false, features = ["parse", "displa
 toon-format = { version = "0.5", default-features = false }
 rusqlite = { version = "=0.39.0", default-features = false, features = ["bundled"] }
 clap = { version = "4.5", features = ["derive"] }
-ctrlc = "3.5.2"
+libc = "0.2.189"
 ureq = { version = "3.4", default-features = false, features = ["rustls", "json"] }
 getrandom = "0.3"
 tempfile = "3"

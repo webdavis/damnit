@@ -15,9 +15,21 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Format;
 
+/// The whole interrupt handler: it stores the cancellation flag and returns,
+/// which is all a signal handler may safely do. Every wait loop reads the flag.
+extern "C" fn on_interrupt(_: libc::c_int) {
+    dam_adapters::request_cancellation();
+}
+
 fn main() {
-    // One handler for the whole process: every wait loop reads the flag it sets.
-    let _ = ctrlc::set_handler(dam_adapters::request_cancellation);
+    // SAFETY: `on_interrupt` only stores into a static atomic, which is
+    // async-signal-safe, and the handler is installed once before any work.
+    unsafe {
+        libc::signal(
+            libc::SIGINT,
+            on_interrupt as *const () as libc::sighandler_t,
+        )
+    };
     let cli = Cli::parse();
     let format = if cli.json {
         Format::Json
