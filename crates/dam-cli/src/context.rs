@@ -5,11 +5,25 @@ use dam_adapters::{
     load_config,
 };
 use dam_application::{
-    Clock, Config, CredentialSource, EditorSession, HelperLauncher, ObjectStore, Randomness,
+    Clock, Config, CredentialSource, EditorError, EditorSession, HelperLauncher, ObjectStore,
+    Randomness,
 };
 
 use crate::error::CliError;
-use crate::prompt::{Prompt, TerminalPrompt};
+use crate::output::Format;
+use crate::prompt::{Prompt, RefusingPrompt, TerminalPrompt};
+
+/// Installed instead of `EnvEditor` for `--json`/`--toon`, so `edit -e` fails
+/// instead of opening `$EDITOR`.
+pub struct RefusingEditor;
+
+impl EditorSession for RefusingEditor {
+    fn edit(&self, _text: &str) -> Result<String, EditorError> {
+        Err(EditorError(
+            "-e opens an editor; drop --json/--toon to use it".into(),
+        ))
+    }
+}
 
 pub struct Context {
     pub store: Box<dyn ObjectStore>,
@@ -31,9 +45,20 @@ pub struct Context {
 }
 
 impl Context {
-    pub fn open(config_path: PathBuf, store_path: &Path) -> Result<Context, CliError> {
+    /// `format` picks the prompt and editor: `Human` gets the real terminal
+    /// pair, `Json`/`Toon` get the refusing pair so a verb that needs to ask
+    /// something fails cleanly instead of blocking or opening an editor.
+    pub fn open(
+        config_path: PathBuf,
+        store_path: &Path,
+        format: Format,
+    ) -> Result<Context, CliError> {
         let config = load_config(&config_path)?;
         let store = SqliteStore::open(store_path)?;
+        let (prompt, editor): (Box<dyn Prompt>, Box<dyn EditorSession>) = match format {
+            Format::Human => (Box::new(TerminalPrompt), Box::new(EnvEditor::from_env())),
+            Format::Json | Format::Toon => (Box::new(RefusingPrompt), Box::new(RefusingEditor)),
+        };
         Ok(Context {
             store: Box::new(store),
             config,
@@ -42,8 +67,8 @@ impl Context {
             random: Box::new(OsRandom),
             launcher: Box::new(ProcessLauncher::from_env()),
             credentials: Box::new(ProcessCredentialSource::from_env()),
-            editor: Box::new(EnvEditor::from_env()),
-            prompt: Box::new(TerminalPrompt),
+            editor,
+            prompt,
             tz: jiff::tz::TimeZone::system(),
         })
     }

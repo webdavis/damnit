@@ -2,10 +2,28 @@ use std::io::{BufRead, Write};
 
 use crate::error::CliError;
 
-/// Called by the interactive paths Tasks 29 to 31 add (`done --force --interactive`, remote add).
+/// Asks the operator a question, for verbs like `done --force --interactive` and remote add.
 pub trait Prompt {
     fn choose(&self, question: &str, options: &[&str]) -> Result<usize, CliError>;
     fn text(&self, question: &str) -> Result<String, CliError>;
+}
+
+/// Installed instead of `TerminalPrompt` for `--json`/`--toon`, so a verb
+/// that needs to ask a question fails instead of blocking on stdin.
+pub struct RefusingPrompt;
+
+impl Prompt for RefusingPrompt {
+    fn choose(&self, _question: &str, _options: &[&str]) -> Result<usize, CliError> {
+        Err(refused())
+    }
+
+    fn text(&self, _question: &str) -> Result<String, CliError> {
+        Err(refused())
+    }
+}
+
+fn refused() -> CliError {
+    CliError::Usage("a question needs an answer; drop --json/--toon to answer interactively".into())
 }
 
 pub struct TerminalPrompt;

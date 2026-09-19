@@ -11,9 +11,9 @@ use dam_application::{
 use dam_domain::{Categories, Date, Timestamp};
 use jiff::civil::date;
 
-use crate::context::Context;
+use crate::context::{Context, RefusingEditor};
 use crate::error::CliError;
-use crate::prompt::Prompt;
+use crate::prompt::{Prompt, RefusingPrompt};
 
 pub struct FixedClock(pub Date);
 impl Clock for FixedClock {
@@ -156,5 +156,15 @@ pub fn context() -> Context {
             texts: RefCell::new(vec![]),
         }),
         tz: jiff::tz::TimeZone::UTC,
+    }
+}
+
+/// A context wired the way `--json`/`--toon` wires one: any question refuses
+/// instead of blocking, matching what `Context::open` installs for those formats.
+pub fn machine_context() -> Context {
+    Context {
+        prompt: Box::new(RefusingPrompt),
+        editor: Box::new(RefusingEditor),
+        ..context()
     }
 }

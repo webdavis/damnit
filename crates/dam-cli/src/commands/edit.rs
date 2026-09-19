@@ -102,7 +102,9 @@ fn through_editor(ctx: &Context, oid: &Oid) -> Result<EditFields, CliError> {
     let original = render_template(&current);
     let mut opened = original.clone();
     loop {
-        let saved = ctx.editor.edit(&opened).map_err(|e| CliError::Io(e.0))?;
+        // A missing/refused editor, a non-zero exit, or a dropped --json/--toon
+        // run are all "you can't do this right now", not an internal failure.
+        let saved = ctx.editor.edit(&opened).map_err(|e| CliError::Usage(e.0))?;
         if saved == opened || saved == original {
             return Err(CliError::Cancelled);
         }
@@ -128,7 +130,7 @@ fn through_editor(ctx: &Context, oid: &Oid) -> Result<EditFields, CliError> {
 mod tests {
     use super::*;
     use crate::args::EditArgs;
-    use crate::testing::{ScriptedEditor, context};
+    use crate::testing::{ScriptedEditor, context, machine_context};
     use dam_domain::{Object, Oid, Task};
 
     fn oid(b: u8) -> Oid {
@@ -254,5 +256,22 @@ mod tests {
             ctx.store.get(&oid(1)).unwrap().unwrap().base().subject,
             "milk"
         );
+    }
+
+    #[test]
+    fn a_machine_format_refuses_to_open_an_editor() {
+        let mut ctx = machine_context();
+        ctx.store
+            .put(&Object::Task(Task::new(oid(1), "milk")))
+            .unwrap();
+        let err = run(
+            &mut ctx,
+            EditArgs {
+                editor: true,
+                ..args(&oid(1))
+            },
+        )
+        .unwrap_err();
+        assert!(matches!(err, CliError::Usage(_)));
     }
 }

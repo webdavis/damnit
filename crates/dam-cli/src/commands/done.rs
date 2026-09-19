@@ -82,7 +82,7 @@ fn ask(ctx: &Context, blockers: &[Blocker]) -> Result<Dispositions, CliError> {
 mod tests {
     use super::*;
     use crate::args::DoneArgs;
-    use crate::testing::{ScriptedPrompt, context};
+    use crate::testing::{ScriptedPrompt, context, machine_context};
     use dam_domain::{Object, Oid, Path, Task};
     use std::cell::RefCell;
 
@@ -175,6 +175,23 @@ mod tests {
                 .path
                 .as_str(),
             "p/c/"
+        );
+    }
+
+    #[test]
+    fn a_machine_format_refuses_to_ask_instead_of_blocking() {
+        let mut ctx = machine_context();
+        parent_and_child(&ctx);
+        let err = run(&mut ctx, args(&oid(1), true, true)).unwrap_err();
+        assert!(matches!(err, CliError::Usage(_)));
+        assert!(
+            !ctx.store
+                .get(&oid(1))
+                .unwrap()
+                .unwrap()
+                .as_task()
+                .unwrap()
+                .done
         );
     }
 }
