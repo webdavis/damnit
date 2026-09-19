@@ -90,7 +90,7 @@ pub fn maybe_pull_stale(ctx: &mut Context) -> Result<(), CliError> {
 mod tests {
     use super::*;
     use crate::args::{RemoteArgs, RemoteCommand};
-    use crate::testing::{EchoLauncher, context};
+    use crate::testing::{EchoLauncher, FailingLauncher, context};
     use dam_application::{RemoteConfig, RemoteName};
     use dam_protocol::{PullResponse, WireObject, WireTask};
     use std::cell::RefCell;
@@ -198,5 +198,30 @@ mod tests {
         });
         maybe_pull_stale(&mut ctx).unwrap();
         assert!(ctx.store.all().unwrap().is_empty());
+    }
+
+    #[test]
+    fn an_unreachable_stale_remote_records_a_notice_and_does_not_advance_last_pull() {
+        let mut ctx = context();
+        ctx.config.remotes.push(RemoteConfig {
+            name: RemoteName("t".into()),
+            helper: "t".into(),
+            credentials: vec![],
+            stale: Some(Duration::from_secs(60)),
+            path: None,
+        });
+        ctx.launcher = Box::new(FailingLauncher);
+        maybe_pull_stale(&mut ctx).unwrap();
+        assert!(ctx.store.all().unwrap().is_empty());
+        assert!(
+            ctx.store
+                .last_pull(&RemoteName("t".into()))
+                .unwrap()
+                .is_none()
+        );
+        assert!(matches!(
+            ctx.store.notices().unwrap().last(),
+            Some(dam_application::Notice::PullFailed { remote, .. }) if remote.0 == "t"
+        ));
     }
 }

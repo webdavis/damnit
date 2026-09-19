@@ -134,6 +134,21 @@ impl HelperLauncher for EchoLauncher {
     }
 }
 
+/// A launcher whose helper is never reachable, for the auto-pull failure path.
+#[derive(Debug)]
+pub struct FailingLauncher;
+impl HelperLauncher for FailingLauncher {
+    fn launch(
+        &self,
+        remote: &RemoteConfig,
+        _: &[(String, String)],
+    ) -> Result<Box<dyn RemoteHelper>, HelperError> {
+        Err(HelperError::NotFound {
+            helper: remote.helper.clone(),
+        })
+    }
+}
+
 pub fn context() -> Context {
     Context {
         store: Box::new(SqliteStore::in_memory().unwrap_or_else(|e| panic!("{e}"))),
