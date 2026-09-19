@@ -320,6 +320,41 @@ fn a_kind_change_upstream_keeps_ours_and_raises_a_notice() {
 }
 
 #[test]
+fn a_kind_change_is_noticed_once_however_often_it_is_pulled() {
+    let store = MemoryStore::new();
+    store.put(&Object::Task(Task::new(oid(1), "mine"))).unwrap();
+    store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
+    let mut theirs = to_wire(
+        &Object::Event(Event::new(
+            oid(1),
+            "theirs",
+            When::Day(date(2026, 1, 1)),
+            When::Day(date(2026, 1, 2)),
+        )),
+        Some("r1".into()),
+    );
+    theirs.oid = String::new();
+    let l = launcher(PullResponse {
+        objects: vec![theirs],
+        removed: vec![],
+        sync: None,
+    });
+    for _ in 0..2 {
+        pull(
+            &store,
+            &l,
+            &NoCredentials,
+            &FixedClock(date(2026, 9, 18)),
+            &mut FixedRandom(42),
+            &config(),
+            None,
+        )
+        .unwrap();
+    }
+    assert_eq!(store.notices().unwrap().len(), 1);
+}
+
+#[test]
 fn a_pull_records_when_it_happened() {
     let store = MemoryStore::new();
     let l = launcher(PullResponse::default());

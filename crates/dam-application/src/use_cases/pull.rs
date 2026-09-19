@@ -79,8 +79,9 @@ fn apply(
 }
 
 /// Reads every pulled object against local state and decides what to do with
-/// it, without writing anything. `fresh` pairs a generated oid with the
-/// remote id it maps to, applied by the caller once classification succeeds.
+/// it. Notices are the only thing it writes; no object is touched. `fresh`
+/// pairs a generated oid with the remote id it maps to, applied by the caller
+/// once classification succeeds.
 fn classify(
     store: &dyn ObjectStore,
     remote: &RemoteConfig,
@@ -89,6 +90,7 @@ fn classify(
     random: &mut dyn Randomness,
 ) -> Result<Classified, UseCaseError> {
     let staged: Vec<Oid> = store.staged()?.into_iter().map(|c| c.oid).collect();
+    let mut notices = store.notices()?;
     let mut planned = Vec::new();
     let mut fresh = Vec::new();
 
@@ -117,11 +119,16 @@ fn classify(
         }
         let local = store.get(&oid)?;
         if let Some((ours, theirs)) = local.as_ref().and_then(|l| kind_change(l, &theirs_raw)) {
-            store.add_notice(&Notice::KindChanged {
+            let notice = Notice::KindChanged {
                 oid: oid.clone(),
                 ours: ours.into(),
                 theirs: theirs.into(),
-            })?;
+            };
+            // The kinds keep disagreeing until someone acts, so say it once.
+            if !notices.contains(&notice) {
+                store.add_notice(&notice)?;
+                notices.push(notice);
+            }
         }
         let theirs = merge_fields(
             local.as_ref().unwrap_or(&theirs_raw),

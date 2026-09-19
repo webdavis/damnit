@@ -147,9 +147,20 @@ fn notice_line(n: &Notice) -> String {
         Notice::PullFailed { remote, why } => {
             format!("pull from {} failed: {why}", remote.0)
         }
-        Notice::KindChanged { oid, ours, theirs } => {
-            format!("{} is a {ours} here and an {theirs} upstream", oid.short())
-        }
+        Notice::KindChanged { oid, ours, theirs } => format!(
+            "{} is {} {ours} here and {} {theirs} upstream",
+            oid.short(),
+            article(ours),
+            article(theirs)
+        ),
+    }
+}
+
+/// The article a kind word takes, so a reworded or added kind still reads.
+fn article(word: &str) -> &'static str {
+    match word.chars().next() {
+        Some('a' | 'e' | 'i' | 'o' | 'u') => "an",
+        _ => "a",
     }
 }
 
@@ -250,6 +261,27 @@ mod tests {
         assert_eq!(report.data["notices"][0]["kind"], "kind_changed");
         assert_eq!(report.data["notices"][0]["ours"], "task");
         assert_eq!(report.data["notices"][0]["theirs"], "event");
+    }
+
+    #[test]
+    fn a_kind_change_notice_reads_the_other_way_round_too() {
+        let mut ctx = context();
+        ctx.store
+            .add_notice(&dam_application::Notice::KindChanged {
+                oid: oid(1),
+                ours: "event".into(),
+                theirs: "task".into(),
+            })
+            .unwrap();
+        let report = super::run_status(&mut ctx).unwrap();
+        assert!(
+            report.human.contains(&format!(
+                "{} is an event here and a task upstream",
+                oid(1).short()
+            )),
+            "{}",
+            report.human
+        );
     }
 
     #[test]
