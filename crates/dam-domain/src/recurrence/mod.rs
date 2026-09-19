@@ -229,4 +229,21 @@ mod tests {
             Err(RuleError::BadDate("soon".into()))
         );
     }
+
+    #[test]
+    fn a_month_day_outside_1_to_31_is_named_and_refused() {
+        assert_eq!(
+            Rule::parse("every month on 0"),
+            Err(RuleError::BadDay("0".into()))
+        );
+        assert_eq!(
+            Rule::parse("every month on -1"),
+            Err(RuleError::BadDay("-1".into()))
+        );
+        assert_eq!(
+            Rule::parse("every month on 40"),
+            Err(RuleError::BadDay("40".into()))
+        );
+        assert!(Rule::parse("every month on 31").is_ok());
+    }
 }

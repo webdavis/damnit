@@ -55,6 +55,9 @@ impl Rule {
                     let list = words.next().ok_or(RuleError::Empty)?;
                     for item in list.split(',') {
                         if let Ok(day) = item.parse::<i8>() {
+                            if !(1..=31).contains(&day) {
+                                return Err(RuleError::BadDay(item.to_string()));
+                            }
                             rule.by_month_day.push(day);
                         } else {
                             rule.by_day.push(weekday(item)?);
