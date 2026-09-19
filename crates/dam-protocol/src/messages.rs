@@ -1,4 +1,5 @@
-use serde::{Deserialize, Serialize};
+use serde::de::Error as _;
+use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::Capabilities;
 
@@ -10,7 +11,13 @@ pub enum Request {
     Push { mutations: Vec<Mutation> },
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+/// Untagged on the wire, but dispatched by hand on read: `PullResponse` and
+/// `PushResponse` default every field, so the derived untagged deserializer
+/// would accept any object as a `Pull` before ever trying the later variants.
+/// Deciding by which key is present, instead of by which variant happens to
+/// parse first, also lets a helper add a field to its response without
+/// breaking `dam`.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(untagged)]
 pub enum Response {
     Capabilities(Capabilities),
@@ -19,8 +26,43 @@ pub enum Response {
     Error { error: String },
 }
 
+#[derive(Deserialize)]
+struct ErrorPayload {
+    error: String,
+}
+
+impl<'de> Deserialize<'de> for Response {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = serde_json::Value::deserialize(deserializer)?;
+        let object = value
+            .as_object()
+            .ok_or_else(|| D::Error::custom("expected a JSON object"))?;
+        if object.contains_key("error") {
+            let payload: ErrorPayload = serde_json::from_value(value).map_err(D::Error::custom)?;
+            return Ok(Response::Error {
+                error: payload.error,
+            });
+        }
+        if object.contains_key("results") {
+            return serde_json::from_value(value)
+                .map(Response::Push)
+                .map_err(D::Error::custom);
+        }
+        if object.contains_key("protocol") {
+            return serde_json::from_value(value)
+                .map(Response::Capabilities)
+                .map_err(D::Error::custom);
+        }
+        serde_json::from_value(value)
+            .map(Response::Pull)
+            .map_err(D::Error::custom)
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
 pub struct PullResponse {
     #[serde(default)]
     pub objects: Vec<WireObject>,
@@ -31,7 +73,6 @@ pub struct PullResponse {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
 pub struct PushResponse {
     #[serde(default)]
     pub results: Vec<MutationResult>,
@@ -291,5 +332,25 @@ mod tests {
                 error: "no such account".into()
             }
         );
+    }
+
+    #[test]
+    fn a_pull_response_with_an_unknown_field_still_deserializes_as_pull() {
+        let r: Response =
+            serde_json::from_str(r#"{"objects":[],"removed":[],"cursor":"abc"}"#).unwrap();
+        assert_eq!(
+            r,
+            Response::Pull(PullResponse {
+                objects: vec![],
+                removed: vec![],
+                sync: None,
+            })
+        );
+    }
+
+    #[test]
+    fn a_push_response_with_an_unknown_field_still_deserializes_as_push() {
+        let r: Response = serde_json::from_str(r#"{"results":[],"cursor":"abc"}"#).unwrap();
+        assert_eq!(r, Response::Push(PushResponse { results: vec![] }));
     }
 }
