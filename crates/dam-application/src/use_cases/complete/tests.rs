@@ -99,6 +99,9 @@ impl ObjectStore for FailingGetStore {
     ) -> Result<(), StoreError> {
         unimplemented!()
     }
+    fn clear_remote_mapping(&self, _remote: &RemoteName, _oid: &Oid) -> Result<(), StoreError> {
+        unimplemented!()
+    }
     fn sync_token(&self, _remote: &RemoteName) -> Result<Option<String>, StoreError> {
         unimplemented!()
     }

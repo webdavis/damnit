@@ -212,6 +212,12 @@ impl ObjectStore for MemoryStore {
             .insert((remote.clone(), object.oid().clone()), object.clone());
         Ok(())
     }
+    fn clear_remote_mapping(&self, remote: &RemoteName, oid: &Oid) -> Result<(), StoreError> {
+        let mut inner = self.0.borrow_mut();
+        inner.remote_ids.remove(&(remote.clone(), oid.clone()));
+        inner.snapshots.remove(&(remote.clone(), oid.clone()));
+        Ok(())
+    }
     fn sync_token(&self, remote: &RemoteName) -> Result<Option<String>, StoreError> {
         Ok(self.0.borrow().sync.get(remote).cloned())
     }

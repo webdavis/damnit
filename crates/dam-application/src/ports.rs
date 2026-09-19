@@ -76,6 +76,9 @@ pub trait ObjectStore {
     fn remote_snapshot(&self, remote: &RemoteName, oid: &Oid)
     -> Result<Option<Object>, StoreError>;
     fn set_remote_snapshot(&self, remote: &RemoteName, object: &Object) -> Result<(), StoreError>;
+    /// Drops the remote id and the remote snapshot for one oid on one remote,
+    /// for an object the remote no longer has after a successful delete.
+    fn clear_remote_mapping(&self, remote: &RemoteName, oid: &Oid) -> Result<(), StoreError>;
     fn sync_token(&self, remote: &RemoteName) -> Result<Option<String>, StoreError>;
     fn set_sync_token(&self, remote: &RemoteName, token: Option<&str>) -> Result<(), StoreError>;
     // conflicts and notices

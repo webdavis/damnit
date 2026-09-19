@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use dam_domain::{Change, Object, Oid, Op, changed_fields, coalesce};
 use dam_protocol::{Capabilities, Mutation, PushResponse};
@@ -6,12 +6,14 @@ use dam_protocol::{Capabilities, Mutation, PushResponse};
 use crate::config::{Config, RemoteConfig};
 use crate::credentials::resolve_credentials;
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{CredentialSource, HelperLauncher, Notice, ObjectStore, RemoteHelper};
+use crate::ports::{
+    CredentialSource, HelperLauncher, Notice, ObjectStore, RemoteHelper, RemoteName,
+};
 use crate::wire::to_wire;
 
 #[derive(Debug)]
 pub struct PushReport {
-    pub remote: crate::ports::RemoteName,
+    pub remote: RemoteName,
     pub sent: usize,
     pub succeeded: usize,
     pub failed: Vec<(Oid, String)>,
@@ -79,11 +81,14 @@ fn push_one(
 
     let mut mutations = Vec::new();
     let mut after_by_oid: BTreeMap<String, Object> = BTreeMap::new();
+    let mut deletes: BTreeSet<String> = BTreeSet::new();
     let mut skipped = 0;
     for change in changes.into_values() {
         match mutation_for(store, caps, remote, &change)? {
             Some(mutation) => {
-                if let Some(after) = &change.after {
+                if mutation.op == "delete" {
+                    deletes.insert(mutation.oid.clone());
+                } else if let Some(after) = &change.after {
                     after_by_oid.insert(change.oid.to_string(), after.clone());
                 }
                 mutations.push(mutation);
@@ -92,15 +97,23 @@ fn push_one(
         }
     }
     let sent = mutations.len();
+    let sent_oids: BTreeSet<String> = mutations.iter().map(|m| m.oid.clone()).collect();
     let response = if mutations.is_empty() {
         PushResponse { results: vec![] }
     } else {
         helper.push(mutations)?
     };
 
+    // The helper is an untrusted subprocess: a result for an oid dam never
+    // sent is dropped, and a repeated result for one oid keeps only the
+    // first (results arrive in the order the helper wrote them).
     let mut failed = Vec::new();
     let mut retries = Vec::new();
+    let mut answered: BTreeSet<String> = BTreeSet::new();
     for result in response.results {
+        if !sent_oids.contains(&result.oid) || !answered.insert(result.oid.clone()) {
+            continue;
+        }
         let Ok(oid) = Oid::parse(&result.oid) else {
             continue;
         };
@@ -108,7 +121,9 @@ fn push_one(
             if let Some(id) = &result.remote_id {
                 store.map_remote_id(&remote.name, &oid, id)?;
             }
-            if let Some(after) = after_by_oid.get(&result.oid) {
+            if deletes.contains(&result.oid) {
+                store.clear_remote_mapping(&remote.name, &oid)?;
+            } else if let Some(after) = after_by_oid.get(&result.oid) {
                 store.set_remote_snapshot(&remote.name, after)?;
             }
         } else {
@@ -131,7 +146,7 @@ fn push_one(
     Ok(PushReport {
         remote: remote.name.clone(),
         sent,
-        succeeded: sent - failed.len(),
+        succeeded: sent.saturating_sub(failed.len()),
         failed,
         skipped,
     })
