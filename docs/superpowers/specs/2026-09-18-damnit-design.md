@@ -60,7 +60,7 @@ Two kinds of object share one base. Everything below lives in SQLite under
 | `path` | string | Where the object sits in the tree. See below. |
 | `labels` | set of strings | Free labels plus category values. See categories. |
 | `depends` | list of `oid` | Objects that must finish first. Cycles are refused at write time. |
-| `reminders` | list | Offsets or absolute times. One model for both kinds. |
+| `reminders` | list | Minutes before the due time. Version one models only that offset. |
 | `recurrence` | rule, optional | See recurrence. |
 
 An `oid` is `dam`'s, assigned the moment an object is created and shown as a 7-character prefix the
@@ -287,7 +287,8 @@ helper did not declare. That rule is what keeps `dam`-only data safe.
 {"cmd": "pull", "since": "<opaque sync token or null>"}
 {"objects": [...], "removed": ["<remote-id>", ...], "sync": "<opaque token>"}
 
-{"cmd": "push", "mutations": [{"op": "create|update|delete", "oid": "...", "fields": {...}}, ...]}
+{"cmd": "push", "mutations": [{"op": "create|update|delete", "oid": "...", "remote_id": "...",
+ "object": {...}, "fields": ["<changed field name>", ...]}, ...]}
 {"results": [{"oid": "...", "ok": true, "remote_id": "..."}, {"oid": "...", "ok": false, "why": "..."}]}
 ```
 
@@ -319,8 +320,10 @@ a status message.
 
 ### Helpers in this repository
 
-`dam-remote-todoist` ships in version one. `dam-remote-gcal` ships second. Both are binaries in the
-`damnit` package, so `cargo install damnit` installs `dam` and both helpers together.
+`dam-remote-todoist` ships in version one. `dam-remote-gcal` ships second. Each helper is its own
+package (`dam-remote-todoist`, `dam-remote-gcal`), separate from `damnit`, which builds only the
+`dam` binary. `cargo install --git <url> damnit` and `cargo install --git <url> dam-remote-todoist`
+are two separate installs.
 
 A native remote, `dam-remote-https` against a server that speaks this protocol, is a later
 helper and out of scope here.
