@@ -1,9 +1,11 @@
+pub mod category;
 pub mod object;
 pub mod oid;
 pub mod path;
 pub mod priority;
 pub mod when;
 
+pub use category::{Categories, Category, CategoryError, LabelViolation};
 pub use object::{
     Attachment, Attendee, Base, Conference, Event, EventStatus, EventType, Kind, Object, Person,
     Reminder, ResponseStatus, Task, Transparency, Visibility,
