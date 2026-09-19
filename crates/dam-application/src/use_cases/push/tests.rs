@@ -143,6 +143,41 @@ fn a_failed_mutation_becomes_a_notice_and_a_retry() {
 }
 
 #[test]
+fn a_mutation_the_helper_never_answered_is_a_failure() {
+    let store = MemoryStore::new();
+    committed_task(&store, 1);
+    committed_task(&store, 2);
+    let (l, _) = launcher(|ms| {
+        ms.iter()
+            .filter(|m| m.oid == oid(1).to_string())
+            .map(|m| MutationResult {
+                oid: m.oid.clone(),
+                ok: true,
+                remote_id: Some("r1".into()),
+                why: None,
+            })
+            .collect()
+    });
+    let reports = push(&store, &l, &NoCredentials, &config(), None).unwrap();
+    assert_eq!(reports[0].succeeded, 1);
+    assert_eq!(
+        reports[0].failed,
+        vec![(oid(2), "no answer from helper".to_string())]
+    );
+    assert_eq!(
+        store.push_retries(&RemoteName("todoist".into())).unwrap(),
+        vec![oid(2)]
+    );
+    assert!(matches!(
+        store.notices().unwrap()[0],
+        Notice::PushFailed { .. }
+    ));
+    let still_unpushed = store.unpushed(&RemoteName("todoist".into())).unwrap();
+    assert_eq!(still_unpushed.len(), 1);
+    assert!(still_unpushed[0].changes.iter().any(|c| c.oid == oid(2)));
+}
+
+#[test]
 fn a_retry_is_sent_as_an_update_of_the_committed_state() {
     let store = MemoryStore::new();
     committed_task(&store, 1);

@@ -122,8 +122,30 @@ fn push_one(
             failed.push((oid, why));
         }
     }
+
+    // A sent mutation with no answer at all, not even a failure, never
+    // reached a known state on the remote: treat it the same as an
+    // explicit failure rather than silently dropping it.
+    let mut unanswered = BTreeSet::new();
+    for oid_str in sent_oids.difference(&answered) {
+        let Ok(oid) = Oid::parse(oid_str) else {
+            continue;
+        };
+        let why = "no answer from helper".to_string();
+        store.add_notice(&Notice::PushFailed {
+            remote: remote.name.clone(),
+            oid: oid.clone(),
+            why: why.clone(),
+        })?;
+        retries.push(oid.clone());
+        unanswered.insert(oid.clone());
+        failed.push((oid, why));
+    }
     store.set_push_retries(&remote.name, &retries)?;
     for record in &unpushed {
+        if record.changes.iter().any(|c| unanswered.contains(&c.oid)) {
+            continue;
+        }
         store.mark_pushed(&remote.name, &record.id)?;
     }
     Ok(PushReport {
