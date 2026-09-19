@@ -9,21 +9,23 @@ pub struct EnvEditor {
 
 impl EnvEditor {
     pub fn from_env() -> EnvEditor {
-        let raw = std::env::var("VISUAL")
-            .ok()
-            .filter(|v| !v.trim().is_empty())
-            .or_else(|| {
-                std::env::var("EDITOR")
-                    .ok()
-                    .filter(|v| !v.trim().is_empty())
-            })
-            .unwrap_or_else(|| "vi".into());
-        EnvEditor::with_command(raw.split_whitespace().map(str::to_string).collect())
+        let visual = std::env::var("VISUAL").ok();
+        let editor = std::env::var("EDITOR").ok();
+        EnvEditor::with_command(choose_command(visual, editor))
     }
 
     pub fn with_command(command: Vec<String>) -> EnvEditor {
         EnvEditor { command }
     }
+}
+
+/// VISUAL wins over EDITOR, a blank value falls through, and neither set means "vi".
+fn choose_command(visual: Option<String>, editor: Option<String>) -> Vec<String> {
+    let raw = visual
+        .filter(|v| !v.trim().is_empty())
+        .or_else(|| editor.filter(|v| !v.trim().is_empty()))
+        .unwrap_or_else(|| "vi".into());
+    raw.split_whitespace().map(str::to_string).collect()
 }
 
 impl EditorSession for EnvEditor {
@@ -77,5 +79,34 @@ mod tests {
     #[test]
     fn an_empty_command_is_an_error() {
         assert!(EnvEditor::with_command(vec![]).edit("x").is_err());
+    }
+
+    #[test]
+    fn visual_wins_over_editor() {
+        assert_eq!(
+            choose_command(Some("emacs".into()), Some("vim".into())),
+            vec!["emacs".to_string()]
+        );
+    }
+
+    #[test]
+    fn a_blank_visual_falls_through_to_editor() {
+        assert_eq!(
+            choose_command(Some("  ".into()), Some("vim".into())),
+            vec!["vim".to_string()]
+        );
+    }
+
+    #[test]
+    fn neither_set_falls_back_to_vi() {
+        assert_eq!(choose_command(None, None), vec!["vi".to_string()]);
+    }
+
+    #[test]
+    fn a_multi_word_value_splits_on_whitespace() {
+        assert_eq!(
+            choose_command(Some("code --wait".into()), None),
+            vec!["code".to_string(), "--wait".to_string()]
+        );
     }
 }
