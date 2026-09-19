@@ -4,11 +4,11 @@ use dam_domain::{Change, Object, Oid, Op, changed_fields, coalesce};
 use dam_protocol::{Capabilities, Mutation, PushResponse};
 
 use crate::config::{Config, RemoteConfig};
-use crate::credentials::resolve_credentials;
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{
     CredentialSource, HelperLauncher, Notice, ObjectStore, RemoteHelper, RemoteName,
 };
+use crate::use_cases::connect::connect;
 use crate::wire::to_wire;
 
 #[derive(Debug)]
@@ -40,7 +40,7 @@ pub fn push(
     Ok(reports)
 }
 
-fn select_remotes<'a>(
+pub(crate) fn select_remotes<'a>(
     config: &'a Config,
     remote: Option<&str>,
 ) -> Result<Vec<&'a RemoteConfig>, UseCaseError> {
@@ -51,23 +51,6 @@ fn select_remotes<'a>(
             .map(|r| vec![r])
             .ok_or_else(|| Refusal::NoSuchRemote(name.to_string()).into()),
     }
-}
-
-/// Reads capabilities with no credentials, then relaunches with the ones the
-/// helper declared. A helper that declares none is used as launched.
-fn connect(
-    launcher: &dyn HelperLauncher,
-    credentials: &dyn CredentialSource,
-    remote: &RemoteConfig,
-) -> Result<(Box<dyn RemoteHelper>, Capabilities), UseCaseError> {
-    let mut probe = launcher.launch(remote, &[])?;
-    let caps = probe.capabilities()?;
-    if caps.credentials.is_empty() {
-        return Ok((probe, caps));
-    }
-    let resolved = resolve_credentials(credentials, remote, &caps.credentials)?;
-    let helper = launcher.launch(remote, &resolved)?;
-    Ok((helper, caps))
 }
 
 fn push_one(

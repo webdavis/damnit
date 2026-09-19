@@ -1,11 +1,14 @@
 pub mod commit;
 pub mod complete;
+pub(crate) mod connect;
 pub mod edit;
 pub mod list;
 pub mod new_object;
+pub mod pull;
 pub mod push;
 pub mod relocate;
 pub mod remove;
+pub mod resolve;
 pub mod stage;
 pub mod status;
 pub(crate) mod subtree;
