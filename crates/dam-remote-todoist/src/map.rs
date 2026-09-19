@@ -98,6 +98,38 @@ impl Tree {
             })
             .map(|i| i.id.as_str())
     }
+
+    pub fn add_project(&mut self, p: Project) {
+        self.projects.insert(p.id.clone(), p);
+    }
+
+    pub fn add_section(&mut self, s: Section) {
+        self.sections.insert(s.id.clone(), s);
+    }
+
+    pub fn add_item(&mut self, i: Item) {
+        self.items.insert(i.id.clone(), i);
+    }
+
+    /// True when a project, section or item is already rooted at `path`, so a
+    /// depth-1 object with something under it becomes a section, not a task.
+    pub fn has_children_at(&self, path: &str) -> bool {
+        self.projects.values().any(|p| {
+            !p.is_deleted
+                && p.parent_id
+                    .as_deref()
+                    .and_then(|id| self.project_path(id))
+                    .as_deref()
+                    == Some(path)
+        }) || self
+            .sections
+            .values()
+            .any(|s| !s.is_deleted && self.project_path(&s.project_id).as_deref() == Some(path))
+            || self
+                .items
+                .values()
+                .any(|i| !i.is_deleted && self.item_path(i).as_deref() == Some(path))
+    }
 }
 
 pub fn remote_id(kind: char, id: &str) -> String {
