@@ -22,8 +22,16 @@ pub struct RemoteConfig {
     pub credentials: Vec<CredentialSpec>,
     pub stale: Option<Duration>,
     /// How long a single helper response may take before the helper is killed.
-    pub deadline: Option<Duration>,
+    pub deadline: Option<ConfiguredDuration>,
     pub path: Option<Path>,
+}
+
+/// A duration next to the text it was configured as, so a message about it
+/// echoes what the operator wrote rather than a normalized form.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConfiguredDuration {
+    pub value: Duration,
+    pub text: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

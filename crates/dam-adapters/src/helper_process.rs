@@ -61,8 +61,10 @@ pub fn credential_variable(remote: &str, name: &str) -> String {
     format!("DAM_{}_{}", shout(remote), shout(name))
 }
 
-/// How long a helper may take to answer one request when the remote names no deadline.
+/// How long a helper may take to answer one request when the remote names no
+/// deadline, and the text the message uses for it.
 const DEFAULT_DEADLINE: Duration = Duration::from_secs(60);
+const DEFAULT_DEADLINE_TEXT: &str = "60s";
 
 /// How often the wait loop wakes to re-check the deadline.
 const TICK: Duration = Duration::from_millis(25);
@@ -117,7 +119,16 @@ impl ProcessLauncher {
             stdin: Some(stdin),
             responses,
             helper: remote.helper.clone(),
-            deadline: remote.deadline.unwrap_or(DEFAULT_DEADLINE),
+            deadline: remote
+                .deadline
+                .as_ref()
+                .map(|d| d.value)
+                .unwrap_or(DEFAULT_DEADLINE),
+            deadline_text: remote
+                .deadline
+                .as_ref()
+                .map(|d| d.text.clone())
+                .unwrap_or_else(|| DEFAULT_DEADLINE_TEXT.to_string()),
             killed: false,
         })
     }
@@ -144,6 +155,8 @@ struct ProcessHelper {
     responses: Receiver<std::io::Result<Option<Response>>>,
     helper: String,
     deadline: Duration,
+    /// The deadline as the operator wrote it, for the message.
+    deadline_text: String,
     killed: bool,
 }
 
@@ -182,7 +195,7 @@ impl ProcessHelper {
                         self.kill();
                         return Err(HelperError::Timeout {
                             helper: self.helper.clone(),
-                            deadline: render_duration(self.deadline),
+                            deadline: self.deadline_text.clone(),
                         });
                     }
                 }
@@ -195,15 +208,6 @@ impl ProcessHelper {
         let _ = self.child.kill();
         let _ = self.child.wait();
         self.killed = true;
-    }
-}
-
-/// A whole number of seconds reads as seconds, anything finer as milliseconds.
-fn render_duration(d: Duration) -> String {
-    if d.subsec_millis() == 0 && d.as_secs() > 0 {
-        format!("{}s", d.as_secs())
-    } else {
-        format!("{}ms", d.as_millis())
     }
 }
 
@@ -259,7 +263,9 @@ impl Drop for ProcessHelper {
 
 #[cfg(test)]
 mod tests {
-    use dam_application::{HelperError, HelperLauncher, RemoteConfig, RemoteName};
+    use dam_application::{
+        ConfiguredDuration, HelperError, HelperLauncher, RemoteConfig, RemoteName,
+    };
     use std::os::unix::fs::PermissionsExt;
 
     use super::*;
@@ -370,7 +376,10 @@ done
         let dir = tempfile::tempdir().unwrap();
         let launcher = install(dir.path(), "#!/bin/sh\nsleep 2\n");
         let mut remote = remote();
-        remote.deadline = Some(std::time::Duration::from_millis(100));
+        remote.deadline = Some(ConfiguredDuration {
+            value: std::time::Duration::from_millis(100),
+            text: "100ms".into(),
+        });
         let started = std::time::Instant::now();
         let mut helper = launcher.spawn(&remote, &[]).unwrap();
         let err = helper.capabilities().unwrap_err();
@@ -383,6 +392,25 @@ done
         );
         assert!(started.elapsed() < std::time::Duration::from_secs(1));
         assert!(helper.child.try_wait().unwrap().is_some());
+    }
+
+    #[test]
+    fn the_timeout_echoes_the_configured_text_rather_than_seconds() {
+        let dir = tempfile::tempdir().unwrap();
+        let launcher = install(dir.path(), "#!/bin/sh\nwhile :; do sleep 0.05; done\n");
+        let mut remote = remote();
+        remote.deadline = Some(ConfiguredDuration {
+            value: std::time::Duration::from_millis(50),
+            text: "2m".into(),
+        });
+        let mut helper = launcher.spawn(&remote, &[]).unwrap();
+        assert_eq!(
+            helper.capabilities().unwrap_err(),
+            HelperError::Timeout {
+                helper: "t".into(),
+                deadline: "2m".into()
+            }
+        );
     }
 
     #[test]

@@ -8,7 +8,7 @@ pub(crate) mod testing;
 pub mod use_cases;
 pub mod wire;
 
-pub use config::{Config, CredentialSpec, FilterConfig, RemoteConfig};
+pub use config::{Config, ConfiguredDuration, CredentialSpec, FilterConfig, RemoteConfig};
 pub use credentials::resolve_credentials;
 pub use dam_domain::{Blocker, ChildDisposition, DependencyDisposition, Force};
 pub use dam_protocol::{

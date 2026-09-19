@@ -1,6 +1,4 @@
-use std::time::Duration;
-
-use dam_application::{CredentialSpec, RemoteConfig, RemoteName};
+use dam_application::{ConfiguredDuration, CredentialSpec, RemoteConfig, RemoteName};
 use dam_domain::Path;
 use toml::{Table, Value};
 
@@ -20,7 +18,7 @@ pub(super) fn parse_remote(name: &str, t: &Table) -> Result<RemoteConfig, Config
                 "remote.{name}: url {url:?} must look like <helper>::"
             ))
         })?;
-    let stale = duration(name, t, "stale")?;
+    let stale = duration(name, t, "stale")?.map(|d| d.value);
     let deadline = duration(name, t, "deadline")?;
     let path = t
         .get("path")
@@ -53,15 +51,20 @@ pub(super) fn parse_remote(name: &str, t: &Table) -> Result<RemoteConfig, Config
     })
 }
 
-/// One optional `<number><s|m|h>` key off a remote table.
-fn duration(remote: &str, t: &Table, key: &str) -> Result<Option<Duration>, ConfigError> {
+/// One optional `<number><s|m|h>` key off a remote table, keeping the text.
+fn duration(remote: &str, t: &Table, key: &str) -> Result<Option<ConfiguredDuration>, ConfigError> {
     t.get(key)
         .map(|v| {
             v.as_str()
                 .ok_or_else(|| {
                     ConfigError::Invalid(format!("remote.{remote}: {key} must be a string"))
                 })
-                .and_then(|text| parse_duration(key, text))
+                .and_then(|text| {
+                    parse_duration(key, text).map(|value| ConfiguredDuration {
+                        value,
+                        text: text.to_string(),
+                    })
+                })
         })
         .transpose()
 }

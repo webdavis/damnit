@@ -33,7 +33,13 @@ fn a_full_file_parses_into_config() {
     let t = c.remote("todoist").unwrap();
     assert_eq!(t.helper, "todoist");
     assert_eq!(t.stale, Some(Duration::from_secs(900)));
-    assert_eq!(t.deadline, Some(Duration::from_secs(120)));
+    assert_eq!(
+        t.deadline,
+        Some(dam_application::ConfiguredDuration {
+            value: Duration::from_secs(120),
+            text: "2m".into()
+        })
+    );
     assert_eq!(t.path.as_ref().unwrap().as_str(), "work/");
     assert_eq!(
         t.credentials,
