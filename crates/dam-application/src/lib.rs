@@ -16,4 +16,7 @@ pub use ports::{
     HelperLauncher, Notice, ObjectStore, Randomness, RemoteHelper, RemoteName, StoreError,
 };
 pub use use_cases::complete::{CompletePlan, Completed, Dispositions, complete, plan_complete};
+pub use use_cases::edit::{EditFields, apply, edit};
 pub use use_cases::new_object::{NewEvent, NewTask, new_event, new_task};
+pub use use_cases::relocate::relocate;
+pub use use_cases::remove::{RemovePlan, plan_remove, remove};

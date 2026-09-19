@@ -29,6 +29,16 @@ pub(crate) fn move_subtree(
     Ok(())
 }
 
+/// The last segment of a path, what `join` needs to place something one level up.
+pub(crate) fn last_segment(path: &Path) -> String {
+    path.as_str()
+        .trim_end_matches('/')
+        .rsplit('/')
+        .next()
+        .unwrap_or("")
+        .to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
