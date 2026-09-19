@@ -21,4 +21,4 @@ pub use path::{Path, PathError};
 pub use priority::{Priority, PriorityError};
 pub use query::{DateSel, Expr, QueryError, Term, matches, parse as parse_query};
 pub use recurrence::{Anchor, Freq, Rule, RuleError, roll_forward};
-pub use when::{Date, Timestamp, When};
+pub use when::{Date, Timestamp, When, WhenError};
