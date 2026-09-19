@@ -1,5 +1,14 @@
 use dam_domain::Object;
 
+use crate::wire::wire_kind;
+
+/// The two wire kinds when a pulled object is not the kind we hold, which is
+/// what `merge_fields` refuses to merge.
+pub fn kind_change(ours: &Object, theirs: &Object) -> Option<(&'static str, &'static str)> {
+    let (o, t) = (wire_kind(ours), wire_kind(theirs));
+    (o != t).then_some((o, t))
+}
+
 /// Copies the named fields from `theirs` onto a clone of `ours`. Anything not
 /// named, which includes every dam-only field, keeps ours.
 pub fn merge_fields(ours: &Object, theirs: &Object, fields: &[String]) -> Object {
@@ -124,7 +133,7 @@ mod tests {
     }
 
     #[test]
-    fn a_kind_mismatch_keeps_ours_entirely() {
+    fn a_kind_mismatch_keeps_ours_entirely_and_is_reported() {
         let ours = Object::Task(Task::new(oid(1), "ours"));
         let theirs = Object::Event(Event::new(
             oid(1),
@@ -133,6 +142,8 @@ mod tests {
             When::Day(date(2026, 1, 2)),
         ));
         assert_eq!(merge_fields(&ours, &theirs, &["subject".into()]), ours);
+        assert_eq!(kind_change(&ours, &theirs), Some(("task", "event")));
+        assert_eq!(kind_change(&ours, &ours), None);
     }
 
     /// A task with every mergeable field set to a value distinct from its

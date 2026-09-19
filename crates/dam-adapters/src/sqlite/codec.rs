@@ -93,6 +93,11 @@ enum NoticeRow {
         remote: String,
         why: String,
     },
+    KindChanged {
+        oid: String,
+        ours: String,
+        theirs: String,
+    },
 }
 
 pub(super) fn notice_to_json(n: &Notice) -> Result<String, StoreError> {
@@ -123,6 +128,11 @@ pub(super) fn notice_to_json(n: &Notice) -> Result<String, StoreError> {
         Notice::PullFailed { remote, why } => NoticeRow::PullFailed {
             remote: remote.0.clone(),
             why: why.clone(),
+        },
+        Notice::KindChanged { oid, ours, theirs } => NoticeRow::KindChanged {
+            oid: oid.to_string(),
+            ours: ours.clone(),
+            theirs: theirs.clone(),
         },
     };
     serde_json::to_string(&row).map_err(|e| StoreError(format!("stored notice: {e}")))
@@ -163,6 +173,15 @@ pub(super) fn notice_from_json(s: &str) -> Result<Notice, StoreError> {
         NoticeRow::PullFailed { remote, why } => Notice::PullFailed {
             remote: RemoteName(remote),
             why,
+        },
+        NoticeRow::KindChanged {
+            oid: o,
+            ours,
+            theirs,
+        } => Notice::KindChanged {
+            oid: oid(&o)?,
+            ours,
+            theirs,
         },
     })
 }
@@ -212,6 +231,11 @@ mod tests {
             Notice::PullFailed {
                 remote: RemoteName("t".into()),
                 why: "w".into(),
+            },
+            Notice::KindChanged {
+                oid: oid(4),
+                ours: "task".into(),
+                theirs: "event".into(),
             },
         ];
         for n in notices {

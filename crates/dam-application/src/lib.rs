@@ -15,7 +15,7 @@ pub use dam_protocol::{
     Capabilities, Mutation, MutationResult, PullResponse, PushResponse, WireObject,
 };
 pub use errors::{Refusal, UseCaseError};
-pub use merge::merge_fields;
+pub use merge::{kind_change, merge_fields};
 pub use ports::{
     Clock, Conflict, CredentialError, CredentialSource, EditorError, EditorSession, HelperError,
     HelperLauncher, Notice, ObjectStore, Randomness, RemoteHelper, RemoteName, StoreError,

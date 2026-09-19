@@ -8,15 +8,20 @@ use dam_protocol::{
     WireAttachment, WireAttendee, WireConference, WireEvent, WireObject, WirePerson, WireTask,
 };
 
+/// The wire word for an object's kind, as `to_wire` writes it.
+pub fn wire_kind(object: &Object) -> &'static str {
+    match object {
+        Object::Task(_) => "task",
+        Object::Event(_) => "event",
+    }
+}
+
 pub fn to_wire(object: &Object, remote_id: Option<String>) -> WireObject {
     let b = object.base();
     WireObject {
         oid: b.oid.to_string(),
         remote_id,
-        kind: match object {
-            Object::Task(_) => "task".into(),
-            Object::Event(_) => "event".into(),
-        },
+        kind: wire_kind(object).into(),
         subject: b.subject.clone(),
         body: b.body.clone(),
         path: b.path.to_string(),

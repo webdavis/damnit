@@ -147,6 +147,9 @@ fn notice_line(n: &Notice) -> String {
         Notice::PullFailed { remote, why } => {
             format!("pull from {} failed: {why}", remote.0)
         }
+        Notice::KindChanged { oid, ours, theirs } => {
+            format!("{} is a {ours} here and an {theirs} upstream", oid.short())
+        }
     }
 }
 
@@ -171,6 +174,9 @@ fn notice_json(n: &Notice) -> serde_json::Value {
         }
         Notice::PullFailed { remote, why } => {
             serde_json::json!({ "kind": "pull_failed", "remote": remote.0, "why": why })
+        }
+        Notice::KindChanged { oid, ours, theirs } => {
+            serde_json::json!({ "kind": "kind_changed", "oid": oid.to_string(), "ours": ours, "theirs": theirs })
         }
     }
 }
@@ -220,6 +226,30 @@ mod tests {
         assert_eq!(report.data["staged"].as_array().unwrap().len(), 1);
         assert_eq!(report.data["unstaged"].as_array().unwrap().len(), 1);
         assert_eq!(report.data["notices"].as_array().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn a_kind_change_notice_names_both_kinds() {
+        let mut ctx = context();
+        ctx.store
+            .add_notice(&dam_application::Notice::KindChanged {
+                oid: oid(1),
+                ours: "task".into(),
+                theirs: "event".into(),
+            })
+            .unwrap();
+        let report = super::run_status(&mut ctx).unwrap();
+        assert!(
+            report.human.contains(&format!(
+                "{} is a task here and an event upstream",
+                oid(1).short()
+            )),
+            "{}",
+            report.human
+        );
+        assert_eq!(report.data["notices"][0]["kind"], "kind_changed");
+        assert_eq!(report.data["notices"][0]["ours"], "task");
+        assert_eq!(report.data["notices"][0]["theirs"], "event");
     }
 
     #[test]

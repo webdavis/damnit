@@ -39,6 +39,12 @@ pub enum Notice {
         remote: RemoteName,
         why: String,
     },
+    /// Upstream changed an object's kind; ours is kept as it is.
+    KindChanged {
+        oid: Oid,
+        ours: String,
+        theirs: String,
+    },
 }
 
 pub trait ObjectStore {

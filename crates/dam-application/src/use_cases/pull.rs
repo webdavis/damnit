@@ -3,7 +3,7 @@ use dam_protocol::Capabilities;
 
 use crate::config::{Config, RemoteConfig};
 use crate::errors::{Refusal, UseCaseError};
-use crate::merge::merge_fields;
+use crate::merge::{kind_change, merge_fields};
 use crate::ports::{
     Clock, CredentialSource, HelperLauncher, Notice, ObjectStore, Randomness, RemoteName,
 };
@@ -116,6 +116,13 @@ fn classify(
             fresh.push((oid.clone(), remote_id));
         }
         let local = store.get(&oid)?;
+        if let Some((ours, theirs)) = local.as_ref().and_then(|l| kind_change(l, &theirs_raw)) {
+            store.add_notice(&Notice::KindChanged {
+                oid: oid.clone(),
+                ours: ours.into(),
+                theirs: theirs.into(),
+            })?;
+        }
         let theirs = merge_fields(
             local.as_ref().unwrap_or(&theirs_raw),
             &theirs_raw,
