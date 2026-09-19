@@ -79,8 +79,6 @@ pub fn object_line(object: &Object) -> String {
     cols.join("  ")
 }
 
-/// Read by `ls`, which Task 30 adds.
-#[allow(dead_code)]
 pub fn objects_report(objects: &[Object]) -> Report {
     Report {
         human: objects
