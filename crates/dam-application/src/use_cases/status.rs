@@ -4,6 +4,7 @@ use dam_domain::{Change, Object, Oid, diff};
 
 use crate::errors::UseCaseError;
 use crate::ports::{Conflict, Notice, ObjectStore, RemoteName};
+use crate::use_cases::stage::tracked_oids;
 
 pub struct Status {
     pub staged: Vec<Change>,
@@ -32,6 +33,8 @@ pub fn diff_staged(store: &dyn ObjectStore) -> Result<Vec<Change>, UseCaseError>
 }
 
 /// Working against what the stage would leave: committed with the stage applied.
+/// Walks every tracked oid, not just working objects, so a working object
+/// deleted but not yet staged still shows up as an unstaged delete.
 pub fn diff_working(store: &dyn ObjectStore) -> Result<Vec<Change>, UseCaseError> {
     let staged: BTreeMap<Oid, Change> = store
         .staged()?
@@ -39,13 +42,13 @@ pub fn diff_working(store: &dyn ObjectStore) -> Result<Vec<Change>, UseCaseError
         .map(|c| (c.oid.clone(), c))
         .collect();
     let mut out = Vec::new();
-    for object in store.all()? {
-        let oid = object.oid().clone();
+    for oid in tracked_oids(store)? {
         let base: Option<Object> = match staged.get(&oid) {
             Some(change) => change.after.clone(),
             None => store.committed(&oid)?,
         };
-        if let Some(change) = diff(&oid, base.as_ref(), Some(&object)) {
+        let working = store.get(&oid)?;
+        if let Some(change) = diff(&oid, base.as_ref(), working.as_ref()) {
             out.push(change);
         }
     }
@@ -100,5 +103,26 @@ mod tests {
         let remote = RemoteName("todoist".into());
         let s = status(&store, std::slice::from_ref(&remote)).unwrap();
         assert_eq!(s.unpushed, vec![(remote, 1)]);
+    }
+
+    #[test]
+    fn a_working_delete_not_yet_staged_shows_as_an_unstaged_delete() {
+        let store = MemoryStore::new();
+        store.put(&Object::Task(Task::new(oid(1), "a"))).unwrap();
+        add(&store, &[oid(1)]).unwrap();
+        commit(
+            &store,
+            &FixedClock(date(2026, 9, 18)),
+            &mut FixedRandom(5),
+            "m",
+        )
+        .unwrap();
+        store.delete(&oid(1)).unwrap();
+        let s = diff_working(&store).unwrap();
+        assert_eq!(s.len(), 1);
+        assert_eq!(s[0].op, Op::Delete);
+        let staged = crate::use_cases::stage::add_all(&store).unwrap();
+        assert_eq!(staged.len(), 1);
+        assert_eq!(staged[0].op, Op::Delete);
     }
 }

@@ -21,16 +21,23 @@ pub fn add(store: &dyn ObjectStore, oids: &[Oid]) -> Result<Vec<Change>, UseCase
     Ok(staged)
 }
 
-/// Every working object that differs from committed, plus every committed
-/// object missing from working, staged as a delete.
-pub fn add_all(store: &dyn ObjectStore) -> Result<Vec<Change>, UseCaseError> {
+/// Every oid that could still need staging: every working object, plus every
+/// oid any commit has ever touched (so a committed object deleted from
+/// working, but not yet staged, is not missed).
+pub(crate) fn tracked_oids(store: &dyn ObjectStore) -> Result<BTreeSet<Oid>, UseCaseError> {
     let mut oids: BTreeSet<Oid> = store.all()?.into_iter().map(|o| o.oid().clone()).collect();
     for record in store.log()? {
         for change in record.changes {
             oids.insert(change.oid);
         }
     }
-    let list: Vec<Oid> = oids.into_iter().collect();
+    Ok(oids)
+}
+
+/// Every working object that differs from committed, plus every committed
+/// object missing from working, staged as a delete.
+pub fn add_all(store: &dyn ObjectStore) -> Result<Vec<Change>, UseCaseError> {
+    let list: Vec<Oid> = tracked_oids(store)?.into_iter().collect();
     add(store, &list)
 }
 
