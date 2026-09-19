@@ -4,6 +4,17 @@ use dam_protocol::{WireObject, WireTask};
 
 use crate::api::{Item, Project, Section, SyncResponse};
 
+/// A Todoist name as exactly one dam path segment: `/` cannot introduce an
+/// extra level, and a blank name still names something.
+fn segment(name: &str, id: &str) -> String {
+    let clean = name.replace('/', "-");
+    if clean.trim().is_empty() {
+        format!("untitled-{id}")
+    } else {
+        clean
+    }
+}
+
 pub struct Tree {
     projects: HashMap<String, Project>,
     sections: HashMap<String, Section>,
@@ -46,12 +57,16 @@ impl Tree {
             Some(pid) => self.project_path_from(pid, visited)?,
             None => String::new(),
         };
-        Some(format!("{parent}{}/", p.name))
+        Some(format!("{parent}{}/", segment(&p.name, &p.id)))
     }
 
     pub fn section_path(&self, id: &str) -> Option<String> {
         let s = self.sections.get(id)?;
-        Some(format!("{}{}/", self.project_path(&s.project_id)?, s.name))
+        Some(format!(
+            "{}{}/",
+            self.project_path(&s.project_id)?,
+            segment(&s.name, &s.id)
+        ))
     }
 
     pub fn item_path(&self, item: &Item) -> Option<String> {
@@ -67,7 +82,7 @@ impl Tree {
             return Some(format!(
                 "{}{}/",
                 self.item_path_from(parent, visited)?,
-                parent.content
+                segment(&parent.content, &parent.id)
             ));
         }
         match &item.section_id {

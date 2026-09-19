@@ -134,6 +134,64 @@ fn priorities_map_both_ways() {
 }
 
 #[test]
+fn a_slash_in_a_name_becomes_one_dam_segment_not_two() {
+    let s = SyncResponse {
+        projects: vec![Project {
+            id: "p1".into(),
+            name: "a/b".into(),
+            parent_id: None,
+            is_deleted: false,
+            is_archived: false,
+            inbox_project: false,
+        }],
+        sections: vec![],
+        items: vec![],
+    };
+    let t = Tree::from_sync(&s);
+    assert_eq!(t.project_path("p1").as_deref(), Some("a-b/"));
+}
+
+#[test]
+fn a_blank_name_becomes_untitled_with_the_remote_id() {
+    let s = SyncResponse {
+        projects: vec![Project {
+            id: "p1".into(),
+            name: "".into(),
+            parent_id: None,
+            is_deleted: false,
+            is_archived: false,
+            inbox_project: false,
+        }],
+        sections: vec![Section {
+            id: "s1".into(),
+            name: "".into(),
+            project_id: "p1".into(),
+            is_deleted: false,
+        }],
+        items: vec![Item {
+            id: "i1".into(),
+            content: "/".into(),
+            description: String::new(),
+            project_id: "p1".into(),
+            section_id: Some("s1".into()),
+            parent_id: None,
+            priority: 1,
+            due: None,
+            deadline: None,
+            labels: vec![],
+            checked: false,
+            is_deleted: false,
+        }],
+    };
+    let t = Tree::from_sync(&s);
+    assert_eq!(t.project_path("p1").as_deref(), Some("untitled-p1/"));
+    assert_eq!(
+        t.section_path("s1").as_deref(),
+        Some("untitled-p1/untitled-s1/")
+    );
+}
+
+#[test]
 fn a_project_parent_cycle_returns_none_instead_of_overflowing() {
     let s = SyncResponse {
         projects: vec![
