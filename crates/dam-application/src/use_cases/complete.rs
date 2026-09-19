@@ -5,6 +5,7 @@ use dam_domain::{
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{Clock, ObjectStore, Randomness};
+use crate::use_cases::subtree::move_subtree;
 
 pub struct CompletePlan {
     pub oid: Oid,
@@ -118,6 +119,7 @@ fn apply_dispositions(
     let target = match d.children {
         ChildDisposition::Keep => None,
         ChildDisposition::Up => Some(parent_path.clone()),
+        ChildDisposition::Into(_) if children.is_empty() => None,
         ChildDisposition::Into(name) => {
             let group_oid = Oid::generate(&mut |b| random.fill(b));
             let mut group = Task::new(group_oid, name.clone());
@@ -130,13 +132,13 @@ fn apply_dispositions(
         }
     };
     if let Some(target) = target {
-        for child in children {
-            if let Some(mut c) = store.get(&child)? {
+        for child in &children {
+            if let Some(c) = store.get(child)? {
                 let segment = last_segment(&c.base().path);
-                c.base_mut().path = target
+                let to = target
                     .join(&segment)
                     .map_err(|e| UseCaseError::Parse(e.to_string()))?;
-                store.put(&c)?;
+                move_subtree(store, child, &to)?;
             }
         }
     }
