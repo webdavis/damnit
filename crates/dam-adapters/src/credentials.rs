@@ -122,6 +122,33 @@ mod tests {
     }
 
     #[test]
+    fn an_empty_argv_is_a_command_failure_not_a_panic() {
+        let spec = CredentialSpec::Command {
+            name: "api_token".into(),
+            argv: vec![],
+        };
+        assert!(matches!(
+            no_env().resolve(&spec),
+            Err(CredentialError::CommandFailed { .. })
+        ));
+    }
+
+    #[test]
+    fn non_utf8_stdout_is_a_command_failure_that_never_echoes_the_bytes() {
+        let spec = CredentialSpec::Command {
+            name: "api_token".into(),
+            argv: vec!["sh".into(), "-c".into(), "printf '\\377'".into()],
+        };
+        match no_env().resolve(&spec).unwrap_err() {
+            CredentialError::CommandFailed { name, why } => {
+                assert_eq!(name, "api_token");
+                assert!(!why.as_bytes().contains(&0xff));
+            }
+            other => panic!("{other:?}"),
+        }
+    }
+
+    #[test]
     fn env_reads_the_variable_or_reports_it_unset() {
         let source =
             ProcessCredentialSource::with_env(|k| (k == "T").then(|| "from-env".to_string()));
