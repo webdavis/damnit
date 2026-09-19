@@ -30,7 +30,7 @@ pub fn run_remote(ctx: &mut Context, args: RemoteArgs) -> Result<Report, CliErro
 }
 
 fn remote_line(r: &RemoteConfig) -> String {
-    let mut line = format!("{}  {}::", r.name.0, r.helper);
+    let mut line = format!("{}  {}", r.name.0, r.url);
     if let Some(p) = &r.path {
         line.push_str(&format!("  path {}", p.as_str()));
     }
@@ -44,6 +44,7 @@ fn remote_json(r: &RemoteConfig) -> serde_json::Value {
     serde_json::json!({
         "name": r.name.0,
         "helper": r.helper,
+        "url": r.url,
         "path": r.path.as_ref().map(|p| p.as_str()),
         "stale_seconds": r.stale.map(|s| s.as_secs()),
     })
@@ -129,7 +130,7 @@ mod tests {
             RemoteArgs {
                 command: RemoteCommand::Add {
                     name: "todoist".into(),
-                    url: "todoist::".into(),
+                    url: "todoist::default".into(),
                 },
             },
         )
@@ -141,7 +142,11 @@ mod tests {
             },
         )
         .unwrap();
-        assert!(report.human.contains("todoist"));
+        assert!(
+            report.human.contains("todoist::default"),
+            "list must echo the url as configured, not just the helper prefix: {}",
+            report.human
+        );
         assert_eq!(ctx.config.remote("todoist").unwrap().helper, "todoist");
     }
 
@@ -151,6 +156,7 @@ mod tests {
         ctx.config.remotes.push(RemoteConfig {
             name: RemoteName("t".into()),
             helper: "t".into(),
+            url: "t::".into(),
             credentials: vec![],
             stale: Some(Duration::from_secs(60)),
             path: None,
@@ -185,6 +191,7 @@ mod tests {
         ctx.config.remotes.push(RemoteConfig {
             name: RemoteName("t".into()),
             helper: "t".into(),
+            url: "t::".into(),
             credentials: vec![],
             stale: None,
             path: None,
@@ -206,6 +213,7 @@ mod tests {
         ctx.config.remotes.push(RemoteConfig {
             name: RemoteName("t".into()),
             helper: "t".into(),
+            url: "t::".into(),
             credentials: vec![],
             stale: Some(Duration::from_secs(60)),
             path: None,

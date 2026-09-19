@@ -259,6 +259,7 @@ mod tests {
         ctx.config.remotes.push(RemoteConfig {
             name: RemoteName("todoist".into()),
             helper: "todoist".into(),
+            url: "todoist::".into(),
             credentials: vec![],
             stale: None,
             path: None,

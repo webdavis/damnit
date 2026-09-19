@@ -195,6 +195,7 @@ done
         RemoteConfig {
             name: RemoteName("t".into()),
             helper: "t".into(),
+            url: "t::".into(),
             credentials: vec![],
             stale: None,
             path: None,

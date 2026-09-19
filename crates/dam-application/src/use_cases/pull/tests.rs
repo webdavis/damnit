@@ -24,6 +24,7 @@ fn config() -> Config {
         remotes: vec![RemoteConfig {
             name: remote(),
             helper: "todoist".into(),
+            url: "todoist::".into(),
             credentials: vec![CredentialSpec::Literal {
                 name: "api_token".into(),
                 value: "t".into(),

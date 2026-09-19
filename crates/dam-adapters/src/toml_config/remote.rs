@@ -51,6 +51,7 @@ pub(super) fn parse_remote(name: &str, t: &Table) -> Result<RemoteConfig, Config
     Ok(RemoteConfig {
         name: RemoteName(name.to_string()),
         helper: helper.to_string(),
+        url: url.to_string(),
         credentials,
         stale,
         path,

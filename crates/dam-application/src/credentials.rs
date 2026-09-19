@@ -45,6 +45,7 @@ mod tests {
         RemoteConfig {
             name: RemoteName("todoist".into()),
             helper: "todoist".into(),
+            url: "todoist::".into(),
             credentials: specs,
             stale: None,
             path: None,

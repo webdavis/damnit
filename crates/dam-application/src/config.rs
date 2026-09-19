@@ -17,6 +17,8 @@ pub struct RemoteConfig {
     pub name: RemoteName,
     /// The word before `::` in the url; the helper is `dam-remote-<helper>`.
     pub helper: String,
+    /// The url exactly as configured, for `remote list` to echo back verbatim.
+    pub url: String,
     pub credentials: Vec<CredentialSpec>,
     pub stale: Option<Duration>,
     pub path: Option<Path>,
