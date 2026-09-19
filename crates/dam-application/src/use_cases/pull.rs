@@ -28,6 +28,10 @@ enum Incoming {
     Unchanged,
 }
 
+/// What each pulled object should do, plus the oids generated for objects
+/// with no local match yet, paired with the remote id each one maps to.
+type Classified = (Vec<(Oid, Incoming)>, Vec<(Oid, String)>);
+
 pub fn pull(
     store: &dyn ObjectStore,
     launcher: &dyn HelperLauncher,
@@ -55,11 +59,39 @@ fn apply(
     caps: &Capabilities,
     response: dam_protocol::PullResponse,
 ) -> Result<PullReport, UseCaseError> {
+    let (planned, fresh) = classify(store, remote, caps, response.objects, random)?;
+    for (oid, remote_id) in fresh {
+        store.map_remote_id(&remote.name, &oid, &remote_id)?;
+    }
+    let mut report = PullReport {
+        remote: remote.name.clone(),
+        created: 0,
+        updated: 0,
+        conflicts: 0,
+        removed_upstream: 0,
+        unchanged: 0,
+    };
+    land(store, clock, random, remote, planned, &mut report)?;
+    report.removed_upstream = record_removals(store, remote, response.removed)?;
+    store.set_sync_token(&remote.name, response.sync.as_deref())?;
+    Ok(report)
+}
+
+/// Reads every pulled object against local state and decides what to do with
+/// it, without writing anything. `fresh` pairs a generated oid with the
+/// remote id it maps to, applied by the caller once classification succeeds.
+fn classify(
+    store: &dyn ObjectStore,
+    remote: &RemoteConfig,
+    caps: &Capabilities,
+    objects: Vec<dam_protocol::WireObject>,
+    random: &mut dyn Randomness,
+) -> Result<Classified, UseCaseError> {
     let staged: Vec<Oid> = store.staged()?.into_iter().map(|c| c.oid).collect();
-    let mut planned: Vec<(Oid, Incoming)> = Vec::new();
+    let mut planned = Vec::new();
     let mut fresh = Vec::new();
 
-    for mut wire in response.objects {
+    for mut wire in objects {
         let remote_id = wire
             .remote_id
             .clone()
@@ -98,18 +130,20 @@ fn apply(
         };
         planned.push((oid, incoming));
     }
+    Ok((planned, fresh))
+}
 
-    let mut report = PullReport {
-        remote: remote.name.clone(),
-        created: 0,
-        updated: 0,
-        conflicts: 0,
-        removed_upstream: 0,
-        unchanged: 0,
-    };
-    for (oid, remote_id) in fresh {
-        store.map_remote_id(&remote.name, &oid, &remote_id)?;
-    }
+/// Writes every classified object to the store and commits the batch of
+/// creates and fast-forwards as one pull commit, already marked pushed for
+/// this remote since it is exactly what the remote holds.
+fn land(
+    store: &dyn ObjectStore,
+    clock: &dyn Clock,
+    random: &mut dyn Randomness,
+    remote: &RemoteConfig,
+    planned: Vec<(Oid, Incoming)>,
+    report: &mut PullReport,
+) -> Result<(), UseCaseError> {
     let mut landed = Vec::new();
     for (oid, incoming) in planned {
         match incoming {
@@ -134,28 +168,42 @@ fn apply(
                 store.mark_conflict(&remote.name, &oid, &o)?;
                 store.set_remote_snapshot(&remote.name, &o)?;
                 report.conflicts += 1;
+                note_cancelled(store, &o)?;
             }
         }
     }
-    if !landed.is_empty() {
-        let record = CommitRecord {
-            id: CommitId::generate(&mut |b| random.fill(b)),
-            message: format!("pull from {}", remote.name.0),
-            at: clock.now(),
-            changes: landed
-                .into_iter()
-                .map(|(oid, op, after)| Change {
-                    oid,
-                    op,
-                    before: None,
-                    after: Some(after),
-                })
-                .collect(),
-        };
-        store.commit(&record)?;
-        store.mark_pushed(&remote.name, &record.id)?;
+    if landed.is_empty() {
+        return Ok(());
     }
-    for remote_id in response.removed {
+    let record = CommitRecord {
+        id: CommitId::generate(&mut |b| random.fill(b)),
+        message: format!("pull from {}", remote.name.0),
+        at: clock.now(),
+        changes: landed
+            .into_iter()
+            .map(|(oid, op, after)| Change {
+                oid,
+                op,
+                before: None,
+                after: Some(after),
+            })
+            .collect(),
+    };
+    store.commit(&record)?;
+    store.mark_pushed(&remote.name, &record.id)?;
+    Ok(())
+}
+
+/// Turns each remote id the remote no longer has into a notice, and drops
+/// its oid-to-remote-id mapping and snapshot: the local object stays, but
+/// nothing about it still tracks that remote.
+fn record_removals(
+    store: &dyn ObjectStore,
+    remote: &RemoteConfig,
+    removed: Vec<String>,
+) -> Result<usize, UseCaseError> {
+    let mut count = 0;
+    for remote_id in removed {
         if let Some(oid) = store.oid_for_remote_id(&remote.name, &remote_id)? {
             let subject = store
                 .get(&oid)?
@@ -163,14 +211,14 @@ fn apply(
                 .unwrap_or_default();
             store.add_notice(&Notice::RemovedUpstream {
                 remote: remote.name.clone(),
-                oid,
+                oid: oid.clone(),
                 subject,
             })?;
-            report.removed_upstream += 1;
+            store.clear_remote_mapping(&remote.name, &oid)?;
+            count += 1;
         }
     }
-    store.set_sync_token(&remote.name, response.sync.as_deref())?;
-    Ok(report)
+    Ok(count)
 }
 
 fn note_cancelled(store: &dyn ObjectStore, object: &Object) -> Result<(), UseCaseError> {
