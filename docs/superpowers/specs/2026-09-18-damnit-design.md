@@ -272,7 +272,7 @@ One JSON object per line in each direction. The first exchange is always `capabi
 ```json
 {"cmd": "capabilities"}
 {"protocol": 1, "kinds": ["task"], "fields": ["subject", "body", "path", "labels", "priority",
- "due", "deadline", "done", "recurrence"], "credentials": ["todoist_api_token"], "incremental": true}
+ "due", "deadline", "done", "recurrence"], "credentials": ["api_token"], "incremental": true}
 ```
 
 `kinds` and `fields` are what the helper will accept on push and return on pull. A helper never
@@ -297,7 +297,8 @@ later `dam`.
 ### Credentials
 
 A helper declares the credentials it needs by name in `capabilities`. `dam-remote-todoist` declares
-`todoist_api_token`; a Google helper declares a client id, a client secret and a refresh token. The
+`api_token`; a Google helper declares `client_id`, `client_secret` and `refresh_token`. The remote's
+name is already the table, so credential names carry no prefix. The
 remote's config table provides each one in one of three ways, tried in this order when more than one
 is set:
 
@@ -308,7 +309,7 @@ is set:
 | `<name>_env` | The name of an environment variable holding it. |
 
 `dam` resolves each and passes it to the helper as `DAM_<NAME>` in its environment, so
-`todoist_api_token` arrives as `DAM_TODOIST_API_TOKEN`. A declared credential with no source in
+`api_token` arrives as `DAM_API_TOKEN`. A declared credential with no source in
 config is a refusal that names the key. No value appears in an argument, a log line or a status
 message.
 
@@ -343,16 +344,16 @@ interactive = true
 
 [remote.todoist]
 url = "todoist::"
-todoist_api_token_command = ["keepassxc-cli", "show", "-a", "Password", "~/vault.kdbx", "Todoist :: API Token"]
-# or: todoist_api_token = "..."          the value itself, warned about by dam status
-# or: todoist_api_token_env = "TODOIST_API_TOKEN"
+api_token_command = ["keepassxc-cli", "show", "-a", "Password", "~/vault.kdbx", "Todoist :: API Token"]
+# or: api_token = "..."          the value itself, warned about by dam status
+# or: api_token_env = "TODOIST_API_TOKEN"
 stale = "15m"
 
 [remote.gcal]
 url = "gcal::"
-gcal_client_id_command = ["keepassxc-cli", "show", "-a", "UserName", "~/vault.kdbx", "Google :: dam"]
-gcal_client_secret_command = ["keepassxc-cli", "show", "-a", "Password", "~/vault.kdbx", "Google :: dam"]
-gcal_refresh_token_command = ["keepassxc-cli", "show", "-a", "refresh", "~/vault.kdbx", "Google :: dam"]
+client_id_command = ["keepassxc-cli", "show", "-a", "UserName", "~/vault.kdbx", "Google :: dam"]
+client_secret_command = ["keepassxc-cli", "show", "-a", "Password", "~/vault.kdbx", "Google :: dam"]
+refresh_token_command = ["keepassxc-cli", "show", "-a", "refresh", "~/vault.kdbx", "Google :: dam"]
 stale = "5m"
 path = "calendar/"
 
