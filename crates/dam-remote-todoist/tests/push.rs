@@ -38,6 +38,31 @@ fn task(oid: &str, path: &str, subject: &str, done: bool) -> WireObject {
     }
 }
 
+/// An object whose `due` is gone and whose `recurrence` is gone, with only "due" in the
+/// changed-fields list, so the update sends nothing but the field that clears the date.
+fn task_with_due_cleared(oid: &str) -> WireObject {
+    WireObject {
+        oid: oid.into(),
+        remote_id: None,
+        kind: "task".into(),
+        subject: "unused".into(),
+        body: "b".into(),
+        path: "Work/".into(),
+        labels: vec!["errand".into()],
+        depends: vec![],
+        reminders: vec![],
+        recurrence: None,
+        task: Some(WireTask {
+            done: false,
+            priority: 1,
+            due: None,
+            deadline: None,
+            event: None,
+        }),
+        event: None,
+    }
+}
+
 #[test]
 fn creates_updates_and_deletes_become_the_right_requests() {
     let mut routes = HashMap::new();
@@ -46,6 +71,7 @@ fn creates_updates_and_deletes_become_the_right_requests() {
     routes.insert("POST /tasks/i1", (200, serde_json::json!({"id": "i1"})));
     routes.insert("POST /tasks/i1/close", (204, serde_json::Value::Null));
     routes.insert("DELETE /projects/p1", (204, serde_json::Value::Null));
+    routes.insert("POST /tasks/i3", (200, serde_json::json!({"id": "i3"})));
     let server = loopback::serve(routes);
     let api = TodoistApi::new(&server.base, "tok");
     let mutations = vec![
@@ -77,15 +103,23 @@ fn creates_updates_and_deletes_become_the_right_requests() {
             object: Some(task(&"4".repeat(40), "Nope/", "lost", false)),
             fields: vec![],
         },
+        Mutation {
+            op: "update".into(),
+            oid: "5".repeat(40),
+            remote_id: Some("i:i3".into()),
+            object: Some(task_with_due_cleared(&"5".repeat(40))),
+            fields: vec!["due".into()],
+        },
     ];
     let response = push(&api, mutations).unwrap();
-    assert_eq!(response.results.len(), 4);
+    assert_eq!(response.results.len(), 5);
     assert!(response.results[0].ok);
     assert_eq!(response.results[0].remote_id.as_deref(), Some("i:i2"));
     assert!(response.results[1].ok);
     assert!(response.results[2].ok);
     assert!(!response.results[3].ok);
     assert!(response.results[3].why.as_deref().unwrap().contains("Nope"));
+    assert!(response.results[4].ok);
     let seen = server.seen.lock().unwrap();
     let create = seen
         .iter()
@@ -110,4 +144,9 @@ fn creates_updates_and_deletes_become_the_right_requests() {
         seen.iter()
             .any(|s| s.path == "/projects/p1" && s.method == "DELETE")
     );
+    let cleared = seen
+        .iter()
+        .find(|s| s.path == "/tasks/i3" && s.method == "POST")
+        .unwrap();
+    assert_eq!(cleared.body, serde_json::json!({"due_string": "no date"}));
 }
