@@ -1,0 +1,1 @@
+{"protocol":1,"kinds":["task"],"fields":["subject","body","path","labels","priority","due","deadline","done","recurrence"],"credentials":["api_token"],"incremental":true}
