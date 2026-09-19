@@ -5,8 +5,9 @@ use dam_application::{Notice, RemoteName, StoreError, wire};
 use dam_domain::{Object, Oid, Op};
 use serde::{Deserialize, Serialize};
 
-pub(super) fn object_to_json(o: &Object) -> String {
-    serde_json::to_string(&wire::to_wire(o, None)).unwrap_or_default()
+pub(super) fn object_to_json(o: &Object) -> Result<String, StoreError> {
+    serde_json::to_string(&wire::to_wire(o, None))
+        .map_err(|e| StoreError(format!("stored object: {e}")))
 }
 
 pub(super) fn object_from_json(s: &str) -> Result<Object, StoreError> {
@@ -52,7 +53,7 @@ enum NoticeRow {
     },
 }
 
-pub(super) fn notice_to_json(n: &Notice) -> String {
+pub(super) fn notice_to_json(n: &Notice) -> Result<String, StoreError> {
     let row = match n {
         Notice::RemovedUpstream {
             remote,
@@ -78,7 +79,7 @@ pub(super) fn notice_to_json(n: &Notice) -> String {
             why: why.clone(),
         },
     };
-    serde_json::to_string(&row).unwrap_or_default()
+    serde_json::to_string(&row).map_err(|e| StoreError(format!("stored notice: {e}")))
 }
 
 pub(super) fn notice_from_json(s: &str) -> Result<Notice, StoreError> {
@@ -129,7 +130,7 @@ mod tests {
     #[test]
     fn an_object_round_trips_through_json() {
         let o = Object::Task(Task::new(oid(1), "milk"));
-        assert_eq!(object_from_json(&object_to_json(&o)).unwrap(), o);
+        assert_eq!(object_from_json(&object_to_json(&o).unwrap()).unwrap(), o);
     }
 
     #[test]
@@ -160,7 +161,7 @@ mod tests {
             },
         ];
         for n in notices {
-            assert_eq!(notice_from_json(&notice_to_json(&n)).unwrap(), n);
+            assert_eq!(notice_from_json(&notice_to_json(&n).unwrap()).unwrap(), n);
         }
     }
 }

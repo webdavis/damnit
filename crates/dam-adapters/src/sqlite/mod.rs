@@ -50,7 +50,7 @@ impl SqliteStore {
             .map_err(|e| OpenError::Sqlite(e.to_string()))?;
         std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600))
             .map_err(|e| OpenError::Io(e.to_string()))?;
-        prepare(&mut conn)?;
+        prepare(&mut conn, false)?;
         Ok(SqliteStore { conn })
     }
 
@@ -58,15 +58,26 @@ impl SqliteStore {
     pub fn in_memory() -> Result<SqliteStore, OpenError> {
         let mut conn =
             Connection::open_in_memory().map_err(|e| OpenError::Sqlite(e.to_string()))?;
-        prepare(&mut conn)?;
+        prepare(&mut conn, true)?;
         Ok(SqliteStore { conn })
     }
 }
 
-fn prepare(conn: &mut Connection) -> Result<(), OpenError> {
+/// `allow_memory` accepts the `memory` journal mode SQLite reports for an
+/// in-memory connection, which can never run WAL; any other outcome, on any
+/// connection, is a failed requirement.
+fn prepare(conn: &mut Connection, allow_memory: bool) -> Result<(), OpenError> {
     conn.busy_timeout(std::time::Duration::from_millis(BUSY_TIMEOUT_MS))
         .map_err(|e| OpenError::Sqlite(e.to_string()))?;
-    let _ = conn.pragma_update(None, "journal_mode", "WAL");
+    let mode: String = conn
+        .pragma_update_and_check(None, "journal_mode", "WAL", |r| r.get(0))
+        .map_err(|e| OpenError::Sqlite(e.to_string()))?;
+    let mode = mode.to_ascii_lowercase();
+    if mode != "wal" && !(allow_memory && mode == "memory") {
+        return Err(OpenError::Sqlite(format!(
+            "journal_mode is {mode}, not wal"
+        )));
+    }
     let found: u32 = conn
         .pragma_query_value(None, "user_version", |r| r.get(0))
         .map_err(|e| OpenError::Sqlite(e.to_string()))?;
@@ -137,6 +148,17 @@ mod tests {
                 supported: migrations::VERSION,
             }
         );
+    }
+
+    #[test]
+    fn a_directory_at_the_path_is_refused() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("dam.db");
+        std::fs::create_dir(&path).unwrap();
+        assert!(matches!(
+            SqliteStore::open(&path),
+            Err(OpenError::Irregular(_))
+        ));
     }
 
     #[test]
