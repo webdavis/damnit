@@ -1,5 +1,7 @@
 pub mod config;
+pub mod credentials;
 pub mod errors;
+pub mod merge;
 pub mod ports;
 #[cfg(test)]
 pub(crate) mod testing;
@@ -7,10 +9,12 @@ pub mod use_cases;
 pub mod wire;
 
 pub use config::{Config, CredentialSpec, FilterConfig, RemoteConfig};
+pub use credentials::resolve_credentials;
 pub use dam_protocol::{
     Capabilities, Mutation, MutationResult, PullResponse, PushResponse, WireObject,
 };
 pub use errors::{Refusal, UseCaseError};
+pub use merge::merge_fields;
 pub use ports::{
     Clock, Conflict, CredentialError, CredentialSource, EditorError, EditorSession, HelperError,
     HelperLauncher, Notice, ObjectStore, Randomness, RemoteHelper, RemoteName, StoreError,
