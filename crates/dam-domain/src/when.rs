@@ -58,21 +58,19 @@ impl When {
             return text
                 .parse::<jiff::Zoned>()
                 .map(When::At)
-                .map_err(|e| WhenError(e.to_string()));
+                .map_err(|e| hint(text, &e));
         }
         if text.contains('T') {
             return text
                 .parse::<jiff::civil::DateTime>()
-                .map_err(|e| WhenError(e.to_string()))?
+                .map_err(|e| hint(text, &e))?
                 .to_zoned(tz.clone())
                 .map(When::At)
-                .map_err(|e| WhenError(e.to_string()));
+                .map_err(|e| hint(text, &e));
         }
-        text.parse::<Date>().map(When::Day).map_err(|_| {
-            WhenError(format!(
-                "cannot read {text:?} as a date; use today, tomorrow, YYYY-MM-DD or YYYY-MM-DDTHH:MM"
-            ))
-        })
+        text.parse::<Date>()
+            .map(When::Day)
+            .map_err(|e| hint(text, &e))
     }
 
     /// `2026-09-25` or the zoned form; `parse_human` reads both back.
@@ -82,6 +80,14 @@ impl When {
             When::At(z) => z.to_string(),
         }
     }
+}
+
+/// The same friendly hint on every `parse_human` failure, whatever shape the
+/// text was read as, with jiff's own reason appended.
+fn hint(text: &str, cause: &dyn std::fmt::Display) -> WhenError {
+    WhenError(format!(
+        "cannot read {text:?} as a date; use today, tomorrow, YYYY-MM-DD or YYYY-MM-DDTHH:MM: {cause}"
+    ))
 }
 
 #[cfg(test)]
@@ -146,5 +152,29 @@ mod tests {
         let at = When::parse_human("2026-09-25T09:00:00[America/Denver]", today, &tz).unwrap();
         assert!(!at.is_all_day());
         assert!(matches!(at, When::At(_)));
+    }
+
+    #[test]
+    fn a_malformed_plain_date_gets_the_friendly_hint() {
+        let today = date(2026, 9, 18);
+        let tz = jiff::tz::TimeZone::UTC;
+        let err = When::parse_human("next tuesday", today, &tz).unwrap_err();
+        assert!(err.0.contains("cannot read"), "{}", err.0);
+    }
+
+    #[test]
+    fn a_malformed_local_time_gets_the_friendly_hint() {
+        let today = date(2026, 9, 18);
+        let tz = jiff::tz::TimeZone::UTC;
+        let err = When::parse_human("2026-13-45T09:00", today, &tz).unwrap_err();
+        assert!(err.0.contains("cannot read"), "{}", err.0);
+    }
+
+    #[test]
+    fn a_malformed_zoned_timestamp_gets_the_friendly_hint() {
+        let today = date(2026, 9, 18);
+        let tz = jiff::tz::TimeZone::UTC;
+        let err = When::parse_human("2026-09-25T09:00[Nowhere/Nope]", today, &tz).unwrap_err();
+        assert!(err.0.contains("cannot read"), "{}", err.0);
     }
 }

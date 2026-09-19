@@ -72,7 +72,7 @@ pub fn parse_template(
         }
     };
     let when = |key: &str, s: &str| {
-        When::parse_human(s, today, tz).map_err(|e| format!("line {}: {key}: {}", at(key), e.0))
+        When::parse_human(s, today, tz).map_err(|e| format!("line {}: {key}: {e}", at(key)))
     };
 
     let mut fields = EditFields::default();
