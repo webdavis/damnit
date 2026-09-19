@@ -195,6 +195,21 @@ mod tests {
     }
 
     #[test]
+    fn monthly_multiple_days_takes_the_earliest_not_the_first_listed() {
+        let rule = Rule::parse("every month on 20,5").unwrap();
+        assert_eq!(rule.next_after(date(2026, 9, 1)), Some(date(2026, 9, 5)));
+        assert_eq!(rule.to_text(), "every month on 5,20");
+    }
+
+    #[test]
+    fn roll_forward_past_until_is_none() {
+        let rule = Rule::parse("every week until 2026-09-24").unwrap();
+        let due = date(2026, 9, 18);
+        let completed = date(2026, 9, 18);
+        assert_eq!(roll_forward(&rule, due, completed), None);
+    }
+
+    #[test]
     fn bad_text_is_named() {
         assert_eq!(Rule::parse(""), Err(RuleError::Empty));
         assert_eq!(

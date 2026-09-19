@@ -71,6 +71,10 @@ impl Rule {
                 other => return Err(RuleError::Unknown(other.to_string())),
             }
         }
+        rule.by_day.sort_by_key(|d| d.to_monday_zero_offset());
+        rule.by_day.dedup();
+        rule.by_month_day.sort_unstable();
+        rule.by_month_day.dedup();
         Ok(rule)
     }
 
