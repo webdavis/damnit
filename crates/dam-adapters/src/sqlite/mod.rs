@@ -1,4 +1,5 @@
 mod codec;
+mod commits;
 mod migrations;
 mod objects;
 mod remote;
@@ -14,8 +15,6 @@ const BUSY_TIMEOUT_MS: u64 = 5000;
 
 #[derive(Debug)]
 pub struct SqliteStore {
-    // Read by the ObjectStore implementation Task 21 adds over this connection.
-    #[allow(dead_code)]
     conn: Connection,
 }
 

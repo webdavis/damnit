@@ -1,8 +1,5 @@
-// Called by the objects, stage and remote modules Tasks 21 and 22 fill in.
-#![allow(dead_code)]
-
 use dam_application::{Notice, RemoteName, StoreError, wire};
-use dam_domain::{Object, Oid, Op};
+use dam_domain::{Change, Object, Oid, Op};
 use serde::{Deserialize, Serialize};
 
 pub(super) fn object_to_json(o: &Object) -> Result<String, StoreError> {
@@ -33,6 +30,22 @@ pub(super) fn op_from_text(s: &str) -> Result<Op, StoreError> {
     }
 }
 
+/// Rebuilds a `Change` from a `stage` or `commit_changes` row's columns.
+pub(super) fn change_from_row(
+    oid: &str,
+    op: &str,
+    before: Option<String>,
+    after: Option<String>,
+) -> Result<Change, StoreError> {
+    Ok(Change {
+        oid: Oid::parse(oid).map_err(|e| StoreError(e.to_string()))?,
+        op: op_from_text(op)?,
+        before: before.map(|j| object_from_json(&j)).transpose()?,
+        after: after.map(|j| object_from_json(&j)).transpose()?,
+    })
+}
+
+#[allow(dead_code)]
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 enum NoticeRow {
@@ -53,6 +66,7 @@ enum NoticeRow {
     },
 }
 
+#[allow(dead_code)]
 pub(super) fn notice_to_json(n: &Notice) -> Result<String, StoreError> {
     let row = match n {
         Notice::RemovedUpstream {
@@ -82,6 +96,7 @@ pub(super) fn notice_to_json(n: &Notice) -> Result<String, StoreError> {
     serde_json::to_string(&row).map_err(|e| StoreError(format!("stored notice: {e}")))
 }
 
+#[allow(dead_code)]
 pub(super) fn notice_from_json(s: &str) -> Result<Notice, StoreError> {
     let row: NoticeRow =
         serde_json::from_str(s).map_err(|e| StoreError(format!("stored notice: {e}")))?;
