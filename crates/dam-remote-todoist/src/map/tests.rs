@@ -267,3 +267,101 @@ fn an_item_parent_cycle_returns_none_instead_of_overflowing() {
     assert!(t.item_path(&s.items[0]).is_none());
     assert!(item_to_wire(&t, &s.items[0]).is_none());
 }
+
+#[test]
+fn a_parent_content_with_a_slash_stays_one_segment_of_the_child_path() {
+    let s = SyncResponse {
+        projects: vec![Project {
+            id: "p1".into(),
+            name: "Work".into(),
+            parent_id: None,
+            is_deleted: false,
+            is_archived: false,
+            inbox_project: false,
+        }],
+        sections: vec![],
+        items: vec![
+            Item {
+                id: "i1".into(),
+                content: "buy milk/oat".into(),
+                description: String::new(),
+                project_id: "p1".into(),
+                section_id: None,
+                parent_id: None,
+                priority: 1,
+                due: None,
+                deadline: None,
+                labels: vec![],
+                checked: false,
+                is_deleted: false,
+            },
+            Item {
+                id: "i2".into(),
+                content: "at the shop".into(),
+                description: String::new(),
+                project_id: "p1".into(),
+                section_id: None,
+                parent_id: Some("i1".into()),
+                priority: 1,
+                due: None,
+                deadline: None,
+                labels: vec![],
+                checked: false,
+                is_deleted: false,
+            },
+        ],
+    };
+    let t = Tree::from_sync(&s);
+    let child = &s.items[1];
+    assert_eq!(t.item_path(child).as_deref(), Some("Work/buy milk-oat/"));
+    assert_eq!(item_to_wire(&t, child).unwrap().path, "Work/buy milk-oat/");
+}
+
+#[test]
+fn a_blank_parent_content_names_the_segment_after_its_id() {
+    let s = SyncResponse {
+        projects: vec![Project {
+            id: "p1".into(),
+            name: "Work".into(),
+            parent_id: None,
+            is_deleted: false,
+            is_archived: false,
+            inbox_project: false,
+        }],
+        sections: vec![],
+        items: vec![
+            Item {
+                id: "i1".into(),
+                content: "   ".into(),
+                description: String::new(),
+                project_id: "p1".into(),
+                section_id: None,
+                parent_id: None,
+                priority: 1,
+                due: None,
+                deadline: None,
+                labels: vec![],
+                checked: false,
+                is_deleted: false,
+            },
+            Item {
+                id: "i2".into(),
+                content: "child".into(),
+                description: String::new(),
+                project_id: "p1".into(),
+                section_id: None,
+                parent_id: Some("i1".into()),
+                priority: 1,
+                due: None,
+                deadline: None,
+                labels: vec![],
+                checked: false,
+                is_deleted: false,
+            },
+        ],
+    };
+    let t = Tree::from_sync(&s);
+    let child = &s.items[1];
+    assert_eq!(t.item_path(child).as_deref(), Some("Work/untitled-i1/"));
+    assert_eq!(item_to_wire(&t, child).unwrap().path, "Work/untitled-i1/");
+}
