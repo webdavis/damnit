@@ -225,11 +225,15 @@ narrowed to a `path` in config.
 ### Reading
 
 ```
-dam ls [<query>] [--json]
+dam ls [<query>] [--json|--toon]
 dam ls today                a saved filter from config
-dam show <oid> [--json]
-dam status [--json]
+dam show <oid> [--json|--toon]
+dam status [--json|--toon]
 ```
+
+`--json` is the answer as JSON. `--toon` is the same answer in TOON (Token-Oriented Object
+Notation), a compact form that costs a language model fewer tokens when it reads a list; the
+helper protocol and the store stay JSON, because no model reads those.
 
 The query is a string in one grammar for both kinds:
 
@@ -407,11 +411,15 @@ and reopens. No error message contains a token.
 damnit/
   Cargo.toml                 workspace
   crates/
-    dam/                     the binary: argument parsing, output, editor round trip
-    dam-core/                model, storage, staging, commits, query, enforcement, sync
-    dam-protocol/            wire types and the golden fixtures
+    dam-domain/              identifiers, the object model, categories, completion rules,
+                             recurrence, the query language, the change model; std and jiff only
+    dam-application/         use cases over ports: new, done, edit, mv, rm, add, reset, commit,
+                             status, ls, push, pull, resolve
+    dam-protocol/            wire types, the line codec and the golden fixtures
+    dam-adapters/            SQLite, TOML config, credentials, the helper process, the editor
+    dam-cli/                 package `damnit`, binary `dam`: arguments, output, prompts
     dam-remote-todoist/      binary
-    dam-remote-gcal/         binary, second
+    dam-remote-gcal/         binary, second, its own plan
   docs/superpowers/specs/
 ```
 
