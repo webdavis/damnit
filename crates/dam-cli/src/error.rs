@@ -15,7 +15,7 @@ pub enum CliError {
         text: String,
         matches: Vec<Oid>,
     },
-    /// A prompt hit EOF or an unscripted answer; `TerminalPrompt` and `ScriptedPrompt` both return it.
+    /// The operator interrupted, a prompt hit EOF, or an answer was unscripted.
     Cancelled,
     Io(String),
 }

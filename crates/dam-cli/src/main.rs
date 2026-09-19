@@ -16,6 +16,8 @@ use crate::error::CliError;
 use crate::output::Format;
 
 fn main() {
+    // One handler for the whole process: every wait loop reads the flag it sets.
+    let _ = ctrlc::set_handler(dam_adapters::request_cancellation);
     let cli = Cli::parse();
     let format = if cli.json {
         Format::Json
@@ -27,6 +29,13 @@ fn main() {
     match run(cli, format) {
         Ok(()) => {}
         Err(e) => {
+            // An interrupt outranks whatever error the abandoned work reported,
+            // so a cancelled run exits 3 wherever it was waiting.
+            let e = if dam_adapters::cancellation_requested() {
+                CliError::Cancelled
+            } else {
+                e
+            };
             eprintln!("dam: {e}");
             std::process::exit(e.exit_code());
         }

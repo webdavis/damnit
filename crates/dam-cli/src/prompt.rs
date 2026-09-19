@@ -39,7 +39,8 @@ impl Prompt for TerminalPrompt {
             write!(err, "> ")?;
             err.flush()?;
             let mut line = String::new();
-            if std::io::stdin().lock().read_line(&mut line)? == 0 {
+            let read = std::io::stdin().lock().read_line(&mut line);
+            if dam_adapters::cancellation_requested() || read? == 0 {
                 return Err(CliError::Cancelled);
             }
             if let Some(n) = line
@@ -58,7 +59,8 @@ impl Prompt for TerminalPrompt {
         write!(err, "{question} ")?;
         err.flush()?;
         let mut line = String::new();
-        if std::io::stdin().lock().read_line(&mut line)? == 0 {
+        let read = std::io::stdin().lock().read_line(&mut line);
+        if dam_adapters::cancellation_requested() || read? == 0 {
             return Err(CliError::Cancelled);
         }
         Ok(line.trim().to_string())

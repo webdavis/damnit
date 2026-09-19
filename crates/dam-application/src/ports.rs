@@ -108,6 +108,7 @@ pub enum HelperError {
     Io(String),
     Remote(String),
     Timeout { helper: String, deadline: String },
+    Cancelled,
 }
 
 pub trait RemoteHelper: std::fmt::Debug {

@@ -120,6 +120,7 @@ impl fmt::Display for UseCaseError {
             UseCaseError::Helper(HelperError::Timeout { helper, deadline }) => {
                 write!(f, "helper {helper} gave no answer within {deadline}")
             }
+            UseCaseError::Helper(HelperError::Cancelled) => f.write_str("cancelled"),
             UseCaseError::Credential(CredentialError::Missing(n)) => {
                 write!(f, "credential {n} has no source")
             }

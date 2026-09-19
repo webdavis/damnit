@@ -31,26 +31,51 @@ impl Sandbox {
         Sandbox { dir }
     }
 
-    fn dam(&self, args: &[&str]) -> (bool, String, String) {
+    fn spawn(&self, args: &[&str]) -> std::process::Child {
         let path = format!(
             "{}:{}",
             self.dir.path().join("bin").display(),
             std::env::var("PATH").unwrap_or_default()
         );
-        let out = Command::new(env!("CARGO_BIN_EXE_dam"))
+        Command::new(env!("CARGO_BIN_EXE_dam"))
             .args(args)
             .env("PATH", path)
             .env("DAM_CONFIG", self.dir.path().join("config.toml"))
             .env("DAM_STORE", self.dir.path().join("dam.db"))
             .env("FAKE_TOKEN_FILE", self.dir.path().join("token.txt"))
             .env("HOME", self.dir.path())
-            .output()
-            .unwrap();
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .unwrap()
+    }
+
+    fn dam(&self, args: &[&str]) -> (bool, String, String) {
+        let out = self.spawn(args).wait_with_output().unwrap();
         (
             out.status.success(),
             String::from_utf8_lossy(&out.stdout).into_owned(),
             String::from_utf8_lossy(&out.stderr).into_owned(),
         )
+    }
+
+    /// Replaces the helper with one that reads a request and never answers.
+    fn install_silent_helper(&self) {
+        let helper = self.dir.path().join("bin/dam-remote-fake");
+        std::fs::write(&helper, "#!/bin/sh\nwhile :; do sleep 0.05; done\n").unwrap();
+        std::fs::set_permissions(&helper, std::fs::Permissions::from_mode(0o755)).unwrap();
+    }
+
+    /// True while a helper spawned out of this sandbox's bin directory is running.
+    fn helper_running(&self) -> bool {
+        Command::new("pgrep")
+            .arg("-f")
+            .arg(self.dir.path().join("bin/dam-remote-fake"))
+            .output()
+            .unwrap()
+            .status
+            .success()
     }
 }
 
@@ -136,4 +161,33 @@ fn a_refusal_exits_two_and_names_the_rule() {
         .unwrap();
     assert_eq!(output.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&output.stderr).contains("child"));
+}
+
+#[test]
+fn an_interrupt_during_a_helper_exchange_exits_three_and_kills_the_helper() {
+    let sb = Sandbox::new();
+    sb.install_silent_helper();
+    let mut dam = sb.spawn(&["push"]);
+    let waited = std::time::Instant::now();
+    while !sb.helper_running() {
+        assert!(
+            waited.elapsed() < std::time::Duration::from_millis(600),
+            "the helper never started"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    assert!(
+        Command::new("kill")
+            .args(["-INT", &dam.id().to_string()])
+            .status()
+            .unwrap()
+            .success()
+    );
+    let status = dam.wait().unwrap();
+    assert_eq!(status.code(), Some(3), "{status:?}");
+    assert!(!sb.helper_running(), "the helper outlived dam");
+    // Read only once the helper is gone: it inherits dam's stderr and would hold the pipe open.
+    let mut err = String::new();
+    std::io::Read::read_to_string(&mut dam.stderr.take().unwrap(), &mut err).unwrap();
+    assert!(err.trim().ends_with("cancelled"), "{err}");
 }

@@ -171,6 +171,10 @@ impl ProcessHelper {
                     });
                 }
                 Err(RecvTimeoutError::Timeout) => {
+                    if crate::cancel::cancellation_requested() {
+                        self.kill();
+                        return Err(HelperError::Cancelled);
+                    }
                     if started.elapsed() >= self.deadline {
                         self.kill();
                         return Err(HelperError::Timeout {
