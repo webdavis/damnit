@@ -74,4 +74,18 @@ mod tests {
         assert_eq!(saved.human.lines().count(), 1);
         assert!(saved.human.contains("today"));
     }
+
+    #[test]
+    fn an_undeclared_category_key_exits_2_and_names_the_key() {
+        let mut ctx = context();
+        let err = super::run_ls(
+            &mut ctx,
+            LsArgs {
+                query: Some("mood:happy".into()),
+            },
+        )
+        .unwrap_err();
+        assert_eq!(err.exit_code(), 2);
+        assert!(err.to_string().contains("mood"));
+    }
 }

@@ -228,6 +228,25 @@ mod tests {
         assert!(!hit("start:none", &t));
     }
 
+    /// The parser cannot know a user's declared categories, so an unknown key parses as a
+    /// `Term::Category` a caller can refuse by checking `name` against `Categories`.
+    #[test]
+    fn an_unrecognized_key_parses_as_a_category_term_a_caller_can_check() {
+        let expr = parse("pat:work/").unwrap();
+        match expr {
+            Expr::Term(Term::Category { name, value }) => {
+                assert_eq!(name, "pat");
+                assert_eq!(value, "work/");
+                assert!(
+                    crate::Categories::default()
+                        .category_of_name(&name)
+                        .is_none()
+                );
+            }
+            other => panic!("{other:?}"),
+        }
+    }
+
     #[test]
     fn errors_are_named() {
         assert_eq!(parse(""), Err(QueryError::Empty));
