@@ -34,7 +34,7 @@ older than that.
 ## Every day
 
     dam new "buy oat milk" --due tomorrow -p 1 --label errand
-    dam ls today
+    dam ls due:today
     dam done 3f2a9c1
     dam add -A
     dam commit -m "morning triage"
