@@ -15,6 +15,18 @@ fn sync_body() -> serde_json::Value {
     })
 }
 
+fn sync_body_with_two_projects() -> serde_json::Value {
+    serde_json::json!({
+        "sync_token": "t", "full_sync": true,
+        "projects": [
+            {"id": "p1", "name": "Work", "parent_id": null, "is_deleted": false, "is_archived": false, "inbox_project": false},
+            {"id": "p2", "name": "Home", "parent_id": null, "is_deleted": false, "is_archived": false, "inbox_project": false}
+        ],
+        "sections": [],
+        "items": [{"id": "i1", "content": "milk", "project_id": "p1", "section_id": null, "priority": 1, "checked": false, "is_deleted": false}]
+    })
+}
+
 fn task(oid: &str, path: &str, subject: &str, done: bool) -> WireObject {
     WireObject {
         oid: oid.into(),
@@ -193,5 +205,38 @@ fn creates_updates_and_deletes_become_the_right_requests() {
     assert_eq!(
         deadline_cleared.body,
         serde_json::json!({"deadline_date": null})
+    );
+}
+
+#[test]
+fn a_path_change_moves_the_task_through_the_move_endpoint() {
+    let mut routes = HashMap::new();
+    routes.insert("POST /sync", (200, sync_body_with_two_projects()));
+    routes.insert(
+        "POST /tasks/i1/move",
+        (200, serde_json::json!({"id": "i1"})),
+    );
+    let server = loopback::serve(routes);
+    let api = TodoistApi::new(&server.base, "tok");
+    let mutations = vec![Mutation {
+        op: "update".into(),
+        oid: "9".repeat(40),
+        remote_id: Some("i:i1".into()),
+        object: Some(task(&"9".repeat(40), "Home/", "milk", false)),
+        fields: vec!["path".into()],
+    }];
+    let response = push(&api, mutations).unwrap();
+    assert!(response.results[0].ok, "{:?}", response.results[0].why);
+    let seen = server.seen.lock().unwrap();
+    let mv = seen
+        .iter()
+        .find(|s| s.path == "/tasks/i1/move" && s.method == "POST")
+        .unwrap();
+    assert_eq!(mv.body, serde_json::json!({"project_id": "p2"}));
+    assert!(
+        !seen
+            .iter()
+            .any(|s| s.path == "/tasks/i1" && s.method == "POST"),
+        "a path-only change sends no plain update, only the move"
     );
 }

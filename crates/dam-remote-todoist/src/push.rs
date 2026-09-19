@@ -65,7 +65,7 @@ fn apply(
                 .as_deref()
                 .and_then(split_remote_id)
                 .ok_or("update without a Todoist id")?;
-            update(api, kind, id, object, &m.fields)?;
+            update(api, tree, kind, id, object, &m.fields)?;
             Ok(m.remote_id.clone())
         }
         other => Err(format!("unknown op {other:?}")),
@@ -214,6 +214,7 @@ fn create(
 
 fn update(
     api: &TodoistApi,
+    tree: &Tree,
     kind: char,
     id: &str,
     object: &WireObject,
@@ -237,6 +238,9 @@ fn update(
             }
         }
         _ => {
+            if changed("path") {
+                move_item(api, tree, id, object)?;
+            }
             let body = task_fields(object, Some(fields));
             if body.as_object().is_some_and(|o| !o.is_empty()) {
                 api.post(&format!("/tasks/{id}"), &body)
@@ -249,5 +253,25 @@ fn update(
             }
         }
     }
+    Ok(())
+}
+
+/// Todoist's move endpoint takes exactly one of project_id, section_id or parent_id;
+/// the most specific container the new path resolves to is the one sent.
+fn move_item(api: &TodoistApi, tree: &Tree, id: &str, object: &WireObject) -> Result<(), String> {
+    let body = match shape_for(tree, object, &[])? {
+        Shape::Item {
+            project_id,
+            section_id,
+            parent_id,
+        } => match (parent_id, section_id) {
+            (Some(p), _) => serde_json::json!({ "parent_id": p }),
+            (None, Some(s)) => serde_json::json!({ "section_id": s }),
+            (None, None) => serde_json::json!({ "project_id": project_id }),
+        },
+        _ => return Err("a path change would move the task out of task position".into()),
+    };
+    api.post(&format!("/tasks/{id}/move"), &body)
+        .map_err(|e| e.to_string())?;
     Ok(())
 }
