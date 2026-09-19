@@ -63,13 +63,11 @@ fn term_matches(term: &Term, object: &Object, today: Date) -> bool {
             task.is_some_and(|t| !t.done && t.due.as_ref().is_some_and(|d| d.date() < today))
         }
         Term::Kind(kind) => object.kind() == *kind,
-        Term::Due(sel) => date_matches(
-            sel,
-            task.and_then(|t| t.due.as_ref().map(|d| d.date())),
-            today,
-        ),
-        Term::Deadline(sel) => date_matches(sel, task.and_then(|t| t.deadline), today),
-        Term::Start(sel) => date_matches(sel, event.map(|e| e.start.date()), today),
+        Term::Due(sel) => {
+            task.is_some_and(|t| date_matches(sel, t.due.as_ref().map(|d| d.date()), today))
+        }
+        Term::Deadline(sel) => task.is_some_and(|t| date_matches(sel, t.deadline, today)),
+        Term::Start(sel) => event.is_some_and(|e| date_matches(sel, Some(e.start.date()), today)),
         Term::Path(prefix) => object.base().path.is_within(prefix),
         Term::Label(name) | Term::Category { value: name, .. } => {
             object.base().labels.contains(name)
@@ -213,6 +211,21 @@ mod tests {
             &task(Some(date(2026, 9, 19)), false)
         ));
         assert!(hit("due:2026-09-19", &task(Some(date(2026, 9, 19)), false)));
+    }
+
+    #[test]
+    fn a_date_term_on_the_wrong_kind_never_matches() {
+        let event = Object::Event(Event::new(
+            oid(5),
+            "meet",
+            When::Day(TODAY),
+            When::Day(TODAY),
+        ));
+        assert!(!hit("due:none", &event));
+        assert!(!hit("deadline:none", &event));
+        assert!(hit("due:none", &task(None, false)));
+        let t = Object::Task(Task::new(oid(6), "x"));
+        assert!(!hit("start:none", &t));
     }
 
     #[test]
