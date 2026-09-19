@@ -24,12 +24,15 @@ extern "C" fn on_interrupt(_: libc::c_int) {
 fn main() {
     // SAFETY: `on_interrupt` only stores into a static atomic, which is
     // async-signal-safe, and the handler is installed once before any work.
-    unsafe {
+    let installed = unsafe {
         libc::signal(
             libc::SIGINT,
             on_interrupt as *const () as libc::sighandler_t,
         )
     };
+    if installed == libc::SIG_ERR {
+        eprintln!("dam: could not install the interrupt handler; Ctrl-C will not cancel cleanly");
+    }
     let cli = Cli::parse();
     let format = if cli.json {
         Format::Json

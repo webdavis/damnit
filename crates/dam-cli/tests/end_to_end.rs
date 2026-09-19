@@ -32,6 +32,10 @@ impl Sandbox {
     }
 
     fn spawn(&self, args: &[&str]) -> std::process::Child {
+        self.spawn_with_stdin(args, std::process::Stdio::null())
+    }
+
+    fn spawn_with_stdin(&self, args: &[&str], stdin: std::process::Stdio) -> std::process::Child {
         let path = format!(
             "{}:{}",
             self.dir.path().join("bin").display(),
@@ -44,7 +48,7 @@ impl Sandbox {
             .env("DAM_STORE", self.dir.path().join("dam.db"))
             .env("FAKE_TOKEN_FILE", self.dir.path().join("token.txt"))
             .env("HOME", self.dir.path())
-            .stdin(std::process::Stdio::null())
+            .stdin(stdin)
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
             .spawn()
@@ -190,4 +194,78 @@ fn an_interrupt_during_a_helper_exchange_exits_three_and_kills_the_helper() {
     let mut err = String::new();
     std::io::Read::read_to_string(&mut dam.stderr.take().unwrap(), &mut err).unwrap();
     assert!(err.trim().ends_with("cancelled"), "{err}");
+}
+
+/// The child's exit within a second, or a kill and a failure. A regression that
+/// leaves `dam` waiting then reddens the suite instead of hanging it.
+fn exit_within_a_second(child: &mut std::process::Child) -> std::process::ExitStatus {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(1);
+    while std::time::Instant::now() < deadline {
+        if let Some(status) = child.try_wait().unwrap() {
+            return status;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    let _ = child.kill();
+    let _ = child.wait();
+    panic!("dam was still running a second after the interrupt");
+}
+
+/// Drains a pipe on its own thread into a string the test can poll, so waiting
+/// for output never deadlocks against the child filling that pipe.
+fn collect(
+    mut pipe: impl std::io::Read + Send + 'static,
+) -> std::sync::Arc<std::sync::Mutex<String>> {
+    let text = std::sync::Arc::new(std::sync::Mutex::new(String::new()));
+    let sink = std::sync::Arc::clone(&text);
+    std::thread::spawn(move || {
+        let mut buf = [0u8; 256];
+        while let Ok(n) = pipe.read(&mut buf) {
+            if n == 0 {
+                return;
+            }
+            sink.lock()
+                .unwrap()
+                .push_str(&String::from_utf8_lossy(&buf[..n]));
+        }
+    });
+    text
+}
+
+#[test]
+fn an_interrupt_at_a_prompt_exits_three_instead_of_waiting_for_an_answer() {
+    let sb = Sandbox::new();
+    let (_, out, _) = sb.dam(&["new", "parent"]);
+    let parent = out.split_whitespace().next().unwrap().to_string();
+    assert!(sb.dam(&["new", "child", "--path", "parent/"]).0);
+    // The write end stays open for the whole run, so the prompt never sees EOF.
+    let mut dam = sb.spawn_with_stdin(
+        &["done", &parent[..7], "--force", "--interactive"],
+        std::process::Stdio::piped(),
+    );
+    let _held_open = dam.stdin.take().unwrap();
+    let asked = collect(dam.stderr.take().unwrap());
+    let waited = std::time::Instant::now();
+    while !asked.lock().unwrap().contains("open child task(s)") {
+        assert!(
+            waited.elapsed() < std::time::Duration::from_millis(600),
+            "the prompt never appeared: {}",
+            asked.lock().unwrap()
+        );
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    assert!(
+        Command::new("kill")
+            .args(["-INT", &dam.id().to_string()])
+            .status()
+            .unwrap()
+            .success()
+    );
+    let status = exit_within_a_second(&mut dam);
+    assert_eq!(status.code(), Some(3), "{status:?}");
+    assert!(
+        asked.lock().unwrap().trim().ends_with("cancelled"),
+        "{}",
+        asked.lock().unwrap()
+    );
 }

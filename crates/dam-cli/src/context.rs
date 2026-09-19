@@ -51,7 +51,10 @@ impl Context {
         let config = load_config(&config_path)?;
         let store = SqliteStore::open(store_path)?;
         let (prompt, editor): (Box<dyn Prompt>, Box<dyn EditorSession>) = match format {
-            Format::Human => (Box::new(TerminalPrompt), Box::new(EnvEditor::from_env())),
+            Format::Human => (
+                Box::new(TerminalPrompt::default()),
+                Box::new(EnvEditor::from_env()),
+            ),
             Format::Json | Format::Toon => (Box::new(RefusingPrompt), Box::new(RefusingEditor)),
         };
         Ok(Context {
