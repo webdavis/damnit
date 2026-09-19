@@ -44,6 +44,24 @@ fn children_of_is_direct_children_only() {
 }
 
 #[test]
+fn children_of_does_not_treat_underscore_and_percent_as_wildcards() {
+    let s = SqliteStore::in_memory().unwrap();
+    s.put(&task(1, "a_b/c")).unwrap();
+    s.put(&task(2, "axb/c")).unwrap();
+    let kids = s.children_of(&Path::parse("a_b").unwrap()).unwrap();
+    assert_eq!(kids.len(), 1);
+    assert_eq!(kids[0].oid(), &oid(1));
+}
+
+#[test]
+fn children_of_does_not_panic_on_a_non_matching_multibyte_path() {
+    let s = SqliteStore::in_memory().unwrap();
+    s.put(&task(1, "éé/c")).unwrap();
+    let kids = s.children_of(&Path::parse("__").unwrap()).unwrap();
+    assert!(kids.is_empty());
+}
+
+#[test]
 fn dependents_of_finds_who_lists_the_oid() {
     let s = SqliteStore::in_memory().unwrap();
     let mut d = Task::new(oid(2), "d");

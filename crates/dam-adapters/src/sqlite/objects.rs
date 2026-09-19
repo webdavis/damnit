@@ -37,7 +37,10 @@ impl SqliteStore {
     pub(super) fn children(&self, path: &Path) -> Result<Vec<Object>, StoreError> {
         let mut stmt = self
             .conn
-            .prepare("SELECT json, path FROM objects WHERE path LIKE ?1 || '%' AND path != ?1")
+            .prepare(
+                "SELECT json, path FROM objects \
+                 WHERE substr(path, 1, length(?1)) = ?1 AND path != ?1",
+            )
             .map_err(sql)?;
         let rows = stmt
             .query_map(params![path.as_str()], |r| {
@@ -47,7 +50,9 @@ impl SqliteStore {
         let mut out = Vec::new();
         for row in rows {
             let (json, child_path) = row.map_err(sql)?;
-            let tail = &child_path[path.as_str().len()..];
+            let Some(tail) = child_path.strip_prefix(path.as_str()) else {
+                continue;
+            };
             if tail.matches('/').count() == 1 {
                 out.push(object_from_json(&json)?);
             }
