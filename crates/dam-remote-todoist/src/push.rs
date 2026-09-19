@@ -112,12 +112,19 @@ fn task_fields(object: &WireObject, only: Option<&[String]>) -> serde_json::Valu
                 }
             }
         }
+        // `only` doubles as the create/update signal: `None` (create, every field wanted) omits
+        // an absent deadline, `Some` (update, a named subset) sends `null` to clear one, since
+        // Todoist documents `null` as update-only and a create has no prior deadline to clear.
         if want("deadline") {
-            let value = match &t.deadline {
-                Some(d) => d.clone().into(),
-                None => serde_json::Value::Null,
-            };
-            body.insert("deadline_date".into(), value);
+            match (&t.deadline, only) {
+                (Some(d), _) => {
+                    body.insert("deadline_date".into(), d.clone().into());
+                }
+                (None, Some(_)) => {
+                    body.insert("deadline_date".into(), serde_json::Value::Null);
+                }
+                (None, None) => {}
+            }
         }
     }
     serde_json::Value::Object(body)

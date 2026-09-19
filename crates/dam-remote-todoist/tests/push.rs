@@ -163,6 +163,10 @@ fn creates_updates_and_deletes_become_the_right_requests() {
     assert_eq!(create.body["priority"], 4, "dam p1 is API 4");
     assert_eq!(create.body["due_date"], "2026-09-25");
     assert_eq!(create.body["labels"], serde_json::json!(["errand"]));
+    assert!(
+        create.body.get("deadline_date").is_none(),
+        "a create with no deadline omits the field rather than sending null"
+    );
     let update = seen
         .iter()
         .find(|s| s.path == "/tasks/i1" && s.method == "POST")
