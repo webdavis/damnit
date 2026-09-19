@@ -296,9 +296,16 @@ later `dam`.
 
 ### Credentials
 
-Each remote names a `token_command` in config. `dam` runs it, takes the first line of standard
-output, and passes the value to the helper as `DAM_REMOTE_TOKEN` in its environment. The token
-never appears in an argument, a log line or a status message.
+Each remote names its token one of three ways, tried in this order when more than one is set:
+
+| Key | Meaning |
+|---|---|
+| `token` | The value itself, in the config file. `dam status` warns when this is set. |
+| `token_command` | Argv of a command whose first line of standard output is the token. |
+| `token_env` | The name of an environment variable holding it. |
+
+`dam` resolves it and passes the value to the helper as `DAM_REMOTE_TOKEN` in its environment. The
+token never appears in an argument, a log line or a status message.
 
 ### Helpers in this repository
 
@@ -332,6 +339,8 @@ interactive = true
 [remote.todoist]
 url = "todoist::"
 token_command = ["keepassxc-cli", "show", "-a", "Password", "~/vault.kdbx", "Todoist :: API Token"]
+# or: token = "..."          the value itself, warned about by dam status
+# or: token_env = "TODOIST_API_TOKEN"
 stale = "15m"
 
 [remote.gcal]
