@@ -1,5 +1,4 @@
 //! Test doubles for `Context`, consumed by the verb tests Tasks 29 to 31 add.
-#![allow(dead_code)]
 
 use std::cell::RefCell;
 

@@ -12,6 +12,7 @@ pub enum Format {
     Toon,
 }
 
+#[derive(Debug)]
 pub struct Report {
     pub human: String,
     pub data: serde_json::Value,
@@ -39,8 +40,6 @@ pub fn print(format: Format, report: &Report) -> Result<(), CliError> {
     Ok(())
 }
 
-/// Used by `object_line`'s JSON sibling column once Tasks 29 to 31 wire up `ls`, `log` and `show`.
-#[allow(dead_code)]
 pub fn object_json(object: &Object) -> serde_json::Value {
     serde_json::to_value(to_wire(object, None)).unwrap_or(serde_json::Value::Null)
 }
@@ -80,7 +79,7 @@ pub fn object_line(object: &Object) -> String {
     cols.join("  ")
 }
 
-/// The `ls`, `log` and `show` verbs Tasks 29 to 31 add report a list of objects this way.
+/// Read by `ls`, which Task 30 adds.
 #[allow(dead_code)]
 pub fn objects_report(objects: &[Object]) -> Report {
     Report {

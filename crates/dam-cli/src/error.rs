@@ -11,14 +11,12 @@ pub enum CliError {
     Open(OpenError),
     Usage(String),
     /// Constructed by `oids::resolve_oid`, called once Tasks 29 to 31 wire the verbs that take an oid.
-    #[allow(dead_code)]
     Ambiguous {
         text: String,
         matches: Vec<Oid>,
     },
     /// Constructed once prompting lands in a Task 29-31 verb; `TerminalPrompt` and
     /// `ScriptedPrompt` already return it on EOF or an unscripted answer.
-    #[allow(dead_code)]
     Cancelled,
     Io(String),
 }

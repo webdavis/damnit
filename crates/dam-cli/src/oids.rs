@@ -3,11 +3,9 @@ use dam_domain::Oid;
 
 use crate::error::CliError;
 
-#[allow(dead_code)]
 const MIN_PREFIX: usize = 4;
 
 /// Called by every verb that takes an oid argument, wired in by Tasks 29 to 31.
-#[allow(dead_code)]
 pub fn resolve_oid(store: &dyn ObjectStore, text: &str) -> Result<Oid, CliError> {
     if let Ok(oid) = Oid::parse(text) {
         return Ok(oid);

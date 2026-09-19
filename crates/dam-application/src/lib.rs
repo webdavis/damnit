@@ -10,6 +10,7 @@ pub mod wire;
 
 pub use config::{Config, CredentialSpec, FilterConfig, RemoteConfig};
 pub use credentials::resolve_credentials;
+pub use dam_domain::{Blocker, ChildDisposition, DependencyDisposition, Force};
 pub use dam_protocol::{
     Capabilities, Mutation, MutationResult, PullResponse, PushResponse, WireObject,
 };

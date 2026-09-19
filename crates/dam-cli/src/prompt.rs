@@ -3,7 +3,6 @@ use std::io::{BufRead, Write};
 use crate::error::CliError;
 
 /// Called by the interactive paths Tasks 29 to 31 add (`done --force --interactive`, remote add).
-#[allow(dead_code)]
 pub trait Prompt {
     fn choose(&self, question: &str, options: &[&str]) -> Result<usize, CliError>;
     fn text(&self, question: &str) -> Result<String, CliError>;

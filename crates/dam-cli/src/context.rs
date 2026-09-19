@@ -11,15 +11,19 @@ use dam_application::{
 use crate::error::CliError;
 use crate::prompt::{Prompt, TerminalPrompt};
 
-/// Fields are read by the verb implementations Tasks 29 to 31 add to `commands::dispatch`.
-#[allow(dead_code)]
 pub struct Context {
     pub store: Box<dyn ObjectStore>,
     pub config: Config,
+    /// Read by the remote verbs Task 31 adds (`remote add` rewrites the config file at this path).
+    #[allow(dead_code)]
     pub config_path: PathBuf,
     pub clock: Box<dyn Clock>,
     pub random: Box<dyn Randomness>,
+    /// Read by the push/pull verbs Task 31 adds.
+    #[allow(dead_code)]
     pub launcher: Box<dyn HelperLauncher>,
+    /// Read by the push/pull verbs Task 31 adds.
+    #[allow(dead_code)]
     pub credentials: Box<dyn CredentialSource>,
     pub editor: Box<dyn EditorSession>,
     pub prompt: Box<dyn Prompt>,
