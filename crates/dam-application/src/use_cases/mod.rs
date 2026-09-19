@@ -1,6 +1,9 @@
+pub mod commit;
 pub mod complete;
 pub mod edit;
 pub mod new_object;
 pub mod relocate;
 pub mod remove;
+pub mod stage;
+pub mod status;
 pub(crate) mod subtree;

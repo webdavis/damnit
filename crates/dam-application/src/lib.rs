@@ -15,8 +15,11 @@ pub use ports::{
     Clock, Conflict, CredentialError, CredentialSource, EditorError, EditorSession, HelperError,
     HelperLauncher, Notice, ObjectStore, Randomness, RemoteHelper, RemoteName, StoreError,
 };
+pub use use_cases::commit::{commit, log};
 pub use use_cases::complete::{CompletePlan, Completed, Dispositions, complete, plan_complete};
 pub use use_cases::edit::{EditFields, apply, edit};
 pub use use_cases::new_object::{NewEvent, NewTask, new_event, new_task};
 pub use use_cases::relocate::relocate;
 pub use use_cases::remove::{RemovePlan, plan_remove, remove};
+pub use use_cases::stage::{add, add_all, reset};
+pub use use_cases::status::{Status, diff_staged, diff_working, status};
