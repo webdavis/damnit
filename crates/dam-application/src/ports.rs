@@ -38,21 +38,26 @@ pub enum Notice {
 }
 
 pub trait ObjectStore {
+    // working layer
     fn get(&self, oid: &Oid) -> Result<Option<Object>, StoreError>;
     fn all(&self) -> Result<Vec<Object>, StoreError>;
     fn children_of(&self, path: &Path) -> Result<Vec<Object>, StoreError>;
     fn dependents_of(&self, oid: &Oid) -> Result<Vec<Oid>, StoreError>;
     fn put(&self, object: &Object) -> Result<(), StoreError>;
     fn delete(&self, oid: &Oid) -> Result<(), StoreError>;
+    /// The last commit (HEAD) view of one object, for diffing working against committed.
     fn committed(&self, oid: &Oid) -> Result<Option<Object>, StoreError>;
+    // stage
     fn stage(&self, change: Change) -> Result<(), StoreError>;
     fn unstage(&self, oid: &Oid) -> Result<(), StoreError>;
     fn unstage_all(&self) -> Result<(), StoreError>;
     fn staged(&self) -> Result<Vec<Change>, StoreError>;
+    // commits
     fn commit(&self, record: &CommitRecord) -> Result<(), StoreError>;
     fn log(&self) -> Result<Vec<CommitRecord>, StoreError>;
     fn unpushed(&self, remote: &RemoteName) -> Result<Vec<CommitRecord>, StoreError>;
     fn mark_pushed(&self, remote: &RemoteName, id: &CommitId) -> Result<(), StoreError>;
+    // remote tracking
     fn remote_id(&self, remote: &RemoteName, oid: &Oid) -> Result<Option<String>, StoreError>;
     fn oid_for_remote_id(
         &self,
@@ -70,6 +75,7 @@ pub trait ObjectStore {
     fn set_remote_snapshot(&self, remote: &RemoteName, object: &Object) -> Result<(), StoreError>;
     fn sync_token(&self, remote: &RemoteName) -> Result<Option<String>, StoreError>;
     fn set_sync_token(&self, remote: &RemoteName, token: Option<&str>) -> Result<(), StoreError>;
+    // conflicts and notices
     fn mark_conflict(
         &self,
         remote: &RemoteName,
