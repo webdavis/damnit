@@ -1,9 +1,10 @@
 use std::collections::BTreeSet;
 
 use dam_application::{NewEvent, NewTask, new_event, new_task};
-use dam_domain::{Date, Path, Priority, When};
+use dam_domain::Path;
 
 use crate::args::NewArgs;
+use crate::commands::parsing::{deadline_flag, priority_flag, when_flag};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::{Report, object_json};
@@ -11,19 +12,16 @@ use crate::output::{Report, object_json};
 pub fn run(ctx: &mut Context, args: NewArgs) -> Result<Report, CliError> {
     let path = Path::parse(&args.path).map_err(|e| CliError::Usage(format!("--path: {e:?}")))?;
     let labels: BTreeSet<String> = args.labels.into_iter().collect();
-    let today = ctx.clock.today();
-    let when = |flag: &str, text: &str| {
-        When::parse_human(text, today, &ctx.tz)
-            .map_err(|e| CliError::Usage(format!("--{flag}: {}", e.0)))
-    };
     let oid = if args.event {
-        let start = when(
+        let start = when_flag(
+            ctx,
             "start",
             args.start
                 .as_deref()
                 .ok_or_else(|| CliError::Usage("--event needs --start and --end".into()))?,
         )?;
-        let end = when(
+        let end = when_flag(
+            ctx,
             "end",
             args.end
                 .as_deref()
@@ -43,20 +41,17 @@ pub fn run(ctx: &mut Context, args: NewArgs) -> Result<Report, CliError> {
             },
         )?
     } else {
-        let priority = match args.priority {
-            Some(p) => Priority::new(p)
-                .map_err(|_| CliError::Usage(format!("-p {p}: priority is 1 (highest) to 4")))?,
-            None => Priority::default(),
-        };
-        let due = args.due.as_deref().map(|d| when("due", d)).transpose()?;
-        let deadline = args
-            .deadline
+        let priority = args
+            .priority
+            .map(priority_flag)
+            .transpose()?
+            .unwrap_or_default();
+        let due = args
+            .due
             .as_deref()
-            .map(|d| {
-                d.parse::<Date>()
-                    .map_err(|e| CliError::Usage(format!("--deadline: {e}")))
-            })
+            .map(|d| when_flag(ctx, "due", d))
             .transpose()?;
+        let deadline = args.deadline.as_deref().map(deadline_flag).transpose()?;
         new_task(
             ctx.store.as_ref(),
             ctx.random.as_mut(),

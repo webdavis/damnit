@@ -1,8 +1,9 @@
 use dam_adapters::{parse_template, render_template};
 use dam_application::{EditFields, edit};
-use dam_domain::{Date, Oid, Priority, When};
+use dam_domain::Oid;
 
 use crate::args::EditArgs;
+use crate::commands::parsing::{deadline_flag, priority_flag, when_flag};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::oids::resolve_oid;
@@ -23,11 +24,6 @@ pub fn run(ctx: &mut Context, args: EditArgs) -> Result<Report, CliError> {
 }
 
 fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
-    let today = ctx.clock.today();
-    let when = |flag: &str, text: &str| {
-        When::parse_human(text, today, &ctx.tz)
-            .map_err(|e| CliError::Usage(format!("--{flag}: {}", e.0)))
-    };
     let oid_of = |flag: &str, text: &str| {
         resolve_oid(ctx.store.as_ref(), text).map_err(|e| CliError::Usage(format!("--{flag}: {e}")))
     };
@@ -36,23 +32,14 @@ fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
         body: args.body,
         ..EditFields::default()
     };
-    f.priority = args
-        .priority
-        .map(|p| {
-            Priority::new(p)
-                .map_err(|_| CliError::Usage(format!("-p {p}: priority is 1 (highest) to 4")))
-        })
-        .transpose()?;
+    f.priority = args.priority.map(priority_flag).transpose()?;
     f.due = match (args.due, args.no_due) {
-        (Some(d), _) => Some(Some(when("due", &d)?)),
+        (Some(d), _) => Some(Some(when_flag(ctx, "due", &d)?)),
         (None, true) => Some(None),
         (None, false) => None,
     };
     f.deadline = match (args.deadline, args.no_deadline) {
-        (Some(d), _) => Some(Some(
-            d.parse::<Date>()
-                .map_err(|e| CliError::Usage(format!("--deadline: {e}")))?,
-        )),
+        (Some(d), _) => Some(Some(deadline_flag(&d)?)),
         (None, true) => Some(None),
         (None, false) => None,
     };
@@ -81,9 +68,13 @@ fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
     f.start = args
         .start
         .as_deref()
-        .map(|s| when("start", s))
+        .map(|s| when_flag(ctx, "start", s))
         .transpose()?;
-    f.end = args.end.as_deref().map(|s| when("end", s)).transpose()?;
+    f.end = args
+        .end
+        .as_deref()
+        .map(|s| when_flag(ctx, "end", s))
+        .transpose()?;
     f.location = match (args.location, args.no_location) {
         (Some(l), _) => Some(Some(l)),
         (None, true) => Some(None),

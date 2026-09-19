@@ -2,6 +2,7 @@ mod done;
 mod edit;
 mod mv;
 mod new;
+mod parsing;
 mod rm;
 
 use crate::args::Command;
