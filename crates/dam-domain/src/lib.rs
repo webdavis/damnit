@@ -1,13 +1,13 @@
-pub mod category;
-pub mod change;
-pub mod completion;
-pub mod object;
-pub mod oid;
-pub mod path;
-pub mod priority;
-pub mod query;
-pub mod recurrence;
-pub mod when;
+mod category;
+mod change;
+mod completion;
+mod object;
+mod oid;
+mod path;
+mod priority;
+mod query;
+mod recurrence;
+mod when;
 
 pub use category::{Categories, Category, CategoryError, LabelViolation};
 pub use change::{Change, CommitId, CommitRecord, Op, changed_fields, coalesce, diff};
