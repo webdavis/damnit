@@ -112,4 +112,79 @@ mod tests {
             Err(CliError::UseCase(_))
         ));
     }
+
+    /// Fills every byte with `0xab` except the last, which counts up from
+    /// the constructor argument: the same twin-prefix technique `oids.rs`
+    /// uses for oids, applied to the ids two separate commits get.
+    struct TwinRandom(u8);
+    impl dam_application::Randomness for TwinRandom {
+        fn fill(&mut self, buf: &mut [u8]) {
+            buf.fill(0xab);
+            let len = buf.len();
+            buf[len - 1] = self.0;
+            self.0 = self.0.wrapping_add(1);
+        }
+    }
+
+    #[test]
+    fn an_ambiguous_commit_prefix_names_every_match() {
+        let mut ctx = context();
+        ctx.random = Box::new(TwinRandom(1));
+        ctx.store
+            .put(&Object::Task(Task::new(
+                Oid::generate(&mut |x: &mut [u8]| x.fill(9)),
+                "a",
+            )))
+            .unwrap();
+        run_add(
+            &mut ctx,
+            AddArgs {
+                oids: vec![],
+                all: true,
+            },
+        )
+        .unwrap();
+        run_commit(
+            &mut ctx,
+            CommitArgs {
+                message: "first".into(),
+            },
+        )
+        .unwrap();
+        ctx.store
+            .put(&Object::Task(Task::new(
+                Oid::generate(&mut |x: &mut [u8]| x.fill(10)),
+                "b",
+            )))
+            .unwrap();
+        run_add(
+            &mut ctx,
+            AddArgs {
+                oids: vec![],
+                all: true,
+            },
+        )
+        .unwrap();
+        run_commit(
+            &mut ctx,
+            CommitArgs {
+                message: "second".into(),
+            },
+        )
+        .unwrap();
+        let err = super::run_show(
+            &mut ctx,
+            ShowArgs {
+                id: "abababab".into(),
+            },
+        )
+        .unwrap_err();
+        match err {
+            CliError::Usage(msg) => {
+                assert!(msg.contains("abababab"), "{msg}");
+                assert!(msg.contains("2 commits"), "{msg}");
+            }
+            other => panic!("expected a usage error, got {other:?}"),
+        }
+    }
 }

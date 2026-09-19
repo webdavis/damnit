@@ -175,6 +175,7 @@ mod tests {
     use crate::commands::commit::run_commit;
     use crate::commands::stage::run_add;
     use crate::testing::context;
+    use dam_application::{RemoteConfig, RemoteName};
     use dam_domain::{Object, Oid, Task};
 
     fn oid(b: u8) -> Oid {
@@ -244,5 +245,56 @@ mod tests {
         assert!(working.human.contains("subject"));
         let staged = super::run_diff(&mut ctx, DiffArgs { staged: true }).unwrap();
         assert!(staged.human.is_empty());
+    }
+
+    #[test]
+    fn status_reports_conflicts_and_unpushed_commits() {
+        let mut ctx = context();
+        ctx.config.remotes.push(RemoteConfig {
+            name: RemoteName("todoist".into()),
+            helper: "todoist".into(),
+            credentials: vec![],
+            stale: None,
+            path: None,
+        });
+        ctx.store
+            .put(&Object::Task(Task::new(oid(1), "mine")))
+            .unwrap();
+        ctx.store
+            .mark_conflict(
+                &RemoteName("todoist".into()),
+                &oid(1),
+                &Object::Task(Task::new(oid(1), "theirs")),
+            )
+            .unwrap();
+        ctx.store
+            .put(&Object::Task(Task::new(oid(2), "b")))
+            .unwrap();
+        run_add(
+            &mut ctx,
+            AddArgs {
+                oids: vec![],
+                all: true,
+            },
+        )
+        .unwrap();
+        run_commit(
+            &mut ctx,
+            CommitArgs {
+                message: "m".into(),
+            },
+        )
+        .unwrap();
+        let report = super::run_status(&mut ctx).unwrap();
+        assert!(report.human.contains("Conflicts:"));
+        assert!(report.human.contains(oid(1).short()));
+        assert!(report.human.contains("\"mine\""));
+        assert!(report.human.contains("\"theirs\""));
+        assert!(report.human.contains("Unpushed:"));
+        assert!(report.human.contains("todoist: 1 commit(s)"));
+        assert_eq!(report.data["conflicts"].as_array().unwrap().len(), 1);
+        assert_eq!(report.data["conflicts"][0]["oid"], oid(1).to_string());
+        assert_eq!(report.data["unpushed"][0]["remote"], "todoist");
+        assert_eq!(report.data["unpushed"][0]["commits"], 1);
     }
 }
