@@ -2,7 +2,7 @@ use std::fmt;
 
 /// Where an object sits in the tree, the way a file sits in a directory.
 /// Empty is the root; otherwise segments joined by `/` with a trailing `/`.
-#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Path(String);
 
 #[derive(Debug, PartialEq, Eq)]
@@ -92,6 +92,11 @@ mod tests {
         assert_eq!(Path::root().as_str(), "");
         assert_eq!(Path::root().parent(), None);
         assert_eq!(Path::root().depth(), 0);
+    }
+
+    #[test]
+    fn default_is_the_root() {
+        assert_eq!(Path::default(), Path::root());
     }
 
     #[test]
