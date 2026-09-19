@@ -51,6 +51,7 @@ struct Inner {
     conflicts: BTreeMap<Oid, Conflict>,
     notices: Vec<Notice>,
     retries: BTreeMap<RemoteName, Vec<Oid>>,
+    last_pulls: BTreeMap<RemoteName, Timestamp>,
 }
 
 #[derive(Default)]
@@ -227,6 +228,13 @@ impl ObjectStore for MemoryStore {
             Some(t) => inner.sync.insert(remote.clone(), t.to_string()),
             None => inner.sync.remove(remote),
         };
+        Ok(())
+    }
+    fn last_pull(&self, remote: &RemoteName) -> Result<Option<Timestamp>, StoreError> {
+        Ok(self.0.borrow().last_pulls.get(remote).copied())
+    }
+    fn set_last_pull(&self, remote: &RemoteName, at: Timestamp) -> Result<(), StoreError> {
+        self.0.borrow_mut().last_pulls.insert(remote.clone(), at);
         Ok(())
     }
     fn push_retries(&self, remote: &RemoteName) -> Result<Vec<Oid>, StoreError> {

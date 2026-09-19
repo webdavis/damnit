@@ -1,5 +1,5 @@
 use dam_application::{RemoteName, StoreError};
-use dam_domain::{Object, Oid};
+use dam_domain::{Object, Oid, Timestamp};
 use rusqlite::{OptionalExtension, params};
 
 use super::SqliteStore;
@@ -134,6 +134,40 @@ impl SqliteStore {
             .map(|_| ())
             .map_err(sql)
     }
+
+    pub(super) fn last_pull_of(
+        &self,
+        remote: &RemoteName,
+    ) -> Result<Option<Timestamp>, StoreError> {
+        self.conn
+            .query_row(
+                "SELECT at FROM pulls WHERE remote = ?1",
+                params![remote.0],
+                |r| r.get::<_, String>(0),
+            )
+            .optional()
+            .map_err(sql)?
+            .map(|t| {
+                t.parse::<Timestamp>()
+                    .map_err(|e| StoreError(e.to_string()))
+            })
+            .transpose()
+    }
+
+    pub(super) fn set_last_pull_of(
+        &self,
+        remote: &RemoteName,
+        at: Timestamp,
+    ) -> Result<(), StoreError> {
+        self.conn
+            .execute(
+                "INSERT INTO pulls (remote, at) VALUES (?1, ?2)
+                 ON CONFLICT(remote) DO UPDATE SET at = excluded.at",
+                params![remote.0, at.to_string()],
+            )
+            .map(|_| ())
+            .map_err(sql)
+    }
 }
 
 #[cfg(test)]
@@ -198,5 +232,17 @@ mod tests {
         assert!(s.remote_snapshot(&remote(), &oid(1)).unwrap().is_none());
         assert_eq!(s.remote_id(&other, &oid(1)).unwrap().as_deref(), Some("r1"));
         assert_eq!(s.remote_snapshot(&other, &oid(1)).unwrap(), Some(o));
+    }
+
+    #[test]
+    fn last_pull_is_absent_then_set() {
+        let s = SqliteStore::in_memory().unwrap();
+        assert!(s.last_pull(&remote()).unwrap().is_none());
+        s.set_last_pull(&remote(), jiff::Timestamp::UNIX_EPOCH)
+            .unwrap();
+        assert_eq!(
+            s.last_pull(&remote()).unwrap(),
+            Some(jiff::Timestamp::UNIX_EPOCH)
+        );
     }
 }

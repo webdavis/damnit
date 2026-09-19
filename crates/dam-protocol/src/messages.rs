@@ -62,7 +62,7 @@ impl<'de> Deserialize<'de> for Response {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PullResponse {
     #[serde(default)]
     pub objects: Vec<WireObject>,

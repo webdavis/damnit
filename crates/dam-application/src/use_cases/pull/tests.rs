@@ -478,3 +478,21 @@ fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
         Some(Notice::EventCancelled { attached: 1, .. })
     ));
 }
+
+#[test]
+fn a_pull_records_when_it_happened() {
+    let store = MemoryStore::new();
+    let l = launcher(PullResponse::default());
+    let clock = FixedClock(date(2026, 9, 18));
+    pull(
+        &store,
+        &l,
+        &NoCredentials,
+        &clock,
+        &mut FixedRandom(1),
+        &config(),
+        None,
+    )
+    .unwrap();
+    assert_eq!(store.last_pull(&remote()).unwrap(), Some(clock.now()));
+}

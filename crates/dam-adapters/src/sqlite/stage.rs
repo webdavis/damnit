@@ -1,5 +1,5 @@
 use dam_application::{ObjectStore, RemoteName, StoreError};
-use dam_domain::{Change, CommitId, CommitRecord, Object, Oid, Path, coalesce};
+use dam_domain::{Change, CommitId, CommitRecord, Object, Oid, Path, Timestamp, coalesce};
 use rusqlite::{OptionalExtension, params};
 
 use super::SqliteStore;
@@ -154,6 +154,12 @@ impl ObjectStore for SqliteStore {
     }
     fn set_sync_token(&self, remote: &RemoteName, token: Option<&str>) -> Result<(), StoreError> {
         self.set_token(remote, token)
+    }
+    fn last_pull(&self, remote: &RemoteName) -> Result<Option<Timestamp>, StoreError> {
+        self.last_pull_of(remote)
+    }
+    fn set_last_pull(&self, remote: &RemoteName, at: Timestamp) -> Result<(), StoreError> {
+        self.set_last_pull_of(remote, at)
     }
     fn mark_conflict(
         &self,

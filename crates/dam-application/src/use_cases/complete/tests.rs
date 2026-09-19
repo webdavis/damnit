@@ -108,6 +108,16 @@ impl ObjectStore for FailingGetStore {
     fn set_sync_token(&self, _remote: &RemoteName, _token: Option<&str>) -> Result<(), StoreError> {
         unimplemented!()
     }
+    fn last_pull(&self, _remote: &RemoteName) -> Result<Option<dam_domain::Timestamp>, StoreError> {
+        unimplemented!()
+    }
+    fn set_last_pull(
+        &self,
+        _remote: &RemoteName,
+        _at: dam_domain::Timestamp,
+    ) -> Result<(), StoreError> {
+        unimplemented!()
+    }
     fn mark_conflict(
         &self,
         _remote: &RemoteName,

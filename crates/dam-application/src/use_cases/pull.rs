@@ -74,6 +74,7 @@ fn apply(
     land(store, clock, random, remote, planned, &mut report)?;
     report.removed_upstream = record_removals(store, remote, response.removed)?;
     store.set_sync_token(&remote.name, response.sync.as_deref())?;
+    store.set_last_pull(&remote.name, clock.now())?;
     Ok(report)
 }
 

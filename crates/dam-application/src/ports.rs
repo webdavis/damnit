@@ -81,6 +81,8 @@ pub trait ObjectStore {
     fn clear_remote_mapping(&self, remote: &RemoteName, oid: &Oid) -> Result<(), StoreError>;
     fn sync_token(&self, remote: &RemoteName) -> Result<Option<String>, StoreError>;
     fn set_sync_token(&self, remote: &RemoteName, token: Option<&str>) -> Result<(), StoreError>;
+    fn last_pull(&self, remote: &RemoteName) -> Result<Option<Timestamp>, StoreError>;
+    fn set_last_pull(&self, remote: &RemoteName, at: Timestamp) -> Result<(), StoreError>;
     // conflicts and notices
     fn mark_conflict(
         &self,
