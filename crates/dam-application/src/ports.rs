@@ -103,7 +103,7 @@ pub enum HelperError {
     Remote(String),
 }
 
-pub trait RemoteHelper {
+pub trait RemoteHelper: std::fmt::Debug {
     fn capabilities(&mut self) -> Result<Capabilities, HelperError>;
     fn pull(&mut self, since: Option<&str>) -> Result<PullResponse, HelperError>;
     fn push(&mut self, mutations: Vec<Mutation>) -> Result<PushResponse, HelperError>;
