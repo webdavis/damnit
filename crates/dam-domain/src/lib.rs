@@ -4,6 +4,7 @@ pub mod object;
 pub mod oid;
 pub mod path;
 pub mod priority;
+pub mod query;
 pub mod recurrence;
 pub mod when;
 
@@ -16,5 +17,6 @@ pub use object::{
 pub use oid::{Oid, OidError};
 pub use path::{Path, PathError};
 pub use priority::{Priority, PriorityError};
+pub use query::{DateSel, Expr, QueryError, Term, matches, parse as parse_query};
 pub use recurrence::{Anchor, Freq, Rule, RuleError, roll_forward};
 pub use when::{Date, Timestamp, When};
