@@ -10,15 +10,20 @@ pub fn relocate(store: &dyn ObjectStore, oid: &Oid, to: &Path) -> Result<(), Use
         .get(oid)?
         .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
     let old = object.base().path.clone();
-    if to.is_within(&old) {
+    // A root path ("") is shared by every top-level object, so it never
+    // meaningfully contains anything: only a real, owned prefix can.
+    if !old.as_str().is_empty() && to.is_within(&old) {
         return Err(UseCaseError::Parse(format!(
             "{} cannot move inside itself",
             oid.short()
         )));
     }
-    let new = to
-        .join(&last_segment(&old))
-        .map_err(|e| UseCaseError::Parse(e.to_string()))?;
+    let new = if old.as_str().is_empty() {
+        to.clone()
+    } else {
+        to.join(&last_segment(&old))
+            .map_err(|e| UseCaseError::Parse(e.to_string()))?
+    };
     move_subtree(store, oid, &new)
 }
 
@@ -59,5 +64,16 @@ mod tests {
         let p = put(&store, 1, "a/p");
         let err = relocate(&store, &p, &Path::parse("a/p/c").unwrap()).unwrap_err();
         assert!(matches!(err, UseCaseError::Parse(_)));
+    }
+
+    #[test]
+    fn a_top_level_object_lands_exactly_at_the_destination() {
+        let store = MemoryStore::new();
+        let x = put(&store, 1, "");
+        relocate(&store, &x, &Path::parse("work").unwrap()).unwrap();
+        assert_eq!(
+            store.get(&x).unwrap().unwrap().base().path.as_str(),
+            "work/"
+        );
     }
 }
