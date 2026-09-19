@@ -112,75 +112,71 @@ impl ObjectStore for SqliteStore {
         self.mark_commit_pushed(remote, id)
     }
 
-    fn push_retries(&self, _remote: &RemoteName) -> Result<Vec<Oid>, StoreError> {
-        Err(StoreError("not yet".into()))
+    fn push_retries(&self, remote: &RemoteName) -> Result<Vec<Oid>, StoreError> {
+        self.retries_of(remote)
     }
-    fn set_push_retries(&self, _remote: &RemoteName, _oids: &[Oid]) -> Result<(), StoreError> {
-        Err(StoreError("not yet".into()))
+    fn set_push_retries(&self, remote: &RemoteName, oids: &[Oid]) -> Result<(), StoreError> {
+        self.set_retries(remote, oids)
     }
-    fn remote_id(&self, _remote: &RemoteName, _oid: &Oid) -> Result<Option<String>, StoreError> {
-        Err(StoreError("not yet".into()))
+    fn remote_id(&self, remote: &RemoteName, oid: &Oid) -> Result<Option<String>, StoreError> {
+        self.remote_id_of(remote, oid)
     }
     fn oid_for_remote_id(
         &self,
-        _remote: &RemoteName,
-        _remote_id: &str,
+        remote: &RemoteName,
+        remote_id: &str,
     ) -> Result<Option<Oid>, StoreError> {
-        Err(StoreError("not yet".into()))
+        self.oid_of_remote_id(remote, remote_id)
     }
     fn map_remote_id(
         &self,
-        _remote: &RemoteName,
-        _oid: &Oid,
-        _remote_id: &str,
+        remote: &RemoteName,
+        oid: &Oid,
+        remote_id: &str,
     ) -> Result<(), StoreError> {
-        Err(StoreError("not yet".into()))
+        self.set_remote_id(remote, oid, remote_id)
     }
     fn remote_snapshot(
         &self,
-        _remote: &RemoteName,
-        _oid: &Oid,
+        remote: &RemoteName,
+        oid: &Oid,
     ) -> Result<Option<Object>, StoreError> {
-        Err(StoreError("not yet".into()))
+        self.snapshot_of(remote, oid)
     }
-    fn set_remote_snapshot(
-        &self,
-        _remote: &RemoteName,
-        _object: &Object,
-    ) -> Result<(), StoreError> {
-        Err(StoreError("not yet".into()))
+    fn set_remote_snapshot(&self, remote: &RemoteName, object: &Object) -> Result<(), StoreError> {
+        self.set_snapshot(remote, object)
     }
-    fn clear_remote_mapping(&self, _remote: &RemoteName, _oid: &Oid) -> Result<(), StoreError> {
-        Err(StoreError("not yet".into()))
+    fn clear_remote_mapping(&self, remote: &RemoteName, oid: &Oid) -> Result<(), StoreError> {
+        self.clear_mapping(remote, oid)
     }
-    fn sync_token(&self, _remote: &RemoteName) -> Result<Option<String>, StoreError> {
-        Err(StoreError("not yet".into()))
+    fn sync_token(&self, remote: &RemoteName) -> Result<Option<String>, StoreError> {
+        self.token_of(remote)
     }
-    fn set_sync_token(&self, _remote: &RemoteName, _token: Option<&str>) -> Result<(), StoreError> {
-        Err(StoreError("not yet".into()))
+    fn set_sync_token(&self, remote: &RemoteName, token: Option<&str>) -> Result<(), StoreError> {
+        self.set_token(remote, token)
     }
     fn mark_conflict(
         &self,
-        _remote: &RemoteName,
-        _oid: &Oid,
-        _theirs: &Object,
+        remote: &RemoteName,
+        oid: &Oid,
+        theirs: &Object,
     ) -> Result<(), StoreError> {
-        Err(StoreError("not yet".into()))
+        self.record_conflict(remote, oid, theirs)
     }
     fn conflicts(&self) -> Result<Vec<dam_application::Conflict>, StoreError> {
-        Err(StoreError("not yet".into()))
+        self.all_conflicts()
     }
-    fn clear_conflict(&self, _oid: &Oid) -> Result<(), StoreError> {
-        Err(StoreError("not yet".into()))
+    fn clear_conflict(&self, oid: &Oid) -> Result<(), StoreError> {
+        self.drop_conflict(oid)
     }
-    fn add_notice(&self, _notice: &dam_application::Notice) -> Result<(), StoreError> {
-        Err(StoreError("not yet".into()))
+    fn add_notice(&self, notice: &dam_application::Notice) -> Result<(), StoreError> {
+        self.push_notice(notice)
     }
     fn notices(&self) -> Result<Vec<dam_application::Notice>, StoreError> {
-        Err(StoreError("not yet".into()))
+        self.all_notices()
     }
     fn clear_notices(&self) -> Result<(), StoreError> {
-        Err(StoreError("not yet".into()))
+        self.drop_notices()
     }
 }
 

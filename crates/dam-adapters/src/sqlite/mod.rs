@@ -1,5 +1,6 @@
 mod codec;
 mod commits;
+mod conflicts;
 mod migrations;
 mod objects;
 mod remote;

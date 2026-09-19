@@ -71,7 +71,6 @@ pub(super) fn read_changes(
     .collect()
 }
 
-#[allow(dead_code)]
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 enum NoticeRow {
@@ -92,7 +91,6 @@ enum NoticeRow {
     },
 }
 
-#[allow(dead_code)]
 pub(super) fn notice_to_json(n: &Notice) -> Result<String, StoreError> {
     let row = match n {
         Notice::RemovedUpstream {
@@ -122,7 +120,6 @@ pub(super) fn notice_to_json(n: &Notice) -> Result<String, StoreError> {
     serde_json::to_string(&row).map_err(|e| StoreError(format!("stored notice: {e}")))
 }
 
-#[allow(dead_code)]
 pub(super) fn notice_from_json(s: &str) -> Result<Notice, StoreError> {
     let row: NoticeRow =
         serde_json::from_str(s).map_err(|e| StoreError(format!("stored notice: {e}")))?;
