@@ -67,6 +67,9 @@ const DEFAULT_DEADLINE: Duration = Duration::from_secs(60);
 /// How often the wait loop wakes to re-check the deadline.
 const TICK: Duration = Duration::from_millis(25);
 
+/// How long a helper gets to exit on end of input before it is killed.
+const EXIT_GRACE: Duration = Duration::from_millis(200);
+
 impl HelperLauncher for ProcessLauncher {
     fn launch(
         &self,
@@ -239,9 +242,18 @@ impl Drop for ProcessHelper {
     fn drop(&mut self) {
         // Closing stdin lets a well-behaved helper see EOF and exit on its own.
         drop(self.stdin.take());
-        if !self.killed {
-            let _ = self.child.wait();
+        if self.killed {
+            return;
         }
+        let give_up_at = Instant::now() + EXIT_GRACE;
+        while Instant::now() < give_up_at {
+            match self.child.try_wait() {
+                Ok(None) => std::thread::sleep(TICK),
+                // Gone, or unwaitable; either way there is nothing left to do.
+                Ok(Some(_)) | Err(_) => return,
+            }
+        }
+        self.kill();
     }
 }
 
@@ -371,6 +383,41 @@ done
         );
         assert!(started.elapsed() < std::time::Duration::from_secs(1));
         assert!(helper.child.try_wait().unwrap().is_some());
+    }
+
+    #[test]
+    fn a_helper_that_ignores_end_of_input_is_killed_at_drop() {
+        let dir = tempfile::tempdir().unwrap();
+        let launcher = install(dir.path(), "#!/bin/sh\nwhile :; do sleep 0.05; done\n");
+        let helper = launcher.spawn(&remote(), &[]).unwrap();
+        let pid = helper.child.id().to_string();
+        // Dropped on a worker so a regression to an unbounded wait reddens the
+        // suite within the second instead of hanging it.
+        let dropped = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let flag = std::sync::Arc::clone(&dropped);
+        std::thread::spawn(move || {
+            drop(helper);
+            flag.store(true, std::sync::atomic::Ordering::SeqCst);
+        });
+        let give_up_at = std::time::Instant::now() + std::time::Duration::from_secs(1);
+        while !dropped.load(std::sync::atomic::Ordering::SeqCst) {
+            if std::time::Instant::now() >= give_up_at {
+                let _ = std::process::Command::new("kill")
+                    .args(["-9", &pid])
+                    .status();
+                panic!("the launcher was still dropping a second later");
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        assert!(
+            !std::process::Command::new("kill")
+                .args(["-0", &pid])
+                .output()
+                .unwrap()
+                .status
+                .success(),
+            "the helper outlived its launcher"
+        );
     }
 
     #[test]
