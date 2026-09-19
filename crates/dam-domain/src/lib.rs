@@ -1,4 +1,5 @@
 pub mod category;
+pub mod change;
 pub mod completion;
 pub mod object;
 pub mod oid;
@@ -9,6 +10,7 @@ pub mod recurrence;
 pub mod when;
 
 pub use category::{Categories, Category, CategoryError, LabelViolation};
+pub use change::{Change, CommitId, CommitRecord, Op, changed_fields, coalesce, diff};
 pub use completion::{Blocker, ChildDisposition, DependencyDisposition, Force, blockers, cycle_in};
 pub use object::{
     Attachment, Attendee, Base, Conference, Event, EventStatus, EventType, Kind, Object, Person,
