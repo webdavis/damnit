@@ -120,6 +120,7 @@ mod tests {
             url: "t::".into(),
             credentials: vec![],
             stale: None,
+            deadline: None,
             path: None,
         });
         ctx

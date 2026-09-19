@@ -10,6 +10,7 @@ interactive = true
 url = "todoist::"
 api_token_command = ["security", "find-generic-password", "-w", "-s", "Todoist"]
 stale = "15m"
+deadline = "2m"
 path = "work/"
 
 [remote.gcal]
@@ -32,6 +33,7 @@ fn a_full_file_parses_into_config() {
     let t = c.remote("todoist").unwrap();
     assert_eq!(t.helper, "todoist");
     assert_eq!(t.stale, Some(Duration::from_secs(900)));
+    assert_eq!(t.deadline, Some(Duration::from_secs(120)));
     assert_eq!(t.path.as_ref().unwrap().as_str(), "work/");
     assert_eq!(
         t.credentials,
@@ -81,11 +83,28 @@ fn a_command_credential_must_be_an_array() {
 
 #[test]
 fn stale_accepts_seconds_minutes_and_hours_only() {
-    assert_eq!(parse_stale("30s").unwrap(), Duration::from_secs(30));
-    assert_eq!(parse_stale("15m").unwrap(), Duration::from_secs(900));
-    assert_eq!(parse_stale("2h").unwrap(), Duration::from_secs(7200));
-    assert!(parse_stale("15").is_err());
-    assert!(parse_stale("1d").is_err());
+    assert_eq!(
+        parse_duration("stale", "30s").unwrap(),
+        Duration::from_secs(30)
+    );
+    assert_eq!(
+        parse_duration("stale", "15m").unwrap(),
+        Duration::from_secs(900)
+    );
+    assert_eq!(
+        parse_duration("stale", "2h").unwrap(),
+        Duration::from_secs(7200)
+    );
+    assert!(parse_duration("stale", "15").is_err());
+    assert!(parse_duration("stale", "1d").is_err());
+}
+
+#[test]
+fn an_absent_deadline_is_none_and_a_non_string_is_refused() {
+    let c = parse_config("[remote.x]\nurl = \"t::\"\n").unwrap();
+    assert_eq!(c.remote("x").unwrap().deadline, None);
+    let err = parse_config("[remote.x]\nurl = \"t::\"\ndeadline = 60\n").unwrap_err();
+    assert!(matches!(err, ConfigError::Invalid(m) if m.contains("deadline must be a string")));
 }
 
 #[test]

@@ -117,6 +117,9 @@ impl fmt::Display for UseCaseError {
             }
             UseCaseError::Helper(HelperError::Io(s)) => write!(f, "talking to the helper: {s}"),
             UseCaseError::Helper(HelperError::Remote(s)) => write!(f, "the remote refused: {s}"),
+            UseCaseError::Helper(HelperError::Timeout { helper, deadline }) => {
+                write!(f, "helper {helper} gave no answer within {deadline}")
+            }
             UseCaseError::Credential(CredentialError::Missing(n)) => {
                 write!(f, "credential {n} has no source")
             }

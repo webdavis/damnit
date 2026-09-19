@@ -134,20 +134,16 @@ fn parse_category(name: &str, t: &Table) -> Result<Category, ConfigError> {
     })
 }
 
-pub fn parse_stale(text: &str) -> Result<Duration, ConfigError> {
+/// A `<number><s|m|h>` duration; `field` names the key in the refusal.
+pub fn parse_duration(field: &str, text: &str) -> Result<Duration, ConfigError> {
+    let bad = || ConfigError::Invalid(format!("{field} {text:?}: expected <number><s|m|h>"));
     let (number, unit) = text.split_at(text.len().saturating_sub(1));
-    let n: u64 = number
-        .parse()
-        .map_err(|_| ConfigError::Invalid(format!("stale {text:?}: expected <number><s|m|h>")))?;
+    let n: u64 = number.parse().map_err(|_| bad())?;
     let secs = match unit {
         "s" => n,
         "m" => n * 60,
         "h" => n * 3600,
-        _ => {
-            return Err(ConfigError::Invalid(format!(
-                "stale {text:?}: expected <number><s|m|h>"
-            )));
-        }
+        _ => return Err(bad()),
     };
     Ok(Duration::from_secs(secs))
 }

@@ -159,6 +159,7 @@ mod tests {
             url: "t::".into(),
             credentials: vec![],
             stale: Some(Duration::from_secs(60)),
+            deadline: None,
             path: None,
         });
         ctx.launcher = Box::new(EchoLauncher {
@@ -194,6 +195,7 @@ mod tests {
             url: "t::".into(),
             credentials: vec![],
             stale: None,
+            deadline: None,
             path: None,
         });
         ctx.launcher = Box::new(EchoLauncher {
@@ -216,6 +218,7 @@ mod tests {
             url: "t::".into(),
             credentials: vec![],
             stale: Some(Duration::from_secs(60)),
+            deadline: None,
             path: None,
         });
         ctx.launcher = Box::new(FailingLauncher);

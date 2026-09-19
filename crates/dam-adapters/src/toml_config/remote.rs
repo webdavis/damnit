@@ -1,8 +1,10 @@
+use std::time::Duration;
+
 use dam_application::{CredentialSpec, RemoteConfig, RemoteName};
 use dam_domain::Path;
 use toml::{Table, Value};
 
-use super::{ConfigError, parse_stale};
+use super::{ConfigError, parse_duration};
 
 pub(super) fn parse_remote(name: &str, t: &Table) -> Result<RemoteConfig, ConfigError> {
     let url = t
@@ -18,16 +20,8 @@ pub(super) fn parse_remote(name: &str, t: &Table) -> Result<RemoteConfig, Config
                 "remote.{name}: url {url:?} must look like <helper>::"
             ))
         })?;
-    let stale = t
-        .get("stale")
-        .map(|v| {
-            v.as_str()
-                .ok_or_else(|| {
-                    ConfigError::Invalid(format!("remote.{name}: stale must be a string"))
-                })
-                .and_then(parse_stale)
-        })
-        .transpose()?;
+    let stale = duration(name, t, "stale")?;
+    let deadline = duration(name, t, "deadline")?;
     let path = t
         .get("path")
         .map(|v| {
@@ -43,7 +37,7 @@ pub(super) fn parse_remote(name: &str, t: &Table) -> Result<RemoteConfig, Config
         .transpose()?;
     let mut credentials = Vec::new();
     for (key, value) in t {
-        if matches!(key.as_str(), "url" | "stale" | "path") {
+        if matches!(key.as_str(), "url" | "stale" | "deadline" | "path") {
             continue;
         }
         credentials.push(parse_credential(name, key, value)?);
@@ -54,8 +48,22 @@ pub(super) fn parse_remote(name: &str, t: &Table) -> Result<RemoteConfig, Config
         url: url.to_string(),
         credentials,
         stale,
+        deadline,
         path,
     })
+}
+
+/// One optional `<number><s|m|h>` key off a remote table.
+fn duration(remote: &str, t: &Table, key: &str) -> Result<Option<Duration>, ConfigError> {
+    t.get(key)
+        .map(|v| {
+            v.as_str()
+                .ok_or_else(|| {
+                    ConfigError::Invalid(format!("remote.{remote}: {key} must be a string"))
+                })
+                .and_then(|text| parse_duration(key, text))
+        })
+        .transpose()
 }
 
 fn parse_credential(remote: &str, key: &str, value: &Value) -> Result<CredentialSpec, ConfigError> {

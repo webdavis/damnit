@@ -2,7 +2,9 @@ use std::ffi::OsString;
 use std::io::BufReader;
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
-use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
+use std::process::{Child, ChildStdin, Command, Stdio};
+use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, channel};
+use std::time::{Duration, Instant};
 
 use dam_application::{HelperError, HelperLauncher, RemoteConfig, RemoteHelper};
 use dam_protocol::{
@@ -59,12 +61,28 @@ pub fn credential_variable(remote: &str, name: &str) -> String {
     format!("DAM_{}_{}", shout(remote), shout(name))
 }
 
+/// How long a helper may take to answer one request when the remote names no deadline.
+const DEFAULT_DEADLINE: Duration = Duration::from_secs(60);
+
+/// How often the wait loop wakes to re-check the deadline.
+const TICK: Duration = Duration::from_millis(25);
+
 impl HelperLauncher for ProcessLauncher {
     fn launch(
         &self,
         remote: &RemoteConfig,
         credentials: &[(String, String)],
     ) -> Result<Box<dyn RemoteHelper>, HelperError> {
+        Ok(Box::new(self.spawn(remote, credentials)?))
+    }
+}
+
+impl ProcessLauncher {
+    fn spawn(
+        &self,
+        remote: &RemoteConfig,
+        credentials: &[(String, String)],
+    ) -> Result<ProcessHelper, HelperError> {
         let program = self
             .find(&remote.helper)
             .ok_or_else(|| HelperError::NotFound {
@@ -89,11 +107,29 @@ impl HelperLauncher for ProcessLauncher {
             .stdout
             .take()
             .ok_or_else(|| HelperError::Io("the child has no stdout".into()))?;
-        Ok(Box::new(ProcessHelper {
+        let (tx, responses) = channel();
+        std::thread::spawn(move || read_responses(BufReader::new(stdout), &tx));
+        Ok(ProcessHelper {
             child,
             stdin: Some(stdin),
-            stdout: BufReader::new(stdout),
-        }))
+            responses,
+            helper: remote.helper.clone(),
+            deadline: remote.deadline.unwrap_or(DEFAULT_DEADLINE),
+            killed: false,
+        })
+    }
+}
+
+/// Reads the helper's output on its own thread so a blocked pipe cannot outlast
+/// the deadline. Ends at the first line that is not a response, or when the
+/// receiver is gone.
+fn read_responses(mut out: impl std::io::BufRead, tx: &Sender<std::io::Result<Option<Response>>>) {
+    loop {
+        let line = read_line::<Response>(&mut out);
+        let more = matches!(line, Ok(Some(_)));
+        if tx.send(line).is_err() || !more {
+            return;
+        }
     }
 }
 
@@ -102,7 +138,10 @@ impl HelperLauncher for ProcessLauncher {
 struct ProcessHelper {
     child: Child,
     stdin: Option<ChildStdin>,
-    stdout: BufReader<ChildStdout>,
+    responses: Receiver<std::io::Result<Option<Response>>>,
+    helper: String,
+    deadline: Duration,
+    killed: bool,
 }
 
 impl ProcessHelper {
@@ -112,16 +151,52 @@ impl ProcessHelper {
             .as_mut()
             .ok_or_else(|| HelperError::Io("the helper's input is closed".into()))?;
         write_line(stdin, request).map_err(|e| HelperError::Io(e.to_string()))?;
-        let response: Option<Response> =
-            read_line(&mut self.stdout).map_err(|e| match e.kind() {
-                std::io::ErrorKind::InvalidData => HelperError::Protocol(e.to_string()),
-                _ => HelperError::Io(e.to_string()),
-            })?;
-        match response {
-            Some(Response::Error { error }) => Err(HelperError::Remote(error)),
-            Some(other) => Ok(other),
-            None => Err(HelperError::Io("the helper closed its output".into())),
+        self.receive()
+    }
+
+    /// Waits for one response, giving up at the deadline and killing the child.
+    fn receive(&mut self) -> Result<Response, HelperError> {
+        let started = Instant::now();
+        loop {
+            match self.responses.recv_timeout(TICK) {
+                Ok(Ok(Some(Response::Error { error }))) => return Err(HelperError::Remote(error)),
+                Ok(Ok(Some(other))) => return Ok(other),
+                Ok(Ok(None)) | Err(RecvTimeoutError::Disconnected) => {
+                    return Err(HelperError::Io("the helper closed its output".into()));
+                }
+                Ok(Err(e)) => {
+                    return Err(match e.kind() {
+                        std::io::ErrorKind::InvalidData => HelperError::Protocol(e.to_string()),
+                        _ => HelperError::Io(e.to_string()),
+                    });
+                }
+                Err(RecvTimeoutError::Timeout) => {
+                    if started.elapsed() >= self.deadline {
+                        self.kill();
+                        return Err(HelperError::Timeout {
+                            helper: self.helper.clone(),
+                            deadline: render_duration(self.deadline),
+                        });
+                    }
+                }
+            }
         }
+    }
+
+    /// Ends the child and reaps it, so `Drop` has nothing left to wait for.
+    fn kill(&mut self) {
+        let _ = self.child.kill();
+        let _ = self.child.wait();
+        self.killed = true;
+    }
+}
+
+/// A whole number of seconds reads as seconds, anything finer as milliseconds.
+fn render_duration(d: Duration) -> String {
+    if d.subsec_millis() == 0 && d.as_secs() > 0 {
+        format!("{}s", d.as_secs())
+    } else {
+        format!("{}ms", d.as_millis())
     }
 }
 
@@ -160,7 +235,9 @@ impl Drop for ProcessHelper {
     fn drop(&mut self) {
         // Closing stdin lets a well-behaved helper see EOF and exit on its own.
         drop(self.stdin.take());
-        let _ = self.child.wait();
+        if !self.killed {
+            let _ = self.child.wait();
+        }
     }
 }
 
@@ -198,6 +275,7 @@ done
             url: "t::".into(),
             credentials: vec![],
             stale: None,
+            deadline: None,
             path: None,
         }
     }
@@ -269,6 +347,26 @@ done
             helper.capabilities().unwrap_err(),
             HelperError::Io(_)
         ));
+    }
+
+    #[test]
+    fn a_helper_that_never_answers_times_out_and_its_child_is_killed() {
+        let dir = tempfile::tempdir().unwrap();
+        let launcher = install(dir.path(), "#!/bin/sh\nsleep 2\n");
+        let mut remote = remote();
+        remote.deadline = Some(std::time::Duration::from_millis(100));
+        let started = std::time::Instant::now();
+        let mut helper = launcher.spawn(&remote, &[]).unwrap();
+        let err = helper.capabilities().unwrap_err();
+        assert_eq!(
+            err,
+            HelperError::Timeout {
+                helper: "t".into(),
+                deadline: "100ms".into()
+            }
+        );
+        assert!(started.elapsed() < std::time::Duration::from_secs(1));
+        assert!(helper.child.try_wait().unwrap().is_some());
     }
 
     #[test]

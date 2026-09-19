@@ -262,6 +262,7 @@ mod tests {
             url: "todoist::".into(),
             credentials: vec![],
             stale: None,
+            deadline: None,
             path: None,
         });
         ctx.store

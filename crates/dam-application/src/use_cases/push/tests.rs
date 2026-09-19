@@ -26,6 +26,7 @@ fn config() -> Config {
                 value: "t".into(),
             }],
             stale: None,
+            deadline: None,
             path: None,
         }],
         ..Config::default()

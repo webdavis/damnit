@@ -21,6 +21,8 @@ pub struct RemoteConfig {
     pub url: String,
     pub credentials: Vec<CredentialSpec>,
     pub stale: Option<Duration>,
+    /// How long a single helper response may take before the helper is killed.
+    pub deadline: Option<Duration>,
     pub path: Option<Path>,
 }
 
