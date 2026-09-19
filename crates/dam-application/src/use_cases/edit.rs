@@ -4,7 +4,7 @@ use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectStore;
 
 /// Outer `None` leaves a field alone; `Some(None)` clears it; `Some(Some(v))` sets it.
-#[derive(Default)]
+#[derive(Default, Debug, PartialEq, Eq)]
 pub struct EditFields {
     pub subject: Option<String>,
     pub body: Option<String>,
