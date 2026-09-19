@@ -1,6 +1,9 @@
 use dam_application::{Notice, RemoteName, StoreError, wire};
 use dam_domain::{Change, Object, Oid, Op};
+use rusqlite::Params;
 use serde::{Deserialize, Serialize};
+
+use super::objects::sql;
 
 pub(super) fn object_to_json(o: &Object) -> Result<String, StoreError> {
     serde_json::to_string(&wire::to_wire(o, None))
@@ -43,6 +46,29 @@ pub(super) fn change_from_row(
         before: before.map(|j| object_from_json(&j)).transpose()?,
         after: after.map(|j| object_from_json(&j)).transpose()?,
     })
+}
+
+/// Runs a prepared `oid, op, before_json, after_json` query and decodes every row.
+/// Shared by `stage`'s `staged()` and `commits`' `commit_changes()`, whose only
+/// difference is the SQL and its bind parameters.
+pub(super) fn read_changes(
+    stmt: &mut rusqlite::Statement,
+    params: impl Params,
+) -> Result<Vec<Change>, StoreError> {
+    stmt.query_map(params, |r| {
+        Ok((
+            r.get::<_, String>(0)?,
+            r.get::<_, String>(1)?,
+            r.get::<_, Option<String>>(2)?,
+            r.get::<_, Option<String>>(3)?,
+        ))
+    })
+    .map_err(sql)?
+    .map(|r| {
+        r.map_err(sql)
+            .and_then(|(o, op, b, a)| change_from_row(&o, &op, b, a))
+    })
+    .collect()
 }
 
 #[allow(dead_code)]

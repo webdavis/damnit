@@ -3,7 +3,7 @@ use dam_domain::{Change, CommitId, CommitRecord};
 use rusqlite::params;
 
 use super::SqliteStore;
-use super::codec::{change_from_row, object_to_json, op_to_text};
+use super::codec::{object_to_json, op_to_text, read_changes};
 use super::objects::sql;
 
 impl SqliteStore {
@@ -94,20 +94,7 @@ impl SqliteStore {
                 "SELECT oid, op, before_json, after_json FROM commit_changes WHERE commit_id = ?1 ORDER BY ord",
             )
             .map_err(sql)?;
-        stmt.query_map(params![commit_id], |r| {
-            Ok((
-                r.get::<_, String>(0)?,
-                r.get::<_, String>(1)?,
-                r.get::<_, Option<String>>(2)?,
-                r.get::<_, Option<String>>(3)?,
-            ))
-        })
-        .map_err(sql)?
-        .map(|r| {
-            r.map_err(sql)
-                .and_then(|(o, op, b, a)| change_from_row(&o, &op, b, a))
-        })
-        .collect()
+        read_changes(&mut stmt, params![commit_id])
     }
 
     pub(super) fn unpushed_commits(

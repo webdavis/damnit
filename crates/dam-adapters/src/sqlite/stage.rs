@@ -3,7 +3,7 @@ use dam_domain::{Change, CommitId, CommitRecord, Object, Oid, Path, coalesce};
 use rusqlite::{OptionalExtension, params};
 
 use super::SqliteStore;
-use super::codec::{change_from_row, object_to_json, op_to_text};
+use super::codec::{change_from_row, object_to_json, op_to_text, read_changes};
 use super::objects::sql;
 
 impl SqliteStore {
@@ -93,21 +93,7 @@ impl ObjectStore for SqliteStore {
             .conn
             .prepare("SELECT oid, op, before_json, after_json FROM stage ORDER BY oid")
             .map_err(sql)?;
-        let rows = stmt
-            .query_map([], |r| {
-                Ok((
-                    r.get::<_, String>(0)?,
-                    r.get::<_, String>(1)?,
-                    r.get::<_, Option<String>>(2)?,
-                    r.get::<_, Option<String>>(3)?,
-                ))
-            })
-            .map_err(sql)?;
-        rows.map(|r| {
-            r.map_err(sql)
-                .and_then(|(o, op, b, a)| change_from_row(&o, &op, b, a))
-        })
-        .collect()
+        read_changes(&mut stmt, [])
     }
 
     fn commit(&self, record: &CommitRecord) -> Result<(), StoreError> {
