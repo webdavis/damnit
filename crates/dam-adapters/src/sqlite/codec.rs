@@ -89,6 +89,10 @@ enum NoticeRow {
         oid: String,
         why: String,
     },
+    PullFailed {
+        remote: String,
+        why: String,
+    },
 }
 
 pub(super) fn notice_to_json(n: &Notice) -> Result<String, StoreError> {
@@ -114,6 +118,10 @@ pub(super) fn notice_to_json(n: &Notice) -> Result<String, StoreError> {
         Notice::PushFailed { remote, oid, why } => NoticeRow::PushFailed {
             remote: remote.0.clone(),
             oid: oid.to_string(),
+            why: why.clone(),
+        },
+        Notice::PullFailed { remote, why } => NoticeRow::PullFailed {
+            remote: remote.0.clone(),
             why: why.clone(),
         },
     };
@@ -150,6 +158,10 @@ pub(super) fn notice_from_json(s: &str) -> Result<Notice, StoreError> {
         } => Notice::PushFailed {
             remote: RemoteName(remote),
             oid: oid(&o)?,
+            why,
+        },
+        NoticeRow::PullFailed { remote, why } => Notice::PullFailed {
+            remote: RemoteName(remote),
             why,
         },
     })
@@ -195,6 +207,10 @@ mod tests {
             Notice::PushFailed {
                 remote: RemoteName("t".into()),
                 oid: oid(3),
+                why: "w".into(),
+            },
+            Notice::PullFailed {
+                remote: RemoteName("t".into()),
                 why: "w".into(),
             },
         ];

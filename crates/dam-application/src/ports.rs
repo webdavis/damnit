@@ -35,6 +35,10 @@ pub enum Notice {
         oid: Oid,
         why: String,
     },
+    PullFailed {
+        remote: RemoteName,
+        why: String,
+    },
 }
 
 pub trait ObjectStore {

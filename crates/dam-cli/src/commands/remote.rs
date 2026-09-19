@@ -77,11 +77,9 @@ pub fn maybe_pull_stale(ctx: &mut Context) -> Result<(), CliError> {
             &ctx.config,
             Some(&name),
         ) {
-            let oid = dam_domain::Oid::generate(&mut |b| ctx.random.fill(b));
-            ctx.store.add_notice(&Notice::PushFailed {
+            ctx.store.add_notice(&Notice::PullFailed {
                 remote: RemoteName(name.clone()),
-                oid,
-                why: format!("auto-pull: {e}"),
+                why: e.to_string(),
             })?;
         }
     }

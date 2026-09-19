@@ -144,6 +144,9 @@ fn notice_line(n: &Notice) -> String {
         Notice::PushFailed { remote, oid, why } => {
             format!("push of {} to {} failed: {why}", oid.short(), remote.0)
         }
+        Notice::PullFailed { remote, why } => {
+            format!("pull from {} failed: {why}", remote.0)
+        }
     }
 }
 
@@ -165,6 +168,9 @@ fn notice_json(n: &Notice) -> serde_json::Value {
         }
         Notice::PushFailed { remote, oid, why } => {
             serde_json::json!({ "kind": "push_failed", "remote": remote.0, "oid": oid.to_string(), "why": why })
+        }
+        Notice::PullFailed { remote, why } => {
+            serde_json::json!({ "kind": "pull_failed", "remote": remote.0, "why": why })
         }
     }
 }
