@@ -308,8 +308,8 @@ is set:
 | `<name>_command` | Argv of a command whose first line of standard output is the value. |
 | `<name>_env` | The name of an environment variable holding it. |
 
-`dam` resolves each and passes it to the helper as `DAM_<NAME>` in its environment, so
-`api_token` arrives as `DAM_API_TOKEN`. A declared credential with no source in
+`dam` resolves each and passes it to the helper as `DAM_<REMOTE>_<NAME>` in its environment, so
+`api_token` under `[remote.todoist]` arrives as `DAM_TODOIST_API_TOKEN`. A declared credential with no source in
 config is a refusal that names the key. No value appears in an argument, a log line or a status
 message.
 
