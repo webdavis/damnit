@@ -59,8 +59,9 @@ impl EditorSession for ScriptedEditor {
     }
 }
 
-pub(crate) struct NoCredentials;
-impl CredentialSource for NoCredentials {
+/// Supplies no credential at all, whatever is asked for.
+pub(crate) struct MissingCredentials;
+impl CredentialSource for MissingCredentials {
     fn resolve(&self, spec: &CredentialSpec) -> Result<Secret, CredentialError> {
         Err(CredentialError::Missing(spec.name().to_string()))
     }
@@ -153,7 +154,7 @@ pub(crate) fn context() -> Context {
         launcher: Box::new(EchoLauncher {
             pulled: RefCell::new(None),
         }),
-        credentials: Box::new(NoCredentials),
+        credentials: Box::new(MissingCredentials),
         editor: Box::new(ScriptedEditor(String::new())),
         prompt: Box::new(ScriptedPrompt {
             choices: RefCell::new(vec![]),

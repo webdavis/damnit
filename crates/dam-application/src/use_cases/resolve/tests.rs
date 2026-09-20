@@ -8,7 +8,7 @@ use crate::ports::Repositories;
 use crate::remote::{IncomingObject, MutationOutcome, PullOutcome, RemoteMutation};
 use crate::testing::prelude::*;
 use crate::testing::{
-    FixedClock, FixedRandom, MemoryStore, NoCredentials, ScriptedHelper, ScriptedLauncher, oid,
+    EchoCredentials, FixedClock, FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
     task_caps,
 };
 use crate::use_cases::commit::commit;
@@ -236,7 +236,7 @@ fn pulled_into_conflict() -> MemoryStore {
     let reports = pull(
         repos,
         &launcher(vec![upstream("theirs")]),
-        &NoCredentials,
+        &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(42),
         &config(),
@@ -280,7 +280,7 @@ fn ours_is_committed_and_the_conflict_is_not_raised_again() {
     let again = pull(
         repos,
         &launcher(vec![upstream("theirs")]),
-        &NoCredentials,
+        &EchoCredentials,
         &FixedClock(date(2026, 9, 20)),
         &mut FixedRandom(43),
         &config(),
@@ -290,7 +290,7 @@ fn ours_is_committed_and_the_conflict_is_not_raised_again() {
     assert_eq!(again[0].conflicts, 0, "the conflict was raised again");
     assert_eq!(store.get(&oid(1)).unwrap().unwrap().base().subject, "mine");
 
-    let reports = push(repos, &launcher(vec![]), &NoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &launcher(vec![]), &EchoCredentials, &config(), None).unwrap();
     assert_eq!(reports[0].sent, 1, "ours was sent upstream");
     assert_eq!(
         store
@@ -322,7 +322,7 @@ fn theirs_leaves_only_theirs_owed_and_settles_the_conflict() {
     )
     .unwrap();
     let (l, sent) = recording_launcher(vec![]);
-    push(repos, &l, &NoCredentials, &config(), None).unwrap();
+    push(repos, &l, &EchoCredentials, &config(), None).unwrap();
     for m in sent.borrow().iter() {
         assert_eq!(
             m.object.as_ref().unwrap().base().subject,
@@ -333,7 +333,7 @@ fn theirs_leaves_only_theirs_owed_and_settles_the_conflict() {
     let again = pull(
         repos,
         &launcher(vec![upstream("theirs")]),
-        &NoCredentials,
+        &EchoCredentials,
         &FixedClock(date(2026, 9, 20)),
         &mut FixedRandom(43),
         &config(),

@@ -93,10 +93,16 @@ impl HelperLauncher for ScriptedLauncher {
     }
 }
 
-pub struct NoCredentials;
-impl CredentialSource for NoCredentials {
+/// Resolves every credential to what its spec says, so a test reads the
+/// value it configured rather than one this double made up.
+pub struct EchoCredentials;
+impl CredentialSource for EchoCredentials {
     fn resolve(&self, spec: &CredentialSpec) -> Result<Secret, CredentialError> {
-        Ok(format!("value-of-{}", spec.name()).into())
+        Ok(match spec {
+            CredentialSpec::Literal { value, .. } => value.clone(),
+            CredentialSpec::Command { argv, .. } => argv.join(" ").into(),
+            CredentialSpec::Env { var, .. } => format!("${var}").into(),
+        })
     }
 }
 

@@ -6,7 +6,7 @@ mod doubles;
 mod memory_store;
 
 pub use doubles::{
-    FixedClock, FixedRandom, NoCredentials, ScriptedHelper, ScriptedLauncher, oid, task_caps,
+    EchoCredentials, FixedClock, FixedRandom, ScriptedHelper, ScriptedLauncher, oid, task_caps,
 };
 pub use memory_store::MemoryStore;
 

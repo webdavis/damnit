@@ -9,7 +9,7 @@ use crate::ports::Repositories;
 use crate::remote::{IncomingObject, PullOutcome, RejectedObject};
 use crate::testing::prelude::*;
 use crate::testing::{
-    FixedClock, FixedRandom, MemoryStore, NoCredentials, ScriptedHelper, ScriptedLauncher, oid,
+    EchoCredentials, FixedClock, FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
     task_caps,
 };
 use crate::use_cases::commit::commit;
@@ -75,7 +75,7 @@ fn a_new_upstream_object_is_created_locally_with_a_fresh_oid_and_mapped() {
     let reports = pull(
         repos,
         &l,
-        &NoCredentials,
+        &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(42),
         &config(),
@@ -119,7 +119,7 @@ fn a_fast_forward_updates_a_clean_local_object() {
     let reports = pull(
         repos,
         &l,
-        &NoCredentials,
+        &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(42),
         &config(),
@@ -162,7 +162,7 @@ fn dam_only_fields_survive_a_pull() {
     pull(
         repos,
         &l,
-        &NoCredentials,
+        &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(42),
         &config(),
@@ -214,7 +214,7 @@ fn both_sides_changed_is_a_conflict_and_nothing_is_overwritten() {
     let reports = pull(
         repos,
         &l,
-        &NoCredentials,
+        &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(42),
         &config(),
@@ -257,7 +257,7 @@ fn uncommitted_local_work_stops_the_pull_before_anything_is_written() {
     let err = pull(
         repos,
         &l,
-        &NoCredentials,
+        &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(42),
         &config(),
@@ -308,7 +308,7 @@ fn a_refused_pull_leaves_none_of_its_own_notices_behind() {
     let err = pull(
         repos,
         &l,
-        &NoCredentials,
+        &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(42),
         &config(),

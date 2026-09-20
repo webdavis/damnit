@@ -11,7 +11,7 @@ use crate::ports::Repositories;
 use crate::ports::{Notice, RemoteName};
 use crate::testing::prelude::*;
 use crate::testing::{
-    FixedClock, FixedRandom, MemoryStore, NoCredentials, ScriptedHelper, ScriptedLauncher, oid,
+    EchoCredentials, FixedClock, FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
     task_caps,
 };
 use crate::use_cases::commit::commit;
@@ -83,7 +83,7 @@ fn a_committed_create_is_sent_and_its_remote_id_is_mapped() {
             })
             .collect()
     });
-    let reports = push(repos, &l, &NoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &l, &EchoCredentials, &config(), None).unwrap();
     assert_eq!(reports[0].succeeded, 1);
     assert_eq!(pushed.borrow()[0].op, MutationOp::Create);
     assert_eq!(
@@ -103,7 +103,8 @@ fn a_committed_create_is_sent_and_its_remote_id_is_mapped() {
         l.launched_with
             .borrow()
             .iter()
-            .any(|c| c == &vec![("api_token".to_string(), "value-of-api_token".into())])
+            .any(|c| c == &vec![("api_token".to_string(), "t".into())]),
+        "the helper was relaunched with the token the remote's config declares"
     );
 }
 
@@ -122,7 +123,7 @@ fn a_failed_mutation_becomes_a_notice_and_a_retry() {
             })
             .collect()
     });
-    let reports = push(repos, &l, &NoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &l, &EchoCredentials, &config(), None).unwrap();
     assert_eq!(
         reports[0].failed,
         vec![(oid(1), "rate limited".to_string())]
@@ -161,7 +162,7 @@ fn a_mutation_the_helper_never_answered_is_a_failure() {
             })
             .collect()
     });
-    let reports = push(repos, &l, &NoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &l, &EchoCredentials, &config(), None).unwrap();
     assert_eq!(reports[0].succeeded, 1);
     assert_eq!(
         reports[0].failed,
@@ -201,7 +202,7 @@ fn a_retry_is_sent_as_an_update_of_the_committed_state() {
             })
             .collect()
     });
-    push(repos, &l, &NoCredentials, &config(), None).unwrap();
+    push(repos, &l, &EchoCredentials, &config(), None).unwrap();
     let sent = pushed.borrow();
     assert!(
         sent.iter()
@@ -257,7 +258,7 @@ fn a_successful_delete_clears_the_remote_mapping() {
             })
             .collect()
     });
-    push(repos, &l, &NoCredentials, &config(), None).unwrap();
+    push(repos, &l, &EchoCredentials, &config(), None).unwrap();
     assert!(store.remote_id(&remote, &oid(1)).unwrap().is_none());
     assert!(store.remote_snapshot(&remote, &oid(1)).unwrap().is_none());
 }
@@ -289,7 +290,7 @@ fn duplicate_and_unsent_results_are_ignored() {
             },
         ]
     });
-    let reports = push(repos, &l, &NoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &l, &EchoCredentials, &config(), None).unwrap();
     assert_eq!(reports[0].succeeded, 0);
     assert_eq!(reports[0].failed.len(), 1);
     let retries = store.push_retries(&RemoteName("todoist".into())).unwrap();
@@ -327,7 +328,7 @@ fn a_delete_with_no_remote_mapping_is_skipped() {
     .unwrap();
 
     let (l, pushed) = launcher(|_| vec![]);
-    let reports = push(repos, &l, &NoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &l, &EchoCredentials, &config(), None).unwrap();
     assert_eq!(reports[0].skipped, 1);
     assert_eq!(reports[0].sent, 0);
     assert!(pushed.borrow().is_empty());
@@ -354,7 +355,7 @@ fn an_event_is_skipped_by_a_task_only_helper() {
     )
     .unwrap();
     let (l, pushed) = launcher(|_| vec![]);
-    let reports = push(repos, &l, &NoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &l, &EchoCredentials, &config(), None).unwrap();
     assert_eq!(reports[0].skipped, 1);
     assert!(pushed.borrow().is_empty());
 }
@@ -372,7 +373,7 @@ fn unresolved_conflicts_block_push() {
         )
         .unwrap();
     let (l, _) = launcher(|_| vec![]);
-    let err = push(repos, &l, &NoCredentials, &config(), None).unwrap_err();
+    let err = push(repos, &l, &EchoCredentials, &config(), None).unwrap_err();
     assert_eq!(err, UseCaseError::Refused(Refusal::UnresolvedConflicts(1)));
 }
 
@@ -381,7 +382,7 @@ fn an_unknown_remote_is_refused() {
     let store = MemoryStore::new();
     let repos = Repositories::of(&store);
     let (l, _) = launcher(|_| vec![]);
-    let err = push(repos, &l, &NoCredentials, &config(), Some("nope")).unwrap_err();
+    let err = push(repos, &l, &EchoCredentials, &config(), Some("nope")).unwrap_err();
     assert_eq!(
         err,
         UseCaseError::Refused(Refusal::NoSuchRemote("nope".into()))
@@ -399,8 +400,8 @@ fn a_resend_after_an_unanswered_push_carries_the_first_attempt_s_key() {
     let repos = Repositories::of(&store);
     committed_task(&store, 1);
     let (l, pushed) = launcher(|_| vec![]);
-    push(repos, &l, &NoCredentials, &config(), None).unwrap();
-    push(repos, &l, &NoCredentials, &config(), None).unwrap();
+    push(repos, &l, &EchoCredentials, &config(), None).unwrap();
+    push(repos, &l, &EchoCredentials, &config(), None).unwrap();
     let sent = pushed.borrow();
     assert_eq!(sent.len(), 2, "the mutation was sent twice: {sent:?}");
     assert_eq!(
@@ -431,7 +432,7 @@ fn two_successive_changes_to_one_object_carry_different_keys() {
             })
             .collect()
     });
-    push(repos, &l, &NoCredentials, &config(), None).unwrap();
+    push(repos, &l, &EchoCredentials, &config(), None).unwrap();
     store
         .put(&Object::Task(Task::new(oid(1), "second")))
         .unwrap();
@@ -444,7 +445,7 @@ fn two_successive_changes_to_one_object_carry_different_keys() {
         "m2",
     )
     .unwrap();
-    push(repos, &l, &NoCredentials, &config(), None).unwrap();
+    push(repos, &l, &EchoCredentials, &config(), None).unwrap();
     let sent = pushed.borrow();
     assert_eq!(sent.len(), 2);
     assert_ne!(sent[0].idempotency_key, sent[1].idempotency_key);

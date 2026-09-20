@@ -30,17 +30,7 @@ mod tests {
     use super::*;
     use crate::config::CredentialSpec;
     use crate::ports::{CredentialError, RemoteName};
-
-    struct Echo;
-    impl CredentialSource for Echo {
-        fn resolve(&self, spec: &CredentialSpec) -> Result<Secret, CredentialError> {
-            Ok(match spec {
-                CredentialSpec::Literal { value, .. } => value.clone(),
-                CredentialSpec::Command { argv, .. } => argv.join(" ").into(),
-                CredentialSpec::Env { var, .. } => format!("${var}").into(),
-            })
-        }
-    }
+    use crate::testing::EchoCredentials;
 
     fn remote(specs: Vec<CredentialSpec>) -> RemoteConfig {
         RemoteConfig {
@@ -60,14 +50,14 @@ mod tests {
             name: "api_token".into(),
             value: "abc".into(),
         }]);
-        let out = resolve_credentials(&Echo, &r, &["api_token".into()]).unwrap();
+        let out = resolve_credentials(&EchoCredentials, &r, &["api_token".into()]).unwrap();
         assert_eq!(out, vec![("api_token".into(), "abc".into())]);
     }
 
     #[test]
     fn a_declared_credential_with_no_spec_is_refused_by_name() {
         let r = remote(vec![]);
-        let err = resolve_credentials(&Echo, &r, &["api_token".into()]).unwrap_err();
+        let err = resolve_credentials(&EchoCredentials, &r, &["api_token".into()]).unwrap_err();
         assert_eq!(
             err,
             UseCaseError::Refused(Refusal::MissingCredential {
@@ -84,7 +74,7 @@ mod tests {
             name: "api_token".into(),
             value: TOKEN.into(),
         }]);
-        let resolved = resolve_credentials(&Echo, &r, &["api_token".into()]).unwrap();
+        let resolved = resolve_credentials(&EchoCredentials, &r, &["api_token".into()]).unwrap();
         assert!(!format!("{resolved:?}").contains(TOKEN));
         let errors = [
             UseCaseError::from(Refusal::MissingCredential {
@@ -113,6 +103,10 @@ mod tests {
             name: "extra".into(),
             value: "x".into(),
         }]);
-        assert!(resolve_credentials(&Echo, &r, &[]).unwrap().is_empty());
+        assert!(
+            resolve_credentials(&EchoCredentials, &r, &[])
+                .unwrap()
+                .is_empty()
+        );
     }
 }

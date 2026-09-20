@@ -5,7 +5,7 @@ use super::*;
 use crate::ports::Repositories;
 use crate::remote::{IncomingObject, PullOutcome};
 use crate::testing::prelude::*;
-use crate::testing::{FixedClock, FixedRandom, MemoryStore, NoCredentials, oid};
+use crate::testing::{EchoCredentials, FixedClock, FixedRandom, MemoryStore, oid};
 use dam_domain::{Event, Kind, Object, Task, When};
 
 #[test]
@@ -31,7 +31,7 @@ fn a_kind_change_upstream_keeps_ours_and_raises_a_notice() {
     let reports = pull(
         repos,
         &l,
-        &NoCredentials,
+        &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(42),
         &config(),
@@ -77,7 +77,7 @@ fn a_kind_change_is_noticed_once_however_often_it_is_pulled() {
         pull(
             repos,
             &l,
-            &NoCredentials,
+            &EchoCredentials,
             &FixedClock(date(2026, 9, 18)),
             &mut FixedRandom(42),
             &config(),

@@ -9,7 +9,7 @@ use crate::ports::Repositories;
 use crate::remote::{IncomingObject, PullOutcome, RejectedObject};
 use crate::testing::prelude::*;
 use crate::testing::{
-    FixedClock, FixedRandom, MemoryStore, NoCredentials, ScriptedHelper, ScriptedLauncher, oid,
+    EchoCredentials, FixedClock, FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
     task_caps,
 };
 use crate::use_cases::commit::commit;
@@ -35,7 +35,7 @@ fn a_removal_upstream_is_a_notice_not_a_deletion() {
     let reports = pull(
         repos,
         &l,
-        &NoCredentials,
+        &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(42),
         &config(),
@@ -95,7 +95,7 @@ fn a_cancelled_event_with_attached_tasks_is_reported() {
     pull(
         repos,
         &l,
-        &NoCredentials,
+        &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(42),
         &config(),
@@ -139,7 +139,7 @@ fn an_unrelated_staged_object_stays_staged_after_a_pull() {
     pull(
         repos,
         &l,
-        &NoCredentials,
+        &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(42),
         &config(),
@@ -224,7 +224,7 @@ fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
     let reports = pull(
         repos,
         &l,
-        &NoCredentials,
+        &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(42),
         &config(),
@@ -255,7 +255,7 @@ fn one_unconvertible_object_is_skipped_with_a_notice_and_the_rest_still_pull() {
     let reports = pull(
         repos,
         &l,
-        &NoCredentials,
+        &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(1),
         &config(),
@@ -286,7 +286,7 @@ fn a_pull_records_when_it_happened() {
     pull(
         repos,
         &l,
-        &NoCredentials,
+        &EchoCredentials,
         &clock,
         &mut FixedRandom(1),
         &config(),
