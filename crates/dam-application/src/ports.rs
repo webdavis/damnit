@@ -2,6 +2,7 @@ use dam_domain::{Change, CommitId, CommitRecord, Date, Object, Oid, Path, Timest
 use dam_protocol::{Capabilities, Mutation, PullResponse, PushResponse};
 
 use crate::config::{CredentialSpec, RemoteConfig};
+use crate::secret::Secret;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct RemoteName(pub String);
@@ -127,7 +128,7 @@ pub trait HelperLauncher {
     fn launch(
         &self,
         remote: &RemoteConfig,
-        credentials: &[(String, String)],
+        credentials: &[(String, Secret)],
     ) -> Result<Box<dyn RemoteHelper>, HelperError>;
 }
 
@@ -139,7 +140,7 @@ pub enum CredentialError {
 }
 
 pub trait CredentialSource {
-    fn resolve(&self, spec: &CredentialSpec) -> Result<String, CredentialError>;
+    fn resolve(&self, spec: &CredentialSpec) -> Result<Secret, CredentialError>;
 }
 
 pub trait Clock {

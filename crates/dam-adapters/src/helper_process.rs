@@ -5,7 +5,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-use dam_application::{HelperError, HelperLauncher, RemoteConfig, RemoteHelper};
+use dam_application::{HelperError, HelperLauncher, RemoteConfig, RemoteHelper, Secret};
 
 use conversation::ProcessHelper;
 
@@ -63,7 +63,7 @@ impl HelperLauncher for ProcessLauncher {
     fn launch(
         &self,
         remote: &RemoteConfig,
-        credentials: &[(String, String)],
+        credentials: &[(String, Secret)],
     ) -> Result<Box<dyn RemoteHelper>, HelperError> {
         Ok(Box::new(self.spawn(remote, credentials)?))
     }
@@ -73,7 +73,7 @@ impl ProcessLauncher {
     fn spawn(
         &self,
         remote: &RemoteConfig,
-        credentials: &[(String, String)],
+        credentials: &[(String, Secret)],
     ) -> Result<ProcessHelper, HelperError> {
         let program = self
             .find(&remote.helper)
@@ -86,7 +86,7 @@ impl ProcessLauncher {
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit());
         for (name, value) in credentials {
-            command.env(credential_variable(&remote.name.0, name), value);
+            command.env(credential_variable(&remote.name.0, name), value.expose());
         }
         let mut child = command
             .spawn()

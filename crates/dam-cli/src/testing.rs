@@ -6,7 +6,7 @@ use dam_adapters::SqliteStore;
 use dam_application::{
     Capabilities, Clock, Config, CredentialError, CredentialSource, CredentialSpec, EditorError,
     EditorSession, HelperError, HelperLauncher, Mutation, MutationResult, PullResponse,
-    PushResponse, RemoteConfig, RemoteHelper,
+    PushResponse, RemoteConfig, RemoteHelper, Secret,
 };
 use dam_domain::{Categories, Date, Timestamp};
 use jiff::civil::date;
@@ -61,7 +61,7 @@ impl EditorSession for ScriptedEditor {
 
 pub struct NoCredentials;
 impl CredentialSource for NoCredentials {
-    fn resolve(&self, spec: &CredentialSpec) -> Result<String, CredentialError> {
+    fn resolve(&self, spec: &CredentialSpec) -> Result<Secret, CredentialError> {
         Err(CredentialError::Missing(spec.name().to_string()))
     }
 }
@@ -122,7 +122,7 @@ impl HelperLauncher for EchoLauncher {
     fn launch(
         &self,
         _: &RemoteConfig,
-        _: &[(String, String)],
+        _: &[(String, Secret)],
     ) -> Result<Box<dyn RemoteHelper>, HelperError> {
         Ok(Box::new(EchoHelper {
             pulled: self.pulled.borrow_mut().take().unwrap_or(PullResponse {
@@ -141,7 +141,7 @@ impl HelperLauncher for FailingLauncher {
     fn launch(
         &self,
         remote: &RemoteConfig,
-        _: &[(String, String)],
+        _: &[(String, Secret)],
     ) -> Result<Box<dyn RemoteHelper>, HelperError> {
         Err(HelperError::NotFound {
             helper: remote.helper.clone(),

@@ -10,6 +10,7 @@ use crate::ports::{
     Clock, Conflict, CredentialError, CredentialSource, HelperError, HelperLauncher, Notice,
     ObjectStore, Randomness, RemoteHelper, RemoteName, StoreError,
 };
+use crate::secret::Secret;
 
 pub(crate) fn oid(byte: u8) -> Oid {
     Oid::generate(&mut |b: &mut [u8]| b.fill(byte))
@@ -294,7 +295,7 @@ impl ObjectStore for MemoryStore {
 }
 
 type PushAnswer = Box<dyn Fn(&[Mutation]) -> Vec<MutationResult>>;
-type LaunchedWith = Rc<RefCell<Vec<Vec<(String, String)>>>>;
+type LaunchedWith = Rc<RefCell<Vec<Vec<(String, Secret)>>>>;
 
 /// A scripted helper: records what it was asked, answers what it was told.
 pub(crate) struct ScriptedHelper {
@@ -337,7 +338,7 @@ impl HelperLauncher for ScriptedLauncher {
     fn launch(
         &self,
         _remote: &RemoteConfig,
-        credentials: &[(String, String)],
+        credentials: &[(String, Secret)],
     ) -> Result<Box<dyn RemoteHelper>, HelperError> {
         self.launched_with.borrow_mut().push(credentials.to_vec());
         Ok(Box::new((self.make)()))
@@ -346,8 +347,8 @@ impl HelperLauncher for ScriptedLauncher {
 
 pub(crate) struct NoCredentials;
 impl CredentialSource for NoCredentials {
-    fn resolve(&self, spec: &CredentialSpec) -> Result<String, CredentialError> {
-        Ok(format!("value-of-{}", spec.name()))
+    fn resolve(&self, spec: &CredentialSpec) -> Result<Secret, CredentialError> {
+        Ok(format!("value-of-{}", spec.name()).into())
     }
 }
 

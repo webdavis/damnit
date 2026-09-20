@@ -103,7 +103,7 @@ fn a_committed_create_is_sent_and_its_remote_id_is_mapped() {
         l.launched_with
             .borrow()
             .iter()
-            .any(|c| c == &vec![("api_token".to_string(), "value-of-api_token".to_string())])
+            .any(|c| c == &vec![("api_token".to_string(), "value-of-api_token".into())])
     );
 }
 

@@ -1,6 +1,7 @@
 use crate::config::RemoteConfig;
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::CredentialSource;
+use crate::secret::Secret;
 
 /// Every credential the helper declared, resolved from the remote's config.
 /// A declared name with no spec is `Refusal::MissingCredential`.
@@ -8,7 +9,7 @@ pub fn resolve_credentials(
     source: &dyn CredentialSource,
     remote: &RemoteConfig,
     declared: &[String],
-) -> Result<Vec<(String, String)>, UseCaseError> {
+) -> Result<Vec<(String, Secret)>, UseCaseError> {
     let mut out = Vec::with_capacity(declared.len());
     for name in declared {
         let spec = remote
@@ -32,11 +33,11 @@ mod tests {
 
     struct Echo;
     impl CredentialSource for Echo {
-        fn resolve(&self, spec: &CredentialSpec) -> Result<String, CredentialError> {
+        fn resolve(&self, spec: &CredentialSpec) -> Result<Secret, CredentialError> {
             Ok(match spec {
                 CredentialSpec::Literal { value, .. } => value.clone(),
-                CredentialSpec::Command { argv, .. } => argv.join(" "),
-                CredentialSpec::Env { var, .. } => format!("${var}"),
+                CredentialSpec::Command { argv, .. } => argv.join(" ").into(),
+                CredentialSpec::Env { var, .. } => format!("${var}").into(),
             })
         }
     }
@@ -74,6 +75,36 @@ mod tests {
                 name: "api_token".into()
             })
         );
+    }
+
+    #[test]
+    fn nothing_on_the_credential_path_reveals_the_value() {
+        const TOKEN: &str = "SUPERSECRETTOKEN";
+        let r = remote(vec![CredentialSpec::Literal {
+            name: "api_token".into(),
+            value: TOKEN.into(),
+        }]);
+        let resolved = resolve_credentials(&Echo, &r, &["api_token".into()]).unwrap();
+        assert!(!format!("{resolved:?}").contains(TOKEN));
+        let errors = [
+            UseCaseError::from(Refusal::MissingCredential {
+                remote: "todoist".into(),
+                name: "api_token".into(),
+            }),
+            UseCaseError::from(CredentialError::Missing("api_token".into())),
+            UseCaseError::from(CredentialError::CommandFailed {
+                name: "api_token".into(),
+                why: "the vault is locked".into(),
+            }),
+            UseCaseError::from(CredentialError::EnvUnset {
+                name: "api_token".into(),
+                var: "DAM_TODOIST_API_TOKEN".into(),
+            }),
+        ];
+        for e in errors {
+            assert!(!format!("{e}").contains(TOKEN));
+            assert!(!format!("{e:?}").contains(TOKEN));
+        }
     }
 
     #[test]

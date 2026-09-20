@@ -3,6 +3,7 @@ pub mod credentials;
 pub mod errors;
 pub mod merge;
 pub mod ports;
+pub mod secret;
 #[cfg(test)]
 pub(crate) mod testing;
 pub mod use_cases;
@@ -20,6 +21,7 @@ pub use ports::{
     Clock, Conflict, CredentialError, CredentialSource, EditorError, EditorSession, HelperError,
     HelperLauncher, Notice, ObjectStore, Randomness, RemoteHelper, RemoteName, StoreError,
 };
+pub use secret::Secret;
 pub use use_cases::commit::{commit, log};
 pub use use_cases::complete::{CompletePlan, Completed, Dispositions, complete, plan_complete};
 pub use use_cases::edit::{EditFields, apply, edit};

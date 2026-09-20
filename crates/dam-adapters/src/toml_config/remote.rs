@@ -1,4 +1,4 @@
-use dam_application::{ConfiguredDuration, CredentialSpec, RemoteConfig, RemoteName};
+use dam_application::{ConfiguredDuration, CredentialSpec, RemoteConfig, RemoteName, Secret};
 use dam_domain::Path;
 use toml::{Table, Value};
 
@@ -103,6 +103,6 @@ fn parse_credential(remote: &str, key: &str, value: &Value) -> Result<Credential
     let literal = value.as_str().ok_or_else(|| invalid("must be a string"))?;
     Ok(CredentialSpec::Literal {
         name: key.to_string(),
-        value: literal.to_string(),
+        value: Secret::from(literal),
     })
 }

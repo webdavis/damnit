@@ -3,6 +3,7 @@ use std::time::Duration;
 use dam_domain::{Categories, Path};
 
 use crate::ports::RemoteName;
+use crate::secret::Secret;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Config {
@@ -36,7 +37,7 @@ pub struct ConfiguredDuration {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum CredentialSpec {
-    Literal { name: String, value: String },
+    Literal { name: String, value: Secret },
     Command { name: String, argv: Vec<String> },
     Env { name: String, var: String },
 }
@@ -64,5 +65,32 @@ impl Config {
 
     pub fn filter(&self, name: &str) -> Option<&FilterConfig> {
         self.filters.iter().find(|f| f.name == name)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const TOKEN: &str = "SUPERSECRETTOKEN";
+
+    #[test]
+    fn a_config_holding_a_literal_credential_never_debug_prints_it() {
+        let config = Config {
+            remotes: vec![RemoteConfig {
+                name: RemoteName("todoist".into()),
+                helper: "todoist".into(),
+                url: "todoist::".into(),
+                credentials: vec![CredentialSpec::Literal {
+                    name: "api_token".into(),
+                    value: TOKEN.into(),
+                }],
+                stale: None,
+                deadline: None,
+                path: None,
+            }],
+            ..Config::default()
+        };
+        assert!(!format!("{config:?}").contains(TOKEN));
     }
 }

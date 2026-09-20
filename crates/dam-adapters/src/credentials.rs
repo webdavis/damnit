@@ -1,6 +1,6 @@
 use std::process::{Command, Stdio};
 
-use dam_application::{CredentialError, CredentialSource, CredentialSpec};
+use dam_application::{CredentialError, CredentialSource, CredentialSpec, Secret};
 
 type EnvLookup = Box<dyn Fn(&str) -> Option<String>>;
 
@@ -19,14 +19,16 @@ impl ProcessCredentialSource {
 }
 
 impl CredentialSource for ProcessCredentialSource {
-    fn resolve(&self, spec: &CredentialSpec) -> Result<String, CredentialError> {
+    fn resolve(&self, spec: &CredentialSpec) -> Result<Secret, CredentialError> {
         match spec {
             CredentialSpec::Literal { value, .. } => Ok(value.clone()),
             CredentialSpec::Env { name, var } => {
-                (self.env)(var).ok_or_else(|| CredentialError::EnvUnset {
-                    name: name.clone(),
-                    var: var.clone(),
-                })
+                (self.env)(var)
+                    .map(Secret::from)
+                    .ok_or_else(|| CredentialError::EnvUnset {
+                        name: name.clone(),
+                        var: var.clone(),
+                    })
             }
             CredentialSpec::Command { name, argv } => run(name, argv),
         }
@@ -34,7 +36,7 @@ impl CredentialSource for ProcessCredentialSource {
 }
 
 /// Standard input is inherited so an interactive vault CLI can prompt.
-fn run(name: &str, argv: &[String]) -> Result<String, CredentialError> {
+fn run(name: &str, argv: &[String]) -> Result<Secret, CredentialError> {
     let failed = |why: String| CredentialError::CommandFailed {
         name: name.to_string(),
         why,
@@ -58,7 +60,7 @@ fn run(name: &str, argv: &[String]) -> Result<String, CredentialError> {
     }
     let value =
         String::from_utf8(output.stdout).map_err(|_| failed("output is not text".into()))?;
-    Ok(value.trim_end_matches(['\n', '\r']).to_string())
+    Ok(value.trim_end_matches(['\n', '\r']).into())
 }
 
 #[cfg(test)]
@@ -76,7 +78,7 @@ mod tests {
             name: "api_token".into(),
             value: "v".into(),
         };
-        assert_eq!(no_env().resolve(&spec).unwrap(), "v");
+        assert_eq!(no_env().resolve(&spec).unwrap().expose(), "v");
     }
 
     #[test]
@@ -85,7 +87,7 @@ mod tests {
             name: "api_token".into(),
             argv: vec!["printf".into(), "secret\\n".into()],
         };
-        assert_eq!(no_env().resolve(&spec).unwrap(), "secret");
+        assert_eq!(no_env().resolve(&spec).unwrap().expose(), "secret");
     }
 
     #[test]
@@ -160,7 +162,7 @@ mod tests {
             name: "api_token".into(),
             var: "U".into(),
         };
-        assert_eq!(source.resolve(&set).unwrap(), "from-env");
+        assert_eq!(source.resolve(&set).unwrap().expose(), "from-env");
         assert_eq!(
             source.resolve(&unset).unwrap_err(),
             CredentialError::EnvUnset {
