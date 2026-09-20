@@ -202,6 +202,9 @@ pub enum HelperError {
     Timeout {
         helper: String,
         deadline: String,
+        /// The tail of what the helper wrote to its standard error, when it
+        /// wrote anything.
+        said: Option<String>,
     },
     Cancelled,
 }

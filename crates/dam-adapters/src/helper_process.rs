@@ -84,7 +84,7 @@ impl ProcessLauncher {
         command
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::inherit());
+            .stderr(Stdio::piped());
         for (name, value) in credentials {
             command.env(credential_variable(&remote.name.0, name), value.expose());
         }
@@ -99,7 +99,11 @@ impl ProcessLauncher {
             .stdout
             .take()
             .ok_or_else(|| HelperError::Io("the child has no stdout".into()))?;
-        Ok(ProcessHelper::new(child, stdin, stdout, remote))
+        let stderr = child
+            .stderr
+            .take()
+            .ok_or_else(|| HelperError::Io("the child has no stderr".into()))?;
+        Ok(ProcessHelper::new(child, stdin, stdout, stderr, remote))
     }
 }
 

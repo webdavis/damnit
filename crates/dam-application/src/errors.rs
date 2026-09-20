@@ -125,8 +125,16 @@ impl fmt::Display for UseCaseError {
             ),
             UseCaseError::Helper(HelperError::Io(s)) => write!(f, "talking to the helper: {s}"),
             UseCaseError::Helper(HelperError::Remote(s)) => write!(f, "the remote refused: {s}"),
-            UseCaseError::Helper(HelperError::Timeout { helper, deadline }) => {
-                write!(f, "helper {helper} gave no answer within {deadline}")
+            UseCaseError::Helper(HelperError::Timeout {
+                helper,
+                deadline,
+                said,
+            }) => {
+                write!(f, "helper {helper} gave no answer within {deadline}")?;
+                match said {
+                    Some(text) => write!(f, "; it said: {text}"),
+                    None => Ok(()),
+                }
             }
             UseCaseError::Helper(HelperError::Cancelled) => f.write_str("cancelled"),
             UseCaseError::Credential(CredentialError::Missing(n)) => {
