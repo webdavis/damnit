@@ -270,4 +270,6 @@ fn note_cancelled(store: &dyn ObjectStore, object: &Object) -> Result<(), UseCas
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
+mod tests_kind_change;
+#[cfg(test)]
 mod tests_removals_and_notices;
