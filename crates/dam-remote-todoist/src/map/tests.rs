@@ -129,8 +129,36 @@ fn priorities_map_both_ways() {
     assert_eq!(dam_priority(4), 1);
     assert_eq!(dam_priority(0), 4);
     assert_eq!(dam_priority(9), 1);
-    assert_eq!(split_remote_id("i:abc"), Some(('i', "abc")));
-    assert_eq!(split_remote_id("abc"), None);
+    assert_eq!(split_remote_id("i:abc"), Ok(('i', "abc")));
+    assert_eq!(split_remote_id("abc"), Err(RemoteIdError::NoKind));
+}
+
+/// The id half is Todoist's own string, read back out of dam's store and
+/// sent upstream again. It is untrusted input on the way back out.
+#[test]
+fn a_remote_id_whose_tail_is_not_a_todoist_id_is_refused() {
+    assert_eq!(
+        split_remote_id("i:6X7rM8997g3RQmvh"),
+        Ok(('i', "6X7rM8997g3RQmvh"))
+    );
+    assert_eq!(
+        split_remote_id("p:c7beb07f-b226-4eb1-bf63-30d782b07b1a"),
+        Ok(('p', "c7beb07f-b226-4eb1-bf63-30d782b07b1a"))
+    );
+    for hostile in [
+        "i:../../projects/p1",
+        "i:..",
+        "i:1?force=true",
+        "i:1/close",
+        "i:1 2",
+        "i:",
+    ] {
+        assert_eq!(
+            split_remote_id(hostile),
+            Err(RemoteIdError::BadId),
+            "{hostile}"
+        );
+    }
 }
 
 #[test]

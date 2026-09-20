@@ -282,3 +282,47 @@ fn a_path_and_subject_change_moves_first_then_updates_the_content() {
     assert_eq!(task_calls[1].path, "/tasks/i1");
     assert_eq!(task_calls[1].body["content"], "oat");
 }
+
+/// The stored `remote_id` is Todoist's own string on the way back out. One
+/// carrying path syntax must never reach a request.
+#[test]
+fn a_hostile_remote_id_is_refused_and_never_reaches_a_request() {
+    let mut routes = HashMap::new();
+    routes.insert("POST /sync", (200, sync_body()));
+    let server = loopback::serve(routes);
+    let api = TodoistApi::new(&server.base, "tok");
+    let mutations = vec![
+        Mutation {
+            op: "delete".into(),
+            oid: "1".repeat(40),
+            remote_id: Some("i:../../projects/p1".into()),
+            object: None,
+            fields: vec![],
+        },
+        Mutation {
+            op: "update".into(),
+            oid: "2".repeat(40),
+            remote_id: Some("i:i1?force=true".into()),
+            object: Some(task(&"2".repeat(40), "Work/", "milk", false)),
+            fields: vec!["subject".into()],
+        },
+    ];
+    let response = push(&api, mutations).unwrap();
+    for result in &response.results {
+        assert!(!result.ok, "{result:?}");
+        assert!(
+            result
+                .why
+                .as_deref()
+                .unwrap()
+                .contains("unusable Todoist id"),
+            "{result:?}"
+        );
+    }
+    let seen = server.seen.lock().unwrap();
+    assert_eq!(
+        seen.iter().map(|s| s.path.as_str()).collect::<Vec<_>>(),
+        vec!["/sync"],
+        "only the opening read left the helper"
+    );
+}

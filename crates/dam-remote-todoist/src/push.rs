@@ -45,11 +45,7 @@ fn apply(
 ) -> Result<Option<String>, String> {
     match m.op.as_str() {
         "delete" => {
-            let (kind, id) = m
-                .remote_id
-                .as_deref()
-                .and_then(split_remote_id)
-                .ok_or("delete without a Todoist id")?;
+            let (kind, id) = addressed(m, "delete")?;
             api.delete(&format!("/{}/{id}", plural(kind)))
                 .map_err(|e| e.to_string())?;
             Ok(m.remote_id.clone())
@@ -60,16 +56,22 @@ fn apply(
         }
         "update" => {
             let object = m.object.as_ref().ok_or("update without an object")?;
-            let (kind, id) = m
-                .remote_id
-                .as_deref()
-                .and_then(split_remote_id)
-                .ok_or("update without a Todoist id")?;
+            let (kind, id) = addressed(m, "update")?;
             update(api, tree, kind, id, object, &m.fields)?;
             Ok(m.remote_id.clone())
         }
         other => Err(format!("unknown op {other:?}")),
     }
+}
+
+/// The Todoist object a mutation names, refused by reason when the stored
+/// `remote_id` is absent or is not one Todoist could have issued.
+fn addressed<'m>(m: &'m Mutation, op: &str) -> Result<(char, &'m str), String> {
+    let text = m
+        .remote_id
+        .as_deref()
+        .ok_or_else(|| format!("{op} without a Todoist id"))?;
+    split_remote_id(text).map_err(|e| format!("{op} with an unusable Todoist id: {e}"))
 }
 
 fn plural(kind: char) -> &'static str {
