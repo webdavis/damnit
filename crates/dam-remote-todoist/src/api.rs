@@ -23,10 +23,41 @@ impl fmt::Display for ApiError {
 
 impl std::error::Error for ApiError {}
 
+/// The bearer token. `Debug` redacts it and there is no `Display`, so `expose`
+/// is the only way to the bytes.
+#[derive(Clone, PartialEq, Eq)]
+pub struct ApiToken(String);
+
+impl ApiToken {
+    /// The value itself. Call this only where it is sent as the Authorization header.
+    pub fn expose(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Debug for ApiToken {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("ApiToken(<redacted>)")
+    }
+}
+
+impl From<String> for ApiToken {
+    fn from(value: String) -> ApiToken {
+        ApiToken(value)
+    }
+}
+
+impl From<&str> for ApiToken {
+    fn from(value: &str) -> ApiToken {
+        ApiToken(value.to_string())
+    }
+}
+
+#[derive(Debug)]
 pub struct TodoistApi {
     agent: ureq::Agent,
     base: String,
-    token: String,
+    token: ApiToken,
 }
 
 #[derive(Debug, Deserialize)]
@@ -115,7 +146,7 @@ impl TodoistApi {
         TodoistApi {
             agent: config.into(),
             base: base.trim_end_matches('/').to_string(),
-            token: token.to_string(),
+            token: token.into(),
         }
     }
 
@@ -146,7 +177,7 @@ impl TodoistApi {
         let response = self
             .agent
             .post(format!("{}{path}", self.base))
-            .header("Authorization", &format!("Bearer {}", self.token))
+            .header("Authorization", &format!("Bearer {}", self.token.expose()))
             .send_json(body)
             .map_err(|e| ApiError::Transport(e.to_string()))?;
         read_json(response)
@@ -156,7 +187,7 @@ impl TodoistApi {
         let response = self
             .agent
             .delete(format!("{}{path}", self.base))
-            .header("Authorization", &format!("Bearer {}", self.token))
+            .header("Authorization", &format!("Bearer {}", self.token.expose()))
             .call()
             .map_err(|e| ApiError::Transport(e.to_string()))?;
         read_json(response).map(|_| ())
@@ -181,6 +212,12 @@ fn read_json(response: ureq::http::Response<ureq::Body>) -> Result<serde_json::V
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_api_never_debug_prints_its_token() {
+        let api = TodoistApi::new("http://example.test", "SUPERSECRETTOKEN");
+        assert!(!format!("{api:?}").contains("SUPERSECRETTOKEN"));
+    }
 
     #[test]
     fn new_trims_a_trailing_slash_from_the_base() {
