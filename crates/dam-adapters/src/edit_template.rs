@@ -75,6 +75,14 @@ pub fn parse_template(
         When::parse_human(s, today, tz).map_err(|e| format!("line {}: {key}: {e}", at(key)))
     };
 
+    let known: &[&str] = match current {
+        Object::Task(_) => &TASK_KEYS,
+        Object::Event(_) => &EVENT_KEYS,
+    };
+    if let Some(key) = table.keys().find(|key| !known.contains(&key.as_str())) {
+        return Err(format!("line {}: unknown field {key}", at(key)));
+    }
+
     let mut fields = EditFields::default();
     let b = current.base();
     if let Some(s) = string("subject")?
@@ -133,6 +141,30 @@ pub fn parse_template(
     }
     Ok(fields)
 }
+
+/// Every key a saved template may carry, per kind. A key outside the set is
+/// refused, because the operator who wrote it meant it to do something.
+const TASK_KEYS: [&str; 9] = [
+    "subject",
+    "body",
+    "labels",
+    "depends",
+    "recurrence",
+    "priority",
+    "due",
+    "deadline",
+    "attach",
+];
+const EVENT_KEYS: [&str; 8] = [
+    "subject",
+    "body",
+    "labels",
+    "depends",
+    "recurrence",
+    "start",
+    "end",
+    "location",
+];
 
 type StringField<'a> = dyn Fn(&str) -> Result<Option<String>, String> + 'a;
 type WhenField<'a> = dyn Fn(&str, &str) -> Result<When, String> + 'a;
@@ -287,6 +319,42 @@ mod tests {
         let err = super::parse_template(&text, &task(), date(2026, 9, 18), &tz()).unwrap_err();
         assert!(err.starts_with("line 5:"), "{err}");
         assert!(err.contains("priority"));
+    }
+
+    fn meeting() -> Object {
+        let mut e = dam_domain::Event::new(
+            oid(2),
+            "standup",
+            When::Day(date(2026, 9, 18)),
+            When::Day(date(2026, 9, 18)),
+        );
+        e.location = Some("room 2".into());
+        Object::Event(e)
+    }
+
+    #[test]
+    fn an_unchanged_event_template_parses_to_no_edits() {
+        let text = super::render_template(&meeting());
+        let fields = super::parse_template(&text, &meeting(), date(2026, 9, 18), &tz()).unwrap();
+        assert_eq!(fields, EditFields::default());
+    }
+
+    #[test]
+    fn a_misspelled_field_is_refused_rather_than_dropped() {
+        let text = super::render_template(&task()).replace("subject =", "subjectt =");
+        let err = super::parse_template(&text, &task(), date(2026, 9, 18), &tz()).unwrap_err();
+        assert!(err.contains("subjectt"), "{err}");
+        assert!(err.starts_with("line 3:"), "{err}");
+    }
+
+    #[test]
+    fn a_field_belonging_to_the_other_kind_is_refused_by_name() {
+        let text = format!(
+            "{}start = \"2026-09-19\"\n",
+            super::render_template(&task())
+        );
+        let err = super::parse_template(&text, &task(), date(2026, 9, 18), &tz()).unwrap_err();
+        assert!(err.contains("start"), "{err}");
     }
 
     #[test]
