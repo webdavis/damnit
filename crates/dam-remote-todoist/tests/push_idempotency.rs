@@ -6,7 +6,7 @@ mod loopback;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use dam_remote_todoist::api::TodoistApi;
+use dam_remote_todoist::api::{ApiError, TodoistApi};
 use dam_remote_todoist::push::push;
 use fixtures::{mutation, sync_body, task, todoist, with_fields};
 
@@ -122,8 +122,11 @@ fn a_failure_reading_the_tree_stops_the_push_before_any_mutation() {
         None,
         Some(task(&"1".repeat(40), "Work/", "eggs", false)),
     )];
-    let why = push(&api, mutations).unwrap_err();
-    assert!(why.contains("500"), "{why}");
+    let err = push(&api, mutations).unwrap_err();
+    assert!(
+        matches!(err, ApiError::Http { status: 500, .. }),
+        "an upstream status reaches the caller as itself: {err:?}"
+    );
     assert_eq!(
         server.seen.lock().unwrap().len(),
         1,

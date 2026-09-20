@@ -15,13 +15,15 @@ enum Failure {
     Mutation(String),
     /// The push stops here. Attempting the rest would report failures Todoist
     /// never saw, and dam would mark the batch pushed on the strength of them.
-    Halt(String),
+    /// It carries the error itself, so the caller keeps the class and the
+    /// retry time rather than one sentence it cannot branch on.
+    Halt(ApiError),
 }
 
 impl From<ApiError> for Failure {
     fn from(e: ApiError) -> Failure {
         match e {
-            rate @ ApiError::RateLimited { .. } => Failure::Halt(rate.to_string()),
+            rate @ ApiError::RateLimited { .. } => Failure::Halt(rate),
             other => Failure::Mutation(other.to_string()),
         }
     }
@@ -33,8 +35,8 @@ impl From<String> for Failure {
     }
 }
 
-pub fn push(api: &TodoistApi, mutations: Vec<Mutation>) -> Result<PushResponse, String> {
-    let sync = api.sync_all().map_err(|e| e.to_string())?;
+pub fn push(api: &TodoistApi, mutations: Vec<Mutation>) -> Result<PushResponse, ApiError> {
+    let sync = api.sync_all()?;
     let mut tree = Tree::from_sync(&sync);
     // Each object's own `path` names the container it lives directly under; collecting
     // those (not each object's own subject-appended location) is what lets a depth-1
@@ -59,7 +61,7 @@ pub fn push(api: &TodoistApi, mutations: Vec<Mutation>) -> Result<PushResponse, 
                 remote_id: m.remote_id.clone(),
                 why: Some(why),
             }),
-            Err(Failure::Halt(why)) => return Err(why),
+            Err(Failure::Halt(e)) => return Err(e),
         }
     }
     Ok(PushResponse { results })

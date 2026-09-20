@@ -3,7 +3,7 @@ mod support;
 mod fixtures;
 mod loopback;
 
-use dam_remote_todoist::api::TodoistApi;
+use dam_remote_todoist::api::{ApiError, TodoistApi};
 use dam_remote_todoist::push::push;
 use fixtures::{
     mutation, sync_body, sync_body_with_two_projects, task, task_with_dates_cleared, todoist,
@@ -213,7 +213,8 @@ fn a_rate_limit_stops_the_push_and_names_the_retry_time() {
         None,
         Some(task(&"1".repeat(40), "Work/", "eggs", false)),
     )];
-    let why = push(&api, mutations).unwrap_err();
-    assert!(why.contains("rate limiting"), "{why}");
-    assert!(why.contains("42s"), "{why}");
+    let err = push(&api, mutations).unwrap_err();
+    assert!(matches!(err, ApiError::RateLimited { .. }), "{err:?}");
+    assert_eq!(err.retry_after(), Some(std::time::Duration::from_secs(42)));
+    assert!(err.to_string().contains("42s"), "{err}");
 }

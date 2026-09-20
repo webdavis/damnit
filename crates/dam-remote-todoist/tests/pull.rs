@@ -4,7 +4,9 @@ mod loopback;
 
 use std::collections::HashMap;
 
-use dam_remote_todoist::api::TodoistApi;
+use std::time::Duration;
+
+use dam_remote_todoist::api::{ApiError, TodoistApi};
 use dam_remote_todoist::pull::pull;
 
 #[test]
@@ -43,4 +45,20 @@ fn pull_returns_every_live_object_and_names_the_removed_ones() {
     );
     assert!(response.sync.is_none());
     assert_eq!(server.seen.lock().unwrap()[0].path, "/sync");
+}
+
+/// The opening full sync is the first request a pull makes, so it is where a
+/// rate limit is most likely met. The refusal keeps its class and the retry
+/// time Todoist named, rather than reading like any other failed request.
+#[test]
+fn a_rate_limit_on_the_opening_sync_keeps_its_class_and_retry_time() {
+    let _guard = support::guard("a_rate_limit_on_the_opening_sync_keeps_its_class_and_retry_time");
+    let server = loopback::serve_with(|_| {
+        loopback::Reply::new(429, serde_json::json!({"error": "Rate limit exceeded"}))
+            .with_header("Retry-After", "42")
+    });
+    let err = pull(&TodoistApi::new(&server.base, "tok")).unwrap_err();
+    assert!(matches!(err, ApiError::RateLimited { .. }), "{err:?}");
+    assert_eq!(err.retry_after(), Some(Duration::from_secs(42)));
+    assert!(err.to_string().contains("42s"), "{err}");
 }

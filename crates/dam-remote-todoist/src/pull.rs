@@ -1,10 +1,10 @@
 use dam_protocol::PullResponse;
 
-use crate::api::TodoistApi;
+use crate::api::{ApiError, TodoistApi};
 use crate::map::{Tree, item_to_wire, project_to_wire, remote_id, section_to_wire};
 
-pub fn pull(api: &TodoistApi) -> Result<PullResponse, String> {
-    let sync = api.sync_all().map_err(|e| e.to_string())?;
+pub fn pull(api: &TodoistApi) -> Result<PullResponse, ApiError> {
+    let sync = api.sync_all()?;
     let tree = Tree::from_sync(&sync);
     let mut objects = Vec::new();
     let mut removed = Vec::new();

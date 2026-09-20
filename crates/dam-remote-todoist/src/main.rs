@@ -1,7 +1,7 @@
 use std::io::{self, BufRead, Write};
 
 use dam_protocol::{Request, Response, read_line, write_line};
-use dam_remote_todoist::api::TodoistApi;
+use dam_remote_todoist::api::{ApiError, TodoistApi};
 use dam_remote_todoist::{capabilities, pull, push};
 
 fn main() {
@@ -48,9 +48,14 @@ fn answer(request: Request) -> Response {
     }
 }
 
-fn with_api(f: impl FnOnce(&TodoistApi) -> Result<Response, String>) -> Response {
+/// The one place an `ApiError` becomes a sentence. Everything above it keeps
+/// the class, so a rate limit stays distinguishable from a 500 or a transport
+/// failure right up to the wire.
+fn with_api(f: impl FnOnce(&TodoistApi) -> Result<Response, ApiError>) -> Response {
     match TodoistApi::from_env() {
-        Ok(api) => f(&api).unwrap_or_else(|error| Response::Error { error }),
+        Ok(api) => f(&api).unwrap_or_else(|e| Response::Error {
+            error: e.to_string(),
+        }),
         Err(error) => Response::Error { error },
     }
 }
