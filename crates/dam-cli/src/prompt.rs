@@ -9,14 +9,14 @@ use crate::error::CliError;
 const TICK: Duration = Duration::from_millis(25);
 
 /// Asks the operator a question, for verbs like `done --force --interactive` and remote add.
-pub trait Prompt {
+pub(crate) trait Prompt {
     fn choose(&self, question: &str, options: &[&str]) -> Result<usize, CliError>;
     fn text(&self, question: &str) -> Result<String, CliError>;
 }
 
 /// Installed instead of `TerminalPrompt` for `--json`/`--toon`, so a verb
 /// that needs to ask a question fails instead of blocking on stdin.
-pub struct RefusingPrompt;
+pub(crate) struct RefusingPrompt;
 
 impl Prompt for RefusingPrompt {
     fn choose(&self, _question: &str, _options: &[&str]) -> Result<usize, CliError> {
@@ -33,7 +33,7 @@ fn refused() -> CliError {
 }
 
 #[derive(Default)]
-pub struct TerminalPrompt {
+pub(crate) struct TerminalPrompt {
     /// Filled by the first question asked, so a run that asks none leaves
     /// stdin to whatever else inherits the terminal.
     lines: OnceCell<Receiver<std::io::Result<String>>>,

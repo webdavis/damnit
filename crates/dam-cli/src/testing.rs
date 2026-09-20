@@ -15,7 +15,7 @@ use crate::context::{Context, RefusingEditor};
 use crate::error::CliError;
 use crate::prompt::{Prompt, RefusingPrompt};
 
-pub struct FixedClock(pub Date);
+pub(crate) struct FixedClock(pub(crate) Date);
 impl Clock for FixedClock {
     fn today(&self) -> Date {
         self.0
@@ -29,7 +29,7 @@ impl Clock for FixedClock {
     }
 }
 
-pub struct CountingRandom(pub u8);
+pub(crate) struct CountingRandom(pub(crate) u8);
 impl dam_application::Randomness for CountingRandom {
     fn fill(&mut self, buf: &mut [u8]) {
         self.0 = self.0.wrapping_add(1);
@@ -38,9 +38,9 @@ impl dam_application::Randomness for CountingRandom {
 }
 
 /// Answers every choice with the scripted index and every text with the scripted string.
-pub struct ScriptedPrompt {
-    pub choices: RefCell<Vec<usize>>,
-    pub texts: RefCell<Vec<String>>,
+pub(crate) struct ScriptedPrompt {
+    pub(crate) choices: RefCell<Vec<usize>>,
+    pub(crate) texts: RefCell<Vec<String>>,
 }
 impl Prompt for ScriptedPrompt {
     fn choose(&self, _: &str, _: &[&str]) -> Result<usize, CliError> {
@@ -52,14 +52,14 @@ impl Prompt for ScriptedPrompt {
 }
 
 /// Returns the scripted text as the editor's save.
-pub struct ScriptedEditor(pub String);
+pub(crate) struct ScriptedEditor(pub(crate) String);
 impl EditorSession for ScriptedEditor {
     fn edit(&self, _: &str) -> Result<String, EditorError> {
         Ok(self.0.clone())
     }
 }
 
-pub struct NoCredentials;
+pub(crate) struct NoCredentials;
 impl CredentialSource for NoCredentials {
     fn resolve(&self, spec: &CredentialSpec) -> Result<Secret, CredentialError> {
         Err(CredentialError::Missing(spec.name().to_string()))
@@ -68,8 +68,8 @@ impl CredentialSource for NoCredentials {
 
 /// A helper that accepts every task, pulls the scripted objects once, and reports every push as ok.
 #[derive(Debug)]
-pub struct EchoHelper {
-    pub pulled: PullOutcome,
+pub(crate) struct EchoHelper {
+    pub(crate) pulled: PullOutcome,
 }
 impl RemoteHelper for EchoHelper {
     fn capabilities(&mut self) -> Result<RemoteCapabilities, HelperError> {
@@ -108,8 +108,8 @@ impl RemoteHelper for EchoHelper {
 }
 
 #[derive(Debug)]
-pub struct EchoLauncher {
-    pub pulled: RefCell<Option<PullOutcome>>,
+pub(crate) struct EchoLauncher {
+    pub(crate) pulled: RefCell<Option<PullOutcome>>,
 }
 impl HelperLauncher for EchoLauncher {
     fn launch(
@@ -125,7 +125,7 @@ impl HelperLauncher for EchoLauncher {
 
 /// A launcher whose helper is never reachable, for the auto-pull failure path.
 #[derive(Debug)]
-pub struct FailingLauncher;
+pub(crate) struct FailingLauncher;
 impl HelperLauncher for FailingLauncher {
     fn launch(
         &self,
@@ -138,7 +138,7 @@ impl HelperLauncher for FailingLauncher {
     }
 }
 
-pub fn context() -> Context {
+pub(crate) fn context() -> Context {
     Context {
         store: Box::new(SqliteStore::in_memory().unwrap_or_else(|e| panic!("{e}"))),
         config: Config {
@@ -165,7 +165,7 @@ pub fn context() -> Context {
 
 /// A context wired the way `--json`/`--toon` wires one: any question refuses
 /// instead of blocking, matching what `Context::open` installs for those formats.
-pub fn machine_context() -> Context {
+pub(crate) fn machine_context() -> Context {
     Context {
         prompt: Box::new(RefusingPrompt),
         editor: Box::new(RefusingEditor),

@@ -14,7 +14,7 @@ use crate::prompt::{Prompt, RefusingPrompt, TerminalPrompt};
 
 /// Installed instead of `EnvEditor` for `--json`/`--toon`, so `edit -e` fails
 /// instead of opening `$EDITOR`.
-pub struct RefusingEditor;
+pub(crate) struct RefusingEditor;
 
 impl EditorSession for RefusingEditor {
     fn edit(&self, _text: &str) -> Result<String, EditorError> {
@@ -24,25 +24,25 @@ impl EditorSession for RefusingEditor {
     }
 }
 
-pub struct Context {
-    pub store: Box<dyn Store>,
-    pub config: Config,
+pub(crate) struct Context {
+    pub(crate) store: Box<dyn Store>,
+    pub(crate) config: Config,
     /// `remote add` rewrites the config file at this path.
-    pub config_path: PathBuf,
-    pub clock: Box<dyn Clock>,
-    pub random: Box<dyn Randomness>,
-    pub launcher: Box<dyn HelperLauncher>,
-    pub credentials: Box<dyn CredentialSource>,
-    pub editor: Box<dyn EditorSession>,
-    pub prompt: Box<dyn Prompt>,
-    pub tz: jiff::tz::TimeZone,
+    pub(crate) config_path: PathBuf,
+    pub(crate) clock: Box<dyn Clock>,
+    pub(crate) random: Box<dyn Randomness>,
+    pub(crate) launcher: Box<dyn HelperLauncher>,
+    pub(crate) credentials: Box<dyn CredentialSource>,
+    pub(crate) editor: Box<dyn EditorSession>,
+    pub(crate) prompt: Box<dyn Prompt>,
+    pub(crate) tz: jiff::tz::TimeZone,
 }
 
 impl Context {
     /// `format` picks the prompt and editor: `Human` gets the real terminal
     /// pair, `Json`/`Toon` get the refusing pair so a verb that needs to ask
     /// something fails cleanly instead of blocking or opening an editor.
-    pub fn open(
+    pub(crate) fn open(
         config_path: PathBuf,
         store_path: &Path,
         format: Format,

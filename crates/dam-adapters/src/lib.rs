@@ -1,13 +1,13 @@
-pub mod cancel;
-pub mod clock;
-pub mod credentials;
-pub mod edit_template;
-pub mod editor;
-pub mod helper_process;
-pub mod random;
-pub mod sqlite;
-pub mod toml_config;
-pub mod wire;
+mod cancel;
+mod clock;
+mod credentials;
+mod edit_template;
+mod editor;
+mod helper_process;
+mod random;
+mod sqlite;
+mod toml_config;
+mod wire;
 
 pub use cancel::{cancellation_requested, request_cancellation};
 pub use clock::SystemClock;

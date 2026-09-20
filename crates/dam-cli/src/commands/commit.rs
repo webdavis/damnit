@@ -7,7 +7,7 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 
-pub fn run_commit(ctx: &mut Context, args: CommitArgs) -> Result<Report, CliError> {
+pub(crate) fn run_commit(ctx: &mut Context, args: CommitArgs) -> Result<Report, CliError> {
     let record = commit(
         ctx.store.as_ref(),
         ctx.store.as_ref(),
@@ -21,7 +21,7 @@ pub fn run_commit(ctx: &mut Context, args: CommitArgs) -> Result<Report, CliErro
     })
 }
 
-pub fn run_log(ctx: &mut Context) -> Result<Report, CliError> {
+pub(crate) fn run_log(ctx: &mut Context) -> Result<Report, CliError> {
     let records = log(ctx.store.as_ref())?;
     Ok(Report {
         human: records
@@ -33,7 +33,7 @@ pub fn run_log(ctx: &mut Context) -> Result<Report, CliError> {
     })
 }
 
-pub fn commit_line(record: &CommitRecord) -> String {
+pub(crate) fn commit_line(record: &CommitRecord) -> String {
     format!(
         "{}  {}  {} change(s)  {}",
         record.id.short(),
@@ -43,7 +43,7 @@ pub fn commit_line(record: &CommitRecord) -> String {
     )
 }
 
-pub fn commit_json(record: &CommitRecord) -> serde_json::Value {
+pub(crate) fn commit_json(record: &CommitRecord) -> serde_json::Value {
     serde_json::json!({
         "id": record.id.to_string(),
         "at": record.at.to_string(),

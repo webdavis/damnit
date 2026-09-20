@@ -6,19 +6,19 @@ use dam_domain::Object;
 use crate::error::CliError;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Format {
+pub(crate) enum Format {
     Human,
     Json,
     Toon,
 }
 
 #[derive(Debug)]
-pub struct Report {
-    pub human: String,
-    pub data: serde_json::Value,
+pub(crate) struct Report {
+    pub(crate) human: String,
+    pub(crate) data: serde_json::Value,
 }
 
-pub fn render(format: Format, report: &Report) -> Result<String, CliError> {
+pub(crate) fn render(format: Format, report: &Report) -> Result<String, CliError> {
     match format {
         Format::Human => Ok(report.human.clone()),
         Format::Json => {
@@ -30,7 +30,7 @@ pub fn render(format: Format, report: &Report) -> Result<String, CliError> {
     }
 }
 
-pub fn print(format: Format, report: &Report) -> Result<(), CliError> {
+pub(crate) fn print(format: Format, report: &Report) -> Result<(), CliError> {
     let text = render(format, report)?;
     let mut out = std::io::stdout().lock();
     out.write_all(text.as_bytes())?;
@@ -40,11 +40,11 @@ pub fn print(format: Format, report: &Report) -> Result<(), CliError> {
     Ok(())
 }
 
-pub fn object_json(object: &Object) -> serde_json::Value {
+pub(crate) fn object_json(object: &Object) -> serde_json::Value {
     serde_json::to_value(to_wire(object, None)).unwrap_or(serde_json::Value::Null)
 }
 
-pub fn object_line(object: &Object) -> String {
+pub(crate) fn object_line(object: &Object) -> String {
     let b = object.base();
     let mut cols = vec![b.oid.short().to_string()];
     match object {
@@ -79,7 +79,7 @@ pub fn object_line(object: &Object) -> String {
     cols.join("  ")
 }
 
-pub fn objects_report(objects: &[Object]) -> Report {
+pub(crate) fn objects_report(objects: &[Object]) -> Report {
     Report {
         human: objects
             .iter()

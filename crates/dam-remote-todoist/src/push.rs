@@ -7,7 +7,7 @@ use dam_protocol::{Mutation, MutationResult, PushResponse, WireObject};
 use crate::api::{ApiError, Item, Project, Section, TodoistApi};
 use crate::map::{Tree, api_priority, remote_id};
 use plan::{missing_object, plan_for};
-pub use shape::{Shape, shape_for};
+use shape::Shape;
 
 /// Why one mutation did not happen.
 enum Failure {

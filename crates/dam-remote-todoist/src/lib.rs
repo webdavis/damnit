@@ -1,5 +1,5 @@
 pub mod api;
 pub mod capabilities;
-pub mod map;
+pub(crate) mod map;
 pub mod pull;
 pub mod push;

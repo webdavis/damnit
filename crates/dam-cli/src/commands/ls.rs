@@ -6,7 +6,7 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::{Report, objects_report};
 
-pub fn run_ls(ctx: &mut Context, args: LsArgs) -> Result<Report, CliError> {
+pub(crate) fn run_ls(ctx: &mut Context, args: LsArgs) -> Result<Report, CliError> {
     maybe_pull_stale(ctx)?;
     let objects = list(
         ctx.store.as_ref(),

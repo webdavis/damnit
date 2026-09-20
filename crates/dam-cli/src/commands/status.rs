@@ -8,7 +8,7 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::{Report, object_json};
 
-pub fn run_status(ctx: &mut Context) -> Result<Report, CliError> {
+pub(crate) fn run_status(ctx: &mut Context) -> Result<Report, CliError> {
     let remotes: Vec<_> = ctx.config.remotes.iter().map(|r| r.name.clone()).collect();
     let s = status(Repositories::of(ctx.store.as_ref()), &remotes)?;
     let mut human = Vec::new();
@@ -50,7 +50,7 @@ pub fn run_status(ctx: &mut Context) -> Result<Report, CliError> {
     })
 }
 
-pub fn run_diff(ctx: &mut Context, args: DiffArgs) -> Result<Report, CliError> {
+pub(crate) fn run_diff(ctx: &mut Context, args: DiffArgs) -> Result<Report, CliError> {
     let changes = if args.staged {
         diff_staged(ctx.store.as_ref())?
     } else {
@@ -105,7 +105,7 @@ fn section(out: &mut Vec<String>, title: &str, lines: impl Iterator<Item = Strin
     }));
 }
 
-pub fn change_line(change: &Change) -> String {
+pub(crate) fn change_line(change: &Change) -> String {
     let subject = change
         .after
         .as_ref()
@@ -129,7 +129,7 @@ pub fn change_line(change: &Change) -> String {
     }
 }
 
-pub fn change_json(change: &Change) -> serde_json::Value {
+pub(crate) fn change_json(change: &Change) -> serde_json::Value {
     serde_json::json!({
         "oid": change.oid.to_string(),
         "op": match change.op { Op::Create => "create", Op::Update => "update", Op::Delete => "delete" },

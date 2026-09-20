@@ -7,7 +7,7 @@ use crate::error::CliError;
 use crate::oids::resolve_oid;
 use crate::output::Report;
 
-pub fn run(ctx: &mut Context, args: RmArgs) -> Result<Report, CliError> {
+pub(crate) fn run(ctx: &mut Context, args: RmArgs) -> Result<Report, CliError> {
     let oid = resolve_oid(ctx.store.as_ref(), &args.oid)?;
     let plan = remove(ctx.store.as_ref(), &oid)?;
     let shorts = |v: &[Oid]| v.iter().map(Oid::short).collect::<Vec<_>>().join(", ");

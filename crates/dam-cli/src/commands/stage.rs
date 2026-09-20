@@ -8,7 +8,7 @@ use crate::error::CliError;
 use crate::oids::resolve_oid;
 use crate::output::Report;
 
-pub fn run_add(ctx: &mut Context, args: AddArgs) -> Result<Report, CliError> {
+pub(crate) fn run_add(ctx: &mut Context, args: AddArgs) -> Result<Report, CliError> {
     let changes = if args.all {
         add_all(ctx.store.as_ref(), ctx.store.as_ref(), ctx.store.as_ref())?
     } else {
@@ -29,7 +29,7 @@ pub fn run_add(ctx: &mut Context, args: AddArgs) -> Result<Report, CliError> {
     })
 }
 
-pub fn run_reset(ctx: &mut Context, args: ResetArgs) -> Result<Report, CliError> {
+pub(crate) fn run_reset(ctx: &mut Context, args: ResetArgs) -> Result<Report, CliError> {
     let oids = args
         .oids
         .iter()

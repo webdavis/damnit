@@ -9,7 +9,7 @@ use crate::error::CliError;
 use crate::oids::resolve_oid;
 use crate::output::{Report, object_json, object_line};
 
-pub fn run_show(ctx: &mut Context, args: ShowArgs) -> Result<Report, CliError> {
+pub(crate) fn run_show(ctx: &mut Context, args: ShowArgs) -> Result<Report, CliError> {
     maybe_pull_stale(ctx)?;
     if let Ok(oid) = resolve_oid(ctx.store.as_ref(), &args.id)
         && let Some(object) = ctx.store.get(&oid)?

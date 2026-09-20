@@ -8,23 +8,23 @@ use clap::{Args, Parser, Subcommand};
     version,
     about = "tasks and events, staged and committed like git"
 )]
-pub struct Cli {
+pub(crate) struct Cli {
     /// Print the result as JSON.
     #[arg(long, global = true, conflicts_with = "toon")]
-    pub json: bool,
+    pub(crate) json: bool,
     /// Print the result as TOON, a compact form for language models.
     #[arg(long, global = true)]
-    pub toon: bool,
+    pub(crate) toon: bool,
     #[arg(long, global = true, env = "DAM_CONFIG", value_name = "FILE")]
-    pub config: Option<PathBuf>,
+    pub(crate) config: Option<PathBuf>,
     #[arg(long, global = true, env = "DAM_STORE", value_name = "FILE")]
-    pub store: Option<PathBuf>,
+    pub(crate) store: Option<PathBuf>,
     #[command(subcommand)]
-    pub command: Command,
+    pub(crate) command: Command,
 }
 
 #[derive(Subcommand, Debug)]
-pub enum Command {
+pub(crate) enum Command {
     /// Create a task, or an event with --event.
     New(NewArgs),
     /// Mark a task done.
@@ -62,139 +62,139 @@ pub enum Command {
 }
 
 #[derive(Args, Debug)]
-pub struct NewArgs {
-    pub subject: String,
+pub(crate) struct NewArgs {
+    pub(crate) subject: String,
     #[arg(long)]
-    pub event: bool,
+    pub(crate) event: bool,
     #[arg(long, default_value = "")]
-    pub path: String,
+    pub(crate) path: String,
     #[arg(long)]
-    pub due: Option<String>,
+    pub(crate) due: Option<String>,
     #[arg(short = 'p', long)]
-    pub priority: Option<u8>,
+    pub(crate) priority: Option<u8>,
     #[arg(long)]
-    pub deadline: Option<String>,
+    pub(crate) deadline: Option<String>,
     #[arg(long = "label")]
-    pub labels: Vec<String>,
+    pub(crate) labels: Vec<String>,
     #[arg(long, default_value = "")]
-    pub body: String,
+    pub(crate) body: String,
     #[arg(long, requires = "event")]
-    pub start: Option<String>,
+    pub(crate) start: Option<String>,
     #[arg(long, requires = "event")]
-    pub end: Option<String>,
+    pub(crate) end: Option<String>,
 }
 
 #[derive(Args, Debug)]
-pub struct DoneArgs {
-    pub oid: String,
+pub(crate) struct DoneArgs {
+    pub(crate) oid: String,
     #[arg(long)]
-    pub force: bool,
+    pub(crate) force: bool,
     #[arg(long, requires = "force")]
-    pub interactive: bool,
+    pub(crate) interactive: bool,
 }
 
 #[derive(Args, Debug)]
-pub struct EditArgs {
-    pub oid: String,
+pub(crate) struct EditArgs {
+    pub(crate) oid: String,
     /// Open the object in your editor instead of passing flags.
     #[arg(short = 'e', long)]
-    pub editor: bool,
+    pub(crate) editor: bool,
     #[arg(long)]
-    pub subject: Option<String>,
+    pub(crate) subject: Option<String>,
     #[arg(long)]
-    pub body: Option<String>,
+    pub(crate) body: Option<String>,
     #[arg(short = 'p', long)]
-    pub priority: Option<u8>,
+    pub(crate) priority: Option<u8>,
     #[arg(long, conflicts_with = "no_due")]
-    pub due: Option<String>,
+    pub(crate) due: Option<String>,
     #[arg(long)]
-    pub no_due: bool,
+    pub(crate) no_due: bool,
     #[arg(long, conflicts_with = "no_deadline")]
-    pub deadline: Option<String>,
+    pub(crate) deadline: Option<String>,
     #[arg(long)]
-    pub no_deadline: bool,
+    pub(crate) no_deadline: bool,
     #[arg(long = "label")]
-    pub labels: Vec<String>,
+    pub(crate) labels: Vec<String>,
     #[arg(long = "unlabel")]
-    pub unlabels: Vec<String>,
+    pub(crate) unlabels: Vec<String>,
     #[arg(long = "depends")]
-    pub depends: Vec<String>,
+    pub(crate) depends: Vec<String>,
     #[arg(long = "undepends")]
-    pub undepends: Vec<String>,
+    pub(crate) undepends: Vec<String>,
     #[arg(long, conflicts_with = "no_recurrence")]
-    pub recurrence: Option<String>,
+    pub(crate) recurrence: Option<String>,
     #[arg(long)]
-    pub no_recurrence: bool,
+    pub(crate) no_recurrence: bool,
     #[arg(long, conflicts_with = "detach")]
-    pub attach: Option<String>,
+    pub(crate) attach: Option<String>,
     #[arg(long)]
-    pub detach: bool,
+    pub(crate) detach: bool,
     #[arg(long)]
-    pub start: Option<String>,
+    pub(crate) start: Option<String>,
     #[arg(long)]
-    pub end: Option<String>,
+    pub(crate) end: Option<String>,
     #[arg(long, conflicts_with = "no_location")]
-    pub location: Option<String>,
+    pub(crate) location: Option<String>,
     #[arg(long)]
-    pub no_location: bool,
+    pub(crate) no_location: bool,
 }
 
 #[derive(Args, Debug)]
-pub struct MvArgs {
-    pub oid: String,
-    pub path: String,
+pub(crate) struct MvArgs {
+    pub(crate) oid: String,
+    pub(crate) path: String,
 }
 
 #[derive(Args, Debug)]
-pub struct RmArgs {
-    pub oid: String,
+pub(crate) struct RmArgs {
+    pub(crate) oid: String,
 }
 
 #[derive(Args, Debug)]
 #[group(required = true)]
-pub struct AddArgs {
+pub(crate) struct AddArgs {
     #[arg(conflicts_with = "all")]
-    pub oids: Vec<String>,
+    pub(crate) oids: Vec<String>,
     #[arg(short = 'A', long)]
-    pub all: bool,
+    pub(crate) all: bool,
 }
 
 #[derive(Args, Debug)]
-pub struct ResetArgs {
-    pub oids: Vec<String>,
+pub(crate) struct ResetArgs {
+    pub(crate) oids: Vec<String>,
 }
 
 #[derive(Args, Debug)]
-pub struct CommitArgs {
+pub(crate) struct CommitArgs {
     #[arg(short = 'm', long)]
-    pub message: String,
+    pub(crate) message: String,
 }
 
 #[derive(Args, Debug)]
-pub struct ShowArgs {
+pub(crate) struct ShowArgs {
     /// An object oid or a commit id, full or prefixed.
-    pub id: String,
+    pub(crate) id: String,
 }
 
 #[derive(Args, Debug)]
-pub struct DiffArgs {
+pub(crate) struct DiffArgs {
     #[arg(long)]
-    pub staged: bool,
+    pub(crate) staged: bool,
 }
 
 #[derive(Args, Debug)]
-pub struct LsArgs {
-    pub query: Option<String>,
+pub(crate) struct LsArgs {
+    pub(crate) query: Option<String>,
 }
 
 #[derive(Args, Debug)]
-pub struct RemoteArgs {
+pub(crate) struct RemoteArgs {
     #[command(subcommand)]
-    pub command: RemoteCommand,
+    pub(crate) command: RemoteCommand,
 }
 
 #[derive(Subcommand, Debug)]
-pub enum RemoteCommand {
+pub(crate) enum RemoteCommand {
     /// Add a remote to the config file.
     Add { name: String, url: String },
     /// List configured remotes.
@@ -202,22 +202,22 @@ pub enum RemoteCommand {
 }
 
 #[derive(Args, Debug)]
-pub struct PushArgs {
-    pub remote: Option<String>,
+pub(crate) struct PushArgs {
+    pub(crate) remote: Option<String>,
 }
 
 #[derive(Args, Debug)]
-pub struct PullArgs {
-    pub remote: Option<String>,
+pub(crate) struct PullArgs {
+    pub(crate) remote: Option<String>,
 }
 
 #[derive(Args, Debug)]
-pub struct ResolveArgs {
-    pub oid: String,
+pub(crate) struct ResolveArgs {
+    pub(crate) oid: String,
     #[arg(long, conflicts_with = "theirs", required_unless_present = "theirs")]
-    pub ours: bool,
+    pub(crate) ours: bool,
     #[arg(long)]
-    pub theirs: bool,
+    pub(crate) theirs: bool,
 }
 
 #[cfg(test)]

@@ -9,7 +9,7 @@ use crate::error::CliError;
 use crate::oids::resolve_oid;
 use crate::output::{Report, object_json, object_line};
 
-pub fn run(ctx: &mut Context, args: EditArgs) -> Result<Report, CliError> {
+pub(crate) fn run(ctx: &mut Context, args: EditArgs) -> Result<Report, CliError> {
     let oid = resolve_oid(ctx.store.as_ref(), &args.oid)?;
     let fields = if args.editor {
         through_editor(ctx, &oid)?

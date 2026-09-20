@@ -9,7 +9,7 @@ use crate::error::CliError;
 use crate::oids::resolve_oid;
 use crate::output::Report;
 
-pub fn run(ctx: &mut Context, args: DoneArgs) -> Result<Report, CliError> {
+pub(crate) fn run(ctx: &mut Context, args: DoneArgs) -> Result<Report, CliError> {
     let oid = resolve_oid(ctx.store.as_ref(), &args.oid)?;
     let plan = plan_complete(ctx.store.as_ref(), &oid)?;
     let interactive = args.force && (args.interactive || ctx.config.done_interactive);

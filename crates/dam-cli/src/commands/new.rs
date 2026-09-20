@@ -9,7 +9,7 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::{Report, object_json};
 
-pub fn run(ctx: &mut Context, args: NewArgs) -> Result<Report, CliError> {
+pub(crate) fn run(ctx: &mut Context, args: NewArgs) -> Result<Report, CliError> {
     let path = Path::parse(&args.path).map_err(|e| CliError::Usage(format!("--path: {e:?}")))?;
     let labels: BTreeSet<String> = args.labels.into_iter().collect();
     let oid = if args.event {

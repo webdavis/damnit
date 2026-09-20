@@ -5,7 +5,7 @@ use dam_application::{StoreError, UseCaseError};
 use dam_domain::Oid;
 
 #[derive(Debug)]
-pub enum CliError {
+pub(crate) enum CliError {
     UseCase(UseCaseError),
     Config(ConfigError),
     Open(OpenError),
@@ -21,7 +21,7 @@ pub enum CliError {
 }
 
 impl CliError {
-    pub fn exit_code(&self) -> i32 {
+    pub(crate) fn exit_code(&self) -> i32 {
         match self {
             CliError::UseCase(UseCaseError::Refused(_)) => 2,
             CliError::Cancelled => 3,

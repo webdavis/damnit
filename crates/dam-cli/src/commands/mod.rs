@@ -17,7 +17,7 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 
-pub fn dispatch(ctx: &mut Context, command: Command) -> Result<Report, CliError> {
+pub(crate) fn dispatch(ctx: &mut Context, command: Command) -> Result<Report, CliError> {
     match command {
         Command::New(a) => new::run(ctx, a),
         Command::Done(a) => done::run(ctx, a),

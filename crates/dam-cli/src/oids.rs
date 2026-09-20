@@ -7,7 +7,7 @@ const MIN_PREFIX: usize = 4;
 
 /// Resolves the oid argument every verb that takes one accepts: a full oid, or a
 /// hex prefix at least `MIN_PREFIX` characters long that matches exactly one object.
-pub fn resolve_oid(objects: &dyn ObjectRepository, text: &str) -> Result<Oid, CliError> {
+pub(crate) fn resolve_oid(objects: &dyn ObjectRepository, text: &str) -> Result<Oid, CliError> {
     if let Ok(oid) = Oid::parse(text) {
         return Ok(oid);
     }

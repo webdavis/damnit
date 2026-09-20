@@ -6,7 +6,7 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 
-pub fn run_remote(ctx: &mut Context, args: RemoteArgs) -> Result<Report, CliError> {
+pub(crate) fn run_remote(ctx: &mut Context, args: RemoteArgs) -> Result<Report, CliError> {
     match args.command {
         RemoteCommand::Add { name, url } => {
             append_remote(&ctx.config_path, &name, &url)?;
@@ -53,7 +53,7 @@ fn remote_json(r: &RemoteConfig) -> serde_json::Value {
 /// Pulls each remote whose `stale` is set and whose last pull is older than
 /// it. A failure to reach a remote is a notice, not an error, so a read
 /// never fails because the network did.
-pub fn maybe_pull_stale(ctx: &mut Context) -> Result<(), CliError> {
+pub(crate) fn maybe_pull_stale(ctx: &mut Context) -> Result<(), CliError> {
     let now = ctx.clock.now();
     let due: Vec<String> = ctx
         .config
