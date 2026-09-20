@@ -134,3 +134,20 @@ fn a_missing_file_loads_as_the_default() {
     let c = load_config(&dir.path().join("absent.toml")).unwrap();
     assert!(c.remotes.is_empty());
 }
+
+#[test]
+fn a_syntax_error_names_its_position_and_never_echoes_the_file() {
+    const TOKEN: &str = "SUPERSECRETTOKEN";
+    let on_the_token_line =
+        format!("[remote.todoist]\nurl = \"todoist::\"\napi_token = \"{TOKEN}\n");
+    let two_lines_away =
+        format!("[remote.todoist]\napi_token = \"{TOKEN}\"\nurl = \"todoist::\"\nstale = 15m\n");
+    for text in [on_the_token_line, two_lines_away] {
+        let rendered = parse_config(&text).unwrap_err().to_string();
+        assert!(!rendered.contains(TOKEN), "{rendered}");
+        assert!(
+            rendered.contains("line 3") || rendered.contains("line 4"),
+            "{rendered}"
+        );
+    }
+}

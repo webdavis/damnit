@@ -60,7 +60,7 @@ pub fn load_config(path: &FsPath) -> Result<Config, ConfigError> {
 pub fn parse_config(text: &str) -> Result<Config, ConfigError> {
     let root: Table = text
         .parse()
-        .map_err(|e: toml::de::Error| ConfigError::Syntax(e.to_string()))?;
+        .map_err(|e: toml::de::Error| syntax_error(text, &e))?;
     let done_interactive = root
         .get("done")
         .and_then(|d| d.get("interactive"))
@@ -94,6 +94,19 @@ pub fn parse_config(text: &str) -> Result<Config, ConfigError> {
         categories,
         filters,
     })
+}
+
+/// A syntax error as its position plus the parser's own sentence. The snippet
+/// toml renders is dropped: it echoes the offending line, where a literal
+/// credential can sit.
+fn syntax_error(text: &str, e: &toml::de::Error) -> ConfigError {
+    let Some(span) = e.span() else {
+        return ConfigError::Syntax(e.message().to_string());
+    };
+    let before = &text[..span.start.min(text.len())];
+    let line = before.matches('\n').count() + 1;
+    let column = before.rsplit('\n').next().unwrap_or("").chars().count() + 1;
+    ConfigError::Syntax(format!("line {line}, column {column}: {}", e.message()))
 }
 
 fn named_tables<'a>(root: &'a Table, key: &str) -> Result<Vec<(&'a str, &'a Table)>, ConfigError> {
