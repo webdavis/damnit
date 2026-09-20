@@ -55,6 +55,11 @@ impl Sandbox {
             .unwrap()
     }
 
+    /// The whole outcome of one run, for a case that asserts an exit code.
+    fn output(&self, args: &[&str]) -> std::process::Output {
+        self.spawn(args).wait_with_output().unwrap()
+    }
+
     fn dam(&self, args: &[&str]) -> (bool, String, String) {
         let out = self.spawn(args).wait_with_output().unwrap();
         (
@@ -157,12 +162,7 @@ fn a_refusal_exits_two_and_names_the_rule() {
     let (_, out, _) = sb.dam(&["new", "parent"]);
     let parent = out.split_whitespace().next().unwrap().to_string();
     assert!(sb.dam(&["new", "child", "--path", "parent/"]).0);
-    let output = Command::new(env!("CARGO_BIN_EXE_dam"))
-        .args(["done", &parent[..7]])
-        .env("DAM_CONFIG", sb.dir.path().join("config.toml"))
-        .env("DAM_STORE", sb.dir.path().join("dam.db"))
-        .output()
-        .unwrap();
+    let output = sb.output(&["done", &parent[..7]]);
     assert_eq!(output.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&output.stderr).contains("child"));
 }
