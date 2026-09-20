@@ -157,6 +157,43 @@ fn new_add_commit_push_pull_and_ls_work_across_processes() {
 }
 
 #[test]
+fn a_machine_format_refuses_to_open_an_editor_rather_than_running_one() {
+    let sb = Sandbox::new();
+    let (_, out, _) = sb.dam(&["new", "buy oat milk"]);
+    let oid = out.split_whitespace().next().unwrap().to_string();
+
+    // An editor that would rewrite the template if dam ever ran it.
+    let editor = sb.dir.path().join("bin/rewrite-template");
+    std::fs::write(
+        &editor,
+        "#!/bin/sh\nprintf 'subject = \"rewritten by the editor\"\\n' > \"$1\"\n",
+    )
+    .unwrap();
+    std::fs::set_permissions(&editor, std::fs::Permissions::from_mode(0o755)).unwrap();
+
+    let refused = Command::new(env!("CARGO_BIN_EXE_dam"))
+        .args(["edit", "-e", &oid[..7], "--json"])
+        .env("PATH", sb.dir.path().join("bin"))
+        .env("HOME", sb.dir.path())
+        .env("EDITOR", &editor)
+        .env("VISUAL", &editor)
+        .env("DAM_CONFIG", sb.dir.path().join("config.toml"))
+        .env("DAM_STORE", sb.dir.path().join("dam.db"))
+        .output()
+        .unwrap();
+    assert!(!refused.status.success(), "the editor ran under --json");
+
+    let (ok, out, _) = sb.dam(&["show", &oid[..7], "--json"]);
+    assert!(ok);
+    let json: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(
+        json["subject"].as_str(),
+        Some("buy oat milk"),
+        "the editor reached the store under --json"
+    );
+}
+
+#[test]
 fn each_exit_code_means_one_thing() {
     let sb = Sandbox::new();
     assert_eq!(sb.output(&["ls"]).status.code(), Some(0), "success");
