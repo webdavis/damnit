@@ -424,6 +424,10 @@ Reads are local SQLite queries. The targets, measured on a store of ten thousand
 - `dam status`: under 30 ms
 - `dam pull` against Todoist with a sync token: bounded by the network, one request
 
+The size ceiling is 16 MiB, one protocol line. A helper reads at most that much of any one upstream
+answer and refuses a larger one by name, because an account whose full sync exceeds a line cannot be
+delivered to `dam` at all.
+
 The clients spawn `dam ... --json` per render and read the result. No daemon and no socket in
 version one; the process start cost is measured before that is reconsidered.
 
