@@ -207,6 +207,7 @@ your text intact. Nothing reaches the working layer until it parses.
 dam add <oid>...            stage
 dam add -A                  stage everything
 dam reset [<oid>...]        unstage one or all
+dam restore <oid>...        back to the last commit, working and stage together
 dam status                  working versus stage versus last commit, and remote notices
 dam diff [--staged]         working versus stage, or stage versus last commit
 dam commit -m "triage"      record the stage as a local commit
@@ -223,6 +224,14 @@ dam push [<remote>]         send unpushed commits
 dam pull [<remote>]         fetch and merge
 dam resolve <oid> --ours | --theirs
 ```
+
+`dam restore <oid>...` sets each named object's working copy back to its last commit and drops
+whatever the stage held for it, so afterwards the object equals the commit and nothing about it is
+staged. The name is git's own since 2.23, and `dam reset` already means unstage here too. An object
+with no commit behind it is refused, naming it, because there is nothing to go back to; `dam rm`
+removes such an object instead. An object that already matches its commit is a no-op that says so.
+Every named oid is read before any is written, so one refusal leaves the others as they were. Under
+`--json` the document lists the restored oids and the unchanged ones.
 
 `push` with no remote sends to every remote. Each helper declares in its capabilities which kinds
 and fields it accepts, and `dam` sends each object to every remote that accepts it. A remote may be

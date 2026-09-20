@@ -15,6 +15,7 @@ pub enum Refusal {
     NoSuchRemote(String),
     NotATask(Oid),
     NotCompleted(Oid),
+    NotCommitted(Oid),
     DirtyOnPull { oid: Oid },
     UnresolvedConflicts(usize),
     MissingCredential { remote: String, name: String },
@@ -90,6 +91,11 @@ impl fmt::Display for Refusal {
             Refusal::NotCompleted(o) => write!(
                 f,
                 "{} is not completed, so there is nothing to reopen",
+                o.short()
+            ),
+            Refusal::NotCommitted(o) => write!(
+                f,
+                "{} has no commit behind it; dam rm removes it instead",
                 o.short()
             ),
             Refusal::DirtyOnPull { oid } => write!(

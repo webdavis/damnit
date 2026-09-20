@@ -39,6 +39,8 @@ pub(crate) enum Command {
     Add(AddArgs),
     /// Unstage changes.
     Reset(ResetArgs),
+    /// Set objects back to their last committed state, staged or not.
+    Restore(RestoreArgs),
     /// Record the stage as a commit.
     Commit(CommitArgs),
     /// List commits, newest first.
@@ -168,6 +170,12 @@ pub(crate) struct ResetArgs {
 }
 
 #[derive(Args, Debug)]
+pub(crate) struct RestoreArgs {
+    #[arg(required = true)]
+    pub(crate) oids: Vec<String>,
+}
+
+#[derive(Args, Debug)]
 pub(crate) struct CommitArgs {
     #[arg(short = 'm', long)]
     pub(crate) message: String,
@@ -268,6 +276,12 @@ mod tests {
             Command::Edit(a) => assert!(a.undone),
             _ => panic!("wrong command"),
         }
+    }
+
+    #[test]
+    fn restore_needs_at_least_one_oid() {
+        assert!(Cli::try_parse_from(["dam", "restore", "abcd"]).is_ok());
+        assert!(Cli::try_parse_from(["dam", "restore"]).is_err());
     }
 
     #[test]

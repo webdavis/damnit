@@ -6,6 +6,7 @@ mod mv;
 mod new;
 mod parsing;
 mod remote;
+mod restore;
 mod rm;
 mod show;
 mod stage;
@@ -26,6 +27,7 @@ pub(crate) fn dispatch(ctx: &mut Context, command: Command) -> Result<Report, Cl
         Command::Rm(a) => rm::run(ctx, a),
         Command::Add(a) => stage::run_add(ctx, a),
         Command::Reset(a) => stage::run_reset(ctx, a),
+        Command::Restore(a) => restore::run(ctx, a),
         Command::Commit(a) => commit::run_commit(ctx, a),
         Command::Log => commit::run_log(ctx),
         Command::Show(a) => show::run_show(ctx, a),
