@@ -17,19 +17,21 @@ pub(crate) fn run_commit(ctx: &mut Context, args: CommitArgs) -> Result<Report, 
     )?;
     Ok(Report {
         human: commit_line(&record),
-        data: commit_json(&record),
+        data: commit_json(&record)?,
     })
 }
 
 pub(crate) fn run_log(ctx: &mut Context) -> Result<Report, CliError> {
     let records = log(ctx.store.as_ref())?;
+    let commits: Vec<serde_json::Value> =
+        records.iter().map(commit_json).collect::<Result<_, _>>()?;
     Ok(Report {
         human: records
             .iter()
             .map(commit_line)
             .collect::<Vec<_>>()
             .join("\n"),
-        data: serde_json::json!({ "commits": records.iter().map(commit_json).collect::<Vec<_>>() }),
+        data: serde_json::json!({ "commits": commits }),
     })
 }
 
@@ -43,13 +45,18 @@ pub(crate) fn commit_line(record: &CommitRecord) -> String {
     )
 }
 
-pub(crate) fn commit_json(record: &CommitRecord) -> serde_json::Value {
-    serde_json::json!({
+pub(crate) fn commit_json(record: &CommitRecord) -> Result<serde_json::Value, CliError> {
+    let changes: Vec<serde_json::Value> = record
+        .changes
+        .iter()
+        .map(change_json)
+        .collect::<Result<_, _>>()?;
+    Ok(serde_json::json!({
         "id": record.id.to_string(),
         "at": record.at.to_string(),
         "message": record.message,
-        "changes": record.changes.iter().map(change_json).collect::<Vec<_>>(),
-    })
+        "changes": changes,
+    }))
 }
 
 #[cfg(test)]

@@ -32,7 +32,7 @@ pub(crate) fn run_show(ctx: &mut Context, args: ShowArgs) -> Result<Report, CliE
         }
         return Ok(Report {
             human: human.join("\n"),
-            data: object_json(&object),
+            data: object_json(&object)?,
         });
     }
     let matches: Vec<_> = log(ctx.store.as_ref())?
@@ -50,7 +50,7 @@ pub(crate) fn run_show(ctx: &mut Context, args: ShowArgs) -> Result<Report, CliE
             );
             Ok(Report {
                 human: human.join("\n"),
-                data: commit_json(record),
+                data: commit_json(record)?,
             })
         }
         [] => Err(UseCaseError::Refused(Refusal::NoSuchObject(args.id)).into()),

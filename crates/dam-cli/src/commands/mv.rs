@@ -18,7 +18,7 @@ pub(crate) fn run(ctx: &mut Context, args: MvArgs) -> Result<Report, CliError> {
         .ok_or_else(|| CliError::Io("the moved object did not persist".into()))?;
     Ok(Report {
         human: object_line(&object),
-        data: object_json(&object),
+        data: object_json(&object)?,
     })
 }
 

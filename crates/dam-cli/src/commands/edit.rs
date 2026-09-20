@@ -19,7 +19,7 @@ pub(crate) fn run(ctx: &mut Context, args: EditArgs) -> Result<Report, CliError>
     let object = edit(ctx.store.as_ref(), &ctx.config.categories, &oid, fields)?;
     Ok(Report {
         human: object_line(&object),
-        data: object_json(&object),
+        data: object_json(&object)?,
     })
 }
 

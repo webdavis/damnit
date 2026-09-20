@@ -19,13 +19,15 @@ pub(crate) fn run_add(ctx: &mut Context, args: AddArgs) -> Result<Report, CliErr
             .collect::<Result<Vec<Oid>, _>>()?;
         add(ctx.store.as_ref(), ctx.store.as_ref(), &oids)?
     };
+    let staged: Vec<serde_json::Value> =
+        changes.iter().map(change_json).collect::<Result<_, _>>()?;
     Ok(Report {
         human: changes
             .iter()
             .map(change_line)
             .collect::<Vec<_>>()
             .join("\n"),
-        data: serde_json::json!({ "staged": changes.iter().map(change_json).collect::<Vec<_>>() }),
+        data: serde_json::json!({ "staged": staged }),
     })
 }
 

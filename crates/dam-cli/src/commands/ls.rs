@@ -14,7 +14,7 @@ pub(crate) fn run_ls(ctx: &mut Context, args: LsArgs) -> Result<Report, CliError
         &ctx.config,
         args.query.as_deref(),
     )?;
-    Ok(objects_report(&objects))
+    objects_report(&objects)
 }
 
 #[cfg(test)]

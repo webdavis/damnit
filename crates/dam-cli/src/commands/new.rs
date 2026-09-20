@@ -73,7 +73,7 @@ pub(crate) fn run(ctx: &mut Context, args: NewArgs) -> Result<Report, CliError> 
         .ok_or_else(|| CliError::Io("the new object did not persist".into()))?;
     Ok(Report {
         human: format!("{}  {}", oid.short(), object.base().subject),
-        data: object_json(&object),
+        data: object_json(&object)?,
     })
 }
 

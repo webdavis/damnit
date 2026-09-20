@@ -40,8 +40,11 @@ pub(crate) fn print(format: Format, report: &Report) -> Result<(), CliError> {
     Ok(())
 }
 
-pub(crate) fn object_json(object: &Object) -> serde_json::Value {
-    serde_json::to_value(to_wire(object, None)).unwrap_or(serde_json::Value::Null)
+/// The object as the `--json` and `--toon` answers carry it. A conversion
+/// failure is an error rather than a null, because a null would be a document
+/// that parses and says the object has no fields.
+pub(crate) fn object_json(object: &Object) -> Result<serde_json::Value, CliError> {
+    serde_json::to_value(to_wire(object, None)).map_err(|e| CliError::Io(e.to_string()))
 }
 
 pub(crate) fn object_line(object: &Object) -> String {
@@ -79,15 +82,16 @@ pub(crate) fn object_line(object: &Object) -> String {
     cols.join("  ")
 }
 
-pub(crate) fn objects_report(objects: &[Object]) -> Report {
-    Report {
+pub(crate) fn objects_report(objects: &[Object]) -> Result<Report, CliError> {
+    let data: Vec<serde_json::Value> = objects.iter().map(object_json).collect::<Result<_, _>>()?;
+    Ok(Report {
         human: objects
             .iter()
             .map(object_line)
             .collect::<Vec<_>>()
             .join("\n"),
-        data: serde_json::json!({ "objects": objects.iter().map(object_json).collect::<Vec<_>>() }),
-    }
+        data: serde_json::json!({ "objects": data }),
+    })
 }
 
 #[cfg(test)]

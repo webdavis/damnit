@@ -38,12 +38,24 @@ pub(crate) fn run_status(ctx: &mut Context) -> Result<Report, CliError> {
     if let Some(warning) = literal_credential_warning(ctx) {
         human.insert(0, warning);
     }
+    let staged: Vec<serde_json::Value> =
+        s.staged.iter().map(change_json).collect::<Result<_, _>>()?;
+    let unstaged: Vec<serde_json::Value> = s
+        .unstaged
+        .iter()
+        .map(change_json)
+        .collect::<Result<_, _>>()?;
+    let conflicts: Vec<serde_json::Value> = s
+        .conflicts
+        .iter()
+        .map(conflict_json)
+        .collect::<Result<_, _>>()?;
     Ok(Report {
         human: human.join("\n"),
         data: serde_json::json!({
-            "staged": s.staged.iter().map(change_json).collect::<Vec<_>>(),
-            "unstaged": s.unstaged.iter().map(change_json).collect::<Vec<_>>(),
-            "conflicts": s.conflicts.iter().map(conflict_json).collect::<Vec<_>>(),
+            "staged": staged,
+            "unstaged": unstaged,
+            "conflicts": conflicts,
             "notices": s.notices.iter().map(notice_json).collect::<Vec<_>>(),
             "unpushed": s.unpushed.iter().map(|(r, n)| serde_json::json!({ "remote": r.0, "commits": n })).collect::<Vec<_>>(),
         }),
@@ -56,13 +68,14 @@ pub(crate) fn run_diff(ctx: &mut Context, args: DiffArgs) -> Result<Report, CliE
     } else {
         diff_working(ctx.store.as_ref(), ctx.store.as_ref(), ctx.store.as_ref())?
     };
+    let data: Vec<serde_json::Value> = changes.iter().map(change_json).collect::<Result<_, _>>()?;
     Ok(Report {
         human: changes
             .iter()
             .map(change_line)
             .collect::<Vec<_>>()
             .join("\n"),
-        data: serde_json::json!({ "changes": changes.iter().map(change_json).collect::<Vec<_>>() }),
+        data: serde_json::json!({ "changes": data }),
     })
 }
 
@@ -129,13 +142,15 @@ pub(crate) fn change_line(change: &Change) -> String {
     }
 }
 
-pub(crate) fn change_json(change: &Change) -> serde_json::Value {
-    serde_json::json!({
+pub(crate) fn change_json(change: &Change) -> Result<serde_json::Value, CliError> {
+    let before = change.before.as_ref().map(object_json).transpose()?;
+    let after = change.after.as_ref().map(object_json).transpose()?;
+    Ok(serde_json::json!({
         "oid": change.oid.to_string(),
         "op": match change.op { Op::Create => "create", Op::Update => "update", Op::Delete => "delete" },
-        "before": change.before.as_ref().map(object_json),
-        "after": change.after.as_ref().map(object_json),
-    })
+        "before": before,
+        "after": after,
+    }))
 }
 
 fn conflict_line(c: &Conflict) -> String {
@@ -149,8 +164,13 @@ fn conflict_line(c: &Conflict) -> String {
     )
 }
 
-fn conflict_json(c: &Conflict) -> serde_json::Value {
-    serde_json::json!({ "oid": c.oid.to_string(), "remote": c.remote.0, "ours": object_json(&c.ours), "theirs": object_json(&c.theirs) })
+fn conflict_json(c: &Conflict) -> Result<serde_json::Value, CliError> {
+    Ok(serde_json::json!({
+        "oid": c.oid.to_string(),
+        "remote": c.remote.0,
+        "ours": object_json(&c.ours)?,
+        "theirs": object_json(&c.theirs)?,
+    }))
 }
 
 fn notice_line(n: &Notice) -> String {
