@@ -16,3 +16,38 @@ pub struct Capabilities {
     #[serde(default)]
     pub incremental: bool,
 }
+
+impl Capabilities {
+    /// Whether dam speaks what this helper declares. The version only grows,
+    /// so dam drives every version up to its own and refuses anything above.
+    pub fn supported(&self) -> bool {
+        self.protocol <= PROTOCOL_VERSION
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_current_version_and_every_older_one_is_supported() {
+        for protocol in 0..=PROTOCOL_VERSION {
+            assert!(caps(protocol).supported(), "{protocol}");
+        }
+    }
+
+    #[test]
+    fn one_version_past_the_current_one_is_not_supported() {
+        assert!(!caps(PROTOCOL_VERSION + 1).supported());
+    }
+
+    fn caps(protocol: u32) -> Capabilities {
+        Capabilities {
+            protocol,
+            kinds: vec![],
+            fields: vec![],
+            credentials: vec![],
+            incremental: false,
+        }
+    }
+}

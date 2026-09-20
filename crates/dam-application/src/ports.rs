@@ -188,11 +188,21 @@ impl<'a> Repositories<'a> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum HelperError {
-    NotFound { helper: String },
+    NotFound {
+        helper: String,
+    },
     Protocol(String),
+    UnsupportedProtocol {
+        helper: String,
+        found: u32,
+        supported: u32,
+    },
     Io(String),
     Remote(String),
-    Timeout { helper: String, deadline: String },
+    Timeout {
+        helper: String,
+        deadline: String,
+    },
     Cancelled,
 }
 

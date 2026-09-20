@@ -130,6 +130,13 @@ impl ProcessHelper {
 impl RemoteHelper for ProcessHelper {
     fn capabilities(&mut self) -> Result<RemoteCapabilities, HelperError> {
         match self.call(&Request::Capabilities)? {
+            Response::Capabilities(caps) if !caps.supported() => {
+                Err(HelperError::UnsupportedProtocol {
+                    helper: self.helper.clone(),
+                    found: caps.protocol,
+                    supported: dam_protocol::PROTOCOL_VERSION,
+                })
+            }
             Response::Capabilities(caps) => Ok(capabilities_from_wire(&caps)),
             other => Err(HelperError::Protocol(format!(
                 "expected a capabilities response, got {other:?}"
@@ -186,6 +193,27 @@ mod tests {
     use dam_application::{ConfiguredDuration, HelperError, RemoteHelper};
 
     use super::super::testing::{install, remote};
+
+    #[test]
+    fn a_helper_declaring_a_newer_protocol_is_refused_with_both_versions() {
+        let dir = tempfile::tempdir().unwrap();
+        let newer = dam_protocol::PROTOCOL_VERSION + 1;
+        let launcher = install(
+            dir.path(),
+            &format!(
+                "#!/bin/sh\nread -r line; printf '{{\"protocol\":{newer},\"kinds\":[],\"fields\":[],\"credentials\":[],\"incremental\":false}}\\n'\n"
+            ),
+        );
+        let mut helper = launcher.spawn(&remote(), &[]).unwrap();
+        assert_eq!(
+            helper.capabilities().unwrap_err(),
+            HelperError::UnsupportedProtocol {
+                helper: "t".into(),
+                found: newer,
+                supported: dam_protocol::PROTOCOL_VERSION,
+            }
+        );
+    }
 
     #[test]
     fn a_helper_that_never_answers_times_out_and_its_child_is_killed() {

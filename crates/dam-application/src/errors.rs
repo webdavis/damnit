@@ -115,6 +115,14 @@ impl fmt::Display for UseCaseError {
             UseCaseError::Helper(HelperError::Protocol(s)) => {
                 write!(f, "the helper answered something dam cannot read: {s}")
             }
+            UseCaseError::Helper(HelperError::UnsupportedProtocol {
+                helper,
+                found,
+                supported,
+            }) => write!(
+                f,
+                "helper {helper} speaks protocol version {found}; dam speaks {supported}, so upgrade dam or use an older helper"
+            ),
             UseCaseError::Helper(HelperError::Io(s)) => write!(f, "talking to the helper: {s}"),
             UseCaseError::Helper(HelperError::Remote(s)) => write!(f, "the remote refused: {s}"),
             UseCaseError::Helper(HelperError::Timeout { helper, deadline }) => {

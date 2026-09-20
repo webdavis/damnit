@@ -1,8 +1,8 @@
-use dam_protocol::Capabilities;
+use dam_protocol::{Capabilities, PROTOCOL_VERSION};
 
 pub fn capabilities() -> Capabilities {
     Capabilities {
-        protocol: 1,
+        protocol: PROTOCOL_VERSION,
         kinds: vec!["task".into()],
         fields: [
             "subject",
@@ -30,7 +30,8 @@ mod tests {
     #[test]
     fn matches_the_todoist_helper_scope() {
         let caps = capabilities();
-        assert_eq!(caps.protocol, 1);
+        assert_eq!(caps.protocol, PROTOCOL_VERSION);
+        assert!(caps.supported());
         assert_eq!(caps.kinds, vec!["task".to_string()]);
         assert_eq!(caps.credentials, vec!["api_token".to_string()]);
         assert!(!caps.incremental);
