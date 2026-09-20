@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{Object, Oid, Timestamp};
+use crate::{Field, Object, Oid, Timestamp};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Op {
@@ -101,90 +101,90 @@ pub fn coalesce(first: Change, second: Change) -> Option<Change> {
 
 /// Field names that differ, for status and for the helper field filter.
 /// Empty for a create or delete.
-pub fn changed_fields(before: &Object, after: &Object) -> Vec<&'static str> {
+pub fn changed_fields(before: &Object, after: &Object) -> Vec<Field> {
     let mut out = Vec::new();
     let (b, a) = (before.base(), after.base());
     if b.subject != a.subject {
-        out.push("subject");
+        out.push(Field::Subject);
     }
     if b.body != a.body {
-        out.push("body");
+        out.push(Field::Body);
     }
     if b.path != a.path {
-        out.push("path");
+        out.push(Field::Path);
     }
     if b.labels != a.labels {
-        out.push("labels");
+        out.push(Field::Labels);
     }
     if b.depends != a.depends {
-        out.push("depends");
+        out.push(Field::Depends);
     }
     if b.reminders != a.reminders {
-        out.push("reminders");
+        out.push(Field::Reminders);
     }
     if b.recurrence != a.recurrence {
-        out.push("recurrence");
+        out.push(Field::Recurrence);
     }
     match (before, after) {
         (Object::Task(b), Object::Task(a)) => {
             if b.priority != a.priority {
-                out.push("priority");
+                out.push(Field::Priority);
             }
             if b.done != a.done {
-                out.push("done");
+                out.push(Field::Done);
             }
             if b.due != a.due {
-                out.push("due");
+                out.push(Field::Due);
             }
             if b.deadline != a.deadline {
-                out.push("deadline");
+                out.push(Field::Deadline);
             }
             if b.event != a.event {
-                out.push("event");
+                out.push(Field::Event);
             }
         }
         (Object::Event(b), Object::Event(a)) => {
             if b.start != a.start {
-                out.push("start");
+                out.push(Field::Start);
             }
             if b.end != a.end {
-                out.push("end");
+                out.push(Field::End);
             }
             if b.timezone != a.timezone {
-                out.push("timezone");
+                out.push(Field::Timezone);
             }
             if b.location != a.location {
-                out.push("location");
+                out.push(Field::Location);
             }
             if b.attendees != a.attendees {
-                out.push("attendees");
+                out.push(Field::Attendees);
             }
             if b.status != a.status {
-                out.push("status");
+                out.push(Field::Status);
             }
             if b.transparency != a.transparency {
-                out.push("transparency");
+                out.push(Field::Transparency);
             }
             if b.visibility != a.visibility {
-                out.push("visibility");
+                out.push(Field::Visibility);
             }
             if b.event_type != a.event_type {
-                out.push("event_type");
+                out.push(Field::EventType);
             }
             if b.color != a.color {
-                out.push("color");
+                out.push(Field::Color);
             }
             if b.organizer != a.organizer {
-                out.push("organizer");
+                out.push(Field::Organizer);
             }
             if b.conference != a.conference {
-                out.push("conference");
+                out.push(Field::Conference);
             }
             if b.attachments != a.attachments {
-                out.push("attachments");
+                out.push(Field::Attachments);
             }
         }
-        _ => out.push("kind"),
+        _ => out.push(Field::Kind),
     }
     out
 }
@@ -192,7 +192,7 @@ pub fn changed_fields(before: &Object, after: &Object) -> Vec<&'static str> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Object, Oid, Priority, Task};
+    use crate::{Field, Object, Oid, Priority, Task};
 
     fn oid(b: u8) -> Oid {
         Oid::generate(&mut |x: &mut [u8]| x.fill(b))
@@ -263,7 +263,7 @@ mod tests {
         t.priority = Priority::HIGHEST;
         t.done = true;
         let b = Object::Task(t);
-        assert_eq!(changed_fields(&a, &b), vec!["priority", "done"]);
+        assert_eq!(changed_fields(&a, &b), vec![Field::Priority, Field::Done]);
         assert!(changed_fields(&a, &a).is_empty());
     }
 }

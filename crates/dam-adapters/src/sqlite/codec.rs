@@ -1,5 +1,5 @@
 use dam_application::{Notice, RemoteName, StoreError, wire};
-use dam_domain::{Change, Object, Oid, Op};
+use dam_domain::{Change, Kind, Object, Oid, Op};
 use rusqlite::Params;
 use serde::{Deserialize, Serialize};
 
@@ -131,8 +131,8 @@ pub(super) fn notice_to_json(n: &Notice) -> Result<String, StoreError> {
         },
         Notice::KindChanged { oid, ours, theirs } => NoticeRow::KindChanged {
             oid: oid.to_string(),
-            ours: ours.clone(),
-            theirs: theirs.clone(),
+            ours: ours.as_str().to_string(),
+            theirs: theirs.as_str().to_string(),
         },
     };
     serde_json::to_string(&row).map_err(|e| StoreError(format!("stored notice: {e}")))
@@ -142,6 +142,9 @@ pub(super) fn notice_from_json(s: &str) -> Result<Notice, StoreError> {
     let row: NoticeRow =
         serde_json::from_str(s).map_err(|e| StoreError(format!("stored notice: {e}")))?;
     let oid = |t: &str| Oid::parse(t).map_err(|e| StoreError(format!("stored notice: {e}")));
+    let kind = |t: &str| {
+        Kind::parse(t).ok_or_else(|| StoreError(format!("stored notice: unknown kind {t:?}")))
+    };
     Ok(match row {
         NoticeRow::RemovedUpstream {
             remote,
@@ -180,8 +183,8 @@ pub(super) fn notice_from_json(s: &str) -> Result<Notice, StoreError> {
             theirs,
         } => Notice::KindChanged {
             oid: oid(&o)?,
-            ours,
-            theirs,
+            ours: kind(&ours)?,
+            theirs: kind(&theirs)?,
         },
     })
 }
@@ -234,8 +237,8 @@ mod tests {
             },
             Notice::KindChanged {
                 oid: oid(4),
-                ours: "task".into(),
-                theirs: "event".into(),
+                ours: Kind::Task,
+                theirs: Kind::Event,
             },
         ];
         for n in notices {

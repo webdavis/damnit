@@ -6,7 +6,7 @@ use crate::ports::Repositories;
 use crate::testing::prelude::*;
 use crate::testing::{FixedClock, FixedRandom, MemoryStore, NoCredentials, oid};
 use crate::wire::to_wire;
-use dam_domain::{Event, Object, Task, When};
+use dam_domain::{Event, Kind, Object, Task, When};
 use dam_protocol::PullResponse;
 
 #[test]
@@ -49,8 +49,8 @@ fn a_kind_change_upstream_keeps_ours_and_raises_a_notice() {
         store.notices().unwrap(),
         vec![Notice::KindChanged {
             oid: oid(1),
-            ours: "task".into(),
-            theirs: "event".into()
+            ours: Kind::Task,
+            theirs: Kind::Event
         }]
     );
 }

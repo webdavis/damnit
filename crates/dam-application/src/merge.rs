@@ -1,99 +1,97 @@
-use dam_domain::Object;
+use dam_domain::{Field, Kind, Object};
 
-use crate::wire::wire_kind;
-
-/// The two wire kinds when a pulled object is not the kind we hold, which is
-/// what `merge_fields` refuses to merge.
-pub fn kind_change(ours: &Object, theirs: &Object) -> Option<(&'static str, &'static str)> {
-    let (o, t) = (wire_kind(ours), wire_kind(theirs));
+/// The two kinds when a pulled object is not the kind we hold, which is what
+/// `merge_fields` refuses to merge.
+pub fn kind_change(ours: &Object, theirs: &Object) -> Option<(Kind, Kind)> {
+    let (o, t) = (ours.kind(), theirs.kind());
     (o != t).then_some((o, t))
 }
 
 /// Copies the named fields from `theirs` onto a clone of `ours`. Anything not
 /// named, which includes every dam-only field, keeps ours.
-pub fn merge_fields(ours: &Object, theirs: &Object, fields: &[String]) -> Object {
+pub fn merge_fields(ours: &Object, theirs: &Object, fields: &[Field]) -> Object {
     let mut out = ours.clone();
-    let has = |name: &str| fields.iter().any(|f| f == name);
+    let has = |field: Field| fields.contains(&field);
     {
         let (o, t) = (out.base_mut(), theirs.base());
-        if has("subject") {
+        if has(Field::Subject) {
             o.subject = t.subject.clone()
         }
-        if has("body") {
+        if has(Field::Body) {
             o.body = t.body.clone()
         }
-        if has("path") {
+        if has(Field::Path) {
             o.path = t.path.clone()
         }
-        if has("labels") {
+        if has(Field::Labels) {
             o.labels = t.labels.clone()
         }
-        if has("depends") {
+        if has(Field::Depends) {
             o.depends = t.depends.clone()
         }
-        if has("reminders") {
+        if has(Field::Reminders) {
             o.reminders = t.reminders.clone()
         }
-        if has("recurrence") {
+        if has(Field::Recurrence) {
             o.recurrence = t.recurrence.clone()
         }
     }
     match (&mut out, theirs) {
         (Object::Task(o), Object::Task(t)) => {
-            if has("done") {
+            if has(Field::Done) {
                 o.done = t.done
             }
-            if has("priority") {
+            if has(Field::Priority) {
                 o.priority = t.priority
             }
-            if has("due") {
+            if has(Field::Due) {
                 o.due = t.due.clone()
             }
-            if has("deadline") {
+            if has(Field::Deadline) {
                 o.deadline = t.deadline
             }
-            if has("event") {
+            if has(Field::Event) {
                 o.event = t.event.clone()
             }
         }
         (Object::Event(o), Object::Event(t)) => {
-            if has("start") {
+            if has(Field::Start) {
                 o.start = t.start.clone()
             }
-            if has("end") {
+            if has(Field::End) {
                 o.end = t.end.clone()
             }
-            if has("timezone") {
+            if has(Field::Timezone) {
                 o.timezone = t.timezone.clone()
             }
-            if has("location") {
+            if has(Field::Location) {
                 o.location = t.location.clone()
             }
-            if has("attendees") {
+            if has(Field::Attendees) {
                 o.attendees = t.attendees.clone()
             }
-            if has("status") {
+            if has(Field::Status) {
                 o.status = t.status
             }
-            if has("transparency") {
+            if has(Field::Transparency) {
                 o.transparency = t.transparency
             }
-            if has("visibility") {
+            if has(Field::Visibility) {
                 o.visibility = t.visibility
             }
-            if has("event_type") {
+            if has(Field::EventType) {
                 o.event_type = t.event_type
             }
-            if has("color") {
+            if has(Field::Color) {
                 o.color = t.color.clone()
             }
-            if has("organizer") {
+            if has(Field::Organizer) {
                 o.organizer = t.organizer.clone()
             }
-            if has("conference") {
+            if has(Field::Conference) {
                 o.conference = t.conference.clone()
             }
-            if has("attachments") {
+            if has(Field::Attachments) {
                 o.attachments = t.attachments.clone()
             }
         }
@@ -124,7 +122,7 @@ mod tests {
         let out = merge_fields(
             &Object::Task(ours),
             &Object::Task(theirs),
-            &["subject".into()],
+            &[Field::Subject],
         );
         let t = out.as_task().unwrap();
         assert_eq!(t.base.subject, "theirs");
@@ -141,8 +139,8 @@ mod tests {
             When::Day(date(2026, 1, 1)),
             When::Day(date(2026, 1, 2)),
         ));
-        assert_eq!(merge_fields(&ours, &theirs, &["subject".into()]), ours);
-        assert_eq!(kind_change(&ours, &theirs), Some(("task", "event")));
+        assert_eq!(merge_fields(&ours, &theirs, &[Field::Subject]), ours);
+        assert_eq!(kind_change(&ours, &theirs), Some((Kind::Task, Kind::Event)));
         assert_eq!(kind_change(&ours, &ours), None);
     }
 
@@ -243,7 +241,7 @@ mod tests {
             "expected every task field to differ: {fields:?}"
         );
         for f in &fields {
-            let merged = merge_fields(&ours, &theirs, &[(*f).to_string()]);
+            let merged = merge_fields(&ours, &theirs, &[*f]);
             assert_eq!(changed_fields(&ours, &merged), vec![*f], "field {f}");
         }
     }
@@ -259,7 +257,7 @@ mod tests {
             "expected every event field to differ: {fields:?}"
         );
         for f in &fields {
-            let merged = merge_fields(&ours, &theirs, &[(*f).to_string()]);
+            let merged = merge_fields(&ours, &theirs, &[*f]);
             assert_eq!(changed_fields(&ours, &merged), vec![*f], "field {f}");
         }
     }

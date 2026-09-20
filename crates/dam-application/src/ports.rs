@@ -1,4 +1,4 @@
-use dam_domain::{Change, CommitId, CommitRecord, Date, Object, Oid, Path, Timestamp};
+use dam_domain::{Change, CommitId, CommitRecord, Date, Kind, Object, Oid, Path, Timestamp};
 use dam_protocol::{Capabilities, Mutation, PullResponse, PushResponse};
 
 use crate::config::{CredentialSpec, RemoteConfig};
@@ -43,8 +43,8 @@ pub enum Notice {
     /// Upstream changed an object's kind; ours is kept as it is.
     KindChanged {
         oid: Oid,
-        ours: String,
-        theirs: String,
+        ours: Kind,
+        theirs: Kind,
     },
 }
 

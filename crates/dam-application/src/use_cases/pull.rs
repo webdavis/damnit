@@ -1,4 +1,4 @@
-use dam_domain::{Change, CommitId, CommitRecord, EventStatus, Object, Oid, Op};
+use dam_domain::{Change, CommitId, CommitRecord, EventStatus, Field, Object, Oid, Op};
 use dam_protocol::Capabilities;
 
 use crate::config::{Config, RemoteConfig};
@@ -96,6 +96,7 @@ fn classify(
     objects: Vec<dam_protocol::WireObject>,
     random: &mut dyn Randomness,
 ) -> Result<Classified, UseCaseError> {
+    let fields: Vec<Field> = caps.fields.iter().filter_map(|f| Field::parse(f)).collect();
     let staged: Vec<Oid> = repos.stage.staged()?.into_iter().map(|c| c.oid).collect();
     let mut notices = repos.notices.notices()?;
     let mut planned = Vec::new();
@@ -130,8 +131,8 @@ fn classify(
         if let Some((ours, theirs)) = local.as_ref().and_then(|l| kind_change(l, &theirs_raw)) {
             let notice = Notice::KindChanged {
                 oid: oid.clone(),
-                ours: ours.into(),
-                theirs: theirs.into(),
+                ours,
+                theirs,
             };
             // The kinds keep disagreeing until someone acts, so say it once.
             if !notices.contains(&notice) {
@@ -139,11 +140,7 @@ fn classify(
                 notices.push(notice);
             }
         }
-        let theirs = merge_fields(
-            local.as_ref().unwrap_or(&theirs_raw),
-            &theirs_raw,
-            &caps.fields,
-        );
+        let theirs = merge_fields(local.as_ref().unwrap_or(&theirs_raw), &theirs_raw, &fields);
         let incoming = match local {
             None => Incoming::Create(theirs),
             Some(ref l) if *l == theirs => Incoming::Unchanged,

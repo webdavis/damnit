@@ -254,7 +254,7 @@ fn mutation_for(
         (Op::Update, Some(before), Some(after)) => {
             let declared: Vec<String> = changed_fields(before, after)
                 .into_iter()
-                .map(|f| f.to_string())
+                .map(|f| f.as_str().to_string())
                 .filter(|f| caps.fields.contains(f))
                 .collect();
             if declared.is_empty() {

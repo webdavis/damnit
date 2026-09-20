@@ -117,7 +117,11 @@ pub fn change_line(change: &Change) -> String {
         Op::Delete => format!("removed  {}  {subject}", change.oid.short()),
         Op::Update => {
             let fields = match (&change.before, &change.after) {
-                (Some(b), Some(a)) => changed_fields(b, a).join(", "),
+                (Some(b), Some(a)) => changed_fields(b, a)
+                    .iter()
+                    .map(|f| f.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", "),
                 _ => String::new(),
             };
             format!("changed  {}  {subject}  ({fields})", change.oid.short())
@@ -178,8 +182,8 @@ fn notice_line(n: &Notice) -> String {
         Notice::KindChanged { oid, ours, theirs } => format!(
             "{} is {} {ours} here and {} {theirs} upstream",
             oid.short(),
-            article(ours),
-            article(theirs)
+            article(ours.as_str()),
+            article(theirs.as_str())
         ),
     }
 }
@@ -215,7 +219,7 @@ fn notice_json(n: &Notice) -> serde_json::Value {
             serde_json::json!({ "kind": "pull_failed", "remote": remote.0, "why": why })
         }
         Notice::KindChanged { oid, ours, theirs } => {
-            serde_json::json!({ "kind": "kind_changed", "oid": oid.to_string(), "ours": ours, "theirs": theirs })
+            serde_json::json!({ "kind": "kind_changed", "oid": oid.to_string(), "ours": ours.as_str(), "theirs": theirs.as_str() })
         }
     }
 }
@@ -227,7 +231,7 @@ mod tests {
     use crate::commands::stage::run_add;
     use crate::testing::context;
     use dam_application::{CredentialSpec, RemoteConfig, RemoteName};
-    use dam_domain::{Object, Oid, Task};
+    use dam_domain::{Kind, Object, Oid, Task};
 
     fn oid(b: u8) -> Oid {
         Oid::generate(&mut |x: &mut [u8]| x.fill(b))
@@ -314,8 +318,8 @@ mod tests {
         ctx.store
             .add_notice(&dam_application::Notice::KindChanged {
                 oid: oid(1),
-                ours: "task".into(),
-                theirs: "event".into(),
+                ours: Kind::Task,
+                theirs: Kind::Event,
             })
             .unwrap();
         let report = super::run_status(&mut ctx).unwrap();
@@ -338,8 +342,8 @@ mod tests {
         ctx.store
             .add_notice(&dam_application::Notice::KindChanged {
                 oid: oid(1),
-                ours: "event".into(),
-                theirs: "task".into(),
+                ours: Kind::Event,
+                theirs: Kind::Task,
             })
             .unwrap();
         let report = super::run_status(&mut ctx).unwrap();

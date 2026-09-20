@@ -19,6 +19,29 @@ pub enum Kind {
     Event,
 }
 
+impl Kind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Kind::Task => "task",
+            Kind::Event => "event",
+        }
+    }
+
+    pub fn parse(name: &str) -> Option<Kind> {
+        match name {
+            "task" => Some(Kind::Task),
+            "event" => Some(Kind::Event),
+            _ => None,
+        }
+    }
+}
+
+impl std::fmt::Display for Kind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 /// A reminder relative to the object's time: minutes before due or start.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Reminder {
