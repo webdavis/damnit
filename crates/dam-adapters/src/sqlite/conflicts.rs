@@ -1,4 +1,6 @@
-use dam_application::{Conflict, Notice, RemoteName, StoreError};
+use dam_application::{
+    Conflict, ConflictRepository, Notice, NoticeRepository, RemoteName, StoreError,
+};
 use dam_domain::{Object, Oid};
 use rusqlite::params;
 
@@ -123,10 +125,42 @@ impl SqliteStore {
     }
 }
 
+impl ConflictRepository for SqliteStore {
+    fn mark_conflict(
+        &self,
+        remote: &RemoteName,
+        oid: &Oid,
+        theirs: &Object,
+    ) -> Result<(), StoreError> {
+        self.record_conflict(remote, oid, theirs)
+    }
+    fn conflicts(&self) -> Result<Vec<Conflict>, StoreError> {
+        self.all_conflicts()
+    }
+    fn clear_conflict(&self, oid: &Oid) -> Result<(), StoreError> {
+        self.drop_conflict(oid)
+    }
+}
+
+impl NoticeRepository for SqliteStore {
+    fn add_notice(&self, notice: &Notice) -> Result<(), StoreError> {
+        self.push_notice(notice)
+    }
+    fn notices(&self) -> Result<Vec<Notice>, StoreError> {
+        self.all_notices()
+    }
+    fn clear_notices(&self) -> Result<(), StoreError> {
+        self.drop_notices()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::SqliteStore;
-    use dam_application::{Notice, ObjectStore, RemoteName};
+    use dam_application::{
+        CommitRepository, ConflictRepository, Notice, NoticeRepository, ObjectRepository,
+        RemoteName,
+    };
     use dam_domain::{Object, Oid, Task};
 
     fn oid(b: u8) -> Oid {

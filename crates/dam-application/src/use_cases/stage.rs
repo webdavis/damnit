@@ -3,18 +3,22 @@ use std::collections::BTreeSet;
 use dam_domain::{Change, Oid, diff};
 
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::ObjectStore;
+use crate::ports::{CommitRepository, ObjectRepository, StageRepository};
 
-pub fn add(store: &dyn ObjectStore, oids: &[Oid]) -> Result<Vec<Change>, UseCaseError> {
+pub fn add(
+    objects: &dyn ObjectRepository,
+    stage: &dyn StageRepository,
+    oids: &[Oid],
+) -> Result<Vec<Change>, UseCaseError> {
     let mut staged = Vec::new();
     for oid in oids {
-        let working = store.get(oid)?;
-        let committed = store.committed(oid)?;
+        let working = objects.get(oid)?;
+        let committed = objects.committed(oid)?;
         if working.is_none() && committed.is_none() {
             return Err(Refusal::NoSuchObject(oid.short().to_string()).into());
         }
         if let Some(change) = diff(oid, committed.as_ref(), working.as_ref()) {
-            store.stage(change.clone())?;
+            stage.stage(change.clone())?;
             staged.push(change);
         }
     }
@@ -24,9 +28,16 @@ pub fn add(store: &dyn ObjectStore, oids: &[Oid]) -> Result<Vec<Change>, UseCase
 /// Every oid that could still need staging: every working object, plus every
 /// oid any commit has ever touched (so a committed object deleted from
 /// working, but not yet staged, is not missed).
-pub(crate) fn tracked_oids(store: &dyn ObjectStore) -> Result<BTreeSet<Oid>, UseCaseError> {
-    let mut oids: BTreeSet<Oid> = store.all()?.into_iter().map(|o| o.oid().clone()).collect();
-    for record in store.log()? {
+pub(crate) fn tracked_oids(
+    objects: &dyn ObjectRepository,
+    commits: &dyn CommitRepository,
+) -> Result<BTreeSet<Oid>, UseCaseError> {
+    let mut oids: BTreeSet<Oid> = objects
+        .all()?
+        .into_iter()
+        .map(|o| o.oid().clone())
+        .collect();
+    for record in commits.log()? {
         for change in record.changes {
             oids.insert(change.oid);
         }
@@ -36,17 +47,21 @@ pub(crate) fn tracked_oids(store: &dyn ObjectStore) -> Result<BTreeSet<Oid>, Use
 
 /// Every working object that differs from committed, plus every committed
 /// object missing from working, staged as a delete.
-pub fn add_all(store: &dyn ObjectStore) -> Result<Vec<Change>, UseCaseError> {
-    let list: Vec<Oid> = tracked_oids(store)?.into_iter().collect();
-    add(store, &list)
+pub fn add_all(
+    objects: &dyn ObjectRepository,
+    stage: &dyn StageRepository,
+    commits: &dyn CommitRepository,
+) -> Result<Vec<Change>, UseCaseError> {
+    let list: Vec<Oid> = tracked_oids(objects, commits)?.into_iter().collect();
+    add(objects, stage, &list)
 }
 
-pub fn reset(store: &dyn ObjectStore, oids: &[Oid]) -> Result<(), UseCaseError> {
+pub fn reset(stage: &dyn StageRepository, oids: &[Oid]) -> Result<(), UseCaseError> {
     if oids.is_empty() {
-        store.unstage_all()?;
+        stage.unstage_all()?;
     }
     for oid in oids {
-        store.unstage(oid)?;
+        stage.unstage(oid)?;
     }
     Ok(())
 }
@@ -54,6 +69,7 @@ pub fn reset(store: &dyn ObjectStore, oids: &[Oid]) -> Result<(), UseCaseError> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::testing::prelude::*;
     use crate::testing::{MemoryStore, oid};
     use dam_domain::{Object, Op, Task};
 
@@ -68,7 +84,7 @@ mod tests {
     fn add_stages_a_create_for_a_new_working_object() {
         let store = MemoryStore::new();
         let id = seed(&store, 1);
-        let staged = add(&store, &[id]).unwrap();
+        let staged = add(&store, &store, &[id]).unwrap();
         assert_eq!(staged.len(), 1);
         assert_eq!(staged[0].op, Op::Create);
         assert_eq!(store.staged().unwrap().len(), 1);
@@ -82,10 +98,10 @@ mod tests {
             id: dam_domain::CommitId::generate(&mut |b| b.fill(9)),
             message: "m".into(),
             at: jiff::Timestamp::UNIX_EPOCH,
-            changes: add(&store, std::slice::from_ref(&id)).unwrap(),
+            changes: add(&store, &store, std::slice::from_ref(&id)).unwrap(),
         };
         store.commit(&record).unwrap();
-        assert!(add(&store, &[id]).unwrap().is_empty());
+        assert!(add(&store, &store, &[id]).unwrap().is_empty());
     }
 
     #[test]
@@ -96,11 +112,11 @@ mod tests {
             id: dam_domain::CommitId::generate(&mut |b| b.fill(9)),
             message: "m".into(),
             at: jiff::Timestamp::UNIX_EPOCH,
-            changes: add(&store, std::slice::from_ref(&id)).unwrap(),
+            changes: add(&store, &store, std::slice::from_ref(&id)).unwrap(),
         };
         store.commit(&record).unwrap();
         store.delete(&id).unwrap();
-        let staged = add_all(&store).unwrap();
+        let staged = add_all(&store, &store, &store).unwrap();
         assert_eq!(staged[0].op, Op::Delete);
     }
 
@@ -109,7 +125,7 @@ mod tests {
         let store = MemoryStore::new();
         let a = seed(&store, 1);
         let b = seed(&store, 2);
-        add_all(&store).unwrap();
+        add_all(&store, &store, &store).unwrap();
         reset(&store, &[a]).unwrap();
         assert_eq!(store.staged().unwrap().len(), 1);
         reset(&store, &[]).unwrap();
@@ -120,7 +136,7 @@ mod tests {
     #[test]
     fn add_of_an_unknown_oid_is_refused() {
         let store = MemoryStore::new();
-        let err = add(&store, &[oid(7)]).unwrap_err();
+        let err = add(&store, &store, &[oid(7)]).unwrap_err();
         assert!(matches!(
             err,
             UseCaseError::Refused(Refusal::NoSuchObject(_))

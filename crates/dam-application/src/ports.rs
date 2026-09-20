@@ -48,22 +48,28 @@ pub enum Notice {
     },
 }
 
-pub trait ObjectStore {
-    // working layer
+/// The working layer: every object as it stands right now, plus the last
+/// commit's view of one object for diffing working against committed.
+pub trait ObjectRepository {
     fn get(&self, oid: &Oid) -> Result<Option<Object>, StoreError>;
     fn all(&self) -> Result<Vec<Object>, StoreError>;
     fn children_of(&self, path: &Path) -> Result<Vec<Object>, StoreError>;
     fn dependents_of(&self, oid: &Oid) -> Result<Vec<Oid>, StoreError>;
     fn put(&self, object: &Object) -> Result<(), StoreError>;
     fn delete(&self, oid: &Oid) -> Result<(), StoreError>;
-    /// The last commit (HEAD) view of one object, for diffing working against committed.
     fn committed(&self, oid: &Oid) -> Result<Option<Object>, StoreError>;
-    // stage
+}
+
+/// The stage: at most one change per oid, waiting for a commit.
+pub trait StageRepository {
     fn stage(&self, change: Change) -> Result<(), StoreError>;
     fn unstage(&self, oid: &Oid) -> Result<(), StoreError>;
     fn unstage_all(&self) -> Result<(), StoreError>;
     fn staged(&self) -> Result<Vec<Change>, StoreError>;
-    // commits
+}
+
+/// The commit history, and which of it each remote has taken.
+pub trait CommitRepository {
     fn commit(&self, record: &CommitRecord) -> Result<(), StoreError>;
     fn log(&self) -> Result<Vec<CommitRecord>, StoreError>;
     fn unpushed(&self, remote: &RemoteName) -> Result<Vec<CommitRecord>, StoreError>;
@@ -71,7 +77,11 @@ pub trait ObjectStore {
     /// Oids a previous push failed on, resent as updates until they succeed.
     fn push_retries(&self, remote: &RemoteName) -> Result<Vec<Oid>, StoreError>;
     fn set_push_retries(&self, remote: &RemoteName, oids: &[Oid]) -> Result<(), StoreError>;
-    // remote tracking
+}
+
+/// What each remote holds: the id it knows an object by, the snapshot of what
+/// it last sent, and where its incremental sync stands.
+pub trait RemoteTrackingRepository {
     fn remote_id(&self, remote: &RemoteName, oid: &Oid) -> Result<Option<String>, StoreError>;
     fn oid_for_remote_id(
         &self,
@@ -94,7 +104,10 @@ pub trait ObjectStore {
     fn set_sync_token(&self, remote: &RemoteName, token: Option<&str>) -> Result<(), StoreError>;
     fn last_pull(&self, remote: &RemoteName) -> Result<Option<Timestamp>, StoreError>;
     fn set_last_pull(&self, remote: &RemoteName, at: Timestamp) -> Result<(), StoreError>;
-    // conflicts and notices
+}
+
+/// Objects a pull could not merge, held until the operator settles them.
+pub trait ConflictRepository {
     fn mark_conflict(
         &self,
         remote: &RemoteName,
@@ -103,9 +116,60 @@ pub trait ObjectStore {
     ) -> Result<(), StoreError>;
     fn conflicts(&self) -> Result<Vec<Conflict>, StoreError>;
     fn clear_conflict(&self, oid: &Oid) -> Result<(), StoreError>;
+}
+
+/// Things upstream did that dam only reports, in the order they were recorded.
+pub trait NoticeRepository {
     fn add_notice(&self, notice: &Notice) -> Result<(), StoreError>;
     fn notices(&self) -> Result<Vec<Notice>, StoreError>;
     fn clear_notices(&self) -> Result<(), StoreError>;
+}
+
+/// One durable store behind all six record families, which is what the
+/// composition root holds and what a transaction spans.
+pub trait Store:
+    ObjectRepository
+    + StageRepository
+    + CommitRepository
+    + RemoteTrackingRepository
+    + ConflictRepository
+    + NoticeRepository
+{
+}
+
+impl<T> Store for T where
+    T: ObjectRepository
+        + StageRepository
+        + CommitRepository
+        + RemoteTrackingRepository
+        + ConflictRepository
+        + NoticeRepository
+{
+}
+
+/// The repositories a use case that spans several families borrows at once,
+/// so it names each family it touches without taking six parameters.
+#[derive(Clone, Copy)]
+pub struct Repositories<'a> {
+    pub objects: &'a dyn ObjectRepository,
+    pub stage: &'a dyn StageRepository,
+    pub commits: &'a dyn CommitRepository,
+    pub remote_tracking: &'a dyn RemoteTrackingRepository,
+    pub conflicts: &'a dyn ConflictRepository,
+    pub notices: &'a dyn NoticeRepository,
+}
+
+impl<'a> Repositories<'a> {
+    pub fn of(store: &'a dyn Store) -> Repositories<'a> {
+        Repositories {
+            objects: store,
+            stage: store,
+            commits: store,
+            remote_tracking: store,
+            conflicts: store,
+            notices: store,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]

@@ -1,12 +1,12 @@
 use dam_domain::{Oid, Path};
 
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::ObjectStore;
+use crate::ports::ObjectRepository;
 use crate::use_cases::subtree::{last_segment, move_subtree};
 
 /// Moves an object to sit under `to`, carrying every descendant with it.
-pub fn relocate(store: &dyn ObjectStore, oid: &Oid, to: &Path) -> Result<(), UseCaseError> {
-    let object = store
+pub fn relocate(objects: &dyn ObjectRepository, oid: &Oid, to: &Path) -> Result<(), UseCaseError> {
+    let object = objects
         .get(oid)?
         .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
     let old = object.base().path.clone();
@@ -24,12 +24,13 @@ pub fn relocate(store: &dyn ObjectStore, oid: &Oid, to: &Path) -> Result<(), Use
         to.join(&last_segment(&old))
             .map_err(|e| UseCaseError::Parse(e.to_string()))?
     };
-    move_subtree(store, oid, &new)
+    move_subtree(objects, oid, &new)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::testing::prelude::*;
     use crate::testing::{MemoryStore, oid};
     use dam_domain::{Object, Task};
 

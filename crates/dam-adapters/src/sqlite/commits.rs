@@ -1,5 +1,5 @@
-use dam_application::{RemoteName, StoreError};
-use dam_domain::{Change, CommitId, CommitRecord};
+use dam_application::{CommitRepository, RemoteName, StoreError};
+use dam_domain::{Change, CommitId, CommitRecord, Oid};
 use rusqlite::params;
 
 use super::SqliteStore;
@@ -129,5 +129,26 @@ impl SqliteStore {
             )
             .map(|_| ())
             .map_err(sql)
+    }
+}
+
+impl CommitRepository for SqliteStore {
+    fn commit(&self, record: &CommitRecord) -> Result<(), StoreError> {
+        self.commit_record(record)
+    }
+    fn log(&self) -> Result<Vec<CommitRecord>, StoreError> {
+        self.commit_log()
+    }
+    fn unpushed(&self, remote: &RemoteName) -> Result<Vec<CommitRecord>, StoreError> {
+        self.unpushed_commits(remote)
+    }
+    fn mark_pushed(&self, remote: &RemoteName, id: &CommitId) -> Result<(), StoreError> {
+        self.mark_commit_pushed(remote, id)
+    }
+    fn push_retries(&self, remote: &RemoteName) -> Result<Vec<Oid>, StoreError> {
+        self.retries_of(remote)
+    }
+    fn set_push_retries(&self, remote: &RemoteName, oids: &[Oid]) -> Result<(), StoreError> {
+        self.set_retries(remote, oids)
     }
 }

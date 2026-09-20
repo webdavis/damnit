@@ -10,6 +10,7 @@ use crate::output::Report;
 pub fn run_commit(ctx: &mut Context, args: CommitArgs) -> Result<Report, CliError> {
     let record = commit(
         ctx.store.as_ref(),
+        ctx.store.as_ref(),
         ctx.clock.as_ref(),
         ctx.random.as_mut(),
         &args.message,

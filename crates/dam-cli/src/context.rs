@@ -5,8 +5,7 @@ use dam_adapters::{
     load_config,
 };
 use dam_application::{
-    Clock, Config, CredentialSource, EditorError, EditorSession, HelperLauncher, ObjectStore,
-    Randomness,
+    Clock, Config, CredentialSource, EditorError, EditorSession, HelperLauncher, Randomness, Store,
 };
 
 use crate::error::CliError;
@@ -26,7 +25,7 @@ impl EditorSession for RefusingEditor {
 }
 
 pub struct Context {
-    pub store: Box<dyn ObjectStore>,
+    pub store: Box<dyn Store>,
     pub config: Config,
     /// `remote add` rewrites the config file at this path.
     pub config_path: PathBuf,

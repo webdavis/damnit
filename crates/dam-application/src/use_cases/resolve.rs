@@ -1,7 +1,7 @@
 use dam_domain::{Change, CommitId, CommitRecord, Oid, Op};
 
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{Clock, ObjectStore, Randomness};
+use crate::ports::{Clock, CommitRepository, ConflictRepository, ObjectRepository, Randomness};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Side {
@@ -10,20 +10,22 @@ pub enum Side {
 }
 
 pub fn resolve(
-    store: &dyn ObjectStore,
+    objects: &dyn ObjectRepository,
+    commits: &dyn CommitRepository,
+    conflicts: &dyn ConflictRepository,
     clock: &dyn Clock,
     random: &mut dyn Randomness,
     oid: &Oid,
     side: Side,
 ) -> Result<(), UseCaseError> {
-    let conflict = store
+    let conflict = conflicts
         .conflicts()?
         .into_iter()
         .find(|c| c.oid == *oid)
         .ok_or_else(|| Refusal::NoSuchObject(format!("conflict on {}", oid.short())))?;
     let (word, before, after) = match side {
         Side::Theirs => {
-            store.put(&conflict.theirs)?;
+            objects.put(&conflict.theirs)?;
             ("theirs", conflict.ours, conflict.theirs)
         }
         Side::Ours => ("ours", conflict.theirs, conflict.ours),
@@ -43,8 +45,8 @@ pub fn resolve(
             after: Some(after),
         }],
     };
-    store.commit(&record)?;
-    store.clear_conflict(oid)?;
+    commits.commit(&record)?;
+    conflicts.clear_conflict(oid)?;
     Ok(())
 }
 

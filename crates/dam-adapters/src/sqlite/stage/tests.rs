@@ -1,5 +1,5 @@
 use crate::SqliteStore;
-use dam_application::{ObjectStore, RemoteName};
+use dam_application::{CommitRepository, ObjectRepository, RemoteName, StageRepository};
 use dam_domain::{CommitId, CommitRecord, Object, Oid, Op, Path, Task, diff};
 
 fn oid(b: u8) -> Oid {

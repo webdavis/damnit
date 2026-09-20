@@ -1,4 +1,4 @@
-use dam_application::{PullReport, PushReport, Side, pull, push, resolve};
+use dam_application::{PullReport, PushReport, Repositories, Side, pull, push, resolve};
 
 use crate::args::{PullArgs, PushArgs, ResolveArgs};
 use crate::context::Context;
@@ -8,7 +8,7 @@ use crate::output::Report;
 
 pub fn run_push(ctx: &mut Context, args: PushArgs) -> Result<Report, CliError> {
     let reports = push(
-        ctx.store.as_ref(),
+        Repositories::of(ctx.store.as_ref()),
         ctx.launcher.as_ref(),
         ctx.credentials.as_ref(),
         &ctx.config,
@@ -22,7 +22,7 @@ pub fn run_push(ctx: &mut Context, args: PushArgs) -> Result<Report, CliError> {
 
 pub fn run_pull(ctx: &mut Context, args: PullArgs) -> Result<Report, CliError> {
     let reports = pull(
-        ctx.store.as_ref(),
+        Repositories::of(ctx.store.as_ref()),
         ctx.launcher.as_ref(),
         ctx.credentials.as_ref(),
         ctx.clock.as_ref(),
@@ -44,6 +44,8 @@ pub fn run_resolve(ctx: &mut Context, args: ResolveArgs) -> Result<Report, CliEr
         Side::Ours
     };
     resolve(
+        ctx.store.as_ref(),
+        ctx.store.as_ref(),
         ctx.store.as_ref(),
         ctx.clock.as_ref(),
         ctx.random.as_mut(),

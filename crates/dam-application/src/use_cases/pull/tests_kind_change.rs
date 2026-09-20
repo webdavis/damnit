@@ -2,6 +2,8 @@ use jiff::civil::date;
 
 use super::tests::{config, launcher, remote};
 use super::*;
+use crate::ports::Repositories;
+use crate::testing::prelude::*;
 use crate::testing::{FixedClock, FixedRandom, MemoryStore, NoCredentials, oid};
 use crate::wire::to_wire;
 use dam_domain::{Event, Object, Task, When};
@@ -10,6 +12,7 @@ use dam_protocol::PullResponse;
 #[test]
 fn a_kind_change_upstream_keeps_ours_and_raises_a_notice() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "mine"))).unwrap();
     store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
     let mut theirs = to_wire(
@@ -28,7 +31,7 @@ fn a_kind_change_upstream_keeps_ours_and_raises_a_notice() {
         sync: None,
     });
     let reports = pull(
-        &store,
+        repos,
         &l,
         &NoCredentials,
         &FixedClock(date(2026, 9, 18)),
@@ -55,6 +58,7 @@ fn a_kind_change_upstream_keeps_ours_and_raises_a_notice() {
 #[test]
 fn a_kind_change_is_noticed_once_however_often_it_is_pulled() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "mine"))).unwrap();
     store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
     let mut theirs = to_wire(
@@ -74,7 +78,7 @@ fn a_kind_change_is_noticed_once_however_often_it_is_pulled() {
     });
     for _ in 0..2 {
         pull(
-            &store,
+            repos,
             &l,
             &NoCredentials,
             &FixedClock(date(2026, 9, 18)),

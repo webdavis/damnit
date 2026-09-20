@@ -16,3 +16,6 @@ serde_json.workspace = true
 toml.workspace = true
 getrandom.workspace = true
 tempfile.workspace = true
+
+[dev-dependencies]
+dam-application = { path = "../dam-application", features = ["testing"] }

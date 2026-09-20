@@ -4,8 +4,8 @@ pub mod errors;
 pub mod merge;
 pub mod ports;
 pub mod secret;
-#[cfg(test)]
-pub(crate) mod testing;
+#[cfg(any(test, feature = "testing"))]
+pub mod testing;
 pub mod use_cases;
 pub mod wire;
 
@@ -18,8 +18,10 @@ pub use dam_protocol::{
 pub use errors::{Refusal, UseCaseError};
 pub use merge::{kind_change, merge_fields};
 pub use ports::{
-    Clock, Conflict, CredentialError, CredentialSource, EditorError, EditorSession, HelperError,
-    HelperLauncher, Notice, ObjectStore, Randomness, RemoteHelper, RemoteName, StoreError,
+    Clock, CommitRepository, Conflict, ConflictRepository, CredentialError, CredentialSource,
+    EditorError, EditorSession, HelperError, HelperLauncher, Notice, NoticeRepository,
+    ObjectRepository, Randomness, RemoteHelper, RemoteName, RemoteTrackingRepository, Repositories,
+    StageRepository, Store, StoreError,
 };
 pub use secret::Secret;
 pub use use_cases::commit::{commit, log};

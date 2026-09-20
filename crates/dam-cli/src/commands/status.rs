@@ -1,4 +1,6 @@
-use dam_application::{Conflict, CredentialSpec, Notice, diff_staged, diff_working, status};
+use dam_application::{
+    Conflict, CredentialSpec, Notice, Repositories, diff_staged, diff_working, status,
+};
 use dam_domain::{Change, Op, changed_fields};
 
 use crate::args::DiffArgs;
@@ -8,7 +10,7 @@ use crate::output::{Report, object_json};
 
 pub fn run_status(ctx: &mut Context) -> Result<Report, CliError> {
     let remotes: Vec<_> = ctx.config.remotes.iter().map(|r| r.name.clone()).collect();
-    let s = status(ctx.store.as_ref(), &remotes)?;
+    let s = status(Repositories::of(ctx.store.as_ref()), &remotes)?;
     let mut human = Vec::new();
     section(&mut human, "Staged:", s.staged.iter().map(change_line));
     section(
@@ -52,7 +54,7 @@ pub fn run_diff(ctx: &mut Context, args: DiffArgs) -> Result<Report, CliError> {
     let changes = if args.staged {
         diff_staged(ctx.store.as_ref())?
     } else {
-        diff_working(ctx.store.as_ref())?
+        diff_working(ctx.store.as_ref(), ctx.store.as_ref(), ctx.store.as_ref())?
     };
     Ok(Report {
         human: changes

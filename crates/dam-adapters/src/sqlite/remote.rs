@@ -1,4 +1,4 @@
-use dam_application::{RemoteName, StoreError};
+use dam_application::{RemoteName, RemoteTrackingRepository, StoreError};
 use dam_domain::{Object, Oid, Timestamp};
 use rusqlite::{OptionalExtension, params};
 
@@ -170,10 +170,56 @@ impl SqliteStore {
     }
 }
 
+impl RemoteTrackingRepository for SqliteStore {
+    fn remote_id(&self, remote: &RemoteName, oid: &Oid) -> Result<Option<String>, StoreError> {
+        self.remote_id_of(remote, oid)
+    }
+    fn oid_for_remote_id(
+        &self,
+        remote: &RemoteName,
+        remote_id: &str,
+    ) -> Result<Option<Oid>, StoreError> {
+        self.oid_of_remote_id(remote, remote_id)
+    }
+    fn map_remote_id(
+        &self,
+        remote: &RemoteName,
+        oid: &Oid,
+        remote_id: &str,
+    ) -> Result<(), StoreError> {
+        self.set_remote_id(remote, oid, remote_id)
+    }
+    fn remote_snapshot(
+        &self,
+        remote: &RemoteName,
+        oid: &Oid,
+    ) -> Result<Option<Object>, StoreError> {
+        self.snapshot_of(remote, oid)
+    }
+    fn set_remote_snapshot(&self, remote: &RemoteName, object: &Object) -> Result<(), StoreError> {
+        self.set_snapshot(remote, object)
+    }
+    fn clear_remote_mapping(&self, remote: &RemoteName, oid: &Oid) -> Result<(), StoreError> {
+        self.clear_mapping(remote, oid)
+    }
+    fn sync_token(&self, remote: &RemoteName) -> Result<Option<String>, StoreError> {
+        self.token_of(remote)
+    }
+    fn set_sync_token(&self, remote: &RemoteName, token: Option<&str>) -> Result<(), StoreError> {
+        self.set_token(remote, token)
+    }
+    fn last_pull(&self, remote: &RemoteName) -> Result<Option<Timestamp>, StoreError> {
+        self.last_pull_of(remote)
+    }
+    fn set_last_pull(&self, remote: &RemoteName, at: Timestamp) -> Result<(), StoreError> {
+        self.set_last_pull_of(remote, at)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::SqliteStore;
-    use dam_application::{ObjectStore, RemoteName};
+    use dam_application::{RemoteName, RemoteTrackingRepository};
     use dam_domain::{Object, Oid, Task};
 
     fn oid(b: u8) -> Oid {

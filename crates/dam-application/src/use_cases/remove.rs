@@ -1,7 +1,7 @@
 use dam_domain::Oid;
 
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::ObjectStore;
+use crate::ports::ObjectRepository;
 use crate::use_cases::subtree::{last_segment, move_subtree};
 
 pub struct RemovePlan {
@@ -11,18 +11,18 @@ pub struct RemovePlan {
     pub attached: Vec<Oid>,
 }
 
-pub fn plan_remove(store: &dyn ObjectStore, oid: &Oid) -> Result<RemovePlan, UseCaseError> {
-    let object = store
+pub fn plan_remove(objects: &dyn ObjectRepository, oid: &Oid) -> Result<RemovePlan, UseCaseError> {
+    let object = objects
         .get(oid)?
         .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
     let path = object.base().path.clone();
-    let all = store.all()?;
+    let all = objects.all()?;
     let descendants = all
         .iter()
         .filter(|o| o.oid() != oid && o.base().path.is_within(&path))
         .map(|o| o.oid().clone())
         .collect();
-    let dependents = store.dependents_of(oid)?;
+    let dependents = objects.dependents_of(oid)?;
     let attached = all
         .iter()
         .filter(|o| o.as_task().is_some_and(|t| t.event.as_ref() == Some(oid)))
@@ -38,32 +38,33 @@ pub fn plan_remove(store: &dyn ObjectStore, oid: &Oid) -> Result<RemovePlan, Use
 
 /// Removes one object. Children move up a level, dependents lose the edge,
 /// attached tasks keep the oid so `status` can report it. Nothing cascades.
-pub fn remove(store: &dyn ObjectStore, oid: &Oid) -> Result<RemovePlan, UseCaseError> {
-    let plan = plan_remove(store, oid)?;
-    let object = store
+pub fn remove(objects: &dyn ObjectRepository, oid: &Oid) -> Result<RemovePlan, UseCaseError> {
+    let plan = plan_remove(objects, oid)?;
+    let object = objects
         .get(oid)?
         .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
     let old = object.base().path.clone();
     let up = old.parent().unwrap_or_default();
-    for child in store.children_of(&old)? {
+    for child in objects.children_of(&old)? {
         let new = up
             .join(&last_segment(&child.base().path))
             .map_err(|e| UseCaseError::Parse(e.to_string()))?;
-        move_subtree(store, child.oid(), &new)?;
+        move_subtree(objects, child.oid(), &new)?;
     }
     for dependent in &plan.dependents {
-        if let Some(mut d) = store.get(dependent)? {
+        if let Some(mut d) = objects.get(dependent)? {
             d.base_mut().depends.retain(|x| x != oid);
-            store.put(&d)?;
+            objects.put(&d)?;
         }
     }
-    store.delete(oid)?;
+    objects.delete(oid)?;
     Ok(plan)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::testing::prelude::*;
     use crate::testing::{MemoryStore, oid};
     use dam_domain::{Object, Path, Task};
 

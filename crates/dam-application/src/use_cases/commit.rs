@@ -1,15 +1,16 @@
 use dam_domain::{CommitId, CommitRecord};
 
 use crate::errors::UseCaseError;
-use crate::ports::{Clock, ObjectStore, Randomness};
+use crate::ports::{Clock, CommitRepository, Randomness, StageRepository};
 
 pub fn commit(
-    store: &dyn ObjectStore,
+    stage: &dyn StageRepository,
+    commits: &dyn CommitRepository,
     clock: &dyn Clock,
     random: &mut dyn Randomness,
     message: &str,
 ) -> Result<CommitRecord, UseCaseError> {
-    let changes = store.staged()?;
+    let changes = stage.staged()?;
     if changes.is_empty() {
         return Err(UseCaseError::Parse("nothing to commit".into()));
     }
@@ -19,17 +20,18 @@ pub fn commit(
         at: clock.now(),
         changes,
     };
-    store.commit(&record)?;
+    commits.commit(&record)?;
     Ok(record)
 }
 
-pub fn log(store: &dyn ObjectStore) -> Result<Vec<CommitRecord>, UseCaseError> {
-    Ok(store.log()?)
+pub fn log(commits: &dyn CommitRepository) -> Result<Vec<CommitRecord>, UseCaseError> {
+    Ok(commits.log()?)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::testing::prelude::*;
     use crate::testing::{FixedClock, FixedRandom, MemoryStore, oid};
     use crate::use_cases::stage::add_all;
     use dam_domain::{Object, Task};
@@ -39,8 +41,9 @@ mod tests {
     fn commit_records_the_stage_and_empties_it() {
         let store = MemoryStore::new();
         store.put(&Object::Task(Task::new(oid(1), "a"))).unwrap();
-        add_all(&store).unwrap();
+        add_all(&store, &store, &store).unwrap();
         let rec = commit(
+            &store,
             &store,
             &FixedClock(date(2026, 9, 18)),
             &mut FixedRandom(5),
@@ -61,6 +64,7 @@ mod tests {
     fn an_empty_stage_cannot_be_committed() {
         let store = MemoryStore::new();
         let err = commit(
+            &store,
             &store,
             &FixedClock(date(2026, 9, 18)),
             &mut FixedRandom(5),

@@ -7,7 +7,9 @@ use jiff::civil::date;
 
 use super::*;
 use crate::config::{Config, CredentialSpec, RemoteConfig};
+use crate::ports::Repositories;
 use crate::ports::{Notice, RemoteName};
+use crate::testing::prelude::*;
 use crate::testing::{
     FixedClock, FixedRandom, MemoryStore, NoCredentials, ScriptedHelper, ScriptedLauncher, oid,
     task_caps,
@@ -59,8 +61,9 @@ fn committed_task(store: &MemoryStore, byte: u8) {
     store
         .put(&Object::Task(Task::new(oid(byte), format!("t{byte}"))))
         .unwrap();
-    add_all(store).unwrap();
+    add_all(store, store, store).unwrap();
     commit(
+        store,
         store,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(byte),
@@ -72,6 +75,7 @@ fn committed_task(store: &MemoryStore, byte: u8) {
 #[test]
 fn a_committed_create_is_sent_and_its_remote_id_is_mapped() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     committed_task(&store, 1);
     let (l, pushed) = launcher(|ms| {
         ms.iter()
@@ -83,7 +87,7 @@ fn a_committed_create_is_sent_and_its_remote_id_is_mapped() {
             })
             .collect()
     });
-    let reports = push(&store, &l, &NoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &l, &NoCredentials, &config(), None).unwrap();
     assert_eq!(reports[0].succeeded, 1);
     assert_eq!(pushed.borrow()[0].op, "create");
     assert_eq!(
@@ -110,6 +114,7 @@ fn a_committed_create_is_sent_and_its_remote_id_is_mapped() {
 #[test]
 fn a_failed_mutation_becomes_a_notice_and_a_retry() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     committed_task(&store, 1);
     let (l, _) = launcher(|ms| {
         ms.iter()
@@ -121,7 +126,7 @@ fn a_failed_mutation_becomes_a_notice_and_a_retry() {
             })
             .collect()
     });
-    let reports = push(&store, &l, &NoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &l, &NoCredentials, &config(), None).unwrap();
     assert_eq!(
         reports[0].failed,
         vec![(oid(1), "rate limited".to_string())]
@@ -146,6 +151,7 @@ fn a_failed_mutation_becomes_a_notice_and_a_retry() {
 #[test]
 fn a_mutation_the_helper_never_answered_is_a_failure() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     committed_task(&store, 1);
     committed_task(&store, 2);
     let (l, _) = launcher(|ms| {
@@ -159,7 +165,7 @@ fn a_mutation_the_helper_never_answered_is_a_failure() {
             })
             .collect()
     });
-    let reports = push(&store, &l, &NoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &l, &NoCredentials, &config(), None).unwrap();
     assert_eq!(reports[0].succeeded, 1);
     assert_eq!(
         reports[0].failed,
@@ -181,6 +187,7 @@ fn a_mutation_the_helper_never_answered_is_a_failure() {
 #[test]
 fn a_retry_is_sent_as_an_update_of_the_committed_state() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     committed_task(&store, 1);
     store
         .map_remote_id(&RemoteName("todoist".into()), &oid(1), "r1")
@@ -198,7 +205,7 @@ fn a_retry_is_sent_as_an_update_of_the_committed_state() {
             })
             .collect()
     });
-    push(&store, &l, &NoCredentials, &config(), None).unwrap();
+    push(repos, &l, &NoCredentials, &config(), None).unwrap();
     let sent = pushed.borrow();
     assert!(
         sent.iter()
@@ -215,10 +222,12 @@ fn a_retry_is_sent_as_an_update_of_the_committed_state() {
 #[test]
 fn a_successful_delete_clears_the_remote_mapping() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     let remote = RemoteName("todoist".into());
     store.put(&Object::Task(Task::new(oid(1), "t1"))).unwrap();
-    add_all(&store).unwrap();
+    add_all(&store, &store, &store).unwrap();
     let created = commit(
+        &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(1),
@@ -232,8 +241,9 @@ fn a_successful_delete_clears_the_remote_mapping() {
     store.mark_pushed(&remote, &created.id).unwrap();
 
     store.delete(&oid(1)).unwrap();
-    add_all(&store).unwrap();
+    add_all(&store, &store, &store).unwrap();
     commit(
+        &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(2),
@@ -251,7 +261,7 @@ fn a_successful_delete_clears_the_remote_mapping() {
             })
             .collect()
     });
-    push(&store, &l, &NoCredentials, &config(), None).unwrap();
+    push(repos, &l, &NoCredentials, &config(), None).unwrap();
     assert!(store.remote_id(&remote, &oid(1)).unwrap().is_none());
     assert!(store.remote_snapshot(&remote, &oid(1)).unwrap().is_none());
 }
@@ -259,6 +269,7 @@ fn a_successful_delete_clears_the_remote_mapping() {
 #[test]
 fn duplicate_and_unsent_results_are_ignored() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     committed_task(&store, 1);
     let (l, _) = launcher(|_| {
         vec![
@@ -282,7 +293,7 @@ fn duplicate_and_unsent_results_are_ignored() {
             },
         ]
     });
-    let reports = push(&store, &l, &NoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &l, &NoCredentials, &config(), None).unwrap();
     assert_eq!(reports[0].succeeded, 0);
     assert_eq!(reports[0].failed.len(), 1);
     let retries = store.push_retries(&RemoteName("todoist".into())).unwrap();
@@ -293,9 +304,11 @@ fn duplicate_and_unsent_results_are_ignored() {
 #[test]
 fn a_delete_with_no_remote_mapping_is_skipped() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "t1"))).unwrap();
-    add_all(&store).unwrap();
+    add_all(&store, &store, &store).unwrap();
     let created = commit(
+        &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(1),
@@ -307,8 +320,9 @@ fn a_delete_with_no_remote_mapping_is_skipped() {
         .unwrap();
 
     store.delete(&oid(1)).unwrap();
-    add_all(&store).unwrap();
+    add_all(&store, &store, &store).unwrap();
     commit(
+        &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(2),
@@ -317,7 +331,7 @@ fn a_delete_with_no_remote_mapping_is_skipped() {
     .unwrap();
 
     let (l, pushed) = launcher(|_| vec![]);
-    let reports = push(&store, &l, &NoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &l, &NoCredentials, &config(), None).unwrap();
     assert_eq!(reports[0].skipped, 1);
     assert_eq!(reports[0].sent, 0);
     assert!(pushed.borrow().is_empty());
@@ -326,6 +340,7 @@ fn a_delete_with_no_remote_mapping_is_skipped() {
 #[test]
 fn an_event_is_skipped_by_a_task_only_helper() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     let e = Event::new(
         oid(2),
         "e",
@@ -333,8 +348,9 @@ fn an_event_is_skipped_by_a_task_only_helper() {
         When::Day(date(2026, 1, 2)),
     );
     store.put(&Object::Event(e)).unwrap();
-    add_all(&store).unwrap();
+    add_all(&store, &store, &store).unwrap();
     commit(
+        &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(3),
@@ -342,7 +358,7 @@ fn an_event_is_skipped_by_a_task_only_helper() {
     )
     .unwrap();
     let (l, pushed) = launcher(|_| vec![]);
-    let reports = push(&store, &l, &NoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &l, &NoCredentials, &config(), None).unwrap();
     assert_eq!(reports[0].skipped, 1);
     assert!(pushed.borrow().is_empty());
 }
@@ -350,6 +366,7 @@ fn an_event_is_skipped_by_a_task_only_helper() {
 #[test]
 fn unresolved_conflicts_block_push() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     committed_task(&store, 1);
     store
         .mark_conflict(
@@ -359,15 +376,16 @@ fn unresolved_conflicts_block_push() {
         )
         .unwrap();
     let (l, _) = launcher(|_| vec![]);
-    let err = push(&store, &l, &NoCredentials, &config(), None).unwrap_err();
+    let err = push(repos, &l, &NoCredentials, &config(), None).unwrap_err();
     assert_eq!(err, UseCaseError::Refused(Refusal::UnresolvedConflicts(1)));
 }
 
 #[test]
 fn an_unknown_remote_is_refused() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     let (l, _) = launcher(|_| vec![]);
-    let err = push(&store, &l, &NoCredentials, &config(), Some("nope")).unwrap_err();
+    let err = push(repos, &l, &NoCredentials, &config(), Some("nope")).unwrap_err();
     assert_eq!(
         err,
         UseCaseError::Refused(Refusal::NoSuchRemote("nope".into()))
@@ -382,10 +400,11 @@ fn an_unknown_remote_is_refused() {
 #[test]
 fn a_resend_after_an_unanswered_push_carries_the_first_attempt_s_key() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     committed_task(&store, 1);
     let (l, pushed) = launcher(|_| vec![]);
-    push(&store, &l, &NoCredentials, &config(), None).unwrap();
-    push(&store, &l, &NoCredentials, &config(), None).unwrap();
+    push(repos, &l, &NoCredentials, &config(), None).unwrap();
+    push(repos, &l, &NoCredentials, &config(), None).unwrap();
     let sent = pushed.borrow();
     assert_eq!(sent.len(), 2, "the mutation was sent twice: {sent:?}");
     assert_eq!(
@@ -404,6 +423,7 @@ fn a_resend_after_an_unanswered_push_carries_the_first_attempt_s_key() {
 #[test]
 fn two_successive_changes_to_one_object_carry_different_keys() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     committed_task(&store, 1);
     let (l, pushed) = launcher(|ms| {
         ms.iter()
@@ -415,19 +435,20 @@ fn two_successive_changes_to_one_object_carry_different_keys() {
             })
             .collect()
     });
-    push(&store, &l, &NoCredentials, &config(), None).unwrap();
+    push(repos, &l, &NoCredentials, &config(), None).unwrap();
     store
         .put(&Object::Task(Task::new(oid(1), "second")))
         .unwrap();
-    add_all(&store).unwrap();
+    add_all(&store, &store, &store).unwrap();
     commit(
+        &store,
         &store,
         &FixedClock(date(2026, 9, 19)),
         &mut FixedRandom(9),
         "m2",
     )
     .unwrap();
-    push(&store, &l, &NoCredentials, &config(), None).unwrap();
+    push(repos, &l, &NoCredentials, &config(), None).unwrap();
     let sent = pushed.borrow();
     assert_eq!(sent.len(), 2);
     assert_ne!(sent[0].idempotency_key, sent[1].idempotency_key);

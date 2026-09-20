@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use dam_domain::{Categories, Date, Event, Object, Oid, Path, Priority, Task, When};
 
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{ObjectStore, Randomness};
+use crate::ports::{ObjectRepository, Randomness};
 
 pub struct NewTask {
     pub subject: String,
@@ -25,7 +25,7 @@ pub struct NewEvent {
 }
 
 pub fn new_task(
-    store: &dyn ObjectStore,
+    objects: &dyn ObjectRepository,
     random: &mut dyn Randomness,
     categories: &Categories,
     input: NewTask,
@@ -39,12 +39,12 @@ pub fn new_task(
     task.priority = input.priority;
     task.due = input.due;
     task.deadline = input.deadline;
-    store.put(&Object::Task(task))?;
+    objects.put(&Object::Task(task))?;
     Ok(oid)
 }
 
 pub fn new_event(
-    store: &dyn ObjectStore,
+    objects: &dyn ObjectRepository,
     random: &mut dyn Randomness,
     categories: &Categories,
     input: NewEvent,
@@ -55,13 +55,14 @@ pub fn new_event(
     event.base.path = input.path;
     event.base.labels = input.labels;
     event.base.body = input.body;
-    store.put(&Object::Event(event))?;
+    objects.put(&Object::Event(event))?;
     Ok(oid)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::testing::prelude::*;
     use crate::testing::{FixedRandom, MemoryStore, oid};
     use dam_domain::Category;
 

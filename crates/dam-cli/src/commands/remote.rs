@@ -1,5 +1,5 @@
 use dam_adapters::{append_remote, load_config};
-use dam_application::{Notice, RemoteConfig, RemoteName, pull};
+use dam_application::{Notice, RemoteConfig, RemoteName, Repositories, pull};
 
 use crate::args::{RemoteArgs, RemoteCommand};
 use crate::context::Context;
@@ -70,7 +70,7 @@ pub fn maybe_pull_stale(ctx: &mut Context) -> Result<(), CliError> {
         .collect();
     for name in due {
         if let Err(e) = pull(
-            ctx.store.as_ref(),
+            Repositories::of(ctx.store.as_ref()),
             ctx.launcher.as_ref(),
             ctx.credentials.as_ref(),
             ctx.clock.as_ref(),

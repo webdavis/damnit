@@ -1,4 +1,4 @@
-use dam_application::{ObjectStore, Refusal, UseCaseError};
+use dam_application::{ObjectRepository, Refusal, UseCaseError};
 use dam_domain::Oid;
 
 use crate::error::CliError;
@@ -7,7 +7,7 @@ const MIN_PREFIX: usize = 4;
 
 /// Resolves the oid argument every verb that takes one accepts: a full oid, or a
 /// hex prefix at least `MIN_PREFIX` characters long that matches exactly one object.
-pub fn resolve_oid(store: &dyn ObjectStore, text: &str) -> Result<Oid, CliError> {
+pub fn resolve_oid(objects: &dyn ObjectRepository, text: &str) -> Result<Oid, CliError> {
     if let Ok(oid) = Oid::parse(text) {
         return Ok(oid);
     }
@@ -16,7 +16,7 @@ pub fn resolve_oid(store: &dyn ObjectStore, text: &str) -> Result<Oid, CliError>
             "{text:?} is not an oid; give at least {MIN_PREFIX} hex characters"
         )));
     }
-    let matches: Vec<Oid> = store
+    let matches: Vec<Oid> = objects
         .all()?
         .into_iter()
         .map(|o| o.oid().clone())

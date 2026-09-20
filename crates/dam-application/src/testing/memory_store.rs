@@ -1,43 +1,14 @@
+//! An in-memory `Store`, the double every application use-case test runs on.
+
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-use std::rc::Rc;
 
-use dam_domain::{Change, CommitId, CommitRecord, Date, Object, Oid, Path, Timestamp, coalesce};
-use dam_protocol::{Capabilities, Mutation, MutationResult, PullResponse, PushResponse};
+use dam_domain::{Change, CommitId, CommitRecord, Object, Oid, Path, Timestamp, coalesce};
 
-use crate::config::{CredentialSpec, RemoteConfig};
 use crate::ports::{
-    Clock, Conflict, CredentialError, CredentialSource, HelperError, HelperLauncher, Notice,
-    ObjectStore, Randomness, RemoteHelper, RemoteName, StoreError,
+    CommitRepository, Conflict, ConflictRepository, Notice, NoticeRepository, ObjectRepository,
+    RemoteName, RemoteTrackingRepository, StageRepository, StoreError,
 };
-use crate::secret::Secret;
-
-pub(crate) fn oid(byte: u8) -> Oid {
-    Oid::generate(&mut |b: &mut [u8]| b.fill(byte))
-}
-
-pub(crate) struct FixedRandom(pub u8);
-
-impl Randomness for FixedRandom {
-    fn fill(&mut self, buf: &mut [u8]) {
-        buf.fill(self.0);
-        self.0 = self.0.wrapping_add(1);
-    }
-}
-
-pub(crate) struct FixedClock(pub Date);
-
-impl Clock for FixedClock {
-    fn today(&self) -> Date {
-        self.0
-    }
-    fn now(&self) -> Timestamp {
-        self.0
-            .to_zoned(jiff::tz::TimeZone::UTC)
-            .map(|z| z.timestamp())
-            .unwrap_or(Timestamp::UNIX_EPOCH)
-    }
-}
 
 #[derive(Default)]
 struct Inner {
@@ -56,15 +27,15 @@ struct Inner {
 }
 
 #[derive(Default)]
-pub(crate) struct MemoryStore(RefCell<Inner>);
+pub struct MemoryStore(RefCell<Inner>);
 
 impl MemoryStore {
-    pub(crate) fn new() -> MemoryStore {
+    pub fn new() -> MemoryStore {
         MemoryStore::default()
     }
 }
 
-impl ObjectStore for MemoryStore {
+impl ObjectRepository for MemoryStore {
     fn get(&self, oid: &Oid) -> Result<Option<Object>, StoreError> {
         Ok(self.0.borrow().working.get(oid).cloned())
     }
@@ -105,6 +76,9 @@ impl ObjectStore for MemoryStore {
     fn committed(&self, oid: &Oid) -> Result<Option<Object>, StoreError> {
         Ok(self.0.borrow().committed.get(oid).cloned())
     }
+}
+
+impl StageRepository for MemoryStore {
     fn stage(&self, change: Change) -> Result<(), StoreError> {
         let mut inner = self.0.borrow_mut();
         let oid = change.oid.clone();
@@ -128,6 +102,9 @@ impl ObjectStore for MemoryStore {
     fn staged(&self) -> Result<Vec<Change>, StoreError> {
         Ok(self.0.borrow().staged.values().cloned().collect())
     }
+}
+
+impl CommitRepository for MemoryStore {
     fn commit(&self, record: &CommitRecord) -> Result<(), StoreError> {
         let mut inner = self.0.borrow_mut();
         for change in &record.changes {
@@ -162,6 +139,25 @@ impl ObjectStore for MemoryStore {
             .push(id.clone());
         Ok(())
     }
+    fn push_retries(&self, remote: &RemoteName) -> Result<Vec<Oid>, StoreError> {
+        Ok(self
+            .0
+            .borrow()
+            .retries
+            .get(remote)
+            .cloned()
+            .unwrap_or_default())
+    }
+    fn set_push_retries(&self, remote: &RemoteName, oids: &[Oid]) -> Result<(), StoreError> {
+        self.0
+            .borrow_mut()
+            .retries
+            .insert(remote.clone(), oids.to_vec());
+        Ok(())
+    }
+}
+
+impl RemoteTrackingRepository for MemoryStore {
     fn remote_id(&self, remote: &RemoteName, oid: &Oid) -> Result<Option<String>, StoreError> {
         Ok(self
             .0
@@ -238,22 +234,9 @@ impl ObjectStore for MemoryStore {
         self.0.borrow_mut().last_pulls.insert(remote.clone(), at);
         Ok(())
     }
-    fn push_retries(&self, remote: &RemoteName) -> Result<Vec<Oid>, StoreError> {
-        Ok(self
-            .0
-            .borrow()
-            .retries
-            .get(remote)
-            .cloned()
-            .unwrap_or_default())
-    }
-    fn set_push_retries(&self, remote: &RemoteName, oids: &[Oid]) -> Result<(), StoreError> {
-        self.0
-            .borrow_mut()
-            .retries
-            .insert(remote.clone(), oids.to_vec());
-        Ok(())
-    }
+}
+
+impl ConflictRepository for MemoryStore {
     fn mark_conflict(
         &self,
         remote: &RemoteName,
@@ -281,6 +264,9 @@ impl ObjectStore for MemoryStore {
         self.0.borrow_mut().conflicts.remove(oid);
         Ok(())
     }
+}
+
+impl NoticeRepository for MemoryStore {
     fn add_notice(&self, notice: &Notice) -> Result<(), StoreError> {
         self.0.borrow_mut().notices.push(notice.clone());
         Ok(())
@@ -294,83 +280,39 @@ impl ObjectStore for MemoryStore {
     }
 }
 
-type PushAnswer = Box<dyn Fn(&[Mutation]) -> Vec<MutationResult>>;
-type LaunchedWith = Rc<RefCell<Vec<Vec<(String, Secret)>>>>;
+#[cfg(test)]
+mod tests {
+    use super::MemoryStore;
+    use crate::testing::contract;
 
-/// A scripted helper: records what it was asked, answers what it was told.
-pub(crate) struct ScriptedHelper {
-    pub caps: Capabilities,
-    pub pull_answer: PullResponse,
-    pub push_answer: PushAnswer,
-    pub pushed: Rc<RefCell<Vec<Mutation>>>,
-    pub pulled_since: Rc<RefCell<Vec<Option<String>>>>,
-}
-
-impl std::fmt::Debug for ScriptedHelper {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ScriptedHelper").finish_non_exhaustive()
+    #[test]
+    fn it_keeps_the_object_repository_contract() {
+        contract::object_repository_contract(&MemoryStore::new());
     }
-}
 
-impl RemoteHelper for ScriptedHelper {
-    fn capabilities(&mut self) -> Result<Capabilities, HelperError> {
-        Ok(self.caps.clone())
+    #[test]
+    fn it_keeps_the_stage_repository_contract() {
+        contract::stage_repository_contract(&MemoryStore::new());
     }
-    fn pull(&mut self, since: Option<&str>) -> Result<PullResponse, HelperError> {
-        self.pulled_since
-            .borrow_mut()
-            .push(since.map(|s| s.to_string()));
-        Ok(self.pull_answer.clone())
-    }
-    fn push(&mut self, mutations: Vec<Mutation>) -> Result<PushResponse, HelperError> {
-        let results = (self.push_answer)(&mutations);
-        self.pushed.borrow_mut().extend(mutations);
-        Ok(PushResponse { results })
-    }
-}
 
-pub(crate) struct ScriptedLauncher {
-    pub make: Box<dyn Fn() -> ScriptedHelper>,
-    pub launched_with: LaunchedWith,
-}
-
-impl HelperLauncher for ScriptedLauncher {
-    fn launch(
-        &self,
-        _remote: &RemoteConfig,
-        credentials: &[(String, Secret)],
-    ) -> Result<Box<dyn RemoteHelper>, HelperError> {
-        self.launched_with.borrow_mut().push(credentials.to_vec());
-        Ok(Box::new((self.make)()))
+    #[test]
+    fn it_keeps_the_commit_repository_contract() {
+        contract::commit_repository_contract(&MemoryStore::new());
     }
-}
 
-pub(crate) struct NoCredentials;
-impl CredentialSource for NoCredentials {
-    fn resolve(&self, spec: &CredentialSpec) -> Result<Secret, CredentialError> {
-        Ok(format!("value-of-{}", spec.name()).into())
+    #[test]
+    fn it_keeps_the_remote_tracking_repository_contract() {
+        contract::remote_tracking_repository_contract(&MemoryStore::new());
     }
-}
 
-pub(crate) fn task_caps() -> Capabilities {
-    Capabilities {
-        protocol: 1,
-        kinds: vec!["task".into()],
-        fields: [
-            "subject",
-            "body",
-            "path",
-            "labels",
-            "priority",
-            "due",
-            "deadline",
-            "done",
-            "recurrence",
-        ]
-        .iter()
-        .map(|s| s.to_string())
-        .collect(),
-        credentials: vec!["api_token".into()],
-        incremental: true,
+    #[test]
+    fn it_keeps_the_conflict_repository_contract() {
+        let store = MemoryStore::new();
+        contract::conflict_repository_contract(&store, &store);
+    }
+
+    #[test]
+    fn it_keeps_the_notice_repository_contract() {
+        contract::notice_repository_contract(&MemoryStore::new());
     }
 }

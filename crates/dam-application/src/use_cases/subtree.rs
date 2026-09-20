@@ -1,31 +1,31 @@
 use dam_domain::{Oid, Path};
 
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::ObjectStore;
+use crate::ports::ObjectRepository;
 
 /// Moves `oid` to `to`, carrying every object nested under its old path along
 /// with it, so a moved task's children (and their own children) relocate
 /// instead of being orphaned under a stale prefix.
 pub(crate) fn move_subtree(
-    store: &dyn ObjectStore,
+    objects: &dyn ObjectRepository,
     oid: &Oid,
     to: &Path,
 ) -> Result<(), UseCaseError> {
-    let mut object = store
+    let mut object = objects
         .get(oid)?
         .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
     let from = object.base().path.clone();
-    for mut other in store.all()? {
+    for mut other in objects.all()? {
         if other.oid() == oid || !other.base().path.is_within(&from) {
             continue;
         }
         let suffix = &other.base().path.as_str()[from.as_str().len()..];
         other.base_mut().path = Path::parse(&format!("{}{suffix}", to.as_str()))
             .map_err(|e| UseCaseError::Parse(e.to_string()))?;
-        store.put(&other)?;
+        objects.put(&other)?;
     }
     object.base_mut().path = to.clone();
-    store.put(&object)?;
+    objects.put(&object)?;
     Ok(())
 }
 
@@ -42,6 +42,7 @@ pub(crate) fn last_segment(path: &Path) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::testing::prelude::*;
     use crate::testing::{MemoryStore, oid};
     use dam_domain::{Object, Task};
 

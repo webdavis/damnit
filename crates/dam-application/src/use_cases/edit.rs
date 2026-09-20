@@ -1,7 +1,7 @@
 use dam_domain::{Categories, Date, Object, Oid, Priority, Rule, When, cycle_in};
 
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::ObjectStore;
+use crate::ports::ObjectRepository;
 
 /// Outer `None` leaves a field alone; `Some(None)` clears it; `Some(Some(v))` sets it.
 #[derive(Default, Debug, PartialEq, Eq)]
@@ -23,12 +23,12 @@ pub struct EditFields {
 }
 
 pub fn edit(
-    store: &dyn ObjectStore,
+    objects: &dyn ObjectRepository,
     categories: &Categories,
     oid: &Oid,
     fields: EditFields,
 ) -> Result<Object, UseCaseError> {
-    let current = store
+    let current = objects
         .get(oid)?
         .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
     let next = apply(&current, &fields)?;
@@ -37,7 +37,7 @@ pub fn edit(
         .map_err(Refusal::Labels)?;
     if !fields.add_depends.is_empty() {
         let edges = |o: &Oid| {
-            store
+            objects
                 .get(o)
                 .ok()
                 .flatten()
@@ -53,12 +53,12 @@ pub fn edit(
         }
     }
     if let Some(Some(event)) = &fields.attach {
-        match store.get(event)? {
+        match objects.get(event)? {
             Some(Object::Event(_)) => {}
             _ => return Err(Refusal::NoSuchObject(event.short().to_string()).into()),
         }
     }
-    store.put(&next)?;
+    objects.put(&next)?;
     Ok(next)
 }
 
@@ -138,6 +138,7 @@ pub fn apply(object: &Object, fields: &EditFields) -> Result<Object, UseCaseErro
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::testing::prelude::*;
     use crate::testing::{MemoryStore, oid};
     use dam_domain::{Categories, Category, Event, Object, Task, When};
     use jiff::civil::date;

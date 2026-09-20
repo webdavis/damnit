@@ -4,10 +4,10 @@ use dam_domain::{Categories, Date, Expr, Object, Term, matches, parse_query};
 
 use crate::config::Config;
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{Clock, ObjectStore};
+use crate::ports::{Clock, ObjectRepository};
 
 pub fn list(
-    store: &dyn ObjectStore,
+    objects: &dyn ObjectRepository,
     clock: &dyn Clock,
     config: &Config,
     query: Option<&str>,
@@ -22,7 +22,7 @@ pub fn list(
         }
     };
     let today = clock.today();
-    let mut out: Vec<Object> = store
+    let mut out: Vec<Object> = objects
         .all()?
         .into_iter()
         .filter(|o| expr.as_ref().is_none_or(|e| matches(e, o, today)))
@@ -77,6 +77,7 @@ fn order(a: &Object, b: &Object) -> Ordering {
 mod tests {
     use super::*;
     use crate::config::FilterConfig;
+    use crate::testing::prelude::*;
     use crate::testing::{FixedClock, MemoryStore, oid};
     use dam_domain::{Categories, Category, Object, Path, Priority, Task, When};
     use jiff::civil::date;

@@ -4,6 +4,8 @@ use std::rc::Rc;
 use super::*;
 use crate::config::{Config, CredentialSpec, RemoteConfig};
 use crate::ports::RemoteName;
+use crate::ports::Repositories;
+use crate::testing::prelude::*;
 use crate::testing::{
     FixedClock, FixedRandom, MemoryStore, NoCredentials, ScriptedHelper, ScriptedLauncher, oid,
     task_caps,
@@ -39,6 +41,8 @@ fn theirs_takes_the_upstream_version() {
     let store = conflicted();
     resolve(
         &store,
+        &store,
+        &store,
         &FixedClock(jiff::civil::date(2026, 9, 18)),
         &mut FixedRandom(3),
         &oid(1),
@@ -66,8 +70,9 @@ fn theirs_takes_the_upstream_version() {
 fn resolving_with_ours_leaves_an_existing_unpushed_commit_untouched() {
     let store = MemoryStore::new();
     store.put(&Object::Task(Task::new(oid(1), "mine"))).unwrap();
-    add_all(&store).unwrap();
+    add_all(&store, &store, &store).unwrap();
     let created = commit(
+        &store,
         &store,
         &FixedClock(jiff::civil::date(2026, 9, 18)),
         &mut FixedRandom(1),
@@ -82,6 +87,8 @@ fn resolving_with_ours_leaves_an_existing_unpushed_commit_untouched() {
         )
         .unwrap();
     resolve(
+        &store,
+        &store,
         &store,
         &FixedClock(jiff::civil::date(2026, 9, 18)),
         &mut FixedRandom(3),
@@ -106,6 +113,8 @@ fn ours_keeps_the_local_version() {
     let store = conflicted();
     resolve(
         &store,
+        &store,
+        &store,
         &FixedClock(jiff::civil::date(2026, 9, 18)),
         &mut FixedRandom(3),
         &oid(1),
@@ -120,6 +129,8 @@ fn ours_keeps_the_local_version() {
 fn resolving_a_non_conflict_is_refused() {
     let store = MemoryStore::new();
     let err = resolve(
+        &store,
+        &store,
         &store,
         &FixedClock(jiff::civil::date(2026, 9, 18)),
         &mut FixedRandom(3),
@@ -196,9 +207,11 @@ fn recording_launcher(
 /// A real conflict: an object both sides moved away from the same base.
 fn pulled_into_conflict() -> MemoryStore {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "base"))).unwrap();
-    add_all(&store).unwrap();
+    add_all(&store, &store, &store).unwrap();
     commit(
+        &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(9),
@@ -212,8 +225,9 @@ fn pulled_into_conflict() -> MemoryStore {
     let mut mine = store.get(&oid(1)).unwrap().unwrap();
     mine.base_mut().subject = "mine".into();
     store.put(&mine).unwrap();
-    add_all(&store).unwrap();
+    add_all(&store, &store, &store).unwrap();
     commit(
+        &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(10),
@@ -221,7 +235,7 @@ fn pulled_into_conflict() -> MemoryStore {
     )
     .unwrap();
     let reports = pull(
-        &store,
+        repos,
         &launcher(vec![upstream("theirs")]),
         &NoCredentials,
         &FixedClock(date(2026, 9, 18)),
@@ -240,7 +254,10 @@ fn pulled_into_conflict() -> MemoryStore {
 #[test]
 fn ours_is_committed_and_the_conflict_is_not_raised_again() {
     let store = pulled_into_conflict();
+    let repos = Repositories::of(&store);
     resolve(
+        &store,
+        &store,
         &store,
         &FixedClock(date(2026, 9, 19)),
         &mut FixedRandom(3),
@@ -262,7 +279,7 @@ fn ours_is_committed_and_the_conflict_is_not_raised_again() {
     // Pulling the same upstream object again, before the resolution has
     // reached the remote, is what used to re-raise it.
     let again = pull(
-        &store,
+        repos,
         &launcher(vec![upstream("theirs")]),
         &NoCredentials,
         &FixedClock(date(2026, 9, 20)),
@@ -274,7 +291,7 @@ fn ours_is_committed_and_the_conflict_is_not_raised_again() {
     assert_eq!(again[0].conflicts, 0, "the conflict was raised again");
     assert_eq!(store.get(&oid(1)).unwrap().unwrap().base().subject, "mine");
 
-    let reports = push(&store, &launcher(vec![]), &NoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &launcher(vec![]), &NoCredentials, &config(), None).unwrap();
     assert_eq!(reports[0].sent, 1, "ours was sent upstream");
     assert_eq!(
         store
@@ -294,7 +311,10 @@ fn ours_is_committed_and_the_conflict_is_not_raised_again() {
 #[test]
 fn theirs_leaves_only_theirs_owed_and_settles_the_conflict() {
     let store = pulled_into_conflict();
+    let repos = Repositories::of(&store);
     resolve(
+        &store,
+        &store,
         &store,
         &FixedClock(date(2026, 9, 19)),
         &mut FixedRandom(3),
@@ -303,7 +323,7 @@ fn theirs_leaves_only_theirs_owed_and_settles_the_conflict() {
     )
     .unwrap();
     let (l, sent) = recording_launcher(vec![]);
-    push(&store, &l, &NoCredentials, &config(), None).unwrap();
+    push(repos, &l, &NoCredentials, &config(), None).unwrap();
     for m in sent.borrow().iter() {
         assert_eq!(
             m.object.as_ref().unwrap().subject,
@@ -312,7 +332,7 @@ fn theirs_leaves_only_theirs_owed_and_settles_the_conflict() {
         );
     }
     let again = pull(
-        &store,
+        repos,
         &launcher(vec![upstream("theirs")]),
         &NoCredentials,
         &FixedClock(date(2026, 9, 20)),

@@ -5,6 +5,9 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[features]
+testing = []
+
 [dependencies]
 dam-domain = { path = "../dam-domain" }
 dam-protocol = { path = "../dam-protocol" }

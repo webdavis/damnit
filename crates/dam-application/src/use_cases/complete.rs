@@ -4,7 +4,7 @@ use dam_domain::{
 };
 
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{Clock, ObjectStore, Randomness};
+use crate::ports::{Clock, ObjectRepository, Randomness};
 use crate::use_cases::subtree::move_subtree;
 
 pub struct CompletePlan {
@@ -25,15 +25,18 @@ pub enum Completed {
 }
 
 /// Step one: find out whether `oid` is blocked. The cli decides whether to ask.
-pub fn plan_complete(store: &dyn ObjectStore, oid: &Oid) -> Result<CompletePlan, UseCaseError> {
-    let task = load_task(store, oid)?;
+pub fn plan_complete(
+    objects: &dyn ObjectRepository,
+    oid: &Oid,
+) -> Result<CompletePlan, UseCaseError> {
+    let task = load_task(objects, oid)?;
     let mut open_deps = Vec::new();
     for dep in &task.base.depends {
-        if is_open(store, dep)? {
+        if is_open(objects, dep)? {
             open_deps.push(dep.clone());
         }
     }
-    let open_children: Vec<Oid> = store
+    let open_children: Vec<Oid> = objects
         .children_of(&task.base.path)?
         .iter()
         .filter(|c| c.as_task().is_some_and(|t| !t.done))
@@ -47,14 +50,14 @@ pub fn plan_complete(store: &dyn ObjectStore, oid: &Oid) -> Result<CompletePlan,
 
 /// Step two: do it. `dispositions` is `None` unless the cli asked.
 pub fn complete(
-    store: &dyn ObjectStore,
+    objects: &dyn ObjectRepository,
     clock: &dyn Clock,
     random: &mut dyn Randomness,
     oid: &Oid,
     force: Force,
     dispositions: Option<Dispositions>,
 ) -> Result<Completed, UseCaseError> {
-    let plan = plan_complete(store, oid)?;
+    let plan = plan_complete(objects, oid)?;
     if !plan.blockers.is_empty() {
         match (force, dispositions) {
             (Force::No, _) => {
@@ -66,11 +69,11 @@ pub fn complete(
             }
             (Force::Yes, _) | (Force::Interactive, None) => {}
             (Force::Interactive, Some(d)) => {
-                apply_dispositions(store, random, oid, &plan.blockers, d)?;
+                apply_dispositions(objects, random, oid, &plan.blockers, d)?;
             }
         }
     }
-    let mut task = load_task(store, oid)?;
+    let mut task = load_task(objects, oid)?;
     let outcome = match rolled(&task, clock.today()) {
         Some(next) => {
             task.due = Some(When::Day(next));
@@ -81,7 +84,7 @@ pub fn complete(
             Completed::Done
         }
     };
-    store.put(&Object::Task(task))?;
+    objects.put(&Object::Task(task))?;
     Ok(outcome)
 }
 
@@ -93,13 +96,13 @@ fn rolled(task: &Task, today: Date) -> Option<Date> {
 }
 
 fn apply_dispositions(
-    store: &dyn ObjectStore,
+    objects: &dyn ObjectRepository,
     random: &mut dyn Randomness,
     oid: &Oid,
     found: &[Blocker],
     d: Dispositions,
 ) -> Result<(), UseCaseError> {
-    let mut task = load_task(store, oid)?;
+    let mut task = load_task(objects, oid)?;
     let parent_path = task.base.path.parent().unwrap_or_default();
     let children: Vec<Oid> = found
         .iter()
@@ -127,24 +130,24 @@ fn apply_dispositions(
                 .join(&name)
                 .map_err(|e| UseCaseError::Parse(e.to_string()))?;
             let path = group.base.path.clone();
-            store.put(&Object::Task(group))?;
+            objects.put(&Object::Task(group))?;
             Some(path)
         }
     };
     if let Some(target) = target {
         for child in &children {
-            if let Some(c) = store.get(child)? {
+            if let Some(c) = objects.get(child)? {
                 let segment = last_segment(&c.base().path);
                 let to = target
                     .join(&segment)
                     .map_err(|e| UseCaseError::Parse(e.to_string()))?;
-                move_subtree(store, child, &to)?;
+                move_subtree(objects, child, &to)?;
             }
         }
     }
     if d.dependencies == DependencyDisposition::Drop {
         task.base.depends.retain(|x| !deps.contains(x));
-        store.put(&Object::Task(task))?;
+        objects.put(&Object::Task(task))?;
     }
     Ok(())
 }
@@ -158,8 +161,8 @@ fn last_segment(path: &Path) -> String {
         .to_string()
 }
 
-fn load_task(store: &dyn ObjectStore, oid: &Oid) -> Result<Task, UseCaseError> {
-    match store.get(oid)? {
+fn load_task(objects: &dyn ObjectRepository, oid: &Oid) -> Result<Task, UseCaseError> {
+    match objects.get(oid)? {
         Some(Object::Task(t)) => Ok(t),
         Some(Object::Event(_)) => Err(Refusal::NotATask(oid.clone()).into()),
         None => Err(Refusal::NoSuchObject(oid.short().to_string()).into()),
@@ -168,8 +171,8 @@ fn load_task(store: &dyn ObjectStore, oid: &Oid) -> Result<Task, UseCaseError> {
 
 /// A missing dependency is treated as closed; a failed read propagates, since
 /// silently treating it as closed could let a blocked task complete.
-fn is_open(store: &dyn ObjectStore, oid: &Oid) -> Result<bool, UseCaseError> {
-    Ok(matches!(store.get(oid)?, Some(Object::Task(t)) if !t.done))
+fn is_open(objects: &dyn ObjectRepository, oid: &Oid) -> Result<bool, UseCaseError> {
+    Ok(matches!(objects.get(oid)?, Some(Object::Task(t)) if !t.done))
 }
 
 #[cfg(test)]

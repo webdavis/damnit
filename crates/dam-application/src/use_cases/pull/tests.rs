@@ -5,6 +5,8 @@ use jiff::civil::date;
 
 use super::*;
 use crate::config::{CredentialSpec, RemoteConfig};
+use crate::ports::Repositories;
+use crate::testing::prelude::*;
 use crate::testing::{
     FixedClock, FixedRandom, MemoryStore, NoCredentials, ScriptedHelper, ScriptedLauncher, oid,
     task_caps,
@@ -64,13 +66,14 @@ pub(super) fn wire(subject: &str, remote_id: &str) -> WireObject {
 #[test]
 fn a_new_upstream_object_is_created_locally_with_a_fresh_oid_and_mapped() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     let l = launcher(PullResponse {
         objects: vec![wire("from todoist", "r1")],
         removed: vec![],
         sync: Some("s1".into()),
     });
     let reports = pull(
-        &store,
+        repos,
         &l,
         &NoCredentials,
         &FixedClock(date(2026, 9, 18)),
@@ -93,9 +96,11 @@ fn a_new_upstream_object_is_created_locally_with_a_fresh_oid_and_mapped() {
 #[test]
 fn a_fast_forward_updates_a_clean_local_object() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "old"))).unwrap();
-    add_all(&store).unwrap();
+    add_all(&store, &store, &store).unwrap();
     commit(
+        &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(9),
@@ -112,7 +117,7 @@ fn a_fast_forward_updates_a_clean_local_object() {
         sync: None,
     });
     let reports = pull(
-        &store,
+        repos,
         &l,
         &NoCredentials,
         &FixedClock(date(2026, 9, 18)),
@@ -132,11 +137,13 @@ fn a_fast_forward_updates_a_clean_local_object() {
 #[test]
 fn dam_only_fields_survive_a_pull() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     let mut t = Task::new(oid(1), "old");
     t.base.depends.push(oid(7));
     store.put(&Object::Task(t.clone())).unwrap();
-    add_all(&store).unwrap();
+    add_all(&store, &store, &store).unwrap();
     commit(
+        &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(9),
@@ -153,7 +160,7 @@ fn dam_only_fields_survive_a_pull() {
         sync: None,
     });
     pull(
-        &store,
+        repos,
         &l,
         &NoCredentials,
         &FixedClock(date(2026, 9, 18)),
@@ -171,9 +178,11 @@ fn dam_only_fields_survive_a_pull() {
 #[test]
 fn both_sides_changed_is_a_conflict_and_nothing_is_overwritten() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "base"))).unwrap();
-    add_all(&store).unwrap();
+    add_all(&store, &store, &store).unwrap();
     commit(
+        &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(9),
@@ -188,8 +197,9 @@ fn both_sides_changed_is_a_conflict_and_nothing_is_overwritten() {
     let mut mine = store.get(&oid(1)).unwrap().unwrap();
     mine.base_mut().subject = "mine".into();
     store.put(&mine).unwrap();
-    add_all(&store).unwrap();
+    add_all(&store, &store, &store).unwrap();
     commit(
+        &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(10),
@@ -202,7 +212,7 @@ fn both_sides_changed_is_a_conflict_and_nothing_is_overwritten() {
         sync: None,
     });
     let reports = pull(
-        &store,
+        repos,
         &l,
         &NoCredentials,
         &FixedClock(date(2026, 9, 18)),
@@ -220,9 +230,11 @@ fn both_sides_changed_is_a_conflict_and_nothing_is_overwritten() {
 #[test]
 fn uncommitted_local_work_stops_the_pull_before_anything_is_written() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "base"))).unwrap();
-    add_all(&store).unwrap();
+    add_all(&store, &store, &store).unwrap();
     commit(
+        &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(9),
@@ -242,7 +254,7 @@ fn uncommitted_local_work_stops_the_pull_before_anything_is_written() {
         sync: Some("s9".into()),
     });
     let err = pull(
-        &store,
+        repos,
         &l,
         &NoCredentials,
         &FixedClock(date(2026, 9, 18)),

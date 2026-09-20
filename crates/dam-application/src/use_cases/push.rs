@@ -6,7 +6,8 @@ use dam_protocol::{Capabilities, Mutation, PushResponse};
 use crate::config::{Config, RemoteConfig};
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{
-    CredentialSource, HelperLauncher, Notice, ObjectStore, RemoteHelper, RemoteName,
+    CommitRepository, CredentialSource, HelperLauncher, Notice, ObjectRepository, RemoteHelper,
+    RemoteName, RemoteTrackingRepository, Repositories,
 };
 use crate::use_cases::connect::connect;
 use crate::use_cases::push::idempotency::{Origin, key};
@@ -22,13 +23,13 @@ pub struct PushReport {
 }
 
 pub fn push(
-    store: &dyn ObjectStore,
+    repos: Repositories<'_>,
     launcher: &dyn HelperLauncher,
     credentials: &dyn CredentialSource,
     config: &Config,
     remote: Option<&str>,
 ) -> Result<Vec<PushReport>, UseCaseError> {
-    let conflicts = store.conflicts()?.len();
+    let conflicts = repos.conflicts.conflicts()?.len();
     if conflicts > 0 {
         return Err(Refusal::UnresolvedConflicts(conflicts).into());
     }
@@ -36,7 +37,7 @@ pub fn push(
     let mut reports = Vec::with_capacity(targets.len());
     for target in targets {
         let (mut helper, caps) = connect(launcher, credentials, target)?;
-        reports.push(push_one(store, helper.as_mut(), &caps, target)?);
+        reports.push(push_one(repos, helper.as_mut(), &caps, target)?);
     }
     Ok(reports)
 }
@@ -55,20 +56,26 @@ pub(crate) fn select_remotes<'a>(
 }
 
 fn push_one(
-    store: &dyn ObjectStore,
+    repos: Repositories<'_>,
     helper: &mut dyn RemoteHelper,
     caps: &Capabilities,
     remote: &RemoteConfig,
 ) -> Result<PushReport, UseCaseError> {
-    let unpushed = store.unpushed(&remote.name)?;
-    let changes = changes_to_send(store, remote, &unpushed)?;
+    let unpushed = repos.commits.unpushed(&remote.name)?;
+    let changes = changes_to_send(repos.objects, repos.commits, remote, &unpushed)?;
 
     let mut mutations = Vec::new();
     let mut after_by_oid: BTreeMap<String, Object> = BTreeMap::new();
     let mut deletes: BTreeSet<String> = BTreeSet::new();
     let mut skipped = 0;
     for (change, origin) in changes.into_values() {
-        match mutation_for(store, caps, remote, &change, origin.as_ref())? {
+        match mutation_for(
+            repos.remote_tracking,
+            caps,
+            remote,
+            &change,
+            origin.as_ref(),
+        )? {
             Some(mutation) => {
                 if mutation.op == "delete" {
                     deletes.insert(mutation.oid.clone());
@@ -103,18 +110,24 @@ fn push_one(
         };
         if result.ok {
             if let Some(id) = &result.remote_id {
-                store.map_remote_id(&remote.name, &oid, id)?;
+                repos
+                    .remote_tracking
+                    .map_remote_id(&remote.name, &oid, id)?;
             }
             if deletes.contains(&result.oid) {
-                store.clear_remote_mapping(&remote.name, &oid)?;
+                repos
+                    .remote_tracking
+                    .clear_remote_mapping(&remote.name, &oid)?;
             } else if let Some(after) = after_by_oid.get(&result.oid) {
-                store.set_remote_snapshot(&remote.name, after)?;
+                repos
+                    .remote_tracking
+                    .set_remote_snapshot(&remote.name, after)?;
             }
         } else {
             let why = result
                 .why
                 .unwrap_or_else(|| "the remote gave no reason".into());
-            store.add_notice(&Notice::PushFailed {
+            repos.notices.add_notice(&Notice::PushFailed {
                 remote: remote.name.clone(),
                 oid: oid.clone(),
                 why: why.clone(),
@@ -133,7 +146,7 @@ fn push_one(
             continue;
         };
         let why = "no answer from helper".to_string();
-        store.add_notice(&Notice::PushFailed {
+        repos.notices.add_notice(&Notice::PushFailed {
             remote: remote.name.clone(),
             oid: oid.clone(),
             why: why.clone(),
@@ -142,12 +155,12 @@ fn push_one(
         unanswered.insert(oid.clone());
         failed.push((oid, why));
     }
-    store.set_push_retries(&remote.name, &retries)?;
+    repos.commits.set_push_retries(&remote.name, &retries)?;
     for record in &unpushed {
         if record.changes.iter().any(|c| unanswered.contains(&c.oid)) {
             continue;
         }
-        store.mark_pushed(&remote.name, &record.id)?;
+        repos.commits.mark_pushed(&remote.name, &record.id)?;
     }
     Ok(PushReport {
         remote: remote.name.clone(),
@@ -168,7 +181,8 @@ fn push_one(
 /// the commit that names it. That name is what lets a resend after an
 /// interrupted push carry the key the interrupted one carried.
 fn changes_to_send(
-    store: &dyn ObjectStore,
+    objects: &dyn ObjectRepository,
+    commits: &dyn CommitRepository,
     remote: &RemoteConfig,
     unpushed: &[dam_domain::CommitRecord],
 ) -> Result<BTreeMap<Oid, (Change, Option<CommitId>)>, UseCaseError> {
@@ -184,11 +198,11 @@ fn changes_to_send(
             }
         }
     }
-    for oid in store.push_retries(&remote.name)? {
+    for oid in commits.push_retries(&remote.name)? {
         if changes.contains_key(&oid) {
             continue;
         }
-        if let Some(current) = store.committed(&oid)? {
+        if let Some(current) = objects.committed(&oid)? {
             changes.insert(
                 oid.clone(),
                 (
@@ -207,7 +221,7 @@ fn changes_to_send(
 }
 
 fn mutation_for(
-    store: &dyn ObjectStore,
+    remote_tracking: &dyn RemoteTrackingRepository,
     caps: &Capabilities,
     remote: &RemoteConfig,
     change: &Change,
@@ -228,7 +242,7 @@ fn mutation_for(
     {
         return Ok(None);
     }
-    let remote_id = store.remote_id(&remote.name, &change.oid)?;
+    let remote_id = remote_tracking.remote_id(&remote.name, &change.oid)?;
     // Whether the remote already holds the object decides the verb, not the
     // change's own op: a create the remote has already taken is an update, and
     // an update of something the remote has never seen is a create.

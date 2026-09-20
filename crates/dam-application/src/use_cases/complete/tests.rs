@@ -1,18 +1,19 @@
 use super::*;
-use crate::ports::{Conflict, Notice, RemoteName, StoreError};
+use crate::ports::StoreError;
+use crate::testing::prelude::*;
 use crate::testing::{FixedClock, FixedRandom, MemoryStore, oid};
-use dam_domain::{Blocker, Change, CommitId, CommitRecord, Event, Object, Path, Task, When};
+use dam_domain::{Blocker, Event, Object, Path, Task, When};
 use jiff::civil::date;
 
 /// Fails `get` for one oid, to prove a store error while checking a
 /// blocker propagates instead of reading as closed. `plan_complete` only
-/// calls `get` and `children_of`; every other method is unused here.
+/// calls `get` and `children_of`.
 struct FailingGetStore {
     objects: Vec<Object>,
     fails: Oid,
 }
 
-impl ObjectStore for FailingGetStore {
+impl ObjectRepository for FailingGetStore {
     fn get(&self, oid: &Oid) -> Result<Option<Object>, StoreError> {
         if *oid == self.fails {
             return Err(StoreError("boom".into()));
@@ -35,110 +36,6 @@ impl ObjectStore for FailingGetStore {
         unimplemented!()
     }
     fn committed(&self, _oid: &Oid) -> Result<Option<Object>, StoreError> {
-        unimplemented!()
-    }
-    fn stage(&self, _change: Change) -> Result<(), StoreError> {
-        unimplemented!()
-    }
-    fn unstage(&self, _oid: &Oid) -> Result<(), StoreError> {
-        unimplemented!()
-    }
-    fn unstage_all(&self) -> Result<(), StoreError> {
-        unimplemented!()
-    }
-    fn staged(&self) -> Result<Vec<Change>, StoreError> {
-        unimplemented!()
-    }
-    fn commit(&self, _record: &CommitRecord) -> Result<(), StoreError> {
-        unimplemented!()
-    }
-    fn log(&self) -> Result<Vec<CommitRecord>, StoreError> {
-        unimplemented!()
-    }
-    fn unpushed(&self, _remote: &RemoteName) -> Result<Vec<CommitRecord>, StoreError> {
-        unimplemented!()
-    }
-    fn mark_pushed(&self, _remote: &RemoteName, _id: &CommitId) -> Result<(), StoreError> {
-        unimplemented!()
-    }
-    fn push_retries(&self, _remote: &RemoteName) -> Result<Vec<Oid>, StoreError> {
-        unimplemented!()
-    }
-    fn set_push_retries(&self, _remote: &RemoteName, _oids: &[Oid]) -> Result<(), StoreError> {
-        unimplemented!()
-    }
-    fn remote_id(&self, _remote: &RemoteName, _oid: &Oid) -> Result<Option<String>, StoreError> {
-        unimplemented!()
-    }
-    fn oid_for_remote_id(
-        &self,
-        _remote: &RemoteName,
-        _remote_id: &str,
-    ) -> Result<Option<Oid>, StoreError> {
-        unimplemented!()
-    }
-    fn map_remote_id(
-        &self,
-        _remote: &RemoteName,
-        _oid: &Oid,
-        _remote_id: &str,
-    ) -> Result<(), StoreError> {
-        unimplemented!()
-    }
-    fn remote_snapshot(
-        &self,
-        _remote: &RemoteName,
-        _oid: &Oid,
-    ) -> Result<Option<Object>, StoreError> {
-        unimplemented!()
-    }
-    fn set_remote_snapshot(
-        &self,
-        _remote: &RemoteName,
-        _object: &Object,
-    ) -> Result<(), StoreError> {
-        unimplemented!()
-    }
-    fn clear_remote_mapping(&self, _remote: &RemoteName, _oid: &Oid) -> Result<(), StoreError> {
-        unimplemented!()
-    }
-    fn sync_token(&self, _remote: &RemoteName) -> Result<Option<String>, StoreError> {
-        unimplemented!()
-    }
-    fn set_sync_token(&self, _remote: &RemoteName, _token: Option<&str>) -> Result<(), StoreError> {
-        unimplemented!()
-    }
-    fn last_pull(&self, _remote: &RemoteName) -> Result<Option<dam_domain::Timestamp>, StoreError> {
-        unimplemented!()
-    }
-    fn set_last_pull(
-        &self,
-        _remote: &RemoteName,
-        _at: dam_domain::Timestamp,
-    ) -> Result<(), StoreError> {
-        unimplemented!()
-    }
-    fn mark_conflict(
-        &self,
-        _remote: &RemoteName,
-        _oid: &Oid,
-        _theirs: &Object,
-    ) -> Result<(), StoreError> {
-        unimplemented!()
-    }
-    fn conflicts(&self) -> Result<Vec<Conflict>, StoreError> {
-        unimplemented!()
-    }
-    fn clear_conflict(&self, _oid: &Oid) -> Result<(), StoreError> {
-        unimplemented!()
-    }
-    fn add_notice(&self, _notice: &Notice) -> Result<(), StoreError> {
-        unimplemented!()
-    }
-    fn notices(&self) -> Result<Vec<Notice>, StoreError> {
-        unimplemented!()
-    }
-    fn clear_notices(&self) -> Result<(), StoreError> {
         unimplemented!()
     }
 }

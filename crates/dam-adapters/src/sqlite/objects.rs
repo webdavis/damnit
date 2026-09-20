@@ -1,4 +1,4 @@
-use dam_application::StoreError;
+use dam_application::{ObjectRepository, StoreError};
 use dam_domain::{Object, Oid, Path};
 use rusqlite::{OptionalExtension, params};
 
@@ -107,5 +107,29 @@ impl SqliteStore {
             .map_err(sql)?
             .map(|j| object_from_json(&j))
             .transpose()
+    }
+}
+
+impl ObjectRepository for SqliteStore {
+    fn get(&self, oid: &Oid) -> Result<Option<Object>, StoreError> {
+        self.get_object(oid)
+    }
+    fn all(&self) -> Result<Vec<Object>, StoreError> {
+        self.all_objects()
+    }
+    fn children_of(&self, path: &Path) -> Result<Vec<Object>, StoreError> {
+        self.children(path)
+    }
+    fn dependents_of(&self, oid: &Oid) -> Result<Vec<Oid>, StoreError> {
+        self.dependents(oid)
+    }
+    fn put(&self, object: &Object) -> Result<(), StoreError> {
+        self.put_object(object)
+    }
+    fn delete(&self, oid: &Oid) -> Result<(), StoreError> {
+        self.delete_object(oid)
+    }
+    fn committed(&self, oid: &Oid) -> Result<Option<Object>, StoreError> {
+        self.committed_object(oid)
     }
 }

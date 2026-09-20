@@ -10,14 +10,14 @@ use crate::output::Report;
 
 pub fn run_add(ctx: &mut Context, args: AddArgs) -> Result<Report, CliError> {
     let changes = if args.all {
-        add_all(ctx.store.as_ref())?
+        add_all(ctx.store.as_ref(), ctx.store.as_ref(), ctx.store.as_ref())?
     } else {
         let oids = args
             .oids
             .iter()
             .map(|t| resolve_oid(ctx.store.as_ref(), t))
             .collect::<Result<Vec<Oid>, _>>()?;
-        add(ctx.store.as_ref(), &oids)?
+        add(ctx.store.as_ref(), ctx.store.as_ref(), &oids)?
     };
     Ok(Report {
         human: changes

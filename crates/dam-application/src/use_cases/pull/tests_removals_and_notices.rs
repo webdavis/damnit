@@ -5,6 +5,8 @@ use jiff::civil::date;
 
 use super::tests::{config, launcher, remote, wire};
 use super::*;
+use crate::ports::Repositories;
+use crate::testing::prelude::*;
 use crate::testing::{
     FixedClock, FixedRandom, MemoryStore, NoCredentials, ScriptedHelper, ScriptedLauncher, oid,
     task_caps,
@@ -18,6 +20,7 @@ use dam_protocol::PullResponse;
 #[test]
 fn a_removal_upstream_is_a_notice_not_a_deletion() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     store
         .put(&Object::Task(Task::new(oid(1), "keep me")))
         .unwrap();
@@ -31,7 +34,7 @@ fn a_removal_upstream_is_a_notice_not_a_deletion() {
         sync: None,
     });
     let reports = pull(
-        &store,
+        repos,
         &l,
         &NoCredentials,
         &FixedClock(date(2026, 9, 18)),
@@ -53,6 +56,7 @@ fn a_removal_upstream_is_a_notice_not_a_deletion() {
 #[test]
 fn a_cancelled_event_with_attached_tasks_is_reported() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     let event = dam_domain::Event::new(
         oid(5),
         "meeting",
@@ -94,7 +98,7 @@ fn a_cancelled_event_with_attached_tasks_is_reported() {
         launched_with: Rc::new(RefCell::new(vec![])),
     };
     pull(
-        &store,
+        repos,
         &l,
         &NoCredentials,
         &FixedClock(date(2026, 9, 18)),
@@ -113,9 +117,11 @@ fn a_cancelled_event_with_attached_tasks_is_reported() {
 #[test]
 fn an_unrelated_staged_object_stays_staged_after_a_pull() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "base"))).unwrap();
-    add_all(&store).unwrap();
+    add_all(&store, &store, &store).unwrap();
     commit(
+        &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(9),
@@ -129,14 +135,14 @@ fn an_unrelated_staged_object_stays_staged_after_a_pull() {
     store
         .put(&Object::Task(Task::new(oid(2), "unrelated")))
         .unwrap();
-    add_all(&store).unwrap();
+    add_all(&store, &store, &store).unwrap();
     let l = launcher(PullResponse {
         objects: vec![wire("new", "r1")],
         removed: vec![],
         sync: None,
     });
     pull(
-        &store,
+        repos,
         &l,
         &NoCredentials,
         &FixedClock(date(2026, 9, 18)),
@@ -159,6 +165,7 @@ fn an_unrelated_staged_object_stays_staged_after_a_pull() {
 #[test]
 fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     let event = dam_domain::Event::new(
         oid(5),
         "meeting",
@@ -166,8 +173,9 @@ fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
         dam_domain::When::Day(date(2026, 1, 2)),
     );
     store.put(&Object::Event(event.clone())).unwrap();
-    add_all(&store).unwrap();
+    add_all(&store, &store, &store).unwrap();
     commit(
+        &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(20),
@@ -182,8 +190,9 @@ fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
     let mut edited = event.clone();
     edited.base.subject = "moved".into();
     store.put(&Object::Event(edited)).unwrap();
-    add_all(&store).unwrap();
+    add_all(&store, &store, &store).unwrap();
     commit(
+        &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
         &mut FixedRandom(21),
@@ -222,7 +231,7 @@ fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
         launched_with: Rc::new(RefCell::new(vec![])),
     };
     let reports = pull(
-        &store,
+        repos,
         &l,
         &NoCredentials,
         &FixedClock(date(2026, 9, 18)),
@@ -242,6 +251,7 @@ fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
 #[test]
 fn one_unconvertible_object_is_skipped_with_a_notice_and_the_rest_still_pull() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     let mut bad = wire("broken", "r-bad");
     bad.path = "a//b/".into();
     let l = launcher(PullResponse {
@@ -250,7 +260,7 @@ fn one_unconvertible_object_is_skipped_with_a_notice_and_the_rest_still_pull() {
         sync: Some("s1".into()),
     });
     let reports = pull(
-        &store,
+        repos,
         &l,
         &NoCredentials,
         &FixedClock(date(2026, 9, 18)),
@@ -277,10 +287,11 @@ fn one_unconvertible_object_is_skipped_with_a_notice_and_the_rest_still_pull() {
 #[test]
 fn a_pull_records_when_it_happened() {
     let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
     let l = launcher(PullResponse::default());
     let clock = FixedClock(date(2026, 9, 18));
     pull(
-        &store,
+        repos,
         &l,
         &NoCredentials,
         &clock,
