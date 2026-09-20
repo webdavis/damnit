@@ -479,3 +479,76 @@ fn a_rate_limit_stops_the_push_and_names_the_retry_time() {
     assert!(why.contains("rate limiting"), "{why}");
     assert!(why.contains("42s"), "{why}");
 }
+
+/// The other half of the same decision. Once mutations are being applied, a
+/// failure belongs to the mutation it happened on: the ones Todoist already
+/// took are reported as taken, and dam marks exactly those pushed. That is
+/// only safe because a resend repeats its key, so anything dam sends again is
+/// deduplicated rather than duplicated.
+#[test]
+fn a_failure_part_way_through_belongs_to_its_own_mutation() {
+    let writes = Arc::new(Mutex::new(0u32));
+    let counted = Arc::clone(&writes);
+    let server = loopback::serve_with(move |seen| {
+        if seen.body.get("commands").is_none() {
+            return loopback::Reply::new(200, sync_body());
+        }
+        let mut n = counted.lock().unwrap();
+        *n += 1;
+        if *n == 2 {
+            return loopback::Reply::new(500, serde_json::json!({"error": "upstream is down"}));
+        }
+        let uuids: Vec<String> = seen.body["commands"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|c| c["uuid"].as_str().unwrap_or_default().to_string())
+            .collect();
+        let status: serde_json::Map<String, serde_json::Value> = uuids
+            .into_iter()
+            .map(|u| (u, serde_json::Value::from("ok")))
+            .collect();
+        loopback::Reply::new(
+            200,
+            serde_json::json!({"sync_status": status, "temp_id_mapping": {}}),
+        )
+    });
+    let api = TodoistApi::new(&server.base, "tok");
+    let mutations = vec![
+        with_fields(
+            mutation(
+                "update",
+                1,
+                Some("i:i1"),
+                Some(task(&"1".repeat(40), "Work/", "milk", false)),
+            ),
+            &["subject"],
+        ),
+        with_fields(
+            mutation(
+                "update",
+                2,
+                Some("i:i1"),
+                Some(task(&"2".repeat(40), "Work/", "oat", false)),
+            ),
+            &["subject"],
+        ),
+        with_fields(
+            mutation(
+                "update",
+                3,
+                Some("i:i1"),
+                Some(task(&"3".repeat(40), "Work/", "soy", false)),
+            ),
+            &["subject"],
+        ),
+    ];
+    let response = push(&api, mutations).unwrap();
+    assert!(response.results[0].ok);
+    assert!(!response.results[1].ok);
+    assert!(response.results[1].why.as_deref().unwrap().contains("500"));
+    assert!(
+        response.results[2].ok,
+        "the batch goes on after one mutation's failure"
+    );
+}

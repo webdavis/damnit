@@ -418,6 +418,13 @@ A refusal names the rule and the objects involved, then stops. A missing helper 
 push lists each failed mutation with the helper's reason. A parse failure in `edit -e` names the line
 and reopens. No error message contains a token.
 
+A push failure is per mutation once mutations are being applied, and whole-push before that. The
+read a helper needs to shape anything is the before: it fails the push with one reason, because no
+mutation was attempted and there is nothing to report against one. From the first mutation onward a
+failure belongs to the mutation it happened on, so the ones the remote already took are reported as
+taken and `dam` marks exactly those pushed. The exception is a rate limit, which says the remote is
+taking nothing more: the push stops there and `dam` marks nothing pushed.
+
 ## Testing
 
 - Every crate has unit tests; every test finishes within one second.
