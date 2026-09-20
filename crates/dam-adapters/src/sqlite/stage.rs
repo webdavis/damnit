@@ -26,6 +26,17 @@ impl SqliteStore {
             .transpose()
     }
 
+    fn coalesce_into_stage(&self, change: Change) -> Result<(), StoreError> {
+        let merged = match self.staged_change(&change.oid)? {
+            Some(existing) => coalesce(existing, change.clone()),
+            None => Some(change.clone()),
+        };
+        match merged {
+            Some(c) => self.write_stage(&c),
+            None => self.unstage(&change.oid),
+        }
+    }
+
     fn write_stage(&self, change: &Change) -> Result<(), StoreError> {
         let before = change.before.as_ref().map(object_to_json).transpose()?;
         let after = change.after.as_ref().map(object_to_json).transpose()?;
@@ -41,15 +52,11 @@ impl SqliteStore {
 }
 
 impl StageRepository for SqliteStore {
+    /// Reading the staged change, coalescing it and writing the result is one
+    /// unit of work, so two dam processes staging the same object cannot
+    /// interleave and lose one of the two coalesces.
     fn stage(&self, change: Change) -> Result<(), StoreError> {
-        let merged = match self.staged_change(&change.oid)? {
-            Some(existing) => coalesce(existing, change.clone()),
-            None => Some(change.clone()),
-        };
-        match merged {
-            Some(c) => self.write_stage(&c),
-            None => self.unstage(&change.oid),
-        }
+        self.in_savepoint("dam_stage", || self.coalesce_into_stage(change))
     }
 
     fn unstage(&self, oid: &Oid) -> Result<(), StoreError> {

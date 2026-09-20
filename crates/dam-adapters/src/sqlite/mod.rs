@@ -65,29 +65,47 @@ impl SqliteStore {
 }
 
 impl SqliteStore {
-    /// Runs `work` inside a savepoint, so every write it makes lands together
-    /// or none of them does. A savepoint rather than a transaction, because
-    /// these nest: an inner unit of work runs the same way whether or not an
-    /// outer one is already open.
+    /// Runs `work` as one unit of work, so every write it makes lands together
+    /// or none of them does.
+    ///
+    /// The outermost one is `BEGIN IMMEDIATE`, which takes the write lock
+    /// before the first statement. A deferred one reads first and upgrades on
+    /// its first write, and in WAL mode that upgrade answers `SQLITE_BUSY` at
+    /// once without consulting the busy handler, so the connection's timeout
+    /// would not cover the read-then-write paths. A nested one is a savepoint,
+    /// so an inner unit of work runs the same way whether or not an outer one
+    /// is already open.
     pub(super) fn in_savepoint<T, E: From<StoreError>>(
         &self,
         name: &'static str,
         work: impl FnOnce() -> Result<T, E>,
     ) -> Result<T, E> {
+        let outermost = self.conn.is_autocommit();
+        let (open, commit, abort) = if outermost {
+            (
+                "BEGIN IMMEDIATE".to_string(),
+                "COMMIT".to_string(),
+                "ROLLBACK".to_string(),
+            )
+        } else {
+            (
+                format!("SAVEPOINT {name}"),
+                format!("RELEASE {name}"),
+                format!("ROLLBACK TO {name}; RELEASE {name}"),
+            )
+        };
         self.conn
-            .execute_batch(&format!("SAVEPOINT {name}"))
+            .execute_batch(&open)
             .map_err(|e| E::from(objects::sql(e)))?;
         match work() {
             Ok(value) => {
                 self.conn
-                    .execute_batch(&format!("RELEASE {name}"))
+                    .execute_batch(&commit)
                     .map_err(|e| E::from(objects::sql(e)))?;
                 Ok(value)
             }
             Err(e) => {
-                let _ = self
-                    .conn
-                    .execute_batch(&format!("ROLLBACK TO {name}; RELEASE {name}"));
+                let _ = self.conn.execute_batch(&abort);
                 Err(e)
             }
         }
@@ -147,6 +165,7 @@ impl std::error::Error for OpenError {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use dam_application::StageRepository;
     use std::os::unix::fs::PermissionsExt;
 
     #[test]
@@ -187,6 +206,64 @@ mod tests {
                 found: migrations::VERSION + 1,
                 supported: migrations::VERSION,
             }
+        );
+    }
+
+    #[test]
+    fn a_unit_of_work_holds_the_write_lock_from_its_first_statement() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("dam.db");
+        let store = SqliteStore::open(&path).unwrap();
+        // A second writer with its busy handler off, so it answers at once.
+        // rusqlite installs a five second one on every connection it opens.
+        let other = Connection::open(&path).unwrap();
+        other.busy_timeout(std::time::Duration::ZERO).unwrap();
+        let mut second_writer = Ok(());
+        store
+            .in_savepoint::<(), StoreError>("dam_test", || {
+                // A read, the way commit_record starts, and no write yet.
+                let _: i64 = store
+                    .conn
+                    .query_row("SELECT COUNT(*) FROM commits", [], |r| r.get(0))
+                    .unwrap();
+                second_writer = other.execute_batch(
+                    "BEGIN IMMEDIATE; INSERT INTO commits (id, seq, message, at) \
+                     VALUES ('a', 1, 'm', 't'); COMMIT;",
+                );
+                Ok(())
+            })
+            .unwrap();
+        let err = second_writer.expect_err("the second writer was let in mid unit of work");
+        assert_eq!(
+            err.sqlite_error_code(),
+            Some(rusqlite::ErrorCode::DatabaseBusy),
+            "{err}"
+        );
+    }
+
+    #[test]
+    fn staging_reads_and_writes_as_one_unit_that_an_outer_failure_rolls_back() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = SqliteStore::open(&dir.path().join("dam.db")).unwrap();
+        let oid = dam_domain::Oid::generate(&mut |b: &mut [u8]| b.fill(7));
+        let change = dam_domain::Change {
+            oid: oid.clone(),
+            op: dam_domain::Op::Create,
+            before: None,
+            after: Some(dam_domain::Object::Task(dam_domain::Task::new(oid, "milk"))),
+        };
+        let outcome = store.in_savepoint::<(), StoreError>("dam_test", || {
+            // Nested inside an open unit of work, so staging takes the
+            // savepoint path rather than opening its own transaction.
+            store.stage(change.clone())?;
+            assert_eq!(store.staged().unwrap().len(), 1);
+            Err(StoreError::Failed("the caller gave up".into()))
+        });
+        assert!(outcome.is_err());
+        assert_eq!(
+            store.staged().unwrap().len(),
+            0,
+            "the staged row survived a rolled back unit of work"
         );
     }
 
