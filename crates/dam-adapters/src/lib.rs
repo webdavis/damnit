@@ -20,4 +20,4 @@ pub use sqlite::{OpenError, SqliteStore};
 pub use toml_config::{
     ConfigError, append_remote, default_config_path, default_store_path, load_config,
 };
-pub use wire::{from_wire, to_wire};
+pub use wire::{WireError, from_wire, to_wire};
