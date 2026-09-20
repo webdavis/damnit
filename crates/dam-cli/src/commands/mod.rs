@@ -1,0 +1,40 @@
+mod commit;
+mod done;
+mod edit;
+mod ls;
+mod mv;
+mod new;
+mod parsing;
+mod remote;
+mod rm;
+mod show;
+mod stage;
+mod status;
+mod sync;
+
+use crate::args::Command;
+use crate::context::Context;
+use crate::error::CliError;
+use crate::output::Report;
+
+pub(crate) fn dispatch(ctx: &mut Context, command: Command) -> Result<Report, CliError> {
+    match command {
+        Command::New(a) => new::run(ctx, a),
+        Command::Done(a) => done::run(ctx, a),
+        Command::Edit(a) => edit::run(ctx, a),
+        Command::Mv(a) => mv::run(ctx, a),
+        Command::Rm(a) => rm::run(ctx, a),
+        Command::Add(a) => stage::run_add(ctx, a),
+        Command::Reset(a) => stage::run_reset(ctx, a),
+        Command::Commit(a) => commit::run_commit(ctx, a),
+        Command::Log => commit::run_log(ctx),
+        Command::Show(a) => show::run_show(ctx, a),
+        Command::Status => status::run_status(ctx),
+        Command::Diff(a) => status::run_diff(ctx, a),
+        Command::Ls(a) => ls::run_ls(ctx, a),
+        Command::Remote(a) => remote::run_remote(ctx, a),
+        Command::Push(a) => sync::run_push(ctx, a),
+        Command::Pull(a) => sync::run_pull(ctx, a),
+        Command::Resolve(a) => sync::run_resolve(ctx, a),
+    }
+}

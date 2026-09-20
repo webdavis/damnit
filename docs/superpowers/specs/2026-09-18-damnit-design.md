@@ -60,7 +60,7 @@ Two kinds of object share one base. Everything below lives in SQLite under
 | `path` | string | Where the object sits in the tree. See below. |
 | `labels` | set of strings | Free labels plus category values. See categories. |
 | `depends` | list of `oid` | Objects that must finish first. Cycles are refused at write time. |
-| `reminders` | list | Offsets or absolute times. One model for both kinds. |
+| `reminders` | list | Minutes before the due time. Version one models only that offset. |
 | `recurrence` | rule, optional | See recurrence. |
 
 An `oid` is `dam`'s, assigned the moment an object is created and shown as a 7-character prefix the
@@ -251,8 +251,20 @@ Saved filters live in config and run by name:
 query = "due:today | overdue"
 ```
 
-Every read command takes `--json` and prints one document per line. This is the interface the
-clients use.
+Every read command takes `--json` and prints one JSON document on stdout. This is the interface
+the clients use.
+
+### Exit codes
+
+One meaning per code, so a client can tell what happened without reading the message:
+
+| Code | Meaning |
+|---|---|
+| 0 | The command did what it was asked. |
+| 1 | `dam` failed: a store, config, helper or io failure. |
+| 2 | The command line was wrong: an unknown argument or subcommand, a flag value `dam` refuses to read, or an oid prefix that names more than one object. |
+| 3 | Cancelled: the operator interrupted, or a prompt could not be answered. |
+| 4 | `dam` refused by one of its own rules, and the message names the rule. |
 
 ## Remotes and helpers
 
@@ -287,13 +299,23 @@ helper did not declare. That rule is what keeps `dam`-only data safe.
 {"cmd": "pull", "since": "<opaque sync token or null>"}
 {"objects": [...], "removed": ["<remote-id>", ...], "sync": "<opaque token>"}
 
-{"cmd": "push", "mutations": [{"op": "create|update|delete", "oid": "...", "fields": {...}}, ...]}
+{"cmd": "push", "mutations": [{"op": "create|update|delete", "oid": "...",
+ "idempotency_key": "<uuid>", "remote_id": "...", "object": {...},
+ "fields": ["<changed field name>", ...]}, ...]}
 {"results": [{"oid": "...", "ok": true, "remote_id": "..."}, {"oid": "...", "ok": false, "why": "..."}]}
 ```
 
 Results are per mutation. Successes leave the unpushed set; failures stay with their reason and
 appear in `status`. A helper that supports incremental sync returns a token; one that does not
 returns null and `dam` diffs the full set itself.
+
+Delivery is at least once. `dam` cannot tell a request that never arrived from an answer that never
+came back, so it sends the mutation again, and the same mutation always carries the same
+`idempotency_key`: a UUID `dam` derives from the commit and the object, never minted afresh for a
+resend. A helper passes it to a remote that deduplicates by key, so the work happens once however
+often it is sent. `dam-remote-todoist` sends it as the `uuid` of each Sync API command, numbering a
+mutation's several commands in the key's last character, which `dam` leaves free for that. Against a
+remote with no such key, delivery is at least once and a resend can duplicate.
 
 The protocol version only grows. A helper written against version 1 keeps working against every
 later `dam`.
@@ -308,9 +330,15 @@ is set:
 
 | Key | Meaning |
 |---|---|
-| `<name>` | The value itself, in the config file. `dam status` warns when this is set. |
+| `<name>` | The value itself, in the config file, with `<name>` listed in `credentials`. `dam status` warns when this is set. |
 | `<name>_command` | Argv of a command whose first line of standard output is the value. |
 | `<name>_env` | The name of an environment variable holding it. |
+
+The config is parsed before any helper runs, so the parser cannot ask a helper which names it
+declares. A bare `<name>` key is therefore read as a credential only when the remote's
+`credentials` array lists that name; the suffixed forms say what they are in the key itself and
+need no listing. Every other key in a remote table is refused by name, so a misspelled setting is
+a refusal rather than a silently exported credential.
 
 `dam` resolves each and passes it to the helper as `DAM_<REMOTE>_<NAME>` in its environment, so
 `api_token` under `[remote.todoist]` arrives as `DAM_TODOIST_API_TOKEN`. A declared credential with
@@ -319,8 +347,15 @@ a status message.
 
 ### Helpers in this repository
 
-`dam-remote-todoist` ships in version one. `dam-remote-gcal` ships second. Both are binaries in the
-`damnit` package, so `cargo install damnit` installs `dam` and both helpers together.
+`dam-remote-todoist` ships in version one. `dam-remote-gcal` ships second. Each helper is its own
+package (`dam-remote-todoist`, `dam-remote-gcal`), separate from `damnit`, which builds only the
+`dam` binary. `cargo install --git <url> damnit` and `cargo install --git <url> dam-remote-todoist`
+are two separate installs.
+
+`dam-remote-todoist` reads one environment variable of its own, `DAM_TODOIST_BASE_URL`, which
+points it at a test server instead of Todoist. It accepts only `http://127.0.0.1:<port>` or
+`http://localhost:<port>` and refuses anything else, so the variable cannot send the bearer token
+to another host.
 
 A native remote, `dam-remote-https` against a server that speaks this protocol, is a later
 helper and out of scope here.
@@ -332,7 +367,10 @@ helper and out of scope here.
    pull again.
 2. A conflict is an object both sides changed since the last common state. `pull` marks it; `dam
    status` lists it; `dam resolve <oid> --ours | --theirs` settles it. Nothing is merged
-   automatically.
+   automatically. Either side is settled by a commit, so what is owed to the remote ends at the
+   side that won, and a settled conflict is not raised again: a pull that finds the remote holding
+   what it held when `dam` last looked has nothing coming in, whichever way the local copy has
+   since moved.
 3. A removal upstream is a notice, never a local deletion.
 4. An event cancelled upstream keeps its attached tasks and is reported.
 5. A helper only writes the fields it declared.
@@ -386,6 +424,10 @@ Reads are local SQLite queries. The targets, measured on a store of ten thousand
 - `dam status`: under 30 ms
 - `dam pull` against Todoist with a sync token: bounded by the network, one request
 
+The size ceiling is 16 MiB, one protocol line. A helper reads at most that much of any one upstream
+answer and refuses a larger one by name, because an account whose full sync exceeds a line cannot be
+delivered to `dam` at all.
+
 The clients spawn `dam ... --json` per render and read the result. No daemon and no socket in
 version one; the process start cost is measured before that is reconsidered.
 
@@ -394,6 +436,13 @@ version one; the process start cost is measured before that is reconsidered.
 A refusal names the rule and the objects involved, then stops. A missing helper is named. A failed
 push lists each failed mutation with the helper's reason. A parse failure in `edit -e` names the line
 and reopens. No error message contains a token.
+
+A push failure is per mutation once mutations are being applied, and whole-push before that. The
+read a helper needs to shape anything is the before: it fails the push with one reason, because no
+mutation was attempted and there is nothing to report against one. From the first mutation onward a
+failure belongs to the mutation it happened on, so the ones the remote already took are reported as
+taken and `dam` marks exactly those pushed. The exception is a rate limit, which says the remote is
+taking nothing more: the push stops there and `dam` marks nothing pushed.
 
 ## Testing
 
@@ -434,6 +483,8 @@ included. No crate depends on anything outside this workspace except published c
 - A capacity or scheduling model over free windows; the data for it is present, the logic is not
 - Comments and attachments on tasks
 - Assignees and shared projects
+- Automatic retry or backoff after a rate limit. A helper reports the rate limit and the retry time
+  the remote named, `dam` stops the push without marking anything pushed, and the operator retries.
 
 ## Decisions recorded
 
