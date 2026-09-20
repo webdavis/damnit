@@ -16,6 +16,13 @@ pub enum HelperError {
         supported: u32,
     },
     Io(String),
+    /// Two credential names of one remote become the same environment
+    /// variable, so one would silently overwrite the other.
+    CollidingCredentials {
+        first: String,
+        second: String,
+        variable: String,
+    },
     Remote(String),
     Timeout {
         helper: String,

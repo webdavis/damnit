@@ -86,8 +86,20 @@ impl ProcessLauncher {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
+        // Every non-alphanumeric character folds to an underscore, so two
+        // names of one remote can land on one variable. Refuse rather than
+        // hand the helper whichever of the two was written last.
+        let mut taken: std::collections::BTreeMap<String, &str> = std::collections::BTreeMap::new();
         for (name, value) in credentials {
-            command.env(credential_variable(&remote.name.0, name), value.expose());
+            let variable = credential_variable(&remote.name.0, name);
+            if let Some(first) = taken.insert(variable.clone(), name) {
+                return Err(HelperError::CollidingCredentials {
+                    first: first.to_string(),
+                    second: name.clone(),
+                    variable,
+                });
+            }
+            command.env(variable, value.expose());
         }
         let mut child = command
             .spawn()
@@ -190,6 +202,29 @@ mod tests {
             helper.capabilities().unwrap_err(),
             HelperError::Io(_)
         ));
+    }
+
+    #[test]
+    fn two_credential_names_that_become_one_variable_are_refused_by_name() {
+        let dir = tempfile::tempdir().unwrap();
+        let launcher = install(dir.path(), FAKE);
+        let err = launcher
+            .launch(
+                &remote(),
+                &[
+                    ("client-id".into(), "one".into()),
+                    ("client.id".into(), "two".into()),
+                ],
+            )
+            .unwrap_err();
+        assert_eq!(
+            err,
+            HelperError::CollidingCredentials {
+                first: "client-id".into(),
+                second: "client.id".into(),
+                variable: "DAM_T_CLIENT_ID".into(),
+            }
+        );
     }
 
     #[test]

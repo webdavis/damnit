@@ -34,7 +34,7 @@ pub(super) fn parse_remote(name: &str, t: &Table) -> Result<RemoteConfig, Config
         })
         .transpose()?;
     let declared = declared_credentials(name, t)?;
-    let mut credentials = Vec::new();
+    let mut candidates: Vec<(u8, CredentialSpec)> = Vec::new();
     for (key, value) in t {
         if BASE_KEYS.contains(&key.as_str()) {
             continue;
@@ -42,8 +42,9 @@ pub(super) fn parse_remote(name: &str, t: &Table) -> Result<RemoteConfig, Config
         if !is_credential_key(key, &declared) {
             return Err(unknown_key(name, key));
         }
-        credentials.push(parse_credential(name, key, value)?);
+        candidates.push((precedence(key), parse_credential(name, key, value)?));
     }
+    let credentials = highest_precedence(candidates);
     Ok(RemoteConfig {
         name: RemoteName(name.to_string()),
         helper: helper.to_string(),
@@ -76,6 +77,27 @@ fn declared_credentials(remote: &str, t: &Table) -> Result<Vec<String>, ConfigEr
                 .ok_or_else(|| invalid("must be an array of strings"))
         })
         .collect()
+}
+
+/// Where one form of a credential sits in the order the design states: the
+/// value in the config first, then the command, then the environment
+/// variable. Declared here rather than left to the order a TOML table happens
+/// to yield its keys in, which agrees with this only by accident.
+fn precedence(key: &str) -> u8 {
+    if key.ends_with("_command") {
+        1
+    } else if key.ends_with("_env") {
+        2
+    } else {
+        0
+    }
+}
+
+/// One spec per credential name, the highest-precedence form of each.
+fn highest_precedence(mut candidates: Vec<(u8, CredentialSpec)>) -> Vec<CredentialSpec> {
+    candidates.sort_by(|a, b| a.1.name().cmp(b.1.name()).then(a.0.cmp(&b.0)));
+    candidates.dedup_by(|a, b| a.1.name() == b.1.name());
+    candidates.into_iter().map(|(_, spec)| spec).collect()
 }
 
 fn is_credential_key(key: &str, declared: &[String]) -> bool {

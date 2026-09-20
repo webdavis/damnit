@@ -218,3 +218,41 @@ fn a_literal_credential_is_read_only_when_credentials_declares_its_name() {
         "{undeclared}"
     );
 }
+
+#[test]
+fn the_config_value_wins_over_the_command_and_the_command_over_the_variable() {
+    let text = r#"
+[remote.t]
+url = "t::"
+credentials = ["api_token"]
+api_token_env = "T_TOKEN"
+api_token_command = ["print-it"]
+api_token = "the-value"
+"#;
+    let config = parse_config(text).unwrap();
+    let remote = config.remote("t").unwrap();
+    assert_eq!(remote.credentials.len(), 1, "one spec per credential name");
+    assert!(
+        matches!(&remote.credentials[0], CredentialSpec::Literal { .. }),
+        "{:?}",
+        remote.credentials[0]
+    );
+}
+
+#[test]
+fn the_command_wins_over_the_variable_when_no_value_is_set() {
+    let text = r#"
+[remote.t]
+url = "t::"
+api_token_env = "T_TOKEN"
+api_token_command = ["print-it"]
+"#;
+    let config = parse_config(text).unwrap();
+    let remote = config.remote("t").unwrap();
+    assert_eq!(remote.credentials.len(), 1);
+    assert!(
+        matches!(&remote.credentials[0], CredentialSpec::Command { .. }),
+        "{:?}",
+        remote.credentials[0]
+    );
+}

@@ -126,6 +126,14 @@ impl fmt::Display for UseCaseError {
                 f,
                 "helper {helper} speaks protocol version {found}; dam speaks {supported}, so upgrade dam or use an older helper"
             ),
+            UseCaseError::Helper(HelperError::CollidingCredentials {
+                first,
+                second,
+                variable,
+            }) => write!(
+                f,
+                "credentials {first} and {second} both become {variable}; rename one of them"
+            ),
             UseCaseError::Helper(HelperError::Io(s)) => write!(f, "talking to the helper: {s}"),
             UseCaseError::Helper(HelperError::Remote(s)) => write!(f, "the remote refused: {s}"),
             UseCaseError::Helper(HelperError::Timeout {
