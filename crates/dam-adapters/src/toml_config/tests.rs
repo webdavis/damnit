@@ -159,3 +159,30 @@ fn a_syntax_error_names_its_position_and_never_echoes_the_file() {
         );
     }
 }
+
+fn mode_of(path: &FsPath) -> u32 {
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::metadata(path).unwrap().permissions().mode() & 0o777
+}
+
+#[test]
+fn append_remote_creates_a_private_file_in_a_private_directory() {
+    let base = tempfile::tempdir().unwrap();
+    let dir = base.path().join("dam");
+    let path = dir.join("config.toml");
+    append_remote(&path, "todoist", "todoist::").unwrap();
+    assert_eq!(mode_of(&path), 0o600);
+    assert_eq!(mode_of(&dir), 0o700);
+}
+
+#[test]
+fn append_remote_tightens_a_world_readable_config() {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("config.toml");
+    std::fs::write(&path, "[done]\ninteractive = true\n").unwrap();
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
+    append_remote(&path, "todoist", "todoist::").unwrap();
+    assert_eq!(mode_of(&path), 0o600);
+    assert!(load_config(&path).unwrap().done_interactive);
+}

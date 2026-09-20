@@ -1,4 +1,7 @@
 use std::fmt;
+use std::fs::{DirBuilder, Permissions};
+use std::io::Write;
+use std::os::unix::fs::{DirBuilderExt, PermissionsExt};
 use std::path::{Path as FsPath, PathBuf};
 use std::time::Duration;
 
@@ -185,10 +188,47 @@ pub fn append_remote(path: &FsPath, name: &str, url: &str) -> Result<(), ConfigE
         "[remote.{name}]\nurl = {}\n",
         Value::String(url.to_string())
     ));
-    if let Some(dir) = path.parent() {
-        std::fs::create_dir_all(dir).map_err(|e| ConfigError::Io(e.to_string()))?;
+    let dir = parent_of(path);
+    DirBuilder::new()
+        .recursive(true)
+        .mode(0o700)
+        .create(&dir)
+        .map_err(io_error)?;
+    write_private(path, &text)
+}
+
+fn parent_of(path: &FsPath) -> PathBuf {
+    match path.parent() {
+        Some(dir) if !dir.as_os_str().is_empty() => dir.to_path_buf(),
+        _ => PathBuf::from("."),
     }
-    std::fs::write(path, text).map_err(|e| ConfigError::Io(e.to_string()))
+}
+
+fn io_error(e: std::io::Error) -> ConfigError {
+    ConfigError::Io(e.to_string())
+}
+
+/// Writes the config through a sibling temp file, so an interrupted write leaves
+/// the old one intact, and leaves the result readable only by its owner: the
+/// file is the documented home of a literal credential.
+fn write_private(path: &FsPath, text: &str) -> Result<(), ConfigError> {
+    if let Ok(meta) = std::fs::metadata(path) {
+        let mode = meta.permissions().mode() & 0o777;
+        if mode & 0o077 != 0 {
+            eprintln!(
+                "dam: {} was mode {mode:o}; writing it 600, it can hold a credential",
+                path.display()
+            );
+        }
+    }
+    let mut file = tempfile::NamedTempFile::new_in(parent_of(path)).map_err(io_error)?;
+    file.as_file()
+        .set_permissions(Permissions::from_mode(0o600))
+        .map_err(io_error)?;
+    file.write_all(text.as_bytes()).map_err(io_error)?;
+    file.as_file().sync_all().map_err(io_error)?;
+    file.persist(path).map_err(|e| io_error(e.error))?;
+    Ok(())
 }
 
 #[cfg(test)]
