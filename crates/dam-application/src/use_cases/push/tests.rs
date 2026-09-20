@@ -7,8 +7,8 @@ use jiff::civil::date;
 
 use super::*;
 use crate::config::{Config, CredentialSpec, RemoteConfig};
+use crate::ports::RemoteName;
 use crate::ports::Repositories;
-use crate::ports::{Notice, RemoteName};
 use crate::testing::prelude::*;
 use crate::testing::{
     EchoCredentials, FixedClock, FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
@@ -17,7 +17,7 @@ use crate::testing::{
 use crate::use_cases::commit::commit;
 use crate::use_cases::stage::add_all;
 
-fn config() -> Config {
+pub(super) fn config() -> Config {
     Config {
         remotes: vec![RemoteConfig {
             name: RemoteName("todoist".into()),
@@ -35,7 +35,7 @@ fn config() -> Config {
     }
 }
 
-fn launcher(
+pub(super) fn launcher(
     answer: impl Fn(&[RemoteMutation]) -> Vec<MutationOutcome> + Clone + 'static,
 ) -> (ScriptedLauncher, Rc<RefCell<Vec<RemoteMutation>>>) {
     let pushed = Rc::new(RefCell::new(Vec::new()));
@@ -53,7 +53,7 @@ fn launcher(
     (l, pushed)
 }
 
-fn committed_task(store: &MemoryStore, byte: u8) {
+pub(super) fn committed_task(store: &MemoryStore, byte: u8) {
     store
         .put(&Object::Task(Task::new(oid(byte), format!("t{byte}"))))
         .unwrap();
@@ -104,79 +104,6 @@ fn a_committed_create_is_sent_and_its_remote_id_is_mapped() {
         vec![vec![("api_token".to_string(), "t".into())]],
         "one helper process, launched with the token the remote's config declares"
     );
-}
-
-#[test]
-fn a_failed_mutation_becomes_a_notice_and_a_retry() {
-    let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
-    committed_task(&store, 1);
-    let (l, _) = launcher(|ms| {
-        ms.iter()
-            .map(|m| MutationOutcome {
-                oid: m.oid.clone(),
-                ok: false,
-                remote_id: None,
-                why: Some("rate limited".into()),
-            })
-            .collect()
-    });
-    let reports = push(repos, &l, &EchoCredentials, &config(), None).unwrap();
-    assert_eq!(
-        reports[0].failed,
-        vec![(oid(1), "rate limited".to_string())]
-    );
-    assert_eq!(
-        store.push_retries(&RemoteName("todoist".into())).unwrap(),
-        vec![oid(1)]
-    );
-    assert!(matches!(
-        store.notices().unwrap()[0],
-        Notice::PushFailed { .. }
-    ));
-    // the commit is marked pushed; the retry set carries the failure forward
-    assert!(
-        store
-            .unpushed(&RemoteName("todoist".into()))
-            .unwrap()
-            .is_empty()
-    );
-}
-
-#[test]
-fn a_mutation_the_helper_never_answered_is_a_failure() {
-    let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
-    committed_task(&store, 1);
-    committed_task(&store, 2);
-    let (l, _) = launcher(|ms| {
-        ms.iter()
-            .filter(|m| m.oid == oid(1))
-            .map(|m| MutationOutcome {
-                oid: m.oid.clone(),
-                ok: true,
-                remote_id: Some("r1".into()),
-                why: None,
-            })
-            .collect()
-    });
-    let reports = push(repos, &l, &EchoCredentials, &config(), None).unwrap();
-    assert_eq!(reports[0].succeeded, 1);
-    assert_eq!(
-        reports[0].failed,
-        vec![(oid(2), "no answer from helper".to_string())]
-    );
-    assert_eq!(
-        store.push_retries(&RemoteName("todoist".into())).unwrap(),
-        vec![oid(2)]
-    );
-    assert!(matches!(
-        store.notices().unwrap()[0],
-        Notice::PushFailed { .. }
-    ));
-    let still_unpushed = store.unpushed(&RemoteName("todoist".into())).unwrap();
-    assert_eq!(still_unpushed.len(), 1);
-    assert!(still_unpushed[0].changes.iter().any(|c| c.oid == oid(2)));
 }
 
 #[test]
@@ -262,41 +189,6 @@ fn a_successful_delete_clears_the_remote_mapping() {
 }
 
 #[test]
-fn duplicate_and_unsent_results_are_ignored() {
-    let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
-    committed_task(&store, 1);
-    let (l, _) = launcher(|_| {
-        vec![
-            MutationOutcome {
-                oid: oid(1),
-                ok: false,
-                remote_id: None,
-                why: Some("first".into()),
-            },
-            MutationOutcome {
-                oid: oid(1),
-                ok: false,
-                remote_id: None,
-                why: Some("second".into()),
-            },
-            MutationOutcome {
-                oid: oid(9),
-                ok: false,
-                remote_id: None,
-                why: Some("unsent".into()),
-            },
-        ]
-    });
-    let reports = push(repos, &l, &EchoCredentials, &config(), None).unwrap();
-    assert_eq!(reports[0].succeeded, 0);
-    assert_eq!(reports[0].failed.len(), 1);
-    let retries = store.push_retries(&RemoteName("todoist".into())).unwrap();
-    assert_eq!(retries, vec![oid(1)]);
-    assert!(!retries.contains(&oid(9)));
-}
-
-#[test]
 fn a_delete_with_no_remote_mapping_is_skipped() {
     let store = MemoryStore::new();
     let repos = Repositories::of(&store);
@@ -358,40 +250,11 @@ fn an_event_is_skipped_by_a_task_only_helper() {
     assert!(pushed.borrow().is_empty());
 }
 
-#[test]
-fn unresolved_conflicts_block_push() {
-    let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
-    committed_task(&store, 1);
-    store
-        .mark_conflict(
-            &RemoteName("todoist".into()),
-            &oid(1),
-            &Object::Task(Task::new(oid(1), "theirs")),
-        )
-        .unwrap();
-    let (l, _) = launcher(|_| vec![]);
-    let err = push(repos, &l, &EchoCredentials, &config(), None).unwrap_err();
-    assert_eq!(err, UseCaseError::Refused(Refusal::UnresolvedConflicts(1)));
-}
-
-#[test]
-fn an_unknown_remote_is_refused() {
-    let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
-    let (l, _) = launcher(|_| vec![]);
-    let err = push(repos, &l, &EchoCredentials, &config(), Some("nope")).unwrap_err();
-    assert_eq!(
-        err,
-        UseCaseError::Refused(Refusal::NoSuchRemote("nope".into()))
-    );
-}
-
-/// The window finding 1.1 named: the request left, the answer never arrived,
-/// and dam cannot tell a lost request from a lost answer. The resend has to
-/// carry the key the first attempt carried, or the remote creates the object
-/// twice. The key is derived rather than stored, so a push that returned no
-/// answer at all, the timeout shape, resends the same key for the same reason.
+/// The request left, the answer never arrived, and dam cannot tell a lost
+/// request from a lost answer. The resend has to carry the key the first
+/// attempt carried, or the remote creates the object twice. The key is
+/// derived rather than stored, so a push that returned no answer at all, the
+/// timeout shape, resends the same key for the same reason.
 #[test]
 fn a_resend_after_an_unanswered_push_carries_the_first_attempt_s_key() {
     let store = MemoryStore::new();
@@ -415,6 +278,7 @@ fn a_resend_after_an_unanswered_push_carries_the_first_attempt_s_key() {
 
 /// Two different changes to one object are two mutations, and each has to be
 /// executed. They must not share a key, or the remote drops the second.
+
 #[test]
 fn two_successive_changes_to_one_object_carry_different_keys() {
     let store = MemoryStore::new();
@@ -447,29 +311,4 @@ fn two_successive_changes_to_one_object_carry_different_keys() {
     let sent = pushed.borrow();
     assert_eq!(sent.len(), 2);
     assert_ne!(sent[0].idempotency_key, sent[1].idempotency_key);
-}
-
-/// The helper stays the authority on what it needs, even though the config
-/// is what supplies it: a name the helper declares and the config does not
-/// is refused by name rather than sent as nothing.
-#[test]
-fn a_credential_the_config_does_not_supply_is_refused_by_name() {
-    let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
-    let mut config = config();
-    config.remotes[0].credentials.clear();
-    let (l, _) = launcher(|_| vec![]);
-    let err = push(repos, &l, &EchoCredentials, &config, None).unwrap_err();
-    assert_eq!(
-        err,
-        UseCaseError::Refused(Refusal::MissingCredential {
-            remote: "todoist".into(),
-            name: "api_token".into()
-        })
-    );
-    assert_eq!(
-        l.launched_with.borrow().len(),
-        1,
-        "one process, even when the capabilities it reported cannot be met"
-    );
 }

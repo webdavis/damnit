@@ -5,6 +5,7 @@ use jiff::civil::date;
 
 use super::*;
 use crate::config::{CredentialSpec, RemoteConfig};
+use crate::errors::Refusal;
 use crate::ports::Repositories;
 use crate::remote::{IncomingObject, PullOutcome, RejectedObject};
 use crate::testing::prelude::*;

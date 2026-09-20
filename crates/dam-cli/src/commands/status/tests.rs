@@ -1,4 +1,3 @@
-
 use crate::args::{AddArgs, CommitArgs, DiffArgs};
 use crate::commands::commit::run_commit;
 use crate::commands::stage::run_add;
