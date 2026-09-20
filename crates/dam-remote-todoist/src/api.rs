@@ -4,6 +4,11 @@ use serde::Deserialize;
 
 pub const PRODUCTION_BASE: &str = "https://api.todoist.com/api/v1";
 
+/// How much of an upstream error body reaches dam, the ellipsis included. The
+/// body crosses the protocol, is stored as a notice and is printed by
+/// `dam status`, so it is cut to one line of at most this many characters.
+pub const MAX_ERROR_BODY: usize = 500;
+
 #[derive(Debug)]
 pub enum ApiError {
     Http { status: u16, body: String },
@@ -219,6 +224,21 @@ fn checked_base(value: &str) -> Result<String, String> {
     Ok(base.to_string())
 }
 
+/// One line of at most `MAX_ERROR_BODY` characters. Every control character
+/// becomes a space so a single notice cannot rewrite the terminal or spill
+/// across lines, and a cut is marked with a trailing ellipsis.
+fn bounded(text: &str) -> String {
+    let flat = text
+        .chars()
+        .map(|c| if c.is_control() { ' ' } else { c })
+        .collect::<String>();
+    let trimmed = flat.trim();
+    match trimmed.char_indices().nth(MAX_ERROR_BODY - 1) {
+        None => trimmed.to_string(),
+        Some((cut, _)) => format!("{}\u{2026}", &trimmed[..cut]),
+    }
+}
+
 fn read_json(response: ureq::http::Response<ureq::Body>) -> Result<serde_json::Value, ApiError> {
     let status = response.status().as_u16();
     let text = response
@@ -226,7 +246,10 @@ fn read_json(response: ureq::http::Response<ureq::Body>) -> Result<serde_json::V
         .read_to_string()
         .map_err(|e| ApiError::Transport(e.to_string()))?;
     if !(200..300).contains(&status) {
-        return Err(ApiError::Http { status, body: text });
+        return Err(ApiError::Http {
+            status,
+            body: bounded(&text),
+        });
     }
     if text.trim().is_empty() {
         return Ok(serde_json::Value::Null);

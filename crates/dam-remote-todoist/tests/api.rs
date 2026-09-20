@@ -74,3 +74,26 @@ fn an_http_failure_and_a_transport_failure_never_show_the_token() {
     assert!(matches!(transport_err, ApiError::Transport(_)));
     assert!(!transport_err.to_string().contains(sentinel));
 }
+
+/// A hostile or merely large upstream error page is copied into dam's stored
+/// notices and printed by `dam status`, so the helper bounds it first.
+#[test]
+fn a_huge_error_body_is_bounded_to_one_short_line() {
+    let mut routes = HashMap::new();
+    let huge = format!("{}\n{}", "x".repeat(100 * 1024), "tail");
+    routes.insert("POST /tasks", (500, serde_json::json!({ "error": huge })));
+    let server = loopback::serve(routes);
+    let err = TodoistApi::new(&server.base, "tok")
+        .post("/tasks", &serde_json::json!({}))
+        .unwrap_err();
+    let ApiError::Http { body, .. } = &err else {
+        panic!("{err:?}")
+    };
+    assert!(
+        body.chars().count() <= dam_remote_todoist::api::MAX_ERROR_BODY,
+        "{} characters reached dam",
+        body.chars().count()
+    );
+    assert!(!body.contains('\n'), "a stored notice stays one line");
+    assert!(body.ends_with('…'), "the cut is marked: {body:?}");
+}
