@@ -77,7 +77,7 @@ fn a_new_upstream_object_is_created_locally_with_a_fresh_oid_and_mapped() {
         &l,
         &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(42),
+        &FixedRandom::new(42),
         &config(),
         None,
     )
@@ -103,7 +103,7 @@ fn a_fast_forward_updates_a_clean_local_object() {
         &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(9),
+        &FixedRandom::new(9),
         "m",
     )
     .unwrap();
@@ -121,7 +121,7 @@ fn a_fast_forward_updates_a_clean_local_object() {
         &l,
         &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(42),
+        &FixedRandom::new(42),
         &config(),
         None,
     )
@@ -146,7 +146,7 @@ fn dam_only_fields_survive_a_pull() {
         &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(9),
+        &FixedRandom::new(9),
         "m",
     )
     .unwrap();
@@ -164,7 +164,7 @@ fn dam_only_fields_survive_a_pull() {
         &l,
         &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(42),
+        &FixedRandom::new(42),
         &config(),
         None,
     )
@@ -185,7 +185,7 @@ fn both_sides_changed_is_a_conflict_and_nothing_is_overwritten() {
         &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(9),
+        &FixedRandom::new(9),
         "m",
     )
     .unwrap();
@@ -202,7 +202,7 @@ fn both_sides_changed_is_a_conflict_and_nothing_is_overwritten() {
         &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(10),
+        &FixedRandom::new(10),
         "m2",
     )
     .unwrap();
@@ -216,7 +216,7 @@ fn both_sides_changed_is_a_conflict_and_nothing_is_overwritten() {
         &l,
         &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(42),
+        &FixedRandom::new(42),
         &config(),
         None,
     )
@@ -237,7 +237,7 @@ fn uncommitted_local_work_stops_the_pull_before_anything_is_written() {
         &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(9),
+        &FixedRandom::new(9),
         "m",
     )
     .unwrap();
@@ -259,7 +259,7 @@ fn uncommitted_local_work_stops_the_pull_before_anything_is_written() {
         &l,
         &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(42),
+        &FixedRandom::new(42),
         &config(),
         None,
     )
@@ -285,7 +285,7 @@ fn a_refused_pull_leaves_none_of_its_own_notices_behind() {
         &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(9),
+        &FixedRandom::new(9),
         "m",
     )
     .unwrap();
@@ -310,7 +310,7 @@ fn a_refused_pull_leaves_none_of_its_own_notices_behind() {
         &l,
         &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(42),
+        &FixedRandom::new(42),
         &config(),
         None,
     )

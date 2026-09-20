@@ -43,7 +43,7 @@ fn theirs_takes_the_upstream_version() {
         &store,
         &store,
         &FixedClock(jiff::civil::date(2026, 9, 18)),
-        &mut FixedRandom(3),
+        &FixedRandom::new(3),
         &oid(1),
         Side::Theirs,
     )
@@ -74,7 +74,7 @@ fn resolving_with_ours_leaves_an_existing_unpushed_commit_untouched() {
         &store,
         &store,
         &FixedClock(jiff::civil::date(2026, 9, 18)),
-        &mut FixedRandom(1),
+        &FixedRandom::new(1),
         "m",
     )
     .unwrap();
@@ -90,7 +90,7 @@ fn resolving_with_ours_leaves_an_existing_unpushed_commit_untouched() {
         &store,
         &store,
         &FixedClock(jiff::civil::date(2026, 9, 18)),
-        &mut FixedRandom(3),
+        &FixedRandom::new(3),
         &oid(1),
         Side::Ours,
     )
@@ -115,7 +115,7 @@ fn ours_keeps_the_local_version() {
         &store,
         &store,
         &FixedClock(jiff::civil::date(2026, 9, 18)),
-        &mut FixedRandom(3),
+        &FixedRandom::new(3),
         &oid(1),
         Side::Ours,
     )
@@ -132,7 +132,7 @@ fn resolving_a_non_conflict_is_refused() {
         &store,
         &store,
         &FixedClock(jiff::civil::date(2026, 9, 18)),
-        &mut FixedRandom(3),
+        &FixedRandom::new(3),
         &oid(1),
         Side::Ours,
     )
@@ -213,7 +213,7 @@ fn pulled_into_conflict() -> MemoryStore {
         &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(9),
+        &FixedRandom::new(9),
         "base",
     )
     .unwrap();
@@ -229,7 +229,7 @@ fn pulled_into_conflict() -> MemoryStore {
         &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(10),
+        &FixedRandom::new(10),
         "mine",
     )
     .unwrap();
@@ -238,7 +238,7 @@ fn pulled_into_conflict() -> MemoryStore {
         &launcher(vec![upstream("theirs")]),
         &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(42),
+        &FixedRandom::new(42),
         &config(),
         None,
     )
@@ -259,7 +259,7 @@ fn ours_is_committed_and_the_conflict_is_not_raised_again() {
         &store,
         &store,
         &FixedClock(date(2026, 9, 19)),
-        &mut FixedRandom(3),
+        &FixedRandom::new(3),
         &oid(1),
         Side::Ours,
     )
@@ -282,7 +282,7 @@ fn ours_is_committed_and_the_conflict_is_not_raised_again() {
         &launcher(vec![upstream("theirs")]),
         &EchoCredentials,
         &FixedClock(date(2026, 9, 20)),
-        &mut FixedRandom(43),
+        &FixedRandom::new(43),
         &config(),
         None,
     )
@@ -316,7 +316,7 @@ fn theirs_leaves_only_theirs_owed_and_settles_the_conflict() {
         &store,
         &store,
         &FixedClock(date(2026, 9, 19)),
-        &mut FixedRandom(3),
+        &FixedRandom::new(3),
         &oid(1),
         Side::Theirs,
     )
@@ -335,7 +335,7 @@ fn theirs_leaves_only_theirs_owed_and_settles_the_conflict() {
         &launcher(vec![upstream("theirs")]),
         &EchoCredentials,
         &FixedClock(date(2026, 9, 20)),
-        &mut FixedRandom(43),
+        &FixedRandom::new(43),
         &config(),
         None,
     )

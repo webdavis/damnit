@@ -1,6 +1,6 @@
 //! The remote-side and environment doubles every use-case test wires in.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use dam_domain::{Date, Field, Kind, Oid, Timestamp};
@@ -16,12 +16,20 @@ pub fn oid(byte: u8) -> Oid {
     Oid::generate(&mut |b: &mut [u8]| b.fill(byte))
 }
 
-pub struct FixedRandom(pub u8);
+/// Fills with one byte per call, counting up, so every generated identifier
+/// in a test is the one its seed names.
+pub struct FixedRandom(Cell<u8>);
+
+impl FixedRandom {
+    pub fn new(seed: u8) -> FixedRandom {
+        FixedRandom(Cell::new(seed))
+    }
+}
 
 impl Randomness for FixedRandom {
-    fn fill(&mut self, buf: &mut [u8]) {
-        buf.fill(self.0);
-        self.0 = self.0.wrapping_add(1);
+    fn fill(&self, buf: &mut [u8]) {
+        buf.fill(self.0.get());
+        self.0.set(self.0.get().wrapping_add(1));
     }
 }
 

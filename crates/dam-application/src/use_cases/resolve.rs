@@ -14,7 +14,7 @@ pub fn resolve(
     commits: &dyn CommitRepository,
     conflicts: &dyn ConflictRepository,
     clock: &dyn Clock,
-    random: &mut dyn Randomness,
+    random: &dyn Randomness,
     oid: &Oid,
     side: Side,
 ) -> Result<(), UseCaseError> {

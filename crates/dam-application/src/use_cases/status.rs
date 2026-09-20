@@ -107,7 +107,7 @@ mod tests {
             &store,
             &store,
             &FixedClock(date(2026, 9, 18)),
-            &mut FixedRandom(5),
+            &FixedRandom::new(5),
             "m",
         )
         .unwrap();
@@ -125,7 +125,7 @@ mod tests {
             &store,
             &store,
             &FixedClock(date(2026, 9, 18)),
-            &mut FixedRandom(5),
+            &FixedRandom::new(5),
             "m",
         )
         .unwrap();

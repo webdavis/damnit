@@ -12,7 +12,7 @@ pub(crate) fn run_commit(ctx: &mut Context, args: CommitArgs) -> Result<Report, 
         ctx.store.as_ref(),
         ctx.store.as_ref(),
         ctx.clock.as_ref(),
-        ctx.random.as_mut(),
+        ctx.random.as_ref(),
         &args.message,
     )?;
     Ok(Report {

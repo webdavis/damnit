@@ -21,7 +21,7 @@ pub(crate) fn run(ctx: &mut Context, args: DoneArgs) -> Result<Report, CliError>
     let outcome = complete(
         ctx.store.as_ref(),
         ctx.clock.as_ref(),
-        ctx.random.as_mut(),
+        ctx.random.as_ref(),
         &oid,
         force,
         dispositions,

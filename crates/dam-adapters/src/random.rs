@@ -3,7 +3,7 @@ use dam_application::Randomness;
 pub struct OsRandom;
 
 impl Randomness for OsRandom {
-    fn fill(&mut self, buf: &mut [u8]) {
+    fn fill(&self, buf: &mut [u8]) {
         // The OS source failing is not recoverable for an identifier; a zeroed
         // id would collide, so this is the one place a panic is correct.
         getrandom::fill(buf).expect("the operating system random source is unavailable");

@@ -227,8 +227,10 @@ pub trait Clock {
     fn now(&self) -> Timestamp;
 }
 
+/// A source of entropy for a new identifier. Shared rather than owned, so a
+/// use case that mints one borrows it alongside everything else it reads.
 pub trait Randomness {
-    fn fill(&mut self, buf: &mut [u8]);
+    fn fill(&self, buf: &mut [u8]);
 }
 
 #[derive(Debug, PartialEq, Eq)]

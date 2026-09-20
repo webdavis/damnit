@@ -7,7 +7,7 @@ pub fn commit(
     stage: &dyn StageRepository,
     commits: &dyn CommitRepository,
     clock: &dyn Clock,
-    random: &mut dyn Randomness,
+    random: &dyn Randomness,
     message: &str,
 ) -> Result<CommitRecord, UseCaseError> {
     let changes = stage.staged()?;
@@ -46,7 +46,7 @@ mod tests {
             &store,
             &store,
             &FixedClock(date(2026, 9, 18)),
-            &mut FixedRandom(5),
+            &FixedRandom::new(5),
             "first",
         )
         .unwrap();
@@ -67,7 +67,7 @@ mod tests {
             &store,
             &store,
             &FixedClock(date(2026, 9, 18)),
-            &mut FixedRandom(5),
+            &FixedRandom::new(5),
             "x",
         )
         .unwrap_err();

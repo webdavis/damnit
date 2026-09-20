@@ -26,7 +26,7 @@ pub(crate) fn run_pull(ctx: &mut Context, args: PullArgs) -> Result<Report, CliE
         ctx.launcher.as_ref(),
         ctx.credentials.as_ref(),
         ctx.clock.as_ref(),
-        ctx.random.as_mut(),
+        ctx.random.as_ref(),
         &ctx.config,
         args.remote.as_deref(),
     )?;
@@ -48,7 +48,7 @@ pub(crate) fn run_resolve(ctx: &mut Context, args: ResolveArgs) -> Result<Report
         ctx.store.as_ref(),
         ctx.store.as_ref(),
         ctx.clock.as_ref(),
-        ctx.random.as_mut(),
+        ctx.random.as_ref(),
         &oid,
         side,
     )?;

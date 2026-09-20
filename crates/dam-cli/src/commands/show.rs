@@ -116,20 +116,20 @@ mod tests {
     /// Fills every byte with `0xab` except the last, which counts up from
     /// the constructor argument: the same twin-prefix technique `oids.rs`
     /// uses for oids, applied to the ids two separate commits get.
-    struct TwinRandom(u8);
+    struct TwinRandom(std::cell::Cell<u8>);
     impl dam_application::Randomness for TwinRandom {
-        fn fill(&mut self, buf: &mut [u8]) {
+        fn fill(&self, buf: &mut [u8]) {
             buf.fill(0xab);
             let len = buf.len();
-            buf[len - 1] = self.0;
-            self.0 = self.0.wrapping_add(1);
+            buf[len - 1] = self.0.get();
+            self.0.set(self.0.get().wrapping_add(1));
         }
     }
 
     #[test]
     fn an_ambiguous_commit_prefix_names_every_match() {
         let mut ctx = context();
-        ctx.random = Box::new(TwinRandom(1));
+        ctx.random = Box::new(TwinRandom(std::cell::Cell::new(1)));
         ctx.store
             .put(&Object::Task(Task::new(
                 Oid::generate(&mut |x: &mut [u8]| x.fill(9)),

@@ -62,7 +62,7 @@ fn committed_task(store: &MemoryStore, byte: u8) {
         store,
         store,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(byte),
+        &FixedRandom::new(byte),
         "m",
     )
     .unwrap();
@@ -227,7 +227,7 @@ fn a_successful_delete_clears_the_remote_mapping() {
         &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(1),
+        &FixedRandom::new(1),
         "m",
     )
     .unwrap();
@@ -243,7 +243,7 @@ fn a_successful_delete_clears_the_remote_mapping() {
         &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(2),
+        &FixedRandom::new(2),
         "rm",
     )
     .unwrap();
@@ -308,7 +308,7 @@ fn a_delete_with_no_remote_mapping_is_skipped() {
         &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(1),
+        &FixedRandom::new(1),
         "m",
     )
     .unwrap();
@@ -322,7 +322,7 @@ fn a_delete_with_no_remote_mapping_is_skipped() {
         &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(2),
+        &FixedRandom::new(2),
         "rm",
     )
     .unwrap();
@@ -350,7 +350,7 @@ fn an_event_is_skipped_by_a_task_only_helper() {
         &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(3),
+        &FixedRandom::new(3),
         "m",
     )
     .unwrap();
@@ -441,7 +441,7 @@ fn two_successive_changes_to_one_object_carry_different_keys() {
         &store,
         &store,
         &FixedClock(date(2026, 9, 19)),
-        &mut FixedRandom(9),
+        &FixedRandom::new(9),
         "m2",
     )
     .unwrap();

@@ -52,7 +52,7 @@ pub fn plan_complete(
 pub fn complete(
     objects: &dyn ObjectRepository,
     clock: &dyn Clock,
-    random: &mut dyn Randomness,
+    random: &dyn Randomness,
     oid: &Oid,
     force: Force,
     dispositions: Option<Dispositions>,
@@ -97,7 +97,7 @@ fn rolled(task: &Task, today: Date) -> Option<Date> {
 
 fn apply_dispositions(
     objects: &dyn ObjectRepository,
-    random: &mut dyn Randomness,
+    random: &dyn Randomness,
     oid: &Oid,
     found: &[Blocker],
     d: Dispositions,

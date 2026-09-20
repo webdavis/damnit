@@ -29,7 +29,7 @@ pub(crate) fn run(ctx: &mut Context, args: NewArgs) -> Result<Report, CliError> 
         )?;
         new_event(
             ctx.store.as_ref(),
-            ctx.random.as_mut(),
+            ctx.random.as_ref(),
             &ctx.config.categories,
             NewEvent {
                 subject: args.subject,
@@ -54,7 +54,7 @@ pub(crate) fn run(ctx: &mut Context, args: NewArgs) -> Result<Report, CliError> 
         let deadline = args.deadline.as_deref().map(deadline_flag).transpose()?;
         new_task(
             ctx.store.as_ref(),
-            ctx.random.as_mut(),
+            ctx.random.as_ref(),
             &ctx.config.categories,
             NewTask {
                 subject: args.subject,

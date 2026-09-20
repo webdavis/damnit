@@ -37,7 +37,7 @@ pub fn pull(
     launcher: &dyn HelperLauncher,
     credentials: &dyn CredentialSource,
     clock: &dyn Clock,
-    random: &mut dyn Randomness,
+    random: &dyn Randomness,
     config: &Config,
     remote: Option<&str>,
 ) -> Result<Vec<PullReport>, UseCaseError> {
@@ -54,7 +54,7 @@ pub fn pull(
 fn apply(
     repos: Repositories<'_>,
     clock: &dyn Clock,
-    random: &mut dyn Randomness,
+    random: &dyn Randomness,
     remote: &RemoteConfig,
     caps: &RemoteCapabilities,
     mut response: PullOutcome,
@@ -109,7 +109,7 @@ fn classify(
     remote: &RemoteConfig,
     caps: &RemoteCapabilities,
     objects: Vec<IncomingObject>,
-    random: &mut dyn Randomness,
+    random: &dyn Randomness,
 ) -> Result<Classified, UseCaseError> {
     let staged: Vec<Oid> = repos.stage.staged()?.into_iter().map(|c| c.oid).collect();
     let mut notices = repos.notices.notices()?;
@@ -186,7 +186,7 @@ fn classify(
 fn land(
     repos: Repositories<'_>,
     clock: &dyn Clock,
-    random: &mut dyn Randomness,
+    random: &dyn Randomness,
     remote: &RemoteConfig,
     planned: Vec<(Oid, Incoming)>,
     report: &mut PullReport,

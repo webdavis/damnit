@@ -74,7 +74,7 @@ pub(crate) fn maybe_pull_stale(ctx: &mut Context) -> Result<(), CliError> {
             ctx.launcher.as_ref(),
             ctx.credentials.as_ref(),
             ctx.clock.as_ref(),
-            ctx.random.as_mut(),
+            ctx.random.as_ref(),
             &ctx.config,
             Some(&name),
         ) {

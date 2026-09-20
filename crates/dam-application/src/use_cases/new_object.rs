@@ -26,7 +26,7 @@ pub struct NewEvent {
 
 pub fn new_task(
     objects: &dyn ObjectRepository,
-    random: &mut dyn Randomness,
+    random: &dyn Randomness,
     categories: &Categories,
     input: NewTask,
 ) -> Result<Oid, UseCaseError> {
@@ -45,7 +45,7 @@ pub fn new_task(
 
 pub fn new_event(
     objects: &dyn ObjectRepository,
-    random: &mut dyn Randomness,
+    random: &dyn Randomness,
     categories: &Categories,
     input: NewEvent,
 ) -> Result<Oid, UseCaseError> {
@@ -92,7 +92,7 @@ mod tests {
         let store = MemoryStore::new();
         let id = new_task(
             &store,
-            &mut FixedRandom(7),
+            &FixedRandom::new(7),
             &Categories::default(),
             input("milk", &[]),
         )
@@ -109,7 +109,7 @@ mod tests {
         let store = MemoryStore::new();
         let err = new_task(
             &store,
-            &mut FixedRandom(1),
+            &FixedRandom::new(1),
             &effort(),
             input("x", &["light", "deep"]),
         )
@@ -125,7 +125,7 @@ mod tests {
         let end = When::Day(jiff::civil::date(2026, 9, 26));
         let id = new_event(
             &store,
-            &mut FixedRandom(2),
+            &FixedRandom::new(2),
             &Categories::default(),
             NewEvent {
                 subject: "dentist".into(),

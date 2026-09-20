@@ -1,6 +1,6 @@
 //! Test doubles for `Context`, consumed by every verb's own test module.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 
 use dam_adapters::SqliteStore;
 use dam_application::{
@@ -29,11 +29,16 @@ impl Clock for FixedClock {
     }
 }
 
-pub(crate) struct CountingRandom(pub(crate) u8);
+pub(crate) struct CountingRandom(Cell<u8>);
+impl CountingRandom {
+    pub(crate) fn new(seed: u8) -> CountingRandom {
+        CountingRandom(Cell::new(seed))
+    }
+}
 impl dam_application::Randomness for CountingRandom {
-    fn fill(&mut self, buf: &mut [u8]) {
-        self.0 = self.0.wrapping_add(1);
-        buf.fill(self.0);
+    fn fill(&self, buf: &mut [u8]) {
+        self.0.set(self.0.get().wrapping_add(1));
+        buf.fill(self.0.get());
     }
 }
 
@@ -150,7 +155,7 @@ pub(crate) fn context() -> Context {
         },
         config_path: std::path::PathBuf::from("/nonexistent/config.toml"),
         clock: Box::new(FixedClock(date(2026, 9, 18))),
-        random: Box::new(CountingRandom(0)),
+        random: Box::new(CountingRandom::new(0)),
         launcher: Box::new(EchoLauncher {
             pulled: RefCell::new(None),
         }),

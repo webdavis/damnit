@@ -37,7 +37,7 @@ fn a_removal_upstream_is_a_notice_not_a_deletion() {
         &l,
         &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(42),
+        &FixedRandom::new(42),
         &config(),
         None,
     )
@@ -97,7 +97,7 @@ fn a_cancelled_event_with_attached_tasks_is_reported() {
         &l,
         &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(42),
+        &FixedRandom::new(42),
         &config(),
         None,
     )
@@ -119,7 +119,7 @@ fn an_unrelated_staged_object_stays_staged_after_a_pull() {
         &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(9),
+        &FixedRandom::new(9),
         "m",
     )
     .unwrap();
@@ -141,7 +141,7 @@ fn an_unrelated_staged_object_stays_staged_after_a_pull() {
         &l,
         &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(42),
+        &FixedRandom::new(42),
         &config(),
         None,
     )
@@ -173,7 +173,7 @@ fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
         &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(20),
+        &FixedRandom::new(20),
         "m",
     )
     .unwrap();
@@ -190,7 +190,7 @@ fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
         &store,
         &store,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(21),
+        &FixedRandom::new(21),
         "m2",
     )
     .unwrap();
@@ -226,7 +226,7 @@ fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
         &l,
         &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(42),
+        &FixedRandom::new(42),
         &config(),
         None,
     )
@@ -257,7 +257,7 @@ fn one_unconvertible_object_is_skipped_with_a_notice_and_the_rest_still_pull() {
         &l,
         &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(1),
+        &FixedRandom::new(1),
         &config(),
         None,
     )
@@ -288,7 +288,7 @@ fn a_pull_records_when_it_happened() {
         &l,
         &EchoCredentials,
         &clock,
-        &mut FixedRandom(1),
+        &FixedRandom::new(1),
         &config(),
         None,
     )

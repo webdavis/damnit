@@ -33,7 +33,7 @@ fn a_kind_change_upstream_keeps_ours_and_raises_a_notice() {
         &l,
         &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
-        &mut FixedRandom(42),
+        &FixedRandom::new(42),
         &config(),
         None,
     )
@@ -79,7 +79,7 @@ fn a_kind_change_is_noticed_once_however_often_it_is_pulled() {
             &l,
             &EchoCredentials,
             &FixedClock(date(2026, 9, 18)),
-            &mut FixedRandom(42),
+            &FixedRandom::new(42),
             &config(),
             None,
         )
