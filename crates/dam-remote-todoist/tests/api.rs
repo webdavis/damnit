@@ -1,3 +1,5 @@
+mod support;
+
 mod loopback;
 
 use std::collections::HashMap;
@@ -6,6 +8,7 @@ use dam_remote_todoist::api::{ApiError, TodoistApi};
 
 #[test]
 fn sync_all_sends_the_token_and_decodes_the_three_resources() {
+    let _guard = support::guard("sync_all_sends_the_token_and_decodes_the_three_resources");
     let mut routes = HashMap::new();
     routes.insert(
         "POST /sync",
@@ -39,6 +42,8 @@ fn sync_all_sends_the_token_and_decodes_the_three_resources() {
 /// JSON array of commands, and every verdict comes back keyed by command uuid.
 #[test]
 fn a_write_sends_its_commands_as_a_form_field_and_reads_each_verdict() {
+    let _guard =
+        support::guard("a_write_sends_its_commands_as_a_form_field_and_reads_each_verdict");
     let mut routes = HashMap::new();
     routes.insert(
         "POST /sync",
@@ -71,6 +76,7 @@ fn a_write_sends_its_commands_as_a_form_field_and_reads_each_verdict() {
 /// Neither a rejected request nor one that never reaches the server may render the token.
 #[test]
 fn an_http_failure_and_a_transport_failure_never_show_the_token() {
+    let _guard = support::guard("an_http_failure_and_a_transport_failure_never_show_the_token");
     let sentinel = "sentinel-token";
     let mut routes = HashMap::new();
     routes.insert(
@@ -101,6 +107,7 @@ fn an_http_failure_and_a_transport_failure_never_show_the_token() {
 /// notices and printed by `dam status`, so the helper bounds it first.
 #[test]
 fn a_huge_error_body_is_bounded_to_one_short_line() {
+    let _guard = support::guard("a_huge_error_body_is_bounded_to_one_short_line");
     let mut routes = HashMap::new();
     let huge = format!("{}\n{}", "x".repeat(100 * 1024), "tail");
     routes.insert("POST /tasks", (500, serde_json::json!({ "error": huge })));
@@ -124,6 +131,7 @@ fn a_huge_error_body_is_bounded_to_one_short_line() {
 /// and dam has to be able to tell that apart from any other refusal.
 #[test]
 fn a_rate_limit_is_its_own_outcome_and_carries_the_retry_time() {
+    let _guard = support::guard("a_rate_limit_is_its_own_outcome_and_carries_the_retry_time");
     let server = loopback::serve_with(|seen| {
         let reply = loopback::Reply::new(
             429,

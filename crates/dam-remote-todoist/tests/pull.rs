@@ -1,3 +1,5 @@
+mod support;
+
 mod loopback;
 
 use std::collections::HashMap;
@@ -7,6 +9,7 @@ use dam_remote_todoist::pull::pull;
 
 #[test]
 fn pull_returns_every_live_object_and_names_the_removed_ones() {
+    let _guard = support::guard("pull_returns_every_live_object_and_names_the_removed_ones");
     let mut routes = HashMap::new();
     routes.insert(
         "POST /sync",

@@ -1,3 +1,5 @@
+mod support;
+
 mod fixtures;
 mod loopback;
 
@@ -13,6 +15,7 @@ use fixtures::{mutation, sync_body, task, todoist, with_fields};
 /// recognises it and creates nothing twice.
 #[test]
 fn a_resent_mutation_repeats_its_uuids_and_creates_nothing_twice() {
+    let _guard = support::guard("a_resent_mutation_repeats_its_uuids_and_creates_nothing_twice");
     let (server, recorded) = todoist(sync_body(), None);
     let api = TodoistApi::new(&server.base, "tok");
     let first = vec![mutation(
@@ -53,6 +56,7 @@ fn a_resent_mutation_repeats_its_uuids_and_creates_nothing_twice() {
 /// as a duplicate of the first.
 #[test]
 fn the_commands_of_one_mutation_have_distinct_uuids() {
+    let _guard = support::guard("the_commands_of_one_mutation_have_distinct_uuids");
     let (server, recorded) = todoist(sync_body(), None);
     let api = TodoistApi::new(&server.base, "tok");
     let mutations = vec![mutation(
@@ -70,6 +74,7 @@ fn the_commands_of_one_mutation_have_distinct_uuids() {
 /// One command's error is that mutation's failure and nobody else's.
 #[test]
 fn a_refused_command_fails_only_its_own_mutation() {
+    let _guard = support::guard("a_refused_command_fails_only_its_own_mutation");
     let (server, recorded) = todoist(sync_body(), Some("item_update"));
     let api = TodoistApi::new(&server.base, "tok");
     let mutations = vec![
@@ -106,6 +111,7 @@ fn a_refused_command_fails_only_its_own_mutation() {
 /// attempted, so there is nothing to report against one.
 #[test]
 fn a_failure_reading_the_tree_stops_the_push_before_any_mutation() {
+    let _guard = support::guard("a_failure_reading_the_tree_stops_the_push_before_any_mutation");
     let mut routes = HashMap::new();
     routes.insert("POST /sync", (500, serde_json::json!({"error": "boom"})));
     let server = loopback::serve(routes);
@@ -132,6 +138,7 @@ fn a_failure_reading_the_tree_stops_the_push_before_any_mutation() {
 /// deduplicated rather than duplicated.
 #[test]
 fn a_failure_part_way_through_belongs_to_its_own_mutation() {
+    let _guard = support::guard("a_failure_part_way_through_belongs_to_its_own_mutation");
     let writes = Arc::new(Mutex::new(0u32));
     let counted = Arc::clone(&writes);
     let server = loopback::serve_with(move |seen| {

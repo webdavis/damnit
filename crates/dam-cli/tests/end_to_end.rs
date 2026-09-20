@@ -3,6 +3,8 @@
 //! pull brings an upstream object in, ls renders both formats, and a second
 //! process sees the same store.
 
+mod support;
+
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process::Command;
@@ -90,6 +92,7 @@ impl Sandbox {
 
 #[test]
 fn new_add_commit_push_pull_and_ls_work_across_processes() {
+    let _guard = support::guard("new_add_commit_push_pull_and_ls_work_across_processes");
     let sb = Sandbox::new();
     let (ok, out, err) = sb.dam(&[
         "new",
@@ -158,6 +161,8 @@ fn new_add_commit_push_pull_and_ls_work_across_processes() {
 
 #[test]
 fn a_machine_format_refuses_to_open_an_editor_rather_than_running_one() {
+    let _guard =
+        support::guard("a_machine_format_refuses_to_open_an_editor_rather_than_running_one");
     let sb = Sandbox::new();
     let (_, out, _) = sb.dam(&["new", "buy oat milk"]);
     let oid = out.split_whitespace().next().unwrap().to_string();
@@ -195,6 +200,7 @@ fn a_machine_format_refuses_to_open_an_editor_rather_than_running_one() {
 
 #[test]
 fn each_exit_code_means_one_thing() {
+    let _guard = support::guard("each_exit_code_means_one_thing");
     let sb = Sandbox::new();
     assert_eq!(sb.output(&["ls"]).status.code(), Some(0), "success");
 
@@ -223,6 +229,7 @@ fn each_exit_code_means_one_thing() {
 
 #[test]
 fn a_refusal_exits_four_and_names_the_rule() {
+    let _guard = support::guard("a_refusal_exits_four_and_names_the_rule");
     let sb = Sandbox::new();
     let (_, out, _) = sb.dam(&["new", "parent"]);
     let parent = out.split_whitespace().next().unwrap().to_string();
@@ -234,6 +241,8 @@ fn a_refusal_exits_four_and_names_the_rule() {
 
 #[test]
 fn an_interrupt_during_a_helper_exchange_exits_three_and_kills_the_helper() {
+    let _guard =
+        support::guard("an_interrupt_during_a_helper_exchange_exits_three_and_kills_the_helper");
     let sb = Sandbox::new();
     sb.install_silent_helper();
     let mut dam = sb.spawn(&["push"]);
@@ -299,6 +308,8 @@ fn collect(
 
 #[test]
 fn an_interrupt_at_a_prompt_exits_three_instead_of_waiting_for_an_answer() {
+    let _guard =
+        support::guard("an_interrupt_at_a_prompt_exits_three_instead_of_waiting_for_an_answer");
     let sb = Sandbox::new();
     let (_, out, _) = sb.dam(&["new", "parent"]);
     let parent = out.split_whitespace().next().unwrap().to_string();

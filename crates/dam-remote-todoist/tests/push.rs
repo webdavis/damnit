@@ -1,3 +1,5 @@
+mod support;
+
 mod fixtures;
 mod loopback;
 
@@ -10,6 +12,7 @@ use fixtures::{
 
 #[test]
 fn creates_updates_and_deletes_become_the_right_commands() {
+    let _guard = support::guard("creates_updates_and_deletes_become_the_right_commands");
     let (server, recorded) = todoist(sync_body(), None);
     let api = TodoistApi::new(&server.base, "tok");
     let mutations = vec![
@@ -105,6 +108,7 @@ fn creates_updates_and_deletes_become_the_right_commands() {
 
 #[test]
 fn a_path_change_moves_the_task_through_the_move_command() {
+    let _guard = support::guard("a_path_change_moves_the_task_through_the_move_command");
     let (server, recorded) = todoist(sync_body_with_two_projects(), None);
     let api = TodoistApi::new(&server.base, "tok");
     let mutations = vec![with_fields(
@@ -128,6 +132,7 @@ fn a_path_change_moves_the_task_through_the_move_command() {
 
 #[test]
 fn a_path_and_subject_change_moves_first_then_updates_the_content() {
+    let _guard = support::guard("a_path_and_subject_change_moves_first_then_updates_the_content");
     let (server, recorded) = todoist(sync_body_with_two_projects(), None);
     let api = TodoistApi::new(&server.base, "tok");
     let mutations = vec![with_fields(
@@ -158,6 +163,7 @@ fn a_path_and_subject_change_moves_first_then_updates_the_content() {
 /// carrying path syntax must never reach a command.
 #[test]
 fn a_hostile_remote_id_is_refused_and_never_reaches_a_command() {
+    let _guard = support::guard("a_hostile_remote_id_is_refused_and_never_reaches_a_command");
     let (server, recorded) = todoist(sync_body(), None);
     let api = TodoistApi::new(&server.base, "tok");
     let mutations = vec![
@@ -192,6 +198,7 @@ fn a_hostile_remote_id_is_refused_and_never_reaches_a_command() {
 /// it, so the push stops and says how long to wait.
 #[test]
 fn a_rate_limit_stops_the_push_and_names_the_retry_time() {
+    let _guard = support::guard("a_rate_limit_stops_the_push_and_names_the_retry_time");
     let server = loopback::serve_with(|seen| {
         if seen.body.get("commands").is_none() {
             return loopback::Reply::new(200, sync_body());
