@@ -1,7 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use std::fmt;
-
-use dam_protocol::{WireObject, WireTask};
 
 use crate::api::{Item, Project, Section, SyncResponse};
 
@@ -148,131 +145,13 @@ impl Tree {
     }
 }
 
-pub fn remote_id(kind: char, id: &str) -> String {
-    format!("{kind}:{id}")
-}
+mod identity;
+mod wire;
 
-/// Why a stored `kind:id` pair cannot be used to address a Todoist object.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum RemoteIdError {
-    /// No `p:`, `s:` or `i:` prefix.
-    NoKind,
-    /// The id half is not one Todoist could have issued.
-    BadId,
-}
-
-impl fmt::Display for RemoteIdError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            RemoteIdError::NoKind => f.write_str("a Todoist id starts with p:, s: or i:"),
-            RemoteIdError::BadId => {
-                f.write_str("a Todoist id holds only letters, digits, hyphens and underscores")
-            }
-        }
-    }
-}
-
-/// Splits a stored `kind:id` pair. The id half came from Todoist and goes back
-/// to Todoist, so it is checked against the character set Todoist issues
-/// (alphanumeric ids and hyphenated UUIDs) before it is used to address
-/// anything.
-pub fn split_remote_id(text: &str) -> Result<(char, &str), RemoteIdError> {
-    let (kind, id) = text.split_once(':').ok_or(RemoteIdError::NoKind)?;
-    let mut chars = kind.chars();
-    match (chars.next(), chars.next()) {
-        (Some(k @ ('p' | 's' | 'i')), None) => {
-            if id.is_empty()
-                || !id
-                    .bytes()
-                    .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
-            {
-                return Err(RemoteIdError::BadId);
-            }
-            Ok((k, id))
-        }
-        _ => Err(RemoteIdError::NoKind),
-    }
-}
-
-pub fn api_priority(dam: u8) -> u8 {
-    5u8.saturating_sub(dam.clamp(1, 4))
-}
-
-pub fn dam_priority(api: u8) -> u8 {
-    5u8.saturating_sub(api.clamp(1, 4))
-}
-
-fn wire(remote_id: String, subject: &str, body: &str, path: String, task: WireTask) -> WireObject {
-    WireObject {
-        oid: String::new(),
-        remote_id: Some(remote_id),
-        kind: "task".into(),
-        subject: subject.to_string(),
-        body: body.to_string(),
-        path,
-        labels: vec![],
-        depends: vec![],
-        reminders: vec![],
-        recurrence: None,
-        task: Some(task),
-        event: None,
-    }
-}
-
-fn plain(done: bool) -> WireTask {
-    WireTask {
-        done,
-        priority: 4,
-        due: None,
-        deadline: None,
-        event: None,
-    }
-}
-
-pub fn project_to_wire(t: &Tree, p: &Project) -> WireObject {
-    let path = p
-        .parent_id
-        .as_deref()
-        .and_then(|pid| t.project_path(pid))
-        .unwrap_or_default();
-    wire(
-        remote_id('p', &p.id),
-        &p.name,
-        "",
-        path,
-        plain(p.is_archived),
-    )
-}
-
-pub fn section_to_wire(t: &Tree, s: &Section) -> WireObject {
-    let path = t.project_path(&s.project_id).unwrap_or_default();
-    wire(remote_id('s', &s.id), &s.name, "", path, plain(false))
-}
-
-pub fn item_to_wire(t: &Tree, i: &Item) -> Option<WireObject> {
-    let path = t.item_path(i)?;
-    let task = WireTask {
-        done: i.checked,
-        priority: dam_priority(i.priority),
-        due: i.due.as_ref().map(|d| d.date.clone()),
-        deadline: i.deadline.as_ref().map(|d| d.date.clone()),
-        event: None,
-    };
-    let mut w = wire(
-        remote_id('i', &i.id),
-        &i.content,
-        &i.description,
-        path,
-        task,
-    );
-    w.labels = i.labels.clone();
-    w.recurrence = i
-        .due
-        .as_ref()
-        .filter(|d| d.is_recurring)
-        .map(|d| d.string.clone());
-    Some(w)
-}
+pub use identity::{api_priority, dam_priority, remote_id, split_remote_id};
+pub use wire::{item_to_wire, project_to_wire, section_to_wire};
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_wire;

@@ -1,8 +1,6 @@
 use std::io::BufReader;
 use std::process::{Child, ChildStderr, ChildStdin, ChildStdout};
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, channel};
-use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use dam_application::{
@@ -11,6 +9,7 @@ use dam_application::{
 };
 use dam_protocol::{Request, Response, read_line, write_line};
 
+use super::stderr_tail::{StderrTail, read_stderr};
 use crate::wire::{capabilities_from_wire, mutation_to_wire, outcomes_from_wire, pull_from_wire};
 
 /// How long a helper may take to answer one request when the remote names no
@@ -23,43 +22,6 @@ const TICK: Duration = Duration::from_millis(25);
 
 /// How long a helper gets to exit on end of input before it is killed.
 const EXIT_GRACE: Duration = Duration::from_millis(200);
-
-/// How much of a helper's standard error is kept for its refusal: the last
-/// lines, each cut at a length. A helper writes as much as it likes and dam
-/// holds a bounded amount of it.
-const STDERR_LINES: usize = 20;
-const STDERR_LINE_BYTES: usize = 200;
-
-/// The tail of a helper's standard error, filled by its own reader thread,
-/// with the flag that thread sets when it reaches end of input.
-#[derive(Clone, Debug, Default)]
-struct StderrTail {
-    lines: Arc<Mutex<Vec<String>>>,
-    at_end: Arc<AtomicBool>,
-}
-
-/// Keeps the last `STDERR_LINES` lines the helper wrote, each cut at
-/// `STDERR_LINE_BYTES`. Ends at end of input, which is when the child closes
-/// its standard error or exits.
-fn read_stderr(err: impl std::io::BufRead, tail: &StderrTail) {
-    for line in err.lines() {
-        let Ok(mut line) = line else { break };
-        line.truncate(
-            (0..=STDERR_LINE_BYTES.min(line.len()))
-                .rev()
-                .find(|n| line.is_char_boundary(*n))
-                .unwrap_or(0),
-        );
-        let Ok(mut kept) = tail.lines.lock() else {
-            break;
-        };
-        if kept.len() == STDERR_LINES {
-            kept.remove(0);
-        }
-        kept.push(line);
-    }
-    tail.at_end.store(true, Ordering::SeqCst);
-}
 
 /// Reads the helper's output on its own thread so a blocked pipe cannot outlast
 /// the deadline. Ends at the first line that is not a response, or when the
@@ -131,11 +93,10 @@ impl ProcessHelper {
     /// is nothing to wait for, which is what bounds the wait.
     fn said(&self) -> Option<String> {
         let give_up_at = Instant::now() + EXIT_GRACE;
-        while !self.stderr_tail.at_end.load(Ordering::SeqCst) && Instant::now() < give_up_at {
+        while !self.stderr_tail.at_end() && Instant::now() < give_up_at {
             std::thread::sleep(TICK);
         }
-        let kept = self.stderr_tail.lines.lock().ok()?;
-        (!kept.is_empty()).then(|| kept.join("\n"))
+        self.stderr_tail.text()
     }
 
     /// An io failure with the helper's own complaint attached, so the operator
@@ -266,171 +227,4 @@ impl Drop for ProcessHelper {
 }
 
 #[cfg(test)]
-mod tests {
-    use dam_application::{ConfiguredDuration, HelperError, RemoteHelper};
-
-    use super::super::testing::{install, remote};
-
-    #[test]
-    fn a_helper_that_dies_without_answering_quotes_what_it_complained_about() {
-        let dir = tempfile::tempdir().unwrap();
-        let launcher = install(
-            dir.path(),
-            "#!/bin/sh\necho 'DAM_T_API_TOKEN is not set' >&2\nexit 1\n",
-        );
-        let mut helper = launcher.spawn(&remote(), &[]).unwrap();
-        let err = helper.capabilities().unwrap_err();
-        let text = format!("{err:?}");
-        assert!(text.contains("DAM_T_API_TOKEN is not set"), "{text}");
-    }
-
-    #[test]
-    fn a_helper_that_never_answers_carries_its_complaint_into_the_timeout() {
-        let dir = tempfile::tempdir().unwrap();
-        let launcher = install(
-            dir.path(),
-            "#!/bin/sh\necho 'waiting on the upstream api' >&2\nwhile :; do sleep 0.05; done\n",
-        );
-        let mut remote = remote();
-        remote.deadline = Some(ConfiguredDuration {
-            value: std::time::Duration::from_millis(100),
-            text: "100ms".into(),
-        });
-        let mut helper = launcher.spawn(&remote, &[]).unwrap();
-        match helper.capabilities().unwrap_err() {
-            HelperError::Timeout { said, .. } => {
-                assert_eq!(said.as_deref(), Some("waiting on the upstream api"))
-            }
-            other => panic!("{other:?}"),
-        }
-    }
-
-    #[test]
-    fn only_the_last_lines_of_a_talkative_helper_are_kept() {
-        let dir = tempfile::tempdir().unwrap();
-        let launcher = install(
-            dir.path(),
-            "#!/bin/sh\ni=0\nwhile [ $i -lt 200 ]; do echo \"line $i\" >&2; i=$((i+1)); done\nexit 1\n",
-        );
-        let mut helper = launcher.spawn(&remote(), &[]).unwrap();
-        let text = format!("{:?}", helper.capabilities().unwrap_err());
-        assert!(text.contains("line 199"), "{text}");
-        assert!(!text.contains("line 0\\n"), "{text}");
-        assert!(text.len() < 8000, "the tail is bounded, got {}", text.len());
-    }
-
-    #[test]
-    fn a_response_of_the_wrong_shape_names_the_shape_and_never_the_task_it_carried() {
-        let dir = tempfile::tempdir().unwrap();
-        let launcher = install(
-            dir.path(),
-            "#!/bin/sh\nread -r line; printf '{\"objects\":[{\"oid\":\"01\",\"kind\":\"task\",\"subject\":\"call the clinic\",\"body\":\"ask about the referral\"}],\"removed\":[]}\\n'\n",
-        );
-        let mut helper = launcher.spawn(&remote(), &[]).unwrap();
-        let err = helper.capabilities().unwrap_err();
-        let text = format!("{err:?}");
-        assert!(text.contains("pull"), "{text}");
-        assert!(!text.contains("call the clinic"), "{text}");
-        assert!(!text.contains("referral"), "{text}");
-    }
-
-    #[test]
-    fn a_helper_declaring_a_newer_protocol_is_refused_with_both_versions() {
-        let dir = tempfile::tempdir().unwrap();
-        let newer = dam_protocol::PROTOCOL_VERSION + 1;
-        let launcher = install(
-            dir.path(),
-            &format!(
-                "#!/bin/sh\nread -r line; printf '{{\"protocol\":{newer},\"kinds\":[],\"fields\":[],\"credentials\":[],\"incremental\":false}}\\n'\n"
-            ),
-        );
-        let mut helper = launcher.spawn(&remote(), &[]).unwrap();
-        assert_eq!(
-            helper.capabilities().unwrap_err(),
-            HelperError::UnsupportedProtocol {
-                helper: "t".into(),
-                found: newer,
-                supported: dam_protocol::PROTOCOL_VERSION,
-            }
-        );
-    }
-
-    #[test]
-    fn a_helper_that_never_answers_times_out_and_its_child_is_killed() {
-        let dir = tempfile::tempdir().unwrap();
-        let launcher = install(dir.path(), "#!/bin/sh\nsleep 2\n");
-        let mut remote = remote();
-        remote.deadline = Some(ConfiguredDuration {
-            value: std::time::Duration::from_millis(100),
-            text: "100ms".into(),
-        });
-        let started = std::time::Instant::now();
-        let mut helper = launcher.spawn(&remote, &[]).unwrap();
-        let err = helper.capabilities().unwrap_err();
-        assert_eq!(
-            err,
-            HelperError::Timeout {
-                helper: "t".into(),
-                deadline: "100ms".into(),
-                said: None
-            }
-        );
-        assert!(started.elapsed() < std::time::Duration::from_secs(1));
-        assert!(helper.child.try_wait().unwrap().is_some());
-    }
-
-    #[test]
-    fn the_timeout_echoes_the_configured_text_rather_than_seconds() {
-        let dir = tempfile::tempdir().unwrap();
-        let launcher = install(dir.path(), "#!/bin/sh\nwhile :; do sleep 0.05; done\n");
-        let mut remote = remote();
-        remote.deadline = Some(ConfiguredDuration {
-            value: std::time::Duration::from_millis(50),
-            text: "2m".into(),
-        });
-        let mut helper = launcher.spawn(&remote, &[]).unwrap();
-        assert_eq!(
-            helper.capabilities().unwrap_err(),
-            HelperError::Timeout {
-                helper: "t".into(),
-                deadline: "2m".into(),
-                said: None
-            }
-        );
-    }
-
-    #[test]
-    fn a_helper_that_ignores_end_of_input_is_killed_at_drop() {
-        let dir = tempfile::tempdir().unwrap();
-        let launcher = install(dir.path(), "#!/bin/sh\nwhile :; do sleep 0.05; done\n");
-        let helper = launcher.spawn(&remote(), &[]).unwrap();
-        let pid = helper.child.id().to_string();
-        // Dropped on a worker so a regression to an unbounded wait reddens the
-        // suite within the second instead of hanging it.
-        let dropped = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
-        let flag = std::sync::Arc::clone(&dropped);
-        std::thread::spawn(move || {
-            drop(helper);
-            flag.store(true, std::sync::atomic::Ordering::SeqCst);
-        });
-        let give_up_at = std::time::Instant::now() + std::time::Duration::from_secs(1);
-        while !dropped.load(std::sync::atomic::Ordering::SeqCst) {
-            if std::time::Instant::now() >= give_up_at {
-                let _ = std::process::Command::new("kill")
-                    .args(["-9", &pid])
-                    .status();
-                panic!("the launcher was still dropping a second later");
-            }
-            std::thread::sleep(std::time::Duration::from_millis(10));
-        }
-        assert!(
-            !std::process::Command::new("kill")
-                .args(["-0", &pid])
-                .output()
-                .unwrap()
-                .status
-                .success(),
-            "the helper outlived its launcher"
-        );
-    }
-}
+mod tests;

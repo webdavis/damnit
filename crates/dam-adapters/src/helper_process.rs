@@ -1,4 +1,5 @@
 mod conversation;
+mod stderr_tail;
 
 use std::ffi::OsString;
 use std::os::unix::fs::PermissionsExt;
