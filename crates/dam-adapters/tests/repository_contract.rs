@@ -38,3 +38,9 @@ fn it_keeps_the_conflict_repository_contract() {
 fn it_keeps_the_notice_repository_contract() {
     contract::notice_repository_contract(&store());
 }
+
+#[test]
+fn it_keeps_the_transactional_contract() {
+    let store = store();
+    contract::transactional_contract(&store, &store, &store);
+}

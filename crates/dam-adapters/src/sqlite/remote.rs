@@ -45,18 +45,21 @@ impl SqliteStore {
         oid: &Oid,
         remote_id: &str,
     ) -> Result<(), StoreError> {
-        let tx = self.conn.unchecked_transaction().map_err(sql)?;
-        tx.execute(
-            "DELETE FROM remote_ids WHERE remote = ?1 AND (oid = ?2 OR remote_id = ?3)",
-            params![remote.0, oid.as_str(), remote_id],
-        )
-        .map_err(sql)?;
-        tx.execute(
-            "INSERT INTO remote_ids (remote, oid, remote_id) VALUES (?1, ?2, ?3)",
-            params![remote.0, oid.as_str(), remote_id],
-        )
-        .map_err(sql)?;
-        tx.commit().map_err(sql)
+        self.in_savepoint("dam_remote_id", || {
+            self.conn
+                .execute(
+                    "DELETE FROM remote_ids WHERE remote = ?1 AND (oid = ?2 OR remote_id = ?3)",
+                    params![remote.0, oid.as_str(), remote_id],
+                )
+                .map_err(sql)?;
+            self.conn
+                .execute(
+                    "INSERT INTO remote_ids (remote, oid, remote_id) VALUES (?1, ?2, ?3)",
+                    params![remote.0, oid.as_str(), remote_id],
+                )
+                .map_err(sql)?;
+            Ok(())
+        })
     }
 
     pub(super) fn snapshot_of(
@@ -93,18 +96,21 @@ impl SqliteStore {
 
     /// Drops the remote id and remote snapshot for one oid on one remote only.
     pub(super) fn clear_mapping(&self, remote: &RemoteName, oid: &Oid) -> Result<(), StoreError> {
-        let tx = self.conn.unchecked_transaction().map_err(sql)?;
-        tx.execute(
-            "DELETE FROM remote_ids WHERE remote = ?1 AND oid = ?2",
-            params![remote.0, oid.as_str()],
-        )
-        .map_err(sql)?;
-        tx.execute(
-            "DELETE FROM snapshots WHERE remote = ?1 AND oid = ?2",
-            params![remote.0, oid.as_str()],
-        )
-        .map_err(sql)?;
-        tx.commit().map_err(sql)
+        self.in_savepoint("dam_clear_mapping", || {
+            self.conn
+                .execute(
+                    "DELETE FROM remote_ids WHERE remote = ?1 AND oid = ?2",
+                    params![remote.0, oid.as_str()],
+                )
+                .map_err(sql)?;
+            self.conn
+                .execute(
+                    "DELETE FROM snapshots WHERE remote = ?1 AND oid = ?2",
+                    params![remote.0, oid.as_str()],
+                )
+                .map_err(sql)?;
+            Ok(())
+        })
     }
 
     pub(super) fn token_of(&self, remote: &RemoteName) -> Result<Option<String>, StoreError> {

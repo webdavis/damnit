@@ -8,26 +8,31 @@ use super::objects::sql;
 
 impl SqliteStore {
     pub(super) fn commit_record(&self, record: &CommitRecord) -> Result<(), StoreError> {
-        let tx = self.conn.unchecked_transaction().map_err(sql)?;
-        let seq: i64 = tx
+        self.in_savepoint("dam_commit", || self.write_commit(record))
+    }
+
+    fn write_commit(&self, record: &CommitRecord) -> Result<(), StoreError> {
+        let seq: i64 = self
+            .conn
             .query_row("SELECT COALESCE(MAX(seq), 0) + 1 FROM commits", [], |r| {
                 r.get(0)
             })
             .map_err(sql)?;
-        tx.execute(
-            "INSERT INTO commits (id, seq, message, at) VALUES (?1, ?2, ?3, ?4)",
-            params![
-                record.id.as_str(),
-                seq,
-                record.message,
-                record.at.to_string()
-            ],
-        )
-        .map_err(sql)?;
+        self.conn
+            .execute(
+                "INSERT INTO commits (id, seq, message, at) VALUES (?1, ?2, ?3, ?4)",
+                params![
+                    record.id.as_str(),
+                    seq,
+                    record.message,
+                    record.at.to_string()
+                ],
+            )
+            .map_err(sql)?;
         for (ord, change) in record.changes.iter().enumerate() {
             let before = change.before.as_ref().map(object_to_json).transpose()?;
             let after = change.after.as_ref().map(object_to_json).transpose()?;
-            tx.execute(
+            self.conn.execute(
                 "INSERT INTO commit_changes (commit_id, ord, oid, op, before_json, after_json) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
                 params![
                     record.id.as_str(),
@@ -40,27 +45,30 @@ impl SqliteStore {
             )
             .map_err(sql)?;
             match &change.after {
-                Some(after) => tx
+                Some(after) => self
+                    .conn
                     .execute(
                         "INSERT INTO committed (oid, json) VALUES (?1, ?2)
                          ON CONFLICT(oid) DO UPDATE SET json = excluded.json",
                         params![change.oid.as_str(), object_to_json(after)?],
                     )
                     .map_err(sql)?,
-                None => tx
+                None => self
+                    .conn
                     .execute(
                         "DELETE FROM committed WHERE oid = ?1",
                         params![change.oid.as_str()],
                     )
                     .map_err(sql)?,
             };
-            tx.execute(
-                "DELETE FROM stage WHERE oid = ?1",
-                params![change.oid.as_str()],
-            )
-            .map_err(sql)?;
+            self.conn
+                .execute(
+                    "DELETE FROM stage WHERE oid = ?1",
+                    params![change.oid.as_str()],
+                )
+                .map_err(sql)?;
         }
-        tx.commit().map_err(sql)
+        Ok(())
     }
 
     pub(super) fn commit_log(&self) -> Result<Vec<CommitRecord>, StoreError> {

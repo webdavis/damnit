@@ -6,7 +6,7 @@ use jiff::civil::date;
 use super::*;
 use crate::config::{CredentialSpec, RemoteConfig};
 use crate::ports::Repositories;
-use crate::remote::{IncomingObject, PullOutcome};
+use crate::remote::{IncomingObject, PullOutcome, RejectedObject};
 use crate::testing::prelude::*;
 use crate::testing::{
     FixedClock, FixedRandom, MemoryStore, NoCredentials, ScriptedHelper, ScriptedLauncher, oid,
@@ -270,4 +270,57 @@ fn uncommitted_local_work_stops_the_pull_before_anything_is_written() {
     );
     assert!(store.oid_for_remote_id(&remote(), "r2").unwrap().is_none());
     assert!(store.sync_token(&remote()).unwrap().is_none());
+}
+
+/// Everything one pull writes is one unit of work. A refusal partway through
+/// takes the notices the same pull had already recorded with it, instead of
+/// leaving the operator a half-applied pull to reason about.
+#[test]
+fn a_refused_pull_leaves_none_of_its_own_notices_behind() {
+    let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
+    store.put(&Object::Task(Task::new(oid(1), "base"))).unwrap();
+    add_all(&store, &store, &store).unwrap();
+    commit(
+        &store,
+        &store,
+        &FixedClock(date(2026, 9, 18)),
+        &mut FixedRandom(9),
+        "m",
+    )
+    .unwrap();
+    store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
+    store
+        .set_remote_snapshot(&remote(), &Object::Task(Task::new(oid(1), "base")))
+        .unwrap();
+    let mut dirty = store.get(&oid(1)).unwrap().unwrap();
+    dirty.base_mut().subject = "unsaved".into();
+    store.put(&dirty).unwrap();
+    let l = launcher(PullOutcome {
+        objects: vec![incoming("theirs", "r1")],
+        rejected: vec![RejectedObject {
+            remote_id: "r-bad".into(),
+            why: "path: cannot read \"a//b\"".into(),
+        }],
+        removed: vec![],
+        sync: Some("s9".into()),
+    });
+    let err = pull(
+        repos,
+        &l,
+        &NoCredentials,
+        &FixedClock(date(2026, 9, 18)),
+        &mut FixedRandom(42),
+        &config(),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(
+        err,
+        UseCaseError::Refused(Refusal::DirtyOnPull { oid: oid(1) })
+    );
+    assert!(
+        store.notices().unwrap().is_empty(),
+        "the rejection notice was written before the refusal and rolled back with it"
+    );
 }

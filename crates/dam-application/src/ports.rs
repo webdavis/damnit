@@ -1,6 +1,7 @@
 use dam_domain::{Change, CommitId, CommitRecord, Date, Kind, Object, Oid, Path, Timestamp};
 
 use crate::config::{CredentialSpec, RemoteConfig};
+use crate::errors::UseCaseError;
 use crate::remote::{MutationOutcome, PullOutcome, RemoteCapabilities, RemoteMutation};
 use crate::secret::Secret;
 
@@ -125,6 +126,15 @@ pub trait NoticeRepository {
     fn clear_notices(&self) -> Result<(), StoreError>;
 }
 
+/// Runs one unit of work so that every write inside it lands together or
+/// none of it does, however many record families it spans.
+pub trait Transactional {
+    fn in_transaction(
+        &self,
+        work: &mut dyn FnMut() -> Result<(), UseCaseError>,
+    ) -> Result<(), UseCaseError>;
+}
+
 /// One durable store behind all six record families, which is what the
 /// composition root holds and what a transaction spans.
 pub trait Store:
@@ -134,6 +144,7 @@ pub trait Store:
     + RemoteTrackingRepository
     + ConflictRepository
     + NoticeRepository
+    + Transactional
 {
 }
 
@@ -144,6 +155,7 @@ impl<T> Store for T where
         + RemoteTrackingRepository
         + ConflictRepository
         + NoticeRepository
+        + Transactional
 {
 }
 
@@ -157,6 +169,7 @@ pub struct Repositories<'a> {
     pub remote_tracking: &'a dyn RemoteTrackingRepository,
     pub conflicts: &'a dyn ConflictRepository,
     pub notices: &'a dyn NoticeRepository,
+    pub transaction: &'a dyn Transactional,
 }
 
 impl<'a> Repositories<'a> {
@@ -168,6 +181,7 @@ impl<'a> Repositories<'a> {
             remote_tracking: store,
             conflicts: store,
             notices: store,
+            transaction: store,
         }
     }
 }

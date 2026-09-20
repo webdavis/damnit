@@ -10,6 +10,7 @@ use std::fmt;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
+use dam_application::{StoreError, Transactional, UseCaseError};
 use rusqlite::{Connection, OpenFlags};
 
 const BUSY_TIMEOUT_MS: u64 = 5000;
@@ -60,6 +61,45 @@ impl SqliteStore {
             Connection::open_in_memory().map_err(|e| OpenError::Sqlite(e.to_string()))?;
         prepare(&mut conn, true)?;
         Ok(SqliteStore { conn })
+    }
+}
+
+impl SqliteStore {
+    /// Runs `work` inside a savepoint, so every write it makes lands together
+    /// or none of them does. A savepoint rather than a transaction, because
+    /// these nest: an inner unit of work runs the same way whether or not an
+    /// outer one is already open.
+    pub(super) fn in_savepoint<T, E: From<StoreError>>(
+        &self,
+        name: &'static str,
+        work: impl FnOnce() -> Result<T, E>,
+    ) -> Result<T, E> {
+        self.conn
+            .execute_batch(&format!("SAVEPOINT {name}"))
+            .map_err(|e| E::from(objects::sql(e)))?;
+        match work() {
+            Ok(value) => {
+                self.conn
+                    .execute_batch(&format!("RELEASE {name}"))
+                    .map_err(|e| E::from(objects::sql(e)))?;
+                Ok(value)
+            }
+            Err(e) => {
+                let _ = self
+                    .conn
+                    .execute_batch(&format!("ROLLBACK TO {name}; RELEASE {name}"));
+                Err(e)
+            }
+        }
+    }
+}
+
+impl Transactional for SqliteStore {
+    fn in_transaction(
+        &self,
+        work: &mut dyn FnMut() -> Result<(), UseCaseError>,
+    ) -> Result<(), UseCaseError> {
+        self.in_savepoint("dam_unit_of_work", work)
     }
 }
 

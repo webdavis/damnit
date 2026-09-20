@@ -5,12 +5,13 @@ use std::collections::BTreeMap;
 
 use dam_domain::{Change, CommitId, CommitRecord, Object, Oid, Path, Timestamp, coalesce};
 
+use crate::errors::UseCaseError;
 use crate::ports::{
     CommitRepository, Conflict, ConflictRepository, Notice, NoticeRepository, ObjectRepository,
-    RemoteName, RemoteTrackingRepository, StageRepository, StoreError,
+    RemoteName, RemoteTrackingRepository, StageRepository, StoreError, Transactional,
 };
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 struct Inner {
     working: BTreeMap<Oid, Object>,
     committed: BTreeMap<Oid, Object>,
@@ -32,6 +33,24 @@ pub struct MemoryStore(RefCell<Inner>);
 impl MemoryStore {
     pub fn new() -> MemoryStore {
         MemoryStore::default()
+    }
+}
+
+impl Transactional for MemoryStore {
+    /// Keeps a copy of everything and puts it back when the work fails, so
+    /// the double is as atomic as the durable store it stands in for.
+    fn in_transaction(
+        &self,
+        work: &mut dyn FnMut() -> Result<(), UseCaseError>,
+    ) -> Result<(), UseCaseError> {
+        let before = self.0.borrow().clone();
+        match work() {
+            Ok(()) => Ok(()),
+            Err(e) => {
+                *self.0.borrow_mut() = before;
+                Err(e)
+            }
+        }
     }
 }
 
@@ -314,5 +333,11 @@ mod tests {
     #[test]
     fn it_keeps_the_notice_repository_contract() {
         contract::notice_repository_contract(&MemoryStore::new());
+    }
+
+    #[test]
+    fn it_keeps_the_transactional_contract() {
+        let store = MemoryStore::new();
+        contract::transactional_contract(&store, &store, &store);
     }
 }

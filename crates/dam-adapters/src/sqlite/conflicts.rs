@@ -108,20 +108,23 @@ impl SqliteStore {
     }
 
     pub(super) fn set_retries(&self, remote: &RemoteName, oids: &[Oid]) -> Result<(), StoreError> {
-        let tx = self.conn.unchecked_transaction().map_err(sql)?;
-        tx.execute(
-            "DELETE FROM push_retries WHERE remote = ?1",
-            params![remote.0],
-        )
-        .map_err(sql)?;
-        for oid in oids {
-            tx.execute(
-                "INSERT INTO push_retries (remote, oid) VALUES (?1, ?2)",
-                params![remote.0, oid.as_str()],
-            )
-            .map_err(sql)?;
-        }
-        tx.commit().map_err(sql)
+        self.in_savepoint("dam_retries", || {
+            self.conn
+                .execute(
+                    "DELETE FROM push_retries WHERE remote = ?1",
+                    params![remote.0],
+                )
+                .map_err(sql)?;
+            for oid in oids {
+                self.conn
+                    .execute(
+                        "INSERT INTO push_retries (remote, oid) VALUES (?1, ?2)",
+                        params![remote.0, oid.as_str()],
+                    )
+                    .map_err(sql)?;
+            }
+            Ok(())
+        })
     }
 }
 

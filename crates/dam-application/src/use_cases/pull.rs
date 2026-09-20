@@ -57,20 +57,8 @@ fn apply(
     random: &mut dyn Randomness,
     remote: &RemoteConfig,
     caps: &RemoteCapabilities,
-    response: PullOutcome,
+    mut response: PullOutcome,
 ) -> Result<PullReport, UseCaseError> {
-    for rejected in &response.rejected {
-        repos.notices.add_notice(&Notice::PullFailed {
-            remote: remote.name.clone(),
-            why: format!("{}: {}", rejected.remote_id, rejected.why),
-        })?;
-    }
-    let (planned, fresh) = classify(repos, remote, caps, response.objects, random)?;
-    for (oid, remote_id) in fresh {
-        repos
-            .remote_tracking
-            .map_remote_id(&remote.name, &oid, &remote_id)?;
-    }
     let mut report = PullReport {
         remote: remote.name.clone(),
         created: 0,
@@ -79,14 +67,36 @@ fn apply(
         removed_upstream: 0,
         unchanged: 0,
     };
-    land(repos, clock, random, remote, planned, &mut report)?;
-    report.removed_upstream = record_removals(repos, remote, response.removed)?;
-    repos
-        .remote_tracking
-        .set_sync_token(&remote.name, response.sync.as_deref())?;
-    repos
-        .remote_tracking
-        .set_last_pull(&remote.name, clock.now())?;
+    // Six families of record move together. A failure between the objects
+    // and the commit behind them would leave pulled objects in the working
+    // layer with nothing committed, which status reports to the operator as
+    // their own uncommitted edits.
+    let mut land_everything = || {
+        for rejected in &response.rejected {
+            repos.notices.add_notice(&Notice::PullFailed {
+                remote: remote.name.clone(),
+                why: format!("{}: {}", rejected.remote_id, rejected.why),
+            })?;
+        }
+        let objects = std::mem::take(&mut response.objects);
+        let (planned, fresh) = classify(repos, remote, caps, objects, random)?;
+        for (oid, remote_id) in fresh {
+            repos
+                .remote_tracking
+                .map_remote_id(&remote.name, &oid, &remote_id)?;
+        }
+        land(repos, clock, random, remote, planned, &mut report)?;
+        let removed = std::mem::take(&mut response.removed);
+        report.removed_upstream = record_removals(repos, remote, removed)?;
+        repos
+            .remote_tracking
+            .set_sync_token(&remote.name, response.sync.as_deref())?;
+        repos
+            .remote_tracking
+            .set_last_pull(&remote.name, clock.now())?;
+        Ok(())
+    };
+    repos.transaction.in_transaction(&mut land_everything)?;
     Ok(report)
 }
 
