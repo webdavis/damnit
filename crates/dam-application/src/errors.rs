@@ -108,7 +108,10 @@ impl fmt::Display for UseCaseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             UseCaseError::Refused(r) => write!(f, "{r}"),
-            UseCaseError::Store(e) => write!(f, "storage: {}", e.0),
+            UseCaseError::Store(StoreError::Busy(why)) => {
+                write!(f, "the store is busy, another dam is writing it: {why}")
+            }
+            UseCaseError::Store(StoreError::Failed(why)) => write!(f, "storage: {why}"),
             UseCaseError::Helper(HelperError::NotFound { helper }) => {
                 write!(f, "{helper} was not found on PATH")
             }

@@ -264,7 +264,7 @@ impl ConflictRepository for MemoryStore {
     ) -> Result<(), StoreError> {
         let ours = self
             .get(oid)?
-            .ok_or_else(|| StoreError("conflict on a missing object".into()))?;
+            .ok_or_else(|| StoreError::Failed("conflict on a missing object".into()))?;
         self.0.borrow_mut().conflicts.insert(
             oid.clone(),
             Conflict {

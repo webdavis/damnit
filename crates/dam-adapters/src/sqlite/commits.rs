@@ -84,11 +84,11 @@ impl SqliteStore {
         let mut out = Vec::with_capacity(heads.len());
         for (id, message, at) in heads {
             out.push(CommitRecord {
-                id: CommitId::parse(&id).map_err(|e| StoreError(e.to_string()))?,
+                id: CommitId::parse(&id).map_err(|e| StoreError::Failed(e.to_string()))?,
                 message,
                 at: at
                     .parse()
-                    .map_err(|e: jiff::Error| StoreError(e.to_string()))?,
+                    .map_err(|e: jiff::Error| StoreError::Failed(e.to_string()))?,
                 changes: self.commit_changes(&id)?,
             });
         }

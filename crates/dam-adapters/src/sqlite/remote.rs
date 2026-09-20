@@ -35,7 +35,7 @@ impl SqliteStore {
             )
             .optional()
             .map_err(sql)?
-            .map(|o| Oid::parse(&o).map_err(|e| StoreError(e.to_string())))
+            .map(|o| Oid::parse(&o).map_err(|e| StoreError::Failed(e.to_string())))
             .transpose()
     }
 
@@ -155,7 +155,7 @@ impl SqliteStore {
             .map_err(sql)?
             .map(|t| {
                 t.parse::<Timestamp>()
-                    .map_err(|e| StoreError(e.to_string()))
+                    .map_err(|e| StoreError::Failed(e.to_string()))
             })
             .transpose()
     }

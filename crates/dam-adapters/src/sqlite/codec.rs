@@ -7,13 +7,13 @@ use super::objects::sql;
 
 pub(super) fn object_to_json(o: &Object) -> Result<String, StoreError> {
     serde_json::to_string(&crate::wire::to_wire(o, None))
-        .map_err(|e| StoreError(format!("stored object: {e}")))
+        .map_err(|e| StoreError::Failed(format!("stored object: {e}")))
 }
 
 pub(super) fn object_from_json(s: &str) -> Result<Object, StoreError> {
     let w: dam_protocol::WireObject =
-        serde_json::from_str(s).map_err(|e| StoreError(format!("stored object: {e}")))?;
-    crate::wire::from_wire(&w).map_err(|e| StoreError(format!("stored object: {e}")))
+        serde_json::from_str(s).map_err(|e| StoreError::Failed(format!("stored object: {e}")))?;
+    crate::wire::from_wire(&w).map_err(|e| StoreError::Failed(format!("stored object: {e}")))
 }
 
 pub(super) fn op_to_text(op: Op) -> &'static str {
@@ -29,7 +29,7 @@ pub(super) fn op_from_text(s: &str) -> Result<Op, StoreError> {
         "create" => Ok(Op::Create),
         "update" => Ok(Op::Update),
         "delete" => Ok(Op::Delete),
-        other => Err(StoreError(format!("stored op {other:?}"))),
+        other => Err(StoreError::Failed(format!("stored op {other:?}"))),
     }
 }
 
@@ -41,7 +41,7 @@ pub(super) fn change_from_row(
     after: Option<String>,
 ) -> Result<Change, StoreError> {
     Ok(Change {
-        oid: Oid::parse(oid).map_err(|e| StoreError(e.to_string()))?,
+        oid: Oid::parse(oid).map_err(|e| StoreError::Failed(e.to_string()))?,
         op: op_from_text(op)?,
         before: before.map(|j| object_from_json(&j)).transpose()?,
         after: after.map(|j| object_from_json(&j)).transpose()?,
@@ -135,15 +135,17 @@ pub(super) fn notice_to_json(n: &Notice) -> Result<String, StoreError> {
             theirs: theirs.as_str().to_string(),
         },
     };
-    serde_json::to_string(&row).map_err(|e| StoreError(format!("stored notice: {e}")))
+    serde_json::to_string(&row).map_err(|e| StoreError::Failed(format!("stored notice: {e}")))
 }
 
 pub(super) fn notice_from_json(s: &str) -> Result<Notice, StoreError> {
     let row: NoticeRow =
-        serde_json::from_str(s).map_err(|e| StoreError(format!("stored notice: {e}")))?;
-    let oid = |t: &str| Oid::parse(t).map_err(|e| StoreError(format!("stored notice: {e}")));
+        serde_json::from_str(s).map_err(|e| StoreError::Failed(format!("stored notice: {e}")))?;
+    let oid =
+        |t: &str| Oid::parse(t).map_err(|e| StoreError::Failed(format!("stored notice: {e}")));
     let kind = |t: &str| {
-        Kind::parse(t).ok_or_else(|| StoreError(format!("stored notice: unknown kind {t:?}")))
+        Kind::parse(t)
+            .ok_or_else(|| StoreError::Failed(format!("stored notice: unknown kind {t:?}")))
     };
     Ok(match row {
         NoticeRow::RemovedUpstream {

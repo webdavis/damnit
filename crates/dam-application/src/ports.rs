@@ -9,7 +9,22 @@ use crate::secret::Secret;
 pub struct RemoteName(pub String);
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct StoreError(pub String);
+pub enum StoreError {
+    /// Another writer holds the store. The work did not happen and retrying
+    /// it later is the right answer.
+    Busy(String),
+    /// Anything else the store refused: a corrupt row, a full disk, a value
+    /// that does not decode. Retrying changes nothing.
+    Failed(String),
+}
+
+impl StoreError {
+    pub fn why(&self) -> &str {
+        match self {
+            StoreError::Busy(why) | StoreError::Failed(why) => why,
+        }
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Conflict {

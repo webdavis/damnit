@@ -16,7 +16,7 @@ struct FailingGetStore {
 impl ObjectRepository for FailingGetStore {
     fn get(&self, oid: &Oid) -> Result<Option<Object>, StoreError> {
         if *oid == self.fails {
-            return Err(StoreError("boom".into()));
+            return Err(StoreError::Failed("boom".into()));
         }
         Ok(self.objects.iter().find(|o| o.oid() == oid).cloned())
     }

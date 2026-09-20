@@ -386,11 +386,11 @@ pub fn transactional_contract(
     let failed = transaction.in_transaction(&mut || {
         objects.put(&task(2, "discarded", ""))?;
         stage.unstage_all()?;
-        Err(UseCaseError::Store(StoreError("stopped".into())))
+        Err(UseCaseError::Store(StoreError::Failed("stopped".into())))
     });
     assert_eq!(
         failed,
-        Err(UseCaseError::Store(StoreError("stopped".into()))),
+        Err(UseCaseError::Store(StoreError::Failed("stopped".into()))),
         "the reason the work stopped reaches the caller unchanged"
     );
     assert_eq!(

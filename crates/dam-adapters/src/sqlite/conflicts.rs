@@ -17,7 +17,7 @@ impl SqliteStore {
     ) -> Result<(), StoreError> {
         let ours = self
             .get_object(oid)?
-            .ok_or_else(|| StoreError("conflict on a missing object".into()))?;
+            .ok_or_else(|| StoreError::Failed("conflict on a missing object".into()))?;
         self.conn
             .execute(
                 "INSERT INTO conflicts (oid, remote, ours_json, theirs_json) VALUES (?1, ?2, ?3, ?4)
@@ -47,7 +47,7 @@ impl SqliteStore {
             let (oid, remote, ours, theirs) = r.map_err(sql)?;
             Ok(Conflict {
                 remote: RemoteName(remote),
-                oid: Oid::parse(&oid).map_err(|e| StoreError(e.to_string()))?,
+                oid: Oid::parse(&oid).map_err(|e| StoreError::Failed(e.to_string()))?,
                 ours: object_from_json(&ours)?,
                 theirs: object_from_json(&theirs)?,
             })
@@ -102,7 +102,7 @@ impl SqliteStore {
             .map_err(sql)?;
         rows.map(|r| {
             r.map_err(sql)
-                .and_then(|o| Oid::parse(&o).map_err(|e| StoreError(e.to_string())))
+                .and_then(|o| Oid::parse(&o).map_err(|e| StoreError::Failed(e.to_string())))
         })
         .collect()
     }
