@@ -7,7 +7,7 @@ mod remote;
 mod stage;
 
 use std::fmt;
-use std::os::unix::fs::PermissionsExt;
+use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::path::Path;
 
 use dam_application::{StoreError, Transactional, UseCaseError};
@@ -32,25 +32,38 @@ impl SqliteStore {
     /// Creates the directory and file when missing, mode 0600, WAL, busy
     /// timeout 5 s, migrated to the current version. Refuses a symlink or a
     /// directory at the path.
+    ///
+    /// A missing file is created here rather than by SQLite, exclusively and
+    /// at 0600 in one call, so no symlink can be planted between the check and
+    /// the open and the file never exists at the umask default.
     pub fn open(path: &Path) -> Result<SqliteStore, OpenError> {
-        if let Ok(meta) = std::fs::symlink_metadata(path)
-            && (meta.file_type().is_symlink() || meta.is_dir())
-        {
-            return Err(OpenError::Irregular(format!(
-                "{} is not a regular file",
-                path.display()
-            )));
-        }
         if let Some(dir) = path.parent() {
             std::fs::create_dir_all(dir).map_err(|e| OpenError::Io(e.to_string()))?;
         }
-        let flags = OpenFlags::SQLITE_OPEN_READ_WRITE
-            | OpenFlags::SQLITE_OPEN_CREATE
-            | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+        match std::fs::OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .mode(0o600)
+            .open(path)
+        {
+            Ok(_) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+                let meta =
+                    std::fs::symlink_metadata(path).map_err(|e| OpenError::Io(e.to_string()))?;
+                if !meta.file_type().is_file() {
+                    return Err(OpenError::Irregular(format!(
+                        "{} is not a regular file",
+                        path.display()
+                    )));
+                }
+                std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600))
+                    .map_err(|e| OpenError::Io(e.to_string()))?;
+            }
+            Err(e) => return Err(OpenError::Io(e.to_string())),
+        }
+        let flags = OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_NO_MUTEX;
         let mut conn = Connection::open_with_flags(path, flags)
             .map_err(|e| OpenError::Sqlite(e.to_string()))?;
-        std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600))
-            .map_err(|e| OpenError::Io(e.to_string()))?;
         prepare(&mut conn, false)?;
         Ok(SqliteStore { conn })
     }
@@ -265,6 +278,19 @@ mod tests {
             0,
             "the staged row survived a rolled back unit of work"
         );
+    }
+
+    #[test]
+    fn a_symlink_at_the_path_is_refused_rather_than_followed() {
+        let dir = tempfile::tempdir().unwrap();
+        let elsewhere = dir.path().join("elsewhere.db");
+        std::fs::write(&elsewhere, b"").unwrap();
+        let path = dir.path().join("dam.db");
+        std::os::unix::fs::symlink(&elsewhere, &path).unwrap();
+        assert!(matches!(
+            SqliteStore::open(&path),
+            Err(OpenError::Irregular(_))
+        ));
     }
 
     #[test]

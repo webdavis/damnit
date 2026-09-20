@@ -5,6 +5,18 @@ use rusqlite::{OptionalExtension, params};
 use super::SqliteStore;
 use super::codec::{object_from_json, object_to_json};
 
+/// The smallest string that sorts above every string starting with `prefix`,
+/// under the byte-wise comparison SQLite uses for TEXT. A path always ends in
+/// a separator, so raising that last byte is enough.
+fn just_past(prefix: &str) -> String {
+    let mut bytes = prefix.as_bytes().to_vec();
+    match bytes.last_mut() {
+        Some(last) if *last < u8::MAX => *last += 1,
+        _ => bytes.push(0),
+    }
+    String::from_utf8_lossy(&bytes).into_owned()
+}
+
 /// A busy or locked store is its own outcome: the work did not happen and a
 /// later attempt is the answer, which a flattened string cannot tell a caller.
 pub(super) fn sql(e: rusqlite::Error) -> StoreError {
@@ -42,22 +54,32 @@ impl SqliteStore {
 
     /// Direct children: path starts with the parent and has exactly one more segment.
     pub(super) fn children(&self, path: &Path) -> Result<Vec<Object>, StoreError> {
-        let mut stmt = self
-            .conn
-            .prepare(
-                "SELECT json, path FROM objects \
-                 WHERE substr(path, 1, length(?1)) = ?1 AND path != ?1",
+        let prefix = path.as_str();
+        // A range rather than substr(path, ...), which is a function on the
+        // column and cannot use the objects_path index. Every path is under
+        // the root, so the root has a lower bound and no upper one.
+        let upper = just_past(prefix);
+        let (query, bounds): (&str, Vec<&dyn rusqlite::ToSql>) = if prefix.is_empty() {
+            (
+                "SELECT json, path FROM objects WHERE path > ?1",
+                vec![&prefix],
             )
-            .map_err(sql)?;
+        } else {
+            (
+                "SELECT json, path FROM objects WHERE path > ?1 AND path < ?2",
+                vec![&prefix, &upper],
+            )
+        };
+        let mut stmt = self.conn.prepare(query).map_err(sql)?;
         let rows = stmt
-            .query_map(params![path.as_str()], |r| {
+            .query_map(bounds.as_slice(), |r| {
                 Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
             })
             .map_err(sql)?;
         let mut out = Vec::new();
         for row in rows {
             let (json, child_path) = row.map_err(sql)?;
-            let Some(tail) = child_path.strip_prefix(path.as_str()) else {
+            let Some(tail) = child_path.strip_prefix(prefix) else {
                 continue;
             };
             if tail.matches('/').count() == 1 {
@@ -67,13 +89,26 @@ impl SqliteStore {
         Ok(out)
     }
 
+    /// Every object that depends on `oid`. The stored JSON is filtered in SQL
+    /// first, so only objects whose text holds the oid at all are decoded.
     pub(super) fn dependents(&self, oid: &Oid) -> Result<Vec<Oid>, StoreError> {
-        Ok(self
-            .all_objects()?
-            .into_iter()
-            .filter(|o| o.base().depends.contains(oid))
-            .map(|o| o.oid().clone())
-            .collect())
+        let mut stmt = self
+            .conn
+            .prepare("SELECT json FROM objects WHERE json LIKE ?1")
+            .map_err(sql)?;
+        let rows = stmt
+            .query_map(params![format!("%{}%", oid.as_str())], |r| {
+                r.get::<_, String>(0)
+            })
+            .map_err(sql)?;
+        let mut out = Vec::new();
+        for row in rows {
+            let object = object_from_json(&row.map_err(sql)?)?;
+            if object.base().depends.contains(oid) {
+                out.push(object.oid().clone());
+            }
+        }
+        Ok(out)
     }
 
     pub(super) fn put_object(&self, object: &Object) -> Result<(), StoreError> {
@@ -144,12 +179,49 @@ impl ObjectRepository for SqliteStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use dam_domain::Object;
 
     fn failure(code: std::ffi::c_int) -> rusqlite::Error {
         rusqlite::Error::SqliteFailure(
             rusqlite::ffi::Error::new(code),
             Some("database is locked".into()),
         )
+    }
+
+    #[test]
+    fn children_of_the_root_are_found_and_deeper_objects_are_not() {
+        let store = crate::sqlite::SqliteStore::in_memory().unwrap();
+        let put = |path: &str, byte: u8| {
+            let mut t =
+                dam_domain::Task::new(Oid::generate(&mut |b: &mut [u8]| b.fill(byte)), "milk");
+            t.base.path = Path::parse(path).unwrap();
+            store.put_object(&Object::Task(t)).unwrap();
+        };
+        put("", 1);
+        put("work", 2);
+        put("work/deep", 3);
+        let root: Vec<String> = store
+            .children(&Path::parse("").unwrap())
+            .unwrap()
+            .iter()
+            .map(|o| o.base().path.as_str().to_string())
+            .collect();
+        assert_eq!(root, vec!["work/".to_string()]);
+        let under_work: Vec<String> = store
+            .children(&Path::parse("work").unwrap())
+            .unwrap()
+            .iter()
+            .map(|o| o.base().path.as_str().to_string())
+            .collect();
+        assert_eq!(under_work, vec!["work/deep/".to_string()]);
+    }
+
+    #[test]
+    fn the_upper_bound_sits_above_every_path_under_the_prefix() {
+        assert_eq!(just_past("work/"), "work0");
+        assert!("work/a" < just_past("work/").as_str());
+        assert!("work/z/deep/" < just_past("work/").as_str());
+        assert!("work0" >= just_past("work/").as_str());
     }
 
     #[test]
