@@ -5,8 +5,6 @@ mod error;
 mod oids;
 mod output;
 mod prompt;
-#[cfg(test)]
-mod testing;
 
 use clap::Parser;
 
@@ -50,3 +48,6 @@ fn run(cli: Cli, format: Format) -> Result<(), CliError> {
     let report = commands::dispatch(&mut ctx, cli.command)?;
     output::print(format, &report)
 }
+
+#[cfg(test)]
+mod testing;
