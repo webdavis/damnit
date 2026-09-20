@@ -139,7 +139,8 @@ impl RemoteHelper for ProcessHelper {
             }
             Response::Capabilities(caps) => Ok(capabilities_from_wire(&caps)),
             other => Err(HelperError::Protocol(format!(
-                "expected a capabilities response, got {other:?}"
+                "expected a capabilities response, got a {} response",
+                other.shape()
             ))),
         }
     }
@@ -150,7 +151,8 @@ impl RemoteHelper for ProcessHelper {
         })? {
             Response::Pull(pull) => Ok(pull_from_wire(pull)),
             other => Err(HelperError::Protocol(format!(
-                "expected a pull response, got {other:?}"
+                "expected a pull response, got a {} response",
+                other.shape()
             ))),
         }
     }
@@ -163,7 +165,8 @@ impl RemoteHelper for ProcessHelper {
         match self.call(&Request::Push { mutations })? {
             Response::Push(push) => Ok(outcomes_from_wire(push.results)),
             other => Err(HelperError::Protocol(format!(
-                "expected a push response, got {other:?}"
+                "expected a push response, got a {} response",
+                other.shape()
             ))),
         }
     }
@@ -193,6 +196,21 @@ mod tests {
     use dam_application::{ConfiguredDuration, HelperError, RemoteHelper};
 
     use super::super::testing::{install, remote};
+
+    #[test]
+    fn a_response_of_the_wrong_shape_names_the_shape_and_never_the_task_it_carried() {
+        let dir = tempfile::tempdir().unwrap();
+        let launcher = install(
+            dir.path(),
+            "#!/bin/sh\nread -r line; printf '{\"objects\":[{\"oid\":\"01\",\"kind\":\"task\",\"subject\":\"call the clinic\",\"body\":\"ask about the referral\"}],\"removed\":[]}\\n'\n",
+        );
+        let mut helper = launcher.spawn(&remote(), &[]).unwrap();
+        let err = helper.capabilities().unwrap_err();
+        let text = format!("{err:?}");
+        assert!(text.contains("pull"), "{text}");
+        assert!(!text.contains("call the clinic"), "{text}");
+        assert!(!text.contains("referral"), "{text}");
+    }
 
     #[test]
     fn a_helper_declaring_a_newer_protocol_is_refused_with_both_versions() {

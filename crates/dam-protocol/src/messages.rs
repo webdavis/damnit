@@ -27,6 +27,20 @@ pub enum Response {
     Error { error: String },
 }
 
+impl Response {
+    /// The shape's own name, for a message about a response of the wrong
+    /// shape. The values a response carries are the operator's private task
+    /// text and never belong in an error.
+    pub fn shape(&self) -> &'static str {
+        match self {
+            Response::Capabilities(_) => "capabilities",
+            Response::Pull(_) => "pull",
+            Response::Push(_) => "push",
+            Response::Error { .. } => "error",
+        }
+    }
+}
+
 #[derive(Deserialize)]
 struct ErrorPayload {
     error: String,
