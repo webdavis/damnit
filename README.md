@@ -24,8 +24,8 @@ wrote:
     api_token_command = ["security", "find-generic-password", "-w", "-s", "Todoist API Token"]
     stale = "15m"
 
-`api_token` (the value), `api_token_command` (a command that prints it) and `api_token_env` (a
-variable name) are the three forms; the command inherits your terminal, so a vault CLI that
+`api_token` (the value, with `credentials = ["api_token"]` in the same table), `api_token_command`
+(a command that prints it) and `api_token_env` (a variable name) are the three forms; the command inherits your terminal, so a vault CLI that
 prompts works when you run `dam` yourself. `stale` makes reads pull first when the last pull is
 older than that. `deadline` (default `"60s"`) bounds how long one helper answer may take; past it
 the helper is killed and the command fails. Ctrl-C at any point ends `dam` the same way, killing

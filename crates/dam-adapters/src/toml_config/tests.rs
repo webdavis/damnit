@@ -15,6 +15,7 @@ path = "work/"
 
 [remote.gcal]
 url = "gcal::"
+credentials = ["client_id"]
 client_id = "abc"
 refresh_token_env = "DAM_GCAL_REFRESH"
 
@@ -185,4 +186,35 @@ fn append_remote_tightens_a_world_readable_config() {
     append_remote(&path, "todoist", "todoist::").unwrap();
     assert_eq!(mode_of(&path), 0o600);
     assert!(load_config(&path).unwrap().done_interactive);
+}
+
+#[test]
+fn a_misspelled_remote_key_is_refused_by_name_and_never_becomes_a_credential() {
+    let err = parse_config("[remote.x]\nurl = \"t::\"\nstael = \"15m\"\n").unwrap_err();
+    assert!(
+        matches!(&err, ConfigError::Invalid(m) if m.contains("remote.x") && m.contains("stael")),
+        "{err}"
+    );
+    let good = parse_config("[remote.x]\nurl = \"t::\"\nstale = \"15m\"\n").unwrap();
+    assert_eq!(
+        good.remote("x").unwrap().stale,
+        Some(Duration::from_secs(900))
+    );
+}
+
+#[test]
+fn a_literal_credential_is_read_only_when_credentials_declares_its_name() {
+    let text = "[remote.x]\nurl = \"t::\"\ncredentials = [\"api_token\"]\napi_token = \"tok\"\n";
+    assert_eq!(
+        parse_config(text).unwrap().remote("x").unwrap().credentials,
+        vec![CredentialSpec::Literal {
+            name: "api_token".into(),
+            value: "tok".into()
+        }]
+    );
+    let undeclared = parse_config("[remote.x]\nurl = \"t::\"\napi_token = \"tok\"\n").unwrap_err();
+    assert!(
+        matches!(&undeclared, ConfigError::Invalid(m) if m.contains("api_token")),
+        "{undeclared}"
+    );
 }

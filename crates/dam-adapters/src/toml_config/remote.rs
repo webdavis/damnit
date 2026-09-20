@@ -33,10 +33,14 @@ pub(super) fn parse_remote(name: &str, t: &Table) -> Result<RemoteConfig, Config
                 })
         })
         .transpose()?;
+    let declared = declared_credentials(name, t)?;
     let mut credentials = Vec::new();
     for (key, value) in t {
-        if matches!(key.as_str(), "url" | "stale" | "deadline" | "path") {
+        if BASE_KEYS.contains(&key.as_str()) {
             continue;
+        }
+        if !is_credential_key(key, &declared) {
+            return Err(unknown_key(name, key));
         }
         credentials.push(parse_credential(name, key, value)?);
     }
@@ -49,6 +53,41 @@ pub(super) fn parse_remote(name: &str, t: &Table) -> Result<RemoteConfig, Config
         deadline,
         path,
     })
+}
+
+/// The keys a remote table holds that are settings rather than credentials.
+const BASE_KEYS: [&str; 5] = ["url", "stale", "deadline", "path", "credentials"];
+
+/// The names under `credentials`, which is what makes a bare `<name>` key a
+/// credential rather than a typo: the helper declares its names at connect
+/// time, long after the config is parsed, so the config declares them itself.
+fn declared_credentials(remote: &str, t: &Table) -> Result<Vec<String>, ConfigError> {
+    let invalid = |why: &str| ConfigError::Invalid(format!("remote.{remote}: credentials {why}"));
+    let Some(value) = t.get("credentials") else {
+        return Ok(Vec::new());
+    };
+    value
+        .as_array()
+        .ok_or_else(|| invalid("must be an array of names"))?
+        .iter()
+        .map(|v| {
+            v.as_str()
+                .map(str::to_string)
+                .ok_or_else(|| invalid("must be an array of strings"))
+        })
+        .collect()
+}
+
+fn is_credential_key(key: &str, declared: &[String]) -> bool {
+    key.ends_with("_command") || key.ends_with("_env") || declared.iter().any(|d| d == key)
+}
+
+fn unknown_key(remote: &str, key: &str) -> ConfigError {
+    ConfigError::Invalid(format!(
+        "remote.{remote}: {key} is not a key dam knows. The settings are {}; a credential is \
+         <name>_command, <name>_env, or <name> with <name> listed in credentials",
+        BASE_KEYS.join(", ")
+    ))
 }
 
 /// One optional `<number><s|m|h>` key off a remote table, keeping the text.

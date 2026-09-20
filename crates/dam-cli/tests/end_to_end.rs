@@ -25,7 +25,7 @@ impl Sandbox {
         std::fs::set_permissions(&helper, std::fs::Permissions::from_mode(0o755)).unwrap();
         std::fs::write(
             dir.path().join("config.toml"),
-            "[remote.fake]\nurl = \"fake::\"\napi_token = \"tok-123\"\n",
+            "[remote.fake]\nurl = \"fake::\"\ncredentials = [\"api_token\"]\napi_token = \"tok-123\"\n",
         )
         .unwrap();
         Sandbox { dir }

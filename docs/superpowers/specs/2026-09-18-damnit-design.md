@@ -309,9 +309,15 @@ is set:
 
 | Key | Meaning |
 |---|---|
-| `<name>` | The value itself, in the config file. `dam status` warns when this is set. |
+| `<name>` | The value itself, in the config file, with `<name>` listed in `credentials`. `dam status` warns when this is set. |
 | `<name>_command` | Argv of a command whose first line of standard output is the value. |
 | `<name>_env` | The name of an environment variable holding it. |
+
+The config is parsed before any helper runs, so the parser cannot ask a helper which names it
+declares. A bare `<name>` key is therefore read as a credential only when the remote's
+`credentials` array lists that name; the suffixed forms say what they are in the key itself and
+need no listing. Every other key in a remote table is refused by name, so a misspelled setting is
+a refusal rather than a silently exported credential.
 
 `dam` resolves each and passes it to the helper as `DAM_<REMOTE>_<NAME>` in its environment, so
 `api_token` under `[remote.todoist]` arrives as `DAM_TODOIST_API_TOKEN`. A declared credential with
