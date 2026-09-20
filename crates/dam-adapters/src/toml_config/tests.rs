@@ -106,6 +106,14 @@ fn stale_accepts_seconds_minutes_and_hours_only() {
 }
 
 #[test]
+fn a_non_ascii_or_empty_duration_is_refused_rather_than_a_panic() {
+    assert!(parse_duration("stale", "15\u{00b5}").is_err());
+    assert!(parse_duration("stale", "").is_err());
+    assert!(parse_duration("deadline", "\u{201c}2m\u{201d}").is_err());
+    assert!(parse_duration("stale", "18446744073709551615h").is_err());
+}
+
+#[test]
 fn an_absent_deadline_is_none_and_a_non_string_is_refused() {
     let c = parse_config("[remote.x]\nurl = \"t::\"\n").unwrap();
     assert_eq!(c.remote("x").unwrap().deadline, None);
