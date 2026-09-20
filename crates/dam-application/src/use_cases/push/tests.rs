@@ -99,12 +99,10 @@ fn a_committed_create_is_sent_and_its_remote_id_is_mapped() {
             .unwrap()
             .is_empty()
     );
-    assert!(
-        l.launched_with
-            .borrow()
-            .iter()
-            .any(|c| c == &vec![("api_token".to_string(), "t".into())]),
-        "the helper was relaunched with the token the remote's config declares"
+    assert_eq!(
+        *l.launched_with.borrow(),
+        vec![vec![("api_token".to_string(), "t".into())]],
+        "one helper process, launched with the token the remote's config declares"
     );
 }
 
@@ -449,4 +447,29 @@ fn two_successive_changes_to_one_object_carry_different_keys() {
     let sent = pushed.borrow();
     assert_eq!(sent.len(), 2);
     assert_ne!(sent[0].idempotency_key, sent[1].idempotency_key);
+}
+
+/// The helper stays the authority on what it needs, even though the config
+/// is what supplies it: a name the helper declares and the config does not
+/// is refused by name rather than sent as nothing.
+#[test]
+fn a_credential_the_config_does_not_supply_is_refused_by_name() {
+    let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
+    let mut config = config();
+    config.remotes[0].credentials.clear();
+    let (l, _) = launcher(|_| vec![]);
+    let err = push(repos, &l, &EchoCredentials, &config, None).unwrap_err();
+    assert_eq!(
+        err,
+        UseCaseError::Refused(Refusal::MissingCredential {
+            remote: "todoist".into(),
+            name: "api_token".into()
+        })
+    );
+    assert_eq!(
+        l.launched_with.borrow().len(),
+        1,
+        "one process, even when the capabilities it reported cannot be met"
+    );
 }
