@@ -4,8 +4,6 @@ mod task;
 use std::collections::BTreeSet;
 
 use crate::{Oid, Path};
-#[cfg(test)]
-use crate::{Priority, When};
 
 pub use event::{
     Attachment, Attendee, Conference, Event, EventStatus, EventType, Person, ResponseStatus,
@@ -129,7 +127,7 @@ impl Object {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Oid;
+    use crate::{Oid, Priority, When};
     use jiff::civil::date;
 
     fn oid(byte: u8) -> Oid {
