@@ -7,7 +7,8 @@ mod remote;
 mod stage;
 
 use std::fmt;
-use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+use std::fs::DirBuilder;
+use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt, PermissionsExt};
 use std::path::Path;
 
 use dam_application::{StoreError, Transactional, UseCaseError};
@@ -29,7 +30,7 @@ pub enum OpenError {
 }
 
 impl SqliteStore {
-    /// Creates the directory and file when missing, mode 0600, WAL, busy
+    /// Creates the directory 0700 and the file 0600 when missing, WAL, busy
     /// timeout 5 s, migrated to the current version. Refuses a symlink or a
     /// directory at the path.
     ///
@@ -38,7 +39,11 @@ impl SqliteStore {
     /// the open and the file never exists at the umask default.
     pub fn open(path: &Path) -> Result<SqliteStore, OpenError> {
         if let Some(dir) = path.parent() {
-            std::fs::create_dir_all(dir).map_err(|e| OpenError::Io(e.to_string()))?;
+            DirBuilder::new()
+                .recursive(true)
+                .mode(0o700)
+                .create(dir)
+                .map_err(|e| OpenError::Io(e.to_string()))?;
         }
         match std::fs::OpenOptions::new()
             .create_new(true)
@@ -199,6 +204,24 @@ mod tests {
         assert_eq!(
             std::fs::metadata(&path).unwrap().permissions().mode() & 0o777,
             0o600
+        );
+    }
+
+    /// The directory the store lives in is the operator's data directory: its
+    /// listing names every remote dam talks to, so it is created as private as
+    /// the config directory beside it rather than at the umask default.
+    #[test]
+    fn the_store_directory_is_created_private() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("dam").join("dam.db");
+        SqliteStore::open(&path).unwrap();
+        assert_eq!(
+            std::fs::metadata(path.parent().unwrap())
+                .unwrap()
+                .permissions()
+                .mode()
+                & 0o777,
+            0o700
         );
     }
 
