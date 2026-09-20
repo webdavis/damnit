@@ -76,7 +76,7 @@ mod tests {
     }
 
     #[test]
-    fn an_undeclared_category_key_exits_2_and_names_the_key() {
+    fn an_undeclared_category_key_is_refused_and_names_the_key() {
         let mut ctx = context();
         let err = super::run_ls(
             &mut ctx,
@@ -85,7 +85,7 @@ mod tests {
             },
         )
         .unwrap_err();
-        assert_eq!(err.exit_code(), 2);
+        assert_eq!(err.exit_code(), 4, "a refusal by dam's own rule");
         assert!(err.to_string().contains("mood"));
     }
 }

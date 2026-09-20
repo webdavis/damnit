@@ -112,7 +112,7 @@ mod tests {
         let mut ctx = context();
         parent_and_child(&ctx);
         let err = run(&mut ctx, args(&oid(1), false, false)).unwrap_err();
-        assert_eq!(err.exit_code(), 2);
+        assert_eq!(err.exit_code(), 4, "a refusal by dam's own rule");
         assert!(err.to_string().contains("child"));
     }
 

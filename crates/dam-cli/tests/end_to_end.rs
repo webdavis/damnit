@@ -157,13 +157,41 @@ fn new_add_commit_push_pull_and_ls_work_across_processes() {
 }
 
 #[test]
-fn a_refusal_exits_two_and_names_the_rule() {
+fn each_exit_code_means_one_thing() {
+    let sb = Sandbox::new();
+    assert_eq!(sb.output(&["ls"]).status.code(), Some(0), "success");
+
+    // dam failed: the store path is a directory it cannot open.
+    std::fs::create_dir(sb.dir.path().join("wrong")).unwrap();
+    let broken = Command::new(env!("CARGO_BIN_EXE_dam"))
+        .args(["ls"])
+        .env("HOME", sb.dir.path())
+        .env("DAM_CONFIG", sb.dir.path().join("config.toml"))
+        .env("DAM_STORE", sb.dir.path().join("wrong"))
+        .output()
+        .unwrap();
+    assert_eq!(broken.status.code(), Some(1), "an internal failure");
+
+    assert_eq!(
+        sb.output(&["nonesuch"]).status.code(),
+        Some(2),
+        "a subcommand dam does not have"
+    );
+    assert_eq!(
+        sb.output(&["new", "x", "-p", "9"]).status.code(),
+        Some(2),
+        "a flag value dam refuses to read"
+    );
+}
+
+#[test]
+fn a_refusal_exits_four_and_names_the_rule() {
     let sb = Sandbox::new();
     let (_, out, _) = sb.dam(&["new", "parent"]);
     let parent = out.split_whitespace().next().unwrap().to_string();
     assert!(sb.dam(&["new", "child", "--path", "parent/"]).0);
     let output = sb.output(&["done", &parent[..7]]);
-    assert_eq!(output.status.code(), Some(2));
+    assert_eq!(output.status.code(), Some(4));
     assert!(String::from_utf8_lossy(&output.stderr).contains("child"));
 }
 

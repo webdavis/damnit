@@ -254,6 +254,18 @@ query = "due:today | overdue"
 Every read command takes `--json` and prints one JSON document on stdout. This is the interface
 the clients use.
 
+### Exit codes
+
+One meaning per code, so a client can tell what happened without reading the message:
+
+| Code | Meaning |
+|---|---|
+| 0 | The command did what it was asked. |
+| 1 | `dam` failed: a store, config, helper or io failure. |
+| 2 | The command line was wrong: an unknown argument or subcommand, a flag value `dam` refuses to read, or an oid prefix that names more than one object. |
+| 3 | Cancelled: the operator interrupted, or a prompt could not be answered. |
+| 4 | `dam` refused by one of its own rules, and the message names the rule. |
+
 ## Remotes and helpers
 
 `dam` core contains no Todoist code and no Google code. A remote is reached through a helper found
