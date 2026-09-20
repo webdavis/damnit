@@ -92,31 +92,20 @@ mod tests {
     use super::*;
     use crate::args::{RemoteArgs, RemoteCommand};
     use crate::testing::{EchoLauncher, FailingLauncher, context};
+    use dam_application::{IncomingObject, PullOutcome};
     use dam_application::{RemoteConfig, RemoteName};
-    use dam_protocol::{PullResponse, WireObject, WireTask};
+    use dam_domain::{Object, Oid, Task};
     use std::cell::RefCell;
     use std::time::Duration;
 
-    fn wire(oid: &str, subject: &str) -> WireObject {
-        WireObject {
-            oid: oid.into(),
-            remote_id: Some(format!("r-{oid}")),
-            kind: "task".into(),
-            subject: subject.into(),
-            body: String::new(),
-            path: String::new(),
-            labels: vec![],
-            depends: vec![],
-            reminders: vec![],
-            recurrence: None,
-            task: Some(WireTask {
-                done: false,
-                priority: 4,
-                due: None,
-                deadline: None,
-                event: None,
-            }),
-            event: None,
+    /// One task as a remote sends it, under a remote id built from `tag`.
+    fn incoming(tag: &str, subject: &str) -> IncomingObject {
+        IncomingObject {
+            remote_id: format!("r-{tag}"),
+            object: Object::Task(Task::new(
+                Oid::generate(&mut |b: &mut [u8]| b.fill(0)),
+                subject,
+            )),
         }
     }
 
@@ -163,19 +152,17 @@ mod tests {
             path: None,
         });
         ctx.launcher = Box::new(EchoLauncher {
-            pulled: RefCell::new(Some(PullResponse {
-                objects: vec![wire("aaaa", "from upstream")],
-                removed: vec![],
-                sync: None,
+            pulled: RefCell::new(Some(PullOutcome {
+                objects: vec![incoming("aaaa", "from upstream")],
+                ..PullOutcome::default()
             })),
         });
         maybe_pull_stale(&mut ctx).unwrap();
         assert_eq!(ctx.store.all().unwrap().len(), 1);
         ctx.launcher = Box::new(EchoLauncher {
-            pulled: RefCell::new(Some(PullResponse {
-                objects: vec![wire("bbbb", "second")],
-                removed: vec![],
-                sync: None,
+            pulled: RefCell::new(Some(PullOutcome {
+                objects: vec![incoming("bbbb", "second")],
+                ..PullOutcome::default()
             })),
         });
         maybe_pull_stale(&mut ctx).unwrap();
@@ -199,10 +186,9 @@ mod tests {
             path: None,
         });
         ctx.launcher = Box::new(EchoLauncher {
-            pulled: RefCell::new(Some(PullResponse {
-                objects: vec![wire("aaaa", "x")],
-                removed: vec![],
-                sync: None,
+            pulled: RefCell::new(Some(PullOutcome {
+                objects: vec![incoming("aaaa", "x")],
+                ..PullOutcome::default()
             })),
         });
         maybe_pull_stale(&mut ctx).unwrap();

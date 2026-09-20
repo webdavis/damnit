@@ -1,7 +1,7 @@
 use dam_domain::{Change, CommitId, CommitRecord, Date, Kind, Object, Oid, Path, Timestamp};
-use dam_protocol::{Capabilities, Mutation, PullResponse, PushResponse};
 
 use crate::config::{CredentialSpec, RemoteConfig};
+use crate::remote::{MutationOutcome, PullOutcome, RemoteCapabilities, RemoteMutation};
 use crate::secret::Secret;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -183,9 +183,10 @@ pub enum HelperError {
 }
 
 pub trait RemoteHelper: std::fmt::Debug {
-    fn capabilities(&mut self) -> Result<Capabilities, HelperError>;
-    fn pull(&mut self, since: Option<&str>) -> Result<PullResponse, HelperError>;
-    fn push(&mut self, mutations: Vec<Mutation>) -> Result<PushResponse, HelperError>;
+    fn capabilities(&mut self) -> Result<RemoteCapabilities, HelperError>;
+    fn pull(&mut self, since: Option<&str>) -> Result<PullOutcome, HelperError>;
+    fn push(&mut self, mutations: Vec<RemoteMutation>)
+    -> Result<Vec<MutationOutcome>, HelperError>;
 }
 
 pub trait HelperLauncher {

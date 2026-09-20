@@ -1,8 +1,8 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use crate::remote::{MutationOp, MutationOutcome, PullOutcome, RemoteMutation};
 use dam_domain::{Event, Object, Task, When};
-use dam_protocol::{Mutation, MutationResult, PullResponse};
 use jiff::civil::date;
 
 use super::*;
@@ -36,18 +36,14 @@ fn config() -> Config {
 }
 
 fn launcher(
-    answer: impl Fn(&[Mutation]) -> Vec<MutationResult> + Clone + 'static,
-) -> (ScriptedLauncher, Rc<RefCell<Vec<Mutation>>>) {
+    answer: impl Fn(&[RemoteMutation]) -> Vec<MutationOutcome> + Clone + 'static,
+) -> (ScriptedLauncher, Rc<RefCell<Vec<RemoteMutation>>>) {
     let pushed = Rc::new(RefCell::new(Vec::new()));
     let seen = pushed.clone();
     let l = ScriptedLauncher {
         make: Box::new(move || ScriptedHelper {
             caps: task_caps(),
-            pull_answer: PullResponse {
-                objects: vec![],
-                removed: vec![],
-                sync: None,
-            },
+            pull_answer: PullOutcome::default(),
             push_answer: Box::new(answer.clone()),
             pushed: seen.clone(),
             pulled_since: Rc::new(RefCell::new(vec![])),
@@ -79,7 +75,7 @@ fn a_committed_create_is_sent_and_its_remote_id_is_mapped() {
     committed_task(&store, 1);
     let (l, pushed) = launcher(|ms| {
         ms.iter()
-            .map(|m| MutationResult {
+            .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
                 ok: true,
                 remote_id: Some("r1".into()),
@@ -89,7 +85,7 @@ fn a_committed_create_is_sent_and_its_remote_id_is_mapped() {
     });
     let reports = push(repos, &l, &NoCredentials, &config(), None).unwrap();
     assert_eq!(reports[0].succeeded, 1);
-    assert_eq!(pushed.borrow()[0].op, "create");
+    assert_eq!(pushed.borrow()[0].op, MutationOp::Create);
     assert_eq!(
         store
             .remote_id(&RemoteName("todoist".into()), &oid(1))
@@ -118,7 +114,7 @@ fn a_failed_mutation_becomes_a_notice_and_a_retry() {
     committed_task(&store, 1);
     let (l, _) = launcher(|ms| {
         ms.iter()
-            .map(|m| MutationResult {
+            .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
                 ok: false,
                 remote_id: None,
@@ -156,8 +152,8 @@ fn a_mutation_the_helper_never_answered_is_a_failure() {
     committed_task(&store, 2);
     let (l, _) = launcher(|ms| {
         ms.iter()
-            .filter(|m| m.oid == oid(1).to_string())
-            .map(|m| MutationResult {
+            .filter(|m| m.oid == oid(1))
+            .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
                 ok: true,
                 remote_id: Some("r1".into()),
@@ -197,7 +193,7 @@ fn a_retry_is_sent_as_an_update_of_the_committed_state() {
         .unwrap();
     let (l, pushed) = launcher(|ms| {
         ms.iter()
-            .map(|m| MutationResult {
+            .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
                 ok: true,
                 remote_id: None,
@@ -209,7 +205,7 @@ fn a_retry_is_sent_as_an_update_of_the_committed_state() {
     let sent = pushed.borrow();
     assert!(
         sent.iter()
-            .any(|m| m.op == "update" && m.remote_id.as_deref() == Some("r1"))
+            .any(|m| m.op == MutationOp::Update && m.remote_id.as_deref() == Some("r1"))
     );
     assert!(
         store
@@ -253,7 +249,7 @@ fn a_successful_delete_clears_the_remote_mapping() {
 
     let (l, _) = launcher(|ms| {
         ms.iter()
-            .map(|m| MutationResult {
+            .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
                 ok: true,
                 remote_id: None,
@@ -273,20 +269,20 @@ fn duplicate_and_unsent_results_are_ignored() {
     committed_task(&store, 1);
     let (l, _) = launcher(|_| {
         vec![
-            MutationResult {
-                oid: oid(1).to_string(),
+            MutationOutcome {
+                oid: oid(1),
                 ok: false,
                 remote_id: None,
                 why: Some("first".into()),
             },
-            MutationResult {
-                oid: oid(1).to_string(),
+            MutationOutcome {
+                oid: oid(1),
                 ok: false,
                 remote_id: None,
                 why: Some("second".into()),
             },
-            MutationResult {
-                oid: oid(9).to_string(),
+            MutationOutcome {
+                oid: oid(9),
                 ok: false,
                 remote_id: None,
                 why: Some("unsent".into()),
@@ -427,7 +423,7 @@ fn two_successive_changes_to_one_object_carry_different_keys() {
     committed_task(&store, 1);
     let (l, pushed) = launcher(|ms| {
         ms.iter()
-            .map(|m| MutationResult {
+            .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
                 ok: true,
                 remote_id: Some("r1".into()),

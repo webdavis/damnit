@@ -3,10 +3,13 @@ use std::process::{Child, ChildStdin, ChildStdout};
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, channel};
 use std::time::{Duration, Instant};
 
-use dam_application::{HelperError, RemoteConfig, RemoteHelper};
-use dam_protocol::{
-    Capabilities, Mutation, PullResponse, PushResponse, Request, Response, read_line, write_line,
+use dam_application::{
+    HelperError, MutationOutcome, PullOutcome, RemoteCapabilities, RemoteConfig, RemoteHelper,
+    RemoteMutation,
 };
+use dam_protocol::{Request, Response, read_line, write_line};
+
+use crate::wire::{capabilities_from_wire, mutation_to_wire, outcomes_from_wire, pull_from_wire};
 
 /// How long a helper may take to answer one request when the remote names no
 /// deadline, and the text the message uses for it.
@@ -125,29 +128,33 @@ impl ProcessHelper {
 }
 
 impl RemoteHelper for ProcessHelper {
-    fn capabilities(&mut self) -> Result<Capabilities, HelperError> {
+    fn capabilities(&mut self) -> Result<RemoteCapabilities, HelperError> {
         match self.call(&Request::Capabilities)? {
-            Response::Capabilities(caps) => Ok(caps),
+            Response::Capabilities(caps) => Ok(capabilities_from_wire(&caps)),
             other => Err(HelperError::Protocol(format!(
                 "expected a capabilities response, got {other:?}"
             ))),
         }
     }
 
-    fn pull(&mut self, since: Option<&str>) -> Result<PullResponse, HelperError> {
+    fn pull(&mut self, since: Option<&str>) -> Result<PullOutcome, HelperError> {
         match self.call(&Request::Pull {
             since: since.map(str::to_string),
         })? {
-            Response::Pull(pull) => Ok(pull),
+            Response::Pull(pull) => Ok(pull_from_wire(pull)),
             other => Err(HelperError::Protocol(format!(
                 "expected a pull response, got {other:?}"
             ))),
         }
     }
 
-    fn push(&mut self, mutations: Vec<Mutation>) -> Result<PushResponse, HelperError> {
+    fn push(
+        &mut self,
+        mutations: Vec<RemoteMutation>,
+    ) -> Result<Vec<MutationOutcome>, HelperError> {
+        let mutations = mutations.into_iter().map(mutation_to_wire).collect();
         match self.call(&Request::Push { mutations })? {
-            Response::Push(push) => Ok(push),
+            Response::Push(push) => Ok(outcomes_from_wire(push.results)),
             other => Err(HelperError::Protocol(format!(
                 "expected a push response, got {other:?}"
             ))),

@@ -1,4 +1,4 @@
-use dam_application::{Notice, RemoteName, StoreError, wire};
+use dam_application::{Notice, RemoteName, StoreError};
 use dam_domain::{Change, Kind, Object, Oid, Op};
 use rusqlite::Params;
 use serde::{Deserialize, Serialize};
@@ -6,14 +6,14 @@ use serde::{Deserialize, Serialize};
 use super::objects::sql;
 
 pub(super) fn object_to_json(o: &Object) -> Result<String, StoreError> {
-    serde_json::to_string(&wire::to_wire(o, None))
+    serde_json::to_string(&crate::wire::to_wire(o, None))
         .map_err(|e| StoreError(format!("stored object: {e}")))
 }
 
 pub(super) fn object_from_json(s: &str) -> Result<Object, StoreError> {
     let w: dam_protocol::WireObject =
         serde_json::from_str(s).map_err(|e| StoreError(format!("stored object: {e}")))?;
-    wire::from_wire(&w).map_err(|e| StoreError(format!("stored object: {e}")))
+    crate::wire::from_wire(&w).map_err(|e| StoreError(format!("stored object: {e}")))
 }
 
 pub(super) fn op_to_text(op: Op) -> &'static str {

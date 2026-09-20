@@ -6,6 +6,7 @@ use jiff::civil::date;
 use super::*;
 use crate::config::{CredentialSpec, RemoteConfig};
 use crate::ports::Repositories;
+use crate::remote::{IncomingObject, PullOutcome};
 use crate::testing::prelude::*;
 use crate::testing::{
     FixedClock, FixedRandom, MemoryStore, NoCredentials, ScriptedHelper, ScriptedLauncher, oid,
@@ -13,9 +14,7 @@ use crate::testing::{
 };
 use crate::use_cases::commit::commit;
 use crate::use_cases::stage::add_all;
-use crate::wire::to_wire;
 use dam_domain::{Object, Task};
-use dam_protocol::{PullResponse, WireObject};
 
 /// Shared with `tests_removals_and_notices`, split out by concern to keep
 /// each file under the size cap.
@@ -41,7 +40,7 @@ pub(super) fn config() -> Config {
     }
 }
 
-pub(super) fn launcher(answer: PullResponse) -> ScriptedLauncher {
+pub(super) fn launcher(answer: PullOutcome) -> ScriptedLauncher {
     ScriptedLauncher {
         make: Box::new(move || ScriptedHelper {
             caps: task_caps(),
@@ -54,21 +53,22 @@ pub(super) fn launcher(answer: PullResponse) -> ScriptedLauncher {
     }
 }
 
-pub(super) fn wire(subject: &str, remote_id: &str) -> WireObject {
-    let mut w = to_wire(
-        &Object::Task(Task::new(oid(0), subject)),
-        Some(remote_id.into()),
-    );
-    w.oid = String::new();
-    w
+/// One object as a remote sends it: an object under a remote id, with no
+/// oid of its own yet.
+pub(super) fn incoming(subject: &str, remote_id: &str) -> IncomingObject {
+    IncomingObject {
+        remote_id: remote_id.to_string(),
+        object: Object::Task(Task::new(oid(0), subject)),
+    }
 }
 
 #[test]
 fn a_new_upstream_object_is_created_locally_with_a_fresh_oid_and_mapped() {
     let store = MemoryStore::new();
     let repos = Repositories::of(&store);
-    let l = launcher(PullResponse {
-        objects: vec![wire("from todoist", "r1")],
+    let l = launcher(PullOutcome {
+        objects: vec![incoming("from todoist", "r1")],
+        rejected: vec![],
         removed: vec![],
         sync: Some("s1".into()),
     });
@@ -111,10 +111,10 @@ fn a_fast_forward_updates_a_clean_local_object() {
     store
         .set_remote_snapshot(&remote(), &Object::Task(Task::new(oid(1), "old")))
         .unwrap();
-    let l = launcher(PullResponse {
-        objects: vec![wire("new", "r1")],
+    let l = launcher(PullOutcome {
+        objects: vec![incoming("new", "r1")],
         removed: vec![],
-        sync: None,
+        ..PullOutcome::default()
     });
     let reports = pull(
         repos,
@@ -154,10 +154,10 @@ fn dam_only_fields_survive_a_pull() {
     store
         .set_remote_snapshot(&remote(), &Object::Task(t))
         .unwrap();
-    let l = launcher(PullResponse {
-        objects: vec![wire("new", "r1")],
+    let l = launcher(PullOutcome {
+        objects: vec![incoming("new", "r1")],
         removed: vec![],
-        sync: None,
+        ..PullOutcome::default()
     });
     pull(
         repos,
@@ -206,10 +206,10 @@ fn both_sides_changed_is_a_conflict_and_nothing_is_overwritten() {
         "m2",
     )
     .unwrap();
-    let l = launcher(PullResponse {
-        objects: vec![wire("theirs", "r1")],
+    let l = launcher(PullOutcome {
+        objects: vec![incoming("theirs", "r1")],
         removed: vec![],
-        sync: None,
+        ..PullOutcome::default()
     });
     let reports = pull(
         repos,
@@ -248,8 +248,9 @@ fn uncommitted_local_work_stops_the_pull_before_anything_is_written() {
     let mut dirty = store.get(&oid(1)).unwrap().unwrap();
     dirty.base_mut().subject = "unsaved".into();
     store.put(&dirty).unwrap();
-    let l = launcher(PullResponse {
-        objects: vec![wire("theirs", "r1"), wire("brand new", "r2")],
+    let l = launcher(PullOutcome {
+        objects: vec![incoming("theirs", "r1"), incoming("brand new", "r2")],
+        rejected: vec![],
         removed: vec![],
         sync: Some("s9".into()),
     });

@@ -10,5 +10,4 @@ testing = []
 
 [dependencies]
 dam-domain = { path = "../dam-domain" }
-dam-protocol = { path = "../dam-protocol" }
 jiff.workspace = true

@@ -109,9 +109,9 @@ mod tests {
     use crate::commands::commit::run_commit;
     use crate::commands::stage::run_add;
     use crate::testing::{EchoLauncher, context};
+    use dam_application::{IncomingObject, PullOutcome};
     use dam_application::{RemoteConfig, RemoteName};
     use dam_domain::{Object, Oid, Task};
-    use dam_protocol::{PullResponse, WireObject, WireTask};
     use std::cell::RefCell;
 
     fn with_remote() -> Context {
@@ -204,31 +204,14 @@ mod tests {
             },
         )
         .unwrap();
-        let theirs = WireObject {
-            oid: oid.to_string(),
-            remote_id: Some(format!("r-{}", &oid.as_str()[..4])),
-            kind: "task".into(),
-            subject: "theirs".into(),
-            body: String::new(),
-            path: String::new(),
-            labels: vec![],
-            depends: vec![],
-            reminders: vec![],
-            recurrence: None,
-            task: Some(WireTask {
-                done: false,
-                priority: 4,
-                due: None,
-                deadline: None,
-                event: None,
-            }),
-            event: None,
+        let theirs = IncomingObject {
+            remote_id: format!("r-{}", &oid.as_str()[..4]),
+            object: Object::Task(Task::new(oid.clone(), "theirs")),
         };
         ctx.launcher = Box::new(EchoLauncher {
-            pulled: RefCell::new(Some(PullResponse {
+            pulled: RefCell::new(Some(PullOutcome {
                 objects: vec![theirs],
-                removed: vec![],
-                sync: None,
+                ..PullOutcome::default()
             })),
         });
         let report = run_pull(

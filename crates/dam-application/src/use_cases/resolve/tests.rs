@@ -5,6 +5,7 @@ use super::*;
 use crate::config::{Config, CredentialSpec, RemoteConfig};
 use crate::ports::RemoteName;
 use crate::ports::Repositories;
+use crate::remote::{IncomingObject, MutationOutcome, PullOutcome, RemoteMutation};
 use crate::testing::prelude::*;
 use crate::testing::{
     FixedClock, FixedRandom, MemoryStore, NoCredentials, ScriptedHelper, ScriptedLauncher, oid,
@@ -14,9 +15,7 @@ use crate::use_cases::commit::commit;
 use crate::use_cases::pull::pull;
 use crate::use_cases::push::push;
 use crate::use_cases::stage::add_all;
-use crate::wire::to_wire;
 use dam_domain::{Object, Task};
-use dam_protocol::{MutationResult, PullResponse, WireObject};
 use jiff::civil::date;
 
 fn remote() -> RemoteName {
@@ -162,33 +161,33 @@ fn config() -> Config {
     }
 }
 
-fn upstream(subject: &str) -> WireObject {
-    let mut w = to_wire(&Object::Task(Task::new(oid(0), subject)), Some("r1".into()));
-    w.oid = String::new();
-    w
+fn upstream(subject: &str) -> IncomingObject {
+    IncomingObject {
+        remote_id: "r1".into(),
+        object: Object::Task(Task::new(oid(0), subject)),
+    }
 }
 
 /// Answers a pull with `objects` and a push by taking every mutation.
-fn launcher(objects: Vec<WireObject>) -> ScriptedLauncher {
+fn launcher(objects: Vec<IncomingObject>) -> ScriptedLauncher {
     recording_launcher(objects).0
 }
 
 fn recording_launcher(
-    objects: Vec<WireObject>,
-) -> (ScriptedLauncher, Rc<RefCell<Vec<dam_protocol::Mutation>>>) {
+    objects: Vec<IncomingObject>,
+) -> (ScriptedLauncher, Rc<RefCell<Vec<RemoteMutation>>>) {
     let pushed = Rc::new(RefCell::new(Vec::new()));
     let seen = pushed.clone();
     let l = ScriptedLauncher {
         make: Box::new(move || ScriptedHelper {
             caps: task_caps(),
-            pull_answer: PullResponse {
+            pull_answer: PullOutcome {
                 objects: objects.clone(),
-                removed: vec![],
-                sync: None,
+                ..PullOutcome::default()
             },
             push_answer: Box::new(|ms| {
                 ms.iter()
-                    .map(|m| MutationResult {
+                    .map(|m| MutationOutcome {
                         oid: m.oid.clone(),
                         ok: true,
                         remote_id: Some("r1".into()),
@@ -326,7 +325,7 @@ fn theirs_leaves_only_theirs_owed_and_settles_the_conflict() {
     push(repos, &l, &NoCredentials, &config(), None).unwrap();
     for m in sent.borrow().iter() {
         assert_eq!(
-            m.object.as_ref().unwrap().subject,
+            m.object.as_ref().unwrap().base().subject,
             "theirs",
             "a push after resolving with theirs must not carry ours"
         );

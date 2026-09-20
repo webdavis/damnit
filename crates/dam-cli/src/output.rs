@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use dam_application::wire::to_wire;
+use dam_adapters::to_wire;
 use dam_domain::Object;
 
 use crate::error::CliError;

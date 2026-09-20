@@ -194,7 +194,6 @@ name = "dam-application"
 version = "0.1.0"
 dependencies = [
  "dam-domain",
- "dam-protocol",
  "jiff",
 ]
 
@@ -231,7 +230,6 @@ dependencies = [
  "dam-adapters",
  "dam-application",
  "dam-domain",
- "dam-protocol",
  "jiff",
  "libc",
  "serde_json",

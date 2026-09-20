@@ -1,9 +1,8 @@
-use dam_protocol::Capabilities;
-
 use crate::config::RemoteConfig;
 use crate::credentials::resolve_credentials;
 use crate::errors::UseCaseError;
 use crate::ports::{CredentialSource, HelperLauncher, RemoteHelper};
+use crate::remote::RemoteCapabilities;
 
 /// Reads capabilities with no credentials, then relaunches with the ones the
 /// helper declared. A helper that declares none is used as launched.
@@ -11,7 +10,7 @@ pub(crate) fn connect(
     launcher: &dyn HelperLauncher,
     credentials: &dyn CredentialSource,
     remote: &RemoteConfig,
-) -> Result<(Box<dyn RemoteHelper>, Capabilities), UseCaseError> {
+) -> Result<(Box<dyn RemoteHelper>, RemoteCapabilities), UseCaseError> {
     let mut probe = launcher.launch(remote, &[])?;
     let caps = probe.capabilities()?;
     if caps.credentials.is_empty() {

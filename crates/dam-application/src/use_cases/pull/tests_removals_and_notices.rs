@@ -3,9 +3,10 @@ use std::rc::Rc;
 
 use jiff::civil::date;
 
-use super::tests::{config, launcher, remote, wire};
+use super::tests::{config, incoming, launcher, remote};
 use super::*;
 use crate::ports::Repositories;
+use crate::remote::{IncomingObject, PullOutcome, RejectedObject};
 use crate::testing::prelude::*;
 use crate::testing::{
     FixedClock, FixedRandom, MemoryStore, NoCredentials, ScriptedHelper, ScriptedLauncher, oid,
@@ -13,9 +14,7 @@ use crate::testing::{
 };
 use crate::use_cases::commit::commit;
 use crate::use_cases::stage::add_all;
-use crate::wire::to_wire;
-use dam_domain::{Object, Task};
-use dam_protocol::PullResponse;
+use dam_domain::{Field, Kind, Object, Task};
 
 #[test]
 fn a_removal_upstream_is_a_notice_not_a_deletion() {
@@ -28,10 +27,10 @@ fn a_removal_upstream_is_a_notice_not_a_deletion() {
     store
         .set_remote_snapshot(&remote(), &Object::Task(Task::new(oid(1), "keep me")))
         .unwrap();
-    let l = launcher(PullResponse {
+    let l = launcher(PullOutcome {
         objects: vec![],
         removed: vec!["r1".into()],
-        sync: None,
+        ..PullOutcome::default()
     });
     let reports = pull(
         repos,
@@ -73,23 +72,19 @@ fn a_cancelled_event_with_attached_tasks_is_reported() {
     store.put(&Object::Task(attached)).unwrap();
     let mut cancelled = event.clone();
     cancelled.status = dam_domain::EventStatus::Cancelled;
-    let mut w = to_wire(&Object::Event(cancelled), Some("e1".into()));
-    w.oid = String::new();
+    let w = IncomingObject {
+        remote_id: "e1".into(),
+        object: Object::Event(cancelled),
+    };
     let mut caps = task_caps();
-    caps.kinds = vec!["event".into()];
-    caps.fields = vec![
-        "subject".into(),
-        "status".into(),
-        "start".into(),
-        "end".into(),
-    ];
+    caps.kinds = vec![Kind::Event];
+    caps.fields = vec![Field::Subject, Field::Status, Field::Start, Field::End];
     let l = ScriptedLauncher {
         make: Box::new(move || ScriptedHelper {
             caps: caps.clone(),
-            pull_answer: PullResponse {
+            pull_answer: PullOutcome {
                 objects: vec![w.clone()],
-                removed: vec![],
-                sync: None,
+                ..PullOutcome::default()
             },
             push_answer: Box::new(|_| vec![]),
             pushed: Rc::new(RefCell::new(vec![])),
@@ -136,10 +131,10 @@ fn an_unrelated_staged_object_stays_staged_after_a_pull() {
         .put(&Object::Task(Task::new(oid(2), "unrelated")))
         .unwrap();
     add_all(&store, &store, &store).unwrap();
-    let l = launcher(PullResponse {
-        objects: vec![wire("new", "r1")],
+    let l = launcher(PullOutcome {
+        objects: vec![incoming("new", "r1")],
         removed: vec![],
-        sync: None,
+        ..PullOutcome::default()
     });
     pull(
         repos,
@@ -206,23 +201,19 @@ fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
 
     let mut cancelled = event.clone();
     cancelled.status = dam_domain::EventStatus::Cancelled;
-    let mut w = to_wire(&Object::Event(cancelled), Some("e1".into()));
-    w.oid = String::new();
+    let w = IncomingObject {
+        remote_id: "e1".into(),
+        object: Object::Event(cancelled),
+    };
     let mut caps = task_caps();
-    caps.kinds = vec!["event".into()];
-    caps.fields = vec![
-        "subject".into(),
-        "status".into(),
-        "start".into(),
-        "end".into(),
-    ];
+    caps.kinds = vec![Kind::Event];
+    caps.fields = vec![Field::Subject, Field::Status, Field::Start, Field::End];
     let l = ScriptedLauncher {
         make: Box::new(move || ScriptedHelper {
             caps: caps.clone(),
-            pull_answer: PullResponse {
+            pull_answer: PullOutcome {
                 objects: vec![w.clone()],
-                removed: vec![],
-                sync: None,
+                ..PullOutcome::default()
             },
             push_answer: Box::new(|_| vec![]),
             pushed: Rc::new(RefCell::new(vec![])),
@@ -252,10 +243,12 @@ fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
 fn one_unconvertible_object_is_skipped_with_a_notice_and_the_rest_still_pull() {
     let store = MemoryStore::new();
     let repos = Repositories::of(&store);
-    let mut bad = wire("broken", "r-bad");
-    bad.path = "a//b/".into();
-    let l = launcher(PullResponse {
-        objects: vec![bad, wire("from todoist", "r-good")],
+    let l = launcher(PullOutcome {
+        objects: vec![incoming("from todoist", "r-good")],
+        rejected: vec![RejectedObject {
+            remote_id: "r-bad".into(),
+            why: "path: cannot read \"a//b/\"".into(),
+        }],
         removed: vec![],
         sync: Some("s1".into()),
     });
@@ -288,7 +281,7 @@ fn one_unconvertible_object_is_skipped_with_a_notice_and_the_rest_still_pull() {
 fn a_pull_records_when_it_happened() {
     let store = MemoryStore::new();
     let repos = Repositories::of(&store);
-    let l = launcher(PullResponse::default());
+    let l = launcher(PullOutcome::default());
     let clock = FixedClock(date(2026, 9, 18));
     pull(
         repos,

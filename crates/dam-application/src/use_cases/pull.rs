@@ -1,5 +1,4 @@
-use dam_domain::{Change, CommitId, CommitRecord, EventStatus, Field, Object, Oid, Op};
-use dam_protocol::Capabilities;
+use dam_domain::{Change, CommitId, CommitRecord, EventStatus, Object, Oid, Op};
 
 use crate::config::{Config, RemoteConfig};
 use crate::errors::{Refusal, UseCaseError};
@@ -8,9 +7,9 @@ use crate::ports::{
     Clock, CredentialSource, HelperLauncher, Notice, NoticeRepository, ObjectRepository,
     Randomness, RemoteName, Repositories,
 };
+use crate::remote::{IncomingObject, PullOutcome, RemoteCapabilities};
 use crate::use_cases::connect::connect;
 use crate::use_cases::push::select_remotes;
-use crate::wire::from_wire;
 
 #[derive(Debug)]
 pub struct PullReport {
@@ -57,9 +56,15 @@ fn apply(
     clock: &dyn Clock,
     random: &mut dyn Randomness,
     remote: &RemoteConfig,
-    caps: &Capabilities,
-    response: dam_protocol::PullResponse,
+    caps: &RemoteCapabilities,
+    response: PullOutcome,
 ) -> Result<PullReport, UseCaseError> {
+    for rejected in &response.rejected {
+        repos.notices.add_notice(&Notice::PullFailed {
+            remote: remote.name.clone(),
+            why: format!("{}: {}", rejected.remote_id, rejected.why),
+        })?;
+    }
     let (planned, fresh) = classify(repos, remote, caps, response.objects, random)?;
     for (oid, remote_id) in fresh {
         repos
@@ -92,38 +97,30 @@ fn apply(
 fn classify(
     repos: Repositories<'_>,
     remote: &RemoteConfig,
-    caps: &Capabilities,
-    objects: Vec<dam_protocol::WireObject>,
+    caps: &RemoteCapabilities,
+    objects: Vec<IncomingObject>,
     random: &mut dyn Randomness,
 ) -> Result<Classified, UseCaseError> {
-    let fields: Vec<Field> = caps.fields.iter().filter_map(|f| Field::parse(f)).collect();
     let staged: Vec<Oid> = repos.stage.staged()?.into_iter().map(|c| c.oid).collect();
     let mut notices = repos.notices.notices()?;
     let mut planned = Vec::new();
     let mut fresh = Vec::new();
 
-    for mut wire in objects {
-        let remote_id = wire
-            .remote_id
-            .clone()
-            .ok_or_else(|| UseCaseError::Parse("a pulled object has no remote_id".into()))?;
+    for incoming in objects {
+        let IncomingObject {
+            remote_id,
+            mut object,
+        } = incoming;
         let existing = repos
             .remote_tracking
             .oid_for_remote_id(&remote.name, &remote_id)?;
         let oid = existing
             .clone()
             .unwrap_or_else(|| Oid::generate(&mut |b| random.fill(b)));
-        wire.oid = oid.to_string();
-        let theirs_raw = match from_wire(&wire) {
-            Ok(o) => o,
-            Err(why) => {
-                repos.notices.add_notice(&Notice::PullFailed {
-                    remote: remote.name.clone(),
-                    why: format!("{remote_id}: {why}"),
-                })?;
-                continue;
-            }
-        };
+        // The remote knows the object by its own id; the oid it is tracked
+        // by here is dam's to supply.
+        object.base_mut().oid = oid.clone();
+        let theirs_raw = object;
         if existing.is_none() {
             fresh.push((oid.clone(), remote_id));
         }
@@ -140,7 +137,11 @@ fn classify(
                 notices.push(notice);
             }
         }
-        let theirs = merge_fields(local.as_ref().unwrap_or(&theirs_raw), &theirs_raw, &fields);
+        let theirs = merge_fields(
+            local.as_ref().unwrap_or(&theirs_raw),
+            &theirs_raw,
+            &caps.fields,
+        );
         let incoming = match local {
             None => Incoming::Create(theirs),
             Some(ref l) if *l == theirs => Incoming::Unchanged,

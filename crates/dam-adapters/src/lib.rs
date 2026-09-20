@@ -7,6 +7,7 @@ pub mod helper_process;
 pub mod random;
 pub mod sqlite;
 pub mod toml_config;
+pub mod wire;
 
 pub use cancel::{cancellation_requested, request_cancellation};
 pub use clock::SystemClock;
@@ -19,3 +20,4 @@ pub use sqlite::{OpenError, SqliteStore};
 pub use toml_config::{
     ConfigError, append_remote, default_config_path, default_store_path, load_config,
 };
+pub use wire::{from_wire, to_wire};

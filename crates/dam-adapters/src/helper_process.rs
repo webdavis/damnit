@@ -158,10 +158,15 @@ mod tests {
             .launch(&remote(), &[("api_token".into(), "tok".into())])
             .unwrap();
         let caps = helper.capabilities().unwrap();
-        assert_eq!(caps.kinds, vec!["task".to_string(), "tok".to_string()]);
+        assert_eq!(caps.kinds, vec![dam_domain::Kind::Task]);
+        assert_eq!(
+            caps.credentials,
+            vec!["api_token".to_string(), "tok".to_string()],
+            "the credential reached the child as an environment variable"
+        );
         assert!(helper.pull(None).unwrap().objects.is_empty());
         let pushed = helper.push(vec![]).unwrap();
-        assert_eq!(pushed.results[0].remote_id.as_deref(), Some("r1"));
+        assert_eq!(pushed[0].remote_id.as_deref(), Some("r1"));
     }
 
     #[test]

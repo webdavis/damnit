@@ -4,11 +4,11 @@ use std::cell::RefCell;
 
 use dam_adapters::SqliteStore;
 use dam_application::{
-    Capabilities, Clock, Config, CredentialError, CredentialSource, CredentialSpec, EditorError,
-    EditorSession, HelperError, HelperLauncher, Mutation, MutationResult, PullResponse,
-    PushResponse, RemoteConfig, RemoteHelper, Secret,
+    Clock, Config, CredentialError, CredentialSource, CredentialSpec, EditorError, EditorSession,
+    HelperError, HelperLauncher, MutationOutcome, PullOutcome, RemoteCapabilities, RemoteConfig,
+    RemoteHelper, RemoteMutation, Secret,
 };
-use dam_domain::{Categories, Date, Timestamp};
+use dam_domain::{Categories, Date, Field, Kind, Timestamp};
 use jiff::civil::date;
 
 use crate::context::{Context, RefusingEditor};
@@ -69,54 +69,47 @@ impl CredentialSource for NoCredentials {
 /// A helper that accepts every task, pulls the scripted objects once, and reports every push as ok.
 #[derive(Debug)]
 pub struct EchoHelper {
-    pub pulled: PullResponse,
+    pub pulled: PullOutcome,
 }
 impl RemoteHelper for EchoHelper {
-    fn capabilities(&mut self) -> Result<Capabilities, HelperError> {
-        Ok(Capabilities {
-            protocol: 1,
-            kinds: vec!["task".into()],
+    fn capabilities(&mut self) -> Result<RemoteCapabilities, HelperError> {
+        Ok(RemoteCapabilities {
+            kinds: vec![Kind::Task],
             fields: vec![
-                "subject".into(),
-                "body".into(),
-                "path".into(),
-                "labels".into(),
-                "done".into(),
-                "priority".into(),
-                "due".into(),
+                Field::Subject,
+                Field::Body,
+                Field::Path,
+                Field::Labels,
+                Field::Done,
+                Field::Priority,
+                Field::Due,
             ],
             credentials: vec![],
             incremental: false,
         })
     }
-    fn pull(&mut self, _: Option<&str>) -> Result<PullResponse, HelperError> {
-        Ok(std::mem::replace(
-            &mut self.pulled,
-            PullResponse {
-                objects: vec![],
-                removed: vec![],
-                sync: None,
-            },
-        ))
+    fn pull(&mut self, _: Option<&str>) -> Result<PullOutcome, HelperError> {
+        Ok(std::mem::take(&mut self.pulled))
     }
-    fn push(&mut self, mutations: Vec<Mutation>) -> Result<PushResponse, HelperError> {
-        Ok(PushResponse {
-            results: mutations
-                .iter()
-                .map(|m| MutationResult {
-                    oid: m.oid.clone(),
-                    ok: true,
-                    remote_id: Some(format!("r-{}", &m.oid[..4])),
-                    why: None,
-                })
-                .collect(),
-        })
+    fn push(
+        &mut self,
+        mutations: Vec<RemoteMutation>,
+    ) -> Result<Vec<MutationOutcome>, HelperError> {
+        Ok(mutations
+            .iter()
+            .map(|m| MutationOutcome {
+                oid: m.oid.clone(),
+                ok: true,
+                remote_id: Some(format!("r-{}", &m.oid.as_str()[..4])),
+                why: None,
+            })
+            .collect())
     }
 }
 
 #[derive(Debug)]
 pub struct EchoLauncher {
-    pub pulled: RefCell<Option<PullResponse>>,
+    pub pulled: RefCell<Option<PullOutcome>>,
 }
 impl HelperLauncher for EchoLauncher {
     fn launch(
@@ -125,11 +118,7 @@ impl HelperLauncher for EchoLauncher {
         _: &[(String, Secret)],
     ) -> Result<Box<dyn RemoteHelper>, HelperError> {
         Ok(Box::new(EchoHelper {
-            pulled: self.pulled.borrow_mut().take().unwrap_or(PullResponse {
-                objects: vec![],
-                removed: vec![],
-                sync: None,
-            }),
+            pulled: self.pulled.borrow_mut().take().unwrap_or_default(),
         }))
     }
 }

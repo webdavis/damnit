@@ -3,11 +3,10 @@ use jiff::civil::date;
 use super::tests::{config, launcher, remote};
 use super::*;
 use crate::ports::Repositories;
+use crate::remote::{IncomingObject, PullOutcome};
 use crate::testing::prelude::*;
 use crate::testing::{FixedClock, FixedRandom, MemoryStore, NoCredentials, oid};
-use crate::wire::to_wire;
 use dam_domain::{Event, Kind, Object, Task, When};
-use dam_protocol::PullResponse;
 
 #[test]
 fn a_kind_change_upstream_keeps_ours_and_raises_a_notice() {
@@ -15,20 +14,19 @@ fn a_kind_change_upstream_keeps_ours_and_raises_a_notice() {
     let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "mine"))).unwrap();
     store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
-    let mut theirs = to_wire(
-        &Object::Event(Event::new(
+    let theirs = IncomingObject {
+        remote_id: "r1".into(),
+        object: Object::Event(Event::new(
             oid(1),
             "theirs",
             When::Day(date(2026, 1, 1)),
             When::Day(date(2026, 1, 2)),
         )),
-        Some("r1".into()),
-    );
-    theirs.oid = String::new();
-    let l = launcher(PullResponse {
+    };
+    let l = launcher(PullOutcome {
         objects: vec![theirs],
         removed: vec![],
-        sync: None,
+        ..PullOutcome::default()
     });
     let reports = pull(
         repos,
@@ -61,20 +59,19 @@ fn a_kind_change_is_noticed_once_however_often_it_is_pulled() {
     let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "mine"))).unwrap();
     store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
-    let mut theirs = to_wire(
-        &Object::Event(Event::new(
+    let theirs = IncomingObject {
+        remote_id: "r1".into(),
+        object: Object::Event(Event::new(
             oid(1),
             "theirs",
             When::Day(date(2026, 1, 1)),
             When::Day(date(2026, 1, 2)),
         )),
-        Some("r1".into()),
-    );
-    theirs.oid = String::new();
-    let l = launcher(PullResponse {
+    };
+    let l = launcher(PullOutcome {
         objects: vec![theirs],
         removed: vec![],
-        sync: None,
+        ..PullOutcome::default()
     });
     for _ in 0..2 {
         pull(
