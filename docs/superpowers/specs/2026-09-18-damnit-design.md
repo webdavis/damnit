@@ -448,6 +448,8 @@ included. No crate depends on anything outside this workspace except published c
 - A capacity or scheduling model over free windows; the data for it is present, the logic is not
 - Comments and attachments on tasks
 - Assignees and shared projects
+- Automatic retry or backoff after a rate limit. A helper reports the rate limit and the retry time
+  the remote named, `dam` stops the push without marking anything pushed, and the operator retries.
 
 ## Decisions recorded
 

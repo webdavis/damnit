@@ -97,3 +97,43 @@ fn a_huge_error_body_is_bounded_to_one_short_line() {
     assert!(!body.contains('\n'), "a stored notice stays one line");
     assert!(body.ends_with('…'), "the cut is marked: {body:?}");
 }
+
+/// Todoist answers 429 with a `Retry-After` header when it is rate limiting,
+/// and dam has to be able to tell that apart from any other refusal.
+#[test]
+fn a_rate_limit_is_its_own_outcome_and_carries_the_retry_time() {
+    let server = loopback::serve_with(|seen| {
+        let reply = loopback::Reply::new(
+            429,
+            serde_json::json!({"error": "Rate limit exceeded", "error_extra": {"retry_after": 30}}),
+        );
+        if seen.path == "/with-header" {
+            reply.with_header("Retry-After", "30")
+        } else {
+            reply
+        }
+    });
+    let api = TodoistApi::new(&server.base, "tok");
+
+    let with = api
+        .post("/with-header", &serde_json::json!({}))
+        .unwrap_err();
+    assert_eq!(
+        with.retry_after(),
+        Some(std::time::Duration::from_secs(30)),
+        "{with:?}"
+    );
+    assert!(matches!(with, ApiError::RateLimited { .. }), "{with:?}");
+    assert!(with.to_string().contains("30s"), "{with}");
+
+    let without = api.post("/no-header", &serde_json::json!({})).unwrap_err();
+    assert!(
+        matches!(without, ApiError::RateLimited { .. }),
+        "{without:?}"
+    );
+    assert_eq!(without.retry_after(), None);
+    assert!(
+        without.to_string().contains("rate limit"),
+        "the reason is named even with no retry time: {without}"
+    );
+}

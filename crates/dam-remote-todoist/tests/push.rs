@@ -326,3 +326,28 @@ fn a_hostile_remote_id_is_refused_and_never_reaches_a_request() {
         "only the opening read left the helper"
     );
 }
+
+/// A rate limit is not one mutation's problem. Reporting it per mutation would
+/// leave dam marking the rest of the batch pushed while Todoist took none of
+/// it, so the push stops and says how long to wait.
+#[test]
+fn a_rate_limit_stops_the_push_and_names_the_retry_time() {
+    let server = loopback::serve_with(|seen| {
+        if seen.path == "/sync" && seen.body.get("commands").is_none() {
+            return loopback::Reply::new(200, sync_body());
+        }
+        loopback::Reply::new(429, serde_json::json!({"error": "Rate limit exceeded"}))
+            .with_header("Retry-After", "42")
+    });
+    let api = TodoistApi::new(&server.base, "tok");
+    let mutations = vec![Mutation {
+        op: "create".into(),
+        oid: "1".repeat(40),
+        remote_id: None,
+        object: Some(task(&"1".repeat(40), "Work/", "eggs", false)),
+        fields: vec![],
+    }];
+    let why = push(&api, mutations).unwrap_err();
+    assert!(why.contains("rate limiting"), "{why}");
+    assert!(why.contains("42s"), "{why}");
+}

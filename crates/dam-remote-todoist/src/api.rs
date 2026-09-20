@@ -1,4 +1,5 @@
 use std::fmt;
+use std::time::Duration;
 
 use serde::Deserialize;
 
@@ -11,15 +12,49 @@ pub const MAX_ERROR_BODY: usize = 500;
 
 #[derive(Debug)]
 pub enum ApiError {
-    Http { status: u16, body: String },
+    Http {
+        status: u16,
+        body: String,
+    },
+    /// Todoist is rate limiting this account. `retry_after` is its
+    /// `Retry-After` header when it sent one.
+    RateLimited {
+        retry_after: Option<Duration>,
+        body: String,
+    },
     Transport(String),
     Decode(String),
+}
+
+impl ApiError {
+    /// How long Todoist asked the caller to wait, when it said.
+    pub fn retry_after(&self) -> Option<Duration> {
+        match self {
+            ApiError::RateLimited { retry_after, .. } => *retry_after,
+            _ => None,
+        }
+    }
 }
 
 impl fmt::Display for ApiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ApiError::Http { status, body } => write!(f, "Todoist answered {status}: {body}"),
+            ApiError::RateLimited {
+                retry_after: Some(d),
+                ..
+            } => write!(
+                f,
+                "Todoist is rate limiting this account; retry after {}s",
+                d.as_secs()
+            ),
+            ApiError::RateLimited {
+                retry_after: None,
+                body,
+            } => write!(
+                f,
+                "Todoist is rate limiting this account and named no retry time: {body}"
+            ),
             ApiError::Transport(s) => write!(f, "reaching Todoist: {s}"),
             ApiError::Decode(s) => write!(f, "reading Todoist's answer: {s}"),
         }
@@ -239,12 +274,27 @@ fn bounded(text: &str) -> String {
     }
 }
 
+/// Todoist's status for a rate limit.
+const TOO_MANY_REQUESTS: u16 = 429;
+
 fn read_json(response: ureq::http::Response<ureq::Body>) -> Result<serde_json::Value, ApiError> {
     let status = response.status().as_u16();
+    let retry_after = response
+        .headers()
+        .get("retry-after")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.trim().parse().ok())
+        .map(Duration::from_secs);
     let text = response
         .into_body()
         .read_to_string()
         .map_err(|e| ApiError::Transport(e.to_string()))?;
+    if status == TOO_MANY_REQUESTS {
+        return Err(ApiError::RateLimited {
+            retry_after,
+            body: bounded(&text),
+        });
+    }
     if !(200..300).contains(&status) {
         return Err(ApiError::Http {
             status,
