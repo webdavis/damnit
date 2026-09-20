@@ -9,6 +9,8 @@ pub struct Path(String);
 pub enum PathError {
     EmptySegment,
     BadCharacter(char),
+    /// `.` or `..`: a step through the tree rather than a name in it.
+    RelativeSegment,
 }
 
 impl Path {
@@ -25,6 +27,9 @@ impl Path {
         for segment in trimmed.split('/') {
             if segment.is_empty() {
                 return Err(PathError::EmptySegment);
+            }
+            if segment == "." || segment == ".." {
+                return Err(PathError::RelativeSegment);
             }
             out.push_str(segment);
             out.push('/');
@@ -50,6 +55,9 @@ impl Path {
     pub fn join(&self, segment: &str) -> Result<Path, PathError> {
         if segment.is_empty() {
             return Err(PathError::EmptySegment);
+        }
+        if segment == "." || segment == ".." {
+            return Err(PathError::RelativeSegment);
         }
         if let Some(bad) = segment.chars().find(|c| *c == '/') {
             return Err(PathError::BadCharacter(bad));
@@ -77,6 +85,7 @@ impl fmt::Display for PathError {
         match self {
             PathError::EmptySegment => f.write_str("a path segment cannot be empty"),
             PathError::BadCharacter(c) => write!(f, "a path segment cannot hold {c:?}"),
+            PathError::RelativeSegment => f.write_str("a path segment cannot be \".\" or \"..\""),
         }
     }
 }
@@ -108,6 +117,27 @@ mod tests {
     #[test]
     fn parse_refuses_an_empty_segment() {
         assert_eq!(Path::parse("a//b"), Err(PathError::EmptySegment));
+    }
+
+    /// `.` and `..` read as instructions rather than names, so `parent` and
+    /// `is_within` would answer questions the segments do not mean: without
+    /// this, `a/../b` reports itself inside `a/`.
+    #[test]
+    fn parse_refuses_a_relative_segment() {
+        for text in ["a/../b", "a/./b", "..", ".", "../a", "./a", "a/..", "a/."] {
+            assert_eq!(
+                Path::parse(text),
+                Err(PathError::RelativeSegment),
+                "{text:?} parsed"
+            );
+        }
+    }
+
+    #[test]
+    fn join_refuses_a_relative_segment() {
+        let a = Path::parse("a").unwrap();
+        assert_eq!(a.join(".."), Err(PathError::RelativeSegment));
+        assert_eq!(a.join("."), Err(PathError::RelativeSegment));
     }
 
     #[test]
