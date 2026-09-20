@@ -251,8 +251,8 @@ Saved filters live in config and run by name:
 query = "due:today | overdue"
 ```
 
-Every read command takes `--json` and prints one document per line. This is the interface the
-clients use.
+Every read command takes `--json` and prints one JSON document on stdout. This is the interface
+the clients use.
 
 ## Remotes and helpers
 
