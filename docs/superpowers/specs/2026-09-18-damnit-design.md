@@ -331,6 +331,11 @@ package (`dam-remote-todoist`, `dam-remote-gcal`), separate from `damnit`, which
 `dam` binary. `cargo install --git <url> damnit` and `cargo install --git <url> dam-remote-todoist`
 are two separate installs.
 
+`dam-remote-todoist` reads one environment variable of its own, `DAM_TODOIST_BASE_URL`, which
+points it at a test server instead of Todoist. It accepts only `http://127.0.0.1:<port>` or
+`http://localhost:<port>` and refuses anything else, so the variable cannot send the bearer token
+to another host.
+
 A native remote, `dam-remote-https` against a server that speaks this protocol, is a later
 helper and out of scope here.
 

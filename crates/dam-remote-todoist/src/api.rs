@@ -158,8 +158,10 @@ impl TodoistApi {
                 "DAM_TODOIST_API_TOKEN is not set; declare api_token under [remote.todoist]"
                     .to_string()
             })?;
-        let base =
-            std::env::var("DAM_TODOIST_BASE_URL").unwrap_or_else(|_| PRODUCTION_BASE.to_string());
+        let base = match std::env::var("DAM_TODOIST_BASE_URL") {
+            Ok(value) => checked_base(&value)?,
+            Err(_) => PRODUCTION_BASE.to_string(),
+        };
         Ok(TodoistApi::new(&base, &token))
     }
 
@@ -194,6 +196,29 @@ impl TodoistApi {
     }
 }
 
+/// `DAM_TODOIST_BASE_URL` is a test seam. Only a loopback address is accepted,
+/// so the variable cannot send the bearer token to another host.
+fn checked_base(value: &str) -> Result<String, String> {
+    let refused = || {
+        format!(
+            "DAM_TODOIST_BASE_URL is a test seam and must be http://127.0.0.1:<port> or \
+             http://localhost:<port>, not {value:?}"
+        )
+    };
+    let base = value.strip_suffix('/').unwrap_or(value);
+    let (host, port) = base
+        .strip_prefix("http://")
+        .and_then(|rest| rest.rsplit_once(':'))
+        .ok_or_else(refused)?;
+    if !matches!(host, "127.0.0.1" | "localhost")
+        || port.is_empty()
+        || !port.chars().all(|c| c.is_ascii_digit())
+    {
+        return Err(refused());
+    }
+    Ok(base.to_string())
+}
+
 fn read_json(response: ureq::http::Response<ureq::Body>) -> Result<serde_json::Value, ApiError> {
     let status = response.status().as_u16();
     let text = response
@@ -212,6 +237,31 @@ fn read_json(response: ureq::http::Response<ureq::Body>) -> Result<serde_json::V
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_base_url_seam_accepts_a_loopback_address_and_nothing_else() {
+        assert_eq!(
+            checked_base("http://127.0.0.1:8080").unwrap(),
+            "http://127.0.0.1:8080"
+        );
+        assert_eq!(
+            checked_base("http://localhost:8080/").unwrap(),
+            "http://localhost:8080"
+        );
+        for refused in [
+            "https://api.todoist.com/api/v1",
+            "http://evil.test:8080",
+            "http://127.0.0.1.evil.test:8080",
+            "http://user@127.0.0.1:8080",
+            "http://localhost:8080@evil.test",
+            "http://127.0.0.1",
+            "http://127.0.0.1:",
+            "https://127.0.0.1:8080",
+            "",
+        ] {
+            assert!(checked_base(refused).is_err(), "{refused}");
+        }
+    }
 
     #[test]
     fn the_api_never_debug_prints_its_token() {
