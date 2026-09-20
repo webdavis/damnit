@@ -18,7 +18,8 @@ pub enum Request {
 /// Deciding by which key is present, instead of by which variant happens to
 /// parse first, also lets a helper add a field to its response without
 /// breaking `dam`. A response matching no variant's keys is an error rather
-/// than the last variant tried.
+/// than the last variant tried, and `error` is looked for first, so a
+/// response carrying both `error` and a shape's own keys reads as a failure.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(untagged)]
 pub enum Response {

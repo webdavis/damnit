@@ -9,7 +9,7 @@ mod sqlite;
 mod toml_config;
 mod wire;
 
-pub use cancel::{cancellation_requested, request_cancellation};
+pub use cancel::{cancellation_requested, catch_interrupts, request_cancellation};
 pub use clock::SystemClock;
 pub use credentials::ProcessCredentialSource;
 pub use edit_template::{parse_template, render_template};
