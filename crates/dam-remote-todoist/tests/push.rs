@@ -106,6 +106,32 @@ fn creates_updates_and_deletes_become_the_right_commands() {
     );
 }
 
+/// Reopening a completed task reaches Todoist as the Sync API's own inverse of
+/// `item_close`, so `dam edit <oid> --undone` pushes like any other update.
+#[test]
+fn clearing_done_becomes_the_uncomplete_command() {
+    let _guard = support::guard("clearing_done_becomes_the_uncomplete_command");
+    let (server, recorded) = todoist(sync_body(), None);
+    let api = TodoistApi::new(&server.base, "tok");
+    let response = push(
+        &api,
+        vec![with_fields(
+            mutation(
+                "update",
+                2,
+                Some("i:i1"),
+                Some(task(&"2".repeat(40), "Work/", "milk", false)),
+            ),
+            &["done"],
+        )],
+    )
+    .unwrap();
+    assert!(response.results[0].ok, "{:?}", response.results[0].why);
+    let recorded = recorded.lock().unwrap();
+    assert_eq!(recorded.command("item_uncomplete")["args"]["id"], "i1");
+    assert!(!recorded.types().contains(&"item_close"));
+}
+
 #[test]
 fn a_path_change_moves_the_task_through_the_move_command() {
     let _guard = support::guard("a_path_change_moves_the_task_through_the_move_command");

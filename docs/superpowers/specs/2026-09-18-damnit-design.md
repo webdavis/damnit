@@ -184,10 +184,18 @@ dam new "buy oat milk" [--path inbox/] [--due tomorrow] [-p 1] [--label errand]
 dam new --event "Dentist" --start 2026-09-25T14:00 --end 2026-09-25T15:00
 dam done <oid> [--force] [--interactive]
 dam edit <oid> --subject "..." --due ... -p ... --label ... --attach <event-oid>
+dam edit <oid> --undone
 dam edit <oid> -e
 dam mv <oid> <path>
 dam rm <oid>
 ```
+
+`dam edit <oid> --undone` reopens a completed task. It is a flag on `edit` rather than a verb of
+its own, because `done` is a field like any other and the flag sits beside `--no-due`,
+`--no-deadline`, `--no-recurrence` and `--detach`, which already pair a clearing flag with the flag
+that sets the field. Reopening records one ordinary working change, op `update` with `done` among
+its fields, so it stages, commits and pushes the way every other edit does; the Todoist helper
+sends it as the Sync API's `item_uncomplete`. A task that is not completed is refused, naming it.
 
 Every flag on `edit` is structured and cannot be malformed. `-e` opens the object in `$EDITOR` as a
 commented template; on save `dam` parses it, and a parse failure names the problem and reopens with

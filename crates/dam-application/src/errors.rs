@@ -14,6 +14,7 @@ pub enum Refusal {
     NoSuchObject(String),
     NoSuchRemote(String),
     NotATask(Oid),
+    NotCompleted(Oid),
     DirtyOnPull { oid: Oid },
     UnresolvedConflicts(usize),
     MissingCredential { remote: String, name: String },
@@ -86,6 +87,11 @@ impl fmt::Display for Refusal {
             Refusal::NotATask(o) => {
                 write!(f, "{} is an event; events are not completed", o.short())
             }
+            Refusal::NotCompleted(o) => write!(
+                f,
+                "{} is not completed, so there is nothing to reopen",
+                o.short()
+            ),
             Refusal::DirtyOnPull { oid } => write!(
                 f,
                 "{} changed upstream and has uncommitted local changes; commit or reset it, then pull again",

@@ -113,6 +113,9 @@ pub(crate) struct EditArgs {
     pub(crate) deadline: Option<String>,
     #[arg(long)]
     pub(crate) no_deadline: bool,
+    /// Reopen a completed task.
+    #[arg(long)]
+    pub(crate) undone: bool,
     #[arg(long = "label")]
     pub(crate) labels: Vec<String>,
     #[arg(long = "unlabel")]
@@ -256,6 +259,15 @@ mod tests {
         assert!(Cli::try_parse_from(["dam", "resolve", "abc", "--ours"]).is_ok());
         assert!(Cli::try_parse_from(["dam", "resolve", "abc"]).is_err());
         assert!(Cli::try_parse_from(["dam", "resolve", "abc", "--ours", "--theirs"]).is_err());
+    }
+
+    #[test]
+    fn edit_takes_undone_beside_the_other_clearing_flags() {
+        let cli = Cli::try_parse_from(["dam", "edit", "abcd", "--undone"]).unwrap();
+        match cli.command {
+            Command::Edit(a) => assert!(a.undone),
+            _ => panic!("wrong command"),
+        }
     }
 
     #[test]

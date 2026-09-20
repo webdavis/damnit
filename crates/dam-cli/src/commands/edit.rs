@@ -43,6 +43,7 @@ fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
         (None, true) => Some(None),
         (None, false) => None,
     };
+    f.undone = args.undone;
     f.add_labels = args.labels;
     f.remove_labels = args.unlabels;
     f.add_depends = args
@@ -139,6 +140,7 @@ mod tests {
             no_due: false,
             deadline: None,
             no_deadline: false,
+            undone: false,
             labels: vec![],
             unlabels: vec![],
             depends: vec![],
@@ -264,5 +266,72 @@ mod tests {
         )
         .unwrap_err();
         assert!(matches!(err, CliError::Usage(_)));
+    }
+
+    #[test]
+    fn undone_reopens_a_completed_task_as_one_update_naming_done() {
+        let mut ctx = context();
+        let mut task = Task::new(oid(1), "milk");
+        task.done = true;
+        ctx.store.put(&Object::Task(task)).unwrap();
+        dam_application::add(ctx.store.as_ref(), ctx.store.as_ref(), &[oid(1)]).unwrap();
+        dam_application::commit(
+            ctx.store.as_ref(),
+            ctx.store.as_ref(),
+            ctx.clock.as_ref(),
+            ctx.random.as_ref(),
+            "done",
+        )
+        .unwrap();
+        run(
+            &mut ctx,
+            EditArgs {
+                undone: true,
+                ..args(&oid(1))
+            },
+        )
+        .unwrap();
+        assert!(
+            !ctx.store
+                .get(&oid(1))
+                .unwrap()
+                .unwrap()
+                .as_task()
+                .unwrap()
+                .done
+        );
+        let changes = dam_application::diff_working(
+            ctx.store.as_ref(),
+            ctx.store.as_ref(),
+            ctx.store.as_ref(),
+        )
+        .unwrap();
+        assert_eq!(changes.len(), 1);
+        assert_eq!(changes[0].op, dam_domain::Op::Update);
+        assert_eq!(
+            dam_domain::changed_fields(
+                changes[0].before.as_ref().unwrap(),
+                changes[0].after.as_ref().unwrap()
+            ),
+            vec![dam_domain::Field::Done]
+        );
+    }
+
+    #[test]
+    fn undone_on_an_open_task_is_refused_by_dams_own_rule() {
+        let mut ctx = context();
+        ctx.store
+            .put(&Object::Task(Task::new(oid(1), "milk")))
+            .unwrap();
+        let err = run(
+            &mut ctx,
+            EditArgs {
+                undone: true,
+                ..args(&oid(1))
+            },
+        )
+        .unwrap_err();
+        assert_eq!(err.exit_code(), 4);
+        assert!(err.to_string().contains(oid(1).short()), "{err}");
     }
 }

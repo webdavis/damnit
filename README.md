@@ -42,6 +42,8 @@ the helper and leaving the store as it was.
     dam commit -m "morning triage"
     dam push
 
+`dam edit <oid> --undone` reopens a task you completed by mistake.
+
 `dam status`, `dam diff`, `dam log` and `dam show` read the way their git namesakes do. `--json`
 and `--toon` on any read give a program the same answer.
 
