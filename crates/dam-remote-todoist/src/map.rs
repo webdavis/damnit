@@ -153,5 +153,3 @@ pub use wire::{item_to_wire, project_to_wire, section_to_wire};
 
 #[cfg(test)]
 mod tests;
-#[cfg(test)]
-mod tests_wire;

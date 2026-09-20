@@ -1,3 +1,5 @@
+mod wire;
+
 use super::*;
 use crate::api::{Due, Item, Project, Section, SyncResponse};
 

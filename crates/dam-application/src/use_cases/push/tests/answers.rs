@@ -1,8 +1,8 @@
 //! What dam makes of the helper's answers: a reported failure, no answer
 //! at all, and answers about mutations dam did not send.
 
-use super::tests::{committed_task, config, launcher};
-use super::*;
+use super::super::*;
+use super::{committed_task, config, launcher};
 use crate::ports::Repositories;
 use crate::remote::MutationOutcome;
 use crate::testing::prelude::*;

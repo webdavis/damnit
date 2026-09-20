@@ -1,3 +1,6 @@
+mod kind_change;
+mod removals_and_notices;
+
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -17,7 +20,7 @@ use crate::use_cases::commit::commit;
 use crate::use_cases::stage::add_all;
 use dam_domain::{Object, Task};
 
-/// Shared with `tests_removals_and_notices`, split out by concern to keep
+/// Shared with `removals_and_notices`, split out by concern to keep
 /// each file under the size cap.
 pub(super) fn remote() -> RemoteName {
     RemoteName("todoist".into())

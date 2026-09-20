@@ -170,7 +170,3 @@ use mutations::{changes_to_send, mutation_for};
 
 #[cfg(test)]
 mod tests;
-#[cfg(test)]
-mod tests_answers;
-#[cfg(test)]
-mod tests_refusals;

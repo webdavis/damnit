@@ -1,7 +1,7 @@
 //! A Todoist object as the wire object dam reads, and the identity it keeps.
 
-use super::identity::RemoteIdError;
-use super::*;
+use super::super::identity::RemoteIdError;
+use super::super::*;
 use crate::api::{Due, Item, Project, Section, SyncResponse};
 
 fn sync() -> SyncResponse {

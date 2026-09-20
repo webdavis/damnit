@@ -3,8 +3,8 @@ use std::rc::Rc;
 
 use jiff::civil::date;
 
-use super::tests::{config, incoming, launcher, remote};
-use super::*;
+use super::super::*;
+use super::{config, incoming, launcher, remote};
 use crate::ports::Repositories;
 use crate::remote::{IncomingObject, PullOutcome, RejectedObject};
 use crate::testing::prelude::*;
