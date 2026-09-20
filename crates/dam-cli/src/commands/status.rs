@@ -1,4 +1,4 @@
-use dam_application::{Conflict, Notice, diff_staged, diff_working, status};
+use dam_application::{Conflict, CredentialSpec, Notice, diff_staged, diff_working, status};
 use dam_domain::{Change, Op, changed_fields};
 
 use crate::args::DiffArgs;
@@ -33,6 +33,9 @@ pub fn run_status(ctx: &mut Context) -> Result<Report, CliError> {
     if human.is_empty() {
         human.push("nothing staged, nothing changed".to_string());
     }
+    if let Some(warning) = literal_credential_warning(ctx) {
+        human.insert(0, warning);
+    }
     Ok(Report {
         human: human.join("\n"),
         data: serde_json::json!({
@@ -59,6 +62,29 @@ pub fn run_diff(ctx: &mut Context, args: DiffArgs) -> Result<Report, CliError> {
             .join("\n"),
         data: serde_json::json!({ "changes": changes.iter().map(change_json).collect::<Vec<_>>() }),
     })
+}
+
+/// One line naming every credential held as a value in the config file, which
+/// the design spec has `dam status` warn about.
+fn literal_credential_warning(ctx: &Context) -> Option<String> {
+    let literals: Vec<String> = ctx
+        .config
+        .remotes
+        .iter()
+        .flat_map(|r| {
+            r.credentials.iter().filter_map(move |c| match c {
+                CredentialSpec::Literal { name, .. } => Some(format!("{}.{name}", r.name.0)),
+                _ => None,
+            })
+        })
+        .collect();
+    if literals.is_empty() {
+        return None;
+    }
+    Some(format!(
+        "warning: a credential is a value in the config file: {}; prefer <name>_command or <name>_env",
+        literals.join(", ")
+    ))
 }
 
 /// Pushes a titled block of already-indented lines, skipping an empty section.
@@ -198,7 +224,7 @@ mod tests {
     use crate::commands::commit::run_commit;
     use crate::commands::stage::run_add;
     use crate::testing::context;
-    use dam_application::{RemoteConfig, RemoteName};
+    use dam_application::{CredentialSpec, RemoteConfig, RemoteName};
     use dam_domain::{Object, Oid, Task};
 
     fn oid(b: u8) -> Oid {
@@ -237,6 +263,47 @@ mod tests {
         assert_eq!(report.data["staged"].as_array().unwrap().len(), 1);
         assert_eq!(report.data["unstaged"].as_array().unwrap().len(), 1);
         assert_eq!(report.data["notices"].as_array().unwrap().len(), 1);
+    }
+
+    fn remote_with(credentials: Vec<CredentialSpec>) -> RemoteConfig {
+        RemoteConfig {
+            name: RemoteName("todoist".into()),
+            helper: "todoist".into(),
+            url: "todoist::".into(),
+            credentials,
+            stale: None,
+            deadline: None,
+            path: None,
+        }
+    }
+
+    #[test]
+    fn status_warns_once_when_a_credential_is_a_value_in_the_config_file() {
+        let mut ctx = context();
+        ctx.config.remotes = vec![remote_with(vec![CredentialSpec::Literal {
+            name: "api_token".into(),
+            value: "SUPERSECRETTOKEN".into(),
+        }])];
+        let report = super::run_status(&mut ctx).unwrap();
+        let warnings: Vec<&str> = report
+            .human
+            .lines()
+            .filter(|l| l.starts_with("warning:"))
+            .collect();
+        assert_eq!(warnings.len(), 1, "{}", report.human);
+        assert!(warnings[0].contains("todoist.api_token"), "{}", warnings[0]);
+        assert!(!report.human.contains("SUPERSECRETTOKEN"));
+    }
+
+    #[test]
+    fn status_does_not_warn_when_no_credential_is_a_value_in_the_config_file() {
+        let mut ctx = context();
+        ctx.config.remotes = vec![remote_with(vec![CredentialSpec::Env {
+            name: "api_token".into(),
+            var: "DAM_TODOIST_API_TOKEN".into(),
+        }])];
+        let report = super::run_status(&mut ctx).unwrap();
+        assert!(!report.human.contains("warning:"), "{}", report.human);
     }
 
     #[test]
