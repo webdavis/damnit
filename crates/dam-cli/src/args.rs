@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand};
+use dam_domain::{ChildDisposition, DependencyDisposition};
 
 #[derive(Parser, Debug)]
 #[command(
@@ -89,10 +90,49 @@ pub(crate) struct NewArgs {
 #[derive(Args, Debug)]
 pub(crate) struct DoneArgs {
     pub(crate) oid: String,
+    /// Complete it even though something it waits on is still open.
     #[arg(long)]
     pub(crate) force: bool,
+    /// Ask what happens to the open children and dependencies.
     #[arg(long, requires = "force")]
     pub(crate) interactive: bool,
+    /// What happens to open children, instead of asking. Default: keep.
+    #[arg(
+        long,
+        requires = "force",
+        value_name = "up|keep|into:<name>",
+        value_parser = child_disposition
+    )]
+    pub(crate) children: Option<ChildDisposition>,
+    /// What happens to open dependency links, instead of asking. Default: keep.
+    #[arg(
+        long,
+        requires = "force",
+        value_name = "drop|keep",
+        value_parser = dependency_disposition
+    )]
+    pub(crate) depends: Option<DependencyDisposition>,
+}
+
+/// `--children`: the words for the three answers the prompt offers, with the
+/// group's name carried inline so the flag needs no second value.
+fn child_disposition(text: &str) -> Result<ChildDisposition, String> {
+    match text.split_once(':') {
+        Some(("into", name)) if !name.is_empty() => Ok(ChildDisposition::Into(name.to_string())),
+        _ => match text {
+            "up" => Ok(ChildDisposition::Up),
+            "keep" => Ok(ChildDisposition::Keep),
+            _ => Err("one of up, keep, into:<name>".to_string()),
+        },
+    }
+}
+
+fn dependency_disposition(text: &str) -> Result<DependencyDisposition, String> {
+    match text {
+        "drop" => Ok(DependencyDisposition::Drop),
+        "keep" => Ok(DependencyDisposition::Keep),
+        _ => Err("one of drop, keep".to_string()),
+    }
 }
 
 #[derive(Args, Debug)]
@@ -171,6 +211,7 @@ pub(crate) struct ResetArgs {
 
 #[derive(Args, Debug)]
 pub(crate) struct RestoreArgs {
+    /// The objects to set back, named in full or by oid prefix.
     #[arg(required = true)]
     pub(crate) oids: Vec<String>,
 }
@@ -235,6 +276,7 @@ pub(crate) struct ResolveArgs {
 mod tests {
     use super::*;
     use clap::Parser;
+    use dam_domain::{ChildDisposition, DependencyDisposition};
 
     #[test]
     fn new_with_flags_parses() {
@@ -276,6 +318,66 @@ mod tests {
             Command::Edit(a) => assert!(a.undone),
             _ => panic!("wrong command"),
         }
+    }
+
+    #[test]
+    fn each_disposition_word_parses_to_its_variant() {
+        let done = |args: &[&str]| {
+            let mut argv = vec!["dam", "done", "abcd", "--force"];
+            argv.extend_from_slice(args);
+            match Cli::try_parse_from(argv).unwrap().command {
+                Command::Done(a) => a,
+                _ => panic!("wrong command"),
+            }
+        };
+        assert_eq!(
+            done(&["--children", "up"]).children,
+            Some(ChildDisposition::Up)
+        );
+        assert_eq!(
+            done(&["--children", "keep"]).children,
+            Some(ChildDisposition::Keep)
+        );
+        assert_eq!(
+            done(&["--children", "into:leftovers"]).children,
+            Some(ChildDisposition::Into("leftovers".into()))
+        );
+        assert_eq!(
+            done(&["--depends", "drop"]).depends,
+            Some(DependencyDisposition::Drop)
+        );
+        assert_eq!(
+            done(&["--depends", "keep"]).depends,
+            Some(DependencyDisposition::Keep)
+        );
+        assert_eq!(done(&[]).children, None);
+        assert_eq!(done(&[]).depends, None);
+    }
+
+    /// clap renders an invalid value as the flag, the value and the accepted
+    /// set, and points at --help rather than printing a usage line.
+    #[test]
+    fn a_disposition_outside_the_set_is_a_usage_error_naming_the_accepted_words() {
+        for (bad, accepted) in [
+            (vec!["--children", "sideways"], "up, keep, into:<name>"),
+            (vec!["--children", "into:"], "up, keep, into:<name>"),
+            (vec!["--depends", "maybe"], "drop, keep"),
+        ] {
+            let mut argv = vec!["dam", "done", "abcd", "--force"];
+            argv.extend_from_slice(&bad);
+            let err = Cli::try_parse_from(argv).unwrap_err();
+            assert_eq!(err.exit_code(), 2, "{bad:?}");
+            let rendered = err.to_string();
+            assert!(rendered.contains(bad[0]), "{bad:?}: {rendered}");
+            assert!(rendered.contains(accepted), "{bad:?}: {rendered}");
+            assert!(rendered.contains("--help"), "{bad:?}: {rendered}");
+        }
+    }
+
+    #[test]
+    fn a_disposition_without_force_is_refused() {
+        assert!(Cli::try_parse_from(["dam", "done", "abcd", "--children", "keep"]).is_err());
+        assert!(Cli::try_parse_from(["dam", "done", "abcd", "--depends", "drop"]).is_err());
     }
 
     #[test]

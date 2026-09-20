@@ -11,7 +11,7 @@ mod use_cases;
 
 pub use config::{Config, ConfiguredDuration, CredentialSpec, FilterConfig, RemoteConfig};
 pub use credentials::resolve_credentials;
-pub use dam_domain::{Blocker, ChildDisposition, DependencyDisposition, Force};
+pub use dam_domain::{Blocker, ChildDisposition, DependencyDisposition, Dispositions, Force};
 pub use errors::{Refusal, UseCaseError};
 pub use merge::{kind_change, merge_fields};
 pub use ports::{
@@ -26,7 +26,7 @@ pub use remote::{
 };
 pub use secret::Secret;
 pub use use_cases::commit::{commit, log};
-pub use use_cases::complete::{CompletePlan, Completed, Dispositions, complete, plan_complete};
+pub use use_cases::complete::{CompletePlan, Completed, complete, plan_complete};
 pub use use_cases::edit::{EditFields, apply, edit};
 pub use use_cases::list::list;
 pub use use_cases::new_object::{NewEvent, NewTask, new_event, new_task};

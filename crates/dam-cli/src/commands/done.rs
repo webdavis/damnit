@@ -12,19 +12,13 @@ use crate::output::Report;
 pub(crate) fn run(ctx: &mut Context, args: DoneArgs) -> Result<Report, CliError> {
     let oid = resolve_oid(ctx.store.as_ref(), &args.oid)?;
     let plan = plan_complete(ctx.store.as_ref(), &oid)?;
-    let interactive = args.force && (args.interactive || ctx.config.done_interactive);
-    let (force, dispositions) = match (args.force, interactive, plan.blockers.is_empty()) {
-        (false, _, _) => (Force::No, None),
-        (true, false, _) | (true, true, true) => (Force::Yes, None),
-        (true, true, false) => (Force::Interactive, Some(ask(ctx, &plan.blockers)?)),
-    };
+    let force = force_for(ctx, &args, &plan.blockers)?;
     let outcome = complete(
         ctx.store.as_ref(),
         ctx.clock.as_ref(),
         ctx.random.as_ref(),
         &oid,
         force,
-        dispositions,
     )?;
     let human = match outcome {
         Completed::Done => "done".to_string(),
@@ -34,6 +28,32 @@ pub(crate) fn run(ctx: &mut Context, args: DoneArgs) -> Result<Report, CliError>
         data: serde_json::json!({ "oid": oid.to_string(), "result": human }),
         human,
     })
+}
+
+/// How far this invocation forces. A disposition flag answers the prompt
+/// without a terminal, so it is taken whatever `done.interactive` says; the
+/// flag that is absent takes the default the prompt would have offered.
+fn force_for(ctx: &Context, args: &DoneArgs, blockers: &[Blocker]) -> Result<Force, CliError> {
+    if !args.force {
+        return Ok(Force::No);
+    }
+    let given = match (&args.children, args.depends) {
+        (None, None) => None,
+        (children, dependencies) => Some(Dispositions {
+            children: children.clone().unwrap_or_default(),
+            dependencies: dependencies.unwrap_or_default(),
+        }),
+    };
+    if blockers.is_empty() {
+        return Ok(Force::Yes);
+    }
+    match given {
+        Some(d) => Ok(Force::With(d)),
+        None if args.interactive || ctx.config.done_interactive => {
+            Ok(Force::With(ask(ctx, blockers)?))
+        }
+        None => Ok(Force::Yes),
+    }
 }
 
 fn ask(ctx: &Context, blockers: &[Blocker]) -> Result<Dispositions, CliError> {
@@ -83,6 +103,7 @@ mod tests {
     use super::*;
     use crate::args::DoneArgs;
     use crate::testing::{ScriptedPrompt, context, machine_context};
+    use dam_application::{ChildDisposition, DependencyDisposition};
     use dam_domain::{Object, Oid, Path, Task};
     use std::cell::RefCell;
 
@@ -104,7 +125,20 @@ mod tests {
             oid: oid.as_str().into(),
             force,
             interactive,
+            children: None,
+            depends: None,
         }
+    }
+
+    /// A parent with one open child and one open dependency, so both halves of
+    /// the prompt have something to decide.
+    fn parent_child_and_dependency(ctx: &Context) {
+        parent_and_child(ctx);
+        let blocker = Task::new(oid(3), "blocker");
+        ctx.store.put(&Object::Task(blocker)).unwrap();
+        let mut parent = ctx.store.get(&oid(1)).unwrap().unwrap();
+        parent.base_mut().depends.push(oid(3));
+        ctx.store.put(&parent).unwrap();
     }
 
     #[test]
@@ -192,6 +226,92 @@ mod tests {
                 .as_task()
                 .unwrap()
                 .done
+        );
+    }
+
+    #[test]
+    fn dispositions_complete_a_blocked_parent_without_a_terminal() {
+        let mut ctx = machine_context();
+        parent_and_child(&ctx);
+        let report = run(
+            &mut ctx,
+            DoneArgs {
+                children: Some(ChildDisposition::Keep),
+                depends: Some(DependencyDisposition::Drop),
+                ..args(&oid(1), true, false)
+            },
+        )
+        .unwrap();
+        assert_eq!(report.human, "done");
+        assert!(
+            ctx.store
+                .get(&oid(1))
+                .unwrap()
+                .unwrap()
+                .as_task()
+                .unwrap()
+                .done
+        );
+        assert_eq!(
+            ctx.store
+                .get(&oid(2))
+                .unwrap()
+                .unwrap()
+                .base()
+                .path
+                .as_str(),
+            "p/c/",
+            "keep leaves the child where it is"
+        );
+    }
+
+    #[test]
+    fn a_disposition_flag_asks_nothing_even_when_config_says_interactive() {
+        let mut ctx = context();
+        ctx.config.done_interactive = true;
+        parent_and_child(&ctx);
+        // No scripted answer, so any question would come back cancelled.
+        ctx.prompt = Box::new(ScriptedPrompt {
+            choices: RefCell::new(vec![]),
+            texts: RefCell::new(vec![]),
+        });
+        run(
+            &mut ctx,
+            DoneArgs {
+                children: Some(ChildDisposition::Up),
+                ..args(&oid(1), true, false)
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            ctx.store
+                .get(&oid(2))
+                .unwrap()
+                .unwrap()
+                .base()
+                .path
+                .as_str(),
+            "c/"
+        );
+    }
+
+    #[test]
+    fn the_flag_that_is_absent_takes_the_default_the_prompt_would_have_offered() {
+        let mut ctx = machine_context();
+        parent_child_and_dependency(&ctx);
+        run(
+            &mut ctx,
+            DoneArgs {
+                children: Some(ChildDisposition::Up),
+                depends: None,
+                ..args(&oid(1), true, false)
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            ctx.store.get(&oid(1)).unwrap().unwrap().base().depends,
+            vec![oid(3)],
+            "the dependency default is keep, so the edge survives"
         );
     }
 }

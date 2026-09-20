@@ -1,6 +1,6 @@
 use dam_domain::{
-    Blocker, ChildDisposition, Date, DependencyDisposition, Force, Object, Oid, Path, Rule, Task,
-    When, blockers, roll_forward,
+    Blocker, ChildDisposition, Date, DependencyDisposition, Dispositions, Force, Object, Oid, Path,
+    Rule, Task, When, blockers, roll_forward,
 };
 
 use crate::errors::{Refusal, UseCaseError};
@@ -10,12 +10,6 @@ use crate::use_cases::subtree::move_subtree;
 pub struct CompletePlan {
     pub oid: Oid,
     pub blockers: Vec<Blocker>,
-}
-
-/// What the cli asks the user when `Force::Interactive` meets blockers.
-pub struct Dispositions {
-    pub children: ChildDisposition,
-    pub dependencies: DependencyDisposition,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -48,29 +42,26 @@ pub fn plan_complete(
     })
 }
 
-/// Step two: do it. `dispositions` is `None` unless the cli asked.
+/// Step two: do it. `force` carries the dispositions when the caller has them.
 pub fn complete(
     objects: &dyn ObjectRepository,
     clock: &dyn Clock,
     random: &dyn Randomness,
     oid: &Oid,
     force: Force,
-    dispositions: Option<Dispositions>,
 ) -> Result<Completed, UseCaseError> {
     let plan = plan_complete(objects, oid)?;
     if !plan.blockers.is_empty() {
-        match (force, dispositions) {
-            (Force::No, _) => {
+        match force {
+            Force::No => {
                 return Err(Refusal::Blocked {
                     oid: oid.clone(),
                     blockers: plan.blockers,
                 }
                 .into());
             }
-            (Force::Yes, _) | (Force::Interactive, None) => {}
-            (Force::Interactive, Some(d)) => {
-                apply_dispositions(objects, random, oid, &plan.blockers, d)?;
-            }
+            Force::Yes => {}
+            Force::With(d) => apply_dispositions(objects, random, oid, &plan.blockers, d)?,
         }
     }
     let mut task = load_task(objects, oid)?;

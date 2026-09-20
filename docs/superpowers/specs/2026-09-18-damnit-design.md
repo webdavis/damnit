@@ -141,6 +141,14 @@ The refusal lists the blockers. `--force` completes it anyway. `--force --intera
 `done.interactive = true` in config makes every `--force` ask, so the flag is the opt-in and the
 setting is the default.
 
+`--children up|keep|into:<name>` and `--depends drop|keep` give those same answers on the command
+line, one word per answer the prompt offers, with the group's name carried inline so `--children`
+needs no second value. Either flag turns the prompt off for that run whatever `done.interactive`
+says, which is what lets a client complete a blocked parent with no terminal at all, and the flag
+that is absent takes `keep`, the answer that disturbs least. `--force` on its own still asks when
+`done.interactive` is set. A word outside the set is a usage error, and either flag without
+`--force` is refused.
+
 ### Recurrence
 
 A rule has a frequency, an interval, optional by-day and by-month-day terms, an optional end, and one
@@ -183,6 +191,7 @@ file, and parses it back on save.
 dam new "buy oat milk" [--path inbox/] [--due tomorrow] [-p 1] [--label errand]
 dam new --event "Dentist" --start 2026-09-25T14:00 --end 2026-09-25T15:00
 dam done <oid> [--force] [--interactive]
+dam done <oid> --force --children up|keep|into:<name> --depends drop|keep
 dam edit <oid> --subject "..." --due ... -p ... --label ... --attach <event-oid>
 dam edit <oid> --undone
 dam edit <oid> -e
