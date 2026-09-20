@@ -7,8 +7,13 @@ use crate::{Kind, Oid, Path, Priority, Transparency};
 pub enum QueryError {
     Empty,
     Unexpected(String),
-    BadValue { key: String, value: String },
+    BadValue {
+        key: String,
+        value: String,
+    },
     Unclosed,
+    /// More nesting than `MAX_DEPTH`, refused rather than recursed into.
+    TooDeep,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -59,9 +64,15 @@ fn lex(text: &str) -> Vec<Tok> {
     out
 }
 
+/// How deep `(` and `!` may nest. The parser descends once per level, so an
+/// unbounded query would overflow the stack and abort the process instead of
+/// answering with an error.
+const MAX_DEPTH: usize = 64;
+
 struct Parser {
     toks: Vec<Tok>,
     at: usize,
+    depth: usize,
 }
 
 pub fn parse(text: &str) -> Result<Expr, QueryError> {
@@ -69,7 +80,11 @@ pub fn parse(text: &str) -> Result<Expr, QueryError> {
     if toks.is_empty() {
         return Err(QueryError::Empty);
     }
-    let mut p = Parser { toks, at: 0 };
+    let mut p = Parser {
+        toks,
+        at: 0,
+        depth: 0,
+    };
     let expr = p.or()?;
     match p.peek() {
         None => Ok(expr),
@@ -112,20 +127,34 @@ impl Parser {
     fn not(&mut self) -> Result<Expr, QueryError> {
         if self.peek() == Some(&Tok::Not) {
             self.next();
-            return Ok(Expr::Not(Box::new(self.not()?)));
+            return self.deeper(|p| Ok(Expr::Not(Box::new(p.not()?))));
         }
         self.atom()
     }
 
+    /// Runs one level of descent, refusing to go past `MAX_DEPTH`.
+    fn deeper(
+        &mut self,
+        inner: impl FnOnce(&mut Parser) -> Result<Expr, QueryError>,
+    ) -> Result<Expr, QueryError> {
+        if self.depth == MAX_DEPTH {
+            return Err(QueryError::TooDeep);
+        }
+        self.depth += 1;
+        let out = inner(self);
+        self.depth -= 1;
+        out
+    }
+
     fn atom(&mut self) -> Result<Expr, QueryError> {
         match self.next() {
-            Some(Tok::Open) => {
-                let inner = self.or()?;
-                match self.next() {
+            Some(Tok::Open) => self.deeper(|p| {
+                let inner = p.or()?;
+                match p.next() {
                     Some(Tok::Close) => Ok(inner),
                     _ => Err(QueryError::Unclosed),
                 }
-            }
+            }),
             Some(Tok::Word(w)) => term(&w).map(Expr::Term),
             Some(Tok::Close) => Err(QueryError::Unexpected(")".into())),
             Some(other) => Err(QueryError::Unexpected(format!("{other:?}"))),
@@ -219,6 +248,7 @@ impl fmt::Display for QueryError {
             QueryError::Unexpected(t) => write!(f, "unexpected {t} in query"),
             QueryError::BadValue { key, value } => write!(f, "{key}: cannot read {value:?}"),
             QueryError::Unclosed => f.write_str("a ( has no matching )"),
+            QueryError::TooDeep => write!(f, "the query nests deeper than {MAX_DEPTH}"),
         }
     }
 }

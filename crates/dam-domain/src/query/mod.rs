@@ -263,4 +263,20 @@ mod tests {
             Err(QueryError::Unexpected("end".into()))
         );
     }
+
+    /// The query is operator-controlled argv, so this is a refusal rather
+    /// than a defence, but a deep enough one used to abort the process.
+    #[test]
+    fn nesting_past_the_bound_is_refused_instead_of_recursed_into() {
+        let deep = format!("{}due:today{}", "(".repeat(200), ")".repeat(200));
+        assert_eq!(parse(&deep), Err(QueryError::TooDeep));
+        let negated = format!("{}due:today", "!".repeat(200));
+        assert_eq!(parse(&negated), Err(QueryError::TooDeep));
+    }
+
+    #[test]
+    fn nesting_up_to_the_bound_still_parses() {
+        let ok = format!("{}due:today{}", "(".repeat(64), ")".repeat(64));
+        assert!(parse(&ok).is_ok(), "64 levels should parse");
+    }
 }
