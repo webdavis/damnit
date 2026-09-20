@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt;
 use std::time::Duration;
 
@@ -176,6 +177,36 @@ pub struct Deadline {
     pub date: String,
 }
 
+/// What Todoist answers a write with: its verdict on each command by uuid, and
+/// the id it issued for each object a command created, by the placeholder that
+/// command used.
+#[derive(Debug, Default, Deserialize)]
+pub struct SyncWrite {
+    #[serde(default)]
+    pub sync_status: HashMap<String, serde_json::Value>,
+    #[serde(default)]
+    pub temp_id_mapping: HashMap<String, String>,
+}
+
+impl SyncWrite {
+    /// Whether Todoist executed the command with this uuid. A verdict is the
+    /// string `"ok"` or an error object; anything else, a missing verdict
+    /// included, is a failure rather than a silent success.
+    pub fn accepted(&self, uuid: &str) -> Result<(), String> {
+        match self.sync_status.get(uuid) {
+            Some(serde_json::Value::String(word)) if word == "ok" => Ok(()),
+            Some(serde_json::Value::Object(error)) => Err(bounded(
+                error
+                    .get("error")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or(&serde_json::Value::Object(error.clone()).to_string()),
+            )),
+            Some(other) => Err(bounded(&other.to_string())),
+            None => Err(format!("Todoist gave no verdict for command {uuid}")),
+        }
+    }
+}
+
 impl TodoistApi {
     pub fn new(base: &str, token: &str) -> TodoistApi {
         let config = ureq::Agent::config_builder()
@@ -211,6 +242,21 @@ impl TodoistApi {
         serde_json::from_value(value).map_err(|e| ApiError::Decode(e.to_string()))
     }
 
+    /// Sends write commands. The endpoint takes them as a form field holding a
+    /// JSON array, which is the shape the API documents for a write; the read
+    /// above is the endpoint's other, separate, shape.
+    pub fn sync_commands(&self, commands: &[serde_json::Value]) -> Result<SyncWrite, ApiError> {
+        let encoded = serde_json::Value::Array(commands.to_vec()).to_string();
+        let response = self
+            .agent
+            .post(format!("{}/sync", self.base))
+            .header("Authorization", &format!("Bearer {}", self.token.expose()))
+            .send_form([("commands", encoded.as_str())])
+            .map_err(|e| ApiError::Transport(e.to_string()))?;
+        let value = read_json(response)?;
+        serde_json::from_value(value).map_err(|e| ApiError::Decode(e.to_string()))
+    }
+
     pub fn post(
         &self,
         path: &str,
@@ -223,16 +269,6 @@ impl TodoistApi {
             .send_json(body)
             .map_err(|e| ApiError::Transport(e.to_string()))?;
         read_json(response)
-    }
-
-    pub fn delete(&self, path: &str) -> Result<(), ApiError> {
-        let response = self
-            .agent
-            .delete(format!("{}{path}", self.base))
-            .header("Authorization", &format!("Bearer {}", self.token.expose()))
-            .call()
-            .map_err(|e| ApiError::Transport(e.to_string()))?;
-        read_json(response).map(|_| ())
     }
 }
 

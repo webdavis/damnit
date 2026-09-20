@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use dam_domain::{Change, Object, Oid, Op, changed_fields, coalesce};
+use dam_domain::{Change, CommitId, Object, Oid, Op, changed_fields, coalesce};
 use dam_protocol::{Capabilities, Mutation, PushResponse};
 
 use crate::config::{Config, RemoteConfig};
@@ -9,6 +9,7 @@ use crate::ports::{
     CredentialSource, HelperLauncher, Notice, ObjectStore, RemoteHelper, RemoteName,
 };
 use crate::use_cases::connect::connect;
+use crate::use_cases::push::idempotency::{Origin, key};
 use crate::wire::to_wire;
 
 #[derive(Debug)]
@@ -66,8 +67,8 @@ fn push_one(
     let mut after_by_oid: BTreeMap<String, Object> = BTreeMap::new();
     let mut deletes: BTreeSet<String> = BTreeSet::new();
     let mut skipped = 0;
-    for change in changes.into_values() {
-        match mutation_for(store, caps, remote, &change)? {
+    for (change, origin) in changes.into_values() {
+        match mutation_for(store, caps, remote, &change, origin.as_ref())? {
             Some(mutation) => {
                 if mutation.op == "delete" {
                     deletes.insert(mutation.oid.clone());
@@ -157,37 +158,48 @@ fn push_one(
     })
 }
 
-/// Every unpushed commit's changes, coalesced per oid, plus a synthetic
-/// update from the committed view for each oid still owed a retry. A retry
-/// replaces any commit change on the same oid: it always resends the last
-/// committed state, not whatever the stale commit change happened to be.
+/// Every unpushed commit's changes, coalesced per oid and paired with the
+/// commit the last of them came from, plus a synthetic update from the
+/// committed view for each oid owed a retry that no unpushed commit already
+/// covers.
+///
+/// A coalesced commit change already ends at the committed state, so leaving
+/// it in place resends exactly what the synthetic one would have, and keeps
+/// the commit that names it. That name is what lets a resend after an
+/// interrupted push carry the key the interrupted one carried.
 fn changes_to_send(
     store: &dyn ObjectStore,
     remote: &RemoteConfig,
     unpushed: &[dam_domain::CommitRecord],
-) -> Result<BTreeMap<Oid, Change>, UseCaseError> {
-    let mut changes: BTreeMap<Oid, Change> = BTreeMap::new();
+) -> Result<BTreeMap<Oid, (Change, Option<CommitId>)>, UseCaseError> {
+    let mut changes: BTreeMap<Oid, (Change, Option<CommitId>)> = BTreeMap::new();
     for record in unpushed {
         for change in &record.changes {
             let merged = match changes.remove(&change.oid) {
-                Some(previous) => coalesce(previous, change.clone()),
+                Some((previous, _)) => coalesce(previous, change.clone()),
                 None => Some(change.clone()),
             };
             if let Some(c) = merged {
-                changes.insert(c.oid.clone(), c);
+                changes.insert(c.oid.clone(), (c, Some(record.id.clone())));
             }
         }
     }
     for oid in store.push_retries(&remote.name)? {
+        if changes.contains_key(&oid) {
+            continue;
+        }
         if let Some(current) = store.committed(&oid)? {
             changes.insert(
                 oid.clone(),
-                Change {
-                    oid,
-                    op: Op::Update,
-                    before: None,
-                    after: Some(current),
-                },
+                (
+                    Change {
+                        oid,
+                        op: Op::Update,
+                        before: None,
+                        after: Some(current),
+                    },
+                    None,
+                ),
             );
         }
     }
@@ -199,6 +211,7 @@ fn mutation_for(
     caps: &Capabilities,
     remote: &RemoteConfig,
     change: &Change,
+    origin: Option<&CommitId>,
 ) -> Result<Option<Mutation>, UseCaseError> {
     let Some(object) = change.after.as_ref().or(change.before.as_ref()) else {
         return Ok(None);
@@ -216,9 +229,14 @@ fn mutation_for(
         return Ok(None);
     }
     let remote_id = store.remote_id(&remote.name, &change.oid)?;
+    // Whether the remote already holds the object decides the verb, not the
+    // change's own op: a create the remote has already taken is an update, and
+    // an update of something the remote has never seen is a create.
     let (op, fields): (&str, Vec<String>) = match (change.op, &change.before, &change.after) {
-        (Op::Create, _, _) => ("create", caps.fields.clone()),
         (Op::Delete, _, _) => ("delete", vec![]),
+        (Op::Update, _, None) => return Ok(None),
+        (_, _, _) if remote_id.is_none() => ("create", caps.fields.clone()),
+        (Op::Create, _, _) => ("update", caps.fields.clone()),
         (Op::Update, Some(before), Some(after)) => {
             let declared: Vec<String> = changed_fields(before, after)
                 .into_iter()
@@ -231,7 +249,6 @@ fn mutation_for(
             ("update", declared)
         }
         (Op::Update, None, Some(_)) => ("update", caps.fields.clone()),
-        (Op::Update, _, None) => return Ok(None),
     };
     if op == "delete" && remote_id.is_none() {
         return Ok(None);
@@ -239,6 +256,7 @@ fn mutation_for(
     Ok(Some(Mutation {
         op: op.to_string(),
         oid: change.oid.to_string(),
+        idempotency_key: key(origin.map_or(Origin::Retry, Origin::Commit), &change.oid),
         remote_id,
         object: if op == "delete" {
             None
@@ -248,6 +266,8 @@ fn mutation_for(
         fields,
     }))
 }
+
+mod idempotency;
 
 #[cfg(test)]
 mod tests;

@@ -287,14 +287,23 @@ helper did not declare. That rule is what keeps `dam`-only data safe.
 {"cmd": "pull", "since": "<opaque sync token or null>"}
 {"objects": [...], "removed": ["<remote-id>", ...], "sync": "<opaque token>"}
 
-{"cmd": "push", "mutations": [{"op": "create|update|delete", "oid": "...", "remote_id": "...",
- "object": {...}, "fields": ["<changed field name>", ...]}, ...]}
+{"cmd": "push", "mutations": [{"op": "create|update|delete", "oid": "...",
+ "idempotency_key": "<uuid>", "remote_id": "...", "object": {...},
+ "fields": ["<changed field name>", ...]}, ...]}
 {"results": [{"oid": "...", "ok": true, "remote_id": "..."}, {"oid": "...", "ok": false, "why": "..."}]}
 ```
 
 Results are per mutation. Successes leave the unpushed set; failures stay with their reason and
 appear in `status`. A helper that supports incremental sync returns a token; one that does not
 returns null and `dam` diffs the full set itself.
+
+Delivery is at least once. `dam` cannot tell a request that never arrived from an answer that never
+came back, so it sends the mutation again, and the same mutation always carries the same
+`idempotency_key`: a UUID `dam` derives from the commit and the object, never minted afresh for a
+resend. A helper passes it to a remote that deduplicates by key, so the work happens once however
+often it is sent. `dam-remote-todoist` sends it as the `uuid` of each Sync API command, numbering a
+mutation's several commands in the key's last character, which `dam` leaves free for that. Against a
+remote with no such key, delivery is at least once and a resend can duplicate.
 
 The protocol version only grows. A helper written against version 1 keeps working against every
 later `dam`.

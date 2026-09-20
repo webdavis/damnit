@@ -373,3 +373,62 @@ fn an_unknown_remote_is_refused() {
         UseCaseError::Refused(Refusal::NoSuchRemote("nope".into()))
     );
 }
+
+/// The window finding 1.1 named: the request left, the answer never arrived,
+/// and dam cannot tell a lost request from a lost answer. The resend has to
+/// carry the key the first attempt carried, or the remote creates the object
+/// twice. The key is derived rather than stored, so a push that returned no
+/// answer at all, the timeout shape, resends the same key for the same reason.
+#[test]
+fn a_resend_after_an_unanswered_push_carries_the_first_attempt_s_key() {
+    let store = MemoryStore::new();
+    committed_task(&store, 1);
+    let (l, pushed) = launcher(|_| vec![]);
+    push(&store, &l, &NoCredentials, &config(), None).unwrap();
+    push(&store, &l, &NoCredentials, &config(), None).unwrap();
+    let sent = pushed.borrow();
+    assert_eq!(sent.len(), 2, "the mutation was sent twice: {sent:?}");
+    assert_eq!(
+        sent[0].idempotency_key, sent[1].idempotency_key,
+        "the resend minted a fresh key"
+    );
+    assert_eq!(
+        sent[0].op, sent[1].op,
+        "a resend of a create is still a create"
+    );
+    assert!(!sent[0].idempotency_key.is_empty());
+}
+
+/// Two different changes to one object are two mutations, and each has to be
+/// executed. They must not share a key, or the remote drops the second.
+#[test]
+fn two_successive_changes_to_one_object_carry_different_keys() {
+    let store = MemoryStore::new();
+    committed_task(&store, 1);
+    let (l, pushed) = launcher(|ms| {
+        ms.iter()
+            .map(|m| MutationResult {
+                oid: m.oid.clone(),
+                ok: true,
+                remote_id: Some("r1".into()),
+                why: None,
+            })
+            .collect()
+    });
+    push(&store, &l, &NoCredentials, &config(), None).unwrap();
+    store
+        .put(&Object::Task(Task::new(oid(1), "second")))
+        .unwrap();
+    add_all(&store).unwrap();
+    commit(
+        &store,
+        &FixedClock(date(2026, 9, 19)),
+        &mut FixedRandom(9),
+        "m2",
+    )
+    .unwrap();
+    push(&store, &l, &NoCredentials, &config(), None).unwrap();
+    let sent = pushed.borrow();
+    assert_eq!(sent.len(), 2);
+    assert_ne!(sent[0].idempotency_key, sent[1].idempotency_key);
+}

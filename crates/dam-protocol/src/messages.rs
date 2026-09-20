@@ -82,6 +82,12 @@ pub struct PushResponse {
 pub struct Mutation {
     pub op: String,
     pub oid: String,
+    /// Stable across every resend of this same mutation, so a remote that
+    /// deduplicates by key does the work once however often an interrupted
+    /// push repeats it. A helper that turns one mutation into several remote
+    /// commands numbers them in the key's last character, which dam leaves
+    /// free.
+    pub idempotency_key: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub remote_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -299,6 +305,7 @@ mod tests {
         let m = Mutation {
             op: "update".into(),
             oid: oid(),
+            idempotency_key: "0102030a-0b0c-4d0e-8f10-111213141500".into(),
             remote_id: Some("r1".into()),
             object: Some(milk("buy oat milk", true)),
             fields: vec!["subject".into(), "done".into()],

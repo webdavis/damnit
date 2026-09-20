@@ -35,15 +35,37 @@ fn sync_all_sends_the_token_and_decodes_the_three_resources() {
     );
 }
 
+/// Writes go to the same endpoint as the read, as a form field holding the
+/// JSON array of commands, and every verdict comes back keyed by command uuid.
 #[test]
-fn delete_hits_the_path_with_the_method() {
+fn a_write_sends_its_commands_as_a_form_field_and_reads_each_verdict() {
     let mut routes = HashMap::new();
-    routes.insert("DELETE /tasks/i1", (204, serde_json::Value::Null));
+    routes.insert(
+        "POST /sync",
+        (
+            200,
+            serde_json::json!({
+                "sync_status": {"u-0": "ok", "u-1": {"error": "task not found", "error_code": 15}},
+                "temp_id_mapping": {"t-1": "i9"}
+            }),
+        ),
+    );
     let server = loopback::serve(routes);
-    TodoistApi::new(&server.base, "tok")
-        .delete("/tasks/i1")
+    let written = TodoistApi::new(&server.base, "tok")
+        .sync_commands(&[
+            serde_json::json!({"type": "item_add", "uuid": "u-0", "temp_id": "t-1", "args": {}}),
+            serde_json::json!({"type": "item_close", "uuid": "u-1", "args": {}}),
+        ])
         .unwrap();
-    assert_eq!(server.seen.lock().unwrap()[0].method, "DELETE");
+    assert_eq!(written.temp_id_mapping.get("t-1").unwrap(), "i9");
+    assert_eq!(written.accepted("u-0"), Ok(()));
+    assert_eq!(written.accepted("u-1"), Err("task not found".to_string()));
+    assert!(written.accepted("u-2").is_err(), "no verdict is no success");
+
+    let seen = server.seen.lock().unwrap();
+    assert_eq!(seen[0].authorization.as_deref(), Some("Bearer tok"));
+    assert_eq!(seen[0].body["commands"][0]["type"], "item_add");
+    assert_eq!(seen[0].body["commands"][1]["uuid"], "u-1");
 }
 
 /// Neither a rejected request nor one that never reaches the server may render the token.
