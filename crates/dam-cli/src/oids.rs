@@ -22,12 +22,9 @@ pub(crate) fn resolve_oid(objects: &dyn ObjectRepository, text: &str) -> Result<
         .map(|o| o.oid().clone())
         .filter(|o| o.as_str().starts_with(text))
         .collect();
-    match matches.len() {
-        0 => Err(UseCaseError::Refused(Refusal::NoSuchObject(text.to_string())).into()),
-        1 => Ok(matches
-            .into_iter()
-            .next()
-            .unwrap_or_else(|| Oid::generate(&mut |b| b.fill(0)))),
+    match matches.as_slice() {
+        [] => Err(UseCaseError::Refused(Refusal::NoSuchObject(text.to_string())).into()),
+        [one] => Ok(one.clone()),
         _ => Err(CliError::Ambiguous {
             text: text.to_string(),
             matches,

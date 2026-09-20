@@ -20,11 +20,20 @@ impl EnvEditor {
 }
 
 /// VISUAL wins over EDITOR, a blank value falls through, and neither set means "vi".
+///
+/// The value is split on whitespace so it can carry arguments, except when the
+/// whole of it names a file that exists: an editor installed at a path with a
+/// space in it is then run as the one word it is rather than as a program and
+/// two arguments that do not exist.
 fn choose_command(visual: Option<String>, editor: Option<String>) -> Vec<String> {
     let raw = visual
         .filter(|v| !v.trim().is_empty())
         .or_else(|| editor.filter(|v| !v.trim().is_empty()))
         .unwrap_or_else(|| "vi".into());
+    let whole = raw.trim();
+    if whole.contains(char::is_whitespace) && std::path::Path::new(whole).is_file() {
+        return vec![whole.to_string()];
+    }
     raw.split_whitespace().map(str::to_string).collect()
 }
 
@@ -56,6 +65,26 @@ impl EditorSession for EnvEditor {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn an_editor_installed_at_a_path_with_a_space_is_run_as_one_word() {
+        let dir = tempfile::tempdir().unwrap();
+        let installed = dir.path().join("My Editor");
+        std::fs::write(&installed, "#!/bin/sh\nexit 0\n").unwrap();
+        let whole = installed.to_string_lossy().into_owned();
+        assert_eq!(
+            super::choose_command(Some(whole.clone()), None),
+            vec![whole]
+        );
+    }
+
+    #[test]
+    fn an_editor_value_carrying_arguments_is_still_split() {
+        assert_eq!(
+            super::choose_command(Some("code --wait".into()), None),
+            vec!["code".to_string(), "--wait".to_string()]
+        );
+    }
+
     use super::*;
     use dam_application::EditorSession;
 
