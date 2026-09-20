@@ -70,8 +70,8 @@ fn an_unknown_kind_is_its_own_rejection() {
     assert_eq!(err.to_string(), "kind: cannot read \"note\"");
 }
 
-/// Four rejections that used to be one string, each answering which
-/// class it belongs to so a caller can branch or count by class.
+/// Each of the four rejections answers which class it belongs to, so a
+/// caller can branch or count by class rather than match on a sentence.
 #[test]
 fn each_rejection_class_is_distinguishable() {
     let good = to_wire(&Object::Task(Task::new(oid(5), "x")), None);

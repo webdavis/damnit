@@ -247,9 +247,9 @@ fn pulled_into_conflict() -> MemoryStore {
     store
 }
 
-/// Finding core 1-2. Clearing the flag settled nothing: no commit carried
-/// ours, and the tracking snapshot still held theirs, so every later pull
-/// raised the identical conflict again.
+/// Resolving with ours writes a commit carrying ours and leaves the tracking
+/// snapshot where it was, so the next pull reads nothing incoming and the
+/// settled conflict is not raised a second time.
 #[test]
 fn ours_is_committed_and_the_conflict_is_not_raised_again() {
     let store = pulled_into_conflict();

@@ -10,9 +10,9 @@ use dam_remote_todoist::api::{ApiError, TodoistApi};
 use dam_remote_todoist::push::push;
 use fixtures::{mutation, sync_body, task, todoist, with_fields};
 
-/// Finding 1.1: the request left, the answer never arrived, dam resent. The
-/// resent mutation carries the key it carried the first time, so the service
-/// recognises it and creates nothing twice.
+/// A mutation whose answer never arrived is sent again. The resend carries
+/// the key the first attempt carried, so the service recognises it and creates
+/// nothing twice.
 #[test]
 fn a_resent_mutation_repeats_its_uuids_and_creates_nothing_twice() {
     let _guard = support::guard("a_resent_mutation_repeats_its_uuids_and_creates_nothing_twice");
