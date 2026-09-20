@@ -142,6 +142,13 @@ fn classify(
                 let base = store.remote_snapshot(&remote.name, &oid)?;
                 if base.as_ref() == Some(l) {
                     Incoming::FastForward(theirs)
+                } else if base.as_ref() == Some(&theirs) {
+                    // The remote holds what it held when we last looked, so
+                    // nothing is coming in; the difference is ours to push.
+                    // This is also what stops a conflict already raised, and
+                    // settled with ours, from being raised again on every pull
+                    // until the resolution reaches the remote.
+                    Incoming::Unchanged
                 } else {
                     let committed = store.committed(&oid)?;
                     if committed.as_ref() != Some(l) || staged.contains(&oid) {

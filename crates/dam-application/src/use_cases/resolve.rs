@@ -21,22 +21,29 @@ pub fn resolve(
         .into_iter()
         .find(|c| c.oid == *oid)
         .ok_or_else(|| Refusal::NoSuchObject(format!("conflict on {}", oid.short())))?;
-    if side == Side::Theirs {
-        store.put(&conflict.theirs)?;
-        let record = CommitRecord {
-            id: CommitId::generate(&mut |b| random.fill(b)),
-            message: format!("resolve {} with theirs", oid.short()),
-            at: clock.now(),
-            changes: vec![Change {
-                oid: oid.clone(),
-                op: Op::Update,
-                before: Some(conflict.ours.clone()),
-                after: Some(conflict.theirs.clone()),
-            }],
-        };
-        store.commit(&record)?;
-        store.mark_pushed(&conflict.remote, &record.id)?;
-    }
+    let (word, before, after) = match side {
+        Side::Theirs => {
+            store.put(&conflict.theirs)?;
+            ("theirs", conflict.ours, conflict.theirs)
+        }
+        Side::Ours => ("ours", conflict.theirs, conflict.ours),
+    };
+    // Either side needs a commit, and an unpushed one. Push coalesces every
+    // unpushed change for an object and sends where they end, so a resolution
+    // that wrote none would leave the change that lost as the last word and
+    // send that upstream instead.
+    let record = CommitRecord {
+        id: CommitId::generate(&mut |b| random.fill(b)),
+        message: format!("resolve {} with {word}", oid.short()),
+        at: clock.now(),
+        changes: vec![Change {
+            oid: oid.clone(),
+            op: Op::Update,
+            before: Some(before),
+            after: Some(after),
+        }],
+    };
+    store.commit(&record)?;
     store.clear_conflict(oid)?;
     Ok(())
 }

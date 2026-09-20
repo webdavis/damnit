@@ -355,7 +355,10 @@ helper and out of scope here.
    pull again.
 2. A conflict is an object both sides changed since the last common state. `pull` marks it; `dam
    status` lists it; `dam resolve <oid> --ours | --theirs` settles it. Nothing is merged
-   automatically.
+   automatically. Either side is settled by a commit, so what is owed to the remote ends at the
+   side that won, and a settled conflict is not raised again: a pull that finds the remote holding
+   what it held when `dam` last looked has nothing coming in, whichever way the local copy has
+   since moved.
 3. A removal upstream is a notice, never a local deletion.
 4. An event cancelled upstream keeps its attached tasks and is reported.
 5. A helper only writes the fields it declared.
