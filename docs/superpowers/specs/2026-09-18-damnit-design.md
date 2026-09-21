@@ -248,6 +248,11 @@ the restored oids and the unchanged ones.
 An oid prefix is resolved against the working layer, here as in every verb, so an object `dam rm`
 took out of it is named by its full oid and the refusal on a prefix says which layer it read.
 
+`dam remote add --json` answers with the remote's name and url and a `warnings` list, empty in the
+ordinary case. It carries one sentence when the config file had been readable by someone other than
+its owner, which `dam` tightens as it writes: the file is the documented home of a literal
+credential, so a client driving `remote add` is told rather than left to notice.
+
 `push` with no remote sends to every remote. Each helper declares in its capabilities which kinds
 and fields it accepts, and `dam` sends each object to every remote that accepts it. A remote may be
 narrowed to a `path` in config.

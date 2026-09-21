@@ -12,12 +12,16 @@ pub(crate) fn run_remote(ctx: &mut Context, args: RemoteArgs) -> Result<Report, 
             let warning = append_remote(&ctx.config_path, &name, &url)?;
             ctx.config = load_config(&ctx.config_path)?;
             let mut human = format!("added {name} ({url})");
-            if let Some(why) = warning {
+            if let Some(why) = &warning {
                 human.insert_str(0, &format!("warning: {why}\n"));
             }
             Ok(Report {
                 human,
-                data: serde_json::json!({ "name": name, "url": url }),
+                data: serde_json::json!({
+                    "name": name,
+                    "url": url,
+                    "warnings": Vec::from_iter(warning),
+                }),
             })
         }
         RemoteCommand::List => Ok(Report {

@@ -24,6 +24,23 @@ fn a_machine_format_writes_nothing_to_stderr_but_the_document() {
         "",
         "a warning reached the stream a client parses as one document"
     );
+    // The advisory is in the answer rather than lost: the operator still
+    // learns their credential-bearing config had been readable by someone else.
+    let answer: serde_json::Value =
+        serde_json::from_slice(&added.stdout).expect("the answer is one document");
+    let warnings = answer["warnings"].as_array().expect("warnings is a list");
+    assert_eq!(warnings.len(), 1, "{answer}");
+    let said = warnings[0].as_str().unwrap();
+    assert!(said.contains("644"), "{said}");
+    assert!(!said.contains('/'), "the advisory carries a path: {said}");
+
+    let quiet = sb.output(&["remote", "add", "third", "fake::", "--json"]);
+    let answer: serde_json::Value = serde_json::from_slice(&quiet.stdout).unwrap();
+    assert_eq!(
+        answer["warnings"],
+        serde_json::json!([]),
+        "an already-private config warns about nothing"
+    );
 
     let failed = sb.output(&["remote", "add", "second", "fake::", "--json"]);
     let err = String::from_utf8_lossy(&failed.stderr);
