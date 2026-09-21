@@ -524,7 +524,7 @@ blocked are both refusals, and a list that should refresh itself on the first sh
 blockers on the second. The words are `blocked`, `cycle`, `exclusive_label`, `unknown_category`,
 `no_such_object`, `no_working_object`, `no_such_remote`, `not_a_task`, `not_an_event`,
 `not_completed`, `not_committed`, `dirty_on_pull`, `move_inside_itself`, `nothing_to_commit`,
-`needs_an_answer`, `unresolved_conflicts` and `missing_credential`.
+`needs_an_answer`, `needs_an_editor`, `unresolved_conflicts` and `missing_credential`.
 
 `message` is the sentence the human form prints after `dam: `, which is what carries the rule that
 no token reaches an error. `oids` names the objects the message names, in full and in the order it

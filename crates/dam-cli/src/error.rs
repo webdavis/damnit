@@ -24,7 +24,7 @@ impl CliError {
     /// One meaning per code, so a client can tell what happened:
     ///
     /// | 0 | the command did what it was asked |
-    /// | 1 | dam failed: a store, config, helper or io failure |
+    /// | 1 | dam failed: a store, config, helper, editor or io failure |
     /// | 2 | the command line was wrong, which is also clap's own code |
     /// | 3 | cancelled: an interrupt, or a prompt with no answer |
     /// | 4 | dam refused by one of its own rules |

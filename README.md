@@ -96,9 +96,12 @@ output:
 `kind` is one of `refused`, `store`, `helper`, `credential`, `parse`, `usage` and `cancelled`.
 `rule` names which rule a refusal broke, such as `blocked`, `no_such_object` or
 `nothing_to_commit`, and is null for every other kind. `oids` names the objects the message names,
-in the order it names them. Standard
-error carries that one document and nothing else, so parse the whole stream; a run that succeeds
-writes nothing there. Without those flags you get the plain `dam: <message>` line instead.
+in the order it names them.
+
+Standard error carries that one document and nothing else, so parse the whole stream; a run that
+succeeds writes nothing there. The exception is an argument clap rejects before `dam` runs, such as
+a subcommand that does not exist: that prints clap's own usage text and exits 2, whatever the format
+flag says. Without those flags you get the plain `dam: <message>` line instead.
 
 ## Exit codes
 
