@@ -100,7 +100,8 @@ fn refusal_oids(refusal: &Refusal) -> Vec<String> {
         | Refusal::NoSuchRemote(_)
         | Refusal::UnresolvedConflicts(_)
         | Refusal::MissingCredential { .. }
-        | Refusal::NothingToCommit => Vec::new(),
+        | Refusal::NothingToCommit
+        | Refusal::NeedsAnAnswer => Vec::new(),
     }
 }
 
@@ -135,6 +136,11 @@ impl std::error::Error for CliError {}
 impl From<UseCaseError> for CliError {
     fn from(e: UseCaseError) -> CliError {
         CliError::UseCase(e)
+    }
+}
+impl From<Refusal> for CliError {
+    fn from(r: Refusal) -> CliError {
+        CliError::UseCase(UseCaseError::Refused(r))
     }
 }
 impl From<ConfigError> for CliError {

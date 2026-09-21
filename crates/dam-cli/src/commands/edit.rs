@@ -1,5 +1,5 @@
 use dam_adapters::{parse_template, render_template};
-use dam_application::{EditFields, edit};
+use dam_application::{EditFields, Refusal, edit};
 use dam_domain::Oid;
 
 use crate::args::EditArgs;
@@ -90,7 +90,7 @@ fn through_editor(ctx: &Context, oid: &Oid) -> Result<EditFields, CliError> {
     let current = ctx
         .store
         .get(oid)?
-        .ok_or_else(|| CliError::Usage(format!("{} is not in the working layer", oid.short())))?;
+        .ok_or_else(|| Refusal::NoWorkingObject(oid.short().to_string()))?;
     let original = render_template(&current);
     let mut opened = original.clone();
     loop {

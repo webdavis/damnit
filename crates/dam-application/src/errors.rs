@@ -33,6 +33,8 @@ pub enum Refusal {
     /// A path that would put an object under itself, which no tree allows.
     MoveInsideItself(Oid),
     NothingToCommit,
+    /// A verb needed the operator's answer and the format cannot carry one.
+    NeedsAnAnswer,
     UnresolvedConflicts(usize),
     MissingCredential {
         remote: String,
@@ -138,6 +140,9 @@ impl fmt::Display for Refusal {
                 write!(f, "{} cannot move inside itself", o.short())
             }
             Refusal::NothingToCommit => f.write_str("nothing to commit"),
+            Refusal::NeedsAnAnswer => f.write_str(
+                "a question needs an answer; drop --json/--toon to answer interactively",
+            ),
             Refusal::MissingCredential { remote, name } => {
                 write!(
                     f,

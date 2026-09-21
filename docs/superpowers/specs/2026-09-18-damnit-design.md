@@ -325,8 +325,9 @@ One meaning per code, so a client can tell what happened without reading the mes
 | 4 | `dam` refused by one of its own rules, and the message names the rule. |
 
 Every rule `dam` keeps reports code 4, and nothing else does, so a client maps the code once
-rather than per verb. An empty stage, a move into an object's own path and an event field asked of
-a task are refusals like any other, and each names its rule.
+rather than per verb. An empty stage, a move into an object's own path, an event field asked of a
+task and a question no machine format can answer are refusals like any other, and each names its
+rule. Code 2 stays for the command line alone: an argument `dam` cannot read, and never a rule.
 
 ## Remotes and helpers
 

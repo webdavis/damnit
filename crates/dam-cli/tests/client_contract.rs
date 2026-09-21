@@ -149,6 +149,10 @@ fn every_refusal_exits_four_whatever_the_rule() {
 
     let refusals: Vec<(&str, Vec<&str>)> = vec![
         ("an empty stage", vec!["commit", "-m", "nothing"]),
+        (
+            "a question no machine format can answer",
+            vec!["done", &parent, "--force", "--interactive"],
+        ),
         ("a completion with an open child", vec!["done", &parent]),
         (
             "a move into its own path",
