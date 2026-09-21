@@ -65,12 +65,23 @@ impl CliError {
         }
     }
 
+    /// The rule a refusal broke, and null for every other failure, so a
+    /// client can tell a blocked completion from a missing object without
+    /// reading the sentence.
+    pub(crate) fn rule(&self) -> Option<&'static str> {
+        match self {
+            CliError::UseCase(UseCaseError::Refused(refusal)) => Some(refusal.name()),
+            _ => None,
+        }
+    }
+
     /// The whole failure as one document, which `--json` and `--toon` print on
     /// standard error in place of the plain line.
     pub(crate) fn document(&self) -> serde_json::Value {
         serde_json::json!({
             "error": {
                 "kind": self.kind(),
+                "rule": self.rule(),
                 "message": self.to_string(),
                 "oids": self.oids(),
             }
@@ -171,6 +182,18 @@ mod tests {
 
     fn oid(byte: u8) -> Oid {
         Oid::generate(&mut |x: &mut [u8]| x.fill(byte))
+    }
+
+    #[test]
+    fn a_refusal_names_the_rule_it_broke_and_another_failure_names_none() {
+        let refused = CliError::UseCase(UseCaseError::Refused(Refusal::NothingToCommit));
+        assert_eq!(refused.document()["error"]["rule"], "nothing_to_commit");
+        let failed = CliError::Io("disk".into());
+        assert_eq!(
+            failed.document()["error"]["rule"],
+            serde_json::Value::Null,
+            "only a refusal breaks a rule"
+        );
     }
 
     #[test]

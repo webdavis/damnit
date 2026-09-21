@@ -52,6 +52,32 @@ pub enum UseCaseError {
     Parse(String),
 }
 
+impl Refusal {
+    /// The rule this refusal broke, one stable snake_case word per variant,
+    /// which is what a client branches on when `refused` is too coarse.
+    pub fn name(&self) -> &'static str {
+        match self {
+            Refusal::Blocked { .. } => "blocked",
+            Refusal::Cycle { .. } => "cycle",
+            Refusal::Labels(_) => "exclusive_label",
+            Refusal::UnknownCategory(_) => "unknown_category",
+            Refusal::NoSuchObject(_) => "no_such_object",
+            Refusal::NoWorkingObject(_) => "no_working_object",
+            Refusal::NoSuchRemote(_) => "no_such_remote",
+            Refusal::NotATask(_) => "not_a_task",
+            Refusal::NotAnEvent(_) => "not_an_event",
+            Refusal::NotCompleted(_) => "not_completed",
+            Refusal::NotCommitted(_) => "not_committed",
+            Refusal::DirtyOnPull { .. } => "dirty_on_pull",
+            Refusal::MoveInsideItself(_) => "move_inside_itself",
+            Refusal::NothingToCommit => "nothing_to_commit",
+            Refusal::NeedsAnAnswer => "needs_an_answer",
+            Refusal::UnresolvedConflicts(_) => "unresolved_conflicts",
+            Refusal::MissingCredential { .. } => "missing_credential",
+        }
+    }
+}
+
 impl From<Refusal> for UseCaseError {
     fn from(r: Refusal) -> UseCaseError {
         UseCaseError::Refused(r)
@@ -213,3 +239,70 @@ impl fmt::Display for UseCaseError {
 }
 
 impl std::error::Error for UseCaseError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use dam_domain::{LabelViolation, Oid};
+
+    fn oid() -> Oid {
+        Oid::generate(&mut |x: &mut [u8]| x.fill(1))
+    }
+
+    /// One of every variant, so the distinctness check below sees them all.
+    fn every_refusal() -> Vec<Refusal> {
+        vec![
+            Refusal::Blocked {
+                oid: oid(),
+                blockers: vec![],
+            },
+            Refusal::Cycle {
+                oid: oid(),
+                path: vec![],
+            },
+            Refusal::Labels(LabelViolation::Exclusive {
+                category: "effort".into(),
+                held: vec![],
+            }),
+            Refusal::UnknownCategory("effort".into()),
+            Refusal::NoSuchObject("abab".into()),
+            Refusal::NoWorkingObject("abab".into()),
+            Refusal::NoSuchRemote("todoist".into()),
+            Refusal::NotATask(oid()),
+            Refusal::NotAnEvent(oid()),
+            Refusal::NotCompleted(oid()),
+            Refusal::NotCommitted(oid()),
+            Refusal::DirtyOnPull { oid: oid() },
+            Refusal::MoveInsideItself(oid()),
+            Refusal::NothingToCommit,
+            Refusal::NeedsAnAnswer,
+            Refusal::UnresolvedConflicts(2),
+            Refusal::MissingCredential {
+                remote: "todoist".into(),
+                name: "api_token".into(),
+            },
+        ]
+    }
+
+    #[test]
+    fn every_rule_has_its_own_name() {
+        let refusals = every_refusal();
+        let mut names: Vec<&str> = refusals.iter().map(Refusal::name).collect();
+        let count = names.len();
+        names.sort_unstable();
+        names.dedup();
+        assert_eq!(names.len(), count, "two rules share a name: {names:?}");
+    }
+
+    #[test]
+    fn every_name_is_lower_snake_case_and_says_something() {
+        for refusal in every_refusal() {
+            let name = refusal.name();
+            assert!(!name.is_empty(), "{refusal:?}");
+            assert!(
+                name.chars().all(|c| c.is_ascii_lowercase() || c == '_'),
+                "{name} is not snake_case"
+            );
+        }
+    }
+}

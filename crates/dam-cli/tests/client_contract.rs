@@ -60,6 +60,7 @@ fn a_refusal_under_json_is_a_document_naming_its_kind_message_and_oids() {
     );
     let document = error_document(&out);
     assert_eq!(document["error"]["kind"], "refused");
+    assert_eq!(document["error"]["rule"], "blocked");
     let named: Vec<&str> = document["error"]["oids"]
         .as_array()
         .unwrap()
@@ -163,12 +164,30 @@ fn every_refusal_exits_four_whatever_the_rule() {
             vec!["edit", &parent, "--start", "2026-09-25T10:00"],
         ),
     ];
+    let mut named = Vec::new();
     for (rule, mut args) in refusals {
         args.push("--json");
         let out = sb.output(&args);
         assert_eq!(out.status.code(), Some(4), "{rule}: {args:?}");
         assert_eq!(kind_of(&out), "refused", "{rule}");
+        named.push(
+            error_document(&out)["error"]["rule"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string(),
+        );
     }
+    assert_eq!(
+        named,
+        vec![
+            "nothing_to_commit",
+            "needs_an_answer",
+            "blocked",
+            "move_inside_itself",
+            "not_an_event"
+        ],
+        "each rule names itself"
+    );
 }
 
 /// A client reads the field names off dam's answer instead of diffing the

@@ -506,17 +506,28 @@ and reopens. No error message contains a token.
 the reason instead of matching substrings. Standard output stays empty on a failure.
 
 ```json
-{"error": {"kind": "refused", "message": "98d8780 cannot be completed: child a9db854 is open",
+{"error": {"kind": "refused", "rule": "blocked",
+ "message": "98d8780 cannot be completed: child a9db854 is open",
  "oids": ["98d878013fb0e026d37170e7ceed6707192ae99a",
           "a9db854060d1943ef9eb9f6d7a8ac0b1ace45d77"]}}
 ```
 
 `kind` is one of `refused`, `store`, `helper`, `credential`, `editor`, `parse`, `usage` and
-`cancelled`. `message` is the sentence the human form prints after `dam: `, which is what carries
-the rule that no token reaches an error. `oids` names the objects the message names, in full and in
-the order it names them: for a blocked completion the task and then each blocker, for a cycle the
-task and then the chain, for an ambiguous prefix every object it matched, and empty for a failure
-that names none.
+`cancelled`.
+
+`rule` names the rule a refusal broke, one stable snake_case word per rule, and is null for every
+other kind. `refused` alone is too coarse for a client: a task that is gone and a task that is
+blocked are both refusals, and a list that should refresh itself on the first should show the
+blockers on the second. The words are `blocked`, `cycle`, `exclusive_label`, `unknown_category`,
+`no_such_object`, `no_working_object`, `no_such_remote`, `not_a_task`, `not_an_event`,
+`not_completed`, `not_committed`, `dirty_on_pull`, `move_inside_itself`, `nothing_to_commit`,
+`needs_an_answer`, `unresolved_conflicts` and `missing_credential`.
+
+`message` is the sentence the human form prints after `dam: `, which is what carries the rule that
+no token reaches an error. `oids` names the objects the message names, in full and in the order it
+names them: for a blocked completion the task and then each blocker, for a cycle the task and then
+the chain, for an ambiguous prefix every object it matched, and empty for a failure that names
+none.
 
 Under `--json` or `--toon`, standard error carries exactly that one document and nothing else, so a
 client parses the whole stream rather than hunting a line in it. A run that succeeds writes nothing
