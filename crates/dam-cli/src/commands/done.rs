@@ -32,7 +32,8 @@ pub(crate) fn run(ctx: &mut Context, args: DoneArgs) -> Result<Report, CliError>
 
 /// How far this invocation forces. A disposition flag answers the prompt
 /// without a terminal, so it is taken whatever `done.interactive` says; the
-/// flag that is absent takes the default the prompt would have offered.
+/// flag that is absent takes `Keep`, the answer that disturbs least, which is
+/// the flags' own default: `ask` demands an answer for every blocker it finds.
 fn force_for(ctx: &Context, args: &DoneArgs, blockers: &[Blocker]) -> Result<Force, CliError> {
     if !args.force {
         return Ok(Force::No);
@@ -298,7 +299,7 @@ mod tests {
     }
 
     #[test]
-    fn the_flag_that_is_absent_takes_the_default_the_prompt_would_have_offered() {
+    fn the_flag_that_is_absent_keeps_what_is_there() {
         let mut ctx = machine_context();
         parent_child_and_dependency(&ctx);
         run(
