@@ -1,9 +1,12 @@
-//! The suite's own speed gate. Each crate carries its own copy so the crate
-//! still builds the day it moves to a repository of its own.
+//! The suite's shared parts: its own speed gate, and the sandbox that drives
+//! the real binary. Each crate carries its own copy so the crate still builds
+//! the day it moves to a repository of its own.
 
 // Each test binary compiles this module and uses the part of it that binary
 // needs, so the rest is unused there.
 #![allow(dead_code)]
+
+pub mod sandbox;
 
 use std::time::{Duration, Instant};
 

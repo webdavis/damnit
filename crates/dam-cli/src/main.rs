@@ -35,7 +35,7 @@ fn main() {
             } else {
                 e
             };
-            eprintln!("dam: {e}");
+            output::print_error(format, &e);
             std::process::exit(e.exit_code());
         }
     }

@@ -68,6 +68,19 @@ and `--toon` on any read give a program the same answer.
 `|` or, `&` and, `!` not, parentheses group. `@label`, `pN`, `key:value`; an unknown key is looked
 up as a category. Saved filters live under `[filter.<name>]` and run by name.
 
+## Errors
+
+With `--json` or `--toon` a failure prints one document on standard error and nothing on standard
+output:
+
+    {"error": {"kind": "refused", "message": "98d8780 cannot be completed: child a9db854 is open",
+     "oids": ["98d878013fb0e026d37170e7ceed6707192ae99a",
+              "a9db854060d1943ef9eb9f6d7a8ac0b1ace45d77"]}}
+
+`kind` is one of `refused`, `store`, `helper`, `credential`, `editor`, `parse`, `usage` and
+`cancelled`, and `oids` names the objects the message names, in the order it names them. Without
+those flags you get the plain `dam: <message>` line instead.
+
 ## Exit codes
 
 | Code | Meaning |

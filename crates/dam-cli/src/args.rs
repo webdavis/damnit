@@ -23,10 +23,10 @@ pub(crate) use writing::{DoneArgs, EditArgs, MvArgs, NewArgs, RmArgs};
     about = "tasks and events, staged and committed like git"
 )]
 pub(crate) struct Cli {
-    /// Print the result as JSON.
+    /// Print the result as JSON, and a failure as one error document on stderr.
     #[arg(long, global = true, conflicts_with = "toon")]
     pub(crate) json: bool,
-    /// Print the result as TOON, a compact form for language models.
+    /// Print the result as TOON, a compact form for language models; errors as --json.
     #[arg(long, global = true)]
     pub(crate) toon: bool,
     #[arg(long, global = true, env = "DAM_CONFIG", value_name = "FILE")]

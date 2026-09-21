@@ -469,6 +469,28 @@ A refusal names the rule and the objects involved, then stops. A missing helper 
 push lists each failed mutation with the helper's reason. A parse failure in `edit -e` names the line
 and reopens. No error message contains a token.
 
+### The error document
+
+`--json` and `--toon` replace the plain line on standard error with one document, so a client reads
+the reason instead of matching substrings. Standard output stays empty on a failure.
+
+```json
+{"error": {"kind": "refused", "message": "98d8780 cannot be completed: child a9db854 is open",
+ "oids": ["98d878013fb0e026d37170e7ceed6707192ae99a",
+          "a9db854060d1943ef9eb9f6d7a8ac0b1ace45d77"]}}
+```
+
+`kind` is one of `refused`, `store`, `helper`, `credential`, `editor`, `parse`, `usage` and
+`cancelled`. `message` is the sentence the human form prints after `dam: `, which is what carries
+the rule that no token reaches an error. `oids` names the objects the message names, in full and in
+the order it names them: for a blocked completion the task and then each blocker, for a cycle the
+task and then the chain, for an ambiguous prefix every object it matched, and empty for a failure
+that names none.
+
+Without `--json` or `--toon` nothing changes: the plain `dam: <message>` line, and the same exit
+code. An argument clap rejects before `dam` runs prints clap's own usage text and exits 2, whatever
+the format flag says.
+
 A push failure is per mutation once mutations are being applied, and whole-push before that. The
 read a helper needs to shape anything is the before: it fails the push with one reason, because no
 mutation was attempted and there is nothing to report against one. From the first mutation onward a
