@@ -301,7 +301,9 @@ change. The default carries what a client renders and no object:
 before and after itself. An update names the fields that moved. A create names the fields the new
 object carries: the ones its kind always has, `subject` for a task and `subject`, `start` and `end`
 for an event, then every other field holding something other than its default. A delete names
-nothing, because it removes the object whole rather than any field of it.
+nothing, because it removes the object whole rather than any field of it. An update that changes an
+object's kind names `kind` alone, whatever else differs between the two, because a task and an event
+share no field list to compare.
 
 The rest of the row is the state the change left behind: `kind`, `subject`, `path` and `labels` for
 either kind, then `done`, `priority` and `due` for a task or `start` and `end` for an event. A

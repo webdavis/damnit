@@ -37,7 +37,7 @@ pub(crate) struct ShowArgs {
 
 #[derive(Args, Debug)]
 pub(crate) struct StatusArgs {
-    /// Embed the whole before and after object in every change.
+    /// Embed the whole before and after object in every change; shapes --json and --toon only.
     #[arg(long)]
     pub(crate) full: bool,
 }
@@ -46,7 +46,7 @@ pub(crate) struct StatusArgs {
 pub(crate) struct DiffArgs {
     #[arg(long)]
     pub(crate) staged: bool,
-    /// Embed the whole before and after object in every change.
+    /// Embed the whole before and after object in every change; shapes --json and --toon only.
     #[arg(long)]
     pub(crate) full: bool,
 }
