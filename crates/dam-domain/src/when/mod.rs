@@ -1,3 +1,5 @@
+mod words;
+
 pub type Date = jiff::civil::Date;
 pub type Timestamp = jiff::Timestamp;
 
@@ -32,7 +34,8 @@ impl When {
         matches!(self, When::Day(_))
     }
 
-    /// `today`, `tomorrow`, `YYYY-MM-DD`, `YYYY-MM-DDTHH:MM[:SS]` in `tz`, or a full zoned timestamp.
+    /// A date word (see `words`), `YYYY-MM-DD`, `YYYY-MM-DDTHH:MM[:SS]` in `tz`, or a full
+    /// zoned timestamp.
     ///
     /// `Date` and `DateTime` both parse a string carrying more than they need (dropping any
     /// trailing time or zone), so the text shape picks the parser instead of trying each in
@@ -44,15 +47,8 @@ impl When {
         tz: &jiff::tz::TimeZone,
     ) -> Result<When, WhenError> {
         let text = text.trim();
-        match text {
-            "today" => return Ok(When::Day(today)),
-            "tomorrow" => {
-                return today
-                    .tomorrow()
-                    .map(When::Day)
-                    .map_err(|e| WhenError(e.to_string()));
-            }
-            _ => {}
+        if let Some(day) = words::day(text, today) {
+            return Ok(When::Day(day));
         }
         if text.contains('[') {
             return text
@@ -86,7 +82,8 @@ impl When {
 /// text was read as, with jiff's own reason appended.
 fn hint(text: &str, cause: &dyn std::fmt::Display) -> WhenError {
     WhenError(format!(
-        "cannot read {text:?} as a date; use today, tomorrow, YYYY-MM-DD or YYYY-MM-DDTHH:MM: {cause}"
+        "cannot read {text:?} as a date; use {}, YYYY-MM-DD or YYYY-MM-DDTHH:MM: {cause}",
+        words::ACCEPTED
     ))
 }
 
@@ -132,7 +129,10 @@ mod tests {
         let at = When::parse_human("2026-09-25T14:00", today, &tz).unwrap();
         assert_eq!(at.date(), date(2026, 9, 25));
         assert!(!at.is_all_day());
-        assert!(When::parse_human("next tuesday", today, &tz).is_err());
+        assert_eq!(
+            When::parse_human("next tuesday", today, &tz).unwrap(),
+            When::Day(date(2026, 9, 22))
+        );
     }
 
     #[test]
@@ -158,8 +158,9 @@ mod tests {
     fn a_malformed_plain_date_gets_the_friendly_hint() {
         let today = date(2026, 9, 18);
         let tz = jiff::tz::TimeZone::UTC;
-        let err = When::parse_human("next tuesday", today, &tz).unwrap_err();
+        let err = When::parse_human("someday", today, &tz).unwrap_err();
         assert!(err.0.contains("cannot read"), "{}", err.0);
+        assert!(err.0.contains("next <weekday>"), "{}", err.0);
     }
 
     #[test]

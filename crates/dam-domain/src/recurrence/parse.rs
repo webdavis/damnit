@@ -3,6 +3,7 @@ use std::fmt;
 use jiff::civil::Weekday;
 
 use super::{Anchor, Freq, Rule};
+use crate::weekday::{parse_weekday, weekday_text};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum RuleError {
@@ -117,28 +118,7 @@ impl Rule {
 }
 
 fn weekday(text: &str) -> Result<Weekday, RuleError> {
-    Ok(match text {
-        "mon" => Weekday::Monday,
-        "tue" => Weekday::Tuesday,
-        "wed" => Weekday::Wednesday,
-        "thu" => Weekday::Thursday,
-        "fri" => Weekday::Friday,
-        "sat" => Weekday::Saturday,
-        "sun" => Weekday::Sunday,
-        other => return Err(RuleError::BadDay(other.to_string())),
-    })
-}
-
-fn weekday_text(day: Weekday) -> &'static str {
-    match day {
-        Weekday::Monday => "mon",
-        Weekday::Tuesday => "tue",
-        Weekday::Wednesday => "wed",
-        Weekday::Thursday => "thu",
-        Weekday::Friday => "fri",
-        Weekday::Saturday => "sat",
-        Weekday::Sunday => "sun",
-    }
+    parse_weekday(text).ok_or_else(|| RuleError::BadDay(text.to_string()))
 }
 
 impl fmt::Display for RuleError {
@@ -149,7 +129,8 @@ impl fmt::Display for RuleError {
             RuleError::BadInterval(w) => write!(f, "interval must be 1 or more, got {w:?}"),
             RuleError::BadDay(w) => write!(
                 f,
-                "unknown day {w:?}; use mon,tue,wed,thu,fri,sat,sun or a day of the month"
+                "unknown day {w:?}; use a weekday by short or full name in any case, \
+                 such as mon or Monday, or a day of the month from 1 to 31"
             ),
             RuleError::BadDate(w) => write!(f, "until wants YYYY-MM-DD, got {w:?}"),
         }
@@ -157,3 +138,26 @@ impl fmt::Display for RuleError {
 }
 
 impl std::error::Error for RuleError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The refusal names forms the parser reads back, so an operator who
+    /// follows it gets a rule rather than a second refusal.
+    #[test]
+    fn the_unknown_day_message_names_forms_the_parser_accepts() {
+        let said = RuleError::BadDay("funday".into()).to_string();
+        for form in ["mon", "Monday", "any case", "1 to 31"] {
+            assert!(said.contains(form), "{said}");
+        }
+        for text in ["mon", "Monday"] {
+            assert!(
+                Rule::parse(&format!("every week on {text}")).is_ok(),
+                "the message names {text:?} and the parser refuses it"
+            );
+        }
+        assert!(Rule::parse("every month on 31").is_ok());
+        assert!(Rule::parse("every month on 32").is_err());
+    }
+}

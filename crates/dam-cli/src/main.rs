@@ -8,7 +8,7 @@ mod prompt;
 
 use clap::Parser;
 
-use crate::args::Cli;
+use crate::args::{Cli, Command};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Format;
@@ -51,10 +51,28 @@ fn run(cli: Cli, format: Format) -> Result<(), CliError> {
         ));
     }
     let config_path = cli.config.unwrap_or_else(dam_adapters::default_config_path);
-    let store_path = cli.store.unwrap_or_else(dam_adapters::default_store_path);
-    let mut ctx = Context::open(config_path, &store_path, format, cli.no_pull)?;
-    let report = commands::dispatch(&mut ctx, cli.command)?;
-    output::print(format, &report)
+    // The catalogue verbs read config and nothing else, so they answer here,
+    // before a store is opened: a store that will not open is a failure for
+    // the verbs that read one, and no reason to refuse a client the
+    // categories and filters it renders its first screen from.
+    match cli.command {
+        Command::Category(a) => {
+            let config = dam_adapters::load_config(&config_path)?;
+            let report = commands::catalogue::run_category(&config, a.command)?;
+            output::print(format, &report)
+        }
+        Command::Filter(a) => {
+            let config = dam_adapters::load_config(&config_path)?;
+            let report = commands::catalogue::run_filter(&config, a.command)?;
+            output::print(format, &report)
+        }
+        command => {
+            let store_path = cli.store.unwrap_or_else(dam_adapters::default_store_path);
+            let mut ctx = Context::open(config_path, &store_path, format, cli.no_pull)?;
+            let report = commands::dispatch(&mut ctx, command)?;
+            output::print(format, &report)
+        }
+    }
 }
 
 #[cfg(test)]

@@ -11,7 +11,7 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
-pub(crate) use reading::LsArgs;
+pub(crate) use reading::{CategoryArgs, CategoryCommand, FilterArgs, FilterCommand, LsArgs};
 pub(crate) use remotes::{PullArgs, PushArgs, RemoteArgs, RemoteCommand, ResolveArgs};
 pub(crate) use staging::{
     AddArgs, CommitArgs, DiffArgs, ResetArgs, RestoreArgs, ShowArgs, StatusArgs,
@@ -72,6 +72,10 @@ pub(crate) enum Command {
     Diff(DiffArgs),
     /// List objects, optionally by query or saved filter.
     Ls(LsArgs),
+    /// The label categories config declares.
+    Category(CategoryArgs),
+    /// The saved filters config declares.
+    Filter(FilterArgs),
     /// Manage remotes.
     Remote(RemoteArgs),
     /// Send unpushed commits to a remote, or to every remote.

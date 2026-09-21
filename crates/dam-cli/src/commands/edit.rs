@@ -39,7 +39,7 @@ fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
         (None, false) => None,
     };
     f.deadline = match (args.deadline, args.no_deadline) {
-        (Some(d), _) => Some(Some(deadline_flag(&d)?)),
+        (Some(d), _) => Some(Some(deadline_flag(ctx, &d)?)),
         (None, true) => Some(None),
         (None, false) => None,
     };

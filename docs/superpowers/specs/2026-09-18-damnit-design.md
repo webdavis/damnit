@@ -215,6 +215,18 @@ that sets the field. Reopening records one ordinary working change, op `update` 
 its fields, so it stages, commits and pushes the way every other edit does; the Todoist helper
 sends it as the Sync API's `item_uncomplete`. A task that is not completed is refused, naming it.
 
+Every flag that takes a date, `--due`, `--deadline`, `--start` and `--end`, reads one grammar:
+`today`, `tomorrow`, a weekday by short or full name, `next` before a weekday, `in <n>` days, weeks
+or months, `YYYY-MM-DD`, and `YYYY-MM-DDTHH:MM` or a full zoned timestamp for a flag that holds a
+time. Words are case-insensitive. A weekday means its next occurrence strictly after today, so a
+weekday named on its own day is a week out; `next mon` means that same day rather than the Monday of
+the following calendar week, because an operator has no way to say which of those two they meant and
+the sooner date is the recoverable mistake. A count of months lands on the same day of a later
+month, clamped to that month's last day. A deadline is a whole day, so a text carrying a time keeps
+its date and drops the time. A word outside the grammar is the command line being wrong rather than
+a rule being broken: exit 2, kind `usage`, and the message names every accepted form. A deadline
+already in the past is a date like any other.
+
 Every flag on `edit` is structured and cannot be malformed. `-e` opens the object in `$EDITOR` as a
 commented template; on save `dam` parses it, and a parse failure names the problem and reopens with
 your text intact. Nothing reaches the working layer until it parses.
@@ -284,6 +296,8 @@ dam ls [<query>] [--json|--toon] [--no-pull]
 dam ls today                a saved filter from config
 dam show <oid> [--json|--toon] [--no-pull]
 dam status [--json|--toon] [--full]
+dam category list [--json|--toon]
+dam filter list [--json|--toon]
 ```
 
 `--no-pull` answers from the local store: the reads that would otherwise pull a stale remote first,
@@ -315,6 +329,25 @@ Saved filters live in config and run by name:
 [filter.today]
 query = "due:today | overdue"
 ```
+
+`dam category list` and `dam filter list` print what config declares, so a client groups a label
+picker by category, pre-refuses an exclusive clash and offers the saved filters as views without
+owning a second parser for a file `dam` owns. Each answers in the shape `remote list` uses, one
+top-level key holding an array of objects with fixed keys:
+
+```json
+{"categories": [{"name": "effort", "values": ["light", "admin", "deep"], "exclusive": true}]}
+{"filters": [{"name": "today", "query": "due:today | overdue"}]}
+```
+
+Both list in alphabetical order by name, which is the order `dam`'s config reader hands them over
+rather than the order the file declares them; a client that wants another sorts what it is given.
+
+Nothing declared is an empty array rather than a failure, so a client renders an empty picker. The
+human line is the name, then `exclusive` or `any` and the values for a category, and the query for
+a filter. Neither verb reads the store or a remote, so both refuse `--no-pull` like every other
+verb that never pulls, and neither opens a store at all: a store that will not open fails the verbs
+that read one and never a listing of what config declares.
 
 Every read command takes `--json` and prints one JSON document on stdout. This is the interface
 the clients use.
@@ -507,6 +540,9 @@ exclusive = true
 [filter.today]
 query = "due:today | overdue"
 ```
+
+`dam category list` and `dam filter list` print the `[category.*]` and `[filter.*]` tables back, so
+a client reads the catalogue from `dam` rather than from this file.
 
 `stale` makes a read command pull that remote first when the last pull is older than the value.
 Absent, reads never pull. `--no-pull` on the command line skips that pass for one invocation.

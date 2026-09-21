@@ -198,6 +198,8 @@ fn no_pull_is_refused_on_a_verb_that_never_pulls() {
         vec!["pull", "--no-pull"],
         vec!["status", "--no-pull"],
         vec!["done", oid.as_str(), "--no-pull"],
+        vec!["category", "list", "--no-pull"],
+        vec!["filter", "list", "--no-pull"],
     ] {
         let out = sb.output(&args);
         assert_eq!(
@@ -215,5 +217,175 @@ fn no_pull_is_refused_on_a_verb_that_never_pulls() {
     ] {
         let out = sb.output(&args);
         assert_eq!(out.status.code(), Some(0), "{args:?} refused the flag");
+    }
+}
+
+/// The catalogue a client renders: two listing verbs, so no client owns a
+/// second parser for the config file `dam` owns.
+#[test]
+fn category_list_and_filter_list_print_what_config_declares() {
+    let _guard = support::guard("category_list_and_filter_list_print_what_config_declares");
+    let sb = Sandbox::new();
+    let config = sb.dir.path().join("config.toml");
+    let mut text = std::fs::read_to_string(&config).unwrap();
+    text.push_str(
+        "\n[category.effort]\nvalues = [\"light\", \"admin\", \"deep\"]\nexclusive = true\n\
+         \n[category.context]\nvalues = [\"home\", \"errand\"]\n\
+         \n[filter.today]\nquery = \"due:today | overdue\"\n",
+    );
+    std::fs::write(&config, text).unwrap();
+
+    let (ok, out, err) = sb.dam(&["category", "list", "--json"]);
+    assert!(ok, "{err}");
+    let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(
+        answer,
+        serde_json::json!({"categories": [
+            {"name": "context", "values": ["home", "errand"], "exclusive": false},
+            {"name": "effort", "values": ["light", "admin", "deep"], "exclusive": true},
+        ]}),
+        "{answer}"
+    );
+
+    let (ok, out, err) = sb.dam(&["filter", "list", "--json"]);
+    assert!(ok, "{err}");
+    let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(
+        answer,
+        serde_json::json!({"filters": [{"name": "today", "query": "due:today | overdue"}]}),
+        "{answer}"
+    );
+
+    let (ok, out, err) = sb.dam(&["category", "list"]);
+    assert!(ok, "{err}");
+    assert!(out.contains("effort"), "{out}");
+    assert!(out.contains("light, admin, deep"), "{out}");
+    let (ok, out, err) = sb.dam(&["filter", "list"]);
+    assert!(ok, "{err}");
+    assert!(out.contains("due:today | overdue"), "{out}");
+}
+
+/// A store with nothing declared answers with an empty list rather than a
+/// failure, so a client renders an empty picker instead of an error.
+#[test]
+fn an_empty_catalogue_is_an_empty_array() {
+    let _guard = support::guard("an_empty_catalogue_is_an_empty_array");
+    let sb = Sandbox::new();
+
+    for (args, key) in [
+        (["category", "list", "--json"], "categories"),
+        (["filter", "list", "--json"], "filters"),
+    ] {
+        let (ok, out, err) = sb.dam(&args);
+        assert!(ok, "{err}");
+        let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert_eq!(answer[key], serde_json::json!([]), "{answer}");
+    }
+}
+
+/// TOON is the same answer in the compact form, which is a table per list.
+#[test]
+fn the_catalogue_renders_as_toon_too() {
+    let _guard = support::guard("the_catalogue_renders_as_toon_too");
+    let sb = Sandbox::new();
+    let config = sb.dir.path().join("config.toml");
+    let mut text = std::fs::read_to_string(&config).unwrap();
+    text.push_str("\n[filter.today]\nquery = \"due:today\"\n");
+    std::fs::write(&config, text).unwrap();
+
+    let (ok, out, err) = sb.dam(&["filter", "list", "--toon"]);
+    assert!(ok, "{err}");
+    assert!(out.starts_with("filters[1]{name,query}:"), "{out}");
+}
+
+/// The date words a client passes through from its own prompt. The dates
+/// themselves are pinned against a fixed clock in the unit tests; this run
+/// proves the real binary reads each form on every flag that takes a date.
+#[test]
+fn every_date_flag_accepts_the_words_and_refuses_anything_else() {
+    let _guard = support::guard("every_date_flag_accepts_the_words_and_refuses_anything_else");
+    let sb = Sandbox::new();
+
+    for word in [
+        "today",
+        "tomorrow",
+        "mon",
+        "MONDAY",
+        "next fri",
+        "in 3 days",
+        "in 2 months",
+    ] {
+        let oid = sb.new_object(&["a task", "--due", word, "--deadline", word]);
+        let (ok, out, err) = sb.dam(&["edit", &oid, "--due", word, "--deadline", word, "--json"]);
+        assert!(ok, "{word}: {err}");
+        let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert!(answer["task"]["due"].is_string(), "{word}: {answer}");
+        assert!(answer["task"]["deadline"].is_string(), "{word}: {answer}");
+    }
+    let oid = sb.new_object(&[
+        "an event",
+        "--event",
+        "--start",
+        "mon",
+        "--end",
+        "in 1 week",
+    ]);
+    let (ok, _, err) = sb.dam(&["show", &oid, "--json"]);
+    assert!(ok, "{err}");
+
+    for flag in ["--due", "--deadline", "--start", "--end"] {
+        let out = sb.output(&["edit", &oid, flag, "someday", "--json"]);
+        assert_eq!(out.status.code(), Some(2), "{flag} read a word it cannot");
+        let said = String::from_utf8_lossy(&out.stderr);
+        let document: serde_json::Value = serde_json::from_str(&said).unwrap();
+        assert_eq!(document["error"]["kind"], "usage", "{said}");
+        let message = document["error"]["message"].as_str().unwrap();
+        for form in ["today", "next <weekday>", "in <n> days", "YYYY-MM-DD"] {
+            assert!(message.contains(form), "{flag}: {message}");
+        }
+    }
+}
+
+/// The catalogue is what a client renders its first screen from, and it lives
+/// in config. A store it cannot open is a failure for the verbs that read one
+/// and no reason to refuse the listing, so neither verb opens one at all.
+#[test]
+fn the_catalogue_answers_although_the_store_will_not_open() {
+    let _guard = support::guard("the_catalogue_answers_although_the_store_will_not_open");
+    let sb = Sandbox::new();
+    let config = sb.dir.path().join("config.toml");
+    let mut text = std::fs::read_to_string(&config).unwrap();
+    text.push_str(
+        "\n[category.effort]\nvalues = [\"deep\"]\nexclusive = true\n\
+         \n[filter.today]\nquery = \"due:today\"\n",
+    );
+    std::fs::write(&config, text).unwrap();
+
+    // A directory where the store file goes: SQLite cannot open it, and no
+    // run can create one over it either.
+    let store = sb.dir.path().join("dam.db");
+    std::fs::create_dir(&store).unwrap();
+
+    let broken = sb.output(&["ls", "--json"]);
+    assert_eq!(
+        broken.status.code(),
+        Some(1),
+        "the store opened after all, so this proves nothing: {}",
+        String::from_utf8_lossy(&broken.stderr)
+    );
+
+    for (args, key, name) in [
+        (["category", "list", "--json"], "categories", "effort"),
+        (["filter", "list", "--json"], "filters", "today"),
+    ] {
+        let out = sb.output(&args);
+        assert_eq!(
+            out.status.code(),
+            Some(0),
+            "{args:?} reached the store: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        let answer: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+        assert_eq!(answer[key][0]["name"], name, "{answer}");
     }
 }
