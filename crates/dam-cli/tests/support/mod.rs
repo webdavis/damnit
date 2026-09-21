@@ -8,6 +8,18 @@
 
 pub mod sandbox;
 
+use sandbox::Sandbox;
+
+/// One `dam status` run as a parsed document. `extra` carries the format flag
+/// and anything else the case wants, since `status` alone prints a human page.
+pub fn status_json(sb: &Sandbox, extra: &[&str]) -> serde_json::Value {
+    let mut args = vec!["status"];
+    args.extend_from_slice(extra);
+    let (ok, out, err) = sb.dam(&args);
+    assert!(ok, "{err}");
+    serde_json::from_str(&out).unwrap()
+}
+
 use std::time::{Duration, Instant};
 
 /// What a test should finish inside. Over this it warns, which is the signal
