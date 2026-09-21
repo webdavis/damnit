@@ -255,7 +255,39 @@ mod tests {
         Oid::generate(&mut |x: &mut [u8]| x.fill(1))
     }
 
-    /// One of every variant, so the distinctness check below sees them all.
+    /// How many slots `slot` below hands out. Kept in sync by hand; nothing
+    /// forces it to rise when a new variant reuses an existing slot.
+    const RULE_COUNT: usize = 18;
+
+    /// Which variant this is. The match is exhaustive, so a rule added to the
+    /// enum does not compile until it has an arm here, but that arm may reuse
+    /// an existing index. `every_variant_has_a_sample` then catches a variant
+    /// whose sample is missing from `every_refusal`; it does not catch a new
+    /// variant that reused a slot instead of taking a fresh one.
+    fn slot(refusal: &Refusal) -> usize {
+        match refusal {
+            Refusal::Blocked { .. } => 0,
+            Refusal::Cycle { .. } => 1,
+            Refusal::Labels(_) => 2,
+            Refusal::UnknownCategory(_) => 3,
+            Refusal::NoSuchObject(_) => 4,
+            Refusal::NoWorkingObject(_) => 5,
+            Refusal::NoSuchRemote(_) => 6,
+            Refusal::NotATask(_) => 7,
+            Refusal::NotAnEvent(_) => 8,
+            Refusal::NotCompleted(_) => 9,
+            Refusal::NotCommitted(_) => 10,
+            Refusal::DirtyOnPull { .. } => 11,
+            Refusal::MoveInsideItself(_) => 12,
+            Refusal::NothingToCommit => 13,
+            Refusal::NeedsAnAnswer => 14,
+            Refusal::NeedsAnEditor => 15,
+            Refusal::UnresolvedConflicts(_) => 16,
+            Refusal::MissingCredential { .. } => 17,
+        }
+    }
+
+    /// One of every variant, so the checks below see them all.
     fn every_refusal() -> Vec<Refusal> {
         vec![
             Refusal::Blocked {
@@ -289,6 +321,18 @@ mod tests {
                 name: "api_token".into(),
             },
         ]
+    }
+
+    #[test]
+    fn every_variant_has_a_sample() {
+        let mut slots: Vec<usize> = every_refusal().iter().map(slot).collect();
+        slots.sort_unstable();
+        slots.dedup();
+        assert_eq!(
+            slots,
+            (0..RULE_COUNT).collect::<Vec<usize>>(),
+            "a rule has no sample in every_refusal, so the checks below never see it"
+        );
     }
 
     #[test]
