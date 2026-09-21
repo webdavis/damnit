@@ -130,6 +130,45 @@ fn every_failure_class_names_itself_under_json() {
     assert_eq!(kind_of(&no_helper), "helper");
 }
 
+/// `-e` is refused rather than run under a machine format, and an editor that
+/// dies in a human run is an editor failure rather than a bad command line.
+#[test]
+fn an_editor_is_refused_under_a_machine_format_and_its_death_is_its_own_failure() {
+    let _guard = support::guard(
+        "an_editor_is_refused_under_a_machine_format_and_its_death_is_its_own_failure",
+    );
+    let sb = Sandbox::new();
+    let oid = sb.new_object(&["buy oat milk"]);
+    let dies = sb.dir.path().join("bin/dies");
+    std::fs::write(&dies, "#!/bin/sh\nexit 1\n").unwrap();
+    std::fs::set_permissions(&dies, std::os::unix::fs::PermissionsExt::from_mode(0o755)).unwrap();
+
+    let refused = sb
+        .command(&["edit", &oid, "-e", "--json"])
+        .env("EDITOR", &dies)
+        .env("VISUAL", &dies)
+        .output()
+        .unwrap();
+    assert_eq!(refused.status.code(), Some(4));
+    let document = error_document(&refused);
+    assert_eq!(document["error"]["kind"], "refused");
+    assert_eq!(document["error"]["rule"], "needs_an_editor");
+
+    let died = sb
+        .command(&["edit", &oid, "-e"])
+        .env("EDITOR", &dies)
+        .env("VISUAL", &dies)
+        .output()
+        .unwrap();
+    assert_eq!(
+        died.status.code(),
+        Some(1),
+        "an editor that died is dam failing"
+    );
+    let err = String::from_utf8_lossy(&died.stderr);
+    assert!(err.starts_with("dam: editor: "), "{err}");
+}
+
 #[test]
 fn toon_carries_the_same_error_document() {
     let _guard = support::guard("toon_carries_the_same_error_document");

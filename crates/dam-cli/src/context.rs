@@ -5,24 +5,12 @@ use dam_adapters::{
     load_config,
 };
 use dam_application::{
-    Clock, Config, CredentialSource, EditorError, EditorSession, HelperLauncher, Randomness, Store,
+    Clock, Config, CredentialSource, EditorSession, HelperLauncher, Randomness, Store,
 };
 
 use crate::error::CliError;
 use crate::output::Format;
 use crate::prompt::{Prompt, RefusingPrompt, TerminalPrompt};
-
-/// Installed instead of `EnvEditor` for `--json`/`--toon`, so `edit -e` fails
-/// instead of opening `$EDITOR`.
-pub(crate) struct RefusingEditor;
-
-impl EditorSession for RefusingEditor {
-    fn edit(&self, _text: &str) -> Result<String, EditorError> {
-        Err(EditorError(
-            "-e opens an editor; drop --json/--toon to use it".into(),
-        ))
-    }
-}
 
 pub(crate) struct Context {
     pub(crate) store: Box<dyn Store>,
@@ -33,15 +21,16 @@ pub(crate) struct Context {
     pub(crate) random: Box<dyn Randomness>,
     pub(crate) launcher: Box<dyn HelperLauncher>,
     pub(crate) credentials: Box<dyn CredentialSource>,
-    pub(crate) editor: Box<dyn EditorSession>,
+    /// `None` under `--json`/`--toon`, which cannot open one.
+    pub(crate) editor: Option<Box<dyn EditorSession>>,
     pub(crate) prompt: Box<dyn Prompt>,
     pub(crate) tz: jiff::tz::TimeZone,
 }
 
 impl Context {
     /// `format` picks the prompt and editor: `Human` gets the real terminal
-    /// pair, `Json`/`Toon` get the refusing pair so a verb that needs to ask
-    /// something fails cleanly instead of blocking or opening an editor.
+    /// pair, `Json`/`Toon` get a refusing prompt and no editor at all, so a
+    /// verb needing either refuses instead of blocking or opening one.
     pub(crate) fn open(
         config_path: PathBuf,
         store_path: &Path,
@@ -49,12 +38,12 @@ impl Context {
     ) -> Result<Context, CliError> {
         let config = load_config(&config_path)?;
         let store = SqliteStore::open(store_path)?;
-        let (prompt, editor): (Box<dyn Prompt>, Box<dyn EditorSession>) = match format {
+        let (prompt, editor): (Box<dyn Prompt>, Option<Box<dyn EditorSession>>) = match format {
             Format::Human => (
                 Box::new(TerminalPrompt::default()),
-                Box::new(EnvEditor::from_env()),
+                Some(Box::new(EnvEditor::from_env())),
             ),
-            Format::Json | Format::Toon => (Box::new(RefusingPrompt), Box::new(RefusingEditor)),
+            Format::Json | Format::Toon => (Box::new(RefusingPrompt), None),
         };
         Ok(Context {
             store: Box::new(store),

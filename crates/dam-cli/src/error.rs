@@ -48,6 +48,8 @@ impl CliError {
             | CliError::Config(ConfigError::Io(_)) => "store",
             CliError::UseCase(UseCaseError::Helper(_)) => "helper",
             CliError::UseCase(UseCaseError::Credential(_)) => "credential",
+            // Only a human run opens an editor, so this classifies a failure
+            // no document is ever printed for.
             CliError::UseCase(UseCaseError::Editor(_)) => "editor",
             CliError::UseCase(UseCaseError::Parse(_)) | CliError::Config(_) => "parse",
             CliError::Usage(_) | CliError::Ambiguous { .. } => "usage",
@@ -112,7 +114,8 @@ fn refusal_oids(refusal: &Refusal) -> Vec<String> {
         | Refusal::UnresolvedConflicts(_)
         | Refusal::MissingCredential { .. }
         | Refusal::NothingToCommit
-        | Refusal::NeedsAnAnswer => Vec::new(),
+        | Refusal::NeedsAnAnswer
+        | Refusal::NeedsAnEditor => Vec::new(),
     }
 }
 
@@ -232,8 +235,8 @@ mod tests {
     #[test]
     fn a_failure_naming_no_object_carries_an_empty_list() {
         let error = CliError::UseCase(UseCaseError::Editor(EditorError("no editor".into())));
-        assert_eq!(error.document()["error"]["kind"], "editor");
         assert_eq!(error.document()["error"]["oids"], serde_json::json!([]));
+        assert_eq!(error.document()["error"]["rule"], serde_json::Value::Null);
     }
 
     #[test]

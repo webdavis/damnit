@@ -35,6 +35,8 @@ pub enum Refusal {
     NothingToCommit,
     /// A verb needed the operator's answer and the format cannot carry one.
     NeedsAnAnswer,
+    /// `-e` needed an editor and the format cannot open one.
+    NeedsAnEditor,
     UnresolvedConflicts(usize),
     MissingCredential {
         remote: String,
@@ -72,6 +74,7 @@ impl Refusal {
             Refusal::MoveInsideItself(_) => "move_inside_itself",
             Refusal::NothingToCommit => "nothing_to_commit",
             Refusal::NeedsAnAnswer => "needs_an_answer",
+            Refusal::NeedsAnEditor => "needs_an_editor",
             Refusal::UnresolvedConflicts(_) => "unresolved_conflicts",
             Refusal::MissingCredential { .. } => "missing_credential",
         }
@@ -169,6 +172,9 @@ impl fmt::Display for Refusal {
             Refusal::NeedsAnAnswer => f.write_str(
                 "a question needs an answer; drop --json/--toon to answer interactively",
             ),
+            Refusal::NeedsAnEditor => {
+                f.write_str("-e opens an editor; drop --json/--toon to use it")
+            }
             Refusal::MissingCredential { remote, name } => {
                 write!(
                     f,
@@ -276,6 +282,7 @@ mod tests {
             Refusal::MoveInsideItself(oid()),
             Refusal::NothingToCommit,
             Refusal::NeedsAnAnswer,
+            Refusal::NeedsAnEditor,
             Refusal::UnresolvedConflicts(2),
             Refusal::MissingCredential {
                 remote: "todoist".into(),

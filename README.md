@@ -93,8 +93,8 @@ output:
      "oids": ["98d878013fb0e026d37170e7ceed6707192ae99a",
               "a9db854060d1943ef9eb9f6d7a8ac0b1ace45d77"]}}
 
-`kind` is one of `refused`, `store`, `helper`, `credential`, `editor`, `parse`, `usage` and
-`cancelled`. `rule` names which rule a refusal broke, such as `blocked`, `no_such_object` or
+`kind` is one of `refused`, `store`, `helper`, `credential`, `parse`, `usage` and `cancelled`.
+`rule` names which rule a refusal broke, such as `blocked`, `no_such_object` or
 `nothing_to_commit`, and is null for every other kind. `oids` names the objects the message names,
 in the order it names them. Standard
 error carries that one document and nothing else, so parse the whole stream; a run that succeeds
@@ -105,7 +105,7 @@ writes nothing there. Without those flags you get the plain `dam: <message>` lin
 | Code | Meaning |
 |---|---|
 | 0 | The command did what it was asked. |
-| 1 | `dam` failed: a store, config, helper or io failure. |
+| 1 | `dam` failed: a store, config, helper, editor or io failure. |
 | 2 | The command line was wrong: an unknown argument or subcommand, a flag value `dam` refuses to read, or an oid prefix that names more than one object. |
 | 3 | Cancelled: you interrupted, or a prompt could not be answered. |
 | 4 | `dam` refused by one of its own rules, and the message names the rule. |

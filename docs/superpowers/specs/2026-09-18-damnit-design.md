@@ -319,7 +319,7 @@ One meaning per code, so a client can tell what happened without reading the mes
 | Code | Meaning |
 |---|---|
 | 0 | The command did what it was asked. |
-| 1 | `dam` failed: a store, config, helper or io failure. |
+| 1 | `dam` failed: a store, config, helper, editor or io failure. |
 | 2 | The command line was wrong: an unknown argument or subcommand, a flag value `dam` refuses to read, or an oid prefix that names more than one object. |
 | 3 | Cancelled: the operator interrupted, or a prompt could not be answered. |
 | 4 | `dam` refused by one of its own rules, and the message names the rule. |
@@ -512,8 +512,9 @@ the reason instead of matching substrings. Standard output stays empty on a fail
           "a9db854060d1943ef9eb9f6d7a8ac0b1ace45d77"]}}
 ```
 
-`kind` is one of `refused`, `store`, `helper`, `credential`, `editor`, `parse`, `usage` and
-`cancelled`.
+`kind` is one of `refused`, `store`, `helper`, `credential`, `parse`, `usage` and `cancelled`. An
+editor failure is not among them: `-e` under a machine format is refused as `needs_an_editor`
+rather than run, so no document is ever printed for an editor that died.
 
 `rule` names the rule a refusal broke, one stable snake_case word per rule, and is null for every
 other kind. `refused` alone is too coarse for a client: a task that is gone and a task that is

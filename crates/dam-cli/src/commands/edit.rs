@@ -1,5 +1,5 @@
 use dam_adapters::{parse_template, render_template};
-use dam_application::{EditFields, Refusal, edit};
+use dam_application::{EditFields, Refusal, UseCaseError, edit};
 use dam_domain::Oid;
 
 use crate::args::EditArgs;
@@ -91,12 +91,13 @@ fn through_editor(ctx: &Context, oid: &Oid) -> Result<EditFields, CliError> {
         .store
         .get(oid)?
         .ok_or_else(|| Refusal::NoWorkingObject(oid.short().to_string()))?;
+    let editor = ctx.editor.as_ref().ok_or(Refusal::NeedsAnEditor)?;
     let original = render_template(&current);
     let mut opened = original.clone();
     loop {
-        // A missing/refused editor, a non-zero exit, or a dropped --json/--toon
-        // run are all "you can't do this right now", not an internal failure.
-        let saved = ctx.editor.edit(&opened).map_err(|e| CliError::Usage(e.0))?;
+        let saved = editor
+            .edit(&opened)
+            .map_err(|e| CliError::UseCase(UseCaseError::Editor(e)))?;
         if saved == opened || saved == original {
             return Err(CliError::Cancelled);
         }
@@ -194,7 +195,7 @@ mod tests {
             .unwrap();
         let saved = dam_adapters::render_template(&ctx.store.get(&oid(1)).unwrap().unwrap())
             .replace("subject = \"milk\"", "subject = \"eggs\"");
-        ctx.editor = Box::new(ScriptedEditor(saved));
+        ctx.editor = Some(Box::new(ScriptedEditor(saved)));
         run(
             &mut ctx,
             EditArgs {
@@ -216,7 +217,7 @@ mod tests {
             .put(&Object::Task(Task::new(oid(1), "milk")))
             .unwrap();
         let same = dam_adapters::render_template(&ctx.store.get(&oid(1)).unwrap().unwrap());
-        ctx.editor = Box::new(ScriptedEditor(same));
+        ctx.editor = Some(Box::new(ScriptedEditor(same)));
         assert!(matches!(
             run(
                 &mut ctx,
@@ -235,7 +236,7 @@ mod tests {
         ctx.store
             .put(&Object::Task(Task::new(oid(1), "milk")))
             .unwrap();
-        ctx.editor = Box::new(ScriptedEditor("priority = \"high\"\n".into()));
+        ctx.editor = Some(Box::new(ScriptedEditor("priority = \"high\"\n".into())));
         let err = run(
             &mut ctx,
             EditArgs {
@@ -265,7 +266,8 @@ mod tests {
             },
         )
         .unwrap_err();
-        assert!(matches!(err, CliError::Usage(_)));
+        assert_eq!(err.to_string(), Refusal::NeedsAnEditor.to_string());
+        assert_eq!(err.exit_code(), 4);
     }
 
     #[test]
