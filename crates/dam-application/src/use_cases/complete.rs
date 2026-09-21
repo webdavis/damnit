@@ -71,8 +71,12 @@ pub fn complete(
             Completed::RolledForward { next_due: next }
         }
         None => {
+            // The time records the completion, so a second done leaves the
+            // first one standing and writes the same object back.
+            if !task.done {
+                task.completed_at = Some(clock.now());
+            }
             task.done = true;
-            task.completed_at = Some(clock.now());
             Completed::Done
         }
     };

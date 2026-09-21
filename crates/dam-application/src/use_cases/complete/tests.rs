@@ -358,3 +358,22 @@ fn a_task_that_rolls_forward_records_no_completion_time() {
     assert!(!task.done);
     assert_eq!(task.completed_at, None);
 }
+
+/// Completing a task that is already done writes the same object back, so the
+/// second run leaves nothing for `diff` to report.
+#[test]
+fn completing_an_already_completed_task_changes_nothing() {
+    let store = MemoryStore::new();
+    let id = put_task(&store, 1, "", false);
+    let first = FixedClock(date(2026, 9, 18));
+    complete(&store, &first, &FixedRandom::new(1), &id, Force::No).unwrap();
+    let after_first = store.get(&id).unwrap().unwrap();
+
+    let later = FixedClock(date(2026, 9, 19));
+    complete(&store, &later, &FixedRandom::new(1), &id, Force::No).unwrap();
+    assert_eq!(
+        store.get(&id).unwrap().unwrap(),
+        after_first,
+        "a second done restamped the completion time"
+    );
+}

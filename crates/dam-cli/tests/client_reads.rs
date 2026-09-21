@@ -125,3 +125,22 @@ fn a_completion_time_appears_in_the_object_and_the_change_and_is_cleared_by_undo
         "{reopened}"
     );
 }
+
+/// A client that completes a task twice, because the operator clicked twice or
+/// a retry repeated the call, leaves the workspace clean.
+#[test]
+fn completing_a_task_twice_leaves_nothing_to_report() {
+    let _guard = support::guard("completing_a_task_twice_leaves_nothing_to_report");
+    let sb = Sandbox::new();
+    let oid = sb.new_object(&["repeat done test"]);
+    assert!(sb.dam(&["done", &oid]).0);
+    assert!(sb.dam(&["add", "-A"]).0);
+    assert!(sb.dam(&["commit", "-m", "done it"]).0);
+
+    assert!(sb.dam(&["done", &oid]).0);
+    assert_eq!(
+        status_json(&sb, &["--json"])["unstaged"],
+        serde_json::json!([]),
+        "the second done made a change describing nothing"
+    );
+}
