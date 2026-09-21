@@ -11,6 +11,8 @@ pub struct EditFields {
     pub priority: Option<Priority>,
     pub due: Option<Option<When>>,
     pub deadline: Option<Option<Date>>,
+    /// Reopens a completed task; refused on one that is already open.
+    pub undone: bool,
     pub add_labels: Vec<String>,
     pub remove_labels: Vec<String>,
     pub add_depends: Vec<Oid>,
@@ -71,7 +73,8 @@ pub fn apply(object: &Object, fields: &EditFields) -> Result<Object, UseCaseErro
             || fields.due.is_some()
             || fields.deadline.is_some()
             || fields.attach.is_some()
-            || fields.recurrence.is_some())
+            || fields.recurrence.is_some()
+            || fields.undone)
     {
         return Err(Refusal::NotATask(next.oid().clone()).into());
     }
@@ -118,6 +121,12 @@ pub fn apply(object: &Object, fields: &EditFields) -> Result<Object, UseCaseErro
             }
             if let Some(a) = &fields.attach {
                 t.event = a.clone();
+            }
+            if fields.undone {
+                if !t.done {
+                    return Err(Refusal::NotCompleted(t.base.oid.clone()).into());
+                }
+                t.done = false;
             }
         }
         Object::Event(e) => {

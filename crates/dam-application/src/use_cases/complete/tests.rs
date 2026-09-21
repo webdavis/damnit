@@ -58,7 +58,7 @@ fn an_unblocked_task_is_done() {
     let id = put_task(&store, 1, "", false);
     assert!(plan_complete(&store, &id).unwrap().blockers.is_empty());
     assert_eq!(
-        complete(&store, &today(), &FixedRandom::new(9), &id, Force::No, None).unwrap(),
+        complete(&store, &today(), &FixedRandom::new(9), &id, Force::No).unwrap(),
         Completed::Done
     );
     assert!(store.get(&id).unwrap().unwrap().as_task().unwrap().done);
@@ -81,15 +81,7 @@ fn open_children_and_dependencies_block_and_force_no_refuses() {
             Blocker::OpenChild(child.clone())
         ]
     );
-    let err = complete(
-        &store,
-        &today(),
-        &FixedRandom::new(9),
-        &parent,
-        Force::No,
-        None,
-    )
-    .unwrap_err();
+    let err = complete(&store, &today(), &FixedRandom::new(9), &parent, Force::No).unwrap_err();
     assert!(matches!(
         err,
         UseCaseError::Refused(Refusal::Blocked { .. })
@@ -110,15 +102,7 @@ fn force_yes_completes_and_leaves_children_where_they_are() {
     let store = MemoryStore::new();
     let parent = put_task(&store, 1, "p", false);
     let child = put_task(&store, 2, "p/c", false);
-    complete(
-        &store,
-        &today(),
-        &FixedRandom::new(9),
-        &parent,
-        Force::Yes,
-        None,
-    )
-    .unwrap();
+    complete(&store, &today(), &FixedRandom::new(9), &parent, Force::Yes).unwrap();
     assert!(store.get(&parent).unwrap().unwrap().as_task().unwrap().done);
     assert_eq!(
         store.get(&child).unwrap().unwrap().base().path.as_str(),
@@ -140,8 +124,7 @@ fn interactive_up_moves_children_beside_the_parent() {
         &today(),
         &FixedRandom::new(9),
         &parent,
-        Force::Interactive,
-        Some(d),
+        Force::With(d),
     )
     .unwrap();
     assert_eq!(
@@ -164,8 +147,7 @@ fn interactive_into_groups_children_under_a_new_task() {
         &today(),
         &FixedRandom::new(9),
         &parent,
-        Force::Interactive,
-        Some(d),
+        Force::With(d),
     )
     .unwrap();
     let group = store.get(&oid(9)).unwrap().unwrap();
@@ -192,8 +174,7 @@ fn interactive_up_carries_a_grandchild_along() {
         &today(),
         &FixedRandom::new(9),
         &parent,
-        Force::Interactive,
-        Some(d),
+        Force::With(d),
     )
     .unwrap();
     assert_eq!(
@@ -227,8 +208,7 @@ fn interactive_into_carries_a_grandchild_along() {
         &today(),
         &FixedRandom::new(9),
         &parent,
-        Force::Interactive,
-        Some(d),
+        Force::With(d),
     )
     .unwrap();
     assert_eq!(
@@ -259,15 +239,7 @@ fn interactive_into_with_no_open_children_creates_no_group() {
         children: ChildDisposition::Into("later".into()),
         dependencies: DependencyDisposition::Keep,
     };
-    complete(
-        &store,
-        &today(),
-        &FixedRandom::new(9),
-        &id,
-        Force::Interactive,
-        Some(d),
-    )
-    .unwrap();
+    complete(&store, &today(), &FixedRandom::new(9), &id, Force::With(d)).unwrap();
     assert!(store.get(&oid(9)).unwrap().is_none());
 }
 
@@ -283,15 +255,7 @@ fn interactive_drop_removes_open_dependencies() {
         children: ChildDisposition::Keep,
         dependencies: DependencyDisposition::Drop,
     };
-    complete(
-        &store,
-        &today(),
-        &FixedRandom::new(9),
-        &id,
-        Force::Interactive,
-        Some(d),
-    )
-    .unwrap();
+    complete(&store, &today(), &FixedRandom::new(9), &id, Force::With(d)).unwrap();
     let t = store.get(&id).unwrap().unwrap();
     assert!(t.base().depends.is_empty() && t.as_task().unwrap().done);
 }
@@ -306,7 +270,7 @@ fn a_recurring_task_rolls_forward_instead_of_closing() {
         task.due = Some(When::Day(date(2026, 9, 18)));
     }
     store.put(&t).unwrap();
-    let out = complete(&store, &today(), &FixedRandom::new(9), &id, Force::No, None).unwrap();
+    let out = complete(&store, &today(), &FixedRandom::new(9), &id, Force::No).unwrap();
     assert_eq!(
         out,
         Completed::RolledForward {
@@ -328,15 +292,7 @@ fn an_event_is_not_a_task() {
         When::Day(date(2026, 1, 2)),
     );
     store.put(&Object::Event(e)).unwrap();
-    let err = complete(
-        &store,
-        &today(),
-        &FixedRandom::new(9),
-        &oid(5),
-        Force::No,
-        None,
-    )
-    .unwrap_err();
+    let err = complete(&store, &today(), &FixedRandom::new(9), &oid(5), Force::No).unwrap_err();
     assert_eq!(err, UseCaseError::Refused(Refusal::NotATask(oid(5))));
 }
 

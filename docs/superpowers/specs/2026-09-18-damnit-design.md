@@ -141,6 +141,15 @@ The refusal lists the blockers. `--force` completes it anyway. `--force --intera
 `done.interactive = true` in config makes every `--force` ask, so the flag is the opt-in and the
 setting is the default.
 
+`--children up|keep|into:<name>` and `--depends drop|keep` give those same answers on the command
+line, one word per answer the prompt offers, with the group's name carried inline so `--children`
+needs no second value. Either flag turns the prompt off for that run whatever `done.interactive`
+says, which is what lets a client complete a blocked parent with no terminal at all, and the flag
+that is absent takes `keep`, the answer that disturbs least. `--force` on its own still asks when
+`done.interactive` is set. A word outside the set is a usage error, either flag without `--force`
+is refused, and so is either flag beside an explicit `--interactive`: the setting is a default to
+override, a flag the operator typed is not.
+
 ### Recurrence
 
 A rule has a frequency, an interval, optional by-day and by-month-day terms, an optional end, and one
@@ -183,11 +192,20 @@ file, and parses it back on save.
 dam new "buy oat milk" [--path inbox/] [--due tomorrow] [-p 1] [--label errand]
 dam new --event "Dentist" --start 2026-09-25T14:00 --end 2026-09-25T15:00
 dam done <oid> [--force] [--interactive]
+dam done <oid> --force --children up|keep|into:<name> --depends drop|keep
 dam edit <oid> --subject "..." --due ... -p ... --label ... --attach <event-oid>
+dam edit <oid> --undone
 dam edit <oid> -e
 dam mv <oid> <path>
 dam rm <oid>
 ```
+
+`dam edit <oid> --undone` reopens a completed task. It is a flag on `edit` rather than a verb of
+its own, because `done` is a field like any other and the flag sits beside `--no-due`,
+`--no-deadline`, `--no-recurrence` and `--detach`, which already pair a clearing flag with the flag
+that sets the field. Reopening records one ordinary working change, op `update` with `done` among
+its fields, so it stages, commits and pushes the way every other edit does; the Todoist helper
+sends it as the Sync API's `item_uncomplete`. A task that is not completed is refused, naming it.
 
 Every flag on `edit` is structured and cannot be malformed. `-e` opens the object in `$EDITOR` as a
 commented template; on save `dam` parses it, and a parse failure names the problem and reopens with
@@ -199,6 +217,7 @@ your text intact. Nothing reaches the working layer until it parses.
 dam add <oid>...            stage
 dam add -A                  stage everything
 dam reset [<oid>...]        unstage one or all
+dam restore <oid>...        back to the last commit, working and stage together
 dam status                  working versus stage versus last commit, and remote notices
 dam diff [--staged]         working versus stage, or stage versus last commit
 dam commit -m "triage"      record the stage as a local commit
@@ -215,6 +234,19 @@ dam push [<remote>]         send unpushed commits
 dam pull [<remote>]         fetch and merge
 dam resolve <oid> --ours | --theirs
 ```
+
+`dam restore <oid>...` sets each named object's working copy back to its last commit and drops
+whatever the stage held for it, so afterwards the object equals the commit and nothing about it is
+staged. The name is git's own since 2.23, and `dam reset` already means unstage here too. An object
+with no commit behind it is refused, naming it, because there is nothing to go back to; `dam rm`
+removes such an object instead. An oid neither layer knows, which is what a committed delete leaves
+behind, is refused as no such object rather than sent to `dam rm`. An object that already matches
+its commit is a no-op that says so. Every named oid is read before any is written, so one refusal
+leaves the others as they were, and a repeated oid answers once. Under `--json` the document lists
+the restored oids and the unchanged ones.
+
+An oid prefix is resolved against the working layer, here as in every verb, so an object `dam rm`
+took out of it is named by its full oid and the refusal on a prefix says which layer it read.
 
 `push` with no remote sends to every remote. Each helper declares in its capabilities which kinds
 and fields it accepts, and `dam` sends each object to every remote that accepts it. A remote may be

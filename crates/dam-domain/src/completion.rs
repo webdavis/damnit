@@ -9,24 +9,38 @@ pub enum Blocker {
     OpenChild(Oid),
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// How far a caller will go to complete a blocked task. `With` carries the
+/// answers to what happens to the blockers, so a forced completion can never
+/// be asked to dispose of them without saying how.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Force {
     No,
     Yes,
-    Interactive,
+    With(Dispositions),
+}
+
+/// What happens to a forced parent's open children and open dependencies.
+/// Both default to keeping what is there, which is the least a completion can
+/// disturb and what a caller that names only one of them gets for the other.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Dispositions {
+    pub children: ChildDisposition,
+    pub dependencies: DependencyDisposition,
 }
 
 /// What to do with open children when a parent is forced done.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub enum ChildDisposition {
     Up,
     Into(String),
+    #[default]
     Keep,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum DependencyDisposition {
     Drop,
+    #[default]
     Keep,
 }
 

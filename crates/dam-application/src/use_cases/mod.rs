@@ -9,6 +9,7 @@ pub(crate) mod push;
 pub(crate) mod relocate;
 pub(crate) mod remove;
 pub(crate) mod resolve;
+pub(crate) mod restore;
 pub(crate) mod stage;
 pub(crate) mod status;
 pub(crate) mod subtree;

@@ -42,13 +42,17 @@ the helper and leaving the store as it was.
     dam commit -m "morning triage"
     dam push
 
+`dam edit <oid> --undone` reopens a task you completed by mistake, and
+`dam restore <oid>...` throws a working change away, back to the last commit and out of the stage.
+
 `dam status`, `dam diff`, `dam log` and `dam show` read the way their git namesakes do. `--json`
 and `--toon` on any read give a program the same answer.
 
 ## The rules it keeps
 
 - A task with open children or open dependencies is not done until they are; `--force` overrides,
-  `--force --interactive` asks what to do with them.
+  `--force --interactive` asks what to do with them, and `--children up|keep|into:<name>` with
+  `--depends drop|keep` answers that question on the command line, for a client with no terminal.
 - Labels can be grouped into categories in config; an exclusive category allows one value per
   object.
 - A pull never overwrites work you have not committed, and never deletes on your behalf: an
