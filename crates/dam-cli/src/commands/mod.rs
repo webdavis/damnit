@@ -1,4 +1,4 @@
-mod catalogue;
+pub(crate) mod catalogue;
 mod commit;
 mod done;
 mod edit;
@@ -25,6 +25,8 @@ pub(crate) fn pulls_a_stale_remote(command: &Command) -> bool {
     matches!(command, Command::Ls(_) | Command::Show(_))
 }
 
+/// Every verb that reads or writes the store. The catalogue verbs are not
+/// here: `main` answers those out of config before a store is opened.
 pub(crate) fn dispatch(ctx: &mut Context, command: Command) -> Result<Report, CliError> {
     match command {
         Command::New(a) => new::run(ctx, a),
@@ -41,11 +43,10 @@ pub(crate) fn dispatch(ctx: &mut Context, command: Command) -> Result<Report, Cl
         Command::Status(a) => status::run_status(ctx, a),
         Command::Diff(a) => status::run_diff(ctx, a),
         Command::Ls(a) => ls::run_ls(ctx, a),
-        Command::Category(a) => catalogue::run_category(ctx, a.command),
-        Command::Filter(a) => catalogue::run_filter(ctx, a.command),
         Command::Remote(a) => remote::run_remote(ctx, a),
         Command::Push(a) => sync::run_push(ctx, a),
         Command::Pull(a) => sync::run_pull(ctx, a),
         Command::Resolve(a) => sync::run_resolve(ctx, a),
+        Command::Category(_) | Command::Filter(_) => unreachable!("answered before the store"),
     }
 }

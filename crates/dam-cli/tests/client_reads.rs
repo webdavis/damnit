@@ -345,3 +345,47 @@ fn every_date_flag_accepts_the_words_and_refuses_anything_else() {
         }
     }
 }
+
+/// The catalogue is what a client renders its first screen from, and it lives
+/// in config. A store it cannot open is a failure for the verbs that read one
+/// and no reason to refuse the listing, so neither verb opens one at all.
+#[test]
+fn the_catalogue_answers_although_the_store_will_not_open() {
+    let _guard = support::guard("the_catalogue_answers_although_the_store_will_not_open");
+    let sb = Sandbox::new();
+    let config = sb.dir.path().join("config.toml");
+    let mut text = std::fs::read_to_string(&config).unwrap();
+    text.push_str(
+        "\n[category.effort]\nvalues = [\"deep\"]\nexclusive = true\n\
+         \n[filter.today]\nquery = \"due:today\"\n",
+    );
+    std::fs::write(&config, text).unwrap();
+
+    // A directory where the store file goes: SQLite cannot open it, and no
+    // run can create one over it either.
+    let store = sb.dir.path().join("dam.db");
+    std::fs::create_dir(&store).unwrap();
+
+    let broken = sb.output(&["ls", "--json"]);
+    assert_eq!(
+        broken.status.code(),
+        Some(1),
+        "the store opened after all, so this proves nothing: {}",
+        String::from_utf8_lossy(&broken.stderr)
+    );
+
+    for (args, key, name) in [
+        (["category", "list", "--json"], "categories", "effort"),
+        (["filter", "list", "--json"], "filters", "today"),
+    ] {
+        let out = sb.output(&args);
+        assert_eq!(
+            out.status.code(),
+            Some(0),
+            "{args:?} reached the store: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        let answer: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+        assert_eq!(answer[key][0]["name"], name, "{answer}");
+    }
+}
