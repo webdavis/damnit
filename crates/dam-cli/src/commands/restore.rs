@@ -104,6 +104,18 @@ mod tests {
     }
 
     #[test]
+    fn a_repeated_oid_lands_in_one_bucket_only() {
+        let mut ctx = context();
+        let id = committed_task(&ctx, 1);
+        let mut edited = ctx.store.get(&id).unwrap().unwrap();
+        edited.base_mut().subject = "oat milk".into();
+        ctx.store.put(&edited).unwrap();
+        let report = run(&mut ctx, args(&[&id, &id])).unwrap();
+        assert_eq!(report.data["restored"], serde_json::json!([id.to_string()]));
+        assert_eq!(report.data["unchanged"], serde_json::json!([]));
+    }
+
+    #[test]
     fn an_object_with_no_commit_behind_it_is_refused_by_dams_own_rule() {
         let mut ctx = context();
         let id = oid(7);

@@ -19,22 +19,27 @@ pub struct Restored {
 ///
 /// Every oid is read before any is written: restoring throws work away, so an
 /// object with no commit behind it refuses the whole command rather than
-/// leaving half of it done.
+/// leaving half of it done. A repeated oid is one object and answers once.
 pub fn restore(
     objects: &dyn ObjectRepository,
     stage: &dyn StageRepository,
     oids: &[Oid],
 ) -> Result<Vec<Restored>, UseCaseError> {
+    let mut seen = BTreeSet::new();
+    let oids: Vec<&Oid> = oids
+        .iter()
+        .filter(|oid| seen.insert((*oid).clone()))
+        .collect();
     let mut committed = Vec::with_capacity(oids.len());
-    for oid in oids {
+    for oid in &oids {
         match objects.committed(oid)? {
             Some(object) => committed.push(object),
-            None => return Err(Refusal::NotCommitted(oid.clone()).into()),
+            None => return Err(Refusal::NotCommitted((*oid).clone()).into()),
         }
     }
     let staged: BTreeSet<Oid> = stage.staged()?.into_iter().map(|c| c.oid).collect();
     let mut restored = Vec::with_capacity(oids.len());
-    for (oid, object) in oids.iter().zip(committed) {
+    for (oid, object) in oids.into_iter().zip(committed) {
         let changed = staged.contains(oid) || objects.get(oid)?.as_ref() != Some(&object);
         if changed {
             objects.put(&object)?;

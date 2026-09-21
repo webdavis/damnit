@@ -117,3 +117,15 @@ fn a_stale_stage_is_cleared_even_when_the_working_copy_already_matches() {
     assert!(out[0].changed);
     assert!(store.staged().unwrap().is_empty());
 }
+
+/// Two mutually exclusive lists naming the same object is a document no client
+/// can read, and the second pass would always find the work already done.
+#[test]
+fn a_repeated_oid_is_restored_once() {
+    let store = MemoryStore::new();
+    let id = committed_task(&store, 1);
+    retitle(&store, &id, "edited");
+    let out = restore(&store, &store, &[id.clone(), id.clone()]).unwrap();
+    assert_eq!(out.len(), 1);
+    assert!(out[0].changed);
+}
