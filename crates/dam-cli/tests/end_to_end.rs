@@ -113,6 +113,24 @@ fn a_machine_format_refuses_to_open_an_editor_rather_than_running_one() {
     );
 }
 
+/// An interval the calendar cannot step by is refused where it is written, so
+/// the completion that would have used it is an ordinary one.
+#[test]
+fn an_interval_no_calendar_holds_is_refused_at_the_edit() {
+    let _guard = support::guard("an_interval_no_calendar_holds_is_refused_at_the_edit");
+    let sb = Sandbox::new();
+    let oid = sb.new_object(&["water the plants", "--due", "2026-10-01"]);
+
+    let refused = sb.output(&["edit", &oid, "--recurrence", "every 2147483647 weeks"]);
+    assert_eq!(refused.status.code(), Some(1));
+    let said = String::from_utf8_lossy(&refused.stderr);
+    assert!(said.contains("1 to 1043497 weeks"), "{said}");
+
+    let (ok, out, err) = sb.dam(&["done", &oid]);
+    assert!(ok, "{err}");
+    assert!(out.contains("done"), "{out}");
+}
+
 #[test]
 fn each_exit_code_means_one_thing() {
     let _guard = support::guard("each_exit_code_means_one_thing");

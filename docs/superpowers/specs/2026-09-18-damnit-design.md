@@ -164,6 +164,11 @@ A rule has a frequency, an interval, optional by-day and by-month-day terms, an 
 bit Todoist made necessary: whether the next occurrence counts from the due date or from the
 completion date. Todoist writes the second as `every!`.
 
+The interval is at least one and at most the widest step of its unit the calendar holds: 7,304,484
+days, 1,043,497 weeks, 239,976 months or 19,998 years, each of which spans the whole range of dates
+`dam` stores. Past that no occurrence is reachable, so the rule is refused where it is written and
+the message names the range its unit takes.
+
 `dam` computes the next occurrence itself when a recurring task is completed, so it works with no
 remote attached. A helper may push the rule to a remote that understands it. Both sides then roll
 forward, and `dam pull` reconciles the rare case where they land on different dates as an ordinary

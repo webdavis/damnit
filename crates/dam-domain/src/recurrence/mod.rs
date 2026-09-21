@@ -15,6 +15,33 @@ pub enum Freq {
     Yearly,
 }
 
+impl Freq {
+    /// The word `parse` reads for this frequency and `to_text` writes back.
+    pub(crate) fn unit_text(self, plural: bool) -> &'static str {
+        match (self, plural) {
+            (Freq::Daily, false) => "day",
+            (Freq::Daily, true) => "days",
+            (Freq::Weekly, false) => "week",
+            (Freq::Weekly, true) => "weeks",
+            (Freq::Monthly, false) => "month",
+            (Freq::Monthly, true) => "months",
+            (Freq::Yearly, false) => "year",
+            (Freq::Yearly, true) => "years",
+        }
+    }
+
+    /// The widest interval of this unit a date can be stepped by. Past it the
+    /// step itself cannot be built, so no occurrence is reachable.
+    pub(crate) fn max_interval(self) -> u32 {
+        match self {
+            Freq::Daily => 7_304_484,
+            Freq::Weekly => 1_043_497,
+            Freq::Monthly => 239_976,
+            Freq::Yearly => 19_998,
+        }
+    }
+}
+
 /// How far one interval of `freq` advances, or None when no span of that unit
 /// holds it.
 fn span(freq: Freq, interval: u32) -> Option<Span> {
@@ -138,6 +165,25 @@ mod tests {
             until: None,
             anchor: Anchor::Due,
         }
+    }
+
+    /// The bound is the calendar's own, so it is measured against the calendar
+    /// rather than trusted: the maximum steps and one more does not.
+    #[test]
+    fn each_units_maximum_is_the_widest_step_the_calendar_holds() {
+        for freq in [Freq::Daily, Freq::Weekly, Freq::Monthly, Freq::Yearly] {
+            let max = freq.max_interval();
+            assert!(span(freq, max).is_some(), "{freq:?} {max}");
+            assert!(span(freq, max + 1).is_none(), "{freq:?} {}", max + 1);
+        }
+    }
+
+    /// The widest interval the calendar holds is a working rule, not merely an
+    /// accepted one: from the earliest date it reaches the latest year.
+    #[test]
+    fn the_widest_interval_still_steps() {
+        let rule = Rule::parse("every 19998 years").unwrap();
+        assert_eq!(rule.next_after(date(-9999, 1, 1)), Some(date(9999, 1, 1)));
     }
 
     /// Rule carries public fields, so an interval the parser refuses can still
