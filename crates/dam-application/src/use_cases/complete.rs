@@ -72,6 +72,7 @@ pub fn complete(
         }
         None => {
             task.done = true;
+            task.completed_at = Some(clock.now());
             Completed::Done
         }
     };

@@ -5,7 +5,7 @@ use std::collections::BTreeSet;
 use dam_domain::{
     Attachment, Attendee, Base, Conference, Date, Event, EventStatus, EventType, Object, Oid,
     OidError, Path, PathError, Person, Priority, PriorityError, Reminder, ResponseStatus, Task,
-    Transparency, Visibility, When,
+    Timestamp, Transparency, Visibility, When,
 };
 use dam_protocol::WireObject;
 
@@ -117,6 +117,14 @@ pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
         ("task", Some(t), _) => Ok(Object::Task(Task {
             base,
             done: t.done,
+            completed_at: t
+                .completed_at
+                .as_deref()
+                .map(|at| {
+                    at.parse::<Timestamp>()
+                        .map_err(|_| date("completed_at")(at.to_string()))
+                })
+                .transpose()?,
             priority: Priority::new(t.priority).map_err(|why| WireError::Priority {
                 value: t.priority.to_string(),
                 why,

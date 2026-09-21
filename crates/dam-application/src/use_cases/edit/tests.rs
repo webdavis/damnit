@@ -236,6 +236,7 @@ fn undone_reopens_a_completed_task() {
     let store = MemoryStore::new();
     let mut task = Task::new(oid(1), "t1");
     task.done = true;
+    task.completed_at = Some(jiff::Timestamp::UNIX_EPOCH);
     store.put(&Object::Task(task)).unwrap();
     let id = oid(1);
     let out = edit(
@@ -249,6 +250,11 @@ fn undone_reopens_a_completed_task() {
     )
     .unwrap();
     assert!(!out.as_task().unwrap().done);
+    assert_eq!(
+        out.as_task().unwrap().completed_at,
+        None,
+        "an open task carries no completion time"
+    );
     assert_eq!(store.get(&id).unwrap(), Some(out));
 }
 

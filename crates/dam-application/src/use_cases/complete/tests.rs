@@ -311,3 +311,50 @@ fn a_store_error_while_checking_a_dependency_propagates() {
         Err(UseCaseError::Store(_))
     ));
 }
+
+/// The Done screen shows when a task was finished, so completing one records
+/// the moment rather than leaving the client to find the commit that did it.
+#[test]
+fn completing_a_task_records_when_it_happened() {
+    let store = MemoryStore::new();
+    let id = put_task(&store, 1, "", false);
+    let clock = FixedClock(date(2026, 9, 18));
+    assert_eq!(
+        store
+            .get(&id)
+            .unwrap()
+            .unwrap()
+            .as_task()
+            .unwrap()
+            .completed_at,
+        None
+    );
+    complete(&store, &clock, &FixedRandom::new(1), &id, Force::No).unwrap();
+    let task = store.get(&id).unwrap().unwrap();
+    let task = task.as_task().unwrap();
+    assert!(task.done);
+    assert_eq!(task.completed_at, Some(clock.now()));
+}
+
+/// A recurring task rolls forward instead of completing, so it is still open
+/// and carries no completion time.
+#[test]
+fn a_task_that_rolls_forward_records_no_completion_time() {
+    let store = MemoryStore::new();
+    let mut t = Task::new(oid(1), "water the plants");
+    t.base.recurrence = Some("every day".into());
+    t.due = Some(When::Day(date(2026, 9, 18)));
+    store.put(&Object::Task(t)).unwrap();
+    complete(
+        &store,
+        &FixedClock(date(2026, 9, 18)),
+        &FixedRandom::new(1),
+        &oid(1),
+        Force::No,
+    )
+    .unwrap();
+    let task = store.get(&oid(1)).unwrap().unwrap();
+    let task = task.as_task().unwrap();
+    assert!(!task.done);
+    assert_eq!(task.completed_at, None);
+}

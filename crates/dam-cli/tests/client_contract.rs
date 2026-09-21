@@ -445,3 +445,49 @@ fn remote_row(sb: &Sandbox) -> serde_json::Value {
     let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
     answer["remotes"][0].clone()
 }
+
+/// `dam done` records when, `dam edit --undone` takes it away, and both the
+/// object document and the change row carry it.
+#[test]
+fn a_completion_time_appears_in_the_object_and_the_change_and_is_cleared_by_undone() {
+    let _guard = support::guard(
+        "a_completion_time_appears_in_the_object_and_the_change_and_is_cleared_by_undone",
+    );
+    let sb = Sandbox::new();
+    let oid = sb.new_object(&["buy oat milk"]);
+
+    let (ok, out, err) = sb.dam(&["show", &oid, "--json"]);
+    assert!(ok, "{err}");
+    let open: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(
+        open["task"]["completed_at"],
+        serde_json::Value::Null,
+        "{open}"
+    );
+
+    let (ok, _, err) = sb.dam(&["done", &oid]);
+    assert!(ok, "{err}");
+    let (ok, out, err) = sb.dam(&["show", &oid, "--json"]);
+    assert!(ok, "{err}");
+    let done: serde_json::Value = serde_json::from_str(&out).unwrap();
+    let at = done["task"]["completed_at"]
+        .as_str()
+        .unwrap_or_else(|| panic!("no completion time: {done}"));
+    at.parse::<jiff::Timestamp>()
+        .unwrap_or_else(|e| panic!("completed_at is not RFC 3339: {e} ({at})"));
+
+    let row = status_json(&sb, &["--json"])["unstaged"][0].clone();
+    assert_eq!(row["done"], true, "{row}");
+    assert_eq!(row["completed_at"], at, "{row}");
+
+    let (ok, _, err) = sb.dam(&["edit", &oid, "--undone"]);
+    assert!(ok, "{err}");
+    let (ok, out, err) = sb.dam(&["show", &oid, "--json"]);
+    assert!(ok, "{err}");
+    let reopened: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(
+        reopened["task"]["completed_at"],
+        serde_json::Value::Null,
+        "{reopened}"
+    );
+}

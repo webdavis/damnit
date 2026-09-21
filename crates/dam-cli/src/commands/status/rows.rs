@@ -72,6 +72,10 @@ fn state_json(change: &Change) -> serde_json::Map<String, serde_json::Value> {
     match object {
         Object::Task(t) => {
             state.insert("done".into(), t.done.into());
+            state.insert(
+                "completed_at".into(),
+                t.completed_at.map(|at| at.to_string()).into(),
+            );
             state.insert("priority".into(), t.priority.get().into());
             state.insert("due".into(), t.due.as_ref().map(When::to_text).into());
         }

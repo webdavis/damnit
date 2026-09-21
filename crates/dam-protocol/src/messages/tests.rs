@@ -20,6 +20,7 @@ fn milk(subject: &str, done: bool) -> WireObject {
         recurrence: None,
         task: Some(WireTask {
             done,
+            completed_at: None,
             priority: 4,
             due: Some("2026-09-25".into()),
             deadline: None,
