@@ -129,7 +129,8 @@ impl fmt::Display for RuleError {
             RuleError::BadInterval(w) => write!(f, "interval must be 1 or more, got {w:?}"),
             RuleError::BadDay(w) => write!(
                 f,
-                "unknown day {w:?}; use mon,tue,wed,thu,fri,sat,sun or a day of the month"
+                "unknown day {w:?}; use a weekday by short or full name in any case, \
+                 such as mon or Monday, or a day of the month from 1 to 31"
             ),
             RuleError::BadDate(w) => write!(f, "until wants YYYY-MM-DD, got {w:?}"),
         }
@@ -137,3 +138,26 @@ impl fmt::Display for RuleError {
 }
 
 impl std::error::Error for RuleError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The refusal names forms the parser reads back, so an operator who
+    /// follows it gets a rule rather than a second refusal.
+    #[test]
+    fn the_unknown_day_message_names_forms_the_parser_accepts() {
+        let said = RuleError::BadDay("funday".into()).to_string();
+        for form in ["mon", "Monday", "any case", "1 to 31"] {
+            assert!(said.contains(form), "{said}");
+        }
+        for text in ["mon", "Monday"] {
+            assert!(
+                Rule::parse(&format!("every week on {text}")).is_ok(),
+                "the message names {text:?} and the parser refuses it"
+            );
+        }
+        assert!(Rule::parse("every month on 31").is_ok());
+        assert!(Rule::parse("every month on 32").is_err());
+    }
+}
