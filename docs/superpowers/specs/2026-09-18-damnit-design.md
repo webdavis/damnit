@@ -239,7 +239,8 @@ dam resolve <oid> --ours | --theirs
 whatever the stage held for it, so afterwards the object equals the commit and nothing about it is
 staged. The name is git's own since 2.23, and `dam reset` already means unstage here too. An object
 with no commit behind it is refused, naming it, because there is nothing to go back to; `dam rm`
-removes such an object instead. An object that already matches its commit is a no-op that says so.
+removes such an object instead. An oid neither layer knows, which is what a committed delete leaves
+behind, is refused as no such object rather than sent to `dam rm`. An object that already matches its commit is a no-op that says so.
 Every named oid is read before any is written, so one refusal leaves the others as they were. Under
 `--json` the document lists the restored oids and the unchanged ones.
 

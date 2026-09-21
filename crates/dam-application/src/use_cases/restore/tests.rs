@@ -129,3 +129,16 @@ fn a_repeated_oid_is_restored_once() {
     assert_eq!(out.len(), 1);
     assert!(out[0].changed);
 }
+
+/// Once a delete is committed both layers are empty, so the oid names nothing
+/// at all and the advice to remove it with dam rm would be about an object
+/// that is already gone.
+#[test]
+fn an_oid_neither_layer_knows_is_no_such_object() {
+    let store = MemoryStore::new();
+    let err = restore(&store, &store, &[oid(9)]).unwrap_err();
+    assert_eq!(
+        err,
+        UseCaseError::Refused(Refusal::NoSuchObject(oid(9).short().to_string()))
+    );
+}

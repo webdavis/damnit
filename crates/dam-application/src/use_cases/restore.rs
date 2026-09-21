@@ -34,7 +34,13 @@ pub fn restore(
     for oid in &oids {
         match objects.committed(oid)? {
             Some(object) => committed.push(object),
-            None => return Err(Refusal::NotCommitted((*oid).clone()).into()),
+            // An object still in the working layer was never committed, so
+            // dam rm is the way to drop it. One in neither layer names
+            // nothing: its delete has been committed, or the oid is wrong.
+            None if objects.get(oid)?.is_some() => {
+                return Err(Refusal::NotCommitted((*oid).clone()).into());
+            }
+            None => return Err(Refusal::NoSuchObject(oid.short().to_string()).into()),
         }
     }
     let staged: BTreeSet<Oid> = stage.staged()?.into_iter().map(|c| c.oid).collect();
