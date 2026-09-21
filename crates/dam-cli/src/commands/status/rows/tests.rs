@@ -71,6 +71,7 @@ fn the_default_row_is_the_after_state_without_the_object() {
             "path": "work/",
             "labels": ["errand"],
             "done": false,
+            "completed_at": null,
             "priority": 1,
             "due": "2026-09-25",
         })
@@ -121,4 +122,24 @@ fn a_delete_describes_the_object_it_removed() {
     assert_eq!(document["op"], "delete");
     assert_eq!(document["subject"], "buy oat milk");
     assert_eq!(document["fields"], serde_json::json!([]));
+}
+
+/// A change row carries the completion time beside `done`, so a Done list
+/// renders from `status` without a second read of the log.
+#[test]
+fn a_completed_task_row_carries_when_it_was_completed() {
+    let mut completed = Task::new(oid(1), "a");
+    completed.done = true;
+    completed.completed_at = Some("2026-09-18T15:04:05Z".parse().unwrap());
+    let change = diff(&oid(1), Some(&task("a")), Some(&Object::Task(completed))).unwrap();
+    let document = change_json(&change, false).unwrap();
+    assert_eq!(document["done"], true);
+    assert_eq!(document["completed_at"], "2026-09-18T15:04:05Z");
+}
+
+#[test]
+fn an_open_task_row_carries_a_null_completion_time() {
+    let change = diff(&oid(1), None, Some(&task("a"))).unwrap();
+    let document = change_json(&change, false).unwrap();
+    assert_eq!(document["completed_at"], serde_json::Value::Null);
 }

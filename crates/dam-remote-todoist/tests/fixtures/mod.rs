@@ -65,6 +65,7 @@ pub fn task(oid: &str, path: &str, subject: &str, done: bool) -> WireObject {
         recurrence: None,
         task: Some(WireTask {
             done,
+            completed_at: None,
             priority: 1,
             due: Some("2026-09-25".into()),
             deadline: None,
@@ -80,6 +81,7 @@ pub fn task_with_dates_cleared(oid: &str) -> WireObject {
     let mut t = task(oid, "Work/", "unused", false);
     t.task = Some(WireTask {
         done: false,
+        completed_at: None,
         priority: 1,
         due: None,
         deadline: None,

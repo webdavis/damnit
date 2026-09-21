@@ -30,6 +30,7 @@ pub fn to_wire(object: &Object, remote_id: Option<String>) -> WireObject {
         recurrence: b.recurrence.clone(),
         task: object.as_task().map(|t| WireTask {
             done: t.done,
+            completed_at: t.completed_at.map(|at| at.to_string()),
             priority: t.priority.get(),
             due: t.due.as_ref().map(when_text),
             deadline: t.deadline.map(|d| d.to_string()),

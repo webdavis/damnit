@@ -5,7 +5,7 @@ use dam_domain::{Object, Oid};
 use crate::config::{Config, RemoteConfig};
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{
-    CredentialSource, HelperLauncher, Notice, RemoteHelper, RemoteName, Repositories,
+    Clock, CredentialSource, HelperLauncher, Notice, RemoteHelper, RemoteName, Repositories,
 };
 use crate::remote::{MutationOp, MutationOutcome, RemoteCapabilities};
 use crate::use_cases::connect::connect;
@@ -23,6 +23,7 @@ pub fn push(
     repos: Repositories<'_>,
     launcher: &dyn HelperLauncher,
     credentials: &dyn CredentialSource,
+    clock: &dyn Clock,
     config: &Config,
     remote: Option<&str>,
 ) -> Result<Vec<PushReport>, UseCaseError> {
@@ -34,7 +35,7 @@ pub fn push(
     let mut reports = Vec::with_capacity(targets.len());
     for target in targets {
         let (mut helper, caps) = connect(launcher, credentials, target)?;
-        reports.push(push_one(repos, helper.as_mut(), &caps, target)?);
+        reports.push(push_one(repos, helper.as_mut(), &caps, clock, target)?);
     }
     Ok(reports)
 }
@@ -56,6 +57,7 @@ fn push_one(
     repos: Repositories<'_>,
     helper: &mut dyn RemoteHelper,
     caps: &RemoteCapabilities,
+    clock: &dyn Clock,
     remote: &RemoteConfig,
 ) -> Result<PushReport, UseCaseError> {
     let unpushed = repos.commits.unpushed(&remote.name)?;
@@ -154,6 +156,11 @@ fn push_one(
         }
         repos.commits.mark_pushed(&remote.name, &record.id)?;
     }
+    // The run reached the remote and came back; a mutation the remote refused
+    // is a notice against that object, the way a rejected object is on a pull.
+    repos
+        .remote_tracking
+        .set_last_push(&remote.name, clock.now())?;
     Ok(PushReport {
         remote: remote.name.clone(),
         sent,

@@ -39,7 +39,12 @@ pub fn merge_fields(ours: &Object, theirs: &Object, fields: &[Field]) -> Object 
     match (&mut out, theirs) {
         (Object::Task(o), Object::Task(t)) => {
             if has(Field::Done) {
-                o.done = t.done
+                o.done = t.done;
+                // The completion time goes with `done`: a reopen upstream
+                // clears the one dam recorded.
+                if !o.done {
+                    o.completed_at = None;
+                }
             }
             if has(Field::Priority) {
                 o.priority = t.priority
@@ -260,5 +265,35 @@ mod tests {
             let merged = merge_fields(&ours, &theirs, &[*f]);
             assert_eq!(changed_fields(&ours, &merged), vec![*f], "field {f}");
         }
+    }
+
+    /// A remote carries no completion time, so a task it reopens must not keep
+    /// the one dam recorded when it was completed here.
+    #[test]
+    fn a_reopen_from_a_remote_clears_the_completion_time() {
+        let mut ours = Task::new(oid(1), "t");
+        ours.done = true;
+        ours.completed_at = Some(jiff::Timestamp::UNIX_EPOCH);
+        let theirs = Task::new(oid(1), "t");
+        let merged = merge_fields(&Object::Task(ours), &Object::Task(theirs), &[Field::Done]);
+        let merged = merged.as_task().unwrap();
+        assert!(!merged.done);
+        assert_eq!(merged.completed_at, None);
+    }
+
+    /// A remote that agrees the task is done says nothing about when, so the
+    /// time dam recorded stands.
+    #[test]
+    fn a_remote_that_agrees_it_is_done_leaves_the_completion_time_alone() {
+        let mut ours = Task::new(oid(1), "t");
+        ours.done = true;
+        ours.completed_at = Some(jiff::Timestamp::UNIX_EPOCH);
+        let mut theirs = Task::new(oid(1), "t");
+        theirs.done = true;
+        let merged = merge_fields(&Object::Task(ours), &Object::Task(theirs), &[Field::Done]);
+        assert_eq!(
+            merged.as_task().unwrap().completed_at,
+            Some(jiff::Timestamp::UNIX_EPOCH)
+        );
     }
 }

@@ -35,6 +35,9 @@ pub(crate) struct Cli {
     pub(crate) config: Option<PathBuf>,
     #[arg(long, global = true, env = "DAM_STORE", value_name = "FILE")]
     pub(crate) store: Option<PathBuf>,
+    /// Answer from the local store alone: no read pulls a stale remote.
+    #[arg(long, global = true)]
+    pub(crate) no_pull: bool,
     #[command(subcommand)]
     pub(crate) command: Command,
 }

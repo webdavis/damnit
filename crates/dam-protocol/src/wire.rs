@@ -32,6 +32,9 @@ pub struct WireObject {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WireTask {
     pub done: bool,
+    /// RFC 3339 in UTC, when the task was completed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub completed_at: Option<String>,
     pub priority: u8,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub due: Option<String>,

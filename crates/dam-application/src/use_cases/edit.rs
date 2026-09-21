@@ -127,6 +127,7 @@ pub fn apply(object: &Object, fields: &EditFields) -> Result<Object, UseCaseErro
                     return Err(Refusal::NotCompleted(t.base.oid.clone()).into());
                 }
                 t.done = false;
+                t.completed_at = None;
             }
         }
         Object::Event(e) => {

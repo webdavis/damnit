@@ -45,8 +45,21 @@ the helper and leaving the store as it was.
 `dam edit <oid> --undone` reopens a task you completed by mistake, and
 `dam restore <oid>...` throws a working change away, back to the last commit and out of the stage.
 
+`dam done` records when it ran, as `completed_at` on the task: RFC 3339 in UTC, null on an open task,
+and cleared again by `--undone`. It is dam's own record, so a task Todoist completed comes in done
+with no time on it.
+
 `dam status`, `dam diff`, `dam log` and `dam show` read the way their git namesakes do. `--json`
 and `--toon` on any read give a program the same answer.
+
+`dam remote list` names every remote with when it was last pulled and last pushed: `pulled 4m ago`
+in the line, `last_pull` and `last_push` as RFC 3339 under `--json`, null until that verb has
+reached the remote once.
+
+`--no-pull` answers from the local store: `dam ls` and `dam show` otherwise pull a remote whose
+`stale` window has passed, and with the flag they spawn no helper at all. Use it wherever a read has
+to be quick and local, such as a statusline that runs `dam` every few seconds. Those two verbs are
+the only ones that pull, so every other verb refuses the flag with exit 2 rather than ignoring it.
 
 ## The rules it keeps
 
@@ -74,7 +87,7 @@ up as a category. Saved filters live under `[filter.<name>]` and run by name.
 
     {"oid": "98d878...", "op": "update", "fields": ["subject", "due"], "kind": "task",
      "subject": "buy oat milk", "path": "work/", "labels": ["errand"], "done": false,
-     "priority": 1, "due": "2026-09-25"}
+     "completed_at": null, "priority": 1, "due": "2026-09-25"}
 
 `fields` names what the change touches. An update names what moved; a create names every field the
 new object carries beyond its defaults; a delete names nothing and its row describes the object it

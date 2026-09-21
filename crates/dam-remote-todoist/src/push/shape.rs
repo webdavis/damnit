@@ -122,6 +122,7 @@ mod tests {
             recurrence: None,
             task: Some(WireTask {
                 done: false,
+                completed_at: None,
                 priority: 4,
                 due: None,
                 deadline: None,

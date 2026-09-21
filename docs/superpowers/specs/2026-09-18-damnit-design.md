@@ -72,10 +72,18 @@ a mapping table that `dam` never displays.
 | Field | Type | Notes |
 |---|---|---|
 | `done` | bool | |
+| `completed_at` | timestamp, optional | When the task was completed, in UTC. |
 | `priority` | 1 to 4 | 1 is highest. |
 | `due` | date or datetime with timezone, optional | |
 | `deadline` | date, optional | Distinct from `due`, as Todoist distinguishes them. |
 | `event` | `oid`, optional | The event this task is attached to. |
+
+`completed_at` is `dam`'s own record of when a task was finished: `dam done` sets it to the moment it
+ran, `dam edit --undone` clears it, and it goes with `done` whenever that field moves, so an open
+task never carries one. It is written as RFC 3339 in UTC wherever a document carries it. Todoist
+holds a completion time of its own, on its completed-tasks endpoint rather than on the sync item
+`dam` reads, and its complete command takes only an id; the Todoist helper therefore declares neither
+the field nor a value for it, and a task Todoist completed arrives done with `completed_at` unset.
 
 ### Event
 
@@ -259,14 +267,34 @@ narrowed to a `path` in config.
 
 `pull` is per remote and never implies another. Each remote has its own `stale` setting.
 
+`dam remote list` reports, per remote, when `dam` last pulled it and last pushed to it. A verb
+records its time once the run reached the remote and came back with an answer, the way `pull`
+already records its own: a mutation the remote refused is a notice against that object rather than a
+failed run, so a push whose mutations were partly refused still records the time. A push with
+nothing to send records it too, on the strength of the capabilities exchange that opened the
+connection, so a remote that is entirely up to date does not read as never pushed. `--json` carries
+`last_pull` and `last_push` as RFC 3339 timestamps, null for a verb that has not reached that remote
+yet; the human line says `pulled 4m ago` and `pushed 2h ago`, or `never pulled` and `never pushed`.
+Both are kept in the store beside the sync token, one row per remote.
+
 ### Reading
 
 ```
-dam ls [<query>] [--json|--toon]
+dam ls [<query>] [--json|--toon] [--no-pull]
 dam ls today                a saved filter from config
-dam show <oid> [--json|--toon]
+dam show <oid> [--json|--toon] [--no-pull]
 dam status [--json|--toon] [--full]
 ```
+
+`--no-pull` answers from the local store: the reads that would otherwise pull a stale remote first,
+`ls` and `show`, skip that pass and spawn no helper. The documents are unchanged, and nothing in
+them reports staleness; a client that renders inside a frame budget uses the flag to make the read
+local, and reads `remote list` when it wants to say how fresh the answer is. Neither the `stale`
+setting nor anything else in config changes.
+
+`ls` and `show` are the only verbs it applies to, so every other verb refuses it as a command line
+that was wrong, exit 2, naming the flag. `dam pull --no-pull` is refused like the rest rather than
+read as a contradiction.
 
 `--json` is the answer as JSON. `--toon` is the same answer in TOON (Token-Oriented Object
 Notation), a compact form that costs a language model fewer tokens when it reads a list; the
@@ -299,7 +327,7 @@ change. The default carries what a client renders and no object:
 ```json
 {"oid": "98d878...", "op": "update", "fields": ["subject", "due"], "kind": "task",
  "subject": "buy oat milk", "path": "work/", "labels": ["errand"], "done": false,
- "priority": 1, "due": "2026-09-25"}
+ "completed_at": null, "priority": 1, "due": "2026-09-25"}
 ```
 
 `fields` names what the change touches, so a client reads dam's own answer rather than diffing the
@@ -311,8 +339,11 @@ object's kind names `kind` alone, whatever else differs between the two, because
 share no field list to compare.
 
 The rest of the row is the state the change left behind: `kind`, `subject`, `path` and `labels` for
-either kind, then `done`, `priority` and `due` for a task or `start` and `end` for an event. A
-delete has no such state, so its row describes the object it removed.
+either kind, then `done`, `completed_at`, `priority` and `due` for a task or `start` and `end` for an
+event. A delete has no such state, so its row describes the object it removed.
+
+A completion never names `completed_at` in `fields`: the time moves only when `done` does, so `done`
+is the one name that covers it, and a client reads the value off the row.
 
 `dam status --full` and `dam diff --full` add `before` and `after`, each the whole object or null,
 beside that row. The default exists because the clients poll `status` per render: three hundred
@@ -478,7 +509,7 @@ query = "due:today | overdue"
 ```
 
 `stale` makes a read command pull that remote first when the last pull is older than the value.
-Absent, reads never pull.
+Absent, reads never pull. `--no-pull` on the command line skips that pass for one invocation.
 
 A `_command` inherits `dam`'s standard input. A vault CLI that prompts for a password works when
 `dam` runs in a terminal and fails when a client spawns `dam` with standard input closed; a keychain

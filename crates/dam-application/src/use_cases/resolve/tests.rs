@@ -290,7 +290,15 @@ fn ours_is_committed_and_the_conflict_is_not_raised_again() {
     assert_eq!(again[0].conflicts, 0, "the conflict was raised again");
     assert_eq!(store.get(&oid(1)).unwrap().unwrap().base().subject, "mine");
 
-    let reports = push(repos, &launcher(vec![]), &EchoCredentials, &config(), None).unwrap();
+    let reports = push(
+        repos,
+        &launcher(vec![]),
+        &EchoCredentials,
+        &FixedClock(date(2026, 9, 18)),
+        &config(),
+        None,
+    )
+    .unwrap();
     assert_eq!(reports[0].sent, 1, "ours was sent upstream");
     assert_eq!(
         store
@@ -322,7 +330,15 @@ fn theirs_leaves_only_theirs_owed_and_settles_the_conflict() {
     )
     .unwrap();
     let (l, sent) = recording_launcher(vec![]);
-    push(repos, &l, &EchoCredentials, &config(), None).unwrap();
+    push(
+        repos,
+        &l,
+        &EchoCredentials,
+        &FixedClock(date(2026, 9, 18)),
+        &config(),
+        None,
+    )
+    .unwrap();
     for m in sent.borrow().iter() {
         assert_eq!(
             m.object.as_ref().unwrap().base().subject,

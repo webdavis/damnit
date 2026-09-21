@@ -87,6 +87,13 @@ impl RemoteTrackingRepository for MemoryStore {
         self.0.borrow_mut().last_pulls.insert(remote.clone(), at);
         Ok(())
     }
+    fn last_push(&self, remote: &RemoteName) -> Result<Option<Timestamp>, StoreError> {
+        Ok(self.0.borrow().last_pushes.get(remote).copied())
+    }
+    fn set_last_push(&self, remote: &RemoteName, at: Timestamp) -> Result<(), StoreError> {
+        self.0.borrow_mut().last_pushes.insert(remote.clone(), at);
+        Ok(())
+    }
 }
 
 impl ConflictRepository for MemoryStore {

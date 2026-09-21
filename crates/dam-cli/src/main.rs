@@ -45,9 +45,14 @@ fn main() {
 }
 
 fn run(cli: Cli, format: Format) -> Result<(), CliError> {
+    if cli.no_pull && !commands::pulls_a_stale_remote(&cli.command) {
+        return Err(CliError::Usage(
+            "--no-pull applies to ls and show, the reads that pull a stale remote".into(),
+        ));
+    }
     let config_path = cli.config.unwrap_or_else(dam_adapters::default_config_path);
     let store_path = cli.store.unwrap_or_else(dam_adapters::default_store_path);
-    let mut ctx = Context::open(config_path, &store_path, format)?;
+    let mut ctx = Context::open(config_path, &store_path, format, cli.no_pull)?;
     let report = commands::dispatch(&mut ctx, cli.command)?;
     output::print(format, &report)
 }

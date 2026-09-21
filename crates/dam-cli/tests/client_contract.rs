@@ -4,6 +4,7 @@
 mod support;
 
 use support::sandbox::Sandbox;
+use support::status_json;
 
 /// A machine format writes nothing to standard error but the one document a
 /// failure produces, so this parses the whole stream rather than a line of it.
@@ -362,12 +363,4 @@ fn commit_everything(sb: &Sandbox, message: &str) {
 
 fn unstaged_fields(sb: &Sandbox) -> serde_json::Value {
     status_json(sb, &["--json"])["unstaged"][0]["fields"].clone()
-}
-
-fn status_json(sb: &Sandbox, extra: &[&str]) -> serde_json::Value {
-    let mut args = vec!["status"];
-    args.extend_from_slice(extra);
-    let (ok, out, err) = sb.dam(&args);
-    assert!(ok, "{err}");
-    serde_json::from_str(&out).unwrap()
 }

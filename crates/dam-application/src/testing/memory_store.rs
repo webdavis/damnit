@@ -25,6 +25,7 @@ struct Inner {
     notices: Vec<Notice>,
     retries: BTreeMap<RemoteName, Vec<Oid>>,
     last_pulls: BTreeMap<RemoteName, Timestamp>,
+    last_pushes: BTreeMap<RemoteName, Timestamp>,
 }
 
 #[derive(Default)]

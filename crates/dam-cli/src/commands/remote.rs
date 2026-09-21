@@ -1,5 +1,7 @@
+mod listing;
+
 use dam_adapters::{append_remote, load_config};
-use dam_application::{Notice, RemoteConfig, RemoteName, Repositories, pull};
+use dam_application::{Notice, RemoteName, Repositories, pull};
 
 use crate::args::{RemoteArgs, RemoteCommand};
 use crate::context::Context;
@@ -24,44 +26,18 @@ pub(crate) fn run_remote(ctx: &mut Context, args: RemoteArgs) -> Result<Report, 
                 }),
             })
         }
-        RemoteCommand::List => Ok(Report {
-            human: ctx
-                .config
-                .remotes
-                .iter()
-                .map(remote_line)
-                .collect::<Vec<_>>()
-                .join("\n"),
-            data: serde_json::json!({ "remotes": ctx.config.remotes.iter().map(remote_json).collect::<Vec<_>>() }),
-        }),
+        RemoteCommand::List => listing::run(ctx),
     }
-}
-
-fn remote_line(r: &RemoteConfig) -> String {
-    let mut line = format!("{}  {}", r.name.0, r.url);
-    if let Some(p) = &r.path {
-        line.push_str(&format!("  path {}", p.as_str()));
-    }
-    if let Some(s) = r.stale {
-        line.push_str(&format!("  stale {}s", s.as_secs()));
-    }
-    line
-}
-
-fn remote_json(r: &RemoteConfig) -> serde_json::Value {
-    serde_json::json!({
-        "name": r.name.0,
-        "helper": r.helper,
-        "url": r.url,
-        "path": r.path.as_ref().map(|p| p.as_str()),
-        "stale_seconds": r.stale.map(|s| s.as_secs()),
-    })
 }
 
 /// Pulls each remote whose `stale` is set and whose last pull is older than
 /// it. A failure to reach a remote is a notice, not an error, so a read
-/// never fails because the network did.
+/// never fails because the network did. `--no-pull` skips the whole pass, so
+/// the read touches nothing but the store.
 pub(crate) fn maybe_pull_stale(ctx: &mut Context) -> Result<(), CliError> {
+    if ctx.no_pull {
+        return Ok(());
+    }
     let now = ctx.clock.now();
     let due: Vec<String> = ctx
         .config
@@ -178,6 +154,33 @@ mod tests {
             ctx.store.all().unwrap().len(),
             1,
             "a fresh remote is not pulled again"
+        );
+    }
+
+    #[test]
+    fn no_pull_answers_from_the_store_and_never_launches_a_helper() {
+        let mut ctx = context();
+        ctx.no_pull = true;
+        ctx.config.remotes.push(RemoteConfig {
+            name: RemoteName("t".into()),
+            helper: "t".into(),
+            url: "t::".into(),
+            credentials: vec![],
+            stale: Some(Duration::from_secs(60)),
+            deadline: None,
+            path: None,
+        });
+        // A launcher that cannot produce a helper, so reaching for one at all
+        // would leave a PullFailed notice behind.
+        ctx.launcher = Box::new(FailingLauncher);
+        maybe_pull_stale(&mut ctx).unwrap();
+        assert!(ctx.store.all().unwrap().is_empty());
+        assert!(ctx.store.notices().unwrap().is_empty());
+        assert!(
+            ctx.store
+                .last_pull(&RemoteName("t".into()))
+                .unwrap()
+                .is_none()
         );
     }
 

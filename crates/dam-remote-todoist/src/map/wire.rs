@@ -25,6 +25,7 @@ fn wire(remote_id: String, subject: &str, body: &str, path: String, task: WireTa
 fn plain(done: bool) -> WireTask {
     WireTask {
         done,
+        completed_at: None,
         priority: 4,
         due: None,
         deadline: None,
@@ -56,6 +57,7 @@ pub fn item_to_wire(t: &Tree, i: &Item) -> Option<WireObject> {
     let path = t.item_path(i)?;
     let task = WireTask {
         done: i.checked,
+        completed_at: None,
         priority: dam_priority(i.priority),
         due: i.due.as_ref().map(|d| d.date.clone()),
         deadline: i.deadline.as_ref().map(|d| d.date.clone()),

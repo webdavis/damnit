@@ -23,6 +23,61 @@ fn a_task_round_trips_with_a_day_due() {
     assert_eq!(from_wire(&wire).unwrap(), object);
 }
 
+/// The store is wire JSON, so the completion time has to survive the trip or
+/// a completed task loses it the moment dam writes it down.
+#[test]
+fn a_completion_time_round_trips_as_rfc_3339() {
+    let mut t = Task::new(oid(1), "milk");
+    t.done = true;
+    t.completed_at = Some("2026-09-18T15:04:05Z".parse().unwrap());
+    let object = Object::Task(t);
+    let wire = to_wire(&object, None);
+    assert_eq!(
+        wire.task.as_ref().unwrap().completed_at.as_deref(),
+        Some("2026-09-18T15:04:05Z")
+    );
+    assert_eq!(from_wire(&wire).unwrap(), object);
+}
+
+/// A helper from an older protocol sends no completion time, and an open task
+/// never has one.
+#[test]
+fn an_absent_completion_time_reads_as_none_and_is_left_out() {
+    let object = Object::Task(Task::new(oid(1), "milk"));
+    let wire = to_wire(&object, None);
+    assert_eq!(wire.task.as_ref().unwrap().completed_at, None);
+    let text = serde_json::to_string(&wire).unwrap();
+    assert!(!text.contains("completed_at"), "{text}");
+    assert_eq!(from_wire(&wire).unwrap(), object);
+}
+
+/// The time belongs to a completed task, so an open one never takes one off
+/// the wire, whatever a helper sends.
+#[test]
+fn an_open_task_does_not_take_a_completion_time_from_the_wire() {
+    let mut wire = to_wire(&Object::Task(Task::new(oid(1), "milk")), None);
+    let task = wire.task.as_mut().unwrap();
+    task.done = false;
+    task.completed_at = Some("2020-01-01T00:00:00Z".into());
+    let object = from_wire(&wire).unwrap();
+    let task = object.as_task().unwrap();
+    assert!(!task.done);
+    assert_eq!(task.completed_at, None);
+}
+
+/// A completion time dam cannot read is a rejection naming the field, the way
+/// an unreadable due date is.
+#[test]
+fn an_unreadable_completion_time_is_rejected_naming_the_field() {
+    let mut done = Task::new(oid(1), "milk");
+    done.done = true;
+    let mut wire = to_wire(&Object::Task(done), None);
+    wire.task.as_mut().unwrap().completed_at = Some("last tuesday".into());
+    let err = from_wire(&wire).unwrap_err();
+    assert_eq!(err.field(), "completed_at");
+    assert!(err.to_string().contains("last tuesday"), "{err}");
+}
+
 #[test]
 fn an_event_round_trips_with_a_zoned_start() {
     let start = date(2026, 9, 25)
