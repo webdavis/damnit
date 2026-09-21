@@ -13,7 +13,9 @@ use clap::{Parser, Subcommand};
 
 pub(crate) use reading::LsArgs;
 pub(crate) use remotes::{PullArgs, PushArgs, RemoteArgs, RemoteCommand, ResolveArgs};
-pub(crate) use staging::{AddArgs, CommitArgs, DiffArgs, ResetArgs, RestoreArgs, ShowArgs};
+pub(crate) use staging::{
+    AddArgs, CommitArgs, DiffArgs, ResetArgs, RestoreArgs, ShowArgs, StatusArgs,
+};
 pub(crate) use writing::{DoneArgs, EditArgs, MvArgs, NewArgs, RmArgs};
 
 #[derive(Parser, Debug)]
@@ -62,7 +64,7 @@ pub(crate) enum Command {
     /// Show one object or one commit.
     Show(ShowArgs),
     /// Working versus stage versus last commit, plus remote notices.
-    Status,
+    Status(StatusArgs),
     /// Unstaged changes, or staged with --staged.
     Diff(DiffArgs),
     /// List objects, optionally by query or saved filter.

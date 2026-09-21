@@ -31,7 +31,7 @@ pub(crate) fn dispatch(ctx: &mut Context, command: Command) -> Result<Report, Cl
         Command::Commit(a) => commit::run_commit(ctx, a),
         Command::Log => commit::run_log(ctx),
         Command::Show(a) => show::run_show(ctx, a),
-        Command::Status => status::run_status(ctx),
+        Command::Status(a) => status::run_status(ctx, a),
         Command::Diff(a) => status::run_diff(ctx, a),
         Command::Ls(a) => ls::run_ls(ctx, a),
         Command::Remote(a) => remote::run_remote(ctx, a),

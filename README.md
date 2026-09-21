@@ -72,10 +72,16 @@ up as a category. Saved filters live under `[filter.<name>]` and run by name.
 
 `dam status --json` and `dam diff --json` answer in change documents, one per change:
 
-    {"oid": "98d878...", "op": "update", "fields": ["subject", "due"]}
+    {"oid": "98d878...", "op": "update", "fields": ["subject", "due"], "kind": "task",
+     "subject": "buy oat milk", "path": "work/", "labels": ["errand"], "done": false,
+     "priority": 1, "due": "2026-09-25"}
 
 `fields` names what the change touches. An update names what moved; a create names every field the
-new object carries beyond its defaults; a delete names nothing.
+new object carries beyond its defaults; a delete names nothing and its row describes the object it
+removed. The rest of the row is the state the change left behind, which is what a list renders.
+
+Add `--full` to either command for `before` and `after`, the whole object on each side. The default
+leaves them out because a client polling `status` per render pays for them on every poll.
 
 ## Errors
 

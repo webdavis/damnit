@@ -1,6 +1,7 @@
 use dam_application::{CredentialSpec, Repositories, diff_staged, diff_working, status};
+use dam_domain::Change;
 
-use crate::args::DiffArgs;
+use crate::args::{DiffArgs, StatusArgs};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
@@ -12,7 +13,7 @@ use notices::{notice_json, notice_line};
 pub(crate) use rows::{change_json, change_line};
 use rows::{conflict_json, conflict_line};
 
-pub(crate) fn run_status(ctx: &mut Context) -> Result<Report, CliError> {
+pub(crate) fn run_status(ctx: &mut Context, args: StatusArgs) -> Result<Report, CliError> {
     let remotes: Vec<_> = ctx.config.remotes.iter().map(|r| r.name.clone()).collect();
     let s = status(Repositories::of(ctx.store.as_ref()), &remotes)?;
     let mut human = Vec::new();
@@ -42,13 +43,8 @@ pub(crate) fn run_status(ctx: &mut Context) -> Result<Report, CliError> {
     if let Some(warning) = literal_credential_warning(ctx) {
         human.insert(0, warning);
     }
-    let staged: Vec<serde_json::Value> =
-        s.staged.iter().map(change_json).collect::<Result<_, _>>()?;
-    let unstaged: Vec<serde_json::Value> = s
-        .unstaged
-        .iter()
-        .map(change_json)
-        .collect::<Result<_, _>>()?;
+    let staged = change_documents(&s.staged, args.full)?;
+    let unstaged = change_documents(&s.unstaged, args.full)?;
     let conflicts: Vec<serde_json::Value> = s
         .conflicts
         .iter()
@@ -72,7 +68,7 @@ pub(crate) fn run_diff(ctx: &mut Context, args: DiffArgs) -> Result<Report, CliE
     } else {
         diff_working(ctx.store.as_ref(), ctx.store.as_ref(), ctx.store.as_ref())?
     };
-    let data: Vec<serde_json::Value> = changes.iter().map(change_json).collect::<Result<_, _>>()?;
+    let data = change_documents(&changes, args.full)?;
     Ok(Report {
         human: changes
             .iter()
@@ -81,6 +77,10 @@ pub(crate) fn run_diff(ctx: &mut Context, args: DiffArgs) -> Result<Report, CliE
             .join("\n"),
         data: serde_json::json!({ "changes": data }),
     })
+}
+
+fn change_documents(changes: &[Change], full: bool) -> Result<Vec<serde_json::Value>, CliError> {
+    changes.iter().map(|c| change_json(c, full)).collect()
 }
 
 /// One line naming every credential held as a value in the config file, which

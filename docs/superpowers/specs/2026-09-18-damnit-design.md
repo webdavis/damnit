@@ -214,15 +214,15 @@ your text intact. Nothing reaches the working layer until it parses.
 ### Staging and committing
 
 ```
-dam add <oid>...            stage
-dam add -A                  stage everything
-dam reset [<oid>...]        unstage one or all
-dam restore <oid>...        back to the last commit, working and stage together
-dam status                  working versus stage versus last commit, and remote notices
-dam diff [--staged]         working versus stage, or stage versus last commit
-dam commit -m "triage"      record the stage as a local commit
-dam log                     history
-dam show <oid|commit>       one object, or one commit
+dam add <oid>...              stage
+dam add -A                    stage everything
+dam reset [<oid>...]          unstage one or all
+dam restore <oid>...          back to the last commit, working and stage together
+dam status [--full]           working versus stage versus last commit, and remote notices
+dam diff [--staged] [--full]  working versus stage, or stage versus last commit
+dam commit -m "triage"        record the stage as a local commit
+dam log                       history
+dam show <oid|commit>         one object, or one commit
 ```
 
 ### Remotes
@@ -260,7 +260,7 @@ narrowed to a `path` in config.
 dam ls [<query>] [--json|--toon]
 dam ls today                a saved filter from config
 dam show <oid> [--json|--toon]
-dam status [--json|--toon]
+dam status [--json|--toon] [--full]
 ```
 
 `--json` is the answer as JSON. `--toon` is the same answer in TOON (Token-Oriented Object
@@ -288,18 +288,29 @@ the clients use.
 
 #### The change document
 
-`dam status` and `dam diff` answer in change documents, one per working or staged change:
+`dam status`, `dam diff`, `dam log`, `dam add` and `dam commit` answer in change documents, one per
+change. The default carries what a client renders and no object:
 
 ```json
-{"oid": "98d878...", "op": "update", "fields": ["subject", "due"]}
+{"oid": "98d878...", "op": "update", "fields": ["subject", "due"], "kind": "task",
+ "subject": "buy oat milk", "path": "work/", "labels": ["errand"], "done": false,
+ "priority": 1, "due": "2026-09-25"}
 ```
 
 `fields` names what the change touches, so a client reads dam's own answer rather than diffing the
 before and after itself. An update names the fields that moved. A create names the fields the new
 object carries: the ones its kind always has, `subject` for a task and `subject`, `start` and `end`
 for an event, then every other field holding something other than its default. A delete names
-nothing, because it removes the object whole rather than any field of it, and the object it removed
-is in `before` under `--full`.
+nothing, because it removes the object whole rather than any field of it.
+
+The rest of the row is the state the change left behind: `kind`, `subject`, `path` and `labels` for
+either kind, then `done`, `priority` and `due` for a task or `start` and `end` for an event. A
+delete has no such state, so its row describes the object it removed.
+
+`dam status --full` and `dam diff --full` add `before` and `after`, each the whole object or null,
+beside that row. The default exists because the clients poll `status` per render: three hundred
+uncommitted creates measured 146,985 bytes with the objects embedded, and the row shape is what a
+statusline count and a change list actually read.
 
 ### Exit codes
 

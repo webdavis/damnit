@@ -178,6 +178,45 @@ fn a_change_document_names_the_fields_it_touches() {
     );
 }
 
+/// A background poll runs `status` per render, so its default answer carries
+/// a row per change rather than two whole objects.
+#[test]
+fn status_embeds_no_object_until_asked_for_one() {
+    let _guard = support::guard("status_embeds_no_object_until_asked_for_one");
+    let sb = Sandbox::new();
+    let oid = sb.new_object(&[
+        "buy oat milk",
+        "--due",
+        "2026-09-25",
+        "-p",
+        "1",
+        "--label",
+        "errand",
+    ]);
+
+    let row = status_json(&sb, &["--json"])["unstaged"][0].clone();
+    assert!(
+        row.get("before").is_none() && row.get("after").is_none(),
+        "{row}"
+    );
+    assert!(row["oid"].as_str().unwrap().starts_with(&oid));
+    assert_eq!(row["op"], "create");
+    assert_eq!(row["kind"], "task");
+    assert_eq!(row["subject"], "buy oat milk");
+    assert_eq!(row["due"], "2026-09-25");
+    assert_eq!(row["priority"], 1);
+    assert_eq!(row["done"], false);
+    assert_eq!(row["labels"], serde_json::json!(["errand"]));
+
+    let full = status_json(&sb, &["--json", "--full"])["unstaged"][0].clone();
+    assert_eq!(full["before"], serde_json::Value::Null);
+    assert_eq!(full["after"]["subject"], "buy oat milk");
+    assert_eq!(full["after"]["body"], "");
+    for key in ["oid", "op", "fields", "subject", "due"] {
+        assert_eq!(full[key], row[key], "--full dropped {key}");
+    }
+}
+
 fn commit_everything(sb: &Sandbox, message: &str) {
     assert!(sb.dam(&["add", "-A"]).0);
     assert!(sb.dam(&["commit", "-m", message]).0);

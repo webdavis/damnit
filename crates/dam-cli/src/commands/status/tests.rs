@@ -1,4 +1,4 @@
-use crate::args::{AddArgs, CommitArgs, DiffArgs};
+use crate::args::{AddArgs, CommitArgs, DiffArgs, StatusArgs};
 use crate::commands::commit::run_commit;
 use crate::commands::stage::run_add;
 use crate::testing::context;
@@ -33,7 +33,7 @@ fn status_separates_staged_unstaged_and_notices() {
             why: "nope".into(),
         })
         .unwrap();
-    let report = super::run_status(&mut ctx).unwrap();
+    let report = super::run_status(&mut ctx, StatusArgs { full: false }).unwrap();
     assert!(report.human.contains("Staged:"));
     assert!(report.human.contains("Not staged:"));
     assert!(report.human.contains("Notices:"));
@@ -62,7 +62,7 @@ fn status_warns_once_when_a_credential_is_a_value_in_the_config_file() {
         name: "api_token".into(),
         value: "SUPERSECRETTOKEN".into(),
     }])];
-    let report = super::run_status(&mut ctx).unwrap();
+    let report = super::run_status(&mut ctx, StatusArgs { full: false }).unwrap();
     let warnings: Vec<&str> = report
         .human
         .lines()
@@ -80,7 +80,7 @@ fn status_does_not_warn_when_no_credential_is_a_value_in_the_config_file() {
         name: "api_token".into(),
         var: "DAM_TODOIST_API_TOKEN".into(),
     }])];
-    let report = super::run_status(&mut ctx).unwrap();
+    let report = super::run_status(&mut ctx, StatusArgs { full: false }).unwrap();
     assert!(!report.human.contains("warning:"), "{}", report.human);
 }
 
@@ -94,7 +94,7 @@ fn a_kind_change_notice_names_both_kinds() {
             theirs: Kind::Event,
         })
         .unwrap();
-    let report = super::run_status(&mut ctx).unwrap();
+    let report = super::run_status(&mut ctx, StatusArgs { full: false }).unwrap();
     assert!(
         report.human.contains(&format!(
             "{} is a task here and an event upstream",
@@ -118,7 +118,7 @@ fn a_kind_change_notice_reads_the_other_way_round_too() {
             theirs: Kind::Task,
         })
         .unwrap();
-    let report = super::run_status(&mut ctx).unwrap();
+    let report = super::run_status(&mut ctx, StatusArgs { full: false }).unwrap();
     assert!(
         report.human.contains(&format!(
             "{} is an event here and a task upstream",
@@ -153,10 +153,24 @@ fn diff_shows_working_or_staged() {
     let mut t = Task::new(oid(1), "b");
     t.base.subject = "b".into();
     ctx.store.put(&Object::Task(t)).unwrap();
-    let working = super::run_diff(&mut ctx, DiffArgs { staged: false }).unwrap();
+    let working = super::run_diff(
+        &mut ctx,
+        DiffArgs {
+            staged: false,
+            full: false,
+        },
+    )
+    .unwrap();
     assert!(working.human.contains("changed"));
     assert!(working.human.contains("subject"));
-    let staged = super::run_diff(&mut ctx, DiffArgs { staged: true }).unwrap();
+    let staged = super::run_diff(
+        &mut ctx,
+        DiffArgs {
+            staged: true,
+            full: false,
+        },
+    )
+    .unwrap();
     assert!(staged.human.is_empty());
 }
 
@@ -200,7 +214,7 @@ fn status_reports_conflicts_and_unpushed_commits() {
         },
     )
     .unwrap();
-    let report = super::run_status(&mut ctx).unwrap();
+    let report = super::run_status(&mut ctx, StatusArgs { full: false }).unwrap();
     assert!(report.human.contains("Conflicts:"));
     assert!(report.human.contains(oid(1).short()));
     assert!(report.human.contains("\"mine\""));
