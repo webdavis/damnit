@@ -383,6 +383,22 @@ beside that row. The default exists because the clients poll `status` per render
 uncommitted creates measured 146,985 bytes with the objects embedded, and the row shape is what a
 statusline count and a change list actually read.
 
+#### The status document
+
+`dam status` answers one document beside the change documents it carries: `staged` and `unstaged`
+are change documents, `conflicts` is one row per object both sides changed, `notices` is what a pull
+or a push left to read, and `unpushed` is one row per configured remote.
+
+```json
+{"remote": "todoist", "commits": 2, "oids": ["9f21c4...", "3b0e77..."]}
+```
+
+`oids` names the commits that remote has not been told about, newest first, which is the order
+`dam log` prints history in, so a client pairs the two lists without sorting either. `commits` is
+the length of that list, so a statusline reads one field and a client offering to open a commit
+reads the other. A remote owed nothing carries an empty list and a zero. The human page lists only
+the remotes that are owed something.
+
 ### Exit codes
 
 One meaning per code, so a client can tell what happened without reading the message:

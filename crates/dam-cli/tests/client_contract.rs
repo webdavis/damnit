@@ -317,6 +317,43 @@ fn a_change_document_names_the_fields_it_touches() {
     );
 }
 
+/// A client names the commits a remote is owed and pairs them with the log, so
+/// the row carries the ids themselves in the order `dam log` lists them and the
+/// count beside them is the length of that list.
+#[test]
+fn an_unpushed_row_names_its_commits_in_log_order() {
+    let _guard = support::guard("an_unpushed_row_names_its_commits_in_log_order");
+    let sb = Sandbox::new();
+    for (subject, message) in [("first", "one"), ("second", "two")] {
+        sb.new_object(&[subject]);
+        assert!(sb.dam(&["add", "-A"]).0);
+        assert!(sb.dam(&["commit", "-m", message]).0);
+    }
+
+    let (ok, out, err) = sb.dam(&["log", "--json"]);
+    assert!(ok, "{err}");
+    let log: serde_json::Value = serde_json::from_str(&out).unwrap();
+    let logged: Vec<&str> = log["commits"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["id"].as_str().unwrap())
+        .collect();
+    assert_eq!(logged.len(), 2);
+
+    let row = status_json(&sb, &["--json"])["unpushed"][0].clone();
+    assert_eq!(row["remote"], "fake");
+    assert_eq!(
+        row["oids"],
+        serde_json::json!(logged),
+        "the ids read in the order dam log lists them"
+    );
+    assert_eq!(
+        row["commits"], 2,
+        "the count is the length of the list beside it"
+    );
+}
+
 /// A background poll runs `status` per render, so its default answer carries
 /// a row per change rather than two whole objects.
 #[test]
