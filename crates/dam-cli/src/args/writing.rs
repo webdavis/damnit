@@ -57,8 +57,7 @@ pub(crate) struct DoneArgs {
     pub(crate) depends: Option<DependencyDisposition>,
 }
 
-/// `--children`: the words for the three answers the prompt offers, with the
-
+/// Flags for `dam edit`: fields to set directly, or `--editor` to open the object instead.
 #[derive(Args, Debug)]
 pub(crate) struct EditArgs {
     pub(crate) oid: String,
