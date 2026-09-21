@@ -100,6 +100,19 @@ fn a_disposition_outside_the_set_is_a_usage_error_naming_the_accepted_words() {
     }
 }
 
+/// Ignoring `done.interactive` is what the flags are for; ignoring an
+/// --interactive the operator typed on the same line is a different thing.
+#[test]
+fn a_disposition_beside_an_explicit_interactive_is_refused() {
+    for flag in [vec!["--children", "keep"], vec!["--depends", "drop"]] {
+        let mut argv = vec!["dam", "done", "abcd", "--force", "--interactive"];
+        argv.extend_from_slice(&flag);
+        let err = Cli::try_parse_from(argv).unwrap_err();
+        assert_eq!(err.exit_code(), 2, "{flag:?}");
+        assert!(err.to_string().contains("--interactive"), "{flag:?}: {err}");
+    }
+}
+
 #[test]
 fn a_disposition_without_force_is_refused() {
     assert!(Cli::try_parse_from(["dam", "done", "abcd", "--children", "keep"]).is_err());

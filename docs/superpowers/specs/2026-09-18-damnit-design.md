@@ -146,8 +146,9 @@ line, one word per answer the prompt offers, with the group's name carried inlin
 needs no second value. Either flag turns the prompt off for that run whatever `done.interactive`
 says, which is what lets a client complete a blocked parent with no terminal at all, and the flag
 that is absent takes `keep`, the answer that disturbs least. `--force` on its own still asks when
-`done.interactive` is set. A word outside the set is a usage error, and either flag without
-`--force` is refused.
+`done.interactive` is set. A word outside the set is a usage error, either flag without `--force`
+is refused, and so is either flag beside an explicit `--interactive`: the setting is a default to
+override, a flag the operator typed is not.
 
 ### Recurrence
 

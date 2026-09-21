@@ -41,6 +41,7 @@ pub(crate) struct DoneArgs {
     #[arg(
         long,
         requires = "force",
+        conflicts_with = "interactive",
         value_name = "up|keep|into:<name>",
         value_parser = child_disposition
     )]
@@ -49,6 +50,7 @@ pub(crate) struct DoneArgs {
     #[arg(
         long,
         requires = "force",
+        conflicts_with = "interactive",
         value_name = "drop|keep",
         value_parser = dependency_disposition
     )]
