@@ -5,6 +5,32 @@ mod support;
 
 use support::sandbox::Sandbox;
 
+/// A machine format writes nothing to standard error but the one document a
+/// failure produces, so this parses the whole stream rather than a line of it.
+#[test]
+fn a_machine_format_writes_nothing_to_stderr_but_the_document() {
+    let _guard = support::guard("a_machine_format_writes_nothing_to_stderr_but_the_document");
+    let sb = Sandbox::new();
+    std::fs::set_permissions(
+        sb.dir.path().join("config.toml"),
+        std::os::unix::fs::PermissionsExt::from_mode(0o644),
+    )
+    .unwrap();
+
+    let added = sb.output(&["remote", "add", "second", "fake::", "--json"]);
+    assert_eq!(added.status.code(), Some(0));
+    assert_eq!(
+        String::from_utf8_lossy(&added.stderr),
+        "",
+        "a warning reached the stream a client parses as one document"
+    );
+
+    let failed = sb.output(&["remote", "add", "second", "fake::", "--json"]);
+    let err = String::from_utf8_lossy(&failed.stderr);
+    serde_json::from_str::<serde_json::Value>(&err)
+        .unwrap_or_else(|e| panic!("stderr is not one JSON document: {e}\n{err}"));
+}
+
 /// The error document a machine format prints, parsed off standard error.
 fn error_document(out: &std::process::Output) -> serde_json::Value {
     let err = String::from_utf8_lossy(&out.stderr);

@@ -171,7 +171,7 @@ fn append_remote_creates_a_private_file_in_a_private_directory() {
     let base = tempfile::tempdir().unwrap();
     let dir = base.path().join("dam");
     let path = dir.join("config.toml");
-    append_remote(&path, "todoist", "todoist::").unwrap();
+    assert_eq!(append_remote(&path, "todoist", "todoist::").unwrap(), None);
     assert_eq!(mode_of(&path), 0o600);
     assert_eq!(mode_of(&dir), 0o700);
 }
@@ -183,9 +183,15 @@ fn append_remote_tightens_a_world_readable_config() {
     let path = dir.path().join("config.toml");
     std::fs::write(&path, "[done]\ninteractive = true\n").unwrap();
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
-    append_remote(&path, "todoist", "todoist::").unwrap();
+    let warning = append_remote(&path, "todoist", "todoist::").unwrap();
     assert_eq!(mode_of(&path), 0o600);
     assert!(load_config(&path).unwrap().done_interactive);
+    let said = warning.expect("a widened config is warned about");
+    assert!(said.contains("644"), "{said}");
+    assert!(
+        !said.contains(path.to_str().unwrap()),
+        "the warning carries the config path: {said}"
+    );
 }
 
 #[test]

@@ -14,9 +14,7 @@ use crate::error::CliError;
 use crate::output::Format;
 
 fn main() {
-    if !dam_adapters::catch_interrupts() {
-        eprintln!("dam: could not install the interrupt handler; Ctrl-C will not cancel cleanly");
-    }
+    let interrupts_installed = dam_adapters::catch_interrupts();
     let cli = Cli::parse();
     let format = if cli.json {
         Format::Json
@@ -25,6 +23,11 @@ fn main() {
     } else {
         Format::Human
     };
+    // A machine format keeps standard error to the one document a failure
+    // writes there, so this reaches the operator and not a parser.
+    if !interrupts_installed && format == Format::Human {
+        eprintln!("dam: could not install the interrupt handler; Ctrl-C will not cancel cleanly");
+    }
     match run(cli, format) {
         Ok(()) => {}
         Err(e) => {

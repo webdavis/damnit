@@ -9,10 +9,14 @@ use crate::output::Report;
 pub(crate) fn run_remote(ctx: &mut Context, args: RemoteArgs) -> Result<Report, CliError> {
     match args.command {
         RemoteCommand::Add { name, url } => {
-            append_remote(&ctx.config_path, &name, &url)?;
+            let warning = append_remote(&ctx.config_path, &name, &url)?;
             ctx.config = load_config(&ctx.config_path)?;
+            let mut human = format!("added {name} ({url})");
+            if let Some(why) = warning {
+                human.insert_str(0, &format!("warning: {why}\n"));
+            }
             Ok(Report {
-                human: format!("added {name} ({url})"),
+                human,
                 data: serde_json::json!({ "name": name, "url": url }),
             })
         }

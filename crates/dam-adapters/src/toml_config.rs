@@ -166,7 +166,9 @@ pub fn parse_duration(field: &str, text: &str) -> Result<Duration, ConfigError> 
     Ok(Duration::from_secs(secs))
 }
 
-pub fn append_remote(path: &FsPath, name: &str, url: &str) -> Result<(), ConfigError> {
+/// Adds one remote table. The `Some` answer is a warning for the operator,
+/// returned rather than printed so the caller decides where it goes.
+pub fn append_remote(path: &FsPath, name: &str, url: &str) -> Result<Option<String>, ConfigError> {
     let existing = match std::fs::read_to_string(path) {
         Ok(t) => t,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
@@ -210,17 +212,13 @@ fn io_error(e: std::io::Error) -> ConfigError {
 
 /// Writes the config through a sibling temp file, so an interrupted write leaves
 /// the old one intact, and leaves the result readable only by its owner: the
-/// file is the documented home of a literal credential.
-fn write_private(path: &FsPath, text: &str) -> Result<(), ConfigError> {
-    if let Ok(meta) = std::fs::metadata(path) {
-        let mode = meta.permissions().mode() & 0o777;
-        if mode & 0o077 != 0 {
-            eprintln!(
-                "dam: {} was mode {mode:o}; writing it 600, it can hold a credential",
-                path.display()
-            );
-        }
-    }
+/// file is the documented home of a literal credential. The `Some` answer says
+/// the file had been reachable by someone else.
+fn write_private(path: &FsPath, text: &str) -> Result<Option<String>, ConfigError> {
+    let widened = match std::fs::metadata(path) {
+        Ok(meta) => meta.permissions().mode() & 0o777,
+        Err(_) => 0,
+    };
     let mut file = tempfile::NamedTempFile::new_in(parent_of(path)).map_err(io_error)?;
     file.as_file()
         .set_permissions(Permissions::from_mode(0o600))
@@ -228,7 +226,12 @@ fn write_private(path: &FsPath, text: &str) -> Result<(), ConfigError> {
     file.write_all(text.as_bytes()).map_err(io_error)?;
     file.as_file().sync_all().map_err(io_error)?;
     file.persist(path).map_err(|e| io_error(e.error))?;
-    Ok(())
+    if widened & 0o077 == 0 {
+        return Ok(None);
+    }
+    Ok(Some(format!(
+        "the config was mode {widened:o}; writing it 600, it can hold a credential"
+    )))
 }
 
 #[cfg(test)]

@@ -517,6 +517,11 @@ the order it names them: for a blocked completion the task and then each blocker
 task and then the chain, for an ambiguous prefix every object it matched, and empty for a failure
 that names none.
 
+Under `--json` or `--toon`, standard error carries exactly that one document and nothing else, so a
+client parses the whole stream rather than hunting a line in it. A run that succeeds writes nothing
+there. A warning `dam` would print for the operator, such as a config file it had to tighten, is
+returned as data and reaches the human answer instead.
+
 Without `--json` or `--toon` nothing changes: the plain `dam: <message>` line, and the same exit
 code. An argument clap rejects before `dam` runs prints clap's own usage text and exits 2, whatever
 the format flag says.

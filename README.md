@@ -93,8 +93,9 @@ output:
               "a9db854060d1943ef9eb9f6d7a8ac0b1ace45d77"]}}
 
 `kind` is one of `refused`, `store`, `helper`, `credential`, `editor`, `parse`, `usage` and
-`cancelled`, and `oids` names the objects the message names, in the order it names them. Without
-those flags you get the plain `dam: <message>` line instead.
+`cancelled`, and `oids` names the objects the message names, in the order it names them. Standard
+error carries that one document and nothing else, so parse the whole stream; a run that succeeds
+writes nothing there. Without those flags you get the plain `dam: <message>` line instead.
 
 ## Exit codes
 
