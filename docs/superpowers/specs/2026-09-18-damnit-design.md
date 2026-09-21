@@ -167,7 +167,8 @@ completion date. Todoist writes the second as `every!`.
 The interval is at least one and at most the widest step of its unit the calendar holds: 7,304,484
 days, 1,043,497 weeks, 239,976 months or 19,998 years, each of which spans the whole range of dates
 `dam` stores. Past that no occurrence is reachable, so the rule is refused where it is written and
-the message names the range its unit takes.
+the message names the range its unit takes. The refusal reports exit 1, kind `parse`, which is what
+every rule text the parser will not read reports, whatever is wrong with it; see the exit codes.
 
 `dam` computes the next occurrence itself when a recurring task is completed, so it works with no
 remote attached. A helper may push the rule to a remote that understands it. Both sides then roll
@@ -422,7 +423,7 @@ One meaning per code, so a client can tell what happened without reading the mes
 |---|---|
 | 0 | The command did what it was asked. |
 | 1 | `dam` failed: a store, config, helper, editor or io failure. |
-| 2 | The command line was wrong: an unknown argument or subcommand, a flag value `dam` refuses to read, or an oid prefix that names more than one object. |
+| 2 | The command line was wrong: an unknown argument or subcommand, a flag value `dam` refuses to read, or an oid prefix that names more than one object. `--recurrence` is the one exception, below. |
 | 3 | Cancelled: the operator interrupted, or a prompt could not be answered. |
 | 4 | `dam` refused by one of its own rules, and the message names the rule. |
 
@@ -430,6 +431,13 @@ Every rule `dam` keeps reports code 4, and nothing else does, so a client maps t
 rather than per verb. An empty stage, a move into an object's own path, an event field asked of a
 task and a question no machine format can answer are refusals like any other, and each names its
 rule. Code 2 stays for the command line alone: an argument `dam` cannot read, and never a rule.
+
+`--recurrence` is the exception today. Every rule text the recurrence parser will not read reports
+code 1, kind `parse`, whatever is wrong with it: an unknown word, a zero interval, an interval past
+its unit's bound, a day outside 1 to 31, an unreadable `until` date. One flag reporting one code
+whichever way its value is wrong is better than two, and moving the class to code 2 is a change both
+clients map from `code` and `kind`, so it is its own change rather than a side effect of whichever
+refusal was added last.
 
 ## Remotes and helpers
 

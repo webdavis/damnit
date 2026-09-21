@@ -131,6 +131,30 @@ fn an_interval_no_calendar_holds_is_refused_at_the_edit() {
     assert!(out.contains("done"), "{out}");
 }
 
+/// The exit-code table carves `--recurrence` out, so the carve-out is pinned:
+/// every rule text the parser will not read reports one code and one kind,
+/// whichever way the text is wrong.
+#[test]
+fn every_recurrence_the_parser_refuses_reports_one_code_and_kind() {
+    let _guard = support::guard("every_recurrence_the_parser_refuses_reports_one_code_and_kind");
+    let sb = Sandbox::new();
+    let oid = sb.new_object(&["probe"]);
+    for rule in [
+        "every fortnight",
+        "every 0 days",
+        "every 2147483647 weeks",
+        "every month on 40",
+        "every day until soon",
+    ] {
+        let out = sb.output(&["edit", &oid, "--recurrence", rule, "--json"]);
+        assert_eq!(out.status.code(), Some(1), "{rule}");
+        let said = String::from_utf8_lossy(&out.stderr);
+        let document: serde_json::Value = serde_json::from_str(&said)
+            .unwrap_or_else(|e| panic!("{rule}: stderr is not one document: {e}\n{said}"));
+        assert_eq!(document["error"]["kind"], "parse", "{rule}");
+    }
+}
+
 #[test]
 fn each_exit_code_means_one_thing() {
     let _guard = support::guard("each_exit_code_means_one_thing");
