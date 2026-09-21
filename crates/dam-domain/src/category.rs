@@ -81,6 +81,12 @@ impl Categories {
     pub fn is_free(&self, value: &str) -> bool {
         self.category_of(value).is_none()
     }
+
+    /// Every declared category, in the order config declared them, for a
+    /// client that renders the catalogue rather than enforcing it.
+    pub fn all(&self) -> &[Category] {
+        &self.0
+    }
 }
 
 impl fmt::Display for CategoryError {
@@ -227,5 +233,20 @@ mod tests {
     fn no_categories_means_every_label_is_free() {
         let cats = Categories::new(vec![]).unwrap();
         assert_eq!(cats.check(&labels(&["a", "b"])), Ok(()));
+    }
+
+    #[test]
+    fn all_reports_every_declared_category_in_config_order() {
+        let categories = Categories::new(vec![effort(), context()]).unwrap();
+        let listed: Vec<&str> = categories.all().iter().map(|c| c.name.as_str()).collect();
+        assert_eq!(listed, ["effort", "context"]);
+        assert_eq!(categories.all()[0].values, ["light", "admin", "deep"]);
+        assert!(categories.all()[0].exclusive);
+        assert!(!categories.all()[1].exclusive);
+    }
+
+    #[test]
+    fn all_is_empty_when_nothing_is_declared() {
+        assert!(Categories::default().all().is_empty());
     }
 }
