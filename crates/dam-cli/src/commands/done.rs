@@ -195,8 +195,10 @@ mod tests {
         let mut ctx = context();
         ctx.config.done_interactive = true;
         parent_and_child(&ctx);
+        // "move them up one level", an answer that moves the child, so the
+        // assertion tells a prompt that was asked from one that was skipped.
         ctx.prompt = Box::new(ScriptedPrompt {
-            choices: RefCell::new(vec![2]),
+            choices: RefCell::new(vec![0]),
             texts: RefCell::new(vec![]),
         });
         run(&mut ctx, args(&oid(1), true, false)).unwrap();
@@ -208,7 +210,7 @@ mod tests {
                 .base()
                 .path
                 .as_str(),
-            "p/c/"
+            "c/"
         );
     }
 
