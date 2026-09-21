@@ -18,6 +18,12 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 
+/// The verbs that pull a stale remote before they answer, which is the set
+/// `--no-pull` acts on. Every one of them reaches `remote::maybe_pull_stale`.
+pub(crate) fn pulls_a_stale_remote(command: &Command) -> bool {
+    matches!(command, Command::Ls(_) | Command::Show(_))
+}
+
 pub(crate) fn dispatch(ctx: &mut Context, command: Command) -> Result<Report, CliError> {
     match command {
         Command::New(a) => new::run(ctx, a),

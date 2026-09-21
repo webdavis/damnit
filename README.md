@@ -58,7 +58,8 @@ reached the remote once.
 
 `--no-pull` answers from the local store: `dam ls` and `dam show` otherwise pull a remote whose
 `stale` window has passed, and with the flag they spawn no helper at all. Use it wherever a read has
-to be quick and local, such as a statusline that runs `dam` every few seconds.
+to be quick and local, such as a statusline that runs `dam` every few seconds. Those two verbs are
+the only ones that pull, so every other verb refuses the flag with exit 2 rather than ignoring it.
 
 ## The rules it keeps
 

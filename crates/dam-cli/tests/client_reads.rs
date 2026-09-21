@@ -185,3 +185,35 @@ done
         "an open task was stored carrying a completion time: {answer}"
     );
 }
+
+/// `--no-pull` says which reads answer locally, so a verb that never reaches a
+/// remote refuses it rather than accepting a flag that means nothing there.
+#[test]
+fn no_pull_is_refused_on_a_verb_that_never_pulls() {
+    let _guard = support::guard("no_pull_is_refused_on_a_verb_that_never_pulls");
+    let sb = Sandbox::new();
+    let oid = sb.new_object(&["buy oat milk"]);
+
+    for args in [
+        vec!["pull", "--no-pull"],
+        vec!["status", "--no-pull"],
+        vec!["done", oid.as_str(), "--no-pull"],
+    ] {
+        let out = sb.output(&args);
+        assert_eq!(
+            out.status.code(),
+            Some(2),
+            "{args:?} took a flag it cannot act on"
+        );
+        let said = String::from_utf8_lossy(&out.stderr);
+        assert!(said.contains("--no-pull"), "{said}");
+    }
+
+    for args in [
+        vec!["ls", "--no-pull"],
+        vec!["show", oid.as_str(), "--no-pull"],
+    ] {
+        let out = sb.output(&args);
+        assert_eq!(out.status.code(), Some(0), "{args:?} refused the flag");
+    }
+}
