@@ -1,7 +1,7 @@
 //! One staged or unstaged change, and one conflict, rendered both ways.
 
 use dam_application::Conflict;
-use dam_domain::{Change, Op, changed_fields};
+use dam_domain::{Change, Op, changed_fields, touched_fields};
 
 use crate::error::CliError;
 use crate::output::object_json;
@@ -33,9 +33,11 @@ pub(crate) fn change_line(change: &Change) -> String {
 pub(crate) fn change_json(change: &Change) -> Result<serde_json::Value, CliError> {
     let before = change.before.as_ref().map(object_json).transpose()?;
     let after = change.after.as_ref().map(object_json).transpose()?;
+    let fields: Vec<&str> = touched_fields(change).iter().map(|f| f.as_str()).collect();
     Ok(serde_json::json!({
         "oid": change.oid.to_string(),
         "op": match change.op { Op::Create => "create", Op::Update => "update", Op::Delete => "delete" },
+        "fields": fields,
         "before": before,
         "after": after,
     }))
@@ -60,3 +62,6 @@ pub(super) fn conflict_json(c: &Conflict) -> Result<serde_json::Value, CliError>
         "theirs": object_json(&c.theirs)?,
     }))
 }
+
+#[cfg(test)]
+mod tests;

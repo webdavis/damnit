@@ -286,6 +286,21 @@ query = "due:today | overdue"
 Every read command takes `--json` and prints one JSON document on stdout. This is the interface
 the clients use.
 
+#### The change document
+
+`dam status` and `dam diff` answer in change documents, one per working or staged change:
+
+```json
+{"oid": "98d878...", "op": "update", "fields": ["subject", "due"]}
+```
+
+`fields` names what the change touches, so a client reads dam's own answer rather than diffing the
+before and after itself. An update names the fields that moved. A create names the fields the new
+object carries: the ones its kind always has, `subject` for a task and `subject`, `start` and `end`
+for an event, then every other field holding something other than its default. A delete names
+nothing, because it removes the object whole rather than any field of it, and the object it removed
+is in `before` under `--full`.
+
 ### Exit codes
 
 One meaning per code, so a client can tell what happened without reading the message:

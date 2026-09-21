@@ -68,6 +68,15 @@ and `--toon` on any read give a program the same answer.
 `|` or, `&` and, `!` not, parentheses group. `@label`, `pN`, `key:value`; an unknown key is looked
 up as a category. Saved filters live under `[filter.<name>]` and run by name.
 
+## Reading it from a program
+
+`dam status --json` and `dam diff --json` answer in change documents, one per change:
+
+    {"oid": "98d878...", "op": "update", "fields": ["subject", "due"]}
+
+`fields` names what the change touches. An update names what moved; a create names every field the
+new object carries beyond its defaults; a delete names nothing.
+
 ## Errors
 
 With `--json` or `--toon` a failure prints one document on standard error and nothing on standard
