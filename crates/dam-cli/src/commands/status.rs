@@ -34,8 +34,8 @@ pub(crate) fn run_status(ctx: &mut Context, args: StatusArgs) -> Result<Report, 
         "Unpushed:",
         s.unpushed
             .iter()
-            .filter(|u| !u.ids.is_empty())
-            .map(|u| format!("  {}: {} commit(s)", u.remote.0, u.ids.len())),
+            .filter(|u| !u.commit_ids.is_empty())
+            .map(|u| format!("  {}: {} commit(s)", u.remote.0, u.commit_ids.len())),
     );
     if human.is_empty() {
         human.push("nothing staged, nothing changed".to_string());
@@ -79,13 +79,13 @@ pub(crate) fn run_diff(ctx: &mut Context, args: DiffArgs) -> Result<Report, CliE
     })
 }
 
-/// One remote's owed commits: the ids in `dam log`'s order, and the count
-/// beside them, which is the length of that list.
+/// One remote's owed commits: the commit ids in `dam log`'s order, and the
+/// count beside them, which is the length of that list.
 fn unpushed_json(unpushed: &Unpushed) -> serde_json::Value {
     serde_json::json!({
         "remote": unpushed.remote.0,
-        "commits": unpushed.ids.len(),
-        "oids": unpushed.ids.iter().map(|id| id.to_string()).collect::<Vec<_>>(),
+        "commits": unpushed.commit_ids.len(),
+        "commit_ids": unpushed.commit_ids.iter().map(|id| id.to_string()).collect::<Vec<_>>(),
     })
 }
 

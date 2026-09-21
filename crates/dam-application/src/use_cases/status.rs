@@ -20,13 +20,13 @@ pub struct Status {
 /// `dam log` prints history in.
 pub struct Unpushed {
     pub remote: RemoteName,
-    pub ids: Vec<CommitId>,
+    pub commit_ids: Vec<CommitId>,
 }
 
 pub fn status(repos: Repositories<'_>, remotes: &[RemoteName]) -> Result<Status, UseCaseError> {
     let mut unpushed = Vec::new();
     for remote in remotes {
-        let ids = repos
+        let commit_ids = repos
             .commits
             .unpushed(remote)?
             .into_iter()
@@ -35,7 +35,7 @@ pub fn status(repos: Repositories<'_>, remotes: &[RemoteName]) -> Result<Status,
             .collect();
         unpushed.push(Unpushed {
             remote: remote.clone(),
-            ids,
+            commit_ids,
         });
     }
     Ok(Status {
@@ -130,7 +130,7 @@ mod tests {
         let remote = RemoteName("todoist".into());
         let s = status(Repositories::of(&store), std::slice::from_ref(&remote)).unwrap();
         assert_eq!(s.unpushed[0].remote, remote);
-        assert_eq!(s.unpushed[0].ids, vec![second.id, first.id]);
+        assert_eq!(s.unpushed[0].commit_ids, vec![second.id, first.id]);
     }
 
     #[test]
@@ -151,7 +151,7 @@ mod tests {
         let s = status(repos, std::slice::from_ref(&remote)).unwrap();
         assert_eq!(s.unpushed.len(), 1);
         assert_eq!(s.unpushed[0].remote, remote);
-        assert_eq!(s.unpushed[0].ids.len(), 1);
+        assert_eq!(s.unpushed[0].commit_ids.len(), 1);
     }
 
     #[test]

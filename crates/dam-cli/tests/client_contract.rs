@@ -318,7 +318,7 @@ fn a_change_document_names_the_fields_it_touches() {
 }
 
 /// A client names the commits a remote is owed and pairs them with the log, so
-/// the row carries the ids themselves in the order `dam log` lists them and the
+/// the row carries the commit ids in the order `dam log` lists them and the
 /// count beside them is the length of that list.
 #[test]
 fn an_unpushed_row_names_its_commits_in_log_order() {
@@ -344,9 +344,9 @@ fn an_unpushed_row_names_its_commits_in_log_order() {
     let row = status_json(&sb, &["--json"])["unpushed"][0].clone();
     assert_eq!(row["remote"], "fake");
     assert_eq!(
-        row["oids"],
+        row["commit_ids"],
         serde_json::json!(logged),
-        "the ids read in the order dam log lists them"
+        "the commit ids read in the order dam log lists them"
     );
     assert_eq!(
         row["commits"], 2,
