@@ -11,6 +11,7 @@ pub(crate) fn run_push(ctx: &mut Context, args: PushArgs) -> Result<Report, CliE
         Repositories::of(ctx.store.as_ref()),
         ctx.launcher.as_ref(),
         ctx.credentials.as_ref(),
+        ctx.clock.as_ref(),
         &ctx.config,
         args.remote.as_deref(),
     )?;

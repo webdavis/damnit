@@ -2,7 +2,7 @@
 //! at all, and answers about mutations dam did not send.
 
 use super::super::*;
-use super::{committed_task, config, launcher};
+use super::{clock, committed_task, config, launcher};
 use crate::ports::Repositories;
 use crate::remote::MutationOutcome;
 use crate::testing::prelude::*;
@@ -23,7 +23,7 @@ fn a_failed_mutation_becomes_a_notice_and_a_retry() {
             })
             .collect()
     });
-    let reports = push(repos, &l, &EchoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
     assert_eq!(
         reports[0].failed,
         vec![(oid(1), "rate limited".to_string())]
@@ -62,7 +62,7 @@ fn a_mutation_the_helper_never_answered_is_a_failure() {
             })
             .collect()
     });
-    let reports = push(repos, &l, &EchoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
     assert_eq!(reports[0].succeeded, 1);
     assert_eq!(
         reports[0].failed,
@@ -108,7 +108,7 @@ fn duplicate_and_unsent_results_are_ignored() {
             },
         ]
     });
-    let reports = push(repos, &l, &EchoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
     assert_eq!(reports[0].succeeded, 0);
     assert_eq!(reports[0].failed.len(), 1);
     let retries = store.push_retries(&RemoteName("todoist".into())).unwrap();

@@ -120,6 +120,8 @@ pub trait RemoteTrackingRepository {
     fn set_sync_token(&self, remote: &RemoteName, token: Option<&str>) -> Result<(), StoreError>;
     fn last_pull(&self, remote: &RemoteName) -> Result<Option<Timestamp>, StoreError>;
     fn set_last_pull(&self, remote: &RemoteName, at: Timestamp) -> Result<(), StoreError>;
+    fn last_push(&self, remote: &RemoteName) -> Result<Option<Timestamp>, StoreError>;
+    fn set_last_push(&self, remote: &RemoteName, at: Timestamp) -> Result<(), StoreError>;
 }
 
 /// Objects a pull could not merge, held until the operator settles them.

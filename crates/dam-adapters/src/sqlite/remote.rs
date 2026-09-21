@@ -174,6 +174,40 @@ impl SqliteStore {
             .map(|_| ())
             .map_err(sql)
     }
+
+    pub(super) fn last_push_of(
+        &self,
+        remote: &RemoteName,
+    ) -> Result<Option<Timestamp>, StoreError> {
+        self.conn
+            .query_row(
+                "SELECT at FROM pushes WHERE remote = ?1",
+                params![remote.0],
+                |r| r.get::<_, String>(0),
+            )
+            .optional()
+            .map_err(sql)?
+            .map(|t| {
+                t.parse::<Timestamp>()
+                    .map_err(|e| StoreError::Failed(e.to_string()))
+            })
+            .transpose()
+    }
+
+    pub(super) fn set_last_push_of(
+        &self,
+        remote: &RemoteName,
+        at: Timestamp,
+    ) -> Result<(), StoreError> {
+        self.conn
+            .execute(
+                "INSERT INTO pushes (remote, at) VALUES (?1, ?2)
+                 ON CONFLICT(remote) DO UPDATE SET at = excluded.at",
+                params![remote.0, at.to_string()],
+            )
+            .map(|_| ())
+            .map_err(sql)
+    }
 }
 
 impl RemoteTrackingRepository for SqliteStore {
@@ -219,6 +253,12 @@ impl RemoteTrackingRepository for SqliteStore {
     }
     fn set_last_pull(&self, remote: &RemoteName, at: Timestamp) -> Result<(), StoreError> {
         self.set_last_pull_of(remote, at)
+    }
+    fn last_push(&self, remote: &RemoteName) -> Result<Option<Timestamp>, StoreError> {
+        self.last_push_of(remote)
+    }
+    fn set_last_push(&self, remote: &RemoteName, at: Timestamp) -> Result<(), StoreError> {
+        self.set_last_push_of(remote, at)
     }
 }
 
@@ -284,6 +324,22 @@ mod tests {
         assert!(s.remote_snapshot(&remote(), &oid(1)).unwrap().is_none());
         assert_eq!(s.remote_id(&other, &oid(1)).unwrap().as_deref(), Some("r1"));
         assert_eq!(s.remote_snapshot(&other, &oid(1)).unwrap(), Some(o));
+    }
+
+    #[test]
+    fn last_push_is_absent_then_set_and_does_not_disturb_last_pull() {
+        let s = SqliteStore::in_memory().unwrap();
+        assert!(s.last_push(&remote()).unwrap().is_none());
+        let pulled = jiff::Timestamp::UNIX_EPOCH;
+        let pushed = pulled + std::time::Duration::from_secs(60);
+        s.set_last_pull(&remote(), pulled).unwrap();
+        s.set_last_push(&remote(), pushed).unwrap();
+        assert_eq!(s.last_push(&remote()).unwrap(), Some(pushed));
+        assert_eq!(s.last_pull(&remote()).unwrap(), Some(pulled));
+        assert!(
+            s.last_push(&RemoteName("other".into())).unwrap().is_none(),
+            "the record is per remote"
+        );
     }
 
     #[test]

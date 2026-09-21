@@ -144,4 +144,15 @@ pub fn remote_tracking_repository_contract(tracking: &dyn RemoteTrackingReposito
     tracking.set_last_pull(&here, at).unwrap();
     assert_eq!(tracking.last_pull(&here).unwrap(), Some(at));
     assert_eq!(tracking.last_pull(&there).unwrap(), None);
+
+    assert_eq!(tracking.last_push(&here).unwrap(), None);
+    let pushed_at = at + std::time::Duration::from_secs(60);
+    tracking.set_last_push(&here, pushed_at).unwrap();
+    assert_eq!(tracking.last_push(&here).unwrap(), Some(pushed_at));
+    assert_eq!(tracking.last_push(&there).unwrap(), None);
+    assert_eq!(
+        tracking.last_pull(&here).unwrap(),
+        Some(at),
+        "the two times are kept apart"
+    );
 }

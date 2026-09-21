@@ -48,6 +48,10 @@ the helper and leaving the store as it was.
 `dam status`, `dam diff`, `dam log` and `dam show` read the way their git namesakes do. `--json`
 and `--toon` on any read give a program the same answer.
 
+`dam remote list` names every remote with when it was last pulled and last pushed: `pulled 4m ago`
+in the line, `last_pull` and `last_push` as RFC 3339 under `--json`, null until that verb has
+reached the remote once.
+
 `--no-pull` answers from the local store: `dam ls` and `dam show` otherwise pull a remote whose
 `stale` window has passed, and with the flag they spawn no helper at all. Use it wherever a read has
 to be quick and local, such as a statusline that runs `dam` every few seconds.

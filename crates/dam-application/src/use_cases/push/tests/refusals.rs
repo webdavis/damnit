@@ -1,7 +1,7 @@
 //! What a push refuses before it sends anything.
 
 use super::super::*;
-use super::{committed_task, config, launcher};
+use super::{clock, committed_task, config, launcher};
 use crate::errors::Refusal;
 use crate::ports::Repositories;
 use crate::testing::prelude::*;
@@ -21,7 +21,7 @@ fn unresolved_conflicts_block_push() {
         )
         .unwrap();
     let (l, _) = launcher(|_| vec![]);
-    let err = push(repos, &l, &EchoCredentials, &config(), None).unwrap_err();
+    let err = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap_err();
     assert_eq!(err, UseCaseError::Refused(Refusal::UnresolvedConflicts(1)));
 }
 
@@ -30,7 +30,15 @@ fn an_unknown_remote_is_refused() {
     let store = MemoryStore::new();
     let repos = Repositories::of(&store);
     let (l, _) = launcher(|_| vec![]);
-    let err = push(repos, &l, &EchoCredentials, &config(), Some("nope")).unwrap_err();
+    let err = push(
+        repos,
+        &l,
+        &EchoCredentials,
+        &clock(),
+        &config(),
+        Some("nope"),
+    )
+    .unwrap_err();
     assert_eq!(
         err,
         UseCaseError::Refused(Refusal::NoSuchRemote("nope".into()))
@@ -47,7 +55,7 @@ fn a_credential_the_config_does_not_supply_is_refused_by_name() {
     let mut config = config();
     config.remotes[0].credentials.clear();
     let (l, _) = launcher(|_| vec![]);
-    let err = push(repos, &l, &EchoCredentials, &config, None).unwrap_err();
+    let err = push(repos, &l, &EchoCredentials, &clock(), &config, None).unwrap_err();
     assert_eq!(
         err,
         UseCaseError::Refused(Refusal::MissingCredential {

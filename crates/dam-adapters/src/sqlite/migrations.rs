@@ -1,6 +1,6 @@
 use rusqlite::Connection;
 
-pub(super) const VERSION: u32 = 1;
+pub(super) const VERSION: u32 = 2;
 
 const V1: &str = r#"
 CREATE TABLE objects (oid TEXT PRIMARY KEY, kind TEXT NOT NULL, path TEXT NOT NULL, json TEXT NOT NULL);
@@ -19,6 +19,10 @@ CREATE TABLE push_retries (remote TEXT NOT NULL, oid TEXT NOT NULL, PRIMARY KEY 
 CREATE TABLE pulls (remote TEXT PRIMARY KEY, at TEXT NOT NULL);
 "#;
 
+const V2: &str = r#"
+CREATE TABLE pushes (remote TEXT PRIMARY KEY, at TEXT NOT NULL);
+"#;
+
 /// Applies every migration above the file's `user_version`, in one transaction.
 pub(super) fn migrate(conn: &mut Connection) -> Result<(), rusqlite::Error> {
     let current: u32 = conn.pragma_query_value(None, "user_version", |r| r.get(0))?;
@@ -29,6 +33,57 @@ pub(super) fn migrate(conn: &mut Connection) -> Result<(), rusqlite::Error> {
     if current < 1 {
         tx.execute_batch(V1)?;
     }
+    if current < 2 {
+        tx.execute_batch(V2)?;
+    }
     tx.pragma_update(None, "user_version", VERSION)?;
     tx.commit()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A store written by an earlier dam gains the newer tables in place,
+    /// keeping the rows it already held.
+    #[test]
+    fn a_version_one_store_migrates_up_and_keeps_its_rows() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(V1).unwrap();
+        conn.pragma_update(None, "user_version", 1u32).unwrap();
+        conn.execute(
+            "INSERT INTO pulls (remote, at) VALUES ('todoist', '1970-01-01T00:00:00Z')",
+            [],
+        )
+        .unwrap();
+
+        migrate(&mut conn).unwrap();
+
+        let version: u32 = conn
+            .pragma_query_value(None, "user_version", |r| r.get(0))
+            .unwrap();
+        assert_eq!(version, VERSION);
+        conn.execute(
+            "INSERT INTO pushes (remote, at) VALUES ('todoist', '1970-01-01T00:01:00Z')",
+            [],
+        )
+        .unwrap();
+        let pulled: String = conn
+            .query_row("SELECT at FROM pulls WHERE remote = 'todoist'", [], |r| {
+                r.get(0)
+            })
+            .unwrap();
+        assert_eq!(pulled, "1970-01-01T00:00:00Z");
+    }
+
+    #[test]
+    fn migrating_a_current_store_again_changes_nothing() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        migrate(&mut conn).unwrap();
+        migrate(&mut conn).unwrap();
+        let version: u32 = conn
+            .pragma_query_value(None, "user_version", |r| r.get(0))
+            .unwrap();
+        assert_eq!(version, VERSION);
+    }
 }

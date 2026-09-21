@@ -56,6 +56,10 @@ pub(super) fn launcher(
     (l, pushed)
 }
 
+pub(super) fn clock() -> FixedClock {
+    FixedClock(date(2026, 9, 18))
+}
+
 pub(super) fn committed_task(store: &MemoryStore, byte: u8) {
     store
         .put(&Object::Task(Task::new(oid(byte), format!("t{byte}"))))
@@ -86,7 +90,7 @@ fn a_committed_create_is_sent_and_its_remote_id_is_mapped() {
             })
             .collect()
     });
-    let reports = push(repos, &l, &EchoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
     assert_eq!(reports[0].succeeded, 1);
     assert_eq!(pushed.borrow()[0].op, MutationOp::Create);
     assert_eq!(
@@ -130,7 +134,7 @@ fn a_retry_is_sent_as_an_update_of_the_committed_state() {
             })
             .collect()
     });
-    push(repos, &l, &EchoCredentials, &config(), None).unwrap();
+    push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
     let sent = pushed.borrow();
     assert!(
         sent.iter()
@@ -186,7 +190,7 @@ fn a_successful_delete_clears_the_remote_mapping() {
             })
             .collect()
     });
-    push(repos, &l, &EchoCredentials, &config(), None).unwrap();
+    push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
     assert!(store.remote_id(&remote, &oid(1)).unwrap().is_none());
     assert!(store.remote_snapshot(&remote, &oid(1)).unwrap().is_none());
 }
@@ -221,7 +225,7 @@ fn a_delete_with_no_remote_mapping_is_skipped() {
     .unwrap();
 
     let (l, pushed) = launcher(|_| vec![]);
-    let reports = push(repos, &l, &EchoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
     assert_eq!(reports[0].skipped, 1);
     assert_eq!(reports[0].sent, 0);
     assert!(pushed.borrow().is_empty());
@@ -248,7 +252,7 @@ fn an_event_is_skipped_by_a_task_only_helper() {
     )
     .unwrap();
     let (l, pushed) = launcher(|_| vec![]);
-    let reports = push(repos, &l, &EchoCredentials, &config(), None).unwrap();
+    let reports = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
     assert_eq!(reports[0].skipped, 1);
     assert!(pushed.borrow().is_empty());
 }
@@ -264,8 +268,8 @@ fn a_resend_after_an_unanswered_push_carries_the_first_attempt_s_key() {
     let repos = Repositories::of(&store);
     committed_task(&store, 1);
     let (l, pushed) = launcher(|_| vec![]);
-    push(repos, &l, &EchoCredentials, &config(), None).unwrap();
-    push(repos, &l, &EchoCredentials, &config(), None).unwrap();
+    push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
     let sent = pushed.borrow();
     assert_eq!(sent.len(), 2, "the mutation was sent twice: {sent:?}");
     assert_eq!(
@@ -297,7 +301,7 @@ fn two_successive_changes_to_one_object_carry_different_keys() {
             })
             .collect()
     });
-    push(repos, &l, &EchoCredentials, &config(), None).unwrap();
+    push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
     store
         .put(&Object::Task(Task::new(oid(1), "second")))
         .unwrap();
@@ -310,8 +314,47 @@ fn two_successive_changes_to_one_object_carry_different_keys() {
         "m2",
     )
     .unwrap();
-    push(repos, &l, &EchoCredentials, &config(), None).unwrap();
+    push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
     let sent = pushed.borrow();
     assert_eq!(sent.len(), 2);
     assert_ne!(sent[0].idempotency_key, sent[1].idempotency_key);
+}
+
+/// The header a client renders reads "pushed <when>" off the store, so a push
+/// that reached the remote and came back records when it did.
+#[test]
+fn a_push_that_reached_the_remote_records_when_it_did() {
+    let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
+    let todoist = RemoteName("todoist".into());
+    assert_eq!(store.last_push(&todoist).unwrap(), None);
+    committed_task(&store, 1);
+    let (l, _) = launcher(|ms| {
+        ms.iter()
+            .map(|m| MutationOutcome {
+                oid: m.oid.clone(),
+                ok: true,
+                remote_id: Some("r1".into()),
+                why: None,
+            })
+            .collect()
+    });
+    push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    assert_eq!(store.last_push(&todoist).unwrap(), Some(clock().now()));
+}
+
+/// A push with nothing unpushed still reached the remote, so it counts: the
+/// alternative leaves the header saying "never pushed" on a remote that is
+/// entirely up to date.
+#[test]
+fn a_push_with_nothing_to_send_records_the_time_too() {
+    let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
+    let (l, pushed) = launcher(|_| vec![]);
+    push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    assert!(pushed.borrow().is_empty());
+    assert_eq!(
+        store.last_push(&RemoteName("todoist".into())).unwrap(),
+        Some(clock().now())
+    );
 }
