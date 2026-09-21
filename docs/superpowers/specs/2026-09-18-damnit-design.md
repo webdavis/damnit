@@ -340,10 +340,14 @@ top-level key holding an array of objects with fixed keys:
 {"filters": [{"name": "today", "query": "due:today | overdue"}]}
 ```
 
+Both list in alphabetical order by name, which is the order `dam`'s config reader hands them over
+rather than the order the file declares them; a client that wants another sorts what it is given.
+
 Nothing declared is an empty array rather than a failure, so a client renders an empty picker. The
 human line is the name, then `exclusive` or `any` and the values for a category, and the query for
 a filter. Neither verb reads the store or a remote, so both refuse `--no-pull` like every other
-verb that never pulls.
+verb that never pulls, and neither opens a store at all: a store that will not open fails the verbs
+that read one and never a listing of what config declares.
 
 Every read command takes `--json` and prints one JSON document on stdout. This is the interface
 the clients use.
