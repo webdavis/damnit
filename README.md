@@ -42,6 +42,12 @@ the helper and leaving the store as it was.
     dam commit -m "morning triage"
     dam push
 
+`--due`, `--deadline`, `--start` and `--end` all read the same words, in any case: `today`,
+`tomorrow`, a weekday (`mon` or `monday`, meaning its next occurrence after today, so naming today's
+own weekday is a week out), `next mon` for that same day, `in 3 days`, `in 2 weeks`, `in 1 month`,
+`YYYY-MM-DD`, and `YYYY-MM-DDTHH:MM` where a time makes sense. Anything else exits 2 with a message
+naming the accepted forms.
+
 `dam edit <oid> --undone` reopens a task you completed by mistake, and
 `dam restore <oid>...` throws a working change away, back to the last commit and out of the stage.
 
@@ -80,6 +86,12 @@ the only ones that pull, so every other verb refuses the flag with exit 2 rather
 
 `|` or, `&` and, `!` not, parentheses group. `@label`, `pN`, `key:value`; an unknown key is looked
 up as a category. Saved filters live under `[filter.<name>]` and run by name.
+
+`dam filter list` prints the saved filters and `dam category list` prints the label categories with
+their values and whether each is exclusive, so a program reads the catalogue from `dam` instead of
+parsing the config file: `{"filters": [{"name": "today", "query": "due:today | overdue"}]}` and
+`{"categories": [{"name": "effort", "values": ["light", "admin", "deep"], "exclusive": true}]}`
+under `--json`, an empty array when nothing is declared.
 
 ## Reading it from a program
 
