@@ -6,7 +6,9 @@ use crate::error::CliError;
 const MIN_PREFIX: usize = 4;
 
 /// Resolves the oid argument every verb that takes one accepts: a full oid, or a
-/// hex prefix at least `MIN_PREFIX` characters long that matches exactly one object.
+/// hex prefix at least `MIN_PREFIX` characters long that matches exactly one
+/// object. A prefix is matched against the working layer, so an object only the
+/// history still holds is reached by its full oid, which parses without a scan.
 pub(crate) fn resolve_oid(objects: &dyn ObjectRepository, text: &str) -> Result<Oid, CliError> {
     if let Ok(oid) = Oid::parse(text) {
         return Ok(oid);
@@ -23,7 +25,7 @@ pub(crate) fn resolve_oid(objects: &dyn ObjectRepository, text: &str) -> Result<
         .filter(|o| o.as_str().starts_with(text))
         .collect();
     match matches.as_slice() {
-        [] => Err(UseCaseError::Refused(Refusal::NoSuchObject(text.to_string())).into()),
+        [] => Err(UseCaseError::Refused(Refusal::NoWorkingObject(text.to_string())).into()),
         [one] => Ok(one.clone()),
         _ => Err(CliError::Ambiguous {
             text: text.to_string(),
@@ -67,10 +69,12 @@ mod tests {
             resolve_oid(&store, "zzzz"),
             Err(CliError::Usage(_))
         ));
-        assert!(matches!(
-            resolve_oid(&store, "cdcd"),
-            Err(CliError::UseCase(_))
-        ));
+        let missing = resolve_oid(&store, "cdcd").unwrap_err();
+        assert_eq!(missing.exit_code(), 4);
+        assert!(
+            missing.to_string().contains("working layer"),
+            "the refusal names the layer the scan read: {missing}"
+        );
         assert!(matches!(
             resolve_oid(&store, "abab"),
             Err(CliError::Ambiguous { .. })

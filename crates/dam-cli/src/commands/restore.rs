@@ -115,6 +115,26 @@ mod tests {
         assert_eq!(report.data["unchanged"], serde_json::json!([]));
     }
 
+    /// restore is the first verb whose subject is often missing from the
+    /// working layer, which is the layer the prefix scan reads.
+    #[test]
+    fn a_removed_object_takes_its_full_oid_and_the_prefix_refusal_says_so() {
+        let mut ctx = context();
+        let id = committed_task(&ctx, 1);
+        ctx.store.delete(&id).unwrap();
+        let err = run(
+            &mut ctx,
+            RestoreArgs {
+                oids: vec![id.short().to_string()],
+            },
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("working layer"), "{err}");
+        assert!(err.to_string().contains("full oid"), "{err}");
+        run(&mut ctx, args(&[&id])).unwrap();
+        assert!(ctx.store.get(&id).unwrap().is_some());
+    }
+
     #[test]
     fn an_object_with_no_commit_behind_it_is_refused_by_dams_own_rule() {
         let mut ctx = context();

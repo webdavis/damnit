@@ -241,8 +241,12 @@ staged. The name is git's own since 2.23, and `dam reset` already means unstage 
 with no commit behind it is refused, naming it, because there is nothing to go back to; `dam rm`
 removes such an object instead. An oid neither layer knows, which is what a committed delete leaves
 behind, is refused as no such object rather than sent to `dam rm`. An object that already matches its commit is a no-op that says so.
-Every named oid is read before any is written, so one refusal leaves the others as they were. Under
-`--json` the document lists the restored oids and the unchanged ones.
+Every named oid is read before any is written, so one refusal leaves the others as they were, and a
+repeated oid answers once. Under `--json` the document lists the restored oids and the unchanged
+ones.
+
+An oid prefix is resolved against the working layer, here as in every verb, so an object `dam rm`
+took out of it is named by its full oid and the refusal on a prefix says which layer it read.
 
 `push` with no remote sends to every remote. Each helper declares in its capabilities which kinds
 and fields it accepts, and `dam` sends each object to every remote that accepts it. A remote may be
