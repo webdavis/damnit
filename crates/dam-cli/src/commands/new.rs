@@ -51,7 +51,11 @@ pub(crate) fn run(ctx: &mut Context, args: NewArgs) -> Result<Report, CliError> 
             .as_deref()
             .map(|d| when_flag(ctx, "due", d))
             .transpose()?;
-        let deadline = args.deadline.as_deref().map(deadline_flag).transpose()?;
+        let deadline = args
+            .deadline
+            .as_deref()
+            .map(|d| deadline_flag(ctx, d))
+            .transpose()?;
         new_task(
             ctx.store.as_ref(),
             ctx.random.as_ref(),
