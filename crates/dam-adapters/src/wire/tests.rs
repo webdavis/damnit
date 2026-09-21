@@ -51,11 +51,27 @@ fn an_absent_completion_time_reads_as_none_and_is_left_out() {
     assert_eq!(from_wire(&wire).unwrap(), object);
 }
 
+/// The time belongs to a completed task, so an open one never takes one off
+/// the wire, whatever a helper sends.
+#[test]
+fn an_open_task_does_not_take_a_completion_time_from_the_wire() {
+    let mut wire = to_wire(&Object::Task(Task::new(oid(1), "milk")), None);
+    let task = wire.task.as_mut().unwrap();
+    task.done = false;
+    task.completed_at = Some("2020-01-01T00:00:00Z".into());
+    let object = from_wire(&wire).unwrap();
+    let task = object.as_task().unwrap();
+    assert!(!task.done);
+    assert_eq!(task.completed_at, None);
+}
+
 /// A completion time dam cannot read is a rejection naming the field, the way
 /// an unreadable due date is.
 #[test]
 fn an_unreadable_completion_time_is_rejected_naming_the_field() {
-    let mut wire = to_wire(&Object::Task(Task::new(oid(1), "milk")), None);
+    let mut done = Task::new(oid(1), "milk");
+    done.done = true;
+    let mut wire = to_wire(&Object::Task(done), None);
     wire.task.as_mut().unwrap().completed_at = Some("last tuesday".into());
     let err = from_wire(&wire).unwrap_err();
     assert_eq!(err.field(), "completed_at");

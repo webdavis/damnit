@@ -117,9 +117,11 @@ pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
         ("task", Some(t), _) => Ok(Object::Task(Task {
             base,
             done: t.done,
+            // The time records a completion, so an open task takes none.
             completed_at: t
                 .completed_at
                 .as_deref()
+                .filter(|_| t.done)
                 .map(|at| {
                     at.parse::<Timestamp>()
                         .map_err(|_| date("completed_at")(at.to_string()))

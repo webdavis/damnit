@@ -144,3 +144,44 @@ fn completing_a_task_twice_leaves_nothing_to_report() {
         "the second done made a change describing nothing"
     );
 }
+
+/// A helper is any program that speaks the protocol, so a completion time on
+/// an open task has to be refused where the object is read rather than where
+/// a declared field is merged.
+#[test]
+fn a_helper_cannot_put_a_completion_time_on_an_open_task() {
+    let _guard = support::guard("a_helper_cannot_put_a_completion_time_on_an_open_task");
+    let sb = Sandbox::new();
+    let task = r#"{"oid":"","remote_id":"up-1","kind":"task","subject":"upstream","body":"","path":"","labels":[],"depends":[],"reminders":[],"recurrence":null,"task":{"done":false,"completed_at":"2020-01-01T00:00:00Z","priority":2,"due":null,"deadline":null,"event":null},"event":null}"#;
+    let helper = sb.dir.path().join("bin/dam-remote-fake");
+    std::fs::write(
+        &helper,
+        format!(
+            r#"#!/bin/sh
+set -eu
+while IFS= read -r line; do
+  case "$line" in
+    *'"capabilities"'*) printf '{{"protocol":1,"kinds":["task"],"fields":["subject"],"credentials":["api_token"],"incremental":false}}\n' ;;
+    *'"pull"'*) printf '{{"objects":[{task}],"removed":[],"sync":null}}\n' ;;
+    *) printf '{{"error":"unknown request"}}\n' ;;
+  esac
+done
+"#
+        ),
+    )
+    .unwrap();
+    std::fs::set_permissions(&helper, std::os::unix::fs::PermissionsExt::from_mode(0o755)).unwrap();
+
+    let (ok, _, err) = sb.dam(&["pull", "--json"]);
+    assert!(ok, "{err}");
+    let (ok, out, err) = sb.dam(&["ls", "--json", "--no-pull"]);
+    assert!(ok, "{err}");
+    let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
+    let task = &answer["objects"][0]["task"];
+    assert_eq!(task["done"], false, "{answer}");
+    assert_eq!(
+        task["completed_at"],
+        serde_json::Value::Null,
+        "an open task was stored carrying a completion time: {answer}"
+    );
+}
