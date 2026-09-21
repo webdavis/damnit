@@ -82,7 +82,7 @@ impl Categories {
         self.category_of(value).is_none()
     }
 
-    /// Every declared category, in the order config declared them, for a
+    /// Every declared category, in the order the config gave them, for a
     /// client that renders the catalogue rather than enforcing it.
     pub fn all(&self) -> &[Category] {
         &self.0

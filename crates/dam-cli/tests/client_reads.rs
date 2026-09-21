@@ -198,6 +198,8 @@ fn no_pull_is_refused_on_a_verb_that_never_pulls() {
         vec!["pull", "--no-pull"],
         vec!["status", "--no-pull"],
         vec!["done", oid.as_str(), "--no-pull"],
+        vec!["category", "list", "--no-pull"],
+        vec!["filter", "list", "--no-pull"],
     ] {
         let out = sb.output(&args);
         assert_eq!(
@@ -216,4 +218,82 @@ fn no_pull_is_refused_on_a_verb_that_never_pulls() {
         let out = sb.output(&args);
         assert_eq!(out.status.code(), Some(0), "{args:?} refused the flag");
     }
+}
+
+/// The catalogue a client renders: two listing verbs, so no client owns a
+/// second parser for the config file `dam` owns.
+#[test]
+fn category_list_and_filter_list_print_what_config_declares() {
+    let _guard = support::guard("category_list_and_filter_list_print_what_config_declares");
+    let sb = Sandbox::new();
+    let config = sb.dir.path().join("config.toml");
+    let mut text = std::fs::read_to_string(&config).unwrap();
+    text.push_str(
+        "\n[category.effort]\nvalues = [\"light\", \"admin\", \"deep\"]\nexclusive = true\n\
+         \n[category.context]\nvalues = [\"home\", \"errand\"]\n\
+         \n[filter.today]\nquery = \"due:today | overdue\"\n",
+    );
+    std::fs::write(&config, text).unwrap();
+
+    let (ok, out, err) = sb.dam(&["category", "list", "--json"]);
+    assert!(ok, "{err}");
+    let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(
+        answer,
+        serde_json::json!({"categories": [
+            {"name": "context", "values": ["home", "errand"], "exclusive": false},
+            {"name": "effort", "values": ["light", "admin", "deep"], "exclusive": true},
+        ]}),
+        "{answer}"
+    );
+
+    let (ok, out, err) = sb.dam(&["filter", "list", "--json"]);
+    assert!(ok, "{err}");
+    let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(
+        answer,
+        serde_json::json!({"filters": [{"name": "today", "query": "due:today | overdue"}]}),
+        "{answer}"
+    );
+
+    let (ok, out, err) = sb.dam(&["category", "list"]);
+    assert!(ok, "{err}");
+    assert!(out.contains("effort"), "{out}");
+    assert!(out.contains("light, admin, deep"), "{out}");
+    let (ok, out, err) = sb.dam(&["filter", "list"]);
+    assert!(ok, "{err}");
+    assert!(out.contains("due:today | overdue"), "{out}");
+}
+
+/// A store with nothing declared answers with an empty list rather than a
+/// failure, so a client renders an empty picker instead of an error.
+#[test]
+fn an_empty_catalogue_is_an_empty_array() {
+    let _guard = support::guard("an_empty_catalogue_is_an_empty_array");
+    let sb = Sandbox::new();
+
+    for (args, key) in [
+        (["category", "list", "--json"], "categories"),
+        (["filter", "list", "--json"], "filters"),
+    ] {
+        let (ok, out, err) = sb.dam(&args);
+        assert!(ok, "{err}");
+        let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert_eq!(answer[key], serde_json::json!([]), "{answer}");
+    }
+}
+
+/// TOON is the same answer in the compact form, which is a table per list.
+#[test]
+fn the_catalogue_renders_as_toon_too() {
+    let _guard = support::guard("the_catalogue_renders_as_toon_too");
+    let sb = Sandbox::new();
+    let config = sb.dir.path().join("config.toml");
+    let mut text = std::fs::read_to_string(&config).unwrap();
+    text.push_str("\n[filter.today]\nquery = \"due:today\"\n");
+    std::fs::write(&config, text).unwrap();
+
+    let (ok, out, err) = sb.dam(&["filter", "list", "--toon"]);
+    assert!(ok, "{err}");
+    assert!(out.starts_with("filters[1]{name,query}:"), "{out}");
 }

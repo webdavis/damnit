@@ -1,3 +1,4 @@
+mod catalogue;
 mod commit;
 mod done;
 mod edit;
@@ -40,6 +41,8 @@ pub(crate) fn dispatch(ctx: &mut Context, command: Command) -> Result<Report, Cl
         Command::Status(a) => status::run_status(ctx, a),
         Command::Diff(a) => status::run_diff(ctx, a),
         Command::Ls(a) => ls::run_ls(ctx, a),
+        Command::Category(a) => catalogue::run_category(ctx, a.command),
+        Command::Filter(a) => catalogue::run_filter(ctx, a.command),
         Command::Remote(a) => remote::run_remote(ctx, a),
         Command::Push(a) => sync::run_push(ctx, a),
         Command::Pull(a) => sync::run_pull(ctx, a),
