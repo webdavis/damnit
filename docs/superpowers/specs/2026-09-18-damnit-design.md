@@ -270,10 +270,12 @@ narrowed to a `path` in config.
 `dam remote list` reports, per remote, when `dam` last pulled it and last pushed to it. A verb
 records its time once the run reached the remote and came back with an answer, the way `pull`
 already records its own: a mutation the remote refused is a notice against that object rather than a
-failed run. `--json` carries `last_pull` and `last_push` as RFC 3339 timestamps, null for a verb
-that has not reached that remote yet; the human line says `pulled 4m ago` and `pushed 2h ago`, or
-`never pulled` and `never pushed`. Both are kept in the store beside the sync token, one row per
-remote.
+failed run, so a push whose mutations were partly refused still records the time. A push with
+nothing to send records it too, on the strength of the capabilities exchange that opened the
+connection, so a remote that is entirely up to date does not read as never pushed. `--json` carries
+`last_pull` and `last_push` as RFC 3339 timestamps, null for a verb that has not reached that remote
+yet; the human line says `pulled 4m ago` and `pushed 2h ago`, or `never pulled` and `never pushed`.
+Both are kept in the store beside the sync token, one row per remote.
 
 ### Reading
 
