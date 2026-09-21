@@ -37,4 +37,4 @@ pub use use_cases::remove::{RemovePlan, plan_remove, remove};
 pub use use_cases::resolve::{Side, resolve};
 pub use use_cases::restore::{Restored, restore};
 pub use use_cases::stage::{add, add_all, reset};
-pub use use_cases::status::{Status, diff_staged, diff_working, status};
+pub use use_cases::status::{Status, Unpushed, diff_staged, diff_working, status};

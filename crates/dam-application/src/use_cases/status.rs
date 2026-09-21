@@ -1,6 +1,6 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
-use dam_domain::{Change, Object, Oid, diff};
+use dam_domain::{Change, CommitId, Object, Oid, diff};
 
 use crate::errors::UseCaseError;
 use crate::ports::{
@@ -13,13 +13,22 @@ pub struct Status {
     pub unstaged: Vec<Change>,
     pub conflicts: Vec<Conflict>,
     pub notices: Vec<Notice>,
-    pub unpushed: Vec<(RemoteName, usize)>,
+    pub unpushed: Vec<Unpushed>,
+}
+
+/// What one remote has not been told about: the commits, newest first, the
+/// order `dam log` prints history in, and the objects their changes touch,
+/// each once, in the order they first appear along that walk.
+pub struct Unpushed {
+    pub remote: RemoteName,
+    pub commit_ids: Vec<CommitId>,
+    pub oids: Vec<Oid>,
 }
 
 pub fn status(repos: Repositories<'_>, remotes: &[RemoteName]) -> Result<Status, UseCaseError> {
     let mut unpushed = Vec::new();
     for remote in remotes {
-        unpushed.push((remote.clone(), repos.commits.unpushed(remote)?.len()));
+        unpushed.push(unpushed_for(repos.commits, remote)?);
     }
     Ok(Status {
         staged: diff_staged(repos.stage)?,
@@ -27,6 +36,30 @@ pub fn status(repos: Repositories<'_>, remotes: &[RemoteName]) -> Result<Status,
         conflicts: repos.conflicts.conflicts()?,
         notices: repos.notices.notices()?,
         unpushed,
+    })
+}
+
+/// One remote's owed commits and the objects they touch, walked newest first
+/// so both lists read in `dam log`'s order.
+fn unpushed_for(
+    commits: &dyn CommitRepository,
+    remote: &RemoteName,
+) -> Result<Unpushed, UseCaseError> {
+    let mut commit_ids = Vec::new();
+    let mut oids = Vec::new();
+    let mut named = BTreeSet::new();
+    for record in commits.unpushed(remote)?.into_iter().rev() {
+        for change in &record.changes {
+            if named.insert(change.oid.clone()) {
+                oids.push(change.oid.clone());
+            }
+        }
+        commit_ids.push(record.id);
+    }
+    Ok(Unpushed {
+        remote: remote.clone(),
+        commit_ids,
+        oids,
     })
 }
 
@@ -97,6 +130,62 @@ mod tests {
         assert_eq!(s.unstaged[0].after.as_ref().unwrap().base().subject, "b");
     }
 
+    /// The clients read this list to name the commits a remote is owed, so it
+    /// reads in the order `dam log` prints history: newest first.
+    #[test]
+    fn unpushed_names_each_commit_newest_first() {
+        let store = MemoryStore::new();
+        let clock = FixedClock(date(2026, 9, 18));
+        let random = FixedRandom::new(5);
+        store.put(&Object::Task(Task::new(oid(1), "a"))).unwrap();
+        add(&store, &store, &[oid(1)]).unwrap();
+        let first = commit(&store, &store, &clock, &random, "first").unwrap();
+        store.put(&Object::Task(Task::new(oid(2), "b"))).unwrap();
+        add(&store, &store, &[oid(2)]).unwrap();
+        let second = commit(&store, &store, &clock, &random, "second").unwrap();
+        let remote = RemoteName("todoist".into());
+        let s = status(Repositories::of(&store), std::slice::from_ref(&remote)).unwrap();
+        assert_eq!(s.unpushed[0].remote, remote);
+        assert_eq!(s.unpushed[0].commit_ids, vec![second.id, first.id]);
+    }
+
+    /// The pane draws its unpushed mark by matching a change row's object
+    /// against this list, so it names objects rather than commits, each once,
+    /// in the order they first appear walking the commits newest first.
+    #[test]
+    fn unpushed_names_each_object_once_in_first_appearance_order() {
+        let store = MemoryStore::new();
+        let clock = FixedClock(date(2026, 9, 18));
+        let random = FixedRandom::new(5);
+        for byte in [1u8, 2] {
+            store.put(&Object::Task(Task::new(oid(byte), "a"))).unwrap();
+            add(&store, &store, &[oid(byte)]).unwrap();
+            commit(&store, &store, &clock, &random, "create").unwrap();
+        }
+        let mut second = store.get(&oid(2)).unwrap().unwrap();
+        second.base_mut().subject = "changed again".into();
+        store.put(&second).unwrap();
+        add(&store, &store, &[oid(2)]).unwrap();
+        commit(&store, &store, &clock, &random, "touch it again").unwrap();
+
+        let remote = RemoteName("todoist".into());
+        let s = status(Repositories::of(&store), std::slice::from_ref(&remote)).unwrap();
+        assert_eq!(s.unpushed[0].commit_ids.len(), 3);
+        assert_eq!(s.unpushed[0].oids, vec![oid(2), oid(1)]);
+    }
+
+    /// A configured remote still gets a row, so a client renders every remote
+    /// without deciding what a missing one means.
+    #[test]
+    fn a_remote_owed_nothing_gets_a_row_with_empty_lists() {
+        let store = MemoryStore::new();
+        let remote = RemoteName("todoist".into());
+        let s = status(Repositories::of(&store), std::slice::from_ref(&remote)).unwrap();
+        assert_eq!(s.unpushed.len(), 1);
+        assert!(s.unpushed[0].commit_ids.is_empty());
+        assert!(s.unpushed[0].oids.is_empty());
+    }
+
     #[test]
     fn unpushed_counts_per_remote() {
         let store = MemoryStore::new();
@@ -113,7 +202,9 @@ mod tests {
         .unwrap();
         let remote = RemoteName("todoist".into());
         let s = status(repos, std::slice::from_ref(&remote)).unwrap();
-        assert_eq!(s.unpushed, vec![(remote, 1)]);
+        assert_eq!(s.unpushed.len(), 1);
+        assert_eq!(s.unpushed[0].remote, remote);
+        assert_eq!(s.unpushed[0].commit_ids.len(), 1);
     }
 
     #[test]

@@ -1,4 +1,4 @@
-use dam_application::{CredentialSpec, Repositories, diff_staged, diff_working, status};
+use dam_application::{CredentialSpec, Repositories, Unpushed, diff_staged, diff_working, status};
 use dam_domain::Change;
 
 use crate::args::{DiffArgs, StatusArgs};
@@ -34,8 +34,8 @@ pub(crate) fn run_status(ctx: &mut Context, args: StatusArgs) -> Result<Report, 
         "Unpushed:",
         s.unpushed
             .iter()
-            .filter(|(_, n)| *n > 0)
-            .map(|(r, n)| format!("  {}: {n} commit(s)", r.0)),
+            .filter(|u| !u.commit_ids.is_empty())
+            .map(|u| format!("  {}: {} commit(s)", u.remote.0, u.commit_ids.len())),
     );
     if human.is_empty() {
         human.push("nothing staged, nothing changed".to_string());
@@ -57,7 +57,7 @@ pub(crate) fn run_status(ctx: &mut Context, args: StatusArgs) -> Result<Report, 
             "unstaged": unstaged,
             "conflicts": conflicts,
             "notices": s.notices.iter().map(notice_json).collect::<Vec<_>>(),
-            "unpushed": s.unpushed.iter().map(|(r, n)| serde_json::json!({ "remote": r.0, "commits": n })).collect::<Vec<_>>(),
+            "unpushed": s.unpushed.iter().map(unpushed_json).collect::<Vec<_>>(),
         }),
     })
 }
@@ -76,6 +76,17 @@ pub(crate) fn run_diff(ctx: &mut Context, args: DiffArgs) -> Result<Report, CliE
             .collect::<Vec<_>>()
             .join("\n"),
         data: serde_json::json!({ "changes": data }),
+    })
+}
+
+/// One remote's owed commits in `dam log`'s order, the count beside them,
+/// which is the length of that list, and the objects those commits touch.
+fn unpushed_json(unpushed: &Unpushed) -> serde_json::Value {
+    serde_json::json!({
+        "remote": unpushed.remote.0,
+        "commits": unpushed.commit_ids.len(),
+        "commit_ids": unpushed.commit_ids.iter().map(|id| id.to_string()).collect::<Vec<_>>(),
+        "oids": unpushed.oids.iter().map(|oid| oid.to_string()).collect::<Vec<_>>(),
     })
 }
 

@@ -317,6 +317,83 @@ fn a_change_document_names_the_fields_it_touches() {
     );
 }
 
+/// A client names the commits a remote is owed and pairs them with the log, so
+/// the row carries the commit ids in the order `dam log` lists them and the
+/// count beside them is the length of that list.
+#[test]
+fn an_unpushed_row_names_its_commits_in_log_order() {
+    let _guard = support::guard("an_unpushed_row_names_its_commits_in_log_order");
+    let sb = Sandbox::new();
+    for (subject, message) in [("first", "one"), ("second", "two")] {
+        sb.new_object(&[subject]);
+        assert!(sb.dam(&["add", "-A"]).0);
+        assert!(sb.dam(&["commit", "-m", message]).0);
+    }
+
+    let (ok, out, err) = sb.dam(&["log", "--json"]);
+    assert!(ok, "{err}");
+    let log: serde_json::Value = serde_json::from_str(&out).unwrap();
+    let logged: Vec<&str> = log["commits"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["id"].as_str().unwrap())
+        .collect();
+    assert_eq!(logged.len(), 2);
+
+    let row = status_json(&sb, &["--json"])["unpushed"][0].clone();
+    assert_eq!(row["remote"], "fake");
+    assert_eq!(
+        row["commit_ids"],
+        serde_json::json!(logged),
+        "the commit ids read in the order dam log lists them"
+    );
+    assert_eq!(
+        row["commits"], 2,
+        "the count is the length of the list beside it"
+    );
+}
+
+/// The unpushed mark is drawn by matching a change row's object against this
+/// list, so the row names the objects those commits touch as well as the
+/// commits themselves, and an object two commits touched is named once.
+#[test]
+fn an_unpushed_row_names_each_object_once() {
+    let _guard = support::guard("an_unpushed_row_names_each_object_once");
+    let sb = Sandbox::new();
+    let first = sb.new_object(&["first"]);
+    assert!(sb.dam(&["add", "-A"]).0);
+    assert!(sb.dam(&["commit", "-m", "one"]).0);
+    let second = sb.new_object(&["second"]);
+    assert!(sb.dam(&["add", "-A"]).0);
+    assert!(sb.dam(&["commit", "-m", "two"]).0);
+    assert!(sb.dam(&["edit", &second, "--priority", "1"]).0);
+    assert!(sb.dam(&["add", "-A"]).0);
+    assert!(sb.dam(&["commit", "-m", "three"]).0);
+
+    let row = status_json(&sb, &["--json"])["unpushed"][0].clone();
+    assert_eq!(row["commits"], 3);
+    let oids: Vec<String> = row["oids"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_str().unwrap().to_string())
+        .collect();
+    assert_eq!(
+        oids.len(),
+        2,
+        "the object two commits touched is named once: {oids:?}"
+    );
+    assert!(
+        oids[0].starts_with(&second),
+        "the object the newest commit touched comes first: {oids:?}"
+    );
+    assert!(
+        oids[1].starts_with(&first),
+        "then the one only an older commit touched: {oids:?}"
+    );
+}
+
 /// A background poll runs `status` per render, so its default answer carries
 /// a row per change rather than two whole objects.
 #[test]

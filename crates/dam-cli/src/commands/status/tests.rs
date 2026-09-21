@@ -207,7 +207,7 @@ fn status_reports_conflicts_and_unpushed_commits() {
         },
     )
     .unwrap();
-    run_commit(
+    let recorded = run_commit(
         &mut ctx,
         CommitArgs {
             message: "m".into(),
@@ -225,4 +225,9 @@ fn status_reports_conflicts_and_unpushed_commits() {
     assert_eq!(report.data["conflicts"][0]["oid"], oid(1).to_string());
     assert_eq!(report.data["unpushed"][0]["remote"], "todoist");
     assert_eq!(report.data["unpushed"][0]["commits"], 1);
+    assert_eq!(
+        report.data["unpushed"][0]["commit_ids"],
+        serde_json::json!([recorded.data["id"]]),
+        "the row names the commit the remote is owed"
+    );
 }

@@ -1,7 +1,7 @@
 mod parse;
 
-use jiff::ToSpan;
 use jiff::civil::Weekday;
+use jiff::{Span, ToSpan};
 
 use crate::Date;
 
@@ -13,6 +13,46 @@ pub enum Freq {
     Weekly,
     Monthly,
     Yearly,
+}
+
+impl Freq {
+    /// The word `parse` reads for this frequency and `to_text` writes back.
+    pub(crate) fn unit_text(self, plural: bool) -> &'static str {
+        match (self, plural) {
+            (Freq::Daily, false) => "day",
+            (Freq::Daily, true) => "days",
+            (Freq::Weekly, false) => "week",
+            (Freq::Weekly, true) => "weeks",
+            (Freq::Monthly, false) => "month",
+            (Freq::Monthly, true) => "months",
+            (Freq::Yearly, false) => "year",
+            (Freq::Yearly, true) => "years",
+        }
+    }
+
+    /// The widest interval of this unit a date can be stepped by. Past it the
+    /// step itself cannot be built, so no occurrence is reachable.
+    pub(crate) fn max_interval(self) -> u32 {
+        match self {
+            Freq::Daily => 7_304_484,
+            Freq::Weekly => 1_043_497,
+            Freq::Monthly => 239_976,
+            Freq::Yearly => 19_998,
+        }
+    }
+}
+
+/// How far one interval of `freq` advances, or None when no span of that unit
+/// holds it.
+fn span(freq: Freq, interval: u32) -> Option<Span> {
+    let n = i64::from(interval);
+    match freq {
+        Freq::Daily => Span::new().try_days(n),
+        Freq::Weekly => Span::new().try_weeks(n),
+        Freq::Monthly => Span::new().try_months(n),
+        Freq::Yearly => Span::new().try_years(n),
+    }
+    .ok()
 }
 
 /// `every week` counts from the due date; `every! week` from the completion.
@@ -36,18 +76,18 @@ pub struct Rule {
 const SCAN_LIMIT_DAYS: i32 = 366 * 4;
 
 impl Rule {
+    /// The next occurrence strictly after `date`, or None when the rule cannot
+    /// reach one: past its `until`, off the end of the calendar, or carrying an
+    /// interval no step of its unit holds.
     pub fn next_after(&self, date: Date) -> Option<Date> {
+        // Zero advances nothing and would divide by zero in the weekly scan.
+        if self.interval == 0 {
+            return None;
+        }
         let candidate = match self.freq {
-            Freq::Daily => date.checked_add((self.interval as i32).days()).ok(),
-            Freq::Weekly if self.by_day.is_empty() => {
-                date.checked_add((self.interval as i32).weeks()).ok()
-            }
-            Freq::Weekly => self.next_weekly_on(date),
-            Freq::Monthly if self.by_month_day.is_empty() => {
-                date.checked_add((self.interval as i32).months()).ok()
-            }
-            Freq::Monthly => self.next_monthly_on(date),
-            Freq::Yearly => date.checked_add((self.interval as i32).years()).ok(),
+            Freq::Weekly if !self.by_day.is_empty() => self.next_weekly_on(date),
+            Freq::Monthly if !self.by_month_day.is_empty() => self.next_monthly_on(date),
+            _ => date.checked_add(self.step()?).ok(),
         }?;
         match self.until {
             Some(until) if candidate > until => None,
@@ -55,13 +95,18 @@ impl Rule {
         }
     }
 
+    fn step(&self) -> Option<Span> {
+        span(self.freq, self.interval)
+    }
+
     fn next_weekly_on(&self, from: Date) -> Option<Date> {
         let anchor_week = week_start(from);
+        let interval = i64::from(self.interval);
         let mut day = from;
         for _ in 0..SCAN_LIMIT_DAYS {
             day = day.tomorrow().ok()?;
-            let weeks_between = (week_start(day) - anchor_week).get_days() / 7;
-            if self.by_day.contains(&day.weekday()) && weeks_between % self.interval as i32 == 0 {
+            let weeks_between = i64::from((week_start(day) - anchor_week).get_days() / 7);
+            if self.by_day.contains(&day.weekday()) && weeks_between % interval == 0 {
                 return Some(day);
             }
         }
@@ -69,6 +114,7 @@ impl Rule {
     }
 
     fn next_monthly_on(&self, from: Date) -> Option<Date> {
+        let step = self.step()?;
         let mut month_start = from.first_of_month();
         for _ in 0..48 {
             let days = if month_start == from.first_of_month() {
@@ -87,9 +133,7 @@ impl Rule {
                     return Some(candidate);
                 }
             }
-            month_start = month_start
-                .checked_add((self.interval as i32).months())
-                .ok()?;
+            month_start = month_start.checked_add(step).ok()?;
         }
         None
     }
@@ -111,6 +155,64 @@ pub fn roll_forward(rule: &Rule, due: Date, completed_on: Date) -> Option<Date> 
 mod tests {
     use super::*;
     use jiff::civil::{Weekday, date};
+
+    fn hand_built(freq: Freq, interval: u32, by_day: Vec<Weekday>, by_month_day: Vec<i8>) -> Rule {
+        Rule {
+            freq,
+            interval,
+            by_day,
+            by_month_day,
+            until: None,
+            anchor: Anchor::Due,
+        }
+    }
+
+    /// The bound is the calendar's own, so it is measured against the calendar
+    /// rather than trusted: the maximum steps and one more does not.
+    #[test]
+    fn each_units_maximum_is_the_widest_step_the_calendar_holds() {
+        for freq in [Freq::Daily, Freq::Weekly, Freq::Monthly, Freq::Yearly] {
+            let max = freq.max_interval();
+            assert!(span(freq, max).is_some(), "{freq:?} {max}");
+            assert!(span(freq, max + 1).is_none(), "{freq:?} {}", max + 1);
+        }
+    }
+
+    /// The widest interval the calendar holds is a working rule, not merely an
+    /// accepted one: from the earliest date it reaches the latest year.
+    #[test]
+    fn the_widest_interval_still_steps() {
+        let rule = Rule::parse("every 19998 years").unwrap();
+        assert_eq!(rule.next_after(date(-9999, 1, 1)), Some(date(9999, 1, 1)));
+    }
+
+    /// Rule carries public fields, so an interval the parser refuses can still
+    /// reach the arithmetic. It answers that it cannot advance.
+    #[test]
+    fn an_interval_no_calendar_holds_cannot_advance() {
+        for freq in [Freq::Daily, Freq::Weekly, Freq::Monthly, Freq::Yearly] {
+            let rule = hand_built(freq, u32::MAX, vec![], vec![]);
+            assert_eq!(rule.next_after(date(2026, 9, 18)), None, "{freq:?}");
+        }
+        let weekly = hand_built(Freq::Weekly, u32::MAX, vec![Weekday::Monday], vec![]);
+        assert_eq!(weekly.next_after(date(2026, 9, 18)), None);
+        let monthly = hand_built(Freq::Monthly, u32::MAX, vec![], vec![1]);
+        assert_eq!(monthly.next_after(date(2026, 9, 18)), None);
+    }
+
+    /// Zero advances nothing, so a rule built with it says so rather than
+    /// answering the date it was handed or dividing by zero in the weekly scan.
+    #[test]
+    fn a_zero_interval_cannot_advance() {
+        for freq in [Freq::Daily, Freq::Weekly, Freq::Monthly, Freq::Yearly] {
+            let rule = hand_built(freq, 0, vec![], vec![]);
+            assert_eq!(rule.next_after(date(2026, 9, 18)), None, "{freq:?}");
+        }
+        let weekly = hand_built(Freq::Weekly, 0, vec![Weekday::Monday], vec![]);
+        assert_eq!(weekly.next_after(date(2026, 9, 18)), None);
+        let monthly = hand_built(Freq::Monthly, 0, vec![], vec![1]);
+        assert_eq!(monthly.next_after(date(2026, 9, 18)), None);
+    }
 
     #[test]
     fn every_week_from_a_thursday_lands_on_the_next_thursday() {
