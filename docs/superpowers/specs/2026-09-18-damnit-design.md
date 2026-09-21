@@ -214,15 +214,15 @@ your text intact. Nothing reaches the working layer until it parses.
 ### Staging and committing
 
 ```
-dam add <oid>...            stage
-dam add -A                  stage everything
-dam reset [<oid>...]        unstage one or all
-dam restore <oid>...        back to the last commit, working and stage together
-dam status                  working versus stage versus last commit, and remote notices
-dam diff [--staged]         working versus stage, or stage versus last commit
-dam commit -m "triage"      record the stage as a local commit
-dam log                     history
-dam show <oid|commit>       one object, or one commit
+dam add <oid>...              stage
+dam add -A                    stage everything
+dam reset [<oid>...]          unstage one or all
+dam restore <oid>...          back to the last commit, working and stage together
+dam status [--full]           working versus stage versus last commit, and remote notices
+dam diff [--staged] [--full]  working versus stage, or stage versus last commit
+dam commit -m "triage"        record the stage as a local commit
+dam log                       history
+dam show <oid|commit>         one object, or one commit
 ```
 
 ### Remotes
@@ -248,6 +248,11 @@ the restored oids and the unchanged ones.
 An oid prefix is resolved against the working layer, here as in every verb, so an object `dam rm`
 took out of it is named by its full oid and the refusal on a prefix says which layer it read.
 
+`dam remote add --json` answers with the remote's name and url and a `warnings` list, empty in the
+ordinary case. It carries one sentence when the config file had been readable by someone other than
+its owner, which `dam` tightens as it writes: the file is the documented home of a literal
+credential, so a client driving `remote add` is told rather than left to notice.
+
 `push` with no remote sends to every remote. Each helper declares in its capabilities which kinds
 and fields it accepts, and `dam` sends each object to every remote that accepts it. A remote may be
 narrowed to a `path` in config.
@@ -260,7 +265,7 @@ narrowed to a `path` in config.
 dam ls [<query>] [--json|--toon]
 dam ls today                a saved filter from config
 dam show <oid> [--json|--toon]
-dam status [--json|--toon]
+dam status [--json|--toon] [--full]
 ```
 
 `--json` is the answer as JSON. `--toon` is the same answer in TOON (Token-Oriented Object
@@ -286,6 +291,34 @@ query = "due:today | overdue"
 Every read command takes `--json` and prints one JSON document on stdout. This is the interface
 the clients use.
 
+#### The change document
+
+`dam status`, `dam diff`, `dam log`, `dam add` and `dam commit` answer in change documents, one per
+change. The default carries what a client renders and no object:
+
+```json
+{"oid": "98d878...", "op": "update", "fields": ["subject", "due"], "kind": "task",
+ "subject": "buy oat milk", "path": "work/", "labels": ["errand"], "done": false,
+ "priority": 1, "due": "2026-09-25"}
+```
+
+`fields` names what the change touches, so a client reads dam's own answer rather than diffing the
+before and after itself. An update names the fields that moved. A create names the fields the new
+object carries: the ones its kind always has, `subject` for a task and `subject`, `start` and `end`
+for an event, then every other field holding something other than its default. A delete names
+nothing, because it removes the object whole rather than any field of it. An update that changes an
+object's kind names `kind` alone, whatever else differs between the two, because a task and an event
+share no field list to compare.
+
+The rest of the row is the state the change left behind: `kind`, `subject`, `path` and `labels` for
+either kind, then `done`, `priority` and `due` for a task or `start` and `end` for an event. A
+delete has no such state, so its row describes the object it removed.
+
+`dam status --full` and `dam diff --full` add `before` and `after`, each the whole object or null,
+beside that row. The default exists because the clients poll `status` per render: three hundred
+uncommitted creates measured 146,985 bytes with the objects embedded, and the row shape is what a
+statusline count and a change list actually read.
+
 ### Exit codes
 
 One meaning per code, so a client can tell what happened without reading the message:
@@ -293,10 +326,15 @@ One meaning per code, so a client can tell what happened without reading the mes
 | Code | Meaning |
 |---|---|
 | 0 | The command did what it was asked. |
-| 1 | `dam` failed: a store, config, helper or io failure. |
+| 1 | `dam` failed: a store, config, helper, editor or io failure. |
 | 2 | The command line was wrong: an unknown argument or subcommand, a flag value `dam` refuses to read, or an oid prefix that names more than one object. |
 | 3 | Cancelled: the operator interrupted, or a prompt could not be answered. |
 | 4 | `dam` refused by one of its own rules, and the message names the rule. |
+
+Every rule `dam` keeps reports code 4, and nothing else does, so a client maps the code once
+rather than per verb. An empty stage, a move into an object's own path, an event field asked of a
+task and a question no machine format can answer are refusals like any other, and each names its
+rule. Code 2 stays for the command line alone: an argument `dam` cannot read, and never a rule.
 
 ## Remotes and helpers
 
@@ -468,6 +506,45 @@ version one; the process start cost is measured before that is reconsidered.
 A refusal names the rule and the objects involved, then stops. A missing helper is named. A failed
 push lists each failed mutation with the helper's reason. A parse failure in `edit -e` names the line
 and reopens. No error message contains a token.
+
+### The error document
+
+`--json` and `--toon` replace the plain line on standard error with one document, so a client reads
+the reason instead of matching substrings. Standard output stays empty on a failure.
+
+```json
+{"error": {"kind": "refused", "rule": "blocked",
+ "message": "98d8780 cannot be completed: child a9db854 is open",
+ "oids": ["98d878013fb0e026d37170e7ceed6707192ae99a",
+          "a9db854060d1943ef9eb9f6d7a8ac0b1ace45d77"]}}
+```
+
+`kind` is one of `refused`, `store`, `helper`, `credential`, `parse`, `usage` and `cancelled`. An
+editor failure is not among them: `-e` under a machine format is refused as `needs_an_editor`
+rather than run, so no document is ever printed for an editor that died.
+
+`rule` names the rule a refusal broke, one stable snake_case word per rule, and is null for every
+other kind. `refused` alone is too coarse for a client: a task that is gone and a task that is
+blocked are both refusals, and a list that should refresh itself on the first should show the
+blockers on the second. The words are `blocked`, `cycle`, `exclusive_label`, `unknown_category`,
+`no_such_object`, `no_working_object`, `no_such_remote`, `not_a_task`, `not_an_event`,
+`not_completed`, `not_committed`, `dirty_on_pull`, `move_inside_itself`, `nothing_to_commit`,
+`needs_an_answer`, `needs_an_editor`, `unresolved_conflicts` and `missing_credential`.
+
+`message` is the sentence the human form prints after `dam: `, which is what carries the rule that
+no token reaches an error. `oids` names the objects the message names, in full and in the order it
+names them: for a blocked completion the task and then each blocker, for a cycle the task and then
+the chain, for an ambiguous prefix every object it matched, and empty for a failure that names
+none.
+
+Under `--json` or `--toon`, standard error carries exactly that one document and nothing else, so a
+client parses the whole stream rather than hunting a line in it. A run that succeeds writes nothing
+there. A warning `dam` would print for the operator, such as a config file it had to tighten, is
+returned as data and reaches the human answer instead.
+
+Without `--json` or `--toon` nothing changes: the plain `dam: <message>` line, and the same exit
+code. An argument clap rejects before `dam` runs prints clap's own usage text and exits 2, whatever
+the format flag says.
 
 A push failure is per mutation once mutations are being applied, and whole-push before that. The
 read a helper needs to shape anything is the before: it fails the push with one reason, because no

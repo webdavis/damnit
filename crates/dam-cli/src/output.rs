@@ -30,6 +30,22 @@ pub(crate) fn render(format: Format, report: &Report) -> Result<String, CliError
     }
 }
 
+/// A failure, on standard error. A machine format prints the error document
+/// so a client reads the reason; the human form keeps its plain line.
+pub(crate) fn print_error(format: Format, error: &CliError) {
+    let line = match format {
+        Format::Human => format!("dam: {error}"),
+        Format::Json | Format::Toon => {
+            let report = Report {
+                human: String::new(),
+                data: error.document(),
+            };
+            render(format, &report).unwrap_or_else(|_| format!("dam: {error}"))
+        }
+    };
+    eprintln!("{line}");
+}
+
 pub(crate) fn print(format: Format, report: &Report) -> Result<(), CliError> {
     let text = render(format, report)?;
     let mut out = std::io::stdout().lock();

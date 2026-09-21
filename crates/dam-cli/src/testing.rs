@@ -11,7 +11,7 @@ use dam_application::{
 use dam_domain::{Categories, Date, Field, Kind, Timestamp};
 use jiff::civil::date;
 
-use crate::context::{Context, RefusingEditor};
+use crate::context::Context;
 use crate::error::CliError;
 use crate::prompt::{Prompt, RefusingPrompt};
 
@@ -160,7 +160,7 @@ pub(crate) fn context() -> Context {
             pulled: RefCell::new(None),
         }),
         credentials: Box::new(MissingCredentials),
-        editor: Box::new(ScriptedEditor(String::new())),
+        editor: Some(Box::new(ScriptedEditor(String::new()))),
         prompt: Box::new(ScriptedPrompt {
             choices: RefCell::new(vec![]),
             texts: RefCell::new(vec![]),
@@ -170,11 +170,12 @@ pub(crate) fn context() -> Context {
 }
 
 /// A context wired the way `--json`/`--toon` wires one: any question refuses
-/// instead of blocking, matching what `Context::open` installs for those formats.
+/// instead of blocking and there is no editor, matching what `Context::open`
+/// installs for those formats.
 pub(crate) fn machine_context() -> Context {
     Context {
         prompt: Box::new(RefusingPrompt),
-        editor: Box::new(RefusingEditor),
+        editor: None,
         ..context()
     }
 }

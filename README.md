@@ -68,12 +68,49 @@ and `--toon` on any read give a program the same answer.
 `|` or, `&` and, `!` not, parentheses group. `@label`, `pN`, `key:value`; an unknown key is looked
 up as a category. Saved filters live under `[filter.<name>]` and run by name.
 
+## Reading it from a program
+
+`dam status --json` and `dam diff --json` answer in change documents, one per change:
+
+    {"oid": "98d878...", "op": "update", "fields": ["subject", "due"], "kind": "task",
+     "subject": "buy oat milk", "path": "work/", "labels": ["errand"], "done": false,
+     "priority": 1, "due": "2026-09-25"}
+
+`fields` names what the change touches. An update names what moved; a create names every field the
+new object carries beyond its defaults; a delete names nothing and its row describes the object it
+removed. The rest of the row is the state the change left behind, which is what a list renders.
+
+Add `--full` to either command for `before` and `after`, the whole object on each side. The default
+leaves them out because a client polling `status` per render pays for them on every poll.
+
+## Errors
+
+With `--json` or `--toon` a failure prints one document on standard error and nothing on standard
+output:
+
+    {"error": {"kind": "refused", "rule": "blocked",
+     "message": "98d8780 cannot be completed: child a9db854 is open",
+     "oids": ["98d878013fb0e026d37170e7ceed6707192ae99a",
+              "a9db854060d1943ef9eb9f6d7a8ac0b1ace45d77"]}}
+
+`kind` is one of `refused`, `store`, `helper`, `credential`, `parse`, `usage` and `cancelled`.
+`rule` names which rule a refusal broke, such as `blocked`, `no_such_object` or
+`nothing_to_commit`, and is null for every other kind. `oids` names the objects the message names,
+in the order it names them.
+
+Standard error carries that one document and nothing else, so parse the whole stream; a run that
+succeeds writes nothing there. The exception is an argument clap rejects before `dam` runs, such as
+a subcommand that does not exist: that prints clap's own usage text and exits 2, whatever the format
+flag says. Without those flags you get the plain `dam: <message>` line instead.
+
 ## Exit codes
 
 | Code | Meaning |
 |---|---|
 | 0 | The command did what it was asked. |
-| 1 | `dam` failed: a store, config, helper or io failure. |
+| 1 | `dam` failed: a store, config, helper, editor or io failure. |
 | 2 | The command line was wrong: an unknown argument or subcommand, a flag value `dam` refuses to read, or an oid prefix that names more than one object. |
 | 3 | Cancelled: you interrupted, or a prompt could not be answered. |
 | 4 | `dam` refused by one of its own rules, and the message names the rule. |
+
+Every rule `dam` keeps reports code 4, and nothing else does, so one mapping covers every verb.

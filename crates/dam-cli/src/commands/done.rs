@@ -104,7 +104,7 @@ mod tests {
     use super::*;
     use crate::args::DoneArgs;
     use crate::testing::{ScriptedPrompt, context, machine_context};
-    use dam_application::{ChildDisposition, DependencyDisposition};
+    use dam_application::{ChildDisposition, DependencyDisposition, Refusal};
     use dam_domain::{Object, Oid, Path, Task};
     use std::cell::RefCell;
 
@@ -220,7 +220,8 @@ mod tests {
         let mut ctx = machine_context();
         parent_and_child(&ctx);
         let err = run(&mut ctx, args(&oid(1), true, true)).unwrap_err();
-        assert!(matches!(err, CliError::Usage(_)));
+        assert_eq!(err.to_string(), Refusal::NeedsAnAnswer.to_string());
+        assert_eq!(err.exit_code(), 4);
         assert!(
             !ctx.store
                 .get(&oid(1))

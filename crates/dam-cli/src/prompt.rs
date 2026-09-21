@@ -3,6 +3,8 @@ use std::io::{BufRead, Write};
 use std::sync::mpsc::{Receiver, RecvTimeoutError, channel};
 use std::time::Duration;
 
+use dam_application::Refusal;
+
 use crate::error::CliError;
 
 /// How often a wait on the operator wakes to re-check for an interrupt.
@@ -29,7 +31,7 @@ impl Prompt for RefusingPrompt {
 }
 
 fn refused() -> CliError {
-    CliError::Usage("a question needs an answer; drop --json/--toon to answer interactively".into())
+    Refusal::NeedsAnAnswer.into()
 }
 
 #[derive(Default)]

@@ -11,7 +11,9 @@ mod recurrence;
 mod when;
 
 pub use category::{Categories, Category, CategoryError, LabelViolation};
-pub use change::{Change, CommitId, CommitRecord, Op, changed_fields, coalesce, diff};
+pub use change::{
+    Change, CommitId, CommitRecord, Op, changed_fields, coalesce, diff, touched_fields,
+};
 pub use completion::{
     Blocker, ChildDisposition, DependencyDisposition, Dispositions, Force, blockers, cycle_in,
 };

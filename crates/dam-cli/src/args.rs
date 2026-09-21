@@ -13,7 +13,9 @@ use clap::{Parser, Subcommand};
 
 pub(crate) use reading::LsArgs;
 pub(crate) use remotes::{PullArgs, PushArgs, RemoteArgs, RemoteCommand, ResolveArgs};
-pub(crate) use staging::{AddArgs, CommitArgs, DiffArgs, ResetArgs, RestoreArgs, ShowArgs};
+pub(crate) use staging::{
+    AddArgs, CommitArgs, DiffArgs, ResetArgs, RestoreArgs, ShowArgs, StatusArgs,
+};
 pub(crate) use writing::{DoneArgs, EditArgs, MvArgs, NewArgs, RmArgs};
 
 #[derive(Parser, Debug)]
@@ -23,10 +25,10 @@ pub(crate) use writing::{DoneArgs, EditArgs, MvArgs, NewArgs, RmArgs};
     about = "tasks and events, staged and committed like git"
 )]
 pub(crate) struct Cli {
-    /// Print the result as JSON.
+    /// Print the result as JSON, and a failure as one error document on stderr.
     #[arg(long, global = true, conflicts_with = "toon")]
     pub(crate) json: bool,
-    /// Print the result as TOON, a compact form for language models.
+    /// Print the result as TOON, a compact form for language models; errors as --json.
     #[arg(long, global = true)]
     pub(crate) toon: bool,
     #[arg(long, global = true, env = "DAM_CONFIG", value_name = "FILE")]
@@ -62,7 +64,7 @@ pub(crate) enum Command {
     /// Show one object or one commit.
     Show(ShowArgs),
     /// Working versus stage versus last commit, plus remote notices.
-    Status,
+    Status(StatusArgs),
     /// Unstaged changes, or staged with --staged.
     Diff(DiffArgs),
     /// List objects, optionally by query or saved filter.

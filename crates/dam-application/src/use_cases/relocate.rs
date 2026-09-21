@@ -13,10 +13,7 @@ pub fn relocate(objects: &dyn ObjectRepository, oid: &Oid, to: &Path) -> Result<
     // A root path ("") is shared by every top-level object, so it never
     // meaningfully contains anything: only a real, owned prefix can.
     if !old.as_str().is_empty() && to.is_within(&old) {
-        return Err(UseCaseError::Parse(format!(
-            "{} cannot move inside itself",
-            oid.short()
-        )));
+        return Err(Refusal::MoveInsideItself(oid.clone()).into());
     }
     let new = if old.as_str().is_empty() {
         to.clone()
@@ -64,7 +61,7 @@ mod tests {
         let store = MemoryStore::new();
         let p = put(&store, 1, "a/p");
         let err = relocate(&store, &p, &Path::parse("a/p/c").unwrap()).unwrap_err();
-        assert!(matches!(err, UseCaseError::Parse(_)));
+        assert_eq!(err, UseCaseError::Refused(Refusal::MoveInsideItself(p)));
     }
 
     #[test]

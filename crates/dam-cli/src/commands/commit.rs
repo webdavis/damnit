@@ -49,7 +49,7 @@ pub(crate) fn commit_json(record: &CommitRecord) -> Result<serde_json::Value, Cl
     let changes: Vec<serde_json::Value> = record
         .changes
         .iter()
-        .map(change_json)
+        .map(|c| change_json(c, false))
         .collect::<Result<_, _>>()?;
     Ok(serde_json::json!({
         "id": record.id.to_string(),

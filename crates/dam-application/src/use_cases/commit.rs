@@ -1,6 +1,6 @@
 use dam_domain::{CommitId, CommitRecord};
 
-use crate::errors::UseCaseError;
+use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{Clock, CommitRepository, Randomness, StageRepository};
 
 pub fn commit(
@@ -12,7 +12,7 @@ pub fn commit(
 ) -> Result<CommitRecord, UseCaseError> {
     let changes = stage.staged()?;
     if changes.is_empty() {
-        return Err(UseCaseError::Parse("nothing to commit".into()));
+        return Err(Refusal::NothingToCommit.into());
     }
     let record = CommitRecord {
         id: CommitId::generate(&mut |b| random.fill(b)),
@@ -71,6 +71,6 @@ mod tests {
             "x",
         )
         .unwrap_err();
-        assert_eq!(err, UseCaseError::Parse("nothing to commit".into()));
+        assert_eq!(err, UseCaseError::Refused(Refusal::NothingToCommit));
     }
 }
