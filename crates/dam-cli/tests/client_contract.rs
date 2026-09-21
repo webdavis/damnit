@@ -371,3 +371,33 @@ fn status_json(sb: &Sandbox, extra: &[&str]) -> serde_json::Value {
     assert!(ok, "{err}");
     serde_json::from_str(&out).unwrap()
 }
+
+/// `--no-pull` is what lets a client promise a render costs no network: the
+/// same read pulls the stale remote without it and answers locally with it.
+#[test]
+fn no_pull_answers_a_read_from_the_store_alone() {
+    let _guard = support::guard("no_pull_answers_a_read_from_the_store_alone");
+    let sb = Sandbox::new();
+    let config = sb.dir.path().join("config.toml");
+    let mut text = std::fs::read_to_string(&config).unwrap();
+    text.push_str("stale = \"15m\"\n");
+    std::fs::write(&config, text).unwrap();
+
+    let (ok, out, err) = sb.dam(&["ls", "--json", "--no-pull"]);
+    assert!(ok, "{err}");
+    let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(
+        answer["objects"].as_array().unwrap().len(),
+        0,
+        "a local read reached the remote: {answer}"
+    );
+
+    let (ok, out, err) = sb.dam(&["ls", "--json"]);
+    assert!(ok, "{err}");
+    let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(
+        answer["objects"].as_array().unwrap().len(),
+        1,
+        "the same read without the flag pulls the stale remote: {answer}"
+    );
+}

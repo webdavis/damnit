@@ -166,6 +166,7 @@ pub(crate) fn context() -> Context {
             texts: RefCell::new(vec![]),
         }),
         tz: jiff::tz::TimeZone::UTC,
+        no_pull: false,
     }
 }
 

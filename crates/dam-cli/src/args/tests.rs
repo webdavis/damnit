@@ -31,6 +31,21 @@ fn json_and_toon_are_global_and_exclusive() {
 }
 
 #[test]
+fn no_pull_is_global_and_defaults_to_pulling() {
+    assert!(!Cli::try_parse_from(["dam", "ls"]).unwrap().no_pull);
+    assert!(
+        Cli::try_parse_from(["dam", "ls", "--no-pull"])
+            .unwrap()
+            .no_pull
+    );
+    assert!(
+        Cli::try_parse_from(["dam", "show", "abcd", "--no-pull"])
+            .unwrap()
+            .no_pull
+    );
+}
+
+#[test]
 fn resolve_needs_exactly_one_side() {
     assert!(Cli::try_parse_from(["dam", "resolve", "abc", "--ours"]).is_ok());
     assert!(Cli::try_parse_from(["dam", "resolve", "abc"]).is_err());

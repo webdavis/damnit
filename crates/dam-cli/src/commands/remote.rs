@@ -60,8 +60,12 @@ fn remote_json(r: &RemoteConfig) -> serde_json::Value {
 
 /// Pulls each remote whose `stale` is set and whose last pull is older than
 /// it. A failure to reach a remote is a notice, not an error, so a read
-/// never fails because the network did.
+/// never fails because the network did. `--no-pull` skips the whole pass, so
+/// the read touches nothing but the store.
 pub(crate) fn maybe_pull_stale(ctx: &mut Context) -> Result<(), CliError> {
+    if ctx.no_pull {
+        return Ok(());
+    }
     let now = ctx.clock.now();
     let due: Vec<String> = ctx
         .config
@@ -178,6 +182,33 @@ mod tests {
             ctx.store.all().unwrap().len(),
             1,
             "a fresh remote is not pulled again"
+        );
+    }
+
+    #[test]
+    fn no_pull_answers_from_the_store_and_never_launches_a_helper() {
+        let mut ctx = context();
+        ctx.no_pull = true;
+        ctx.config.remotes.push(RemoteConfig {
+            name: RemoteName("t".into()),
+            helper: "t".into(),
+            url: "t::".into(),
+            credentials: vec![],
+            stale: Some(Duration::from_secs(60)),
+            deadline: None,
+            path: None,
+        });
+        // A launcher that cannot produce a helper, so reaching for one at all
+        // would leave a PullFailed notice behind.
+        ctx.launcher = Box::new(FailingLauncher);
+        maybe_pull_stale(&mut ctx).unwrap();
+        assert!(ctx.store.all().unwrap().is_empty());
+        assert!(ctx.store.notices().unwrap().is_empty());
+        assert!(
+            ctx.store
+                .last_pull(&RemoteName("t".into()))
+                .unwrap()
+                .is_none()
         );
     }
 

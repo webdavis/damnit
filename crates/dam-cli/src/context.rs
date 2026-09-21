@@ -25,6 +25,8 @@ pub(crate) struct Context {
     pub(crate) editor: Option<Box<dyn EditorSession>>,
     pub(crate) prompt: Box<dyn Prompt>,
     pub(crate) tz: jiff::tz::TimeZone,
+    /// Set by `--no-pull`: a read answers from the store and pulls nothing.
+    pub(crate) no_pull: bool,
 }
 
 impl Context {
@@ -35,6 +37,7 @@ impl Context {
         config_path: PathBuf,
         store_path: &Path,
         format: Format,
+        no_pull: bool,
     ) -> Result<Context, CliError> {
         let config = load_config(&config_path)?;
         let store = SqliteStore::open(store_path)?;
@@ -56,6 +59,7 @@ impl Context {
             editor,
             prompt,
             tz: jiff::tz::TimeZone::system(),
+            no_pull,
         })
     }
 }

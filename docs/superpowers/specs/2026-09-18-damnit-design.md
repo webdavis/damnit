@@ -262,11 +262,17 @@ narrowed to a `path` in config.
 ### Reading
 
 ```
-dam ls [<query>] [--json|--toon]
+dam ls [<query>] [--json|--toon] [--no-pull]
 dam ls today                a saved filter from config
-dam show <oid> [--json|--toon]
+dam show <oid> [--json|--toon] [--no-pull]
 dam status [--json|--toon] [--full]
 ```
+
+`--no-pull` is global and answers from the local store: the reads that would otherwise pull a stale
+remote first, `ls` and `show`, skip that pass and spawn no helper. The documents are unchanged, and
+nothing in them reports staleness; a client that renders inside a frame budget uses the flag to make
+the read local, and reads `remote list` when it wants to say how fresh the answer is. Neither the
+`stale` setting nor anything else in config changes; `dam pull` still pulls.
 
 `--json` is the answer as JSON. `--toon` is the same answer in TOON (Token-Oriented Object
 Notation), a compact form that costs a language model fewer tokens when it reads a list; the
@@ -478,7 +484,7 @@ query = "due:today | overdue"
 ```
 
 `stale` makes a read command pull that remote first when the last pull is older than the value.
-Absent, reads never pull.
+Absent, reads never pull. `--no-pull` on the command line skips that pass for one invocation.
 
 A `_command` inherits `dam`'s standard input. A vault CLI that prompts for a password works when
 `dam` runs in a terminal and fails when a client spawns `dam` with standard input closed; a keychain

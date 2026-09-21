@@ -48,6 +48,10 @@ the helper and leaving the store as it was.
 `dam status`, `dam diff`, `dam log` and `dam show` read the way their git namesakes do. `--json`
 and `--toon` on any read give a program the same answer.
 
+`--no-pull` answers from the local store: `dam ls` and `dam show` otherwise pull a remote whose
+`stale` window has passed, and with the flag they spawn no helper at all. Use it wherever a read has
+to be quick and local, such as a statusline that runs `dam` every few seconds.
+
 ## The rules it keeps
 
 - A task with open children or open dependencies is not done until they are; `--force` overrides,
