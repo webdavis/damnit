@@ -8,6 +8,7 @@ mod path;
 mod priority;
 mod query;
 mod recurrence;
+mod weekday;
 mod when;
 
 pub use category::{Categories, Category, CategoryError, LabelViolation};
@@ -27,4 +28,5 @@ pub use path::{Path, PathError};
 pub use priority::{Priority, PriorityError};
 pub use query::{DateSel, Expr, QueryError, Term, matches, parse as parse_query};
 pub use recurrence::{Anchor, Freq, Rule, RuleError, roll_forward};
+pub use weekday::{parse_weekday, weekday_text};
 pub use when::{Date, Timestamp, When, WhenError};

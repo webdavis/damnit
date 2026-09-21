@@ -3,6 +3,7 @@ use std::fmt;
 use jiff::civil::Weekday;
 
 use super::{Anchor, Freq, Rule};
+use crate::weekday::{parse_weekday, weekday_text};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum RuleError {
@@ -117,28 +118,7 @@ impl Rule {
 }
 
 fn weekday(text: &str) -> Result<Weekday, RuleError> {
-    Ok(match text {
-        "mon" => Weekday::Monday,
-        "tue" => Weekday::Tuesday,
-        "wed" => Weekday::Wednesday,
-        "thu" => Weekday::Thursday,
-        "fri" => Weekday::Friday,
-        "sat" => Weekday::Saturday,
-        "sun" => Weekday::Sunday,
-        other => return Err(RuleError::BadDay(other.to_string())),
-    })
-}
-
-fn weekday_text(day: Weekday) -> &'static str {
-    match day {
-        Weekday::Monday => "mon",
-        Weekday::Tuesday => "tue",
-        Weekday::Wednesday => "wed",
-        Weekday::Thursday => "thu",
-        Weekday::Friday => "fri",
-        Weekday::Saturday => "sat",
-        Weekday::Sunday => "sun",
-    }
+    parse_weekday(text).ok_or_else(|| RuleError::BadDay(text.to_string()))
 }
 
 impl fmt::Display for RuleError {
