@@ -79,7 +79,7 @@ pub fn apply(object: &Object, fields: &EditFields) -> Result<Object, UseCaseErro
         return Err(Refusal::NotATask(next.oid().clone()).into());
     }
     if is_task && (fields.start.is_some() || fields.end.is_some() || fields.location.is_some()) {
-        return Err(UseCaseError::Parse("start applies to events".into()));
+        return Err(Refusal::NotAnEvent(next.oid().clone()).into());
     }
 
     let base = next.base_mut();

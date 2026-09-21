@@ -23,11 +23,16 @@ pub enum Refusal {
     NoWorkingObject(String),
     NoSuchRemote(String),
     NotATask(Oid),
+    /// An event field asked of a task, the mirror of `NotATask`.
+    NotAnEvent(Oid),
     NotCompleted(Oid),
     NotCommitted(Oid),
     DirtyOnPull {
         oid: Oid,
     },
+    /// A path that would put an object under itself, which no tree allows.
+    MoveInsideItself(Oid),
+    NothingToCommit,
     UnresolvedConflicts(usize),
     MissingCredential {
         remote: String,
@@ -106,6 +111,11 @@ impl fmt::Display for Refusal {
             Refusal::NotATask(o) => {
                 write!(f, "{} is an event; events are not completed", o.short())
             }
+            Refusal::NotAnEvent(o) => write!(
+                f,
+                "{} is a task; start, end and location are event fields",
+                o.short()
+            ),
             Refusal::NotCompleted(o) => write!(
                 f,
                 "{} is not completed, so there is nothing to reopen",
@@ -124,6 +134,10 @@ impl fmt::Display for Refusal {
             Refusal::UnresolvedConflicts(n) => {
                 write!(f, "{n} conflicts are unresolved; run dam resolve")
             }
+            Refusal::MoveInsideItself(o) => {
+                write!(f, "{} cannot move inside itself", o.short())
+            }
+            Refusal::NothingToCommit => f.write_str("nothing to commit"),
             Refusal::MissingCredential { remote, name } => {
                 write!(
                     f,

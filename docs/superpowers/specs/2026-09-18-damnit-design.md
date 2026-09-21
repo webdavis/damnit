@@ -298,6 +298,10 @@ One meaning per code, so a client can tell what happened without reading the mes
 | 3 | Cancelled: the operator interrupted, or a prompt could not be answered. |
 | 4 | `dam` refused by one of its own rules, and the message names the rule. |
 
+Every rule `dam` keeps reports code 4, and nothing else does, so a client maps the code once
+rather than per verb. An empty stage, a move into an object's own path and an event field asked of
+a task are refusals like any other, and each names its rule.
+
 ## Remotes and helpers
 
 `dam` core contains no Todoist code and no Google code. A remote is reached through a helper found

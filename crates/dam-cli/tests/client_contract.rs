@@ -111,3 +111,32 @@ fn toon_carries_the_same_error_document() {
         String::from_utf8_lossy(&sb.output(&["show", "0000000", "--toon"]).stderr).into_owned();
     assert!(err.contains("kind: refused"), "{err}");
 }
+
+/// Every rule dam keeps exits 4 and says `refused`, whichever rule it was.
+/// A rule that reported some other code would make a client guess.
+#[test]
+fn every_refusal_exits_four_whatever_the_rule() {
+    let _guard = support::guard("every_refusal_exits_four_whatever_the_rule");
+    let sb = Sandbox::new();
+    let parent = sb.new_object(&["parent"]);
+    let child = sb.new_object(&["child", "--path", "parent/"]);
+
+    let refusals: Vec<(&str, Vec<&str>)> = vec![
+        ("an empty stage", vec!["commit", "-m", "nothing"]),
+        ("a completion with an open child", vec!["done", &parent]),
+        (
+            "a move into its own path",
+            vec!["mv", &child, "parent/here"],
+        ),
+        (
+            "an event field on a task",
+            vec!["edit", &parent, "--start", "2026-09-25T10:00"],
+        ),
+    ];
+    for (rule, mut args) in refusals {
+        args.push("--json");
+        let out = sb.output(&args);
+        assert_eq!(out.status.code(), Some(4), "{rule}: {args:?}");
+        assert_eq!(kind_of(&out), "refused", "{rule}");
+    }
+}

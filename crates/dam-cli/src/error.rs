@@ -88,6 +88,8 @@ fn refusal_oids(refusal: &Refusal) -> Vec<String> {
             .chain(path.iter().map(named))
             .collect(),
         Refusal::NotATask(oid)
+        | Refusal::NotAnEvent(oid)
+        | Refusal::MoveInsideItself(oid)
         | Refusal::NotCompleted(oid)
         | Refusal::NotCommitted(oid)
         | Refusal::DirtyOnPull { oid } => vec![named(oid)],
@@ -97,7 +99,8 @@ fn refusal_oids(refusal: &Refusal) -> Vec<String> {
         | Refusal::NoWorkingObject(_)
         | Refusal::NoSuchRemote(_)
         | Refusal::UnresolvedConflicts(_)
-        | Refusal::MissingCredential { .. } => Vec::new(),
+        | Refusal::MissingCredential { .. }
+        | Refusal::NothingToCommit => Vec::new(),
     }
 }
 

@@ -90,3 +90,5 @@ those flags you get the plain `dam: <message>` line instead.
 | 2 | The command line was wrong: an unknown argument or subcommand, a flag value `dam` refuses to read, or an oid prefix that names more than one object. |
 | 3 | Cancelled: you interrupted, or a prompt could not be answered. |
 | 4 | `dam` refused by one of its own rules, and the message names the rule. |
+
+Every rule `dam` keeps reports code 4, and nothing else does, so one mapping covers every verb.
