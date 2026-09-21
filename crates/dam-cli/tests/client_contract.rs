@@ -354,6 +354,46 @@ fn an_unpushed_row_names_its_commits_in_log_order() {
     );
 }
 
+/// The unpushed mark is drawn by matching a change row's object against this
+/// list, so the row names the objects those commits touch as well as the
+/// commits themselves, and an object two commits touched is named once.
+#[test]
+fn an_unpushed_row_names_each_object_once() {
+    let _guard = support::guard("an_unpushed_row_names_each_object_once");
+    let sb = Sandbox::new();
+    let first = sb.new_object(&["first"]);
+    assert!(sb.dam(&["add", "-A"]).0);
+    assert!(sb.dam(&["commit", "-m", "one"]).0);
+    let second = sb.new_object(&["second"]);
+    assert!(sb.dam(&["add", "-A"]).0);
+    assert!(sb.dam(&["commit", "-m", "two"]).0);
+    assert!(sb.dam(&["edit", &second, "--priority", "1"]).0);
+    assert!(sb.dam(&["add", "-A"]).0);
+    assert!(sb.dam(&["commit", "-m", "three"]).0);
+
+    let row = status_json(&sb, &["--json"])["unpushed"][0].clone();
+    assert_eq!(row["commits"], 3);
+    let oids: Vec<String> = row["oids"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_str().unwrap().to_string())
+        .collect();
+    assert_eq!(
+        oids.len(),
+        2,
+        "the object two commits touched is named once: {oids:?}"
+    );
+    assert!(
+        oids[0].starts_with(&second),
+        "the object the newest commit touched comes first: {oids:?}"
+    );
+    assert!(
+        oids[1].starts_with(&first),
+        "then the one only an older commit touched: {oids:?}"
+    );
+}
+
 /// A background poll runs `status` per render, so its default answer carries
 /// a row per change rather than two whole objects.
 #[test]

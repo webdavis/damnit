@@ -395,14 +395,24 @@ are change documents, `conflicts` is one row per object both sides changed, `not
 or a push left to read, and `unpushed` is one row per configured remote.
 
 ```json
-{"remote": "todoist", "commits": 2, "commit_ids": ["9f21c4...", "3b0e77..."]}
+{"remote": "todoist", "commits": 2, "commit_ids": ["9f21c4...", "3b0e77..."],
+ "oids": ["98d878...", "a9db85..."]}
 ```
 
 `commit_ids` names the commits that remote has not been told about, newest first, which is the
 order `dam log` prints history in, so a client pairs the two lists without sorting either.
 `commits` is the length of that list, so a statusline reads one field and a client offering to
-open a commit reads the other. A remote owed nothing carries an empty list and a zero. The human
-page lists only the remotes that are owed something.
+open a commit reads the other.
+
+`oids` names the objects whose changes sit in those commits, each once however many of them
+touched it, in the order they first appear walking the commits newest first. It is the list a
+client matches a change row against to mark that object as owed upstream, which is why it names
+objects rather than commits and why the two lists are separate rather than one field a reader has
+to guess the meaning of.
+
+A remote owed nothing gets a row all the same, with two empty lists and a zero, so a client
+renders every configured remote without deciding what a missing row means. The human page lists
+only the remotes that are owed something.
 
 ### Exit codes
 

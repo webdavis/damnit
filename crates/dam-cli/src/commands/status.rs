@@ -79,13 +79,14 @@ pub(crate) fn run_diff(ctx: &mut Context, args: DiffArgs) -> Result<Report, CliE
     })
 }
 
-/// One remote's owed commits: the commit ids in `dam log`'s order, and the
-/// count beside them, which is the length of that list.
+/// One remote's owed commits in `dam log`'s order, the count beside them,
+/// which is the length of that list, and the objects those commits touch.
 fn unpushed_json(unpushed: &Unpushed) -> serde_json::Value {
     serde_json::json!({
         "remote": unpushed.remote.0,
         "commits": unpushed.commit_ids.len(),
         "commit_ids": unpushed.commit_ids.iter().map(|id| id.to_string()).collect::<Vec<_>>(),
+        "oids": unpushed.oids.iter().map(|oid| oid.to_string()).collect::<Vec<_>>(),
     })
 }
 
