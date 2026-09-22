@@ -126,7 +126,7 @@ crates/
     src/invocation.rs                 credential_variable, moved here from dam-adapters     (PR 2)
     src/messages.rs                   PullResponse.cancelled                                 (PR 4)
     src/wire.rs                       WireAttendee.is_self, `self` on the wire               (PR 3)
-    docs/specs/protocol.md            invocation, `cancelled`                                (PR 2, 4)
+    docs/specs/protocol.md            invocation, `cancelled`, no kinds is read-only         (PR 2, 4, 5)
     fixtures/pull-cancelled.response.json                                                    (PR 4)
   dam-domain/
     src/object/event.rs               Attendee.is_self; Event::span, Event::holds_time       (PR 3, 7)
@@ -2085,6 +2085,7 @@ the spec.
 - Create: `crates/dam-remote-gcal/src/address.rs`, `src/credentials.rs`, `src/capabilities.rs`
 - Create: `crates/dam-application/src/use_cases/push/tests/read_only.rs`
 - Modify: `crates/dam-remote-gcal/src/lib.rs`, `crates/dam-application/src/use_cases/push/tests.rs`
+- Modify: `crates/dam-protocol/docs/specs/protocol.md` (the Capabilities paragraph)
 
 **Interfaces:**
 - Consumes: `dam_protocol::{credential_variable, Capabilities, PROTOCOL_VERSION}`, `Secret`, `Client`.
@@ -2322,6 +2323,17 @@ pub fn capabilities() -> Capabilities {
 }
 ```
 
+In `protocol.md`, the Capabilities section's first sentence, "`kinds` and `fields` are what the
+helper accepts on push and returns on pull.", becomes A6's wording, so a helper author reads the
+same rule the spec states:
+
+```markdown
+`kinds` is what the helper accepts on push, and `fields` is what it accepts on push and returns on
+pull. A helper that declares no kinds is read-only: `dam` sends it no mutation, so a push reaches
+it, sends nothing, and marks its commits pushed, with nothing refused or retried. Its pulls land as
+any other, and `fields` still bounds what a pulled object may overwrite.
+```
+
 `lib.rs` gains `pub mod address; pub mod capabilities; pub mod credentials;` and
 `pub use credentials::Credentials;`.
 
@@ -2333,8 +2345,8 @@ Expected: every test passes; gates clean.
 - [ ] **Step 5: Commit**
 
 ```bash
-SKIP_AI_COMMIT=1 git add crates/dam-application/src/use_cases/push/tests.rs crates/dam-application/src/use_cases/push/tests/read_only.rs
-SKIP_AI_COMMIT=1 git commit -m "test(push): pin that a remote declaring no kinds is sent nothing"
+SKIP_AI_COMMIT=1 git add crates/dam-application/src/use_cases/push/tests.rs crates/dam-application/src/use_cases/push/tests/read_only.rs crates/dam-protocol/docs/specs/protocol.md
+SKIP_AI_COMMIT=1 git commit -m "test(push): pin and document that a remote declaring no kinds is sent nothing"
 SKIP_AI_COMMIT=1 git add crates/dam-remote-gcal
 SKIP_AI_COMMIT=1 git commit -m "feat(gcal): read the calendars from the address and the credentials under the remote's name"
 ```
@@ -5002,7 +5014,9 @@ field and new code in core, for no behavior this lacks.
 ## Follow-ups this plan does not do
 
 - **Two-way sync with Google Calendar.** Its own spec and plan; it needs the wider
-  `calendar.events` scope, so a person signs in again.
+  `calendar.events` scope, so a person signs in again. A push to a remote with no kinds marks the
+  commits it skipped as pushed, so that plan needs a backfill that sends every event the remote
+  never mapped, or events made in dam during the read-only period never reach Google.
 - **The Todoist helper reads its remote's name from its arguments** once A1 lands, instead of
   hardcoding `DAM_TODOIST_API_TOKEN`. A one-task change to that helper.
 - **Commits no remote will take still count as owed.** A gcal pull commit is marked pushed for gcal
