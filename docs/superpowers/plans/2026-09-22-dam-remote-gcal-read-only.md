@@ -4,16 +4,18 @@
 
 **Goal:** Ship `dam-remote-gcal`, the Google Calendar remote the spec names, as a read-only helper:
 a one-time sign-in that mints the refresh token the spec's config reads, a pull that brings the
-operator's configured calendars into dam's store and refuses every push by name, and a `dam agenda`
-listing a scheduler reads busy times from.
+operator's configured calendars into dam's store and never writes to Google, and a `dam agenda`
+listing a scheduler reads busy times from without waiting on the network and without taking stale
+data for fresh.
 
 **Architecture:** One new package, `dam-remote-gcal`, holds every line of Google code: the consent
 walk (binary `dam-gcal-sign-in`) and the protocol helper (binary `dam-remote-gcal`), both thin mains
 over one library. Four small changes to dam's core carry what that helper needs and the spec does not
 provide yet: the helper learns its remote's name and address, an attendee records whether it is the
 calendar's own, a pull can report an event cancelled by id, and `dam agenda` reads events as
-intervals with a busy reading. Each core change is its own pull request and its own proposed spec
-amendment.
+intervals with a busy reading and refuses to answer from a remote pulled longer ago than its caller
+allows. The helper declares no kinds, which dam already reads as nothing to push. Each core change is
+its own pull request and its own proposed spec amendment.
 
 **Tech Stack:** Rust 2024 edition, stable toolchain. `ureq` 3 with rustls, `serde` and `serde_json`,
 `jiff` 0.2, `getrandom` 0.3, and one new workspace dependency, `sha2` 0.11, for the PKCE challenge.
@@ -34,8 +36,9 @@ work. Every task's requirements include these.
 - OAuth credentials and tokens are secrets: never in argv, a child's environment, a log line or an error string. Mirror the discipline pns's `GoogleCalendar` type documents.
 - No code in this workspace depends on another repository.
 - Nothing dam ships names pns: no code, comment, test name, README line, spec text or output. This
-  plan names it only where it points at the consent walk being copied. The sign-in code is a copy,
-  never a path or git dependency, and no crate is shared with that repository.
+  plan names it in two places only: the operator's rule above, quoted as given, and the consent walk
+  Task 2 copies. The sign-in code is a copy, never a path or git dependency, and no crate is shared
+  with that repository.
 - Every helper binary run in a test sets the same three variables as a `dam` run, so no test can
   reach a real home directory whichever binary it drives.
 - Read-only means read-only: nothing `dam-remote-gcal` does can create, change or delete a Google
@@ -51,8 +54,8 @@ work. Every task's requirements include these.
 - Every test finishes within one second. Bind `support::guard` in every integration test, as the
   Todoist helper's tests do.
 - File size: 200 implementation lines and 300 total are the targets; 250 implementation or 400 total
-  requires decomposition; no handwritten `.rs` file exceeds 500 total lines, tests included. Count
-  with the command in `~/.agents/skills/clean-code-rust/SKILL.md`; `just size` is the gate.
+  requires decomposition; no handwritten `.rs` file exceeds 500 total lines, tests included.
+  `just size` counts them and is the gate.
 - Every `main.rs` and every `src/bin/*.rs` stays under 150 lines.
 - Domain crate: `std` and `jiff` only. A time zone reaches it as an argument, never read there.
 - Private by default. `pub` only for intentional crate APIs, curated in `lib.rs`.
@@ -90,8 +93,9 @@ is written into the task named after it.
 
 ## Pull requests
 
-Six pull requests. The first four are independent of one another and can be reviewed in parallel;
-the fifth needs all four merged; the sixth needs the third.
+Seven pull requests. The first four are independent of one another and can be reviewed in
+parallel; the fifth needs the first two; the sixth needs the third, fourth and fifth; the seventh
+needs the third.
 
 | PR | Branch | Tasks | Needs |
 |---|---|---|---|
@@ -99,18 +103,19 @@ the fifth needs all four merged; the sixth needs the third.
 | 2 | `feat/helper-remote-name-and-address` | 4: helper invocation | nothing |
 | 3 | `feat/attendee-self` | 5: the calendar's own attendee | nothing |
 | 4 | `feat/pull-cancelled` | 6: a pull reports a cancellation by id | nothing |
-| 5 | `feat/gcal-read-only-pull` | 7 to 12: the read-only helper | 1, 2, 3, 4 |
-| 6 | `feat/agenda` | 13, 14, 15: `dam agenda` | 3 |
+| 5 | `feat/gcal-calendar-api` | 7, 8, 9: credentials, the access token, `events.list` | 1, 2 |
+| 6 | `feat/gcal-read-only-pull` | 10, 11, 12: mapping, the pull, the protocol binary | 3, 4, 5 |
+| 7 | `feat/agenda` | 13 to 16: `dam agenda`, `--max-age` | 3 |
 
 Each pull request applies the text of its own spec amendment as its last commit, and only once the
 operator has approved that amendment; an amendment still pending stops that step and is raised with
 the operator rather than applied or skipped. PR 1 applies A4's "Signing in" paragraph, PR 2 A1,
-PR 3 A2, PR 4 A3, PR 5 the rest of A4, and PR 6 A5.
+PR 3 A2, PR 4 A3, PR 5 A6, PR 6 the rest of A4, and PR 7 A5.
 
 Every branch starts from `main` in its own worktree:
 
 ```bash
-herdr worktree create --cwd /Users/stephen/workspaces/Ivy/webdavis/damnit --branch <branch> --no-focus
+herdr worktree create --cwd <repo> --branch <branch> --no-focus
 ```
 
 ## File structure
@@ -124,22 +129,26 @@ crates/
     docs/specs/protocol.md            invocation, `cancelled`                                (PR 2, 4)
     fixtures/pull-cancelled.response.json                                                    (PR 4)
   dam-domain/
-    src/object/event.rs               Attendee.is_self; Event::span, Event::holds_time       (PR 3, 6)
-    src/object/event/tests.rs                                                                (PR 6)
-    src/when/mod.rs                   When::instant                                          (PR 6)
+    src/object/event.rs               Attendee.is_self; Event::span, Event::holds_time       (PR 3, 7)
+    src/object/event/tests.rs                                                                (PR 7)
+    src/when/mod.rs                   When::instant                                          (PR 7)
   dam-application/
     src/config.rs                     RemoteConfig::address                                  (PR 2)
     src/remote.rs                     PullOutcome.cancelled                                  (PR 4)
     src/use_cases/pull/cancelled.rs   cancelled ids become incoming cancelled events         (PR 4)
-    src/use_cases/agenda.rs           Window, Scheduled, agenda()                            (PR 6)
+    src/use_cases/agenda.rs           Window, Scheduled, agenda()                            (PR 7)
+    src/use_cases/freshness.rs        require_fresh: a remote's last pull against a bound    (PR 7)
+    src/use_cases/push/tests/read_only.rs   a remote that declares no kinds is sent nothing  (PR 5)
+    src/errors.rs                     Refusal::StaleRemote, rule `stale_remote`              (PR 7)
   dam-adapters/
     src/helper_process.rs             `<remote> <address>` on the helper's command line      (PR 2)
     src/wire/{encode,decode,mod}.rs   is_self both ways; cancelled into PullOutcome           (PR 3, 4)
   dam-cli/
-    src/args/reading.rs               AgendaArgs                                             (PR 6)
-    src/commands/agenda.rs            run_agenda, the agenda document, the human line        (PR 6)
-    tests/agenda.rs                   the real binary, the document's contract               (PR 6)
-  dam-remote-gcal/                                                                            (PR 1, 5)
+    src/args/reading.rs               AgendaArgs, `--max-age <remote>=<duration>`            (PR 7)
+    src/error.rs                      StaleRemote names no object                            (PR 7)
+    src/commands/agenda.rs            run_agenda, the agenda document, the human line        (PR 7)
+    tests/agenda.rs                   the real binary, the document's contract, `--no-pull`  (PR 7)
+  dam-remote-gcal/                                                                            (PR 1, 5, 6)
     Cargo.toml                        package dam-remote-gcal; bins dam-gcal-sign-in, dam-remote-gcal
     rust-toolchain.toml
     src/lib.rs                        curated exports
@@ -155,17 +164,17 @@ crates/
     src/bin/dam-gcal-sign-in.rs       the operator's one-time walk
     src/address.rs                    the calendars the remote's address names                (PR 5)
     src/credentials.rs                Credentials from DAM_<REMOTE>_<NAME>                     (PR 5)
-    src/capabilities.rs               kinds, fields, credentials                               (PR 5)
+    src/capabilities.rs               no kinds (read-only), fields, credentials                (PR 5)
     src/access.rs                     the refresh_token grant                                  (PR 5)
     src/api_error.rs                  ApiError                                                 (PR 5)
     src/calendar_api.rs               CalendarApi::events, Window, paging                      (PR 5)
     src/calendar_api/resources.rs     Google's event resource, as much of it as dam reads      (PR 5)
-    src/map.rs                        a Google event onto a wire event, or a cancelled id      (PR 5)
-    src/map/time.rs                   start and end: text dam reads, epoch seconds             (PR 5)
-    src/memory.rs                     what the last pull reported, the sync token              (PR 5)
-    src/pull.rs                       the window, every calendar, cancellations                (PR 5)
-    src/push.rs                       every mutation refused, by name                          (PR 5)
-    src/main.rs                       dam-remote-gcal: `<remote> <address>`, the protocol loop  (PR 5)
+    src/map.rs                        a Google event onto a wire event, or a cancelled id      (PR 6)
+    src/map/time.rs                   start and end: text dam reads, epoch seconds             (PR 6)
+    src/memory.rs                     what the last pull reported, the sync token              (PR 6)
+    src/pull.rs                       the window, every calendar, cancellations                (PR 6)
+    src/push.rs                       every mutation refused, by name                          (PR 6)
+    src/main.rs                       dam-remote-gcal: `<remote> <address>`, the protocol loop  (PR 6)
     tests/loopback/mod.rs             the Google double: routes, queued replies, recorded requests
     tests/support/mod.rs              the speed guard, copied from dam-remote-todoist
     tests/sign_in_walk.rs, tests/sign_in_binary.rs, tests/api.rs, tests/pull.rs, tests/protocol.rs
@@ -190,6 +199,7 @@ crates/
 | `refuse`, `READ_ONLY` | dam-remote-gcal | Task 12 |
 | `When::instant`, `Event::span`, `Event::holds_time` | dam-domain | Task 13 |
 | `Window`, `Scheduled`, `agenda` | dam-application | Task 14 |
+| `require_fresh`, `Refusal::StaleRemote` | dam-application | Task 16 |
 
 Google facts this plan rests on, read on 2026-09-22 from
 `https://developers.google.com/workspace/calendar/api/v3/reference/events/list`,
@@ -1526,7 +1536,22 @@ project. Keep its client id and client secret in your vault, then sign in:
 The command prints a URL; open it, grant read-only access to your calendar events, and the refresh
 token is printed once on standard output. Store it in your vault. dam asks Google for read-only
 access, so nothing it does can change your calendar.
+
+Publish the OAuth consent screen ("In production") before you sign in. While its publishing status
+is "Testing", Google issues refresh tokens that expire after 7 days, and every pull fails with
+`invalid_grant` from then on until you sign in again. An app Google has not verified still works in
+production; the consent page shows a warning you click through once.
 ```
+
+Operator notes for this task, carried into A4:
+
+- The 7-day expiry is Google's rule for a project with an external user type and a "Testing"
+  publishing status, unless the only scopes are name, email and profile
+  (`https://developers.google.com/identity/protocols/oauth2`, read 2026-09-22). The calendar scope is
+  not among those, so a personal project left in "Testing" loses its token a week after sign-in.
+- A refresh token also stops working when the person revokes access, when it goes unused for six
+  months, or when the account holds too many tokens for the client. Each reads as `invalid_grant`,
+  and Task 8's message covers them all by saying to sign in again.
 
 - [ ] **Step 4: Run to verify pass**
 
@@ -2047,11 +2072,19 @@ cancellation by id`. Pending: stop and ask.
 
 ### Task 7: What the helper is given
 
-PR 5. Tasks 7 to 12 need PRs 1 to 4 merged: this branch starts from a `main` that has them.
+PR 5. Tasks 7 to 9 need PRs 1 and 2 merged: this branch starts from a `main` that has them.
+
+The helper declares no kinds. dam builds a push mutation only for an object whose kind the remote
+declares (`dam-application/src/use_cases/push/mutations.rs`, `mutation_for`), and a pull lands
+objects without reading `kinds` at all. So an event made in dam is never sent to this remote: a push
+connects, sends nothing, and marks the commit pushed, with no refusal, no retry and no notice. The
+core test below pins that, because this helper is the first to rely on it. Amendment A6 says it in
+the spec.
 
 **Files:**
 - Create: `crates/dam-remote-gcal/src/address.rs`, `src/credentials.rs`, `src/capabilities.rs`
-- Modify: `crates/dam-remote-gcal/src/lib.rs`
+- Create: `crates/dam-application/src/use_cases/push/tests/read_only.rs`
+- Modify: `crates/dam-remote-gcal/src/lib.rs`, `crates/dam-application/src/use_cases/push/tests.rs`
 
 **Interfaces:**
 - Consumes: `dam_protocol::{credential_variable, Capabilities, PROTOCOL_VERSION}`, `Secret`, `Client`.
@@ -2069,7 +2102,7 @@ impl Credentials {
 }
 
 // capabilities.rs
-pub fn capabilities() -> Capabilities;   // kinds ["event"], the sixteen event fields, the three credentials, incremental true
+pub fn capabilities() -> Capabilities;   // no kinds, the sixteen event fields, the three credentials, incremental true
 ```
 
 - [ ] **Step 1: Write the failing tests**
@@ -2140,10 +2173,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn events_only_with_every_google_field_and_the_three_credentials() {
+    fn no_kinds_every_google_field_and_the_three_credentials() {
         let caps = capabilities();
         assert!(caps.supported());
-        assert_eq!(caps.kinds, vec!["event"]);
+        assert!(caps.kinds.is_empty(), "a declared kind is one dam pushes");
         assert_eq!(caps.credentials, vec!["client_id", "client_secret", "refresh_token"]);
         assert!(caps.incremental);
         for field in ["subject", "body", "path", "start", "end", "timezone", "location", "attendees", "status", "transparency", "visibility", "event_type", "color", "organizer", "conference", "attachments"] {
@@ -2156,10 +2189,56 @@ mod tests {
 }
 ```
 
+```rust
+// crates/dam-application/src/use_cases/push/tests/read_only.rs
+//! A remote that declares no kinds is read-only: a push sends it nothing.
+
+use std::cell::RefCell;
+use std::rc::Rc;
+
+use crate::ports::{RemoteName, Repositories};
+use crate::remote::{MutationOutcome, PullOutcome, RemoteCapabilities, RemoteMutation};
+use crate::testing::prelude::*;
+use crate::testing::{EchoCredentials, MemoryStore, ScriptedHelper, ScriptedLauncher, task_caps};
+use crate::use_cases::push::push;
+
+use super::{clock, committed_task, config};
+
+#[test]
+fn a_remote_that_declares_no_kinds_is_sent_nothing_and_owed_nothing() {
+    let store = MemoryStore::new();
+    committed_task(&store, 1);
+    let pushed = Rc::new(RefCell::new(Vec::new()));
+    let seen = pushed.clone();
+    let l = ScriptedLauncher {
+        make: Box::new(move || ScriptedHelper {
+            caps: RemoteCapabilities { kinds: vec![], ..task_caps() },
+            pull_answer: PullOutcome::default(),
+            push_answer: Box::new(|_: &[RemoteMutation]| -> Vec<MutationOutcome> {
+                panic!("a remote that declares no kinds was sent a push")
+            }),
+            pushed: seen.clone(),
+            pulled_since: Rc::new(RefCell::new(vec![])),
+        }),
+        launched_with: Rc::new(RefCell::new(vec![])),
+    };
+    let reports = push(Repositories::of(&store), &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    assert_eq!((reports[0].sent, reports[0].skipped), (0, 1));
+    assert!(pushed.borrow().is_empty());
+    assert!(store.unpushed(&RemoteName("todoist".into())).unwrap().is_empty(), "nothing stays owed to it");
+    assert!(store.notices().unwrap().is_empty(), "nothing was refused, so nothing is reported");
+}
+```
+
+`crates/dam-application/src/use_cases/push/tests.rs` gains `mod read_only;` beside `mod answers;`
+and `mod refusals;`.
+
 - [ ] **Step 2: Run to verify failure**
 
-Run: `cargo test -p dam-remote-gcal`
-Expected: unresolved `calendars`, `Credentials`, `capabilities`.
+Run: `cargo test -p dam-remote-gcal && cargo test -p dam-application read_only`
+Expected: unresolved `calendars`, `Credentials`, `capabilities`. The core test passes at once: it
+pins what dam already does, and a failure there means the premise of this task is wrong, so stop and
+raise it rather than change core code in this pull request.
 
 - [ ] **Step 3: Implement**
 
@@ -2223,10 +2302,10 @@ impl Credentials {
 // crates/dam-remote-gcal/src/capabilities.rs
 use dam_protocol::{Capabilities, PROTOCOL_VERSION};
 
-/// Events, every field Google's event resource carries that dam models, and
-/// none of dam's own fields, so labels, dependencies, reminders and
-/// recurrence stay in dam. Incremental: the helper reads `since` and answers
-/// a token.
+/// No kinds, so dam pushes nothing here: this remote is read-only. Every
+/// field Google's event resource carries that dam models, and none of dam's
+/// own, so a pull never overwrites labels, dependencies, reminders or
+/// recurrence. Incremental: the helper reads `since` and answers a token.
 pub fn capabilities() -> Capabilities {
     let fields = [
         "subject", "body", "path", "start", "end", "timezone", "location", "attendees",
@@ -2235,7 +2314,7 @@ pub fn capabilities() -> Capabilities {
     ];
     Capabilities {
         protocol: PROTOCOL_VERSION,
-        kinds: vec!["event".into()],
+        kinds: vec![],
         fields: fields.iter().map(|f| f.to_string()).collect(),
         credentials: vec!["client_id".into(), "client_secret".into(), "refresh_token".into()],
         incremental: true,
@@ -2254,6 +2333,8 @@ Expected: every test passes; gates clean.
 - [ ] **Step 5: Commit**
 
 ```bash
+SKIP_AI_COMMIT=1 git add crates/dam-application/src/use_cases/push/tests.rs crates/dam-application/src/use_cases/push/tests/read_only.rs
+SKIP_AI_COMMIT=1 git commit -m "test(push): pin that a remote declaring no kinds is sent nothing"
 SKIP_AI_COMMIT=1 git add crates/dam-remote-gcal
 SKIP_AI_COMMIT=1 git commit -m "feat(gcal): read the calendars from the address and the credentials under the remote's name"
 ```
@@ -2342,6 +2423,7 @@ fn a_revoked_refresh_token_says_to_sign_in_again_and_quotes_nothing() {
     let err = access_token(&http_agent(), &Endpoints::loopback(&google.base).unwrap(), &credentials()).unwrap_err();
     let said = err.to_string();
     assert!(said.contains("invalid_grant") && said.contains("dam-gcal-sign-in"), "{said}");
+    assert!(said.contains("\"Testing\" expires it after 7 days"), "{said}");
     for secret in [REFRESH, CLIENT_SECRET, "expired or revoked"] {
         assert!(!said.contains(secret), "{said}");
     }
@@ -2419,7 +2501,7 @@ impl fmt::Display for ApiError {
         match self {
             ApiError::TokenRefused { code: Some("invalid_grant"), status } => write!(
                 f,
-                "Google refused the refresh token (HTTP {}, invalid_grant): it was revoked or has expired; run dam-gcal-sign-in again and store the new one",
+                "Google refused the refresh token (HTTP {}, invalid_grant): it was revoked or has expired; run dam-gcal-sign-in again and store the new one (a consent screen still in \"Testing\" expires it after 7 days)",
                 status.map_or_else(|| "?".to_string(), |s| s.to_string())
             ),
             ApiError::TokenRefused { status: Some(s), code: Some(c) } => write!(f, "Google refused the token exchange (HTTP {s}, {c})"),
@@ -2490,7 +2572,7 @@ pub struct GoogleAttendee { pub email: Option<String>, pub response_status: Opti
 pub struct ConferenceData { pub conference_solution: Option<ConferenceSolution>, pub entry_points: Vec<EntryPoint> }
 pub struct ConferenceSolution { pub name: Option<String> }
 pub struct EntryPoint { pub entry_point_type: Option<String>, pub uri: Option<String> }
-pub struct GoogleAttachment { pub file_url: String, pub title: Option<String>, pub mime_type: Option<String> }
+pub struct GoogleAttachment { pub file_url: Option<String>, pub title: Option<String>, pub mime_type: Option<String> }
 ```
 
 - [ ] **Step 1: Write the failing tests**
@@ -2597,9 +2679,10 @@ Expected: unresolved `calendar_api`.
 - [ ] **Step 3: Implement**
 
 `resources.rs` declares the structs in the interface block with `#[derive(Clone, Debug, Default,
-Deserialize)]` and `#[serde(rename_all = "camelCase")]`, `#[serde(default)]` on every field but
-`GoogleEvent::id` and `GoogleAttachment::file_url`, and `#[serde(rename = "self")]` on
-`GoogleAttendee::is_self`. Unknown fields are ignored, as serde does by default.
+Deserialize)]` and `#[serde(rename_all = "camelCase")]`, `#[serde(default)]` on every field but `GoogleEvent::id`,
+and `#[serde(rename = "self")]` on `GoogleAttendee::is_self`. Unknown fields are ignored, as serde
+does by default. An attachment without a `fileUrl` still decodes, and Task 10 leaves it out the way
+it leaves out an attendee without an email, so one odd attachment never fails a whole calendar.
 
 ```rust
 // crates/dam-remote-gcal/src/calendar_api.rs
@@ -2733,13 +2816,18 @@ SKIP_AI_COMMIT=1 git add crates/dam-remote-gcal Cargo.lock
 SKIP_AI_COMMIT=1 git commit -m "feat(gcal): list a calendar's events over a window, page by bounded page"
 ```
 
+This is PR 5's last task. When the operator has approved Amendment A6, apply it to the spec in a
+separate commit, `docs(spec): say that a helper declaring no kinds is read-only`. If A6 is still
+pending, stop and ask; do not apply it, do not skip it.
+
 ---
 
 ### Task 10: Mapping events, and the pull
 
-PR 5. A remote id is `<calendar>/<event id>`: event ids are unique per calendar, not across
-calendars, and Google's event ids never contain `/`, so the id splits at its last `/`. An event's
-path is its calendar's title as one segment, the way the Todoist helper names a project.
+PR 6. Tasks 10 to 12 need PRs 3, 4 and 5 merged: this branch starts from a `main` that has them. A
+remote id is `<calendar>/<event id>`, because event ids are unique per calendar, not across
+calendars. An event's path is its calendar's title as one segment, the way the Todoist helper names
+a project.
 
 **Files:**
 - Create: `crates/dam-remote-gcal/src/map.rs`, `src/map/time.rs`, `src/pull.rs`
@@ -2758,7 +2846,6 @@ pub(crate) enum Mapped { Live { object: Box<WireObject>, end: i64 }, Cancelled(S
 #[derive(Debug, PartialEq, Eq)]
 pub struct MapError { pub calendar: String, pub event_id: String, pub what: &'static str }   // Display: "calendar <c>, event <id>: <what>"
 pub fn remote_id(calendar: &str, event_id: &str) -> String;
-pub(crate) fn calendar_of(remote_id: &str) -> Option<&str>;
 pub(crate) fn map_event(listing: &Listing, event: &GoogleEvent) -> Result<Mapped, MapError>;
 
 // map/time.rs
@@ -2817,7 +2904,7 @@ fn a_timed_event_maps_every_field_dam_models() {
         "conferenceData": {"conferenceSolution": {"name": "Google Meet"}, "entryPoints": [
             {"entryPointType": "phone", "uri": "tel:+1"}, {"entryPointType": "video", "uri": "https://meet.google.com/abc"}
         ]},
-        "attachments": [{"fileUrl": "https://drive/x", "title": "Agenda", "mimeType": "application/pdf"}]
+        "attachments": [{"fileUrl": "https://drive/x", "title": "Agenda", "mimeType": "application/pdf"}, {"title": "no url"}]
     }));
     assert_eq!(w.oid, "");
     assert_eq!(w.remote_id.as_deref(), Some("primary/e1"));
@@ -2835,6 +2922,7 @@ fn a_timed_event_maps_every_field_dam_models() {
     assert_eq!(e.attendees[1].response, "needs_action");
     let c = e.conference.unwrap();
     assert_eq!((c.provider.as_str(), c.url.as_str()), ("Google Meet", "https://meet.google.com/abc"));
+    assert_eq!(e.attachments.len(), 1, "an attachment with no url is left out");
     assert_eq!(e.attachments[0].mime_type.as_deref(), Some("application/pdf"));
 }
 
@@ -2890,11 +2978,6 @@ fn a_calendar_title_is_one_path_segment() {
     assert_eq!(object.path, "primary/");
 }
 
-#[test]
-fn a_remote_id_splits_back_at_its_last_slash() {
-    let id = remote_id("en.usa#holiday@group.v.calendar.google.com", "abc_20260925");
-    assert_eq!(calendar_of(&id), Some("en.usa#holiday@group.v.calendar.google.com"));
-}
 ```
 
 - [ ] **Step 2: Write the failing pull tests**
@@ -3051,10 +3134,6 @@ pub fn remote_id(calendar: &str, event_id: &str) -> String {
     format!("{calendar}/{event_id}")
 }
 
-pub(crate) fn calendar_of(remote_id: &str) -> Option<&str> {
-    remote_id.rsplit_once('/').map(|(calendar, _)| calendar)
-}
-
 /// A title as exactly one path segment: `/` cannot add a level, and a title
 /// that names nothing falls back to the calendar's id.
 fn segment(summary: Option<&str>, calendar: &str) -> String {
@@ -3097,11 +3176,11 @@ pub(crate) fn map_event(listing: &Listing, event: &GoogleEvent) -> Result<Mapped
                 url: video.uri.clone()?,
             })
         }),
-        attachments: event.attachments.iter().map(|a| WireAttachment {
-            url: a.file_url.clone(),
+        attachments: event.attachments.iter().filter_map(|a| Some(WireAttachment {
+            url: a.file_url.clone()?,
             title: a.title.clone().unwrap_or_default(),
             mime_type: a.mime_type.clone(),
-        }).collect(),
+        })).collect(),
     };
     let object = WireObject {
         oid: String::new(),
@@ -3239,13 +3318,16 @@ SKIP_AI_COMMIT=1 git commit -m "feat(gcal): pull every configured calendar's win
 
 ### Task 11: Events that vanish from the window
 
-PR 5. An instance moved past the horizon, and a deleted event Google has since purged, stop
-appearing with no cancelled item left behind, and dam would keep the old time as busy. The helper
-remembers, in the opaque `sync` token dam hands back as `since`, the remote id and end second of
-every live event it reported. An id it reported last time, whose calendar is still configured, whose
-end is still inside the window, and which this pull neither lists nor cancels, is reported as
-cancelled. If the event comes back into the window later, it arrives whole and moves back to
-confirmed at its new time, because dam still tracks it under the same id.
+PR 6. An instance moved past the horizon, a deleted event Google has since purged, and every event
+of a calendar the operator took off the address stop appearing with no cancelled item left behind,
+and dam would keep the old time as busy. The helper remembers, in the opaque `sync` token dam hands
+back as `since`, the remote id and end second of every live event it reported. An id it reported
+last time, whose end is still inside the window, and which this pull neither lists nor cancels, is
+reported as cancelled, whichever calendar it came from. So dropping a noisy calendar from the
+address frees its hours on the next pull rather than leaving them busy for up to 90 days. If an
+event comes back later, because it moved back into the window or its calendar went back on the
+address, it arrives whole and moves back to confirmed, because dam still tracks it under the same
+id.
 
 **Files:**
 - Create: `crates/dam-remote-gcal/src/memory.rs`
@@ -3253,7 +3335,7 @@ confirmed at its new time, because dam still tracks it under the same id.
 - Modify: `crates/dam-remote-gcal/tests/pull.rs`
 
 **Interfaces:**
-- Consumes: `calendar_of` (Task 10).
+- Consumes: `pull`, `Mapped` (Task 10).
 - Produces:
 
 ```rust
@@ -3263,7 +3345,7 @@ pub(crate) struct Memory { pub(crate) reported: std::collections::BTreeMap<Strin
 impl Memory {
     pub(crate) fn read(since: Option<&str>) -> Memory;    // an absent or unreadable token is an empty memory
     pub(crate) fn token(&self) -> String;
-    pub(crate) fn vanished(&self, seen: &std::collections::BTreeSet<String>, calendars: &[String], window_start: i64) -> Vec<String>;
+    pub(crate) fn vanished(&self, seen: &std::collections::BTreeSet<String>, window_start: i64) -> Vec<String>;
 }
 ```
 
@@ -3290,10 +3372,10 @@ mod tests {
     }
 
     #[test]
-    fn only_an_unseen_id_still_in_the_window_on_a_configured_calendar_has_vanished() {
+    fn an_unseen_id_still_in_the_window_has_vanished_whichever_calendar_it_came_from() {
         let m = memory(&[("primary/seen", 500), ("primary/moved", 500), ("primary/aged", 100), ("dropped@x/c", 500)]);
         let seen: BTreeSet<String> = ["primary/seen".to_string()].into();
-        assert_eq!(m.vanished(&seen, &["primary".into()], 200), vec!["primary/moved"]);
+        assert_eq!(m.vanished(&seen, 200), vec!["dropped@x/c", "primary/moved"]);
     }
 }
 ```
@@ -3319,15 +3401,17 @@ fn an_event_that_left_the_window_early_comes_back_cancelled_on_the_next_pull() {
 }
 
 #[test]
-fn a_calendar_taken_off_the_address_is_forgotten_rather_than_cancelled() {
-    let _guard = support::guard("a_calendar_taken_off_the_address_is_forgotten_rather_than_cancelled");
+fn a_calendar_taken_off_the_address_has_its_events_cancelled_once() {
+    let _guard = support::guard("a_calendar_taken_off_the_address_has_its_events_cancelled_once");
     let mut routes = HashMap::new();
     routes.insert("GET /calendar/v3/calendars/primary/events", page("me", serde_json::json!([event("a")])));
     routes.insert("GET /calendar/v3/calendars/team%40x/events", page("Team", serde_json::json!([event("b")])));
     let google = loopback::serve(routes);
     let first = pull(&api(&google.base), &["primary".into(), "team@x".into()], None, NOW.parse().unwrap()).unwrap();
     let second = pull(&api(&google.base), &["primary".into()], first.sync.as_deref(), NOW.parse().unwrap()).unwrap();
-    assert!(second.cancelled.is_empty());
+    assert_eq!(second.cancelled, vec!["team@x/b"], "its hours stop reading as busy");
+    let third = pull(&api(&google.base), &["primary".into()], second.sync.as_deref(), NOW.parse().unwrap()).unwrap();
+    assert!(third.cancelled.is_empty(), "reported once, then forgotten");
 }
 ```
 
@@ -3347,8 +3431,6 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 
-use crate::map::calendar_of;
-
 #[derive(Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct Memory {
     pub(crate) reported: BTreeMap<String, i64>,
@@ -3365,14 +3447,13 @@ impl Memory {
         serde_json::to_string(self).unwrap_or_default()
     }
 
-    pub(crate) fn vanished(&self, seen: &BTreeSet<String>, calendars: &[String], window_start: i64) -> Vec<String> {
+    /// An id reported last time, unseen now, whose end is still inside the
+    /// window. One that ended before the window is forgotten: time moved it
+    /// out, nothing removed it.
+    pub(crate) fn vanished(&self, seen: &BTreeSet<String>, window_start: i64) -> Vec<String> {
         self.reported
             .iter()
-            .filter(|(id, end)| {
-                !seen.contains(*id)
-                    && **end > window_start
-                    && calendar_of(id).is_some_and(|c| calendars.iter().any(|k| k == c))
-            })
+            .filter(|(id, end)| !seen.contains(*id) && **end > window_start)
             .map(|(id, _)| id.clone())
             .collect()
     }
@@ -3406,7 +3487,7 @@ pub fn pull(api: &CalendarApi, calendars: &[String], since: Option<&str>, now: T
             }
         }
     }
-    response.cancelled.extend(previous.vanished(&seen, calendars, window.from.as_second()));
+    response.cancelled.extend(previous.vanished(&seen, window.from.as_second()));
     response.sync = Some(next.token());
     Ok(response)
 }
@@ -3430,10 +3511,9 @@ SKIP_AI_COMMIT=1 git commit -m "feat(gcal): report an event that vanished from t
 
 ### Task 12: The protocol binary, and push refused
 
-PR 5. A push is answered per mutation, each refused with one sentence, so every other remote's push
-goes ahead and `dam status` says, against each event, why it did not reach Google. The helper reads
-no credential and sends no request on a push. dam's existing retry rule then resends a refused
-mutation on the next push, where it is refused again with the same sentence.
+PR 6. dam never sends this helper a push, because it declares no kinds (Task 7). A push that arrives
+anyway, from anything else that speaks the protocol, is answered per mutation, each refused with one
+sentence. The helper reads no credential and sends no request on a push.
 
 **Files:**
 - Create: `crates/dam-remote-gcal/src/push.rs`, `src/main.rs`
@@ -3535,7 +3615,7 @@ fn capabilities_need_no_credentials_and_a_pull_names_the_missing_variable_only()
     let home = tempfile::tempdir().unwrap();
     let google = google();
     let (responses, _) = converse(helper(home.path(), &["gcal", ""], &google.base, false), "{\"cmd\":\"capabilities\"}\n{\"cmd\":\"pull\",\"since\":null}\n");
-    assert!(matches!(&responses[0], Response::Capabilities(c) if c.kinds == vec!["event"]));
+    assert!(matches!(&responses[0], Response::Capabilities(c) if c.kinds.is_empty() && c.incremental));
     let Response::Error { error } = &responses[1] else { panic!("{:?}", responses[1]) };
     assert!(error.contains("DAM_GCAL_CLIENT_ID"), "{error}");
     assert!(google.seen().is_empty());
@@ -3689,6 +3769,8 @@ fn pull_now(remote: &str, address: &str, since: Option<&str>) -> Result<dam_prot
 }
 ```
 
+`lib.rs` gains `pub mod push;`, which `main.rs` imports as `dam_remote_gcal::push`.
+
 Copy the `a_non_decode_read_error_ends_the_loop_without_spinning_forever` unit test and its
 `FailingReader` from `crates/dam-remote-todoist/src/main.rs`, calling `run(&mut input, &mut out,
 "gcal", "")`.
@@ -3706,11 +3788,15 @@ means your primary calendar:
     client_id_command = ["security", "find-generic-password", "-w", "-s", "Google dam client id"]
     client_secret_command = ["security", "find-generic-password", "-w", "-s", "Google dam client"]
     refresh_token_command = ["security", "find-generic-password", "-w", "-s", "Google dam refresh"]
-    stale = "5m"
 
-A pull reads the week behind and the ninety days ahead, recurring events as their instances. The
-helper is read-only: `dam push` answers each event change sent to it with a refusal that `dam status`
-shows, and nothing reaches Google.
+A pull reads the week behind and the ninety days ahead, recurring events as their instances, and
+files each event under a folder named after its calendar's title. The remote is read-only: it
+declares no kinds, so `dam push` sends it nothing, and an event you make or change in dam stays in
+dam. `path` narrows what a push sends, so it does nothing for this remote.
+
+Pull it on a schedule: run `dam pull gcal` every few minutes from cron, launchd or a systemd timer,
+somewhere the three credential commands work without a terminal. Setting `stale` also keeps it
+fresh, but then whichever read finds it stale waits on Google first.
 ```
 
 - [ ] **Step 4: Run to verify pass**
@@ -3732,7 +3818,7 @@ comment) in its own commit, `docs(spec): dam-remote-gcal pulls read-only`. Pendi
 
 ### Task 13: When an event holds time
 
-PR 6. Needs PR 3 (`Attendee.is_self`).
+PR 7. Needs PR 3 (`Attendee.is_self`).
 
 **Files:**
 - Modify: `crates/dam-domain/src/when/mod.rs` (`When::instant`)
@@ -3895,7 +3981,7 @@ SKIP_AI_COMMIT=1 git commit -m "feat(event): an event's span in instants, and wh
 
 ### Task 14: The agenda use case
 
-PR 6.
+PR 7.
 
 **Files:**
 - Create: `crates/dam-application/src/use_cases/agenda.rs`
@@ -4064,13 +4150,15 @@ SKIP_AI_COMMIT=1 git commit -m "feat(agenda): events overlapping a window, each 
 
 ### Task 15: The `dam agenda` verb and its document
 
-PR 6.
+PR 7.
 
 The document is a contract with programs that read busy times, so its rules are stated once here and
 pinned by a test the executor must not loosen:
 
 - One top-level key, `events`, an array ordered by start and then oid.
-- Every event the window overlaps is a row, busy or not, cancelled ones included.
+- Every event the window overlaps is a row, busy or not, cancelled ones included. An event made in
+  dam with a `recurrence` is listed at its stored occurrence only; events pulled from Google arrive
+  as instances, so they are listed whole.
 - `start` and `end` are integers, epoch seconds, `end` exclusive. `busy` is a boolean: whether the
   event holds the calendar owner's time (Task 13's rule).
 - The other keys are dam's own vocabulary: `oid` (full), `subject`, `path`, `labels`, `status`,
@@ -4079,8 +4167,16 @@ pinned by a test the executor must not loosen:
   key it does not know.
 
 With no flags the window opens now and closes 24 hours later, so a program that runs
-`dam agenda --json` with no other argument gets every event in progress and every event of the next
-day. A day of events measures a few kilobytes.
+`dam agenda --json --no-pull` with no other argument gets every event in progress and every event of
+the next day. A day of events measures a few kilobytes.
+
+A program that reads on a deadline passes `--no-pull`, always. Without it, `agenda` pulls every
+remote whose `stale` has passed before answering, like `ls`, and a pull can take longer than any
+deadline: credential commands, a token exchange, and a page or more per calendar. The store is kept
+fresh by a separately scheduled `dam pull <remote>`, and Task 16's `--max-age` makes the reader
+refuse an answer that scheduled pull has stopped refreshing. The binary test in Step 2 pins that
+`--no-pull` runs no credential command and launches no helper, which is every way dam reaches the
+network.
 
 **Files:**
 - Modify: `crates/dam-cli/src/args/reading.rs` (`AgendaArgs`), `crates/dam-cli/src/args.rs`
@@ -4190,9 +4286,9 @@ mod tests {
 }
 ```
 
-`dam agenda --no-pull` being accepted is pinned through the real binary in Step 2
-(`dam_agenda_takes_no_pull_and_answers_from_the_store`); every other verb's refusal of the flag is
-already pinned by the existing `--no-pull` tests and must stay green.
+`dam agenda --no-pull` is pinned through the real binary in Step 2
+(`agenda_no_pull_runs_no_credential_command_and_no_helper`); every other verb's refusal of the flag
+is already pinned by the existing `--no-pull` tests and must stay green.
 
 - [ ] **Step 2: Write the failing binary test**
 
@@ -4229,13 +4325,35 @@ fn dam_agenda_json_answers_every_event_in_the_window_as_intervals() {
     assert_eq!(busy_intervals(&out), vec![(1_790_294_400, 1_790_380_800, true), (1_790_344_800, 1_790_346_600, true)]);
 }
 
+/// A reader on a deadline runs `agenda --no-pull`: however stale a remote
+/// is, no credential command and no helper runs, and those are the only ways
+/// dam reaches a vault or the network.
 #[test]
-fn dam_agenda_takes_no_pull_and_answers_from_the_store() {
-    let _guard = support::guard("dam_agenda_takes_no_pull_and_answers_from_the_store");
+fn agenda_no_pull_runs_no_credential_command_and_no_helper() {
+    let _guard = support::guard("agenda_no_pull_runs_no_credential_command_and_no_helper");
     let sb = Sandbox::new();
+    let resolved = sb.dir.path().join("credential-command-ran");
+    // The fake helper writes this file as soon as it starts.
+    let launched = sb.dir.path().join("token.txt");
+    std::fs::write(
+        sb.dir.path().join("config.toml"),
+        format!(
+            "[remote.fake]\nurl = \"fake::\"\napi_token_command = [\"sh\", \"-c\", \"touch '{}'; echo tok-123\"]\nstale = \"1s\"\n",
+            resolved.display()
+        ),
+    )
+    .unwrap();
+
     let (ok, out, err) = sb.dam(&["agenda", "--no-pull", "--json"]);
     assert!(ok, "{err}");
     assert_eq!(busy_intervals(&out), vec![]);
+    assert!(!resolved.exists(), "--no-pull ran a credential command");
+    assert!(!launched.exists(), "--no-pull launched a helper");
+
+    let (ok, _, err) = sb.dam(&["agenda", "--json"]);
+    assert!(ok, "{err}");
+    assert!(resolved.exists(), "without the flag the stale remote's credential command runs");
+    assert!(launched.exists(), "without the flag the stale remote is pulled");
 }
 ```
 
@@ -4347,11 +4465,16 @@ README, under "Reading it from a program":
      "labels": [], "status": "confirmed", "transparency": "busy", "all_day": false,
      "start": 1790344800, "end": 1790346600, "busy": true}]}
 
-`start` and `end` are epoch seconds, `end` exclusive; `busy` says whether the event holds your time:
-not cancelled, shown busy, and not declined by you. Every event the window overlaps is listed, busy
-or not. With no flags the window runs from now to 24 hours later; `--from` and `--to` take the same
-words `--due` does, and a query narrows it the way `dam ls` reads one. Keys are only ever added, never
-renamed or retyped. Like `ls`, `agenda` pulls a stale remote first unless given `--no-pull`.
+`start` and `end` are epoch seconds, `end` exclusive; `busy` says whether the event holds time: not
+cancelled, shown busy, and not declined by the attendee that stands for the calendar the event came
+from. Every event the window overlaps is listed, busy or not; a recurring event made in dam is
+listed at its stored occurrence only. With no flags the window runs from now to 24 hours later;
+`--from` and `--to` take the same words `--due` does, and a query narrows it the way `dam ls` reads
+one. Keys are only ever added, never renamed or retyped.
+
+Like `ls`, `agenda` pulls a stale remote first unless given `--no-pull`. A program that reads on a
+deadline always passes `--no-pull`, so its answer never waits on the network or a credential
+command, and keeps the store fresh with a separately scheduled `dam pull <remote>`.
 ```
 
 - [ ] **Step 5: Run to verify pass**
@@ -4359,15 +4482,348 @@ renamed or retyped. Like `ls`, `agenda` pulls a stale remote first unless given 
 Run: `just gates`
 Expected: clean; the two binary tests inside a second each.
 
-- [ ] **Step 6: Commit, and apply the amendment once approved**
+- [ ] **Step 6: Commit**
 
 ```bash
 SKIP_AI_COMMIT=1 git add crates/dam-cli README.md
 SKIP_AI_COMMIT=1 git commit -m "feat(agenda): dam agenda lists events as intervals with a busy reading"
 ```
 
-Once Amendment A5 is approved, apply it in its own commit, `docs(spec): dam agenda and its
-document`. Pending: stop and ask.
+---
+
+### Task 16: `--max-age`: no answer from a store the pulls stopped refreshing
+
+PR 7. A reader that passes `--no-pull` never refreshes the store itself, so when the scheduled pull
+stops working (an expired sign-in, a vault that will not open without a terminal, a local edit that
+makes every pull refuse with `dirty_on_pull`) the agenda would keep answering from the last good
+pull with exit 0, and a meeting booked since would read as a clear calendar. `--max-age
+<remote>=<duration>` turns that into a refusal: when the named remote's last successful pull is
+older than the duration, or it has never pulled, `agenda` prints no document and exits 4 with the
+rule `stale_remote` and one sentence on standard error.
+
+Where the last successful pull is kept: dam already records it, so this task adds no storage. The
+store's `pulls` table (`remote TEXT PRIMARY KEY, at TEXT NOT NULL`, migration V1 in
+`crates/dam-adapters/src/sqlite/migrations.rs`) holds one row per remote. `pull`
+(`crates/dam-application/src/use_cases/pull.rs`) writes it through
+`RemoteTrackingRepository::set_last_pull` as the last step of the landing transaction, after the
+objects, the removals and the sync token. A pull that fails before landing never reaches that step,
+and one that fails while landing rolls the whole transaction back, so the time moves only when a
+pull succeeds; a pull that brings nothing new still lands and still moves it. `last_pull` reads it,
+and `dam remote list` already shows it.
+
+The check runs after the stale-pull pass and before the listing, so without `--no-pull` a pull that
+just succeeded counts. It reads the store only: it spawns nothing and needs no credential.
+
+**Files:**
+- Create: `crates/dam-application/src/use_cases/freshness.rs`
+- Create: `crates/dam-application/src/errors/refusal_display.rs` (the existing `Display`, moved)
+- Modify: `crates/dam-application/src/errors.rs` (`Refusal::StaleRemote`, its rule word),
+  `crates/dam-application/src/use_cases/mod.rs`, `crates/dam-application/src/lib.rs`
+- Modify: `crates/dam-adapters/src/lib.rs` (export `parse_duration`)
+- Modify: `crates/dam-cli/src/args/reading.rs` (`AgendaArgs::max_age`),
+  `crates/dam-cli/src/commands/agenda.rs`, `crates/dam-cli/src/error.rs`
+- Modify: `crates/dam-cli/tests/agenda.rs`, `README.md`
+
+**Interfaces:**
+- Consumes: `RemoteTrackingRepository::last_pull`, `Clock`, `Config::remote`, `run_agenda` (Task 15),
+  `parse_duration` (`dam-adapters`, the reader of `stale`).
+- Produces:
+
+```rust
+// errors.rs, a new Refusal variant; rule word "stale_remote"
+/// A remote pulled longer ago than a reader's `--max-age` allows, or never.
+StaleRemote { remote: String, age: Option<u64>, limit: u64 },   // seconds
+
+// use_cases/freshness.rs
+pub fn require_fresh(
+    remote_tracking: &dyn RemoteTrackingRepository,
+    clock: &dyn Clock,
+    config: &Config,
+    bounds: &[(String, std::time::Duration)],
+) -> Result<(), UseCaseError>;
+
+// args/reading.rs, in AgendaArgs
+#[arg(long = "max-age", value_name = "REMOTE=DURATION")]
+pub(crate) max_age: Vec<String>,
+```
+
+Exported from `lib.rs` as `pub use use_cases::freshness::require_fresh;`.
+
+- [ ] **Step 1: Move `Refusal`'s `Display` out of `errors.rs`**
+
+`errors.rs` holds 248 implementation lines, and the new variant would take it past 250. Move the
+whole `impl fmt::Display for Refusal` block, unchanged, into `errors/refusal_display.rs` (with the
+`use` lines it needs), declare `mod refusal_display;` in `errors.rs`, and run `just gates`: every
+test passes with no other change. Commit it on its own:
+
+```bash
+SKIP_AI_COMMIT=1 git add crates/dam-application/src/errors.rs crates/dam-application/src/errors/refusal_display.rs
+SKIP_AI_COMMIT=1 git commit -m "refactor(errors): move the refusal sentences into their own file"
+```
+
+- [ ] **Step 2: Write the failing use-case tests**
+
+```rust
+// crates/dam-application/src/use_cases/freshness.rs, at the bottom
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use jiff::SignedDuration;
+    use jiff::civil::date;
+
+    use super::*;
+    use crate::config::RemoteConfig;
+    use crate::errors::Refusal;
+    use crate::ports::RemoteName;
+    use crate::testing::prelude::*;
+    use crate::testing::{FixedClock, MemoryStore};
+
+    const HOUR: Duration = Duration::from_secs(3600);
+
+    fn clock() -> FixedClock {
+        FixedClock(date(2026, 9, 18))
+    }
+
+    fn config() -> Config {
+        Config {
+            remotes: vec![RemoteConfig {
+                name: RemoteName("gcal".into()),
+                helper: "gcal".into(),
+                url: "gcal::".into(),
+                credentials: vec![],
+                stale: None,
+                deadline: None,
+                path: None,
+            }],
+            ..Config::default()
+        }
+    }
+
+    fn pulled_ago(ago: SignedDuration) -> MemoryStore {
+        let store = MemoryStore::new();
+        let at = clock().now().checked_sub(ago).unwrap();
+        store.set_last_pull(&RemoteName("gcal".into()), at).unwrap();
+        store
+    }
+
+    fn check(store: &MemoryStore, remote: &str) -> Result<(), UseCaseError> {
+        require_fresh(store, &clock(), &config(), &[(remote.into(), HOUR)])
+    }
+
+    #[test]
+    fn a_pull_inside_the_bound_answers() {
+        assert_eq!(check(&pulled_ago(SignedDuration::from_mins(59)), "gcal"), Ok(()));
+    }
+
+    #[test]
+    fn a_pull_older_than_the_bound_is_refused_with_its_age() {
+        let refused = check(&pulled_ago(SignedDuration::from_hours(2)), "gcal").unwrap_err();
+        assert_eq!(
+            refused,
+            UseCaseError::Refused(Refusal::StaleRemote { remote: "gcal".into(), age: Some(7200), limit: 3600 })
+        );
+        assert_eq!(
+            refused.to_string(),
+            "remote \"gcal\" last pulled 7200s ago, longer than --max-age allows (3600s); run dam pull gcal"
+        );
+    }
+
+    #[test]
+    fn a_remote_never_pulled_is_refused() {
+        let refused = check(&MemoryStore::new(), "gcal").unwrap_err();
+        assert_eq!(refused.to_string(), "remote \"gcal\" has never been pulled; run dam pull gcal");
+    }
+
+    #[test]
+    fn a_bound_on_a_remote_the_config_does_not_name_is_no_such_remote() {
+        let refused = check(&MemoryStore::new(), "nope").unwrap_err();
+        assert_eq!(refused, UseCaseError::Refused(Refusal::NoSuchRemote("nope".into())));
+    }
+}
+```
+
+- [ ] **Step 3: Write the failing binary tests**
+
+Append to `crates/dam-cli/tests/agenda.rs`:
+
+```rust
+fn error_document(out: &std::process::Output) -> serde_json::Value {
+    serde_json::from_slice(&out.stderr).unwrap_or_else(|e| panic!("stderr is not one JSON document: {e}"))
+}
+
+/// A store nothing has pulled into is refused under `--max-age`, not
+/// answered as a clear calendar; once a pull lands, the same read answers.
+#[test]
+fn max_age_refuses_a_remote_never_pulled_and_answers_once_one_lands() {
+    let _guard = support::guard("max_age_refuses_a_remote_never_pulled_and_answers_once_one_lands");
+    let sb = Sandbox::new();
+    let never = sb.output(&["agenda", "--json", "--no-pull", "--max-age", "fake=1h"]);
+    assert_eq!(never.status.code(), Some(4));
+    assert!(never.stdout.is_empty(), "a refused read prints no document");
+    let refusal = error_document(&never);
+    assert_eq!(refusal["error"]["rule"], "stale_remote");
+    assert_eq!(refusal["error"]["message"], "remote \"fake\" has never been pulled; run dam pull fake");
+
+    let (ok, _, err) = sb.dam(&["pull", "fake"]);
+    assert!(ok, "{err}");
+    let (ok, out, err) = sb.dam(&["agenda", "--json", "--no-pull", "--max-age", "fake=1h"]);
+    assert!(ok, "{err}");
+    assert_eq!(busy_intervals(&out), vec![]);
+}
+
+#[test]
+fn max_age_takes_a_configured_remote_and_a_duration_it_can_read() {
+    let _guard = support::guard("max_age_takes_a_configured_remote_and_a_duration_it_can_read");
+    let sb = Sandbox::new();
+    let unknown = sb.output(&["agenda", "--json", "--no-pull", "--max-age", "nope=1h"]);
+    assert_eq!(unknown.status.code(), Some(4));
+    assert_eq!(error_document(&unknown)["error"]["rule"], "no_such_remote");
+    for unreadable in ["fake", "fake=", "=1h", "fake=soon", "fake=1d"] {
+        let out = sb.output(&["agenda", "--no-pull", "--max-age", unreadable]);
+        assert_eq!(out.status.code(), Some(2), "{unreadable}");
+    }
+}
+```
+
+A pull older than the bound is pinned in Step 2 with a fixed clock; the binary runs on the real one,
+and a test that waited out a bound would break the one-second rule.
+
+- [ ] **Step 4: Run to verify failure**
+
+Run: `cargo test -p dam-application freshness && cargo test -p damnit agenda`
+Expected: unresolved `require_fresh` and `Refusal::StaleRemote`; the two `max_age` binary tests
+fail with exit 2 where they expect 4, clap's `unexpected argument '--max-age'`.
+
+- [ ] **Step 5: Implement**
+
+```rust
+// crates/dam-application/src/use_cases/freshness.rs
+//! A reader's bound on how long ago a remote last pulled.
+
+use std::time::Duration;
+
+use crate::config::Config;
+use crate::errors::{Refusal, UseCaseError};
+use crate::ports::{Clock, RemoteTrackingRepository};
+
+/// Refuses when a named remote last pulled successfully longer ago than its
+/// bound, or never has. A clock set back since the pull reads as age zero.
+pub fn require_fresh(
+    remote_tracking: &dyn RemoteTrackingRepository,
+    clock: &dyn Clock,
+    config: &Config,
+    bounds: &[(String, Duration)],
+) -> Result<(), UseCaseError> {
+    let now = clock.now();
+    for (name, bound) in bounds {
+        let remote = config
+            .remote(name)
+            .ok_or_else(|| Refusal::NoSuchRemote(name.clone()))?;
+        let age = remote_tracking
+            .last_pull(&remote.name)?
+            .map(|at| u64::try_from(now.duration_since(at).as_secs()).unwrap_or(0));
+        let limit = bound.as_secs();
+        if age.is_none_or(|a| a > limit) {
+            return Err(Refusal::StaleRemote { remote: name.clone(), age, limit }.into());
+        }
+    }
+    Ok(())
+}
+```
+
+In `errors.rs`, the variant from the interface block goes after `MissingCredential`, and `name()`
+gains `Refusal::StaleRemote { .. } => "stale_remote",`. Its tests keep a sample of every variant, so
+`RULE_COUNT` becomes 19, `slot` gains `Refusal::StaleRemote { .. } => 18,`, and `every_refusal`
+gains `Refusal::StaleRemote { remote: "gcal".into(), age: None, limit: 900 }`. In
+`errors/refusal_display.rs`:
+
+```rust
+            Refusal::StaleRemote { remote, age: None, .. } => {
+                write!(f, "remote {remote:?} has never been pulled; run dam pull {remote}")
+            }
+            Refusal::StaleRemote { remote, age: Some(age), limit } => write!(
+                f,
+                "remote {remote:?} last pulled {age}s ago, longer than --max-age allows ({limit}s); run dam pull {remote}"
+            ),
+```
+
+`use_cases/mod.rs` gains `pub(crate) mod freshness;`. In `crates/dam-cli/src/error.rs`,
+`refusal_oids` lists `Refusal::StaleRemote { .. }` with the refusals that name no object.
+`crates/dam-adapters/src/lib.rs` adds `parse_duration` to its `pub use toml_config::{...}` line.
+
+`AgendaArgs` gains the field from the interface block, documented
+`/// Refuse to answer when REMOTE last pulled longer ago than DURATION (such as 90s, 15m or 2h), or never. Repeatable.`
+Task 15's test helper `args` sets `max_age: vec![]`. In `commands/agenda.rs`:
+
+```rust
+use std::time::Duration;
+
+use dam_adapters::parse_duration;
+use dam_application::require_fresh;
+
+pub(crate) fn run_agenda(ctx: &mut Context, args: AgendaArgs) -> Result<Report, CliError> {
+    let window = window(ctx, &args)?;
+    let bounds = max_ages(&args.max_age)?;
+    maybe_pull_stale(ctx)?;
+    require_fresh(ctx.store.as_ref(), ctx.clock.as_ref(), &ctx.config, &bounds)?;
+    let found = agenda(ctx.store.as_ref(), ctx.clock.as_ref(), &ctx.config, args.query.as_deref(), window, &ctx.tz)?;
+    let rows = found.iter().map(row).collect::<Result<Vec<_>, _>>()?;
+    Ok(Report {
+        human: found.iter().map(|s| line(s, &ctx.tz)).collect::<Vec<_>>().join("\n"),
+        data: serde_json::json!({ "events": rows }),
+    })
+}
+
+/// Each `--max-age <remote>=<duration>`, the duration read the way `stale` is.
+fn max_ages(texts: &[String]) -> Result<Vec<(String, Duration)>, CliError> {
+    texts
+        .iter()
+        .map(|text| {
+            let unreadable = || CliError::Usage(format!("--max-age {text:?}: expected <remote>=<number><s|m|h>"));
+            let (remote, age) = text.split_once('=').ok_or_else(unreadable)?;
+            if remote.is_empty() {
+                return Err(unreadable());
+            }
+            let age = parse_duration("--max-age", age).map_err(|_| unreadable())?;
+            Ok((remote.to_string(), age))
+        })
+        .collect()
+}
+```
+
+The flags are read before the stale-pull pass, as the window is, so a mistyped `--max-age` exits 2
+without spawning a helper.
+
+README, appended to the `dam agenda` section:
+
+```markdown
+`--max-age <remote>=<duration>` makes the answer depend on that remote being fresh. When its last
+successful pull is older than the duration, or it has never pulled, `agenda` prints nothing on
+standard output and exits 4, rule `stale_remote`, with one sentence on standard error. A failed pull
+never counts as fresh, so a scheduled pull that keeps failing (an expired sign-in, a vault that will
+not open) reaches the reader as a refusal rather than as yesterday's calendar. A program that polls
+every couple of minutes, with `dam pull gcal` scheduled every five, runs:
+
+    dam agenda --json --no-pull --max-age gcal=15m
+
+Repeat the flag to bound more than one remote.
+```
+
+- [ ] **Step 6: Run to verify pass**
+
+Run: `just gates`
+Expected: clean; the binary tests inside a second each.
+
+- [ ] **Step 7: Commit, and apply the amendment once approved**
+
+```bash
+SKIP_AI_COMMIT=1 git add crates/dam-application crates/dam-adapters/src/lib.rs crates/dam-cli README.md
+SKIP_AI_COMMIT=1 git commit -m "feat(agenda): --max-age refuses an answer from a remote pulled too long ago"
+```
+
+This is PR 7's last task. Once Amendment A5 is approved, apply it in its own commit,
+`docs(spec): dam agenda, its document and --max-age`. Pending: stop and ask.
 
 ---
 
@@ -4396,7 +4852,9 @@ the operator to say which calendars to read.
 > the address is the helper's to read.
 
 **Recommendation: approve.** It is git's exact shape, costs one line in the process adapter, and the
-Todoist helper keeps working unchanged because it ignores its arguments.
+Todoist helper keeps working unchanged because it ignores its arguments. The cost: an address is on
+the helper's command line, so the calendar ids in it (email addresses) show in `ps` while a helper
+runs. A new helper under an older dam fails loudly on the missing arguments rather than half-working.
 
 ### A2. An attendee says whether it is the calendar's own (Task 5)
 
@@ -4430,7 +4888,7 @@ Rule 3 gains: "A cancellation upstream is a status, not a removal: the event sta
 
 **Recommendation: approve.**
 
-### A4. dam-remote-gcal, read-only, and how its refresh token is minted (Tasks 3 and 12)
+### A4. dam-remote-gcal, read-only, and how its refresh token is minted (Tasks 3, 11 and 12)
 
 **Where:** "Helpers in this repository", "Credentials", and the `[remote.gcal]` config example.
 
@@ -4440,52 +4898,106 @@ Rule 3 gains: "A cancellation upstream is a status, not a removal: the event sta
 > comma-separated, and an empty address reads the primary calendar: `gcal::primary,team@group.calendar.google.com`.
 > A pull reads the week behind and the ninety days ahead, with recurring events as their instances,
 > so it declares no `recurrence`, and none of `labels`, `depends` or `reminders`, which stay `dam`'s
-> own. An event Google cancelled, and one that left that window early, arrive by id as cancelled.
-> A push is answered per mutation with a refusal naming the helper as read-only, and nothing reaches
-> Google. It reads one variable of its own, `DAM_GCAL_BASE_URL`, under the same loopback-only rule
-> as the Todoist helper's.
+> own. It files each event under a path named after its calendar's title. An event Google
+> cancelled, one that left that window early, and every event of a calendar taken off the address
+> arrive by id as cancelled, so none of them keeps reading as busy; one that comes back arrives
+> whole and is confirmed again. It declares no kinds, so `dam` pushes it nothing (see the protocol's
+> `kinds`); a push that reaches it anyway is refused per mutation, and nothing reaches Google. It
+> reads one variable of its own, `DAM_GCAL_BASE_URL`, under the same loopback-only rule as the
+> Todoist helper's. Keep it fresh with a scheduled `dam pull gcal` rather than `stale`, so no read
+> waits on Google.
 >
 > **Signing in.** The package also installs `dam-gcal-sign-in`, which the operator runs once:
 > `dam-gcal-sign-in --client-id <id>`, the client secret piped on standard input and refused from a
 > terminal or an argument. It walks Google's installed-app consent (a loopback redirect, PKCE with
 > S256), asks for `calendar.events.readonly` alone, prints the refresh token once on standard output
-> and writes it nowhere. The operator stores it where `refresh_token_command` reads it.
+> and writes it nowhere. The operator stores it where `refresh_token_command` reads it. Publish the
+> OAuth consent screen first: while its publishing status is "Testing", Google issues refresh tokens
+> that expire after 7 days, and every pull then fails with `invalid_grant` until the operator signs
+> in again.
 
-The config example's `[remote.gcal]` gains the comment `# url = "gcal::primary,team@group.calendar.google.com" reads two calendars`.
+The config example's `[remote.gcal]` loses `path = "calendar/"` and `stale = "5m"`, and gains the
+comment `# url = "gcal::primary,team@group.calendar.google.com" reads two calendars; pull it on a
+schedule`. `path` narrows what a push sends, and this remote takes no push, so the line did nothing;
+it also suggested pulled events land under `calendar/`, when they land under each calendar's title.
 
 **Why:** the spec reads the refresh token from the vault but never says how a person gets one, and
-it says nothing about which calendars, which slice of time, or what read-only means for a push.
+it says nothing about which calendars, which slice of time, what read-only means for a push, or what
+happens to a calendar the operator stops reading.
 
 **Recommendation: approve.** Decisions inside it the operator may want to change: the window (a week
-back, ninety days ahead), the scope (read-only, so two-way sync later means signing in again), and
-the sign-in being a binary of its own rather than a `dam` verb.
+back, ninety days ahead), the scope (read-only, so two-way sync later means signing in again), the
+sign-in being a binary of its own rather than a `dam` verb, and a dropped calendar's events turning
+cancelled rather than being deleted (they stay in the store, marked cancelled, and come back if the
+calendar does).
 
-### A5. `dam agenda` (Task 15)
+### A5. `dam agenda` and `--max-age` (Tasks 15 and 16)
 
-**Where:** "Commands", "Reading", and the `--no-pull` paragraph.
+**Where:** "Commands", "Reading", the `--no-pull` paragraph, and "The error document"'s list of rule
+words.
 
 **Proposed text:**
 
 > ```
-> dam agenda [<query>] [--from <when>] [--to <when>] [--json|--toon] [--no-pull]
+> dam agenda [<query>] [--from <when>] [--to <when>] [--max-age <remote>=<duration>]... [--json|--toon] [--no-pull]
 > ```
 >
 > `dam agenda` lists the events a window overlaps as intervals, for a program that schedules around
 > busy time. It answers `{"events": [...]}`, ordered by start: each row carries `oid`, `subject`,
 > `path`, `labels`, `status`, `transparency` and `all_day`, and three keys a scheduler reads,
-> `start` and `end` as epoch seconds with `end` exclusive, and `busy`, whether the event holds the
-> calendar owner's time: not cancelled, shown busy, and not declined by the calendar's own attendee.
-> Every event the window overlaps is listed, busy or not. An all-day event runs midnight to midnight
-> where `dam` runs. With no flags the window opens now and closes 24 hours later. Keys are only ever
-> added; none is renamed, removed or retyped.
+> `start` and `end` as epoch seconds with `end` exclusive, and `busy`, whether the event holds time:
+> not cancelled, shown busy, and not declined by the attendee that stands for the calendar the event
+> was read from. That attendee is per calendar, so a meeting on two configured calendars is two rows,
+> and declining it marks only the copy on the calendar that is yours. Every event the window
+> overlaps is listed, busy or not; an event made in `dam` with a `recurrence` is listed at its stored
+> occurrence only, while a helper that expands recurrence into instances, as `dam-remote-gcal` does,
+> has each instance listed. An all-day event runs midnight to midnight where `dam` runs. With no
+> flags the window opens now and closes 24 hours later. Keys are only ever added; none is renamed,
+> removed or retyped.
+>
+> A program that reads on a deadline runs `dam agenda --json --no-pull`, so the answer never waits on
+> a pull, and keeps the store fresh with a separately scheduled `dam pull <remote>`, run where the
+> remote's credential commands work without a terminal. `--max-age <remote>=<duration>` then guards
+> that schedule: when the remote's last successful pull is older than the duration, or it has never
+> pulled, `agenda` prints no document and exits 4 with the rule `stale_remote`, so a pull that keeps
+> failing reaches the reader as a refusal rather than as an old answer that looks current. The time
+> it reads is the one `dam remote list` reports, written only when a pull lands.
 
-The `--no-pull` paragraph's "`ls` and `show`" becomes "`ls`, `show` and `agenda`".
+The `--no-pull` paragraph's "`ls` and `show`" becomes "`ls`, `show` and `agenda`". The list of rule
+words gains `stale_remote`.
 
 **Why:** `dam ls --json` carries events with their times as zoned text nested under `event`, which a
 scheduler would have to parse and filter itself, and nothing in dam says whether an event holds time.
+A reader with a deadline cannot afford the stale-pull pass, and without it nothing tells the reader
+that the store stopped being refreshed: the documents carry no freshness, and a one-command reader
+cannot also run `dam remote list`.
 
-**Recommendation: approve,** including the name. Alternatives considered for the name were weaker
-because no git word fits and `agenda` is the word calendar tools already use for this listing.
+**Recommendation: approve,** including the name: no git word fits, and `agenda` is the word calendar
+tools already use for this listing. A `last_pull` key in the document would serve a reader that wants
+to show freshness; it is left out until one does, because `--max-age` covers a reader that only needs
+to refuse.
+
+### A6. A helper that declares no kinds is read-only (Task 7)
+
+**Where:** "Protocol", the paragraph after the capabilities exchange, and "Remotes", the paragraph on
+`push`.
+
+**Proposed text,** replacing "`kinds` and `fields` are what the helper will accept on push and return
+on pull":
+
+> `kinds` is what the helper accepts on push, and `fields` is what it accepts on push and returns on
+> pull. A helper that declares no kinds is read-only: `dam` sends it no mutation, so a push reaches
+> it, sends nothing, and marks its commits pushed, with nothing refused or retried. Its pulls land as
+> any other, and `fields` still bounds what a pulled object may overwrite.
+
+**Why:** `dam` already behaves this way: a push builds a mutation only for an object whose kind the
+remote declares, and a pull never reads `kinds`. The spec's sentence says `kinds` also describes what
+a pull returns, which would make a read-only helper declare `event` and then have every event made in
+`dam` pushed to it, refused, and resent on every push with a notice each time. `dam-remote-gcal` is
+the first helper to rely on this; Task 7 pins it with a test in core.
+
+**Recommendation: approve.** A `push: false` capability would say the same thing with a new protocol
+field and new code in core, for no behavior this lacks.
 
 ## Follow-ups this plan does not do
 
@@ -4495,29 +5007,42 @@ because no git word fits and `agenda` is the word calendar tools already use for
   hardcoding `DAM_TODOIST_API_TOKEN`. A one-task change to that helper.
 - **Commits no remote will take still count as owed.** A gcal pull commit is marked pushed for gcal
   only, so `dam status` lists it as owed to Todoist until the next `dam push` skips it; the reverse
-  holds for Todoist's pull commits. This predates this plan and first shows with a second remote.
+  holds for Todoist's pull commits, and for every local commit against gcal. This predates this plan
+  and first shows with a second remote.
+- **A push still connects to a read-only remote.** `dam push` with no remote named launches
+  `dam-remote-gcal` and runs its three credential commands to learn it takes nothing, because
+  capabilities arrive only after launch. Sending nothing is correct; skipping the connection needs a
+  config-level signal and is worth adding only if the credential commands prove slow or prompt.
+- **Expanding a recurring event made in dam into its occurrences** in `dam agenda`. A5 states the
+  limit, and expanding occurrences over a window is a change of its own.
+- **`--max-age` on `ls` and `show`.** Only `agenda` is a contract with programs that read on a
+  deadline today.
+- **A `last_pull` key in the agenda document**, for a reader that wants to show how fresh its answer
+  is rather than refuse. `--max-age` covers refusing with no code in the reader.
+- **Refusing a terminal on the sign-in's standard output.** The refresh token is the stronger secret,
+  but a terminal is how most people copy it into a vault that has no command-line add; refusing it
+  would route the token through the clipboard instead, which is no safer.
 - **`fromGmail` events** read as `default`, because dam's `event_type` has no value for them.
-- **A notice per refused push.** dam resends a refused mutation on every push and records a notice
-  each time; notices are capped, not deduplicated.
 
 ## Self-review notes
 
 - Spec coverage: the helper (Tasks 7 to 12) pulls with an OAuth refresh token, declares the spec's
   three credentials, reads them through dam's existing `*_command` resolution, maps every Event field
   the spec lists, and ships as its own package. The sign-in (Tasks 1 to 3) answers the spec's silence
-  on minting the token. The listing (Tasks 13 to 15) is generic, names no consumer, and its default
-  window with argv alone covers every event in progress now.
-- Read-only is enforced twice: the scope Google grants, and a push path that reads no credential and
-  sends no request (`a_push_is_refused_per_mutation_without_a_credential_or_a_request`).
+  on minting the token. The listing (Tasks 13 to 16) is generic, names no consumer, and is read on a
+  deadline with `--no-pull --max-age`, which touches the store alone.
+- Read-only is enforced three times: the scope Google grants, the helper declaring no kinds so dam
+  sends it nothing (`a_remote_that_declares_no_kinds_is_sent_nothing_and_owed_nothing`), and a push
+  path that reads no credential and sends no request
+  (`a_push_is_refused_per_mutation_without_a_credential_or_a_request`).
 - Secrets: every test that could leak one asserts its absence from standard error, the error string
   and `Debug`. The helper spawns no process, so no credential reaches a child's environment; the
   sign-in reads the client secret from standard input, never argv or the environment.
 - Type consistency: `Secret`, `Client`, `Endpoints`, `ApiError`, `Window` (helper) and `Window`
   (application) are distinct types in distinct crates and are never imported into one file together.
 - The code in this plan was compiled and run before it was written down, in scratch copies outside
-  this repository, on 2026-09-22 at `main` `bae8a19`: Tasks 1 to 3 and 7 to 12 as a standalone
-  `dam-remote-gcal` over a copy of `dam-protocol` carrying Tasks 4 to 6, and Tasks 4, 5, 6, 13, 14
-  and 15 applied to a clone of this repository. `cargo clippy --all-targets -- -D warnings` was
-  clean for both, the helper's 63 tests and the workspace's 547 passed, and `just size` passed.
-  Prose-described pieces (`checked_base`, `Secret`, `bounded`, the resources) were written from the
-  task text alone, which is what an executor will have.
+  this repository, at `main` `bae8a19`: Tasks 1 to 3 and 7 to 12 as a standalone `dam-remote-gcal`
+  over a copy of `dam-protocol` carrying Tasks 4 to 6, and Tasks 4 to 7's core test and 13 to 16
+  applied to a clone of this repository. `cargo clippy --all-targets -- -D warnings` was clean for
+  both, and `just size` passed. Prose-described pieces (`checked_base`, `Secret`, `bounded`, the
+  resources) were written from the task text alone, which is what an executor will have.
