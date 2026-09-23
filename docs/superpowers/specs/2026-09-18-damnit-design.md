@@ -530,6 +530,15 @@ points it at a test server instead of Todoist. It accepts only `http://127.0.0.1
 `http://localhost:<port>` and refuses anything else, so the variable cannot send the bearer token
 to another host.
 
+**Signing in.** The package also installs `dam-gcal-sign-in`, which the operator runs once:
+`dam-gcal-sign-in --client-id <id>`, the client secret piped on standard input and refused from a
+terminal or an argument. It walks Google's installed-app consent (a loopback redirect, PKCE with
+S256), asks for `calendar.events.readonly` alone, prints the refresh token once on standard output
+and writes it nowhere. The operator stores it where `refresh_token_command` reads it. Publish the
+OAuth consent screen first: while its publishing status is "Testing", Google issues refresh tokens
+that expire after 7 days, and every pull then fails with `invalid_grant` until the operator signs in
+again.
+
 A native remote, `dam-remote-https` against a server that speaks this protocol, is a later
 helper and out of scope here.
 
