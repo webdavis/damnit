@@ -189,6 +189,39 @@ fn an_exchange_answering_no_refresh_token_is_refused_by_name() {
     }
 }
 
+/// The state is what ties a redirect to this walk, and the verifier is what
+/// ties the exchange to it, so each walk draws both afresh.
+#[test]
+fn each_walk_announces_its_own_state_and_challenge() {
+    let _guard = support::guard("each_walk_announces_its_own_state_and_challenge");
+    let google = loopback::serve(HashMap::new());
+    let sign_in = SignIn::new(Endpoints::loopback(&google.base).unwrap());
+    let mut announced = Vec::new();
+    for _ in 0..2 {
+        let mut browser = None;
+        let _ = sign_in.mint(&client(), &mut |url| {
+            announced.push(loopback::fields(query_of(url)));
+            browser = Some(browse(url, |state| {
+                format!("error=access_denied&state={state}")
+            }));
+        });
+        let _ = browser.map(|b| b.join());
+    }
+    for name in ["state", "code_challenge"] {
+        let [first, second] = [0, 1].map(|n| announced[n].get(name).cloned().unwrap_or_default());
+        for value in [&first, &second] {
+            assert_eq!(value.len(), 43, "{name}: {value}");
+            assert!(
+                value
+                    .bytes()
+                    .all(|c| c.is_ascii_alphanumeric() || c == b'-' || c == b'_'),
+                "{name}: {value}"
+            );
+        }
+        assert_ne!(first, second, "two walks announced the same {name}");
+    }
+}
+
 #[test]
 fn a_consent_refused_in_the_browser_sends_no_exchange() {
     let _guard = support::guard("a_consent_refused_in_the_browser_sends_no_exchange");
