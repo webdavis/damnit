@@ -189,6 +189,35 @@ fn an_exchange_answering_no_refresh_token_is_refused_by_name() {
     }
 }
 
+#[test]
+fn an_exchange_answer_that_is_not_json_is_reported_unreadable() {
+    let _guard = support::guard("an_exchange_answer_that_is_not_json_is_reported_unreadable");
+    let mut routes = HashMap::new();
+    let page = Reply {
+        status: 200,
+        body: "<html>maintenance</html>".into(),
+        headers: vec![],
+    };
+    routes.insert("POST /token", vec![page]);
+    let google = loopback::serve(routes);
+    let sign_in = SignIn::new(Endpoints::loopback(&google.base).unwrap());
+    let mut browser = None;
+    let err = sign_in
+        .mint(&client(), &mut |url| {
+            browser = Some(browse(url, |state| format!("state={state}&code=c")));
+        })
+        .unwrap_err();
+    let _ = browser.unwrap().join();
+    assert_eq!(
+        err,
+        SignInError::Exchange {
+            status: None,
+            code: None
+        }
+    );
+    assert!(err.to_string().contains("could not be read"), "{err}");
+}
+
 /// A redirect is how a credential reaches a host nobody meant, so the token
 /// endpoint's redirect is its answer and is never followed.
 #[test]

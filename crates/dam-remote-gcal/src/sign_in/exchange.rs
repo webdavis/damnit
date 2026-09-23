@@ -22,21 +22,23 @@ pub(super) fn exchange(
         ("code_verifier", verifier),
         ("redirect_uri", redirect_uri),
     ]);
-    let refused = |status| SignInError::Exchange { status, code: None };
+    let unreadable = || SignInError::Exchange {
+        status: None,
+        code: None,
+    };
     let response = agent
         .post(token_endpoint)
         .header("content-type", "application/x-www-form-urlencoded")
         .send(body.as_str())
-        .map_err(|_| refused(None))?;
-    let answer = read(response, MAX_ANSWER).map_err(|_| refused(None))?;
+        .map_err(|_| unreadable())?;
+    let answer = read(response, MAX_ANSWER).map_err(|_| unreadable())?;
     if !(200..300).contains(&answer.status) {
         return Err(SignInError::Exchange {
             status: Some(answer.status),
             code: oauth_error_code(&answer.body),
         });
     }
-    let value: serde_json::Value =
-        serde_json::from_str(&answer.body).map_err(|_| refused(Some(answer.status)))?;
+    let value: serde_json::Value = serde_json::from_str(&answer.body).map_err(|_| unreadable())?;
     value
         .get("refresh_token")
         .and_then(serde_json::Value::as_str)
