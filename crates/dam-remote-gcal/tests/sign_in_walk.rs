@@ -89,7 +89,7 @@ fn a_granted_consent_is_exchanged_for_the_refresh_token() {
         .unwrap();
     assert_eq!(token.expose(), REFRESH);
     let page = browser.unwrap().join().unwrap();
-    assert!(page.contains("200"), "{page}");
+    assert!(page.contains("has the consent"), "{page}");
     let seen = google.seen();
     assert_eq!(seen.len(), 1);
     assert_eq!(
