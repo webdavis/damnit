@@ -7,6 +7,7 @@ use std::net::TcpStream;
 
 use dam_remote_gcal::{Client, Endpoints, SignIn, SignInError};
 use loopback::Reply;
+use sha2::Digest;
 
 const CLIENT_SECRET: &str = "GOCSPX-SUPERSECRETCLIENT";
 const REFRESH: &str = "1//0gSUPERSECRETREFRESH";
@@ -18,24 +19,44 @@ fn client() -> Client {
     }
 }
 
-/// The value of one query parameter in the announced URL.
-fn param(url: &str, name: &str) -> String {
-    let query = url.split_once('?').map(|(_, q)| q).unwrap_or_default();
-    let raw = query
-        .split('&')
-        .find_map(|p| p.strip_prefix(&format!("{name}=")))
-        .unwrap_or_default();
-    raw.replace("%3A", ":").replace("%2F", "/")
+/// The announced URL's query.
+fn query_of(url: &str) -> &str {
+    url.split_once('?').map(|(_, q)| q).unwrap_or_default()
+}
+
+/// One field as it travelled, still percent-encoded.
+fn raw<'a>(text: &'a str, name: &str) -> Option<&'a str> {
+    text.split('&')
+        .find_map(|pair| pair.strip_prefix(name)?.strip_prefix('='))
+}
+
+/// RFC 7636's S256, computed independently of the code under test.
+fn s256(verifier: &str) -> String {
+    const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+    let digest = sha2::Sha256::digest(verifier.as_bytes());
+    let mut out = String::new();
+    for chunk in digest.chunks(3) {
+        let n = chunk
+            .iter()
+            .enumerate()
+            .fold(0u32, |n, (i, b)| n | u32::from(*b) << (16 - 8 * i));
+        for i in 0..=chunk.len() {
+            out.push(ALPHABET[(n >> (18 - 6 * i) & 63) as usize] as char);
+        }
+    }
+    out
 }
 
 /// Plays the browser: opens the redirect with the given query, returns the page.
 fn browse(url: &str, query: impl Fn(&str) -> String) -> std::thread::JoinHandle<String> {
-    let redirect = param(url, "redirect_uri");
-    let state = param(url, "state");
-    let address = redirect.trim_start_matches("http://").to_string();
+    let asked = loopback::fields(query_of(url));
+    let field = |name: &str| asked.get(name).cloned().unwrap_or_default();
+    let address = field("redirect_uri")
+        .trim_start_matches("http://")
+        .to_string();
     let line = format!(
         "GET /?{} HTTP/1.1\r\nHost: {address}\r\n\r\n",
-        query(&state)
+        query(&field("state"))
     );
     std::thread::spawn(move || {
         let mut stream = TcpStream::connect(address).unwrap();
@@ -57,8 +78,10 @@ fn a_granted_consent_is_exchanged_for_the_refresh_token() {
     let google = loopback::serve(routes);
     let sign_in = SignIn::new(Endpoints::loopback(&google.base).unwrap());
     let mut browser = None;
+    let mut announced = String::new();
     let token = sign_in
         .mint(&client(), &mut |url| {
+            announced = url.to_string();
             browser = Some(browse(url, |state| {
                 format!("state={state}&code=4%2F0AbCODE&scope=x")
             }));
@@ -69,19 +92,40 @@ fn a_granted_consent_is_exchanged_for_the_refresh_token() {
     assert!(page.contains("200"), "{page}");
     let seen = google.seen();
     assert_eq!(seen.len(), 1);
-    let body = &seen[0].body;
-    for field in [
-        "grant_type=authorization_code",
-        "code=4%2F0AbCODE",
-        "client_id=123.apps.googleusercontent.com",
-        "client_secret=GOCSPX-SUPERSECRETCLIENT",
-        "code_verifier=",
-    ] {
-        assert!(body.contains(field), "{field} missing from the exchange");
-    }
-    assert!(
-        body.contains("redirect_uri=http%3A%2F%2F127.0.0.1%3A"),
-        "{body}"
+    assert_eq!(
+        (seen[0].method.as_str(), seen[0].path.as_str()),
+        ("POST", "/token")
+    );
+    let asked = loopback::fields(query_of(&announced));
+    let sent = |name: &str| seen[0].form.get(name).cloned();
+    assert_eq!(sent("grant_type").as_deref(), Some("authorization_code"));
+    assert_eq!(sent("code").as_deref(), Some("4/0AbCODE"));
+    assert_eq!(
+        sent("client_id").as_deref(),
+        Some("123.apps.googleusercontent.com")
+    );
+    assert_eq!(sent("client_secret").as_deref(), Some(CLIENT_SECRET));
+    assert_eq!(sent("redirect_uri"), asked.get("redirect_uri").cloned());
+    assert_eq!(
+        raw(&seen[0].body, "redirect_uri"),
+        raw(query_of(&announced), "redirect_uri"),
+        "the exchange's redirect_uri must be the announced one, byte for byte"
+    );
+    let verifier = sent("code_verifier").unwrap_or_default();
+    assert_eq!(
+        Some(s256(&verifier)),
+        asked.get("code_challenge").cloned(),
+        "the verifier sent does not answer the challenge announced"
+    );
+    assert_eq!(seen[0].form.len(), 6, "{:?}", seen[0].form.keys());
+}
+
+/// The helper above is itself pinned to RFC 7636 appendix B.
+#[test]
+fn the_tests_own_s256_is_the_rfc_example() {
+    assert_eq!(
+        s256("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"),
+        "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
     );
 }
 

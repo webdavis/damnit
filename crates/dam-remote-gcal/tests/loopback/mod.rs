@@ -13,6 +13,8 @@ pub struct Seen {
     pub path: String,
     pub query: String,
     pub body: String,
+    /// The body read as a form: each name and value percent-decoded.
+    pub form: HashMap<String, String>,
     pub authorization: Option<String>,
 }
 
@@ -97,6 +99,7 @@ pub fn serve(routes: HashMap<&'static str, Vec<Reply>>) -> Loopback {
                     method: method.clone(),
                     path: path.clone(),
                     query,
+                    form: fields(&body),
                     body,
                     authorization,
                 });
@@ -124,4 +127,39 @@ pub fn serve(routes: HashMap<&'static str, Vec<Reply>>) -> Loopback {
         }
     });
     Loopback { base, seen }
+}
+
+/// `name=value` pairs joined by `&`, each side percent-decoded and `+` read as
+/// a space: a form body, or the query of a URL.
+pub fn fields(text: &str) -> HashMap<String, String> {
+    text.split('&')
+        .filter_map(|pair| pair.split_once('='))
+        .map(|(name, value)| (decoded(name), decoded(value)))
+        .collect()
+}
+
+fn decoded(text: &str) -> String {
+    let bytes = text.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        let hex = bytes
+            .get(i + 1..i + 3)
+            .filter(|h| h.iter().all(u8::is_ascii_hexdigit));
+        match (bytes[i], hex) {
+            (b'%', Some(h)) => {
+                out.push(u8::from_str_radix(&String::from_utf8_lossy(h), 16).unwrap_or(b'?'));
+                i += 3;
+            }
+            (b'+', _) => {
+                out.push(b' ');
+                i += 1;
+            }
+            (byte, _) => {
+                out.push(byte);
+                i += 1;
+            }
+        }
+    }
+    String::from_utf8_lossy(&out).into_owned()
 }
