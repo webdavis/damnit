@@ -287,6 +287,45 @@ mod tests {
         );
     }
 
+    /// The zone dam runs in places the all-day event's day, the date the
+    /// flag names and the times the human line prints.
+    #[test]
+    fn the_local_zone_places_the_day_the_window_and_the_printed_times() {
+        let mut ctx = context();
+        ctx.tz = jiff::tz::TimeZone::fixed(jiff::tz::offset(-4));
+        let offsite = Event::new(
+            Oid::generate(&mut |b: &mut [u8]| b.fill(0x4e)),
+            "offsite",
+            When::Day(jiff::civil::date(2026, 9, 18)),
+            When::Day(jiff::civil::date(2026, 9, 19)),
+        );
+        ctx.store.put(&Object::Event(offsite)).unwrap();
+        // 22:00 on the 17th where dam runs, so before the 18th opens there.
+        ctx.store
+            .put(&timed(
+                2,
+                "late call",
+                "2026-09-18T02:00:00+00:00[UTC]",
+                "2026-09-18T02:30:00+00:00[UTC]",
+            ))
+            .unwrap();
+        ctx.store.put(&Object::Event(standup())).unwrap();
+        let report = run_agenda(&mut ctx, args(Some("2026-09-18"), None)).unwrap();
+        assert_eq!(subjects(&report), ["offsite", "standup"]);
+        let all_day = &report.data["events"][0];
+        assert_eq!(
+            (all_day["start"].as_i64(), all_day["end"].as_i64()),
+            (Some(1_789_704_000), Some(1_789_790_400))
+        );
+        assert!(
+            report
+                .human
+                .contains("3f3f3f3  busy  2026-09-18 10:00  2026-09-18 10:30  standup"),
+            "{}",
+            report.human
+        );
+    }
+
     #[test]
     fn the_human_line_says_busy_or_free_with_local_times() {
         let mut ctx = context();
