@@ -47,6 +47,7 @@ pub fn to_wire(object: &Object, remote_id: Option<String>) -> WireObject {
                 .map(|a| WireAttendee {
                     email: a.email.clone(),
                     response: response_text(a.response).into(),
+                    is_self: a.is_self,
                 })
                 .collect(),
             status: match e.status {
