@@ -54,9 +54,15 @@ A response is recognized by the keys it carries, not by the order the variants a
 | Response | Recognized by | Fields |
 |---|---|---|
 | capabilities | `protocol` | `protocol`, `kinds`, `fields`, `credentials`, `incremental` |
-| pull | `objects`, `removed` or `sync` | `objects`, `removed`, `sync` |
+| pull | `objects`, `removed`, `cancelled` or `sync` | `objects`, `removed`, `cancelled`, `sync` |
 | push | `results` | `results`, one entry per mutation |
 | error | `error` | `error`, the reason as text |
+
+`cancelled` lists remote ids the remote cancelled, for a remote that reports a cancellation without
+restating the object, as Google Calendar does for a deleted event. `dam` moves the event it tracks
+under each id to `cancelled` and keeps tracking it; an id it does not track, or one that names a
+task, changes nothing. `removed` stays what it was: the remote no longer has the object, and `dam`
+stops tracking it.
 
 `error` is looked for first, so a response carrying both `error` and a shape's own keys is read as a
 failure.

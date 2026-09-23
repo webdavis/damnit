@@ -32,6 +32,7 @@ pub fn pull(api: &TodoistApi) -> Result<PullResponse, ApiError> {
     Ok(PullResponse {
         objects,
         removed,
+        cancelled: vec![],
         sync: None,
     })
 }

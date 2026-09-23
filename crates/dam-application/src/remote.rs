@@ -69,6 +69,8 @@ pub struct PullOutcome {
     pub rejected: Vec<RejectedObject>,
     /// Remote ids the remote no longer has.
     pub removed: Vec<String>,
+    /// Remote ids the remote cancelled: each moves the event it maps to cancelled, through the same rules as any pulled change.
+    pub cancelled: Vec<String>,
     /// Where the remote's incremental sync now stands.
     pub sync: Option<String>,
 }
