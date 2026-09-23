@@ -252,6 +252,7 @@ version = "0.1.0"
 dependencies = [
  "dam-protocol",
  "getrandom 0.3.4",
+ "jiff",
  "serde",
  "serde_json",
  "sha2",

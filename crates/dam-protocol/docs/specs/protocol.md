@@ -79,9 +79,12 @@ One push result:
 
 ## Capabilities
 
-`kinds` and `fields` are what the helper accepts on push and returns on pull. A helper never
-receives a field it did not declare, and a pulled object never overwrites a field the helper did not
-declare. That rule is what keeps `dam`-only data safe.
+`kinds` is what the helper accepts on push, and `fields` is what it accepts on push and returns on
+pull. A helper that declares no kinds is read-only: `dam` sends it no mutation, so a push reaches
+it, sends nothing, and marks its commits pushed, with nothing refused or retried. Its pulls land as
+any other, and `fields` still bounds what a pulled object may overwrite. A helper never receives a
+field it did not declare, and a pulled object never overwrites a field the helper did not declare.
+That rule is what keeps `dam`-only data safe.
 
 `credentials` names what the helper needs. `dam` resolves each one and passes it in the helper's
 environment as `DAM_<REMOTE>_<NAME>`, uppercased with every non-alphanumeric character folded to an

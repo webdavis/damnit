@@ -42,22 +42,25 @@ impl Endpoints {
             Ok(base) => Endpoints::loopback(&base),
             Err(VarError::NotPresent) => Ok(Endpoints::production()),
             Err(VarError::NotUnicode(_)) => Err(format!(
-                "{BASE_URL_VARIABLE} is a test seam and must be http://127.0.0.1:<port> or \
-                 http://localhost:<port>, not a value that is not Unicode"
+                "{}; the value it holds is not Unicode",
+                seam_rule()
             )),
         }
     }
 }
 
+/// What the seam accepts, as every refusal of it says.
+fn seam_rule() -> String {
+    format!(
+        "{BASE_URL_VARIABLE} is a test seam and must be http://127.0.0.1:<port> or \
+         http://localhost:<port>"
+    )
+}
+
 /// `DAM_GCAL_BASE_URL` is a test seam. Only a loopback address is accepted,
 /// so the variable cannot send a credential to another host.
 fn checked_base(value: &str) -> Result<String, String> {
-    let refused = || {
-        format!(
-            "DAM_GCAL_BASE_URL is a test seam and must be http://127.0.0.1:<port> or \
-             http://localhost:<port>, not {value:?}"
-        )
-    };
+    let refused = || format!("{}, not {value:?}", seam_rule());
     let base = value.strip_suffix('/').unwrap_or(value);
     let (host, port) = base
         .strip_prefix("http://")
@@ -102,7 +105,13 @@ mod tests {
     fn a_base_url_that_is_not_unicode_is_refused() {
         let not_unicode = std::env::VarError::NotUnicode(std::ffi::OsString::from("x"));
         let err = Endpoints::from_variable(Err(not_unicode)).unwrap_err();
-        assert!(err.contains(BASE_URL_VARIABLE), "{err}");
+        assert_eq!(
+            err,
+            format!(
+                "{BASE_URL_VARIABLE} is a test seam and must be http://127.0.0.1:<port> or \
+                 http://localhost:<port>; the value it holds is not Unicode"
+            )
+        );
         assert_eq!(
             Endpoints::from_variable(Err(std::env::VarError::NotPresent)),
             Ok(Endpoints::production())
