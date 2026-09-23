@@ -478,6 +478,11 @@ helper did not declare. That rule is what keeps `dam`-only data safe.
 {"results": [{"oid": "...", "ok": true, "remote_id": "..."}, {"oid": "...", "ok": false, "why": "..."}]}
 ```
 
+A pull response may carry `cancelled`, a list of remote ids the remote cancelled without restating
+them. `dam` moves the event it tracks under each id to `cancelled` through the same rules as any
+pulled change, keeps tracking it, and reports attached tasks as rule 4 says. An id it does not
+track, or one naming a task, changes nothing.
+
 Results are per mutation. Successes leave the unpushed set; failures stay with their reason and
 appear in `status`. A helper that supports incremental sync returns a token; one that does not
 returns null and `dam` diffs the full set itself.
@@ -553,7 +558,8 @@ helper and out of scope here.
    side that won, and a settled conflict is not raised again: a pull that finds the remote holding
    what it held when `dam` last looked has nothing coming in, whichever way the local copy has
    since moved.
-3. A removal upstream is a notice, never a local deletion.
+3. A removal upstream is a notice, never a local deletion. A cancellation upstream is a status, not
+   a removal: the event stays, cancelled.
 4. An event cancelled upstream keeps its attached tasks and is reported.
 5. A helper only writes the fields it declared.
 6. Recurring objects that both sides rolled forward to different dates are conflicts like any other.
