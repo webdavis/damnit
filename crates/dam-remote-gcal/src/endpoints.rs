@@ -1,6 +1,8 @@
 //! Where the three Google calls go: the consent page, the token endpoint and
 //! the Calendar API.
 
+use std::env::VarError;
+
 pub const BASE_URL_VARIABLE: &str = "DAM_GCAL_BASE_URL";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -30,9 +32,19 @@ impl Endpoints {
     }
 
     pub fn from_env() -> Result<Endpoints, String> {
-        match std::env::var(BASE_URL_VARIABLE) {
+        Endpoints::from_variable(std::env::var(BASE_URL_VARIABLE))
+    }
+
+    /// Unset means Google. Set means the loopback seam, and a value that is not
+    /// Unicode is refused like any other address the seam will not take.
+    fn from_variable(value: Result<String, VarError>) -> Result<Endpoints, String> {
+        match value {
             Ok(base) => Endpoints::loopback(&base),
-            Err(_) => Ok(Endpoints::production()),
+            Err(VarError::NotPresent) => Ok(Endpoints::production()),
+            Err(VarError::NotUnicode(_)) => Err(format!(
+                "{BASE_URL_VARIABLE} is a test seam and must be http://127.0.0.1:<port> or \
+                 http://localhost:<port>, not a value that is not Unicode"
+            )),
         }
     }
 }
@@ -82,6 +94,23 @@ mod tests {
         assert_eq!(e.token, "http://127.0.0.1:8080/token");
         assert_eq!(e.calendar, "http://127.0.0.1:8080/calendar/v3");
         assert!(Endpoints::loopback("http://localhost:9").is_ok());
+    }
+
+    /// A set variable is never read as unset, which would point the walk at
+    /// Google while the operator meant a test server.
+    #[test]
+    fn a_base_url_that_is_not_unicode_is_refused() {
+        let not_unicode = std::env::VarError::NotUnicode(std::ffi::OsString::from("x"));
+        let err = Endpoints::from_variable(Err(not_unicode)).unwrap_err();
+        assert!(err.contains(BASE_URL_VARIABLE), "{err}");
+        assert_eq!(
+            Endpoints::from_variable(Err(std::env::VarError::NotPresent)),
+            Ok(Endpoints::production())
+        );
+        assert_eq!(
+            Endpoints::from_variable(Ok("http://127.0.0.1:9".into())),
+            Endpoints::loopback("http://127.0.0.1:9")
+        );
     }
 
     /// The seam carries a refresh token and a client secret to whatever it
