@@ -139,6 +139,19 @@ fn a_consent_refused_in_the_browser_exits_one_and_prints_nothing() {
     assert!(google.seen().is_empty());
 }
 
+/// The token exists only in this process, so failing to print it loses it,
+/// and the operator is told to walk again.
+#[test]
+fn a_token_that_cannot_be_printed_says_to_sign_in_again() {
+    let _guard = support::guard("a_token_that_cannot_be_printed_says_to_sign_in_again");
+    let home = tempfile::tempdir().unwrap();
+    let google = google_granting();
+    let walked = walk(&google.base, home.path(), granted, false);
+    assert_eq!(walked.code, Some(1), "{}", walked.stderr);
+    assert!(walked.stderr.contains("sign in again"), "{}", walked.stderr);
+    assert_quotes_no_secret(&walked.stderr);
+}
+
 #[test]
 fn an_unknown_flag_is_a_usage_error_before_anything_is_asked() {
     let _guard = support::guard("an_unknown_flag_is_a_usage_error_before_anything_is_asked");
