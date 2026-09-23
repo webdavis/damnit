@@ -1,3 +1,4 @@
+mod agenda;
 pub(crate) mod catalogue;
 mod commit;
 mod done;
@@ -22,7 +23,10 @@ use crate::output::Report;
 /// The verbs that pull a stale remote before they answer, which is the set
 /// `--no-pull` acts on. Every one of them reaches `remote::maybe_pull_stale`.
 pub(crate) fn pulls_a_stale_remote(command: &Command) -> bool {
-    matches!(command, Command::Ls(_) | Command::Show(_))
+    matches!(
+        command,
+        Command::Ls(_) | Command::Show(_) | Command::Agenda(_)
+    )
 }
 
 /// Every verb that reads or writes the store. The catalogue verbs are not
@@ -43,6 +47,7 @@ pub(crate) fn dispatch(ctx: &mut Context, command: Command) -> Result<Report, Cl
         Command::Status(a) => status::run_status(ctx, a),
         Command::Diff(a) => status::run_diff(ctx, a),
         Command::Ls(a) => ls::run_ls(ctx, a),
+        Command::Agenda(a) => agenda::run_agenda(ctx, a),
         Command::Remote(a) => remote::run_remote(ctx, a),
         Command::Push(a) => sync::run_push(ctx, a),
         Command::Pull(a) => sync::run_pull(ctx, a),

@@ -82,10 +82,11 @@ and `--toon` on any read give a program the same answer.
 in the line, `last_pull` and `last_push` as RFC 3339 under `--json`, null until that verb has
 reached the remote once.
 
-`--no-pull` answers from the local store: `dam ls` and `dam show` otherwise pull a remote whose
-`stale` window has passed, and with the flag they spawn no helper at all. Use it wherever a read has
-to be quick and local, such as a statusline that runs `dam` every few seconds. Those two verbs are
-the only ones that pull, so every other verb refuses the flag with exit 2 rather than ignoring it.
+`--no-pull` answers from the local store: `dam ls`, `dam show` and `dam agenda` otherwise pull a
+remote whose `stale` window has passed, and with the flag they spawn no helper at all. Use it
+wherever a read has to be quick and local, such as a statusline that runs `dam` every few seconds.
+Those three verbs are the only ones that pull, so every other verb refuses the flag with exit 2
+rather than ignoring it.
 
 ## The rules it keeps
 
@@ -127,6 +128,23 @@ removed. The rest of the row is the state the change left behind, which is what 
 
 Add `--full` to either command for `before` and `after`, the whole object on each side. The default
 leaves them out because a client polling `status` per render pays for them on every poll.
+
+`dam agenda` lists events as intervals, for a program that schedules around busy time:
+
+    {"events": [{"oid": "98d878...", "subject": "standup", "path": "me@example.com/",
+     "labels": [], "status": "confirmed", "transparency": "busy", "all_day": false,
+     "start": 1790344800, "end": 1790346600, "busy": true}]}
+
+`start` and `end` are epoch seconds, `end` exclusive; `busy` says whether the event holds time: not
+cancelled, shown busy, and not declined by the attendee that stands for the calendar the event came
+from. Every event the window overlaps is listed, busy or not; a recurring event made in dam is
+listed at its stored occurrence only. With no flags the window runs from now to 24 hours later;
+`--from` and `--to` take the same words `--due` does, and a query narrows it the way `dam ls` reads
+one. Keys are only ever added, never renamed or retyped.
+
+Like `ls`, `agenda` pulls a stale remote first unless given `--no-pull`. A program that reads on a
+deadline always passes `--no-pull`, so its answer never waits on the network or a credential
+command, and keeps the store fresh with a separately scheduled `dam pull <remote>`.
 
 ## Errors
 
