@@ -18,6 +18,9 @@ pub(crate) struct AgendaArgs {
     /// Where the window closes, exclusive. Default: 24 hours after it opens.
     #[arg(long)]
     pub(crate) to: Option<String>,
+    /// Refuse to answer when REMOTE last pulled longer ago than DURATION (such as 90s, 15m or 2h), or never. Repeatable.
+    #[arg(long = "max-age", value_name = "REMOTE=DURATION")]
+    pub(crate) max_age: Vec<String>,
 }
 
 #[derive(Args, Debug)]

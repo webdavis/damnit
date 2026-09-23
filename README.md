@@ -146,6 +146,17 @@ Like `ls`, `agenda` pulls a stale remote first unless given `--no-pull`. A progr
 deadline always passes `--no-pull`, so its answer never waits on the network or a credential
 command, and keeps the store fresh with a separately scheduled `dam pull <remote>`.
 
+`--max-age <remote>=<duration>` makes the answer depend on that remote being fresh. When its last
+successful pull is older than the duration, or it has never pulled, `agenda` prints nothing on
+standard output and exits 4, rule `stale_remote`, with one sentence on standard error. A failed pull
+never counts as fresh, so a scheduled pull that keeps failing (an expired sign-in, a vault that will
+not open) reaches the reader as a refusal rather than as yesterday's calendar. A program that polls
+every couple of minutes, with `dam pull gcal` scheduled every five, runs:
+
+    dam agenda --json --no-pull --max-age gcal=15m
+
+Repeat the flag to bound more than one remote.
+
 ## Errors
 
 With `--json` or `--toon` a failure prints one document on standard error and nothing on standard

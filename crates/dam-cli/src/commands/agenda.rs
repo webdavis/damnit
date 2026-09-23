@@ -1,7 +1,10 @@
 //! `dam agenda`: events as intervals over a window, each saying whether it
 //! holds time.
 
-use dam_application::{Scheduled, Window, agenda};
+use std::time::Duration;
+
+use dam_adapters::parse_duration;
+use dam_application::{Scheduled, Window, agenda, require_fresh};
 use dam_domain::{Object, Timestamp};
 use jiff::SignedDuration;
 
@@ -15,11 +18,14 @@ use crate::output::{Report, object_json};
 /// How long the window stays open when `--to` is not given.
 const DEFAULT_SPAN: SignedDuration = SignedDuration::from_hours(24);
 
-/// The window is read before the stale pull, so a mistyped flag exits 2
-/// without spawning a helper.
+/// The flags are read before the stale pull, so a mistyped one exits 2
+/// without spawning a helper; freshness is judged after it, so a pull that
+/// just landed counts.
 pub(crate) fn run_agenda(ctx: &mut Context, args: AgendaArgs) -> Result<Report, CliError> {
     let window = window(ctx, &args)?;
+    let bounds = max_ages(&args.max_age)?;
     maybe_pull_stale(ctx)?;
+    require_fresh(ctx.store.as_ref(), ctx.clock.as_ref(), &ctx.config, &bounds)?;
     let found = agenda(
         ctx.store.as_ref(),
         ctx.clock.as_ref(),
@@ -57,6 +63,26 @@ fn window(ctx: &Context, args: &AgendaArgs) -> Result<Window, CliError> {
         return Err(CliError::Usage("--to must be later than --from".into()));
     }
     Ok(Window { from, to })
+}
+
+/// Each `--max-age <remote>=<duration>`, the duration read the way `stale` is.
+fn max_ages(texts: &[String]) -> Result<Vec<(String, Duration)>, CliError> {
+    texts
+        .iter()
+        .map(|text| {
+            let unreadable = || {
+                CliError::Usage(format!(
+                    "--max-age {text:?}: expected <remote>=<number><s|m|h>"
+                ))
+            };
+            let (remote, age) = text.split_once('=').ok_or_else(unreadable)?;
+            if remote.is_empty() {
+                return Err(unreadable());
+            }
+            let age = parse_duration("--max-age", age).map_err(|_| unreadable())?;
+            Ok((remote.to_string(), age))
+        })
+        .collect()
 }
 
 /// Dam's own summary of the event beside the three keys a scheduler reads.
@@ -123,6 +149,7 @@ mod tests {
             query: None,
             from: from.map(str::to_string),
             to: to.map(str::to_string),
+            max_age: vec![],
         }
     }
 

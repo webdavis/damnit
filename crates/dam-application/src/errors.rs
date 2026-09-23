@@ -44,6 +44,14 @@ pub enum Refusal {
         remote: String,
         name: String,
     },
+    /// A remote pulled longer ago than a reader's `--max-age` allows, or never.
+    StaleRemote {
+        remote: String,
+        /// Seconds since the last successful pull, none when it never pulled.
+        age: Option<u64>,
+        /// The bound, in seconds.
+        limit: u64,
+    },
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -79,6 +87,7 @@ impl Refusal {
             Refusal::NeedsAnEditor => "needs_an_editor",
             Refusal::UnresolvedConflicts(_) => "unresolved_conflicts",
             Refusal::MissingCredential { .. } => "missing_credential",
+            Refusal::StaleRemote { .. } => "stale_remote",
         }
     }
 }
@@ -181,7 +190,7 @@ mod tests {
 
     /// How many slots `slot` below hands out. Kept in sync by hand; nothing
     /// forces it to rise when a new variant reuses an existing slot.
-    const RULE_COUNT: usize = 18;
+    const RULE_COUNT: usize = 19;
 
     /// Which variant this is. The match is exhaustive, so a rule added to the
     /// enum does not compile until it has an arm here, but that arm may reuse
@@ -208,6 +217,7 @@ mod tests {
             Refusal::NeedsAnEditor => 15,
             Refusal::UnresolvedConflicts(_) => 16,
             Refusal::MissingCredential { .. } => 17,
+            Refusal::StaleRemote { .. } => 18,
         }
     }
 
@@ -243,6 +253,11 @@ mod tests {
             Refusal::MissingCredential {
                 remote: "todoist".into(),
                 name: "api_token".into(),
+            },
+            Refusal::StaleRemote {
+                remote: "gcal".into(),
+                age: None,
+                limit: 900,
             },
         ]
     }

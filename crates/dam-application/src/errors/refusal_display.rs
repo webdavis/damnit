@@ -78,6 +78,22 @@ impl fmt::Display for Refusal {
                     "remote {remote:?} needs {name}; set {name}, {name}_command or {name}_env in its config"
                 )
             }
+            Refusal::StaleRemote {
+                remote, age: None, ..
+            } => {
+                write!(
+                    f,
+                    "remote {remote:?} has never been pulled; run dam pull {remote}"
+                )
+            }
+            Refusal::StaleRemote {
+                remote,
+                age: Some(age),
+                limit,
+            } => write!(
+                f,
+                "remote {remote:?} last pulled {age}s ago, longer than --max-age allows ({limit}s); run dam pull {remote}"
+            ),
         }
     }
 }
