@@ -123,6 +123,7 @@ fn a_granted_consent_is_exchanged_for_the_refresh_token() {
 /// The helper above is itself pinned to RFC 7636 appendix B.
 #[test]
 fn the_tests_own_s256_is_the_rfc_example() {
+    let _guard = support::guard("the_tests_own_s256_is_the_rfc_example");
     assert_eq!(
         s256("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"),
         "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
