@@ -58,6 +58,14 @@ pub struct FilterConfig {
     pub query: String,
 }
 
+impl RemoteConfig {
+    /// The text after `::` in the url, handed to the helper as its second
+    /// argument the way git hands one to `git-remote-<transport>`.
+    pub fn address(&self) -> &str {
+        self.url.split_once("::").map_or("", |(_, address)| address)
+    }
+}
+
 impl Config {
     pub fn remote(&self, name: &str) -> Option<&RemoteConfig> {
         self.remotes.iter().find(|r| r.name.0 == name)
@@ -92,5 +100,21 @@ mod tests {
             ..Config::default()
         };
         assert!(!format!("{config:?}").contains(TOKEN));
+    }
+
+    #[test]
+    fn the_address_is_the_text_after_the_helper_name() {
+        let mut remote = RemoteConfig {
+            name: RemoteName("gcal".into()),
+            helper: "gcal".into(),
+            url: "gcal::primary,team@group.calendar.google.com".into(),
+            credentials: vec![],
+            stale: None,
+            deadline: None,
+            path: None,
+        };
+        assert_eq!(remote.address(), "primary,team@group.calendar.google.com");
+        remote.url = "todoist::".into();
+        assert_eq!(remote.address(), "");
     }
 }

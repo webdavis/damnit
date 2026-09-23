@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 use dam_application::{HelperError, HelperLauncher, RemoteConfig, RemoteHelper, Secret};
+use dam_protocol::credential_variable;
 
 use conversation::ProcessHelper;
 
@@ -43,23 +44,6 @@ fn is_executable(path: &std::path::Path) -> bool {
         .unwrap_or(false)
 }
 
-/// The environment variable a helper reads one credential from: `DAM_<REMOTE>_<NAME>`,
-/// uppercased with every non-alphanumeric character folded to `_`.
-pub fn credential_variable(remote: &str, name: &str) -> String {
-    let shout = |s: &str| {
-        s.chars()
-            .map(|c| {
-                if c.is_ascii_alphanumeric() {
-                    c.to_ascii_uppercase()
-                } else {
-                    '_'
-                }
-            })
-            .collect::<String>()
-    };
-    format!("DAM_{}_{}", shout(remote), shout(name))
-}
-
 impl HelperLauncher for ProcessLauncher {
     fn launch(
         &self,
@@ -82,6 +66,8 @@ impl ProcessLauncher {
                 helper: format!("dam-remote-{}", remote.helper),
             })?;
         let mut command = Command::new(program);
+        // Git's invocation: the remote's name, then the address its url names.
+        command.arg(&remote.name.0).arg(remote.address());
         command
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -227,15 +213,39 @@ mod tests {
         );
     }
 
+    /// Git's invocation: the remote's name, then the address its url names. A
+    /// helper reads its credentials under that name.
     #[test]
-    fn credential_variables_are_upper_snake() {
-        assert_eq!(
-            credential_variable("todoist", "api_token"),
-            "DAM_TODOIST_API_TOKEN"
+    fn the_helper_is_given_its_remote_name_and_address() {
+        let dir = tempfile::tempdir().unwrap();
+        let launcher = install(
+            dir.path(),
+            "#!/bin/sh\nread -r line\nprintf '{\"protocol\":1,\"kinds\":[\"task\"],\"fields\":[],\"credentials\":[\"%s\",\"%s\",\"%s\"],\"incremental\":false}\\n' \"$#\" \"$1\" \"$2\"\n",
         );
+        let mut remote = remote();
+        remote.url = "t::primary,team@x".into();
+        let mut helper = launcher.launch(&remote, &[]).unwrap();
         assert_eq!(
-            credential_variable("my-cal", "client-id"),
-            "DAM_MY_CAL_CLIENT_ID"
+            helper.capabilities().unwrap().credentials,
+            vec![
+                "2".to_string(),
+                remote.name.0.clone(),
+                "primary,team@x".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn an_empty_address_is_still_passed_so_the_count_never_varies() {
+        let dir = tempfile::tempdir().unwrap();
+        let launcher = install(
+            dir.path(),
+            "#!/bin/sh\nread -r line\nprintf '{\"protocol\":1,\"kinds\":[\"task\"],\"fields\":[],\"credentials\":[\"%s\",\"%s\"],\"incremental\":false}\\n' \"$#\" \"$2\"\n",
+        );
+        let mut helper = launcher.launch(&remote(), &[]).unwrap();
+        assert_eq!(
+            helper.capabilities().unwrap().credentials,
+            vec!["2".to_string(), String::new()]
         );
     }
 }

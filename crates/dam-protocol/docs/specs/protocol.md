@@ -9,6 +9,13 @@ and quotes it when the helper fails to answer.
 This document is the contract a third-party helper is written against. Everything it states is
 pinned by golden fixtures in this crate.
 
+## Invocation
+
+`dam` runs the helper as `dam-remote-<helper> <remote> <address>`: the remote's name as the first
+argument and the text after `::` in its url as the second, empty when the url ends at `::`. Both are
+always passed. A helper reads its credentials under that remote name, so one helper serves any number
+of remotes. Neither argument is ever a secret.
+
 ## Version and compatibility
 
 `PROTOCOL_VERSION` is the version `dam` speaks. A helper declares its own in the `protocol` field of
