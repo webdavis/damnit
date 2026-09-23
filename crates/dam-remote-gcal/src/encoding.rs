@@ -21,6 +21,7 @@ pub(crate) fn percent_decoded(text: &str) -> String {
         let escaped = (bytes[i] == b'%')
             .then(|| text.get(i + 1..i + 3))
             .flatten()
+            .filter(|hex| hex.bytes().all(|b| b.is_ascii_hexdigit()))
             .and_then(|hex| u8::from_str_radix(hex, 16).ok());
         match (bytes[i], escaped) {
             (_, Some(byte)) => {
@@ -98,6 +99,8 @@ mod tests {
     fn percent_decoding_reads_escapes_and_plus_and_keeps_a_broken_escape() {
         assert_eq!(percent_decoded("a%20b+c%2F"), "a b c/");
         assert_eq!(percent_decoded("100%zz%4"), "100%zz%4");
+        // `u8::from_str_radix` accepts `+f`; an escape still needs two hex digits.
+        assert_eq!(percent_decoded("%+f"), "% f");
         assert_eq!(
             percent_decoded(&percent_encoded("4/0Ab_x&y=z")),
             "4/0Ab_x&y=z"
