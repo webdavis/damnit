@@ -197,6 +197,7 @@ mod tests {
         e.attendees = vec![Attendee {
             email: format!("{tag}@example.com"),
             response: ResponseStatus::Accepted,
+            is_self: false,
         }];
         e.status = if tag == "a" {
             EventStatus::Confirmed

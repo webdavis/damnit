@@ -1,5 +1,7 @@
 use super::*;
-use dam_domain::{Event, Object, Oid, Priority, Task, Transparency, When};
+use dam_domain::{
+    Attendee, Event, Object, Oid, Priority, ResponseStatus, Task, Transparency, When,
+};
 use jiff::civil::date;
 
 fn oid(b: u8) -> Oid {
@@ -196,4 +198,28 @@ fn a_pull_hands_its_cancellations_on() {
         pull_from_wire(response).cancelled,
         vec!["primary/e1".to_string()]
     );
+}
+
+#[test]
+fn the_calendars_own_attendee_round_trips() {
+    let mut event = dam_domain::Event::new(
+        oid(1),
+        "standup",
+        When::Day(date(2026, 9, 25)),
+        When::Day(date(2026, 9, 26)),
+    );
+    event.attendees = vec![
+        Attendee {
+            email: "me@x".into(),
+            response: ResponseStatus::Declined,
+            is_self: true,
+        },
+        Attendee {
+            email: "you@x".into(),
+            response: ResponseStatus::Accepted,
+            is_self: false,
+        },
+    ];
+    let object = Object::Event(event);
+    assert_eq!(from_wire(&to_wire(&object, None)).unwrap(), object);
 }

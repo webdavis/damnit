@@ -213,3 +213,29 @@ fn pull_with_cancellations_round_trips_the_fixture() {
     let read: Response = serde_json::from_str(text).unwrap();
     assert_eq!(serde_json::to_string(&read).unwrap(), text);
 }
+
+/// Written only when true, so every document without it reads exactly as
+/// before, and a stored object from before the field reads as false.
+#[test]
+fn an_attendee_writes_self_only_when_it_is_the_calendars_own() {
+    let own = crate::WireAttendee {
+        email: "me@x".into(),
+        response: "declined".into(),
+        is_self: true,
+    };
+    assert_eq!(
+        serde_json::to_string(&own).unwrap(),
+        r#"{"email":"me@x","response":"declined","self":true}"#
+    );
+    let other = crate::WireAttendee {
+        is_self: false,
+        ..own.clone()
+    };
+    assert_eq!(
+        serde_json::to_string(&other).unwrap(),
+        r#"{"email":"me@x","response":"declined"}"#
+    );
+    let read: crate::WireAttendee =
+        serde_json::from_str(r#"{"email":"me@x","response":"accepted"}"#).unwrap();
+    assert!(!read.is_self);
+}

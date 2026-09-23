@@ -94,7 +94,7 @@ Events have no `done`. They pass. A past event is shown as such and needs no act
 | `start`, `end` | date or datetime with timezone | A `date` means all day. `end` is exclusive. |
 | `timezone` | IANA name | Required when `recurrence` is set. |
 | `location` | string | |
-| `attendees` | list | Email plus response: accepted, declined, tentative, needs action. |
+| `attendees` | list | Email plus response: accepted, declined, tentative, needs action; and `self`, whether this attendee is the calendar the event was read from. |
 | `status` | confirmed, tentative, cancelled | A removed occurrence of a series arrives cancelled. |
 | `transparency` | busy or free | Free does not block time. |
 | `visibility` | default, public, private, confidential | |

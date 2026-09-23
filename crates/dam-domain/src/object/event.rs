@@ -43,6 +43,8 @@ pub enum ResponseStatus {
 pub struct Attendee {
     pub email: String,
     pub response: ResponseStatus,
+    /// Whether this attendee is the calendar the event was read from: its answer is the calendar owner's.
+    pub is_self: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

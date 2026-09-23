@@ -164,6 +164,7 @@ pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
                     Ok(Attendee {
                         email: a.email.clone(),
                         response: parse_response(&a.response)?,
+                        is_self: a.is_self,
                     })
                 })
                 .collect::<Result<_, WireError>>()?,
