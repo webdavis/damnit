@@ -47,7 +47,7 @@ fn main() {
 fn run(cli: Cli, format: Format) -> Result<(), CliError> {
     if cli.no_pull && !commands::pulls_a_stale_remote(&cli.command) {
         return Err(CliError::Usage(
-            "--no-pull applies to ls and show, the reads that pull a stale remote".into(),
+            "--no-pull applies to ls, show and agenda, the reads that pull a stale remote".into(),
         ));
     }
     let config_path = cli.config.unwrap_or_else(dam_adapters::default_config_path);

@@ -46,7 +46,9 @@ impl Sandbox {
             .env("FAKE_TOKEN_FILE", self.dir.path().join("token.txt"))
             .env("HOME", self.dir.path())
             .env("XDG_CONFIG_HOME", self.dir.path().join("config"))
-            .env("XDG_DATA_HOME", self.dir.path().join("data"));
+            .env("XDG_DATA_HOME", self.dir.path().join("data"))
+            .env("XDG_STATE_HOME", self.dir.path().join("state"))
+            .env("TZ", "UTC");
         command
     }
 

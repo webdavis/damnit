@@ -20,5 +20,6 @@ pub use random::OsRandom;
 pub use sqlite::{OpenError, SqliteStore};
 pub use toml_config::{
     ConfigError, append_remote, default_config_path, default_store_path, load_config,
+    parse_duration,
 };
 pub use wire::{WireError, from_wire, to_wire};

@@ -1,7 +1,9 @@
+pub(crate) mod agenda;
 pub(crate) mod commit;
 pub(crate) mod complete;
 pub(crate) mod connect;
 pub(crate) mod edit;
+pub(crate) mod freshness;
 pub(crate) mod list;
 pub(crate) mod new_object;
 pub(crate) mod pull;

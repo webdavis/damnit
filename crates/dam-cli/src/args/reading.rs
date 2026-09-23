@@ -9,6 +9,22 @@ pub(crate) struct LsArgs {
 }
 
 #[derive(Args, Debug)]
+pub(crate) struct AgendaArgs {
+    /// A query or saved filter that narrows the events, read the way `ls` reads one.
+    pub(crate) query: Option<String>,
+    /// Where the window opens: a date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM. Default: now.
+    #[arg(long)]
+    pub(crate) from: Option<String>,
+    /// Where the window closes, exclusive. Default: 24 hours after it opens.
+    #[arg(long)]
+    pub(crate) to: Option<String>,
+    /// Refuse to answer when REMOTE last pulled longer ago than DURATION (such as 90s, 15m or
+    /// 2h), or never. Repeatable.
+    #[arg(long = "max-age", value_name = "REMOTE=DURATION")]
+    pub(crate) max_age: Vec<String>,
+}
+
+#[derive(Args, Debug)]
 pub(crate) struct CategoryArgs {
     #[command(subcommand)]
     pub(crate) command: CategoryCommand,

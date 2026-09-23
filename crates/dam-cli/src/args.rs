@@ -11,7 +11,9 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
-pub(crate) use reading::{CategoryArgs, CategoryCommand, FilterArgs, FilterCommand, LsArgs};
+pub(crate) use reading::{
+    AgendaArgs, CategoryArgs, CategoryCommand, FilterArgs, FilterCommand, LsArgs,
+};
 pub(crate) use remotes::{PullArgs, PushArgs, RemoteArgs, RemoteCommand, ResolveArgs};
 pub(crate) use staging::{
     AddArgs, CommitArgs, DiffArgs, ResetArgs, RestoreArgs, ShowArgs, StatusArgs,
@@ -72,6 +74,8 @@ pub(crate) enum Command {
     Diff(DiffArgs),
     /// List objects, optionally by query or saved filter.
     Ls(LsArgs),
+    /// Events over a window, each with whether it holds time.
+    Agenda(AgendaArgs),
     /// The label categories config declares.
     Category(CategoryArgs),
     /// The saved filters config declares.

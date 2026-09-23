@@ -34,6 +34,15 @@ impl When {
         matches!(self, When::Day(_))
     }
 
+    /// The instant this names: itself for a zoned time, the first instant of
+    /// the day in `zone` for a date.
+    pub fn instant(&self, zone: &jiff::tz::TimeZone) -> Option<Timestamp> {
+        match self {
+            When::At(z) => Some(z.timestamp()),
+            When::Day(d) => d.to_zoned(zone.clone()).ok().map(|z| z.timestamp()),
+        }
+    }
+
     /// A date word (see `words`), `YYYY-MM-DD`, `YYYY-MM-DDTHH:MM[:SS]` in `tz`, or a full
     /// zoned timestamp.
     ///
@@ -91,6 +100,25 @@ fn hint(text: &str, cause: &dyn std::fmt::Display) -> WhenError {
 mod tests {
     use super::*;
     use jiff::civil::date;
+
+    #[test]
+    fn a_date_is_its_first_instant_in_the_zone_and_a_zoned_time_is_itself() {
+        let zone = jiff::tz::TimeZone::fixed(jiff::tz::offset(-4));
+        assert_eq!(
+            When::Day(jiff::civil::date(2026, 9, 25))
+                .instant(&zone)
+                .unwrap()
+                .as_second(),
+            1_790_308_800
+        );
+        let at: jiff::Zoned = "2026-09-25T14:00:00-04:00[America/New_York]"
+            .parse()
+            .unwrap();
+        assert_eq!(
+            When::At(at.clone()).instant(&jiff::tz::TimeZone::UTC),
+            Some(at.timestamp())
+        );
+    }
 
     #[test]
     fn a_day_is_all_day_and_its_date_is_itself() {
