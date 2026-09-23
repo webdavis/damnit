@@ -307,14 +307,14 @@ dam filter list [--json|--toon]
 ```
 
 `--no-pull` answers from the local store: the reads that would otherwise pull a stale remote first,
-`ls`, `show` and `agenda`, skip that pass and spawn no helper. The documents are unchanged, and nothing in
-them reports staleness; a client that renders inside a frame budget uses the flag to make the read
-local, and reads `remote list` when it wants to say how fresh the answer is. Neither the `stale`
-setting nor anything else in config changes.
+`ls`, `show` and `agenda`, skip that pass and spawn no helper. The documents are unchanged, and
+nothing in them reports staleness; a client that renders inside a frame budget uses the flag to make
+the read local, and reads `remote list` when it wants to say how fresh the answer is. Neither the
+`stale` setting nor anything else in config changes.
 
-`ls`, `show` and `agenda` are the only verbs it applies to, so every other verb refuses it as a command line
-that was wrong, exit 2, naming the flag. `dam pull --no-pull` is refused like the rest rather than
-read as a contradiction.
+`ls`, `show` and `agenda` are the only verbs it applies to, so every other verb refuses it as a
+command line that was wrong, exit 2, naming the flag. `dam pull --no-pull` is refused like the rest
+rather than read as a contradiction.
 
 `--json` is the answer as JSON. `--toon` is the same answer in TOON (Token-Oriented Object
 Notation), a compact form that costs a language model fewer tokens when it reads a list; the
