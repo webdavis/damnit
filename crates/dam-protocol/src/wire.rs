@@ -72,6 +72,8 @@ pub struct WireEvent {
 pub struct WireAttendee {
     pub email: String,
     pub response: String,
+    #[serde(rename = "self", default, skip_serializing_if = "std::ops::Not::not")]
+    pub is_self: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

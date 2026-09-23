@@ -197,3 +197,29 @@ fn a_push_response_with_an_unknown_field_still_deserializes_as_push() {
     let r: Response = serde_json::from_str(r#"{"results":[],"cursor":"abc"}"#).unwrap();
     assert_eq!(r, Response::Push(PushResponse { results: vec![] }));
 }
+
+/// Written only when true, so every document without it reads exactly as
+/// before, and a stored object from before the field reads as false.
+#[test]
+fn an_attendee_writes_self_only_when_it_is_the_calendars_own() {
+    let own = crate::WireAttendee {
+        email: "me@x".into(),
+        response: "declined".into(),
+        is_self: true,
+    };
+    assert_eq!(
+        serde_json::to_string(&own).unwrap(),
+        r#"{"email":"me@x","response":"declined","self":true}"#
+    );
+    let other = crate::WireAttendee {
+        is_self: false,
+        ..own.clone()
+    };
+    assert_eq!(
+        serde_json::to_string(&other).unwrap(),
+        r#"{"email":"me@x","response":"declined"}"#
+    );
+    let read: crate::WireAttendee =
+        serde_json::from_str(r#"{"email":"me@x","response":"accepted"}"#).unwrap();
+    assert!(!read.is_self);
+}
