@@ -37,9 +37,16 @@ fn pulled(store: &MemoryStore, event: &dam_domain::Event) {
 }
 
 fn cancelling(ids: &[&str]) -> ScriptedLauncher {
+    declaring(
+        ids,
+        vec![Field::Subject, Field::Start, Field::End, Field::Status],
+    )
+}
+
+fn declaring(ids: &[&str], fields: Vec<Field>) -> ScriptedLauncher {
     let mut caps = task_caps();
     caps.kinds = vec![Kind::Event];
-    caps.fields = vec![Field::Subject, Field::Start, Field::End, Field::Status];
+    caps.fields = fields;
     let answer = PullOutcome {
         cancelled: ids.iter().map(|s| s.to_string()).collect(),
         ..PullOutcome::default()
@@ -57,9 +64,16 @@ fn cancelling(ids: &[&str]) -> ScriptedLauncher {
 }
 
 fn run(store: &MemoryStore, ids: &[&str]) -> Result<Vec<PullReport>, UseCaseError> {
+    run_with(store, &cancelling(ids))
+}
+
+fn run_with(
+    store: &MemoryStore,
+    launcher: &ScriptedLauncher,
+) -> Result<Vec<PullReport>, UseCaseError> {
     pull(
         Repositories::of(store),
-        &cancelling(ids),
+        launcher,
         &EchoCredentials,
         &FixedClock(date(2026, 9, 18)),
         &FixedRandom::new(42),
@@ -84,6 +98,21 @@ fn a_cancelled_id_moves_the_event_it_maps_to_cancelled() {
         Some(oid(5)),
         "still tracked"
     );
+}
+
+/// A cancellation lands under the declared-fields rule, so a helper that
+/// does not declare `status` cancels nothing.
+#[test]
+fn a_helper_that_does_not_declare_status_cancels_nothing() {
+    let store = MemoryStore::new();
+    pulled(&store, &meeting());
+    let silent = declaring(&["e1"], vec![Field::Subject, Field::Start, Field::End]);
+    let reports = run_with(&store, &silent).unwrap();
+    assert_eq!((reports[0].updated, reports[0].unchanged), (0, 1));
+    let Some(Object::Event(now)) = store.get(&oid(5)).unwrap() else {
+        panic!("the event is gone")
+    };
+    assert_eq!(now.status, EventStatus::Confirmed);
 }
 
 #[test]
