@@ -14,8 +14,8 @@ use crate::remote::IncomingObject;
 ///
 /// The base is the remote's own last snapshot, which is what the remote
 /// held before it cancelled; the working copy stands in when no snapshot was
-/// kept. Either way only the status differs, so classification sees exactly
-/// one upstream change.
+/// kept. With a snapshot that is a fast-forward; without one there is no
+/// base, so it arrives as a conflict, as any pulled change would.
 pub(super) fn cancelled_events(
     repos: Repositories<'_>,
     remote: &RemoteConfig,
