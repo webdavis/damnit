@@ -21,7 +21,10 @@ pub fn client_id(arguments: &[String]) -> Result<String, String> {
             w if w == "--client-secret" || w.starts_with("--client-secret=") => {
                 return Err("the client secret is never an argument, where every process on this machine can read it; pipe it on standard input".into());
             }
-            other => return Err(format!("{other} is not a flag this walk takes")),
+            flag if flag.starts_with('-') => {
+                return Err(format!("{flag} is not a flag this walk takes"));
+            }
+            _ => return Err("the command line carries an argument this walk does not take".into()),
         }
     }
     id.ok_or_else(|| "--client-id is required".to_string())
@@ -69,6 +72,18 @@ mod tests {
             client_id(&words("--client-id a --verbose"))
                 .unwrap_err()
                 .contains("--verbose")
+        );
+    }
+
+    /// A stray word may be the secret itself, pasted in the wrong place, so a
+    /// word that is not a flag is refused without being repeated.
+    #[test]
+    fn a_stray_argument_is_refused_without_being_quoted() {
+        let said = client_id(&words("--client-id a GOCSPX-stray")).unwrap_err();
+        assert!(!said.contains("GOCSPX-stray"), "{said}");
+        assert!(
+            said.contains("an argument this walk does not take"),
+            "{said}"
         );
     }
 
