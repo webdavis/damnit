@@ -307,12 +307,12 @@ dam filter list [--json|--toon]
 ```
 
 `--no-pull` answers from the local store: the reads that would otherwise pull a stale remote first,
-`ls` and `show`, skip that pass and spawn no helper. The documents are unchanged, and nothing in
+`ls`, `show` and `agenda`, skip that pass and spawn no helper. The documents are unchanged, and nothing in
 them reports staleness; a client that renders inside a frame budget uses the flag to make the read
 local, and reads `remote list` when it wants to say how fresh the answer is. Neither the `stale`
 setting nor anything else in config changes.
 
-`ls` and `show` are the only verbs it applies to, so every other verb refuses it as a command line
+`ls`, `show` and `agenda` are the only verbs it applies to, so every other verb refuses it as a command line
 that was wrong, exit 2, naming the flag. `dam pull --no-pull` is refused like the rest rather than
 read as a contradiction.
 
@@ -357,6 +357,31 @@ that read one and never a listing of what config declares.
 
 Every read command takes `--json` and prints one JSON document on stdout. This is the interface
 the clients use.
+
+```
+dam agenda [<query>] [--from <when>] [--to <when>] [--max-age <remote>=<duration>]... [--json|--toon] [--no-pull]
+```
+
+`dam agenda` lists the events a window overlaps as intervals, for a program that schedules around
+busy time. It answers `{"events": [...]}`, ordered by start: each row carries `oid`, `subject`,
+`path`, `labels`, `status`, `transparency` and `all_day`, and three keys a scheduler reads,
+`start` and `end` as epoch seconds with `end` exclusive, and `busy`, whether the event holds time:
+not cancelled, shown busy, and not declined by the attendee that stands for the calendar the event
+was read from. That attendee is per calendar, so a meeting on two configured calendars is two rows,
+and declining it marks only the copy on the calendar that is yours. Every event the window
+overlaps is listed, busy or not; an event made in `dam` with a `recurrence` is listed at its stored
+occurrence only, while a helper that expands recurrence into instances, as `dam-remote-gcal` does,
+has each instance listed. An all-day event runs midnight to midnight where `dam` runs. With no
+flags the window opens now and closes 24 hours later. Keys are only ever added; none is renamed,
+removed or retyped.
+
+A program that reads on a deadline runs `dam agenda --json --no-pull`, so the answer never waits on
+a pull, and keeps the store fresh with a separately scheduled `dam pull <remote>`, run where the
+remote's credential commands work without a terminal. `--max-age <remote>=<duration>` then guards
+that schedule: when the remote's last successful pull is older than the duration, or it has never
+pulled, `agenda` prints no document and exits 4 with the rule `stale_remote`, so a pull that keeps
+failing reaches the reader as a refusal rather than as an old answer that looks current. The time
+it reads is the one `dam remote list` reports, written only when a pull lands.
 
 #### The change document
 
@@ -650,7 +675,8 @@ blocked are both refusals, and a list that should refresh itself on the first sh
 blockers on the second. The words are `blocked`, `cycle`, `exclusive_label`, `unknown_category`,
 `no_such_object`, `no_working_object`, `no_such_remote`, `not_a_task`, `not_an_event`,
 `not_completed`, `not_committed`, `dirty_on_pull`, `move_inside_itself`, `nothing_to_commit`,
-`needs_an_answer`, `needs_an_editor`, `unresolved_conflicts` and `missing_credential`.
+`needs_an_answer`, `needs_an_editor`, `unresolved_conflicts`, `missing_credential` and
+`stale_remote`.
 
 `message` is the sentence the human form prints after `dam: `, which is what carries the rule that
 no token reaches an error. `oids` names the objects the message names, in full and in the order it
