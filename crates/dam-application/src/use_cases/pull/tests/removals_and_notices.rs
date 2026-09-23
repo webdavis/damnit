@@ -250,6 +250,7 @@ fn one_unconvertible_object_is_skipped_with_a_notice_and_the_rest_still_pull() {
             why: "path: cannot read \"a//b/\"".into(),
         }],
         removed: vec![],
+        cancelled: vec![],
         sync: Some("s1".into()),
     });
     let reports = pull(

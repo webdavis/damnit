@@ -35,7 +35,8 @@ fn a_response_naming_no_known_shape_is_refused_rather_than_read_as_an_empty_pull
     for text in ["{}", r#"{"foo":1}"#, r#"{"objectss":[]}"#] {
         let err = serde_json::from_str::<Response>(text).unwrap_err();
         assert!(
-            err.to_string().contains("objects, removed or sync"),
+            err.to_string()
+                .contains("objects, removed, cancelled or sync"),
             "{text}: {err}"
         );
     }
@@ -125,6 +126,7 @@ fn pull_round_trips_the_fixtures() {
     let res = PullResponse {
         objects: vec![milk("buy milk", false)],
         removed: vec!["r9".into()],
+        cancelled: vec![],
         sync: Some("tok-2".into()),
     };
     assert_eq!(
@@ -187,6 +189,7 @@ fn a_pull_response_with_an_unknown_field_still_deserializes_as_pull() {
         Response::Pull(PullResponse {
             objects: vec![],
             removed: vec![],
+            cancelled: vec![],
             sync: None,
         })
     );
@@ -196,6 +199,19 @@ fn a_pull_response_with_an_unknown_field_still_deserializes_as_pull() {
 fn a_push_response_with_an_unknown_field_still_deserializes_as_push() {
     let r: Response = serde_json::from_str(r#"{"results":[],"cursor":"abc"}"#).unwrap();
     assert_eq!(r, Response::Push(PushResponse { results: vec![] }));
+}
+
+#[test]
+fn a_pull_carrying_only_cancellations_is_a_pull() {
+    let read = serde_json::from_str::<Response>(r#"{"cancelled":["primary/e1"]}"#).unwrap();
+    assert!(matches!(read, Response::Pull(p) if p.cancelled == vec!["primary/e1".to_string()]));
+}
+
+#[test]
+fn pull_with_cancellations_round_trips_the_fixture() {
+    let text = include_str!("../../fixtures/pull-cancelled.response.json").trim_end();
+    let read: Response = serde_json::from_str(text).unwrap();
+    assert_eq!(serde_json::to_string(&read).unwrap(), text);
 }
 
 /// Written only when true, so every document without it reads exactly as

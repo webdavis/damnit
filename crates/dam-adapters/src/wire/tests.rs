@@ -189,6 +189,18 @@ fn an_unknown_event_word_names_the_field_it_came_from() {
 }
 
 #[test]
+fn a_pull_hands_its_cancellations_on() {
+    let response = dam_protocol::PullResponse {
+        cancelled: vec!["primary/e1".into()],
+        ..Default::default()
+    };
+    assert_eq!(
+        pull_from_wire(response).cancelled,
+        vec!["primary/e1".to_string()]
+    );
+}
+
+#[test]
 fn the_calendars_own_attendee_round_trips() {
     let mut event = dam_domain::Event::new(
         oid(1),

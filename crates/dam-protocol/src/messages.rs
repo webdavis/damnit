@@ -81,7 +81,7 @@ impl<'de> Deserialize<'de> for Response {
         // The count rather than the keys: what a helper sent is its own text,
         // and an error carrying it reaches the operator's terminal.
         Err(D::Error::custom(format!(
-            "a response naming none of objects, removed or sync, over {} keys",
+            "a response naming none of objects, removed, cancelled or sync, over {} keys",
             object.len()
         )))
     }
@@ -90,7 +90,7 @@ impl<'de> Deserialize<'de> for Response {
 /// A pull response is recognized by carrying at least one of these. Every
 /// field defaults, so without this any JSON object would read as an empty
 /// pull: the remote is empty and removed nothing.
-const PULL_KEYS: [&str; 3] = ["objects", "removed", "sync"];
+const PULL_KEYS: [&str; 4] = ["objects", "removed", "cancelled", "sync"];
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PullResponse {
@@ -98,6 +98,8 @@ pub struct PullResponse {
     pub objects: Vec<WireObject>,
     #[serde(default)]
     pub removed: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub cancelled: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sync: Option<String>,
 }

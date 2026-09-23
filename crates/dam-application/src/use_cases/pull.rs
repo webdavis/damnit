@@ -9,6 +9,7 @@ use crate::remote::{PullOutcome, RemoteCapabilities};
 use crate::use_cases::connect::connect;
 use crate::use_cases::push::select_remotes;
 
+mod cancelled;
 mod classify;
 mod notices;
 
@@ -71,7 +72,12 @@ fn apply(
                 why: format!("{}: {}", rejected.remote_id, rejected.why),
             })?;
         }
-        let objects = std::mem::take(&mut response.objects);
+        let mut objects = std::mem::take(&mut response.objects);
+        objects.extend(cancelled::cancelled_events(
+            repos,
+            remote,
+            &response.cancelled,
+        )?);
         let (planned, fresh) = classify(repos, remote, caps, objects, random)?;
         for (oid, remote_id) in fresh {
             repos

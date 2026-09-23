@@ -1,3 +1,4 @@
+mod cancellations;
 mod kind_change;
 mod removals_and_notices;
 
@@ -74,6 +75,7 @@ fn a_new_upstream_object_is_created_locally_with_a_fresh_oid_and_mapped() {
         objects: vec![incoming("from todoist", "r1")],
         rejected: vec![],
         removed: vec![],
+        cancelled: vec![],
         sync: Some("s1".into()),
     });
     let reports = pull(
@@ -256,6 +258,7 @@ fn uncommitted_local_work_stops_the_pull_before_anything_is_written() {
         objects: vec![incoming("theirs", "r1"), incoming("brand new", "r2")],
         rejected: vec![],
         removed: vec![],
+        cancelled: vec![],
         sync: Some("s9".into()),
     });
     let err = pull(
@@ -307,6 +310,7 @@ fn a_refused_pull_leaves_none_of_its_own_notices_behind() {
             why: "path: cannot read \"a//b\"".into(),
         }],
         removed: vec![],
+        cancelled: vec![],
         sync: Some("s9".into()),
     });
     let err = pull(
