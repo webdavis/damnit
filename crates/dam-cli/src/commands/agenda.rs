@@ -60,7 +60,10 @@ fn window(ctx: &Context, args: &AgendaArgs) -> Result<Window, CliError> {
         None => from.saturating_add(DEFAULT_SPAN).unwrap_or(from),
     };
     if to <= from {
-        return Err(CliError::Usage("--to must be later than --from".into()));
+        let opening = if args.from.is_some() { "--from" } else { "now" };
+        return Err(CliError::Usage(format!(
+            "--to must be later than {opening}"
+        )));
     }
     Ok(Window { from, to })
 }
@@ -261,7 +264,11 @@ mod tests {
         let mut ctx = context();
         let err = run_agenda(&mut ctx, args(Some("2026-09-20"), Some("2026-09-19"))).unwrap_err();
         assert_eq!(err.exit_code(), 2);
-        assert!(err.to_string().contains("--to"), "{err}");
+        assert_eq!(err.to_string(), "--to must be later than --from");
+        // Without --from the window opens now, and the message says so.
+        let past = run_agenda(&mut ctx, args(None, Some("2026-09-17"))).unwrap_err();
+        assert_eq!(past.exit_code(), 2);
+        assert_eq!(past.to_string(), "--to must be later than now");
         // A window that closes as it opens holds no instant either.
         let empty = run_agenda(&mut ctx, args(Some("2026-09-20"), Some("2026-09-20"))).unwrap_err();
         assert_eq!(empty.exit_code(), 2);
