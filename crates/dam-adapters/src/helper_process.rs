@@ -111,7 +111,7 @@ mod testing;
 
 #[cfg(test)]
 mod tests {
-    use dam_application::{HelperError, HelperLauncher};
+    use dam_application::{HelperError, HelperLauncher, RemoteName};
 
     use super::testing::{FAKE, install, remote};
     use super::*;
@@ -214,23 +214,28 @@ mod tests {
     }
 
     /// Git's invocation: the remote's name, then the address its url names. A
-    /// helper reads its credentials under that name.
+    /// helper reads its credentials under that name, so the remote is named
+    /// apart from its helper here.
     #[test]
     fn the_helper_is_given_its_remote_name_and_address() {
         let dir = tempfile::tempdir().unwrap();
         let launcher = install(
             dir.path(),
-            "#!/bin/sh\nread -r line\nprintf '{\"protocol\":1,\"kinds\":[\"task\"],\"fields\":[],\"credentials\":[\"%s\",\"%s\",\"%s\"],\"incremental\":false}\\n' \"$#\" \"$1\" \"$2\"\n",
+            "#!/bin/sh\nread -r line\nprintf '{\"protocol\":1,\"kinds\":[\"task\"],\"fields\":[],\"credentials\":[\"%s\",\"%s\",\"%s\",\"%s\"],\"incremental\":false}\\n' \"$#\" \"$1\" \"$2\" \"$DAM_WORK_API_TOKEN\"\n",
         );
         let mut remote = remote();
+        remote.name = RemoteName("work".into());
         remote.url = "t::primary,team@x".into();
-        let mut helper = launcher.launch(&remote, &[]).unwrap();
+        let mut helper = launcher
+            .launch(&remote, &[("api_token".into(), "tok".into())])
+            .unwrap();
         assert_eq!(
             helper.capabilities().unwrap().credentials,
             vec![
                 "2".to_string(),
-                remote.name.0.clone(),
-                "primary,team@x".to_string()
+                "work".to_string(),
+                "primary,team@x".to_string(),
+                "tok".to_string()
             ]
         );
     }
