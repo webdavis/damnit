@@ -106,3 +106,27 @@ impl Event {
         }
     }
 }
+
+impl Event {
+    /// Start and end as instants, the end exclusive. A whole day runs midnight
+    /// to midnight in `zone`, because an all-day event is a date wherever the
+    /// person is rather than a fixed span.
+    pub fn span(&self, zone: &jiff::tz::TimeZone) -> Option<(crate::Timestamp, crate::Timestamp)> {
+        Some((self.start.instant(zone)?, self.end.instant(zone)?))
+    }
+
+    /// Whether the event holds its calendar owner's time: not cancelled, shown
+    /// busy, and not declined by the calendar's own attendee. Tentative and
+    /// unanswered still hold it.
+    pub fn holds_time(&self) -> bool {
+        self.status != EventStatus::Cancelled
+            && self.transparency == Transparency::Busy
+            && !self
+                .attendees
+                .iter()
+                .any(|a| a.is_self && a.response == ResponseStatus::Declined)
+    }
+}
+
+#[cfg(test)]
+mod tests;
