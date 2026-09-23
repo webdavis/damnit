@@ -4,6 +4,11 @@
 use std::fmt;
 use std::time::Duration;
 
+/// How much of an upstream error body reaches dam, the ellipsis included. The
+/// body crosses the protocol, is stored as a notice and is printed by
+/// `dam status`, so it is cut to one line of at most this many characters.
+const MAX_ERROR_BODY: usize = 500;
+
 #[derive(Debug)]
 pub enum ApiError {
     /// The token endpoint refused, or answered without an access token.
@@ -82,5 +87,20 @@ impl fmt::Display for ApiError {
                 "Google Calendar kept paging past {limit} pages, so the pull stopped"
             ),
         }
+    }
+}
+
+/// One line of at most `MAX_ERROR_BODY` characters. Every control character
+/// becomes a space so a single notice cannot rewrite the terminal or spill
+/// across lines, and a cut is marked with a trailing ellipsis.
+pub(crate) fn bounded(text: &str) -> String {
+    let flat = text
+        .chars()
+        .map(|c| if c.is_control() { ' ' } else { c })
+        .collect::<String>();
+    let trimmed = flat.trim();
+    match trimmed.char_indices().nth(MAX_ERROR_BODY - 1) {
+        None => trimmed.to_string(),
+        Some((cut, _)) => format!("{}\u{2026}", &trimmed[..cut]),
     }
 }

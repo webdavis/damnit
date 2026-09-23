@@ -4,6 +4,7 @@
 pub mod access;
 pub mod address;
 mod api_error;
+pub mod calendar_api;
 pub mod capabilities;
 pub mod credentials;
 pub(crate) mod encoding;
