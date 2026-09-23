@@ -37,7 +37,7 @@ the helper and leaving the store as it was.
 
     cargo install --git https://github.com/webdavis/damnit dam-remote-gcal
 
-That installs `dam-remote-gcal`, which dam runs, and `dam-gcal-sign-in`, which you run once.
+That installs `dam-gcal-sign-in`, which you run once.
 
 Google needs an OAuth client of type "Desktop app" with the Google Calendar API enabled on its
 project. Keep its client id and client secret in your vault, then sign in:
