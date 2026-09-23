@@ -7,6 +7,7 @@ members = [
   "crates/dam-adapters",
   "crates/dam-cli",
   "crates/dam-remote-todoist",
+  "crates/dam-remote-gcal",
 ]
 
 [workspace.package]
@@ -25,4 +26,5 @@ clap = { version = "4.5", features = ["derive"] }
 libc = "0.2.189"
 ureq = { version = "3.4", default-features = false, features = ["rustls", "json"] }
 getrandom = "0.3"
+sha2 = "0.11"
 tempfile = "3"
