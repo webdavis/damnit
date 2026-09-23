@@ -1,13 +1,20 @@
 # The dam helper protocol
 
 A remote is reached through a helper executable `dam` finds on `PATH` by the name
-`dam-remote-<remote>`, the way git finds `git-remote-https`. `dam` writes requests to the helper's
+`dam-remote-<helper>`, the way git finds `git-remote-https`. `dam` writes requests to the helper's
 standard input and reads responses from its standard output, one JSON object per line in each
 direction. The helper's standard error is the helper's own diagnostics: `dam` keeps the tail of it
 and quotes it when the helper fails to answer.
 
 This document is the contract a third-party helper is written against. Everything it states is
 pinned by golden fixtures in this crate.
+
+## Invocation
+
+`dam` runs the helper as `dam-remote-<helper> <remote> <address>`: the remote's name as the first
+argument and the text after `::` in its url as the second, empty when the url ends at `::`. Both are
+always passed. A helper reads its credentials under that remote name, so one helper serves any number
+of remotes. Neither argument is ever a secret.
 
 ## Version and compatibility
 

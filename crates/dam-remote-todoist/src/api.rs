@@ -41,10 +41,7 @@ impl TodoistApi {
                 "DAM_TODOIST_API_TOKEN is not set; declare api_token under [remote.todoist]"
                     .to_string()
             })?;
-        let base = match std::env::var("DAM_TODOIST_BASE_URL") {
-            Ok(value) => checked_base(&value)?,
-            Err(_) => PRODUCTION_BASE.to_string(),
-        };
+        let base = base_from(std::env::var("DAM_TODOIST_BASE_URL"))?;
         Ok(TodoistApi::new(&base, &token))
     }
 
@@ -81,6 +78,19 @@ impl TodoistApi {
             .send_json(body)
             .map_err(|e| ApiError::Transport(e.to_string()))?;
         read_json(response)
+    }
+}
+
+/// Only an unset variable means Todoist; a set one goes through the seam's check.
+fn base_from(value: Result<String, std::env::VarError>) -> Result<String, String> {
+    match value {
+        Ok(value) => checked_base(&value),
+        Err(std::env::VarError::NotPresent) => Ok(PRODUCTION_BASE.to_string()),
+        Err(std::env::VarError::NotUnicode(_)) => Err(
+            "DAM_TODOIST_BASE_URL is set to bytes that are not Unicode; the test seam takes \
+             http://127.0.0.1:<port> or http://localhost:<port>"
+                .to_string(),
+        ),
     }
 }
 
@@ -134,6 +144,23 @@ mod tests {
         ] {
             assert!(checked_base(refused).is_err(), "{refused}");
         }
+    }
+
+    /// A set variable is never read as unset, which would send the bearer
+    /// token to Todoist while the operator meant a test server.
+    #[test]
+    fn a_base_url_that_is_not_unicode_is_refused() {
+        let not_unicode = std::env::VarError::NotUnicode(std::ffi::OsString::from("x"));
+        let err = base_from(Err(not_unicode)).unwrap_err();
+        assert!(err.contains("DAM_TODOIST_BASE_URL"), "{err}");
+        assert_eq!(
+            base_from(Err(std::env::VarError::NotPresent)).unwrap(),
+            PRODUCTION_BASE
+        );
+        assert_eq!(
+            base_from(Ok("http://127.0.0.1:9/".into())).unwrap(),
+            "http://127.0.0.1:9"
+        );
     }
 
     #[test]

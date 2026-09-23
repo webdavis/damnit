@@ -12,9 +12,10 @@ mod wire;
 pub use cancel::{cancellation_requested, catch_interrupts, request_cancellation};
 pub use clock::SystemClock;
 pub use credentials::ProcessCredentialSource;
+pub use dam_protocol::credential_variable;
 pub use edit_template::{parse_template, render_template};
 pub use editor::EnvEditor;
-pub use helper_process::{ProcessLauncher, credential_variable};
+pub use helper_process::ProcessLauncher;
 pub use random::OsRandom;
 pub use sqlite::{OpenError, SqliteStore};
 pub use toml_config::{
