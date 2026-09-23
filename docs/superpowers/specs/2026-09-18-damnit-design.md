@@ -447,10 +447,16 @@ on `PATH` by name, exactly as git finds `git-remote-https`:
 | Git | `dam` |
 |---|---|
 | `hg::<address>` picks `git-remote-hg` | `todoist::` picks `dam-remote-todoist` |
+| `hg::<address>` gives `git-remote-hg` the name and the address | `gcal::<address>` runs `dam-remote-gcal <remote> <address>` |
 | Helper on `PATH`, any language | Same |
 | Fixed protocol on stdin and stdout | JSON lines on stdin and stdout |
 | `capabilities` handshake | Same, with a protocol version |
 | Credential helpers | `dam` resolves the token and hands it to the helper in its environment |
+
+`dam` runs a helper as `dam-remote-<helper> <remote> <address>`, git's own invocation: the remote's
+name, then the text after `::` in its url, empty when there is none. Both are always passed and
+neither is ever a secret. A helper reads its credentials under that remote name, and the address is
+the helper's to read.
 
 A missing helper is reported by name.
 
