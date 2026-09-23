@@ -1,3 +1,4 @@
+pub(crate) mod agenda;
 pub(crate) mod commit;
 pub(crate) mod complete;
 pub(crate) mod connect;

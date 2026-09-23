@@ -25,6 +25,7 @@ pub use remote::{
     RemoteMutation,
 };
 pub use secret::Secret;
+pub use use_cases::agenda::{Scheduled, Window, agenda};
 pub use use_cases::commit::{commit, log};
 pub use use_cases::complete::{CompletePlan, Completed, complete, plan_complete};
 pub use use_cases::edit::{EditFields, apply, edit};
