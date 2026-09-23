@@ -189,6 +189,50 @@ fn an_exchange_answering_no_refresh_token_is_refused_by_name() {
     }
 }
 
+/// A redirect is how a credential reaches a host nobody meant, so the token
+/// endpoint's redirect is its answer and is never followed.
+#[test]
+fn a_redirect_from_the_token_endpoint_is_not_followed() {
+    let _guard = support::guard("a_redirect_from_the_token_endpoint_is_not_followed");
+    let mut elsewhere_routes = HashMap::new();
+    elsewhere_routes.insert(
+        "POST /token",
+        vec![Reply::json(
+            200,
+            serde_json::json!({"refresh_token": REFRESH}),
+        )],
+    );
+    let elsewhere = loopback::serve(elsewhere_routes);
+    let mut routes = HashMap::new();
+    routes.insert(
+        "POST /token",
+        vec![
+            Reply::json(307, serde_json::json!({}))
+                .with_header("Location", &format!("{}/token", elsewhere.base)),
+        ],
+    );
+    let google = loopback::serve(routes);
+    let sign_in = SignIn::new(Endpoints::loopback(&google.base).unwrap());
+    let mut browser = None;
+    let err = sign_in
+        .mint(&client(), &mut |url| {
+            browser = Some(browse(url, |state| format!("state={state}&code=c")));
+        })
+        .unwrap_err();
+    let _ = browser.unwrap().join();
+    assert_eq!(
+        err,
+        SignInError::Exchange {
+            status: Some(307),
+            code: None
+        }
+    );
+    assert!(
+        elsewhere.seen().is_empty(),
+        "the exchange followed the redirect"
+    );
+}
+
 /// The state is what ties a redirect to this walk, and the verifier is what
 /// ties the exchange to it, so each walk draws both afresh.
 #[test]
