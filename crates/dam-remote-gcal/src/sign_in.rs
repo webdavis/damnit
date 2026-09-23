@@ -6,6 +6,7 @@
 //! travel in the exchange's request body and nowhere else, and every refusal
 //! is a fixed sentence naming the step.
 
+mod command_line;
 mod exchange;
 mod pkce;
 mod redirect;
@@ -14,6 +15,8 @@ use std::fmt;
 use std::net::TcpListener;
 
 use crate::{Endpoints, Secret};
+
+pub use command_line::{client_id, client_secret};
 
 /// The address the redirect comes back to. Loopback only: the code is a
 /// credential, and a listener on any other interface offers it to the network.

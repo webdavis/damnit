@@ -33,6 +33,26 @@ the helper and leaving the store as it was.
 
     dam pull
 
+## Google Calendar
+
+    cargo install --git https://github.com/webdavis/damnit dam-remote-gcal
+
+That installs `dam-remote-gcal`, which dam runs, and `dam-gcal-sign-in`, which you run once.
+
+Google needs an OAuth client of type "Desktop app" with the Google Calendar API enabled on its
+project. Keep its client id and client secret in your vault, then sign in:
+
+    security find-generic-password -w -s "Google dam client" | dam-gcal-sign-in --client-id <id>
+
+The command prints a URL; open it, grant read-only access to your calendar events, and the refresh
+token is printed once on standard output. Store it in your vault. dam asks Google for read-only
+access, so nothing it does can change your calendar.
+
+Publish the OAuth consent screen ("In production") before you sign in. While its publishing status
+is "Testing", Google issues refresh tokens that expire after 7 days, and every pull fails with
+`invalid_grant` from then on until you sign in again. An app Google has not verified still works in
+production; the consent page shows a warning you click through once.
+
 ## Every day
 
     dam new "buy oat milk" --due tomorrow -p 1 --label errand
