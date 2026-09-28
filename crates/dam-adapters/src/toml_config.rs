@@ -63,7 +63,7 @@ pub fn load_config(path: &FsPath) -> Result<Config, ConfigError> {
 pub fn parse_config(text: &str) -> Result<Config, ConfigError> {
     let root: Table = text
         .parse()
-        .map_err(|e: toml::de::Error| syntax_error(text, &e))?;
+        .map_err(|e: toml::de::Error| syntax_error_without_the_echoed_line(text, &e))?;
     let done_interactive = root
         .get("done")
         .and_then(|d| d.get("interactive"))
@@ -99,10 +99,7 @@ pub fn parse_config(text: &str) -> Result<Config, ConfigError> {
     })
 }
 
-/// A syntax error as its position plus the parser's own sentence. The snippet
-/// toml renders is dropped: it echoes the offending line, where a literal
-/// credential can sit.
-fn syntax_error(text: &str, e: &toml::de::Error) -> ConfigError {
+fn syntax_error_without_the_echoed_line(text: &str, e: &toml::de::Error) -> ConfigError {
     let Some(span) = e.span() else {
         return ConfigError::Syntax(e.message().to_string());
     };
@@ -150,7 +147,6 @@ fn parse_category(name: &str, t: &Table) -> Result<Category, ConfigError> {
     })
 }
 
-/// A `<number><s|m|h>` duration; `field` names the key in the refusal.
 pub fn parse_duration(field: &str, text: &str) -> Result<Duration, ConfigError> {
     let bad = || ConfigError::Invalid(format!("{field} {text:?}: expected <number><s|m|h>"));
     let mut chars = text.chars();
@@ -166,9 +162,13 @@ pub fn parse_duration(field: &str, text: &str) -> Result<Duration, ConfigError> 
     Ok(Duration::from_secs(secs))
 }
 
-/// Adds one remote table. The `Some` answer is a warning for the operator,
-/// returned rather than printed so the caller decides where it goes.
-pub fn append_remote(path: &FsPath, name: &str, url: &str) -> Result<Option<String>, ConfigError> {
+pub type OperatorWarning = String;
+
+pub fn append_remote(
+    path: &FsPath,
+    name: &str,
+    url: &str,
+) -> Result<Option<OperatorWarning>, ConfigError> {
     let existing = match std::fs::read_to_string(path) {
         Ok(t) => t,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
@@ -196,7 +196,7 @@ pub fn append_remote(path: &FsPath, name: &str, url: &str) -> Result<Option<Stri
         .mode(0o700)
         .create(&dir)
         .map_err(io_error)?;
-    write_private(path, &text)
+    replace_atomically_readable_by_its_owner_alone(path, &text)
 }
 
 fn parent_of(path: &FsPath) -> PathBuf {
@@ -210,12 +210,11 @@ fn io_error(e: std::io::Error) -> ConfigError {
     ConfigError::Io(e.to_string())
 }
 
-/// Writes the config through a sibling temp file, so an interrupted write leaves
-/// the old one intact, and leaves the result readable only by its owner: the
-/// file is the documented home of a literal credential. The `Some` answer says
-/// the file had been reachable by someone else.
-fn write_private(path: &FsPath, text: &str) -> Result<Option<String>, ConfigError> {
-    let widened = match std::fs::metadata(path) {
+fn replace_atomically_readable_by_its_owner_alone(
+    path: &FsPath,
+    text: &str,
+) -> Result<Option<OperatorWarning>, ConfigError> {
+    let mode_before = match std::fs::metadata(path) {
         Ok(meta) => meta.permissions().mode() & 0o777,
         Err(_) => 0,
     };
@@ -226,11 +225,11 @@ fn write_private(path: &FsPath, text: &str) -> Result<Option<String>, ConfigErro
     file.write_all(text.as_bytes()).map_err(io_error)?;
     file.as_file().sync_all().map_err(io_error)?;
     file.persist(path).map_err(|e| io_error(e.error))?;
-    if widened & 0o077 == 0 {
+    if mode_before & 0o077 == 0 {
         return Ok(None);
     }
     Ok(Some(format!(
-        "the config was mode {widened:o}; writing it 600, it can hold a credential"
+        "the config was mode {mode_before:o}; writing it 600, it can hold a credential"
     )))
 }
 
