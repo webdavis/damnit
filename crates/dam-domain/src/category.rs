@@ -1,8 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
-/// A named set of label values. `exclusive` means an object holds at most one
-/// of them. dam ships none; users declare their own.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Category {
     pub name: String,
@@ -82,8 +80,6 @@ impl Categories {
         self.category_of(value).is_none()
     }
 
-    /// Every declared category, in the order the config gave them, for a
-    /// client that renders the catalogue rather than enforcing it.
     pub fn all(&self) -> &[Category] {
         &self.0
     }

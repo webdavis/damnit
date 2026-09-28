@@ -7,12 +7,8 @@ use super::term::term;
 pub enum QueryError {
     Empty,
     Unexpected(String),
-    BadValue {
-        key: String,
-        value: String,
-    },
+    BadValue { key: String, value: String },
     Unclosed,
-    /// More nesting than `MAX_DEPTH`, refused rather than recursed into.
     TooDeep,
 }
 
@@ -64,10 +60,7 @@ fn lex(text: &str) -> Vec<Tok> {
     out
 }
 
-/// How deep `(` and `!` may nest. The parser descends once per level, so an
-/// unbounded query would overflow the stack and abort the process instead of
-/// answering with an error.
-const MAX_DEPTH: usize = 64;
+const MAX_RECURSIVE_DESCENT_DEPTH: usize = 64;
 
 struct Parser {
     toks: Vec<Tok>,
@@ -127,17 +120,16 @@ impl Parser {
     fn not(&mut self) -> Result<Expr, QueryError> {
         if self.peek() == Some(&Tok::Not) {
             self.next();
-            return self.deeper(|p| Ok(Expr::Not(Box::new(p.not()?))));
+            return self.descend_one_level(|p| Ok(Expr::Not(Box::new(p.not()?))));
         }
         self.atom()
     }
 
-    /// Runs one level of descent, refusing to go past `MAX_DEPTH`.
-    fn deeper(
+    fn descend_one_level(
         &mut self,
         inner: impl FnOnce(&mut Parser) -> Result<Expr, QueryError>,
     ) -> Result<Expr, QueryError> {
-        if self.depth == MAX_DEPTH {
+        if self.depth == MAX_RECURSIVE_DESCENT_DEPTH {
             return Err(QueryError::TooDeep);
         }
         self.depth += 1;
@@ -148,7 +140,7 @@ impl Parser {
 
     fn atom(&mut self) -> Result<Expr, QueryError> {
         match self.next() {
-            Some(Tok::Open) => self.deeper(|p| {
+            Some(Tok::Open) => self.descend_one_level(|p| {
                 let inner = p.or()?;
                 match p.next() {
                     Some(Tok::Close) => Ok(inner),
@@ -170,7 +162,10 @@ impl fmt::Display for QueryError {
             QueryError::Unexpected(t) => write!(f, "unexpected {t} in query"),
             QueryError::BadValue { key, value } => write!(f, "{key}: cannot read {value:?}"),
             QueryError::Unclosed => f.write_str("a ( has no matching )"),
-            QueryError::TooDeep => write!(f, "the query nests deeper than {MAX_DEPTH}"),
+            QueryError::TooDeep => write!(
+                f,
+                "the query nests deeper than {MAX_RECURSIVE_DESCENT_DEPTH}"
+            ),
         }
     }
 }

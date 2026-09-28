@@ -43,8 +43,6 @@ pub enum ResponseStatus {
 pub struct Attendee {
     pub email: String,
     pub response: ResponseStatus,
-    /// Whether this attendee is the calendar the event was read from:
-    /// its answer is the calendar owner's.
     pub is_self: bool,
 }
 
@@ -67,8 +65,6 @@ pub struct Attachment {
     pub mime_type: Option<String>,
 }
 
-/// An event has no `done`; it passes. Every field maps to one on Google
-/// Calendar's event resource.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Event {
     pub base: Base,

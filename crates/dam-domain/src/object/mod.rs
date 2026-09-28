@@ -40,13 +40,11 @@ impl std::fmt::Display for Kind {
     }
 }
 
-/// A reminder relative to the object's time: minutes before due or start.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Reminder {
     pub minutes_before: i64,
 }
 
-/// What every object has, whatever its kind.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Base {
     pub oid: Oid,
@@ -56,7 +54,6 @@ pub struct Base {
     pub labels: BTreeSet<String>,
     pub depends: Vec<Oid>,
     pub reminders: Vec<Reminder>,
-    /// The compact rule text; `recurrence::Rule::parse` reads it.
     pub recurrence: Option<String>,
 }
 
@@ -75,8 +72,10 @@ impl Base {
     }
 }
 
-/// Both variants carry their full state directly; no indirection.
-#[allow(clippy::large_enum_variant)]
+#[allow(
+    clippy::large_enum_variant,
+    reason = "both variants carry their full state directly, with no indirection"
+)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Object {
     Task(Task),

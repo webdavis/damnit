@@ -2,16 +2,12 @@ use std::collections::BTreeSet;
 
 use crate::Oid;
 
-/// Why `done` is refused. Dependencies are listed before children.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Blocker {
     OpenDependency(Oid),
     OpenChild(Oid),
 }
 
-/// How far a caller will go to complete a blocked task. `With` carries the
-/// answers to what happens to the blockers, so a forced completion can never
-/// be asked to dispose of them without saying how.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Force {
     No,
@@ -19,16 +15,12 @@ pub enum Force {
     With(Dispositions),
 }
 
-/// What happens to a forced parent's open children and open dependencies.
-/// Both default to keeping what is there, which is the least a completion can
-/// disturb and what a caller that names only one of them gets for the other.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Dispositions {
     pub children: ChildDisposition,
     pub dependencies: DependencyDisposition,
 }
 
-/// What to do with open children when a parent is forced done.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub enum ChildDisposition {
     Up,
@@ -44,7 +36,6 @@ pub enum DependencyDisposition {
     Keep,
 }
 
-/// Pure: the caller supplies which dependencies and children are still open.
 pub fn blockers(open_dependencies: &[Oid], open_children: &[Oid]) -> Vec<Blocker> {
     open_dependencies
         .iter()
@@ -54,13 +45,15 @@ pub fn blockers(open_dependencies: &[Oid], open_children: &[Oid]) -> Vec<Blocker
         .collect()
 }
 
-/// The path from one of `depends` back to `oid`, if adding `depends` to `oid`
-/// would close a cycle. `edges` answers what an object already depends on.
-pub fn cycle_in(depends: &[Oid], oid: &Oid, edges: &dyn Fn(&Oid) -> Vec<Oid>) -> Option<Vec<Oid>> {
+pub fn cycle_in(
+    depends: &[Oid],
+    oid: &Oid,
+    existing_depends_of: &dyn Fn(&Oid) -> Vec<Oid>,
+) -> Option<Vec<Oid>> {
     for start in depends {
         let mut path = vec![start.clone()];
         let mut seen = BTreeSet::new();
-        if walk(start, oid, edges, &mut path, &mut seen) {
+        if walk(start, oid, existing_depends_of, &mut path, &mut seen) {
             return Some(path);
         }
     }
@@ -120,25 +113,26 @@ mod tests {
 
     #[test]
     fn a_direct_cycle_is_found() {
-        // b depends on a; adding a -> b closes the loop
-        let graph: BTreeMap<Oid, Vec<Oid>> = [(oid(2), vec![oid(1)])].into();
-        let edges = |o: &Oid| graph.get(o).cloned().unwrap_or_default();
-        assert_eq!(
-            cycle_in(&[oid(2)], &oid(1), &edges),
-            Some(vec![oid(2), oid(1)])
-        );
+        let (a, b) = (oid(1), oid(2));
+        let b_depends_on_a: BTreeMap<Oid, Vec<Oid>> = [(b.clone(), vec![a.clone()])].into();
+        let edges = |o: &Oid| b_depends_on_a.get(o).cloned().unwrap_or_default();
+        let a_now_depending_on_b = cycle_in(std::slice::from_ref(&b), &a, &edges);
+        assert_eq!(a_now_depending_on_b, Some(vec![b, a]));
     }
 
     #[test]
     fn a_transitive_cycle_is_found() {
-        // c -> b -> a; adding a -> c closes it
-        let graph: BTreeMap<Oid, Vec<Oid>> =
-            [(oid(3), vec![oid(2)]), (oid(2), vec![oid(1)])].into();
-        let edges = |o: &Oid| graph.get(o).cloned().unwrap_or_default();
-        assert_eq!(
-            cycle_in(&[oid(3)], &oid(1), &edges),
-            Some(vec![oid(3), oid(2), oid(1)])
-        );
+        let (a, b, c) = (oid(1), oid(2), oid(3));
+        let c_depends_on_b_depends_on_a: BTreeMap<Oid, Vec<Oid>> =
+            [(c.clone(), vec![b.clone()]), (b.clone(), vec![a.clone()])].into();
+        let edges = |o: &Oid| {
+            c_depends_on_b_depends_on_a
+                .get(o)
+                .cloned()
+                .unwrap_or_default()
+        };
+        let a_now_depending_on_c = cycle_in(std::slice::from_ref(&c), &a, &edges);
+        assert_eq!(a_now_depending_on_c, Some(vec![c, b, a]));
     }
 
     #[test]
@@ -146,6 +140,19 @@ mod tests {
         let graph: BTreeMap<Oid, Vec<Oid>> = [(oid(2), vec![oid(3)])].into();
         let edges = |o: &Oid| graph.get(o).cloned().unwrap_or_default();
         assert_eq!(cycle_in(&[oid(2)], &oid(1), &edges), None);
+    }
+
+    #[test]
+    fn dispositions_left_unnamed_keep_children_and_dependencies_where_they_are() {
+        let only_children_named = Dispositions {
+            children: ChildDisposition::Up,
+            ..Dispositions::default()
+        };
+        assert_eq!(
+            only_children_named.dependencies,
+            DependencyDisposition::Keep
+        );
+        assert_eq!(Dispositions::default().children, ChildDisposition::Keep);
     }
 
     #[test]

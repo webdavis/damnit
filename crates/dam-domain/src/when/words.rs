@@ -1,41 +1,30 @@
-//! The date words a flag accepts: `today`, `tomorrow`, a weekday, `next`
-//! plus a weekday, and `in <n> days|weeks|months`. Machine formats are read
-//! by `When::parse_human` itself; a word this module does not know is `None`
-//! there, so the one hint names every accepted form.
-
 use jiff::Span;
 use jiff::civil::Weekday;
 
 use crate::Date;
 use crate::weekday::parse_weekday;
 
-/// The day a word names, or `None` for text that is not one of these forms.
-/// `None` also covers a form whose arithmetic leaves the calendar, such as a
-/// span of days past the last representable date.
 pub(super) fn day(text: &str, today: Date) -> Option<Date> {
     let lowered = text.to_ascii_lowercase();
     let words: Vec<&str> = lowered.split_whitespace().collect();
     match words.as_slice() {
         ["today"] => Some(today),
         ["tomorrow"] => today.tomorrow().ok(),
-        [name] | ["next", name] => parse_weekday(name).and_then(|day| next_weekday(today, day)),
+        [name] | ["next", name] => {
+            parse_weekday(name).and_then(|day| next_weekday_strictly_after(today, day))
+        }
         ["in", count, unit] => ahead(today, count, unit),
         _ => None,
     }
 }
 
-/// The forms `day` reads, for the hint a failure prints.
-pub(super) const ACCEPTED: &str =
+pub(super) const ACCEPTED_FORMS: &str =
     "today, tomorrow, a weekday such as mon or monday, next <weekday>, in <n> days|weeks|months";
 
-/// The next `day` strictly after `today`, so a weekday named on its own day
-/// means a week out rather than the morning already underway.
-fn next_weekday(today: Date, day: Weekday) -> Option<Date> {
+fn next_weekday_strictly_after(today: Date, day: Weekday) -> Option<Date> {
     today.nth_weekday(1, day).ok()
 }
 
-/// `today` moved on by a count of days, weeks or months. A month lands on the
-/// same day of a later month, clamped to that month's last day.
 fn ahead(today: Date, count: &str, unit: &str) -> Option<Date> {
     let count: u32 = count.parse().ok()?;
     let span = Span::new();
@@ -54,7 +43,6 @@ mod tests {
     use super::*;
     use jiff::civil::date;
 
-    /// A Friday, so a weekday named before it, on it and after it all differ.
     fn friday() -> Date {
         date(2026, 9, 18)
     }

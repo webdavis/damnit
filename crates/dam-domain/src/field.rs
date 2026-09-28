@@ -1,8 +1,5 @@
 use std::fmt;
 
-/// One field of an object, by name. The set is closed: a remote declares
-/// which of these it carries, `changed_fields` reports which of them moved,
-/// and `merge_fields` copies exactly the ones named.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Field {
     Subject,
@@ -30,8 +27,6 @@ pub enum Field {
     Organizer,
     Conference,
     Attachments,
-    /// Not a field anything merges: what `changed_fields` reports when the
-    /// two objects are not even the same kind.
     Kind,
 }
 
@@ -67,8 +62,6 @@ impl Field {
         }
     }
 
-    /// `None` for a name this dam does not know, which is how a remote that
-    /// declares a field from a newer protocol is ignored rather than refused.
     pub fn parse(name: &str) -> Option<Field> {
         Some(match name {
             "subject" => Field::Subject,
@@ -158,7 +151,7 @@ mod tests {
     }
 
     #[test]
-    fn an_unknown_name_is_none() {
+    fn an_unknown_name_is_none_so_a_field_from_a_newer_protocol_is_ignored_not_refused() {
         assert_eq!(Field::parse("eventtype"), None);
         assert_eq!(Field::parse(""), None);
     }

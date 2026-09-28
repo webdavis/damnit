@@ -3,14 +3,12 @@ mod words;
 pub type Date = jiff::civil::Date;
 pub type Timestamp = jiff::Timestamp;
 
-/// A point on the calendar: a whole day, or an instant in a named zone.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum When {
     Day(Date),
     At(jiff::Zoned),
 }
 
-/// `When::parse_human` failed to read the given text as a date.
 #[derive(Debug, PartialEq, Eq)]
 pub struct WhenError(pub String);
 
@@ -34,13 +32,6 @@ impl When {
         matches!(self, When::Day(_))
     }
 
-    /// A date word (see `words`), `YYYY-MM-DD`, `YYYY-MM-DDTHH:MM[:SS]` in `tz`, or a full
-    /// zoned timestamp.
-    ///
-    /// `Date` and `DateTime` both parse a string carrying more than they need (dropping any
-    /// trailing time or zone), so the text shape picks the parser instead of trying each in
-    /// turn: a `[zone]` suffix means a full zoned timestamp, a bare `T` means a local time, and
-    /// anything else is a plain date.
     pub fn parse_human(
         text: &str,
         today: Date,
@@ -50,26 +41,27 @@ impl When {
         if let Some(day) = words::day(text, today) {
             return Ok(When::Day(day));
         }
-        if text.contains('[') {
+        let names_a_zone = text.contains('[');
+        let names_a_local_time = text.contains('T');
+        if names_a_zone {
             return text
                 .parse::<jiff::Zoned>()
                 .map(When::At)
-                .map_err(|e| hint(text, &e));
+                .map_err(|e| friendly_hint_with_cause(text, &e));
         }
-        if text.contains('T') {
+        if names_a_local_time {
             return text
                 .parse::<jiff::civil::DateTime>()
-                .map_err(|e| hint(text, &e))?
+                .map_err(|e| friendly_hint_with_cause(text, &e))?
                 .to_zoned(tz.clone())
                 .map(When::At)
-                .map_err(|e| hint(text, &e));
+                .map_err(|e| friendly_hint_with_cause(text, &e));
         }
         text.parse::<Date>()
             .map(When::Day)
-            .map_err(|e| hint(text, &e))
+            .map_err(|e| friendly_hint_with_cause(text, &e))
     }
 
-    /// `2026-09-25` or the zoned form; `parse_human` reads both back.
     pub fn to_text(&self) -> String {
         match self {
             When::Day(d) => d.to_string(),
@@ -78,12 +70,10 @@ impl When {
     }
 }
 
-/// The same friendly hint on every `parse_human` failure, whatever shape the
-/// text was read as, with jiff's own reason appended.
-fn hint(text: &str, cause: &dyn std::fmt::Display) -> WhenError {
+fn friendly_hint_with_cause(text: &str, cause: &dyn std::fmt::Display) -> WhenError {
     WhenError(format!(
         "cannot read {text:?} as a date; use {}, YYYY-MM-DD or YYYY-MM-DDTHH:MM: {cause}",
-        words::ACCEPTED
+        words::ACCEPTED_FORMS
     ))
 }
 

@@ -1,7 +1,5 @@
 use std::fmt;
 
-/// Where an object sits in the tree, the way a file sits in a directory.
-/// Empty is the root; otherwise segments joined by `/` with a trailing `/`.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Path(String);
 
@@ -9,7 +7,6 @@ pub struct Path(String);
 pub enum PathError {
     EmptySegment,
     BadCharacter(char),
-    /// `.` or `..`: a step through the tree rather than a name in it.
     RelativeSegment,
 }
 
@@ -119,11 +116,8 @@ mod tests {
         assert_eq!(Path::parse("a//b"), Err(PathError::EmptySegment));
     }
 
-    /// `.` and `..` read as instructions rather than names, so `parent` and
-    /// `is_within` would answer questions the segments do not mean: without
-    /// this, `a/../b` reports itself inside `a/`.
     #[test]
-    fn parse_refuses_a_relative_segment() {
+    fn parse_refuses_a_relative_segment_so_a_dot_dot_b_cannot_pass_as_inside_a() {
         for text in ["a/../b", "a/./b", "..", ".", "../a", "./a", "a/..", "a/."] {
             assert_eq!(
                 Path::parse(text),
