@@ -324,7 +324,7 @@ The query is a string in one grammar for both kinds:
 
 ```
 due:today | overdue
-path:webdavis/dotfiles/ & effort:deep & !done
+path:example/app/ & effort:deep & !done
 start:this-week & transparency:busy
 attached:<event-oid>
 ```

@@ -27,26 +27,24 @@ spec until the operator approves it.
 
 ## Global constraints
 
-Copied from the spec, the clean-code Rust standard, the v1 plan and the operator's rules for this
+Copied from the spec, the clean-code Rust standard and the operator's rules for this
 work. Every task's requirements include these.
 
 - Helpers are tested against a loopback double of Google's API, never the live service.
 - Every `dam` binary run in a test sets `HOME`, `XDG_CONFIG_HOME` and `XDG_DATA_HOME` to a temporary directory.
-- Never read `~/.config/dam/`, `~/.config/gogcli/`, or any rendered secret file; never run the real `gog`; never run dam against a real account or the network.
-- OAuth credentials and tokens are secrets: never in argv, a child's environment, a log line or an error string. Mirror the discipline pns's `GoogleCalendar` type documents.
+- Never read `~/.config/dam/` or any rendered secret file; never run dam against a real account or the network.
+- OAuth credentials and tokens are secrets: never in argv, a child's environment, a log line or an error string.
 - No code in this workspace depends on another repository.
-- Nothing dam ships names pns: no code, comment, test name, README line, spec text or output. This
-  plan names it in two places only: the operator's rule above, quoted as given, and the consent walk
-  Task 2 copies. The sign-in code is a copy, never a path or git dependency, and no crate is shared
-  with that repository.
+- The sign-in code lives in this workspace, never a path or git dependency, and no crate is shared
+  with another repository.
 - Every helper binary run in a test sets the same three variables as a `dam` run, so no test can
   reach a real home directory whichever binary it drives.
 - Read-only means read-only: nothing `dam-remote-gcal` does can create, change or delete a Google
   Calendar event. The helper sends no request on a push, and the sign-in asks for the read-only scope,
   so Google refuses a write even if code tried one.
 - No em-dashes anywhere: code, comments, docs, commit messages, pull request bodies.
-- Conventional Commits, one logical change per commit, `SKIP_AI_COMMIT=1` in the environment, no AI
-  co-author trailer, no generated-with footer, never `--no-verify`.
+- Conventional Commits, one logical change per commit, no AI co-author trailer, no generated-with
+  footer, never `--no-verify`.
 - `trash`, never `rm`, including scratch you made.
 - Comments say what the code does or why it is that way, never what was rejected or considered.
 - New behavior is written test-first, without exception: failing test, run it, see it fail for the
@@ -427,17 +425,15 @@ Expected: 4 passed; gates clean.
 - [ ] **Step 5: Commit**
 
 ```bash
-SKIP_AI_COMMIT=1 git add Cargo.toml Cargo.lock crates/dam-remote-gcal
-SKIP_AI_COMMIT=1 git commit -m "feat(gcal): add the package with its secret type and loopback-only endpoints"
+git add Cargo.toml Cargo.lock crates/dam-remote-gcal
+git commit -m "feat(gcal): add the package with its secret type and loopback-only endpoints"
 ```
 
 ---
 
 ### Task 2: The consent walk
 
-PR 1. Copied from the consent walk in the dotfiles repository,
-`pns/crates/pns-adapters/src/calendar/google/consent.rs` and `token.rs` (read, never depended on),
-with four differences: randomness comes from `getrandom` rather than `/dev/urandom`, base64url is the
+PR 1. An OAuth loopback consent walk with PKCE: randomness comes from `getrandom`, base64url is the
 twenty lines below rather than a dependency, the scope is `calendar.events.readonly`, and a refusal
 of the exchange names Google's HTTP status and its RFC 6749 error word.
 
@@ -1259,8 +1255,8 @@ Expected: every test passes, each well inside a second; gates clean.
 - [ ] **Step 6: Commit**
 
 ```bash
-SKIP_AI_COMMIT=1 git add crates/dam-remote-gcal
-SKIP_AI_COMMIT=1 git commit -m "feat(gcal): the consent walk that mints a read-only refresh token"
+git add crates/dam-remote-gcal
+git commit -m "feat(gcal): the consent walk that mints a read-only refresh token"
 ```
 
 ---
@@ -1561,8 +1557,8 @@ Expected: every test passes; gates clean.
 - [ ] **Step 5: Commit, and apply the amendment once approved**
 
 ```bash
-SKIP_AI_COMMIT=1 git add crates/dam-remote-gcal README.md
-SKIP_AI_COMMIT=1 git commit -m "feat(gcal): dam-gcal-sign-in prints a refresh token once and writes nothing"
+git add crates/dam-remote-gcal README.md
+git commit -m "feat(gcal): dam-gcal-sign-in prints a refresh token once and writes nothing"
 ```
 
 When the operator has approved Amendment A4, apply its "Signing in" paragraph to the spec in a
@@ -1710,8 +1706,8 @@ Expected: clean; every existing helper test still passes.
 - [ ] **Step 5: Commit, and apply the amendment once approved**
 
 ```bash
-SKIP_AI_COMMIT=1 git add crates/dam-protocol crates/dam-application crates/dam-adapters
-SKIP_AI_COMMIT=1 git commit -m "feat(helper): run each helper with its remote's name and address, as git does"
+git add crates/dam-protocol crates/dam-application crates/dam-adapters
+git commit -m "feat(helper): run each helper with its remote's name and address, as git does"
 ```
 
 Once Amendment A1 is approved, apply it to the spec in its own commit,
@@ -1803,8 +1799,8 @@ Expected: clean. The golden fixtures are unchanged, because a false `self` is ne
 - [ ] **Step 5: Commit, and apply the amendment once approved**
 
 ```bash
-SKIP_AI_COMMIT=1 git add crates
-SKIP_AI_COMMIT=1 git commit -m "feat(event): record which attendee is the calendar's own"
+git add crates
+git commit -m "feat(event): record which attendee is the calendar's own"
 ```
 
 Once Amendment A2 is approved, apply it in its own commit, `docs(spec): an attendee says whether it
@@ -2061,8 +2057,8 @@ Expected: clean.
 - [ ] **Step 5: Commit, and apply the amendment once approved**
 
 ```bash
-SKIP_AI_COMMIT=1 git add crates
-SKIP_AI_COMMIT=1 git commit -m "feat(pull): a helper can report an event cancelled by its remote id"
+git add crates
+git commit -m "feat(pull): a helper can report an event cancelled by its remote id"
 ```
 
 Once Amendment A3 is approved, apply it in its own commit, `docs(spec): a pull reports a
@@ -2345,10 +2341,10 @@ Expected: every test passes; gates clean.
 - [ ] **Step 5: Commit**
 
 ```bash
-SKIP_AI_COMMIT=1 git add crates/dam-application/src/use_cases/push/tests.rs crates/dam-application/src/use_cases/push/tests/read_only.rs crates/dam-protocol/docs/specs/protocol.md
-SKIP_AI_COMMIT=1 git commit -m "test(push): pin and document that a remote declaring no kinds is sent nothing"
-SKIP_AI_COMMIT=1 git add crates/dam-remote-gcal
-SKIP_AI_COMMIT=1 git commit -m "feat(gcal): read the calendars from the address and the credentials under the remote's name"
+git add crates/dam-application/src/use_cases/push/tests.rs crates/dam-application/src/use_cases/push/tests/read_only.rs crates/dam-protocol/docs/specs/protocol.md
+git commit -m "test(push): pin and document that a remote declaring no kinds is sent nothing"
+git add crates/dam-remote-gcal
+git commit -m "feat(gcal): read the calendars from the address and the credentials under the remote's name"
 ```
 
 ---
@@ -2542,8 +2538,8 @@ Expected: every test passes; gates clean.
 - [ ] **Step 5: Commit**
 
 ```bash
-SKIP_AI_COMMIT=1 git add crates/dam-remote-gcal
-SKIP_AI_COMMIT=1 git commit -m "feat(gcal): exchange the refresh token for an access token, quoting nothing back"
+git add crates/dam-remote-gcal
+git commit -m "feat(gcal): exchange the refresh token for an access token, quoting nothing back"
 ```
 
 ---
@@ -2824,8 +2820,8 @@ Expected: every test passes; gates clean.
 - [ ] **Step 5: Commit**
 
 ```bash
-SKIP_AI_COMMIT=1 git add crates/dam-remote-gcal Cargo.lock
-SKIP_AI_COMMIT=1 git commit -m "feat(gcal): list a calendar's events over a window, page by bounded page"
+git add crates/dam-remote-gcal Cargo.lock
+git commit -m "feat(gcal): list a calendar's events over a window, page by bounded page"
 ```
 
 This is PR 5's last task. When the operator has approved Amendment A6, apply it to the spec in a
@@ -3322,8 +3318,8 @@ Expected: every test passes; gates clean.
 - [ ] **Step 6: Commit**
 
 ```bash
-SKIP_AI_COMMIT=1 git add crates/dam-remote-gcal
-SKIP_AI_COMMIT=1 git commit -m "feat(gcal): pull every configured calendar's window, cancelled items by id"
+git add crates/dam-remote-gcal
+git commit -m "feat(gcal): pull every configured calendar's window, cancelled items by id"
 ```
 
 ---
@@ -3515,8 +3511,8 @@ Expected: every test passes; gates clean.
 - [ ] **Step 5: Commit**
 
 ```bash
-SKIP_AI_COMMIT=1 git add crates/dam-remote-gcal
-SKIP_AI_COMMIT=1 git commit -m "feat(gcal): report an event that vanished from the window as cancelled"
+git add crates/dam-remote-gcal
+git commit -m "feat(gcal): report an event that vanished from the window as cancelled"
 ```
 
 ---
@@ -3819,8 +3815,8 @@ Expected: clean; every test inside a second.
 - [ ] **Step 5: Commit, and apply the amendment once approved**
 
 ```bash
-SKIP_AI_COMMIT=1 git add crates/dam-remote-gcal README.md
-SKIP_AI_COMMIT=1 git commit -m "feat(gcal): the read-only protocol helper, refusing every push by name"
+git add crates/dam-remote-gcal README.md
+git commit -m "feat(gcal): the read-only protocol helper, refusing every push by name"
 ```
 
 Once Amendment A4 is approved, apply the rest of it (the helper paragraph and the config example's
@@ -3985,8 +3981,8 @@ Expected: every test passes; gates clean.
 - [ ] **Step 5: Commit**
 
 ```bash
-SKIP_AI_COMMIT=1 git add crates/dam-domain
-SKIP_AI_COMMIT=1 git commit -m "feat(event): an event's span in instants, and whether it holds time"
+git add crates/dam-domain
+git commit -m "feat(event): an event's span in instants, and whether it holds time"
 ```
 
 ---
@@ -4154,8 +4150,8 @@ Expected: every test passes; gates clean.
 - [ ] **Step 5: Commit**
 
 ```bash
-SKIP_AI_COMMIT=1 git add crates/dam-application
-SKIP_AI_COMMIT=1 git commit -m "feat(agenda): events overlapping a window, each with whether it holds time"
+git add crates/dam-application
+git commit -m "feat(agenda): events overlapping a window, each with whether it holds time"
 ```
 
 ---
@@ -4497,8 +4493,8 @@ Expected: clean; the two binary tests inside a second each.
 - [ ] **Step 6: Commit**
 
 ```bash
-SKIP_AI_COMMIT=1 git add crates/dam-cli README.md
-SKIP_AI_COMMIT=1 git commit -m "feat(agenda): dam agenda lists events as intervals with a busy reading"
+git add crates/dam-cli README.md
+git commit -m "feat(agenda): dam agenda lists events as intervals with a busy reading"
 ```
 
 ---
@@ -4569,8 +4565,8 @@ whole `impl fmt::Display for Refusal` block, unchanged, into `errors/refusal_dis
 test passes with no other change. Commit it on its own:
 
 ```bash
-SKIP_AI_COMMIT=1 git add crates/dam-application/src/errors.rs crates/dam-application/src/errors/refusal_display.rs
-SKIP_AI_COMMIT=1 git commit -m "refactor(errors): move the refusal sentences into their own file"
+git add crates/dam-application/src/errors.rs crates/dam-application/src/errors/refusal_display.rs
+git commit -m "refactor(errors): move the refusal sentences into their own file"
 ```
 
 - [ ] **Step 2: Write the failing use-case tests**
@@ -4830,8 +4826,8 @@ Expected: clean; the binary tests inside a second each.
 - [ ] **Step 7: Commit, and apply the amendment once approved**
 
 ```bash
-SKIP_AI_COMMIT=1 git add crates/dam-application crates/dam-adapters/src/lib.rs crates/dam-cli README.md
-SKIP_AI_COMMIT=1 git commit -m "feat(agenda): --max-age refuses an answer from a remote pulled too long ago"
+git add crates/dam-application crates/dam-adapters/src/lib.rs crates/dam-cli README.md
+git commit -m "feat(agenda): --max-age refuses an answer from a remote pulled too long ago"
 ```
 
 This is PR 7's last task. Once Amendment A5 is approved, apply it in its own commit,
