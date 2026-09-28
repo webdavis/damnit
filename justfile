@@ -1,4 +1,3 @@
-# justfile
 default: gates
 
 gates: fmt clippy build test doc size
@@ -18,7 +17,6 @@ test:
 doc:
     RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
 
-# Physical lines after rustfmt; the count the clean-code Rust standard names.
 size:
     #!/usr/bin/env bash
     set -euo pipefail
