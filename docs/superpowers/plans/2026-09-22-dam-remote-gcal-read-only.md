@@ -227,7 +227,7 @@ Google facts this plan rests on, read on 2026-09-22 from
 
 ### Task 1: The package, its secret type and its endpoints
 
-PR 1.
+PR 1, done by #9.
 
 **Files:**
 - Modify: `Cargo.toml` (member `crates/dam-remote-gcal`; workspace dependency `sha2 = "0.11"`)
@@ -255,7 +255,7 @@ impl Endpoints {
 }
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```rust
 // crates/dam-remote-gcal/src/secret.rs, at the bottom
@@ -317,14 +317,14 @@ mod tests {
 }
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cargo test -p dam-remote-gcal`
 Expected: error, `package ID specification dam-remote-gcal did not match any packages` (the package
 does not exist yet). After Step 3's manifests and before its code, compile errors naming `Secret` and
 `Endpoints`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```toml
 # crates/dam-remote-gcal/Cargo.toml
@@ -417,12 +417,12 @@ impl Endpoints {
 `checked_base` is `checked_base` from `crates/dam-remote-todoist/src/api.rs` copied, with the
 refusal naming `DAM_GCAL_BASE_URL` instead of `DAM_TODOIST_BASE_URL`.
 
-- [ ] **Step 4: Run to verify pass**
+- [x] **Step 4: Run to verify pass**
 
 Run: `cargo test -p dam-remote-gcal && just gates`
 Expected: 4 passed; gates clean.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Cargo.toml Cargo.lock crates/dam-remote-gcal
@@ -433,7 +433,7 @@ git commit -m "feat(gcal): add the package with its secret type and loopback-onl
 
 ### Task 2: The consent walk
 
-PR 1. An OAuth loopback consent walk with PKCE: randomness comes from `getrandom`, base64url is the
+PR 1, done by #9. An OAuth loopback consent walk with PKCE: randomness comes from `getrandom`, base64url is the
 twenty lines below rather than a dependency, the scope is `calendar.events.readonly`, and a refusal
 of the exchange names Google's HTTP status and its RFC 6749 error word.
 
@@ -475,7 +475,7 @@ impl SignIn {
 }
 ```
 
-- [ ] **Step 1: Write the failing unit tests**
+- [x] **Step 1: Write the failing unit tests**
 
 ```rust
 // crates/dam-remote-gcal/src/encoding.rs, at the bottom
@@ -621,7 +621,7 @@ mod tests {
 }
 ```
 
-- [ ] **Step 2: Write the failing walk test and its double**
+- [x] **Step 2: Write the failing walk test and its double**
 
 `tests/support/mod.rs` is `crates/dam-remote-todoist/tests/support/mod.rs` copied unchanged.
 
@@ -860,12 +860,12 @@ fn a_consent_refused_in_the_browser_sends_no_exchange() {
 }
 ```
 
-- [ ] **Step 3: Run to verify failure**
+- [x] **Step 3: Run to verify failure**
 
 Run: `cargo test -p dam-remote-gcal`
 Expected: compile errors naming `encoding`, `SignIn`, `Client`, `SignInError`.
 
-- [ ] **Step 4: Implement**
+- [x] **Step 4: Implement**
 
 Add `pub(crate) mod encoding; pub(crate) mod http; pub(crate) mod oauth_error; pub mod sign_in;` and
 `pub use sign_in::{Client, SignIn, SignInError};` to `lib.rs`.
@@ -1247,12 +1247,12 @@ impl SignIn {
 }
 ```
 
-- [ ] **Step 5: Run to verify pass**
+- [x] **Step 5: Run to verify pass**
 
 Run: `cargo test -p dam-remote-gcal && just gates`
 Expected: every test passes, each well inside a second; gates clean.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add crates/dam-remote-gcal
@@ -1263,7 +1263,7 @@ git commit -m "feat(gcal): the consent walk that mints a read-only refresh token
 
 ### Task 3: The `dam-gcal-sign-in` binary
 
-PR 1. The walk lives in the helper's package, not in `dam`, because it is Google code and the spec
+PR 1, done by #9. The walk lives in the helper's package, not in `dam`, because it is Google code and the spec
 keeps every line of Google code out of dam's core ("`dam` core contains no Todoist code and no Google
 code"). It is a binary of its own rather than a word on `dam-remote-gcal`, because dam runs
 `dam-remote-gcal` and nothing else runs it: neither program parses the other's arguments, and one
@@ -1285,7 +1285,7 @@ code"). It is a binary of its own rather than a word on `dam-remote-gcal`, becau
   output carries the refresh token and nothing else; standard error carries the URL and the
   instructions. Exit 0 minted, 1 the walk failed, 2 the command line or standard input was wrong.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Unit tests for the two decisions the binary makes before any network. They live in the library so
 the binary stays a thin main well under 150 lines:
@@ -1407,14 +1407,14 @@ fn an_unknown_flag_is_a_usage_error_before_anything_is_asked() {
 
 Add `tempfile.workspace = true` under `[dev-dependencies]` in the package manifest.
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cargo test -p dam-remote-gcal`
 Expected: `environment variable CARGO_BIN_EXE_dam-gcal-sign-in not defined`, then, once the
 `[[bin]]` entry and an empty `main` exist, the unit tests fail to compile on `client_id` and
 `client_secret`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```toml
 # crates/dam-remote-gcal/Cargo.toml, after [lib]
@@ -1549,12 +1549,12 @@ Operator notes for this task, carried into A4:
   months, or when the account holds too many tokens for the client. Each reads as `invalid_grant`,
   and Task 8's message covers them all by saying to sign in again.
 
-- [ ] **Step 4: Run to verify pass**
+- [x] **Step 4: Run to verify pass**
 
 Run: `cargo test -p dam-remote-gcal && just gates`
 Expected: every test passes; gates clean.
 
-- [ ] **Step 5: Commit, and apply the amendment once approved**
+- [x] **Step 5: Commit, and apply the amendment once approved**
 
 ```bash
 git add crates/dam-remote-gcal README.md
@@ -1569,7 +1569,7 @@ and ask; do not apply it, do not skip it.
 
 ### Task 4: dam hands each helper its remote's name and address
 
-PR 2. Git invokes `git-remote-<transport> <remote-name> <address>`, where the address is the text
+PR 2, done by #10. Git invokes `git-remote-<transport> <remote-name> <address>`, where the address is the text
 after `<transport>::` (gitremote-helpers(7), INVOCATION). dam does the same. A helper then reads its
 credentials under its own remote's name, so a Google remote named `work` reads
 `DAM_WORK_REFRESH_TOKEN`, and the address carries what a helper needs to know that is not a secret,
@@ -1599,7 +1599,7 @@ impl RemoteConfig {
 - `dam-adapters` keeps `pub use dam_protocol::credential_variable;` in `lib.rs` so its callers are
   unchanged, and `ProcessLauncher::spawn` adds `command.arg(&remote.name.0).arg(remote.address())`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```rust
 // crates/dam-application/src/config.rs, in the existing tests module
@@ -1654,12 +1654,12 @@ fn an_empty_address_is_still_passed_so_the_count_never_varies() {
 
 `remote()` in `helper_process/testing.rs` builds a remote with url `t::`; the first test sets its own.
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cargo test -p dam-application address && cargo test -p dam-adapters the_helper_is_given`
 Expected: no method `address`; then the helper test fails with `["0", "", ""]`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```rust
 // crates/dam-application/src/config.rs
@@ -1698,12 +1698,12 @@ of remotes. Neither argument is ever a secret.
 
 The Todoist helper ignores its arguments today and keeps working unchanged.
 
-- [ ] **Step 4: Run to verify pass**
+- [x] **Step 4: Run to verify pass**
 
 Run: `just gates`
 Expected: clean; every existing helper test still passes.
 
-- [ ] **Step 5: Commit, and apply the amendment once approved**
+- [x] **Step 5: Commit, and apply the amendment once approved**
 
 ```bash
 git add crates/dam-protocol crates/dam-application crates/dam-adapters
@@ -1717,7 +1717,7 @@ Once Amendment A1 is approved, apply it to the spec in its own commit,
 
 ### Task 5: An attendee records whether it is the calendar's own
 
-PR 3. Google marks the attendee entry that "represents the calendar on which this copy of the event
+PR 3, done by #11. Google marks the attendee entry that "represents the calendar on which this copy of the event
 appears" with `self`. Without it dam cannot tell a meeting the operator declined from one somebody
 else declined, and a declined meeting would read as busy.
 
@@ -1744,7 +1744,7 @@ pub struct WireAttendee {
 }
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```rust
 // crates/dam-protocol/src/messages/tests.rs
@@ -1778,12 +1778,12 @@ fn the_calendars_own_attendee_round_trips() {
 (`oid`, `date` and `When` come from what that test module already imports; add `Attendee` and
 `ResponseStatus` to its `use dam_domain::{...}` line.)
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cargo test -p dam-protocol attendee && cargo test -p dam-adapters own_attendee`
 Expected: no field `is_self` on either type.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Add the field to both structs as in the interface block, with the doc comment on the domain field:
 "Whether this attendee is the calendar the event was read from: its answer is the calendar owner's."
@@ -1791,12 +1791,12 @@ In `encode.rs` map `is_self: a.is_self`; in `decode.rs` map `is_self: a.is_self`
 `Attendee { .. }` literal in `merge.rs`'s test with `is_self: false`. Compile errors name every other
 site; each takes `is_self: false`.
 
-- [ ] **Step 4: Run to verify pass**
+- [x] **Step 4: Run to verify pass**
 
 Run: `just gates`
 Expected: clean. The golden fixtures are unchanged, because a false `self` is never written.
 
-- [ ] **Step 5: Commit, and apply the amendment once approved**
+- [x] **Step 5: Commit, and apply the amendment once approved**
 
 ```bash
 git add crates
@@ -1810,7 +1810,7 @@ is the calendar's own`. Pending: stop and ask.
 
 ### Task 6: A pull can report an event cancelled by its id
 
-PR 4. Google reports a deleted event as a cancelled item that is only guaranteed to carry its `id`.
+PR 4, done by #12. Google reports a deleted event as a cancelled item that is only guaranteed to carry its `id`.
 dam's `removed` is a notice that stops tracking the object and leaves it as it was, so a deleted
 meeting would stay confirmed and keep reading as busy. A pull gains `cancelled`: remote ids the
 remote cancelled. dam builds the cancelled object from its own copy and lands it through the same
@@ -1850,7 +1850,7 @@ pub struct PullOutcome { /* existing fields */ pub cancelled: Vec<String> }
 pub(super) fn cancelled_events(repos: Repositories<'_>, remote: &RemoteConfig, cancelled: &[String]) -> Result<Vec<IncomingObject>, UseCaseError>;
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```rust
 // crates/dam-protocol/src/messages/tests.rs
@@ -1978,12 +1978,12 @@ fn an_uncommitted_local_edit_stops_the_pull_as_any_upstream_change_would() {
 
 Register the file with `mod cancellations;` beside `mod kind_change;` in `pull/tests.rs`.
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cargo test -p dam-protocol cancell && cargo test -p dam-application cancellations`
 Expected: no field `cancelled` on `PullResponse` or `PullOutcome`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `messages.rs`, add the field as in the interface, extend `PULL_KEYS` to
 `["objects", "removed", "cancelled", "sync"]` (its type becomes `[&str; 4]`), and change the refusal
@@ -2049,12 +2049,12 @@ task, changes nothing. `removed` stays what it was: the remote no longer has the
 stops tracking it.
 ```
 
-- [ ] **Step 4: Run to verify pass**
+- [x] **Step 4: Run to verify pass**
 
 Run: `just gates`
 Expected: clean.
 
-- [ ] **Step 5: Commit, and apply the amendment once approved**
+- [x] **Step 5: Commit, and apply the amendment once approved**
 
 ```bash
 git add crates
@@ -5029,7 +5029,7 @@ field and new code in core, for no behavior this lacks.
   deadline today.
 - **A `last_pull` key in the agenda document**, for a reader that wants to show how fresh its answer
   is rather than refuse. `--max-age` covers refusing with no code in the reader.
-- **Refusing a terminal on the sign-in's standard output.** The refresh token is the stronger secret,
+- **Refusing a terminal on the sign-in's standard output.** Rejected: the refresh token is the stronger secret,
   but a terminal is how most people copy it into a vault that has no command-line add; refusing it
   would route the token through the clipboard instead, which is no safer.
 - **`fromGmail` events** read as `default`, because dam's `event_type` has no value for them.
