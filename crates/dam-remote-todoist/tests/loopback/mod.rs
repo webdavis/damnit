@@ -1,5 +1,3 @@
-// Each test binary compiles this module and uses the part of it that test
-// needs, so the rest is unused there.
 #![allow(dead_code)]
 
 use std::collections::HashMap;
@@ -20,7 +18,6 @@ pub struct Loopback {
     pub seen: Arc<Mutex<Vec<Seen>>>,
 }
 
-/// One answer: a status, any extra headers, and a JSON body.
 pub struct Reply {
     pub status: u16,
     pub headers: Vec<(&'static str, String)>,
@@ -42,19 +39,18 @@ impl Reply {
     }
 }
 
-/// `routes` maps "METHOD /path" to (status, JSON body). Unmatched requests get 404.
-pub fn serve(routes: HashMap<&'static str, (u16, serde_json::Value)>) -> Loopback {
+pub fn serve(
+    status_and_body_by_method_and_path: HashMap<&'static str, (u16, serde_json::Value)>,
+) -> Loopback {
     serve_with(move |seen| {
-        let key = format!("{} {}", seen.method, seen.path);
-        match routes.get(key.as_str()) {
+        let method_and_path = format!("{} {}", seen.method, seen.path);
+        match status_and_body_by_method_and_path.get(method_and_path.as_str()) {
             Some((status, body)) => Reply::new(*status, body.clone()),
             None => Reply::new(404, serde_json::json!({"error": "no route"})),
         }
     })
 }
 
-/// Answers every request with whatever `responder` decides, so a test can hold
-/// state across requests the way the real service does.
 pub fn serve_with(responder: impl Fn(&Seen) -> Reply + Send + 'static) -> Loopback {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap_or_else(|e| panic!("bind: {e}"));
     let base = format!(
@@ -65,8 +61,6 @@ pub fn serve_with(responder: impl Fn(&Seen) -> Reply + Send + 'static) -> Loopba
     let log = seen.clone();
     std::thread::spawn(move || {
         for stream in listener.incoming().flatten() {
-            // ureq already sets TCP_NODELAY on its side; match it here so neither side
-            // waits on Nagle's algorithm for a response this small.
             let _ = stream.set_nodelay(true);
             let mut reader = BufReader::new(stream);
             let mut line = String::new();
@@ -99,7 +93,7 @@ pub fn serve_with(responder: impl Fn(&Seen) -> Reply + Send + 'static) -> Loopba
             let request = Seen {
                 method,
                 path,
-                body: decode(&raw),
+                body: json_or_form_fields(&raw),
                 authorization,
             };
             if let Ok(mut l) = log.lock() {
@@ -123,10 +117,7 @@ pub fn serve_with(responder: impl Fn(&Seen) -> Reply + Send + 'static) -> Loopba
     Loopback { base, seen }
 }
 
-/// A JSON body as itself, or a form body as an object of its decoded fields,
-/// each field parsed as JSON when it is JSON. Todoist's sync endpoint takes
-/// `commands` as a form field holding a JSON array.
-fn decode(raw: &[u8]) -> serde_json::Value {
+fn json_or_form_fields(raw: &[u8]) -> serde_json::Value {
     if let Ok(v) = serde_json::from_slice(raw) {
         return v;
     }

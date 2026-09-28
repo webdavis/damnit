@@ -10,9 +10,6 @@ use dam_remote_todoist::api::{ApiError, TodoistApi};
 use dam_remote_todoist::push::push;
 use fixtures::{mutation, sync_body, task, todoist, with_fields};
 
-/// A mutation whose answer never arrived is sent again. The resend carries
-/// the key the first attempt carried, so the service recognises it and creates
-/// nothing twice.
 #[test]
 fn a_resent_mutation_repeats_its_uuids_and_creates_nothing_twice() {
     let _guard = support::guard("a_resent_mutation_repeats_its_uuids_and_creates_nothing_twice");
@@ -42,7 +39,7 @@ fn a_resent_mutation_repeats_its_uuids_and_creates_nothing_twice() {
         recorded.types()
     );
     assert_eq!(
-        recorded.uuids.len(),
+        recorded.uuids_seen.len(),
         1,
         "the resend repeated the uuid rather than minting one"
     );
@@ -52,8 +49,6 @@ fn a_resent_mutation_repeats_its_uuids_and_creates_nothing_twice() {
     );
 }
 
-/// Every command of one mutation gets its own uuid, or the second is dropped
-/// as a duplicate of the first.
 #[test]
 fn the_commands_of_one_mutation_have_distinct_uuids() {
     let _guard = support::guard("the_commands_of_one_mutation_have_distinct_uuids");
@@ -68,10 +63,9 @@ fn the_commands_of_one_mutation_have_distinct_uuids() {
     assert!(push(&api, mutations).unwrap().results[0].ok);
     let recorded = recorded.lock().unwrap();
     assert_eq!(recorded.types(), vec!["item_add", "item_close"]);
-    assert_eq!(recorded.uuids.len(), 2);
+    assert_eq!(recorded.uuids_seen.len(), 2);
 }
 
-/// One command's error is that mutation's failure and nobody else's.
 #[test]
 fn a_refused_command_fails_only_its_own_mutation() {
     let _guard = support::guard("a_refused_command_fails_only_its_own_mutation");
@@ -128,8 +122,6 @@ fn a_mutation_is_pushed_only_when_every_one_of_its_commands_is_accepted() {
     assert_eq!(recorded.lock().unwrap().types(), vec!["item_add"]);
 }
 
-/// A failure reading the tree is not a per-mutation result: no mutation was
-/// attempted, so there is nothing to report against one.
 #[test]
 fn a_failure_reading_the_tree_stops_the_push_before_any_mutation() {
     let _guard = support::guard("a_failure_reading_the_tree_stops_the_push_before_any_mutation");
@@ -155,11 +147,6 @@ fn a_failure_reading_the_tree_stops_the_push_before_any_mutation() {
     );
 }
 
-/// The other half of the same decision. Once mutations are being applied, a
-/// failure belongs to the mutation it happened on: the ones Todoist already
-/// took are reported as taken, and dam marks exactly those pushed. That is
-/// only safe because a resend repeats its key, so anything dam sends again is
-/// deduplicated rather than duplicated.
 #[test]
 fn a_failure_part_way_through_belongs_to_its_own_mutation() {
     let _guard = support::guard("a_failure_part_way_through_belongs_to_its_own_mutation");

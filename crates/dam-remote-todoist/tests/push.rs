@@ -139,8 +139,6 @@ fn a_depth_one_create_becomes_a_section_when_its_child_arrives_later_in_the_same
     assert_eq!(recorded.command("item_add")["args"]["section_id"], "new1");
 }
 
-/// Reopening a completed task reaches Todoist as the Sync API's own inverse of
-/// `item_close`, so `dam edit <oid> --undone` pushes like any other update.
 #[test]
 fn clearing_done_becomes_the_uncomplete_command() {
     let _guard = support::guard("clearing_done_becomes_the_uncomplete_command");
@@ -218,8 +216,6 @@ fn a_path_and_subject_change_moves_first_then_updates_the_content() {
     assert_eq!(recorded.command("item_update")["args"]["content"], "oat");
 }
 
-/// The stored `remote_id` is Todoist's own string on the way back out. One
-/// carrying path syntax must never reach a command.
 #[test]
 fn a_hostile_remote_id_is_refused_and_never_reaches_a_command() {
     let _guard = support::guard("a_hostile_remote_id_is_refused_and_never_reaches_a_command");
@@ -252,9 +248,6 @@ fn a_hostile_remote_id_is_refused_and_never_reaches_a_command() {
     assert!(recorded.lock().unwrap().executed.is_empty());
 }
 
-/// A rate limit is not one mutation's problem. Reporting it per mutation would
-/// leave dam marking the rest of the batch pushed while Todoist took none of
-/// it, so the push stops and says how long to wait.
 #[test]
 fn a_rate_limit_stops_the_push_and_names_the_retry_time() {
     let _guard = support::guard("a_rate_limit_stops_the_push_and_names_the_retry_time");

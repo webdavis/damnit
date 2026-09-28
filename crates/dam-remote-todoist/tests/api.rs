@@ -38,8 +38,6 @@ fn sync_all_sends_the_token_and_decodes_the_three_resources() {
     );
 }
 
-/// Writes go to the same endpoint as the read, as a form field holding the
-/// JSON array of commands, and every verdict comes back keyed by command uuid.
 #[test]
 fn a_write_sends_its_commands_as_a_form_field_and_reads_each_verdict() {
     let _guard =
@@ -73,7 +71,6 @@ fn a_write_sends_its_commands_as_a_form_field_and_reads_each_verdict() {
     assert_eq!(seen[0].body["commands"][1]["uuid"], "u-1");
 }
 
-/// Neither a rejected request nor one that never reaches the server may render the token.
 #[test]
 fn an_http_failure_and_a_transport_failure_never_show_the_token() {
     let _guard = support::guard("an_http_failure_and_a_transport_failure_never_show_the_token");
@@ -103,11 +100,10 @@ fn an_http_failure_and_a_transport_failure_never_show_the_token() {
     assert!(!transport_err.to_string().contains(sentinel));
 }
 
-/// A hostile or merely large upstream error page is copied into dam's stored
-/// notices and printed by `dam status`, so the helper bounds it first.
 #[test]
-fn a_huge_error_body_is_bounded_to_one_short_line() {
-    let _guard = support::guard("a_huge_error_body_is_bounded_to_one_short_line");
+fn a_huge_error_body_is_bounded_to_one_short_line_before_it_becomes_a_notice() {
+    let _guard =
+        support::guard("a_huge_error_body_is_bounded_to_one_short_line_before_it_becomes_a_notice");
     let mut routes = HashMap::new();
     let huge = format!("{}\n{}", "x".repeat(100 * 1024), "tail");
     routes.insert("POST /tasks", (500, serde_json::json!({ "error": huge })));
@@ -127,8 +123,6 @@ fn a_huge_error_body_is_bounded_to_one_short_line() {
     assert!(body.ends_with('…'), "the cut is marked: {body:?}");
 }
 
-/// Todoist answers 429 with a `Retry-After` header when it is rate limiting,
-/// and dam has to be able to tell that apart from any other refusal.
 #[test]
 fn a_rate_limit_is_its_own_outcome_and_carries_the_retry_time() {
     let _guard = support::guard("a_rate_limit_is_its_own_outcome_and_carries_the_retry_time");
