@@ -22,8 +22,8 @@ pub fn guard(name: &'static str) -> SpeedGuard {
 }
 
 impl SpeedGuard {
-    pub fn allow_slow(mut self, reason: &'static str) -> SpeedGuard {
-        self.allowed = Some(reason);
+    pub fn allow_slow(mut self, structural_cause: &'static str) -> SpeedGuard {
+        self.allowed = Some(structural_cause);
         self
     }
 }

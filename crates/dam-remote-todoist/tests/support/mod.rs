@@ -2,9 +2,9 @@
 
 use std::time::{Duration, Instant};
 
-const WARN_PAST: Duration = Duration::from_secs(1);
+const BUDGET: Duration = Duration::from_secs(1);
 
-const FAIL_PAST: Duration = Duration::from_secs(10);
+const CEILING_CLEARING_A_FIREWALLS_FIRST_CONNECTION_DELAY: Duration = Duration::from_secs(10);
 
 #[must_use = "bind the guard to a name or it measures nothing"]
 pub struct SpeedGuard {
@@ -31,15 +31,16 @@ impl SpeedGuard {
 impl Drop for SpeedGuard {
     fn drop(&mut self) {
         let took = self.started.elapsed();
-        if took > FAIL_PAST && self.allowed.is_none() && !std::thread::panicking() {
-            panic!(
-                "{} took {took:?}, past the {FAIL_PAST:?} ceiling",
+        let ceiling = CEILING_CLEARING_A_FIREWALLS_FIRST_CONNECTION_DELAY;
+        if took > ceiling && self.allowed.is_none() && !std::thread::panicking() {
+            panic!("{} took {took:?}, past the {ceiling:?} ceiling", self.name);
+        }
+        if took > BUDGET {
+            let note = self.allowed.unwrap_or("no reason given");
+            eprintln!(
+                "slow test: {} took {took:?} ({note}); move it to a narrower level or shrink its fixture",
                 self.name
             );
-        }
-        if took > WARN_PAST {
-            let note = self.allowed.unwrap_or("no reason given");
-            eprintln!("slow test: {} took {took:?} ({note})", self.name);
         }
     }
 }
