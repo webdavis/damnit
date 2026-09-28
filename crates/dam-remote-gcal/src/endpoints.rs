@@ -46,7 +46,7 @@ impl Endpoints {
 fn loopback_base_only(value: &str) -> Result<String, String> {
     let refused = || {
         format!(
-            "DAM_GCAL_BASE_URL is a test seam and must be http://127.0.0.1:<port> or \
+            "{BASE_URL_VARIABLE} is a test seam and must be http://127.0.0.1:<port> or \
              http://localhost:<port>, not {value:?}"
         )
     };
