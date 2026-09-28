@@ -1,18 +1,15 @@
 use dam_domain::{Date, When};
 use toml::{Table, Value};
 
-/// One saved template, read by key. Every refusal it builds names the line the
-/// key is on, so the operator's editor takes them straight there.
 pub(super) struct TemplateReader<'a> {
     text: &'a str,
     table: Table,
 }
 
 impl<'a> TemplateReader<'a> {
-    /// The text as TOML. A syntax error names its own line.
     pub(super) fn parse(text: &'a str) -> Result<TemplateReader<'a>, String> {
         let table: Table = text.parse().map_err(|e: toml::de::Error| {
-            match e.span().map(|s| line_of(text, s.start)) {
+            match e.span().map(|s| one_based_line_of_byte(text, s.start)) {
                 Some(line) => format!("line {line}: {}", e.message()),
                 None => e.message().to_string(),
             }
@@ -24,19 +21,19 @@ impl<'a> TemplateReader<'a> {
         self.table.get(key)
     }
 
-    /// The first key the template carries that is not in `known`.
-    pub(super) fn unknown_key(&self, known: &[&str]) -> Option<&str> {
+    pub(super) fn first_unknown_key(&self, known: &[&str]) -> Option<&str> {
         self.table
             .keys()
             .map(String::as_str)
             .find(|key| !known.contains(key))
     }
 
-    /// A refusal naming `key`'s line, or naming nothing when the key is not on
-    /// a line of its own: a quoted key is valid TOML and would otherwise read
-    /// as "line 0".
-    pub(super) fn refuse(&self, key: &str, what: impl std::fmt::Display) -> String {
-        match line_of_key(self.text, key) {
+    pub(super) fn refuse_at_the_keys_line(
+        &self,
+        key: &str,
+        what: impl std::fmt::Display,
+    ) -> String {
+        match one_based_line_of_bare_key(self.text, key) {
             Some(line) => format!("line {line}: {what}"),
             None => what.to_string(),
         }
@@ -46,7 +43,9 @@ impl<'a> TemplateReader<'a> {
         match self.table.get(key) {
             None => Ok(None),
             Some(Value::String(s)) => Ok(Some(s.clone())),
-            Some(_) => Err(self.refuse(key, format_args!("{key} must be a string"))),
+            Some(_) => {
+                Err(self.refuse_at_the_keys_line(key, format_args!("{key} must be a string")))
+            }
         }
     }
 
@@ -57,7 +56,8 @@ impl<'a> TemplateReader<'a> {
         today: Date,
         tz: &jiff::tz::TimeZone,
     ) -> Result<When, String> {
-        When::parse_human(text, today, tz).map_err(|e| self.refuse(key, format_args!("{key}: {e}")))
+        When::parse_human(text, today, tz)
+            .map_err(|e| self.refuse_at_the_keys_line(key, format_args!("{key}: {e}")))
     }
 
     pub(super) fn string_array(
@@ -73,23 +73,26 @@ impl<'a> TemplateReader<'a> {
             .and_then(|a| a.iter().map(|x| x.as_str().map(str::to_string)).collect());
         items
             .map(Some)
-            .ok_or_else(|| self.refuse(key, format_args!("{key} must be {what}")))
+            .ok_or_else(|| self.refuse_at_the_keys_line(key, format_args!("{key} must be {what}")))
     }
 }
 
-/// The one-based line the byte at `offset` falls on. The offset is clamped to
-/// a character boundary, so a multi-byte character cannot panic the slice.
-fn line_of(text: &str, offset: usize) -> usize {
+fn one_based_line_of_byte(text: &str, offset: usize) -> usize {
+    text[..clamped_to_a_char_boundary(text, offset)]
+        .matches('\n')
+        .count()
+        + 1
+}
+
+fn clamped_to_a_char_boundary(text: &str, offset: usize) -> usize {
     let mut end = offset.min(text.len());
     while end > 0 && !text.is_char_boundary(end) {
         end -= 1;
     }
-    text[..end].matches('\n').count() + 1
+    end
 }
 
-/// The one-based line `key = ` is written on, or `None` when no line starts
-/// with the bare key, which is the case for a quoted key.
-fn line_of_key(text: &str, key: &str) -> Option<usize> {
+fn one_based_line_of_bare_key(text: &str, key: &str) -> Option<usize> {
     text.lines()
         .position(|line| {
             let line = line.trim_start();
@@ -107,8 +110,8 @@ mod tests {
     fn an_offset_inside_a_multibyte_character_still_names_a_line() {
         let text = "subject = \"café\"\nbody = \"\"\n";
         let inside = text.find('é').unwrap() + 1;
-        assert_eq!(line_of(text, inside), 1);
-        assert_eq!(line_of(text, text.len()), 3);
+        assert_eq!(one_based_line_of_byte(text, inside), 1);
+        assert_eq!(one_based_line_of_byte(text, text.len()), 3);
     }
 
     #[test]
