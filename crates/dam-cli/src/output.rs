@@ -30,8 +30,6 @@ pub(crate) fn render(format: Format, report: &Report) -> Result<String, CliError
     }
 }
 
-/// A failure, on standard error. A machine format prints the error document
-/// so a client reads the reason; the human form keeps its plain line.
 pub(crate) fn print_error(format: Format, error: &CliError) {
     let line = match format {
         Format::Human => format!("dam: {error}"),
@@ -56,9 +54,6 @@ pub(crate) fn print(format: Format, report: &Report) -> Result<(), CliError> {
     Ok(())
 }
 
-/// The object as the `--json` and `--toon` answers carry it. A conversion
-/// failure is an error rather than a null, because a null would be a document
-/// that parses and says the object has no fields.
 pub(crate) fn object_json(object: &Object) -> Result<serde_json::Value, CliError> {
     serde_json::to_value(to_wire(object, None)).map_err(|e| CliError::Io(e.to_string()))
 }

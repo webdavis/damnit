@@ -10,35 +10,28 @@ pub(crate) enum CliError {
     Config(ConfigError),
     Open(OpenError),
     Usage(String),
-    /// Constructed by `oids::resolve_oid` when a prefix or path names more than one object.
-    Ambiguous {
-        text: String,
-        matches: Vec<Oid>,
-    },
-    /// The operator interrupted, a prompt hit EOF, or an answer was unscripted.
+    Ambiguous { text: String, matches: Vec<Oid> },
     Cancelled,
     Io(String),
 }
 
+const EXIT_FAILED: i32 = 1;
+const EXIT_USAGE_AS_CLAP_EXITS: i32 = 2;
+const EXIT_CANCELLED: i32 = 3;
+const EXIT_REFUSED_BY_A_RULE: i32 = 4;
+
+const KIND_OF_AN_EDITOR_FAILURE_NO_DOCUMENT_CARRIES: &str = "editor";
+
 impl CliError {
-    /// One meaning per code, so a client can tell what happened:
-    ///
-    /// | 0 | the command did what it was asked |
-    /// | 1 | dam failed: a store, config, helper, editor or io failure |
-    /// | 2 | the command line was wrong, which is also clap's own code |
-    /// | 3 | cancelled: an interrupt, or a prompt with no answer |
-    /// | 4 | dam refused by one of its own rules |
     pub(crate) fn exit_code(&self) -> i32 {
         match self {
-            CliError::Usage(_) | CliError::Ambiguous { .. } => 2,
-            CliError::Cancelled => 3,
-            CliError::UseCase(UseCaseError::Refused(_)) => 4,
-            _ => 1,
+            CliError::Usage(_) | CliError::Ambiguous { .. } => EXIT_USAGE_AS_CLAP_EXITS,
+            CliError::Cancelled => EXIT_CANCELLED,
+            CliError::UseCase(UseCaseError::Refused(_)) => EXIT_REFUSED_BY_A_RULE,
+            _ => EXIT_FAILED,
         }
     }
 
-    /// The failure class, one stable word per arm, which is what a client
-    /// branches on instead of reading the message.
     pub(crate) fn kind(&self) -> &'static str {
         match self {
             CliError::UseCase(UseCaseError::Refused(_)) => "refused",
@@ -48,18 +41,16 @@ impl CliError {
             | CliError::Config(ConfigError::Io(_)) => "store",
             CliError::UseCase(UseCaseError::Helper(_)) => "helper",
             CliError::UseCase(UseCaseError::Credential(_)) => "credential",
-            // Only a human run opens an editor, so this classifies a failure
-            // no document is ever printed for.
-            CliError::UseCase(UseCaseError::Editor(_)) => "editor",
+            CliError::UseCase(UseCaseError::Editor(_)) => {
+                KIND_OF_AN_EDITOR_FAILURE_NO_DOCUMENT_CARRIES
+            }
             CliError::UseCase(UseCaseError::Parse(_)) | CliError::Config(_) => "parse",
             CliError::Usage(_) | CliError::Ambiguous { .. } => "usage",
             CliError::Cancelled => "cancelled",
         }
     }
 
-    /// The objects the message names, in full and in the order it names them:
-    /// for a blocked completion the task, then each blocker.
-    pub(crate) fn oids(&self) -> Vec<String> {
+    pub(crate) fn oids_in_the_order_the_message_names_them(&self) -> Vec<String> {
         match self {
             CliError::UseCase(UseCaseError::Refused(refusal)) => refusal_oids(refusal),
             CliError::Ambiguous { matches, .. } => matches.iter().map(Oid::to_string).collect(),
@@ -67,9 +58,6 @@ impl CliError {
         }
     }
 
-    /// The rule a refusal broke, and null for every other failure, so a
-    /// client can tell a blocked completion from a missing object without
-    /// reading the sentence.
     pub(crate) fn rule(&self) -> Option<&'static str> {
         match self {
             CliError::UseCase(UseCaseError::Refused(refusal)) => Some(refusal.name()),
@@ -77,15 +65,13 @@ impl CliError {
         }
     }
 
-    /// The whole failure as one document, which `--json` and `--toon` print on
-    /// standard error in place of the plain line.
     pub(crate) fn document(&self) -> serde_json::Value {
         serde_json::json!({
             "error": {
                 "kind": self.kind(),
                 "rule": self.rule(),
                 "message": self.to_string(),
-                "oids": self.oids(),
+                "oids": self.oids_in_the_order_the_message_names_them(),
             }
         })
     }
