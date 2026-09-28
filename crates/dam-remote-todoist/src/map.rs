@@ -2,9 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::api::{Item, Project, Section, SyncResponse};
 
-/// A Todoist name as exactly one dam path segment: `/` cannot introduce an
-/// extra level, and a blank name still names something.
-fn segment(name: &str, id: &str) -> String {
+fn one_path_segment(name: &str, id: &str) -> String {
     let clean = name.replace('/', "-");
     if clean.trim().is_empty() {
         format!("untitled-{id}")
@@ -41,21 +39,23 @@ impl Tree {
     }
 
     pub fn project_path(&self, id: &str) -> Option<String> {
-        self.project_path_from(id, &mut HashSet::new())
+        self.project_path_unless_cycle(id, &mut HashSet::new())
     }
 
-    /// `visited` catches a parent cycle in the untrusted sync response: a
-    /// repeated id ends the walk with `None` instead of recursing forever.
-    fn project_path_from(&self, id: &str, visited: &mut HashSet<String>) -> Option<String> {
-        if !visited.insert(id.to_string()) {
+    fn project_path_unless_cycle(
+        &self,
+        id: &str,
+        ids_on_this_walk: &mut HashSet<String>,
+    ) -> Option<String> {
+        if !ids_on_this_walk.insert(id.to_string()) {
             return None;
         }
         let p = self.projects.get(id)?;
         let parent = match &p.parent_id {
-            Some(pid) => self.project_path_from(pid, visited)?,
+            Some(pid) => self.project_path_unless_cycle(pid, ids_on_this_walk)?,
             None => String::new(),
         };
-        Some(format!("{parent}{}/", segment(&p.name, &p.id)))
+        Some(format!("{parent}{}/", one_path_segment(&p.name, &p.id)))
     }
 
     pub fn section_path(&self, id: &str) -> Option<String> {
@@ -63,24 +63,27 @@ impl Tree {
         Some(format!(
             "{}{}/",
             self.project_path(&s.project_id)?,
-            segment(&s.name, &s.id)
+            one_path_segment(&s.name, &s.id)
         ))
     }
 
     pub fn item_path(&self, item: &Item) -> Option<String> {
-        self.item_path_from(item, &mut HashSet::new())
+        self.item_path_unless_cycle(item, &mut HashSet::new())
     }
 
-    /// Same cycle guard as `project_path_from`, keyed by item id.
-    fn item_path_from(&self, item: &Item, visited: &mut HashSet<String>) -> Option<String> {
-        if !visited.insert(item.id.clone()) {
+    fn item_path_unless_cycle(
+        &self,
+        item: &Item,
+        ids_on_this_walk: &mut HashSet<String>,
+    ) -> Option<String> {
+        if !ids_on_this_walk.insert(item.id.clone()) {
             return None;
         }
         if let Some(parent) = item.parent_id.as_deref().and_then(|p| self.items.get(p)) {
             return Some(format!(
                 "{}{}/",
-                self.item_path_from(parent, visited)?,
-                segment(&parent.content, &parent.id)
+                self.item_path_unless_cycle(parent, ids_on_this_walk)?,
+                one_path_segment(&parent.content, &parent.id)
             ));
         }
         match &item.section_id {
@@ -124,8 +127,6 @@ impl Tree {
         self.items.insert(i.id.clone(), i);
     }
 
-    /// True when a project, section or item is already rooted at `path`, so a
-    /// depth-1 object with something under it becomes a section, not a task.
     pub fn has_children_at(&self, path: &str) -> bool {
         self.projects.values().any(|p| {
             !p.is_deleted

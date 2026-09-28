@@ -1,85 +1,7 @@
-//! A Todoist object as the wire object dam reads, and the identity it keeps.
-
 use super::super::identity::RemoteIdError;
 use super::super::*;
-use crate::api::{Due, Item, Project, Section, SyncResponse};
-
-fn sync() -> SyncResponse {
-    SyncResponse {
-        projects: vec![
-            Project {
-                id: "p1".into(),
-                name: "Work".into(),
-                parent_id: None,
-                is_deleted: false,
-                is_archived: false,
-                inbox_project: false,
-            },
-            Project {
-                id: "p2".into(),
-                name: "Client".into(),
-                parent_id: Some("p1".into()),
-                is_deleted: false,
-                is_archived: true,
-                inbox_project: false,
-            },
-        ],
-        sections: vec![Section {
-            id: "s1".into(),
-            name: "Now".into(),
-            project_id: "p1".into(),
-            is_deleted: false,
-        }],
-        items: vec![
-            Item {
-                id: "i1".into(),
-                content: "milk".into(),
-                description: "2%".into(),
-                project_id: "p1".into(),
-                section_id: Some("s1".into()),
-                parent_id: None,
-                priority: 4,
-                due: Some(Due {
-                    date: "2026-09-25".into(),
-                    is_recurring: true,
-                    string: "every week".into(),
-                }),
-                deadline: None,
-                labels: vec!["errand".into()],
-                checked: false,
-                is_deleted: false,
-            },
-            Item {
-                id: "i2".into(),
-                content: "oat".into(),
-                description: String::new(),
-                project_id: "p1".into(),
-                section_id: Some("s1".into()),
-                parent_id: Some("i1".into()),
-                priority: 1,
-                due: None,
-                deadline: None,
-                labels: vec![],
-                checked: true,
-                is_deleted: false,
-            },
-            Item {
-                id: "i3".into(),
-                content: "loose".into(),
-                description: String::new(),
-                project_id: "p1".into(),
-                section_id: None,
-                parent_id: None,
-                priority: 2,
-                due: None,
-                deadline: None,
-                labels: vec![],
-                checked: false,
-                is_deleted: false,
-            },
-        ],
-    }
-}
+use super::sync;
+use crate::api::{Item, Project, Section, SyncResponse};
 
 #[test]
 fn wire_objects_carry_kind_fields_and_remote_ids() {
@@ -113,9 +35,6 @@ fn priorities_map_both_ways() {
     assert_eq!(split_remote_id("i:abc"), Ok(('i', "abc")));
     assert_eq!(split_remote_id("abc"), Err(RemoteIdError::NoKind));
 }
-
-/// The id half is Todoist's own string, read back out of dam's store and
-/// sent upstream again. It is untrusted input on the way back out.
 
 #[test]
 fn a_remote_id_whose_tail_is_not_a_todoist_id_is_refused() {
