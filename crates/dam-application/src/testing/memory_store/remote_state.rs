@@ -1,6 +1,3 @@
-//! What syncing with a remote leaves in the double: the oid-to-remote-id
-//! mapping and its snapshots, the conflicts a pull raised, and the notices.
-
 use dam_domain::{Object, Oid, Timestamp};
 
 use crate::ports::{

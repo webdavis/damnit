@@ -1,34 +1,27 @@
 use dam_domain::{CommitId, Oid};
 
-/// What a mutation is a resend of: the commit whose change it carries, or the
-/// retry set, which holds an oid alone once its commit has been accounted for.
 #[derive(Clone, Copy, Debug)]
 pub enum Origin<'a> {
     Commit(&'a CommitId),
     Retry,
 }
 
-/// The key a mutation carries, and carries again on every resend, so a remote
-/// that deduplicates by key does the work once however often an interrupted
-/// push repeats it.
-///
-/// It is UUID-shaped because that is the shape a Todoist sync command's `uuid`
-/// takes. The characters are dam's own identifiers rather than a digest of
-/// them: a commit id names the change and an oid names the object, each already
-/// forty random hex characters, so disjoint slices of the pair are unique
-/// without any further mixing. The version character separates a commit-borne
-/// key from a retry-borne one, and the last character is reserved, so a helper
-/// that turns one mutation into several remote commands can number them there
-/// without minting anything of its own.
+const COMMIT_BORNE_VERSION: char = '4';
+const RETRY_BORNE_VERSION: char = '5';
+const UUID_VARIANT: char = '8';
+const ORDINAL_RESERVED_FOR_THE_HELPER: char = '0';
+
 pub fn key(origin: Origin<'_>, oid: &Oid) -> String {
     let (version, source) = match origin {
-        // A retry has no commit to name, so the object's own tail stands in.
-        Origin::Retry => ('5', &oid.as_str()[25..]),
-        Origin::Commit(id) => ('4', &id.as_str()[..15]),
+        Origin::Retry => {
+            let the_objects_own_tail = &oid.as_str()[25..];
+            (RETRY_BORNE_VERSION, the_objects_own_tail)
+        }
+        Origin::Commit(id) => (COMMIT_BORNE_VERSION, &id.as_str()[..15]),
     };
     let object = oid.as_str();
     format!(
-        "{}-{}-{version}{}-8{}-{}0",
+        "{}-{}-{version}{}-{UUID_VARIANT}{}-{}{ORDINAL_RESERVED_FOR_THE_HELPER}",
         &source[..8],
         &source[8..12],
         &source[12..15],
@@ -65,7 +58,6 @@ mod tests {
         assert!(k.ends_with('0'), "the ordinal character is free: {k}");
     }
 
-    /// The whole point: the same change resent carries the same key.
     #[test]
     fn the_same_change_yields_the_same_key_every_time() {
         let a = key(Origin::Commit(&commit(COMMIT)), &oid(OBJECT));

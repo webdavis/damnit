@@ -1,6 +1,3 @@
-//! What dam makes of the helper's answers: a reported failure, no answer
-//! at all, and answers about mutations dam did not send.
-
 use super::super::*;
 use super::{clock, committed_task, config, launcher};
 use crate::ports::Repositories;
@@ -36,12 +33,12 @@ fn a_failed_mutation_becomes_a_notice_and_a_retry() {
         store.notices().unwrap()[0],
         Notice::PushFailed { .. }
     ));
-    // the commit is marked pushed; the retry set carries the failure forward
     assert!(
         store
             .unpushed(&RemoteName("todoist".into()))
             .unwrap()
-            .is_empty()
+            .is_empty(),
+        "the commit is marked pushed; the retry set carries the failure forward"
     );
 }
 

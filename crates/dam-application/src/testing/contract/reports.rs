@@ -1,11 +1,7 @@
-//! What a sync leaves for the operator to read: conflicts and notices.
-
 use crate::ports::{ConflictRepository, Notice, NoticeRepository, ObjectRepository};
 
 use super::{oid, remote, task};
 
-/// A conflict carries both sides, replaces an earlier one for the same oid,
-/// and clears on demand. `objects` supplies the local side the store reads.
 pub fn conflict_repository_contract(
     objects: &dyn ObjectRepository,
     conflicts: &dyn ConflictRepository,
@@ -36,8 +32,6 @@ pub fn conflict_repository_contract(
     conflicts.clear_conflict(&oid(1)).unwrap();
 }
 
-/// Notices are a log: they keep insertion order, repeat when repeated, and
-/// clear all at once.
 pub fn notice_repository_contract(notices: &dyn NoticeRepository) {
     assert!(notices.notices().unwrap().is_empty());
 

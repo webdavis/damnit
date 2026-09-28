@@ -1,5 +1,3 @@
-//! An in-memory `Store`, the double every application use-case test runs on.
-
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 
@@ -38,17 +36,15 @@ impl MemoryStore {
 }
 
 impl Transactional for MemoryStore {
-    /// Keeps a copy of everything and puts it back when the work fails, so
-    /// the double is as atomic as the durable store it stands in for.
     fn in_transaction(
         &self,
         work: &mut dyn FnMut() -> Result<(), UseCaseError>,
     ) -> Result<(), UseCaseError> {
-        let before = self.0.borrow().clone();
+        let restored_if_the_work_fails = self.0.borrow().clone();
         match work() {
             Ok(()) => Ok(()),
             Err(e) => {
-                *self.0.borrow_mut() = before;
+                *self.0.borrow_mut() = restored_if_the_work_fails;
                 Err(e)
             }
         }

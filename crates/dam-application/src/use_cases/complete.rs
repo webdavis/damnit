@@ -1,11 +1,11 @@
 use dam_domain::{
-    Blocker, ChildDisposition, Date, DependencyDisposition, Dispositions, Force, Object, Oid, Path,
-    Rule, Task, When, blockers, roll_forward,
+    Blocker, ChildDisposition, Date, DependencyDisposition, Dispositions, Force, Object, Oid, Rule,
+    Task, When, blockers, roll_forward,
 };
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{Clock, ObjectRepository, Randomness};
-use crate::use_cases::subtree::move_subtree;
+use crate::use_cases::subtree::{last_segment, move_subtree};
 
 pub struct CompletePlan {
     pub oid: Oid,
@@ -141,15 +141,6 @@ fn apply_dispositions(
         objects.put(&Object::Task(task))?;
     }
     Ok(())
-}
-
-fn last_segment(path: &Path) -> String {
-    path.as_str()
-        .trim_end_matches('/')
-        .rsplit('/')
-        .next()
-        .unwrap_or("")
-        .to_string()
 }
 
 fn load_task(objects: &dyn ObjectRepository, oid: &Oid) -> Result<Task, UseCaseError> {

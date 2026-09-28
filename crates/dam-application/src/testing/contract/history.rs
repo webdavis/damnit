@@ -1,12 +1,8 @@
-//! Commits and what each remote has been told about them.
-
 use crate::ports::{CommitRepository, RemoteTrackingRepository};
 use dam_domain::{Change, CommitRecord, Op, Timestamp};
 
 use super::{commit_id, oid, remote, task};
 
-/// Commits are ordered newest first, unpushed is per remote, and the retry
-/// set is replaced rather than appended to.
 pub fn commit_repository_contract(commits: &dyn CommitRepository) {
     let here = remote("here");
     let there = remote("there");
@@ -77,8 +73,6 @@ pub(super) fn record(byte: u8, message: &str, object: u8) -> CommitRecord {
     }
 }
 
-/// Remote ids map both ways, snapshots and sync state are per remote, and
-/// clearing one mapping leaves every other remote untouched.
 pub fn remote_tracking_repository_contract(tracking: &dyn RemoteTrackingRepository) {
     let here = remote("here");
     let there = remote("there");

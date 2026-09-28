@@ -1,5 +1,3 @@
-//! What a push refuses before it sends anything.
-
 use super::super::*;
 use super::{clock, committed_task, config, launcher};
 use crate::errors::Refusal;
@@ -45,9 +43,6 @@ fn an_unknown_remote_is_refused() {
     );
 }
 
-/// The helper stays the authority on what it needs, even though the config
-/// is what supplies it: a name the helper declares and the config does not
-/// is refused by name rather than sent as nothing.
 #[test]
 fn a_credential_the_config_does_not_supply_is_refused_by_name() {
     let store = MemoryStore::new();

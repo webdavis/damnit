@@ -94,15 +94,14 @@ fn push_one(
         helper.push(mutations)?
     };
 
-    // The helper is an untrusted subprocess: a result for an oid dam never
-    // sent is dropped, and a repeated result for one oid keeps only the
-    // first (results arrive in the order the helper wrote them).
     let mut failed = Vec::new();
     let mut retries = Vec::new();
     let mut answered: BTreeSet<Oid> = BTreeSet::new();
     for outcome in outcomes {
         let oid = outcome.oid;
-        if !sent_oids.contains(&oid) || !answered.insert(oid.clone()) {
+        let first_answer_about_a_sent_oid =
+            sent_oids.contains(&oid) && answered.insert(oid.clone());
+        if !first_answer_about_a_sent_oid {
             continue;
         }
         if outcome.ok {
@@ -134,9 +133,6 @@ fn push_one(
         }
     }
 
-    // A sent mutation with no answer at all, not even a failure, never
-    // reached a known state on the remote: treat it the same as an
-    // explicit failure rather than silently dropping it.
     let mut unanswered = BTreeSet::new();
     for oid in sent_oids.difference(&answered).cloned() {
         let why = "no answer from helper".to_string();
@@ -156,8 +152,6 @@ fn push_one(
         }
         repos.commits.mark_pushed(&remote.name, &record.id)?;
     }
-    // The run reached the remote and came back; a mutation the remote refused
-    // is a notice against that object, the way a rejected object is on a pull.
     repos
         .remote_tracking
         .set_last_push(&remote.name, clock.now())?;

@@ -36,8 +36,6 @@ pub fn plan_remove(objects: &dyn ObjectRepository, oid: &Oid) -> Result<RemovePl
     })
 }
 
-/// Removes one object. Children move up a level, dependents lose the edge,
-/// attached tasks keep the oid so `status` can report it. Nothing cascades.
 pub fn remove(objects: &dyn ObjectRepository, oid: &Oid) -> Result<RemovePlan, UseCaseError> {
     let plan = plan_remove(objects, oid)?;
     let object = objects
@@ -66,7 +64,8 @@ mod tests {
     use super::*;
     use crate::testing::prelude::*;
     use crate::testing::{MemoryStore, oid};
-    use dam_domain::{Object, Path, Task};
+    use dam_domain::{Event, Object, Path, Task, When};
+    use jiff::civil::date;
 
     fn put(store: &MemoryStore, byte: u8, path: &str) -> Oid {
         let mut t = Task::new(oid(byte), format!("t{byte}"));
@@ -105,5 +104,26 @@ mod tests {
             "top/c/"
         );
         assert!(store.get(&d).unwrap().unwrap().base().depends.is_empty());
+    }
+
+    #[test]
+    fn an_attached_task_keeps_the_removed_events_oid() {
+        let store = MemoryStore::new();
+        let day = When::Day(date(2026, 9, 25));
+        store
+            .put(&Object::Event(Event::new(
+                oid(5),
+                "meeting",
+                day.clone(),
+                day,
+            )))
+            .unwrap();
+        let mut prep = Task::new(oid(6), "prep");
+        prep.event = Some(oid(5));
+        store.put(&Object::Task(prep)).unwrap();
+        let plan = remove(&store, &oid(5)).unwrap();
+        assert_eq!(plan.attached, vec![oid(6)]);
+        let kept = store.get(&oid(6)).unwrap().unwrap();
+        assert_eq!(kept.as_task().unwrap().event, Some(oid(5)));
     }
 }

@@ -1,7 +1,3 @@
-//! The behaviour every store implementation owes, run against each of them.
-//! A double that drifts from the real store fails here rather than in the
-//! suite that trusted it.
-
 mod history;
 mod reports;
 mod unit_of_work;
