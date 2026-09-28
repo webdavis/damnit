@@ -27,17 +27,23 @@ fn sign_in(base: &str, home: &Path) -> Command {
     command
 }
 
-/// What one run of the binary left behind.
 struct Walked {
     code: Option<i32>,
     stdout: String,
     stderr: String,
 }
 
-/// One run: the secret piped in, the browser played with `answer` given the
-/// announced state, and every byte of both streams kept. With `keep_stdout`
-/// false the read end of standard output is closed before the token is due.
-fn walk(base: &str, home: &Path, answer: impl Fn(&str) -> String, keep_stdout: bool) -> Walked {
+enum Stdout {
+    Kept,
+    ClosedBeforeTheTokenIsDue,
+}
+
+fn walk_with_the_secret_piped_in(
+    base: &str,
+    home: &Path,
+    browser_answer_for_state: impl Fn(&str) -> String,
+    stdout: Stdout,
+) -> Walked {
     let mut child = sign_in(base, home).spawn().unwrap();
     child
         .stdin
@@ -45,7 +51,7 @@ fn walk(base: &str, home: &Path, answer: impl Fn(&str) -> String, keep_stdout: b
         .unwrap()
         .write_all(format!("{CLIENT_SECRET}\n").as_bytes())
         .unwrap();
-    if !keep_stdout {
+    if let Stdout::ClosedBeforeTheTokenIsDue = stdout {
         drop(child.stdout.take());
     }
     let mut stderr = BufReader::new(child.stderr.take().unwrap());
@@ -64,13 +70,16 @@ fn walk(base: &str, home: &Path, answer: impl Fn(&str) -> String, keep_stdout: b
             break url.to_string();
         }
     };
-    let asked = loopback::fields(&url);
+    let asked = loopback::decoded_fields(&url);
     let field = |name: &str| asked.get(name).cloned().unwrap_or_default();
     let address = field("redirect_uri")
         .trim_start_matches("http://")
         .to_string();
     let mut browser = TcpStream::connect(&address).unwrap();
-    let request = format!("GET /?{} HTTP/1.1\r\n\r\n", answer(&field("state")));
+    let request = format!(
+        "GET /?{} HTTP/1.1\r\n\r\n",
+        browser_answer_for_state(&field("state"))
+    );
     browser.write_all(request.as_bytes()).unwrap();
     stderr.read_to_string(&mut said).unwrap();
     let out = child.wait_with_output().unwrap();
@@ -108,7 +117,7 @@ fn the_refresh_token_alone_reaches_standard_output() {
     let _guard = support::guard("the_refresh_token_alone_reaches_standard_output");
     let home = tempfile::tempdir().unwrap();
     let google = google_granting();
-    let walked = walk(&google.base, home.path(), granted, true);
+    let walked = walk_with_the_secret_piped_in(&google.base, home.path(), granted, Stdout::Kept);
     assert_eq!(walked.code, Some(0), "{}", walked.stderr);
     assert_eq!(walked.stdout, format!("{REFRESH}\n"));
     assert!(walked.stderr.contains("vault"), "{}", walked.stderr);
@@ -126,11 +135,11 @@ fn a_consent_refused_in_the_browser_exits_one_and_prints_nothing() {
     let _guard = support::guard("a_consent_refused_in_the_browser_exits_one_and_prints_nothing");
     let home = tempfile::tempdir().unwrap();
     let google = google_granting();
-    let walked = walk(
+    let walked = walk_with_the_secret_piped_in(
         &google.base,
         home.path(),
         |state| format!("error=access_denied&state={state}"),
-        true,
+        Stdout::Kept,
     );
     assert_eq!(walked.code, Some(1), "{}", walked.stderr);
     assert_eq!(walked.stdout, "");
@@ -139,14 +148,17 @@ fn a_consent_refused_in_the_browser_exits_one_and_prints_nothing() {
     assert!(google.seen().is_empty());
 }
 
-/// The token exists only in this process, so failing to print it loses it,
-/// and the operator is told to walk again.
 #[test]
-fn a_token_that_cannot_be_printed_says_to_sign_in_again() {
-    let _guard = support::guard("a_token_that_cannot_be_printed_says_to_sign_in_again");
+fn a_token_that_cannot_be_printed_is_lost_and_says_to_sign_in_again() {
+    let _guard = support::guard("a_token_that_cannot_be_printed_is_lost_and_says_to_sign_in_again");
     let home = tempfile::tempdir().unwrap();
     let google = google_granting();
-    let walked = walk(&google.base, home.path(), granted, false);
+    let walked = walk_with_the_secret_piped_in(
+        &google.base,
+        home.path(),
+        granted,
+        Stdout::ClosedBeforeTheTokenIsDue,
+    );
     assert_eq!(walked.code, Some(1), "{}", walked.stderr);
     assert!(walked.stderr.contains("sign in again"), "{}", walked.stderr);
     assert_quotes_no_secret(&walked.stderr);

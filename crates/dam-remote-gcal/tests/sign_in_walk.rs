@@ -49,7 +49,7 @@ fn s256(verifier: &str) -> String {
 
 /// Plays the browser: opens the redirect with the given query, returns the page.
 fn browse(url: &str, query: impl Fn(&str) -> String) -> std::thread::JoinHandle<String> {
-    let asked = loopback::fields(query_of(url));
+    let asked = loopback::decoded_fields(query_of(url));
     let field = |name: &str| asked.get(name).cloned().unwrap_or_default();
     let address = field("redirect_uri")
         .trim_start_matches("http://")
@@ -96,8 +96,8 @@ fn a_granted_consent_is_exchanged_for_the_refresh_token() {
         (seen[0].method.as_str(), seen[0].path.as_str()),
         ("POST", "/token")
     );
-    let asked = loopback::fields(query_of(&announced));
-    let sent = |name: &str| seen[0].form.get(name).cloned();
+    let asked = loopback::decoded_fields(query_of(&announced));
+    let sent = |name: &str| seen[0].decoded_form.get(name).cloned();
     assert_eq!(sent("grant_type").as_deref(), Some("authorization_code"));
     assert_eq!(sent("code").as_deref(), Some("4/0AbCODE"));
     assert_eq!(
@@ -117,7 +117,12 @@ fn a_granted_consent_is_exchanged_for_the_refresh_token() {
         asked.get("code_challenge").cloned(),
         "the verifier sent does not answer the challenge announced"
     );
-    assert_eq!(seen[0].form.len(), 6, "{:?}", seen[0].form.keys());
+    assert_eq!(
+        seen[0].decoded_form.len(),
+        6,
+        "{:?}",
+        seen[0].decoded_form.keys()
+    );
 }
 
 /// The helper above is itself pinned to RFC 7636 appendix B.
@@ -273,7 +278,7 @@ fn each_walk_announces_its_own_state_and_challenge() {
     for _ in 0..2 {
         let mut browser = None;
         let _ = sign_in.mint(&client(), &mut |url| {
-            announced.push(loopback::fields(query_of(url)));
+            announced.push(loopback::decoded_fields(query_of(url)));
             browser = Some(browse(url, |state| {
                 format!("error=access_denied&state={state}")
             }));
