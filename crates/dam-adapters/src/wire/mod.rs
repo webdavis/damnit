@@ -1,6 +1,3 @@
-//! The translation between dam's own vocabulary and the helper protocol.
-//! Every wire type is named here and nowhere inside the application.
-
 mod decode;
 mod encode;
 
@@ -14,14 +11,10 @@ use dam_protocol::{Capabilities, Mutation, MutationResult, PullResponse};
 pub use decode::{WireError, from_wire};
 pub use encode::to_wire;
 
-/// The oid a pulled object carries until the application resolves the one it
-/// tracks that remote id by. A helper sends no oid of its own.
-fn placeholder_oid() -> Oid {
+fn placeholder_oid_until_the_application_resolves_the_remote_id() -> Oid {
     Oid::generate(&mut |b: &mut [u8]| b.fill(0))
 }
 
-/// What the application understands of a helper's declared capabilities. A
-/// kind or field this dam does not know is dropped rather than refused.
 pub fn capabilities_from_wire(caps: &Capabilities) -> RemoteCapabilities {
     RemoteCapabilities {
         kinds: caps.kinds.iter().filter_map(|k| Kind::parse(k)).collect(),
@@ -31,9 +24,6 @@ pub fn capabilities_from_wire(caps: &Capabilities) -> RemoteCapabilities {
     }
 }
 
-/// Reads one pull response, splitting the objects dam can use from the ones
-/// it cannot. An object with no remote id is rejected under an empty name,
-/// since there is nothing to track it by.
 pub fn pull_from_wire(response: PullResponse) -> PullOutcome {
     let mut objects = Vec::new();
     let mut rejected = Vec::new();
@@ -45,7 +35,7 @@ pub fn pull_from_wire(response: PullResponse) -> PullOutcome {
             });
             continue;
         };
-        wire.oid = placeholder_oid().to_string();
+        wire.oid = placeholder_oid_until_the_application_resolves_the_remote_id().to_string();
         match from_wire(&wire) {
             Ok(object) => objects.push(IncomingObject { remote_id, object }),
             Err(why) => rejected.push(RejectedObject {
@@ -83,8 +73,6 @@ pub fn mutation_to_wire(mutation: RemoteMutation) -> Mutation {
     }
 }
 
-/// A result naming an oid that is not one is dropped: the helper is an
-/// untrusted subprocess and there is no change to attribute it to.
 pub fn outcomes_from_wire(results: Vec<MutationResult>) -> Vec<MutationOutcome> {
     results
         .into_iter()

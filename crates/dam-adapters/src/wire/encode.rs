@@ -1,5 +1,3 @@
-//! Writing dam's own objects out as the protocol's wire objects.
-
 use dam_domain::{
     EventStatus, EventType, Kind, Object, ResponseStatus, Transparency, Visibility, When,
 };
@@ -7,7 +5,6 @@ use dam_protocol::{
     WireAttachment, WireAttendee, WireConference, WireEvent, WireObject, WirePerson, WireTask,
 };
 
-/// The wire word for an object's kind, as `to_wire` writes it.
 fn wire_kind(object: &Object) -> &'static str {
     match object.kind() {
         Kind::Task => "task",

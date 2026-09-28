@@ -1,5 +1,3 @@
-//! Reading a protocol wire object back as one of dam's own objects.
-
 use std::collections::BTreeSet;
 
 use dam_domain::{
@@ -7,12 +5,8 @@ use dam_domain::{
     OidError, Path, PathError, Person, Priority, PriorityError, Reminder, ResponseStatus, Task,
     Timestamp, Transparency, Visibility, When,
 };
-use dam_protocol::WireObject;
+use dam_protocol::{WireObject, WireTask};
 
-/// Why one wire object could not be read as one of dam's own. Protocol
-/// acceptance over a subprocess's output: a bad oid, an out of range
-/// priority, an unknown kind and an unreadable date are four different
-/// rejections, and each says which field it was.
 #[derive(Debug, PartialEq, Eq)]
 pub enum WireError {
     Oid {
@@ -40,7 +34,6 @@ pub enum WireError {
 }
 
 impl WireError {
-    /// The field the rejection is about, for counting rejections by class.
     pub fn field(&self) -> &'static str {
         match self {
             WireError::Oid { field, .. } => field,
@@ -117,16 +110,7 @@ pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
         ("task", Some(t), _) => Ok(Object::Task(Task {
             base,
             done: t.done,
-            // The time records a completion, so an open task takes none.
-            completed_at: t
-                .completed_at
-                .as_deref()
-                .filter(|_| t.done)
-                .map(|at| {
-                    at.parse::<Timestamp>()
-                        .map_err(|_| date("completed_at")(at.to_string()))
-                })
-                .transpose()?,
+            completed_at: completion_time_of_a_done_task(t)?,
             priority: Priority::new(t.priority).map_err(|why| WireError::Priority {
                 value: t.priority.to_string(),
                 why,
@@ -215,6 +199,17 @@ pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
         })),
         (kind, _, _) => Err(WireError::UnknownKind(kind.to_string())),
     }
+}
+
+fn completion_time_of_a_done_task(t: &WireTask) -> Result<Option<Timestamp>, WireError> {
+    t.completed_at
+        .as_deref()
+        .filter(|_| t.done)
+        .map(|at| {
+            at.parse::<Timestamp>()
+                .map_err(|_| date("completed_at")(at.to_string()))
+        })
+        .transpose()
 }
 
 fn parse_when(text: &str) -> Result<When, String> {
