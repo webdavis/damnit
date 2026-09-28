@@ -89,6 +89,17 @@ impl Sandbox {
         std::fs::set_permissions(&helper, std::fs::Permissions::from_mode(0o755)).unwrap();
     }
 
+    pub fn no_helper_left_within(&self, margin: std::time::Duration) -> bool {
+        let give_up_at = std::time::Instant::now() + margin;
+        while self.helper_running() {
+            if std::time::Instant::now() >= give_up_at {
+                return false;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        true
+    }
+
     pub fn helper_running(&self) -> bool {
         Command::new("pgrep")
             .arg("-f")
