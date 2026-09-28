@@ -30,23 +30,31 @@ pub fn resolve(
         }
         Side::Ours => ("ours", conflict.theirs, conflict.ours),
     };
-    // Either side needs a commit, and an unpushed one. Push coalesces every
-    // unpushed change for an object and sends where they end, so a resolution
-    // that wrote none would leave the change that lost as the last word and
-    // send that upstream instead.
-    let record = CommitRecord {
-        id: CommitId::generate(&mut |b| random.fill(b)),
-        message: format!("resolve {} with {word}", oid.short()),
-        at: clock.now(),
-        changes: vec![Change {
-            oid: oid.clone(),
-            op: Op::Update,
-            before: Some(before),
-            after: Some(after),
-        }],
+    let resolution = Change {
+        oid: oid.clone(),
+        op: Op::Update,
+        before: Some(before),
+        after: Some(after),
     };
-    commits.commit(&record)?;
+    let message = format!("resolve {} with {word}", oid.short());
+    commit_as_the_last_unpushed_word(commits, clock, random, message, resolution)?;
     conflicts.clear_conflict(oid)?;
+    Ok(())
+}
+
+fn commit_as_the_last_unpushed_word(
+    commits: &dyn CommitRepository,
+    clock: &dyn Clock,
+    random: &dyn Randomness,
+    message: String,
+    change: Change,
+) -> Result<(), UseCaseError> {
+    commits.commit(&CommitRecord {
+        id: CommitId::generate(&mut |b| random.fill(b)),
+        message,
+        at: clock.now(),
+        changes: vec![change],
+    })?;
     Ok(())
 }
 

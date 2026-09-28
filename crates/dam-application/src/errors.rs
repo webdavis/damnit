@@ -4,44 +4,26 @@ use dam_domain::{Blocker, LabelViolation, Oid};
 
 use crate::ports::{CredentialError, EditorError, HelperError, StoreError};
 
-/// A rule dam enforces, refused with the reason.
 #[derive(Debug, PartialEq, Eq)]
 pub enum Refusal {
-    Blocked {
-        oid: Oid,
-        blockers: Vec<Blocker>,
-    },
-    Cycle {
-        oid: Oid,
-        path: Vec<Oid>,
-    },
+    Blocked { oid: Oid, blockers: Vec<Blocker> },
+    Cycle { oid: Oid, path: Vec<Oid> },
     Labels(LabelViolation),
     UnknownCategory(String),
     NoSuchObject(String),
-    /// A prefix that matched nothing in the working layer, which is the
-    /// layer a prefix is resolved against.
     NoWorkingObject(String),
     NoSuchRemote(String),
     NotATask(Oid),
-    /// An event field asked of a task, the mirror of `NotATask`.
     NotAnEvent(Oid),
     NotCompleted(Oid),
     NotCommitted(Oid),
-    DirtyOnPull {
-        oid: Oid,
-    },
-    /// A path that would put an object under itself, which no tree allows.
+    DirtyOnPull { oid: Oid },
     MoveInsideItself(Oid),
     NothingToCommit,
-    /// A verb needed the operator's answer and the format cannot carry one.
     NeedsAnAnswer,
-    /// `-e` needed an editor and the format cannot open one.
     NeedsAnEditor,
     UnresolvedConflicts(usize),
-    MissingCredential {
-        remote: String,
-        name: String,
-    },
+    MissingCredential { remote: String, name: String },
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -55,8 +37,6 @@ pub enum UseCaseError {
 }
 
 impl Refusal {
-    /// The rule this refusal broke, one stable snake_case word per variant,
-    /// which is what a client branches on when `refused` is too coarse.
     pub fn name(&self) -> &'static str {
         match self {
             Refusal::Blocked { .. } => "blocked",
@@ -247,113 +227,4 @@ impl fmt::Display for UseCaseError {
 impl std::error::Error for UseCaseError {}
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use dam_domain::{LabelViolation, Oid};
-
-    fn oid() -> Oid {
-        Oid::generate(&mut |x: &mut [u8]| x.fill(1))
-    }
-
-    /// How many slots `slot` below hands out. Kept in sync by hand; nothing
-    /// forces it to rise when a new variant reuses an existing slot.
-    const RULE_COUNT: usize = 18;
-
-    /// Which variant this is. The match is exhaustive, so a rule added to the
-    /// enum does not compile until it has an arm here, but that arm may reuse
-    /// an existing index. `every_variant_has_a_sample` then catches a variant
-    /// whose sample is missing from `every_refusal`; it does not catch a new
-    /// variant that reused a slot instead of taking a fresh one.
-    fn slot(refusal: &Refusal) -> usize {
-        match refusal {
-            Refusal::Blocked { .. } => 0,
-            Refusal::Cycle { .. } => 1,
-            Refusal::Labels(_) => 2,
-            Refusal::UnknownCategory(_) => 3,
-            Refusal::NoSuchObject(_) => 4,
-            Refusal::NoWorkingObject(_) => 5,
-            Refusal::NoSuchRemote(_) => 6,
-            Refusal::NotATask(_) => 7,
-            Refusal::NotAnEvent(_) => 8,
-            Refusal::NotCompleted(_) => 9,
-            Refusal::NotCommitted(_) => 10,
-            Refusal::DirtyOnPull { .. } => 11,
-            Refusal::MoveInsideItself(_) => 12,
-            Refusal::NothingToCommit => 13,
-            Refusal::NeedsAnAnswer => 14,
-            Refusal::NeedsAnEditor => 15,
-            Refusal::UnresolvedConflicts(_) => 16,
-            Refusal::MissingCredential { .. } => 17,
-        }
-    }
-
-    /// One of every variant, so the checks below see them all.
-    fn every_refusal() -> Vec<Refusal> {
-        vec![
-            Refusal::Blocked {
-                oid: oid(),
-                blockers: vec![],
-            },
-            Refusal::Cycle {
-                oid: oid(),
-                path: vec![],
-            },
-            Refusal::Labels(LabelViolation::Exclusive {
-                category: "effort".into(),
-                held: vec![],
-            }),
-            Refusal::UnknownCategory("effort".into()),
-            Refusal::NoSuchObject("abab".into()),
-            Refusal::NoWorkingObject("abab".into()),
-            Refusal::NoSuchRemote("todoist".into()),
-            Refusal::NotATask(oid()),
-            Refusal::NotAnEvent(oid()),
-            Refusal::NotCompleted(oid()),
-            Refusal::NotCommitted(oid()),
-            Refusal::DirtyOnPull { oid: oid() },
-            Refusal::MoveInsideItself(oid()),
-            Refusal::NothingToCommit,
-            Refusal::NeedsAnAnswer,
-            Refusal::NeedsAnEditor,
-            Refusal::UnresolvedConflicts(2),
-            Refusal::MissingCredential {
-                remote: "todoist".into(),
-                name: "api_token".into(),
-            },
-        ]
-    }
-
-    #[test]
-    fn every_variant_has_a_sample() {
-        let mut slots: Vec<usize> = every_refusal().iter().map(slot).collect();
-        slots.sort_unstable();
-        slots.dedup();
-        assert_eq!(
-            slots,
-            (0..RULE_COUNT).collect::<Vec<usize>>(),
-            "a rule has no sample in every_refusal, so the checks below never see it"
-        );
-    }
-
-    #[test]
-    fn every_rule_has_its_own_name() {
-        let refusals = every_refusal();
-        let mut names: Vec<&str> = refusals.iter().map(Refusal::name).collect();
-        let count = names.len();
-        names.sort_unstable();
-        names.dedup();
-        assert_eq!(names.len(), count, "two rules share a name: {names:?}");
-    }
-
-    #[test]
-    fn every_name_is_lower_snake_case_and_says_something() {
-        for refusal in every_refusal() {
-            let name = refusal.name();
-            assert!(!name.is_empty(), "{refusal:?}");
-            assert!(
-                name.chars().all(|c| c.is_ascii_lowercase() || c == '_'),
-                "{name} is not snake_case"
-            );
-        }
-    }
-}
+mod tests;

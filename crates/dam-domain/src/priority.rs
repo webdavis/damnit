@@ -1,6 +1,5 @@
 use std::fmt;
 
-/// 1 is highest, 4 is lowest, matching how Todoist's interface labels them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Priority(u8);
 

@@ -10,7 +10,6 @@ pub enum RuleError {
     Empty,
     Unknown(String),
     BadInterval(String),
-    /// Past the widest span of `unit` a date can be stepped by.
     IntervalTooLarge {
         got: String,
         unit: &'static str,
@@ -48,11 +47,11 @@ impl Rule {
             "year" | "years" => Freq::Yearly,
             other => return Err(RuleError::Unknown(other.to_string())),
         };
-        if interval > freq.max_interval() {
+        if interval > freq.widest_steppable_interval() {
             return Err(RuleError::IntervalTooLarge {
                 got: interval.to_string(),
                 unit: freq.unit_text(true),
-                max: freq.max_interval(),
+                max: freq.widest_steppable_interval(),
             });
         }
         let mut rule = Rule {
@@ -149,11 +148,8 @@ impl std::error::Error for RuleError {}
 mod tests {
     use super::*;
 
-    /// The calendar bounds an interval: past the widest span of its unit a
-    /// date can be stepped by, no occurrence is reachable, so the rule is
-    /// refused when it is read rather than failing when it is used.
     #[test]
-    fn an_interval_past_its_units_calendar_span_is_refused() {
+    fn an_interval_past_its_units_calendar_span_is_refused_when_read_not_when_used() {
         for (unit, max) in [
             ("days", 7_304_484u32),
             ("weeks", 1_043_497),
@@ -175,10 +171,8 @@ mod tests {
         }
     }
 
-    /// The refusal names the range it wants, so an operator who follows it
-    /// gets a rule rather than a second refusal.
     #[test]
-    fn the_too_large_interval_message_names_the_range_and_the_unit() {
+    fn the_too_large_interval_message_names_a_range_and_unit_that_parse() {
         let said = Rule::parse("every 2147483647 weeks")
             .unwrap_err()
             .to_string();
@@ -188,8 +182,6 @@ mod tests {
         assert!(Rule::parse("every 1043497 weeks").is_ok());
     }
 
-    /// The refusal names forms the parser reads back, so an operator who
-    /// follows it gets a rule rather than a second refusal.
     #[test]
     fn the_unknown_day_message_names_forms_the_parser_accepts() {
         let said = RuleError::BadDay("funday".into()).to_string();

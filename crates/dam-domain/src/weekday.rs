@@ -1,11 +1,5 @@
-//! The one weekday vocabulary. The recurrence rules and the date words both
-//! read days by these names, so a day `dam` accepts in one reads the same in
-//! the other.
-
 use jiff::civil::Weekday;
 
-/// A weekday by its short or full name, in any case. `None` for a word that
-/// names no day.
 pub fn parse_weekday(text: &str) -> Option<Weekday> {
     match text.to_ascii_lowercase().as_str() {
         "mon" | "monday" => Some(Weekday::Monday),
@@ -19,7 +13,6 @@ pub fn parse_weekday(text: &str) -> Option<Weekday> {
     }
 }
 
-/// The canonical short name, which is what `dam` writes back.
 pub fn weekday_text(day: Weekday) -> &'static str {
     match day {
         Weekday::Monday => "mon",
@@ -62,6 +55,18 @@ mod tests {
             Weekday::Sunday,
         ] {
             assert_eq!(parse_weekday(weekday_text(day)), Some(day));
+        }
+    }
+
+    #[test]
+    fn a_weekday_name_reads_the_same_in_a_recurrence_rule_and_a_date_word() {
+        let friday = jiff::civil::date(2026, 9, 18);
+        let tz = jiff::tz::TimeZone::UTC;
+        for text in ["mon", "monday", "Monday", "MON"] {
+            let rule = crate::Rule::parse(&format!("every week on {text}")).unwrap();
+            assert_eq!(rule.by_day, vec![Weekday::Monday], "{text}");
+            let when = crate::When::parse_human(text, friday, &tz).unwrap();
+            assert_eq!(when.date().weekday(), Weekday::Monday, "{text}");
         }
     }
 }

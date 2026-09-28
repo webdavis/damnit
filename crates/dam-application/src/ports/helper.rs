@@ -1,5 +1,3 @@
-//! The remote helper dam drives, and the credentials it is handed.
-
 use crate::config::{CredentialSpec, RemoteConfig};
 use crate::remote::{MutationOutcome, PullOutcome, RemoteCapabilities, RemoteMutation};
 use crate::secret::Secret;
@@ -16,8 +14,6 @@ pub enum HelperError {
         supported: u32,
     },
     Io(String),
-    /// Two credential names of one remote become the same environment
-    /// variable, so one would silently overwrite the other.
     CollidingCredentials {
         first: String,
         second: String,
@@ -27,8 +23,6 @@ pub enum HelperError {
     Timeout {
         helper: String,
         deadline: String,
-        /// The tail of what the helper wrote to its standard error, when it
-        /// wrote anything.
         said: Option<String>,
     },
     Cancelled,

@@ -3,9 +3,6 @@ use dam_domain::{Oid, Path};
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
 
-/// Moves `oid` to `to`, carrying every object nested under its old path along
-/// with it, so a moved task's children (and their own children) relocate
-/// instead of being orphaned under a stale prefix.
 pub(crate) fn move_subtree(
     objects: &dyn ObjectRepository,
     oid: &Oid,
@@ -29,7 +26,6 @@ pub(crate) fn move_subtree(
     Ok(())
 }
 
-/// The last segment of a path, what `join` needs to place something one level up.
 pub(crate) fn last_segment(path: &Path) -> String {
     path.as_str()
         .trim_end_matches('/')

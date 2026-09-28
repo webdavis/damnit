@@ -4,18 +4,16 @@ use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
 use crate::use_cases::subtree::{last_segment, move_subtree};
 
-/// Moves an object to sit under `to`, carrying every descendant with it.
 pub fn relocate(objects: &dyn ObjectRepository, oid: &Oid, to: &Path) -> Result<(), UseCaseError> {
     let object = objects
         .get(oid)?
         .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
     let old = object.base().path.clone();
-    // A root path ("") is shared by every top-level object, so it never
-    // meaningfully contains anything: only a real, owned prefix can.
-    if !old.as_str().is_empty() && to.is_within(&old) {
+    let sits_at_the_shared_root = old.as_str().is_empty();
+    if !sits_at_the_shared_root && to.is_within(&old) {
         return Err(Refusal::MoveInsideItself(oid.clone()).into());
     }
-    let new = if old.as_str().is_empty() {
+    let new = if sits_at_the_shared_root {
         to.clone()
     } else {
         to.join(&last_segment(&old))

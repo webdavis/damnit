@@ -1,6 +1,3 @@
-//! The durable store, one port per record family, and the unit of work that
-//! spans them.
-
 use dam_domain::{Change, CommitId, CommitRecord, Kind, Object, Oid, Path, Timestamp};
 
 use crate::errors::UseCaseError;
@@ -10,11 +7,7 @@ pub struct RemoteName(pub String);
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum StoreError {
-    /// Another writer holds the store. The work did not happen and retrying
-    /// it later is the right answer.
     Busy(String),
-    /// Anything else the store refused: a corrupt row, a full disk, a value
-    /// that does not decode. Retrying changes nothing.
     Failed(String),
 }
 
@@ -34,7 +27,6 @@ pub struct Conflict {
     pub theirs: Object,
 }
 
-/// Something upstream did that dam reports and never acts on by itself.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Notice {
     RemovedUpstream {
@@ -56,7 +48,6 @@ pub enum Notice {
         remote: RemoteName,
         why: String,
     },
-    /// Upstream changed an object's kind; ours is kept as it is.
     KindChanged {
         oid: Oid,
         ours: Kind,
@@ -64,8 +55,6 @@ pub enum Notice {
     },
 }
 
-/// The working layer: every object as it stands right now, plus the last
-/// commit's view of one object for diffing working against committed.
 pub trait ObjectRepository {
     fn get(&self, oid: &Oid) -> Result<Option<Object>, StoreError>;
     fn all(&self) -> Result<Vec<Object>, StoreError>;
@@ -76,7 +65,6 @@ pub trait ObjectRepository {
     fn committed(&self, oid: &Oid) -> Result<Option<Object>, StoreError>;
 }
 
-/// The stage: at most one change per oid, waiting for a commit.
 pub trait StageRepository {
     fn stage(&self, change: Change) -> Result<(), StoreError>;
     fn unstage(&self, oid: &Oid) -> Result<(), StoreError>;
@@ -84,19 +72,15 @@ pub trait StageRepository {
     fn staged(&self) -> Result<Vec<Change>, StoreError>;
 }
 
-/// The commit history, and which of it each remote has taken.
 pub trait CommitRepository {
     fn commit(&self, record: &CommitRecord) -> Result<(), StoreError>;
     fn log(&self) -> Result<Vec<CommitRecord>, StoreError>;
     fn unpushed(&self, remote: &RemoteName) -> Result<Vec<CommitRecord>, StoreError>;
     fn mark_pushed(&self, remote: &RemoteName, id: &CommitId) -> Result<(), StoreError>;
-    /// Oids a previous push failed on, resent as updates until they succeed.
     fn push_retries(&self, remote: &RemoteName) -> Result<Vec<Oid>, StoreError>;
     fn set_push_retries(&self, remote: &RemoteName, oids: &[Oid]) -> Result<(), StoreError>;
 }
 
-/// What each remote holds: the id it knows an object by, the snapshot of what
-/// it last sent, and where its incremental sync stands.
 pub trait RemoteTrackingRepository {
     fn remote_id(&self, remote: &RemoteName, oid: &Oid) -> Result<Option<String>, StoreError>;
     fn oid_for_remote_id(
@@ -113,8 +97,6 @@ pub trait RemoteTrackingRepository {
     fn remote_snapshot(&self, remote: &RemoteName, oid: &Oid)
     -> Result<Option<Object>, StoreError>;
     fn set_remote_snapshot(&self, remote: &RemoteName, object: &Object) -> Result<(), StoreError>;
-    /// Drops the remote id and the remote snapshot for one oid on one remote,
-    /// for an object the remote no longer has after a successful delete.
     fn clear_remote_mapping(&self, remote: &RemoteName, oid: &Oid) -> Result<(), StoreError>;
     fn sync_token(&self, remote: &RemoteName) -> Result<Option<String>, StoreError>;
     fn set_sync_token(&self, remote: &RemoteName, token: Option<&str>) -> Result<(), StoreError>;
@@ -124,7 +106,6 @@ pub trait RemoteTrackingRepository {
     fn set_last_push(&self, remote: &RemoteName, at: Timestamp) -> Result<(), StoreError>;
 }
 
-/// Objects a pull could not merge, held until the operator settles them.
 pub trait ConflictRepository {
     fn mark_conflict(
         &self,
@@ -136,15 +117,12 @@ pub trait ConflictRepository {
     fn clear_conflict(&self, oid: &Oid) -> Result<(), StoreError>;
 }
 
-/// Things upstream did that dam only reports, in the order they were recorded.
 pub trait NoticeRepository {
     fn add_notice(&self, notice: &Notice) -> Result<(), StoreError>;
     fn notices(&self) -> Result<Vec<Notice>, StoreError>;
     fn clear_notices(&self) -> Result<(), StoreError>;
 }
 
-/// Runs one unit of work so that every write inside it lands together or
-/// none of it does, however many record families it spans.
 pub trait Transactional {
     fn in_transaction(
         &self,
@@ -152,8 +130,6 @@ pub trait Transactional {
     ) -> Result<(), UseCaseError>;
 }
 
-/// One durable store behind all six record families, which is what the
-/// composition root holds and what a transaction spans.
 pub trait Store:
     ObjectRepository
     + StageRepository
@@ -176,8 +152,6 @@ impl<T> Store for T where
 {
 }
 
-/// The repositories a use case that spans several families borrows at once,
-/// so it names each family it touches without taking six parameters.
 #[derive(Clone, Copy)]
 pub struct Repositories<'a> {
     pub objects: &'a dyn ObjectRepository,

@@ -15,9 +15,7 @@ fn meeting() -> dam_domain::Event {
     )
 }
 
-/// The event as it was pulled and committed: working, committed and the
-/// remote's snapshot all agree, and "e1" maps to it.
-fn pulled(store: &MemoryStore, event: &dam_domain::Event) {
+fn pulled_and_committed_as_e1(store: &MemoryStore, event: &dam_domain::Event) {
     store.put(&Object::Event(event.clone())).unwrap();
     add_all(store, store, store).unwrap();
     commit(
@@ -85,7 +83,7 @@ fn run_with(
 #[test]
 fn a_cancelled_id_moves_the_event_it_maps_to_cancelled() {
     let store = MemoryStore::new();
-    pulled(&store, &meeting());
+    pulled_and_committed_as_e1(&store, &meeting());
     let reports = run(&store, &["e1"]).unwrap();
     assert_eq!(reports[0].updated, 1);
     let Some(Object::Event(now)) = store.get(&oid(5)).unwrap() else {
@@ -100,12 +98,10 @@ fn a_cancelled_id_moves_the_event_it_maps_to_cancelled() {
     );
 }
 
-/// A cancellation lands under the declared-fields rule, so a helper that
-/// does not declare `status` cancels nothing.
 #[test]
 fn a_helper_that_does_not_declare_status_cancels_nothing() {
     let store = MemoryStore::new();
-    pulled(&store, &meeting());
+    pulled_and_committed_as_e1(&store, &meeting());
     let silent = declaring(&["e1"], vec![Field::Subject, Field::Start, Field::End]);
     let reports = run_with(&store, &silent).unwrap();
     assert_eq!((reports[0].updated, reports[0].unchanged), (0, 1));
@@ -118,7 +114,7 @@ fn a_helper_that_does_not_declare_status_cancels_nothing() {
 #[test]
 fn a_cancelled_event_with_an_attached_task_is_reported_and_the_task_kept() {
     let store = MemoryStore::new();
-    pulled(&store, &meeting());
+    pulled_and_committed_as_e1(&store, &meeting());
     let mut prep = Task::new(oid(6), "prep");
     prep.event = Some(oid(5));
     store.put(&Object::Task(prep)).unwrap();
@@ -152,14 +148,14 @@ fn an_event_already_cancelled_is_unchanged() {
     let store = MemoryStore::new();
     let mut gone = meeting();
     gone.status = EventStatus::Cancelled;
-    pulled(&store, &gone);
+    pulled_and_committed_as_e1(&store, &gone);
     assert_eq!(run(&store, &["e1"]).unwrap()[0].unchanged, 1);
 }
 
 #[test]
 fn an_uncommitted_local_edit_stops_the_pull_as_any_upstream_change_would() {
     let store = MemoryStore::new();
-    pulled(&store, &meeting());
+    pulled_and_committed_as_e1(&store, &meeting());
     let mut edited = meeting();
     edited.base.subject = "renamed here".into();
     store.put(&Object::Event(edited)).unwrap();
@@ -169,12 +165,10 @@ fn an_uncommitted_local_edit_stops_the_pull_as_any_upstream_change_would() {
     ));
 }
 
-/// A committed local edit meets the cancellation as any upstream change: a
-/// conflict whose upstream side is what the remote held, cancelled.
 #[test]
 fn a_committed_local_edit_and_a_cancellation_conflict_over_what_the_remote_held() {
     let store = MemoryStore::new();
-    pulled(&store, &meeting());
+    pulled_and_committed_as_e1(&store, &meeting());
     let mut edited = meeting();
     edited.base.subject = "renamed here".into();
     store.put(&Object::Event(edited)).unwrap();
@@ -197,10 +191,8 @@ fn a_committed_local_edit_and_a_cancellation_conflict_over_what_the_remote_held(
     );
 }
 
-/// Without a snapshot the working copy stands in, so the cancellation is
-/// still raised rather than dropped.
 #[test]
-fn a_cancellation_for_an_event_with_no_snapshot_is_still_raised() {
+fn a_cancellation_for_an_event_with_no_snapshot_is_raised_against_the_working_copy() {
     let store = MemoryStore::new();
     store.put(&Object::Event(meeting())).unwrap();
     add_all(&store, &store, &store).unwrap();

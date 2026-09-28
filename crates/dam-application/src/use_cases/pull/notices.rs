@@ -1,15 +1,9 @@
-//! What a pull reports and never acts on: an object the remote removed, and
-//! an event the remote cancelled.
-
 use dam_domain::{EventStatus, Object};
 
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
 use crate::ports::{Notice, NoticeRepository, ObjectRepository, Repositories};
 
-/// Turns each remote id the remote no longer has into a notice, and drops
-/// its oid-to-remote-id mapping and snapshot: the local object stays, but
-/// nothing about it still tracks that remote.
 pub(super) fn record_removals(
     repos: Repositories<'_>,
     remote: &RemoteConfig,

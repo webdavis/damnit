@@ -1,6 +1,3 @@
-//! One word of a query as the thing it selects: a label, a priority, a key
-//! and a value, or a bare word looked up as a category.
-
 use super::parse::QueryError;
 use super::{DateSel, Term};
 use crate::{Kind, Oid, Path, Priority, Transparency};

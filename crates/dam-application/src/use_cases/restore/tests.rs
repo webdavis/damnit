@@ -6,7 +6,6 @@ use crate::use_cases::stage::add;
 use dam_domain::{Object, Task};
 use jiff::civil::date;
 
-/// A task put, staged and committed, so it has a commit behind it.
 fn committed_task(store: &MemoryStore, byte: u8) -> Oid {
     let id = oid(byte);
     store
@@ -103,9 +102,6 @@ fn a_refusal_leaves_every_other_named_object_alone() {
     );
 }
 
-/// Restore means the working copy equals the commit and nothing about it is
-/// staged, so a stage left over from an edit that was typed back by hand is
-/// cleared even though the working copy already matches.
 #[test]
 fn a_stale_stage_is_cleared_even_when_the_working_copy_already_matches() {
     let store = MemoryStore::new();
@@ -118,8 +114,6 @@ fn a_stale_stage_is_cleared_even_when_the_working_copy_already_matches() {
     assert!(store.staged().unwrap().is_empty());
 }
 
-/// Two mutually exclusive lists naming the same object is a document no client
-/// can read, and the second pass would always find the work already done.
 #[test]
 fn a_repeated_oid_is_restored_once() {
     let store = MemoryStore::new();
@@ -130,9 +124,6 @@ fn a_repeated_oid_is_restored_once() {
     assert!(out[0].changed);
 }
 
-/// Once a delete is committed both layers are empty, so the oid names nothing
-/// at all and the advice to remove it with dam rm would be about an object
-/// that is already gone.
 #[test]
 fn an_oid_neither_layer_knows_is_no_such_object() {
     let store = MemoryStore::new();

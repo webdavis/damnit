@@ -1,12 +1,9 @@
 use std::fmt;
 
-/// A resolved credential value. `Debug` redacts it and there is no `Display`, so
-/// `expose` is the only way to the bytes.
 #[derive(Clone, PartialEq, Eq)]
 pub struct Secret(String);
 
 impl Secret {
-    /// The value itself. Call this only where it is handed to the helper.
     pub fn expose(&self) -> &str {
         &self.0
     }

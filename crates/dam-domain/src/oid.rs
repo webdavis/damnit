@@ -4,8 +4,6 @@ const BYTES: usize = 20;
 const HEX_LEN: usize = BYTES * 2;
 const SHORT_LEN: usize = 7;
 
-/// dam's own identifier for an object: 40 lowercase hex characters, assigned
-/// at creation, shown as a 7 character prefix the way git shows an object name.
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Oid(String);
 
@@ -16,10 +14,9 @@ pub enum OidError {
 }
 
 impl Oid {
-    /// The caller supplies entropy so this crate stays free of any source of it.
-    pub fn generate(fill: &mut dyn FnMut(&mut [u8])) -> Oid {
+    pub fn generate(fill_with_entropy: &mut dyn FnMut(&mut [u8])) -> Oid {
         let mut bytes = [0u8; BYTES];
-        fill(&mut bytes);
+        fill_with_entropy(&mut bytes);
         Oid(bytes.iter().map(|b| format!("{b:02x}")).collect())
     }
 

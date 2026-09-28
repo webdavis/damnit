@@ -181,6 +181,25 @@ fn an_error_response_deserializes() {
 }
 
 #[test]
+fn a_response_carrying_error_and_a_shapes_own_keys_reads_as_the_error() {
+    let read: Response = serde_json::from_str(r#"{"error":"quota","results":[]}"#).unwrap();
+    assert_eq!(
+        read,
+        Response::Error {
+            error: "quota".into()
+        }
+    );
+}
+
+#[test]
+fn a_shape_is_named_without_the_text_the_response_carries() {
+    let failure = Response::Error {
+        error: "buy oat milk".into(),
+    };
+    assert_eq!(failure.shape(), "error");
+}
+
+#[test]
 fn a_pull_response_with_an_unknown_field_still_deserializes_as_pull() {
     let r: Response =
         serde_json::from_str(r#"{"objects":[],"removed":[],"cursor":"abc"}"#).unwrap();
@@ -214,10 +233,8 @@ fn pull_with_cancellations_round_trips_the_fixture() {
     assert_eq!(serde_json::to_string(&read).unwrap(), text);
 }
 
-/// Written only when true, so every document without it reads exactly as
-/// before, and a stored object from before the field reads as false.
 #[test]
-fn an_attendee_writes_self_only_when_it_is_the_calendars_own() {
+fn an_attendee_writes_self_only_when_true_and_reads_its_absence_as_false() {
     let own = crate::WireAttendee {
         email: "me@x".into(),
         response: "declined".into(),

@@ -25,10 +25,7 @@ pub fn add(
     Ok(staged)
 }
 
-/// Every oid that could still need staging: every working object, plus every
-/// oid any commit has ever touched (so a committed object deleted from
-/// working, but not yet staged, is not missed).
-pub(crate) fn tracked_oids(
+pub(crate) fn working_and_ever_committed_oids(
     objects: &dyn ObjectRepository,
     commits: &dyn CommitRepository,
 ) -> Result<BTreeSet<Oid>, UseCaseError> {
@@ -45,14 +42,14 @@ pub(crate) fn tracked_oids(
     Ok(oids)
 }
 
-/// Every working object that differs from committed, plus every committed
-/// object missing from working, staged as a delete.
 pub fn add_all(
     objects: &dyn ObjectRepository,
     stage: &dyn StageRepository,
     commits: &dyn CommitRepository,
 ) -> Result<Vec<Change>, UseCaseError> {
-    let list: Vec<Oid> = tracked_oids(objects, commits)?.into_iter().collect();
+    let list: Vec<Oid> = working_and_ever_committed_oids(objects, commits)?
+        .into_iter()
+        .collect();
     add(objects, stage, &list)
 }
 

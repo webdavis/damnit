@@ -160,11 +160,13 @@ mod tests {
 
     #[test]
     fn this_week_is_monday_to_sunday_of_today() {
-        // 2026-09-18 is a Friday; the week is 14 to 20
-        assert!(hit("due:this-week", &task(Some(date(2026, 9, 14)), false)));
-        assert!(hit("due:this-week", &task(Some(date(2026, 9, 20)), false)));
-        assert!(!hit("due:this-week", &task(Some(date(2026, 9, 21)), false)));
-        assert!(hit("due:next-week", &task(Some(date(2026, 9, 21)), false)));
+        assert_eq!(TODAY.weekday(), Weekday::Friday);
+        let (monday, sunday, next_monday) =
+            (date(2026, 9, 14), date(2026, 9, 20), date(2026, 9, 21));
+        assert!(hit("due:this-week", &task(Some(monday), false)));
+        assert!(hit("due:this-week", &task(Some(sunday), false)));
+        assert!(!hit("due:this-week", &task(Some(next_monday), false)));
+        assert!(hit("due:next-week", &task(Some(next_monday), false)));
     }
 
     #[test]
@@ -229,8 +231,6 @@ mod tests {
         assert!(!hit("start:none", &t));
     }
 
-    /// The parser cannot know a user's declared categories, so an unknown key parses as a
-    /// `Term::Category` a caller can refuse by checking `name` against `Categories`.
     #[test]
     fn an_unrecognized_key_parses_as_a_category_term_a_caller_can_check() {
         let expr = parse("pat:work/").unwrap();
@@ -265,8 +265,6 @@ mod tests {
         );
     }
 
-    /// The query is operator-controlled argv, so this is a refusal rather
-    /// than a defence, but a deep enough one used to abort the process.
     #[test]
     fn nesting_past_the_bound_is_refused_instead_of_recursed_into() {
         let deep = format!("{}due:today{}", "(".repeat(200), ")".repeat(200));

@@ -97,6 +97,15 @@ underscore. No value reaches an argument, a log line or a status message.
 `incremental` says whether the helper honors `since`. A helper that does returns a token in `sync`;
 one that does not returns null and `dam` diffs the full set itself.
 
+## Objects
+
+An event's fields follow Google Calendar's event resource. An attendee carries `"self": true` when it
+is the calendar the event was read from, so its response is the calendar owner's; the key is written
+only when true, and its absence reads as false.
+
+A task's `completed_at` is when it was completed, as RFC 3339 in UTC, and its `event` is the oid of
+the event it is attached to. Both are `dam`'s own data.
+
 ## Delivery
 
 Delivery is at least once. `dam` cannot tell a request that never arrived from an answer that never

@@ -1,13 +1,8 @@
-//! The working layer and the stage: what a store must do with objects the
-//! operator is editing and with the changes they have staged.
-
 use crate::ports::{ObjectRepository, StageRepository};
 use dam_domain::{Change, Object, Oid, Op, Path};
 
 use super::{oid, task};
 
-/// Reads and writes of the working layer: replacement, deletion, the tree
-/// query, the dependency query, and the committed view that `put` never moves.
 pub fn object_repository_contract(objects: &dyn ObjectRepository) {
     assert_eq!(objects.get(&oid(1)).unwrap(), None, "absent reads as none");
     assert!(
@@ -77,8 +72,6 @@ pub(super) fn oids_of(objects: Vec<Object>) -> Vec<Oid> {
     out
 }
 
-/// The stage holds at most one change per oid, coalescing a second one onto
-/// the first, and a create followed by a delete leaves nothing staged.
 pub fn stage_repository_contract(stage: &dyn StageRepository) {
     assert!(stage.staged().unwrap().is_empty());
 

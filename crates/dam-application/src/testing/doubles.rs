@@ -1,5 +1,3 @@
-//! The remote-side and environment doubles every use-case test wires in.
-
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
@@ -16,20 +14,23 @@ pub fn oid(byte: u8) -> Oid {
     Oid::generate(&mut |b: &mut [u8]| b.fill(byte))
 }
 
-/// Fills with one byte per call, counting up, so every generated identifier
-/// in a test is the one its seed names.
-pub struct FixedRandom(Cell<u8>);
+pub struct FixedRandom {
+    byte_for_the_next_fill: Cell<u8>,
+}
 
 impl FixedRandom {
-    pub fn new(seed: u8) -> FixedRandom {
-        FixedRandom(Cell::new(seed))
+    pub fn new(byte_for_the_first_fill: u8) -> FixedRandom {
+        FixedRandom {
+            byte_for_the_next_fill: Cell::new(byte_for_the_first_fill),
+        }
     }
 }
 
 impl Randomness for FixedRandom {
     fn fill(&self, buf: &mut [u8]) {
-        buf.fill(self.0.get());
-        self.0.set(self.0.get().wrapping_add(1));
+        let byte = self.byte_for_the_next_fill.get();
+        buf.fill(byte);
+        self.byte_for_the_next_fill.set(byte.wrapping_add(1));
     }
 }
 
@@ -50,7 +51,6 @@ impl Clock for FixedClock {
 type PushAnswer = Box<dyn Fn(&[RemoteMutation]) -> Vec<MutationOutcome>>;
 type LaunchedWith = Rc<RefCell<Vec<Vec<(String, Secret)>>>>;
 
-/// A scripted helper: records what it was asked, answers what it was told.
 pub struct ScriptedHelper {
     pub caps: RemoteCapabilities,
     pub pull_answer: PullOutcome,
@@ -101,8 +101,6 @@ impl HelperLauncher for ScriptedLauncher {
     }
 }
 
-/// Resolves every credential to what its spec says, so a test reads the
-/// value it configured rather than one this double made up.
 pub struct EchoCredentials;
 impl CredentialSource for EchoCredentials {
     fn resolve(&self, spec: &CredentialSpec) -> Result<Secret, CredentialError> {

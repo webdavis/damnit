@@ -1,13 +1,9 @@
-//! One unit of work across several record families.
-
 use crate::errors::UseCaseError;
 use crate::ports::{ObjectRepository, StageRepository, StoreError, Transactional};
 use dam_domain::{Change, Op};
 
 use super::{oid, task};
 
-/// A unit of work lands whole or not at all, across record families, and a
-/// failure comes back to the caller unchanged.
 pub fn transactional_contract(
     objects: &dyn ObjectRepository,
     stage: &dyn StageRepository,

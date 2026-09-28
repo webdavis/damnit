@@ -3,8 +3,6 @@ use crate::errors::{Refusal, UseCaseError};
 use crate::ports::CredentialSource;
 use crate::secret::Secret;
 
-/// Every credential the helper declared, resolved from the remote's config.
-/// A declared name with no spec is `Refusal::MissingCredential`.
 pub fn resolve_credentials(
     source: &dyn CredentialSource,
     remote: &RemoteConfig,

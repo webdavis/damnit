@@ -17,7 +17,6 @@ pub struct Change {
     pub after: Option<Object>,
 }
 
-/// Names a commit the way an Oid names an object.
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct CommitId(Oid);
 
@@ -53,7 +52,6 @@ pub struct CommitRecord {
     pub changes: Vec<Change>,
 }
 
-/// None when nothing differs.
 pub fn diff(oid: &Oid, before: Option<&Object>, after: Option<&Object>) -> Option<Change> {
     let op = match (before, after) {
         (None, None) => return None,
@@ -70,8 +68,6 @@ pub fn diff(oid: &Oid, before: Option<&Object>, after: Option<&Object>) -> Optio
     })
 }
 
-/// Two changes to one oid in sequence collapse into one; a create followed by
-/// a delete collapses to nothing.
 pub fn coalesce(first: Change, second: Change) -> Option<Change> {
     let oid = first.oid.clone();
     match (first.op, second.op) {
@@ -99,8 +95,6 @@ pub fn coalesce(first: Change, second: Change) -> Option<Change> {
     }
 }
 
-/// Field names that differ, for status and for the helper field filter.
-/// Empty for a create or delete.
 pub fn changed_fields(before: &Object, after: &Object) -> Vec<Field> {
     let mut out = Vec::new();
     let (b, a) = (before.base(), after.base());
@@ -189,34 +183,27 @@ pub fn changed_fields(before: &Object, after: &Object) -> Vec<Field> {
     out
 }
 
-/// The fields one change touches: what moved for an update, what a create
-/// sets, and nothing for a delete, which removes the object whole rather than
-/// any field of it.
 pub fn touched_fields(change: &Change) -> Vec<Field> {
     match (&change.before, &change.after) {
         (Some(before), Some(after)) => changed_fields(before, after),
-        (None, Some(after)) => fields_set(after),
+        (None, Some(after)) => fields_a_create_sets(after),
         _ => Vec::new(),
     }
 }
 
-/// What a new object carries: the fields its kind always has, then every
-/// other field holding something other than the default.
-fn fields_set(object: &Object) -> Vec<Field> {
-    let always: Vec<Field> = match object {
+fn fields_a_create_sets(object: &Object) -> Vec<Field> {
+    let always_set: Vec<Field> = match object {
         Object::Task(_) => vec![Field::Subject],
         Object::Event(_) => vec![Field::Subject, Field::Start, Field::End],
     };
-    let blank = blank_like(object);
-    let rest = changed_fields(&blank, object)
+    let defaults = with_every_field_at_default(object);
+    let non_default = changed_fields(&defaults, object)
         .into_iter()
-        .filter(|field| !always.contains(field));
-    always.iter().copied().chain(rest).collect()
+        .filter(|field| !always_set.contains(field));
+    always_set.iter().copied().chain(non_default).collect()
 }
 
-/// The same object with every field at its default, which is what the new
-/// object is compared against to see which ones it sets.
-fn blank_like(object: &Object) -> Object {
+fn with_every_field_at_default(object: &Object) -> Object {
     let oid = object.base().oid.clone();
     match object {
         Object::Task(_) => Object::Task(crate::Task::new(oid, "")),
@@ -227,138 +214,7 @@ fn blank_like(object: &Object) -> Object {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{Field, Object, Oid, Priority, Task};
-
-    fn oid(b: u8) -> Oid {
-        Oid::generate(&mut |x: &mut [u8]| x.fill(b))
-    }
-
-    fn task(subject: &str) -> Object {
-        Object::Task(Task::new(oid(1), subject))
-    }
-
-    #[test]
-    fn diff_reports_create_update_delete_and_nothing() {
-        let a = task("a");
-        let b = task("b");
-        assert_eq!(diff(&oid(1), None, Some(&a)).unwrap().op, Op::Create);
-        assert_eq!(diff(&oid(1), Some(&a), Some(&b)).unwrap().op, Op::Update);
-        assert_eq!(diff(&oid(1), Some(&a), None).unwrap().op, Op::Delete);
-        assert!(diff(&oid(1), Some(&a), Some(&a)).is_none());
-        assert!(diff(&oid(1), None, None).is_none());
-    }
-
-    #[test]
-    fn coalesce_create_then_update_is_a_create_of_the_final_state() {
-        let a = task("a");
-        let b = task("b");
-        let c = diff(&oid(1), None, Some(&a)).unwrap();
-        let u = diff(&oid(1), Some(&a), Some(&b)).unwrap();
-        let out = coalesce(c, u).unwrap();
-        assert_eq!(out.op, Op::Create);
-        assert_eq!(out.after, Some(b));
-    }
-
-    #[test]
-    fn coalesce_create_then_delete_is_nothing() {
-        let a = task("a");
-        let c = diff(&oid(1), None, Some(&a)).unwrap();
-        let d = diff(&oid(1), Some(&a), None).unwrap();
-        assert!(coalesce(c, d).is_none());
-    }
-
-    #[test]
-    fn coalesce_update_then_update_keeps_the_first_before() {
-        let a = task("a");
-        let b = task("b");
-        let c = task("c");
-        let u1 = diff(&oid(1), Some(&a), Some(&b)).unwrap();
-        let u2 = diff(&oid(1), Some(&b), Some(&c)).unwrap();
-        let out = coalesce(u1, u2).unwrap();
-        assert_eq!(out.op, Op::Update);
-        assert_eq!(out.before, Some(a));
-        assert_eq!(out.after, Some(c));
-    }
-
-    #[test]
-    fn coalesce_update_then_delete_is_a_delete_of_the_original() {
-        let a = task("a");
-        let b = task("b");
-        let u = diff(&oid(1), Some(&a), Some(&b)).unwrap();
-        let d = diff(&oid(1), Some(&b), None).unwrap();
-        let out = coalesce(u, d).unwrap();
-        assert_eq!(out.op, Op::Delete);
-        assert_eq!(out.before, Some(a));
-    }
-
-    #[test]
-    fn changed_fields_names_what_moved() {
-        let a = task("a");
-        let mut t = Task::new(oid(1), "a");
-        t.priority = Priority::HIGHEST;
-        t.done = true;
-        let b = Object::Task(t);
-        assert_eq!(changed_fields(&a, &b), vec![Field::Priority, Field::Done]);
-        assert!(changed_fields(&a, &a).is_empty());
-    }
-}
+mod tests;
 
 #[cfg(test)]
-mod touched {
-    use super::*;
-    use crate::{Field, Object, Oid, Path, Priority, Task, When};
-    use jiff::civil::date;
-
-    fn oid(b: u8) -> Oid {
-        Oid::generate(&mut |x: &mut [u8]| x.fill(b))
-    }
-
-    fn task(subject: &str) -> Object {
-        Object::Task(Task::new(oid(1), subject))
-    }
-
-    #[test]
-    fn an_edited_field_is_the_only_one_named() {
-        let before = task("a");
-        let after = task("b");
-        let change = diff(&oid(1), Some(&before), Some(&after)).unwrap();
-        assert_eq!(touched_fields(&change), vec![Field::Subject]);
-    }
-
-    #[test]
-    fn reopening_a_task_names_done_alone() {
-        let mut done = Task::new(oid(1), "a");
-        done.done = true;
-        let before = Object::Task(done);
-        let after = task("a");
-        let change = diff(&oid(1), Some(&before), Some(&after)).unwrap();
-        assert_eq!(touched_fields(&change), vec![Field::Done]);
-    }
-
-    #[test]
-    fn a_create_names_every_field_it_sets_and_no_default() {
-        let mut t = Task::new(oid(1), "buy oat milk");
-        t.priority = Priority::new(1).unwrap();
-        t.due = Some(When::Day(date(2026, 9, 25)));
-        t.base.path = Path::parse("work").unwrap();
-        let change = diff(&oid(1), None, Some(&Object::Task(t))).unwrap();
-        assert_eq!(
-            touched_fields(&change),
-            vec![Field::Subject, Field::Path, Field::Priority, Field::Due]
-        );
-    }
-
-    #[test]
-    fn a_bare_create_names_its_subject_alone() {
-        let change = diff(&oid(1), None, Some(&task("a"))).unwrap();
-        assert_eq!(touched_fields(&change), vec![Field::Subject]);
-    }
-
-    #[test]
-    fn a_delete_names_nothing() {
-        let change = diff(&oid(1), Some(&task("a")), None).unwrap();
-        assert!(touched_fields(&change).is_empty());
-    }
-}
+mod touched;

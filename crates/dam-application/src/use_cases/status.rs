@@ -6,7 +6,7 @@ use crate::errors::UseCaseError;
 use crate::ports::{
     CommitRepository, Conflict, Notice, ObjectRepository, RemoteName, Repositories, StageRepository,
 };
-use crate::use_cases::stage::tracked_oids;
+use crate::use_cases::stage::working_and_ever_committed_oids;
 
 pub struct Status {
     pub staged: Vec<Change>,
@@ -16,9 +16,6 @@ pub struct Status {
     pub unpushed: Vec<Unpushed>,
 }
 
-/// What one remote has not been told about: the commits, newest first, the
-/// order `dam log` prints history in, and the objects their changes touch,
-/// each once, in the order they first appear along that walk.
 pub struct Unpushed {
     pub remote: RemoteName,
     pub commit_ids: Vec<CommitId>,
@@ -39,8 +36,6 @@ pub fn status(repos: Repositories<'_>, remotes: &[RemoteName]) -> Result<Status,
     })
 }
 
-/// One remote's owed commits and the objects they touch, walked newest first
-/// so both lists read in `dam log`'s order.
 fn unpushed_for(
     commits: &dyn CommitRepository,
     remote: &RemoteName,
@@ -48,7 +43,8 @@ fn unpushed_for(
     let mut commit_ids = Vec::new();
     let mut oids = Vec::new();
     let mut named = BTreeSet::new();
-    for record in commits.unpushed(remote)?.into_iter().rev() {
+    let newest_first = commits.unpushed(remote)?.into_iter().rev();
+    for record in newest_first {
         for change in &record.changes {
             if named.insert(change.oid.clone()) {
                 oids.push(change.oid.clone());
@@ -67,9 +63,6 @@ pub fn diff_staged(stage: &dyn StageRepository) -> Result<Vec<Change>, UseCaseEr
     Ok(stage.staged()?)
 }
 
-/// Working against what the stage would leave: committed with the stage applied.
-/// Walks every tracked oid, not just working objects, so a working object
-/// deleted but not yet staged still shows up as an unstaged delete.
 pub fn diff_working(
     objects: &dyn ObjectRepository,
     stage: &dyn StageRepository,
@@ -81,13 +74,17 @@ pub fn diff_working(
         .map(|c| (c.oid.clone(), c))
         .collect();
     let mut out = Vec::new();
-    for oid in tracked_oids(objects, commits)? {
-        let base: Option<Object> = match staged.get(&oid) {
+    for oid in working_and_ever_committed_oids(objects, commits)? {
+        let committed_with_the_stage_applied: Option<Object> = match staged.get(&oid) {
             Some(change) => change.after.clone(),
             None => objects.committed(&oid)?,
         };
         let working = objects.get(&oid)?;
-        if let Some(change) = diff(&oid, base.as_ref(), working.as_ref()) {
+        if let Some(change) = diff(
+            &oid,
+            committed_with_the_stage_applied.as_ref(),
+            working.as_ref(),
+        ) {
             out.push(change);
         }
     }
@@ -130,8 +127,6 @@ mod tests {
         assert_eq!(s.unstaged[0].after.as_ref().unwrap().base().subject, "b");
     }
 
-    /// The clients read this list to name the commits a remote is owed, so it
-    /// reads in the order `dam log` prints history: newest first.
     #[test]
     fn unpushed_names_each_commit_newest_first() {
         let store = MemoryStore::new();
@@ -149,9 +144,6 @@ mod tests {
         assert_eq!(s.unpushed[0].commit_ids, vec![second.id, first.id]);
     }
 
-    /// The pane draws its unpushed mark by matching a change row's object
-    /// against this list, so it names objects rather than commits, each once,
-    /// in the order they first appear walking the commits newest first.
     #[test]
     fn unpushed_names_each_object_once_in_first_appearance_order() {
         let store = MemoryStore::new();
@@ -174,8 +166,6 @@ mod tests {
         assert_eq!(s.unpushed[0].oids, vec![oid(2), oid(1)]);
     }
 
-    /// A configured remote still gets a row, so a client renders every remote
-    /// without deciding what a missing one means.
     #[test]
     fn a_remote_owed_nothing_gets_a_row_with_empty_lists() {
         let store = MemoryStore::new();

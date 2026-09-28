@@ -1,4 +1,4 @@
-use dam_domain::{Change, CommitId, CommitRecord, Oid, Op};
+use dam_domain::{Change, CommitId, CommitRecord, Object, Oid, Op};
 
 use crate::config::{Config, RemoteConfig};
 use crate::errors::UseCaseError;
@@ -61,11 +61,7 @@ fn apply(
         removed_upstream: 0,
         unchanged: 0,
     };
-    // Six families of record move together. A failure between the objects
-    // and the commit behind them would leave pulled objects in the working
-    // layer with nothing committed, which status reports to the operator as
-    // their own uncommitted edits.
-    let mut land_everything = || {
+    let mut land_everything_as_one_unit = || {
         for rejected in &response.rejected {
             repos.notices.add_notice(&Notice::PullFailed {
                 remote: remote.name.clone(),
@@ -78,8 +74,8 @@ fn apply(
             remote,
             &response.cancelled,
         )?);
-        let (planned, fresh) = classify(repos, remote, caps, objects, random)?;
-        for (oid, remote_id) in fresh {
+        let (planned, new_remote_id_mappings) = classify(repos, remote, caps, objects, random)?;
+        for (oid, remote_id) in new_remote_id_mappings {
             repos
                 .remote_tracking
                 .map_remote_id(&remote.name, &oid, &remote_id)?;
@@ -95,13 +91,12 @@ fn apply(
             .set_last_pull(&remote.name, clock.now())?;
         Ok(())
     };
-    repos.transaction.in_transaction(&mut land_everything)?;
+    repos
+        .transaction
+        .in_transaction(&mut land_everything_as_one_unit)?;
     Ok(report)
 }
 
-/// Writes every classified object to the store and commits the batch of
-/// creates and fast-forwards as one pull commit, already marked pushed for
-/// this remote since it is exactly what the remote holds.
 fn land(
     repos: Repositories<'_>,
     clock: &dyn Clock,
@@ -145,6 +140,16 @@ fn land(
     if landed.is_empty() {
         return Ok(());
     }
+    commit_as_already_pushed(repos, clock, random, remote, landed)
+}
+
+fn commit_as_already_pushed(
+    repos: Repositories<'_>,
+    clock: &dyn Clock,
+    random: &dyn Randomness,
+    remote: &RemoteConfig,
+    landed: Vec<(Oid, Op, Object)>,
+) -> Result<(), UseCaseError> {
     let record = CommitRecord {
         id: CommitId::generate(&mut |b| random.fill(b)),
         message: format!("pull from {}", remote.name.0),

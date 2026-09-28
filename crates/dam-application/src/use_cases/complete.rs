@@ -1,11 +1,11 @@
 use dam_domain::{
-    Blocker, ChildDisposition, Date, DependencyDisposition, Dispositions, Force, Object, Oid, Path,
-    Rule, Task, When, blockers, roll_forward,
+    Blocker, ChildDisposition, Date, DependencyDisposition, Dispositions, Force, Object, Oid, Rule,
+    Task, When, blockers, roll_forward,
 };
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{Clock, ObjectRepository, Randomness};
-use crate::use_cases::subtree::move_subtree;
+use crate::use_cases::subtree::{last_segment, move_subtree};
 
 pub struct CompletePlan {
     pub oid: Oid,
@@ -18,7 +18,6 @@ pub enum Completed {
     RolledForward { next_due: Date },
 }
 
-/// Step one: find out whether `oid` is blocked. The cli decides whether to ask.
 pub fn plan_complete(
     objects: &dyn ObjectRepository,
     oid: &Oid,
@@ -26,7 +25,7 @@ pub fn plan_complete(
     let task = load_task(objects, oid)?;
     let mut open_deps = Vec::new();
     for dep in &task.base.depends {
-        if is_open(objects, dep)? {
+        if is_an_open_task(objects, dep)? {
             open_deps.push(dep.clone());
         }
     }
@@ -42,7 +41,6 @@ pub fn plan_complete(
     })
 }
 
-/// Step two: do it. `force` carries the dispositions when the caller has them.
 pub fn complete(
     objects: &dyn ObjectRepository,
     clock: &dyn Clock,
@@ -65,14 +63,12 @@ pub fn complete(
         }
     }
     let mut task = load_task(objects, oid)?;
-    let outcome = match rolled(&task, clock.today()) {
+    let outcome = match next_due_if_recurring(&task, clock.today()) {
         Some(next) => {
             task.due = Some(When::Day(next));
             Completed::RolledForward { next_due: next }
         }
         None => {
-            // The time records the completion, so a second done leaves the
-            // first one standing and writes the same object back.
             if !task.done {
                 task.completed_at = Some(clock.now());
             }
@@ -84,8 +80,7 @@ pub fn complete(
     Ok(outcome)
 }
 
-/// The next due date if `task` recurs, else `None` (done like any other task).
-fn rolled(task: &Task, today: Date) -> Option<Date> {
+fn next_due_if_recurring(task: &Task, today: Date) -> Option<Date> {
     let rule = Rule::parse(task.base.recurrence.as_deref()?).ok()?;
     let due = task.due.as_ref().map(|d| d.date()).unwrap_or(today);
     roll_forward(&rule, due, today)
@@ -148,15 +143,6 @@ fn apply_dispositions(
     Ok(())
 }
 
-fn last_segment(path: &Path) -> String {
-    path.as_str()
-        .trim_end_matches('/')
-        .rsplit('/')
-        .next()
-        .unwrap_or("")
-        .to_string()
-}
-
 fn load_task(objects: &dyn ObjectRepository, oid: &Oid) -> Result<Task, UseCaseError> {
     match objects.get(oid)? {
         Some(Object::Task(t)) => Ok(t),
@@ -165,9 +151,7 @@ fn load_task(objects: &dyn ObjectRepository, oid: &Oid) -> Result<Task, UseCaseE
     }
 }
 
-/// A missing dependency is treated as closed; a failed read propagates, since
-/// silently treating it as closed could let a blocked task complete.
-fn is_open(objects: &dyn ObjectRepository, oid: &Oid) -> Result<bool, UseCaseError> {
+fn is_an_open_task(objects: &dyn ObjectRepository, oid: &Oid) -> Result<bool, UseCaseError> {
     Ok(matches!(objects.get(oid)?, Some(Object::Task(t)) if !t.done))
 }
 

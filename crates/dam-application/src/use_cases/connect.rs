@@ -4,9 +4,6 @@ use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{CredentialSource, HelperLauncher, RemoteHelper};
 use crate::remote::RemoteCapabilities;
 
-/// Opens one helper process per remote operation, with the credentials the
-/// remote's own config declares already in hand. The config names them, so
-/// there is nothing to learn from the helper first.
 pub(crate) fn connect(
     launcher: &dyn HelperLauncher,
     credentials: &dyn CredentialSource,
@@ -20,13 +17,7 @@ pub(crate) fn connect(
     let resolved = resolve_credentials(credentials, remote, &configured)?;
     let mut helper = launcher.launch(remote, &resolved)?;
     let caps = helper.capabilities()?;
-    // The helper is the authority on what it needs, so a name it declares
-    // that the config does not supply is still refused by name.
-    if let Some(name) = caps
-        .credentials
-        .iter()
-        .find(|name| !configured.iter().any(|c| &c == name))
-    {
+    if let Some(name) = declared_by_the_helper_but_not_configured(&caps, &configured) {
         return Err(Refusal::MissingCredential {
             remote: remote.name.0.clone(),
             name: name.clone(),
@@ -34,4 +25,13 @@ pub(crate) fn connect(
         .into());
     }
     Ok((helper, caps))
+}
+
+fn declared_by_the_helper_but_not_configured<'a>(
+    caps: &'a RemoteCapabilities,
+    configured: &[String],
+) -> Option<&'a String> {
+    caps.credentials
+        .iter()
+        .find(|name| !configured.contains(name))
 }

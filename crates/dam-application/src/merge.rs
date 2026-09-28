@@ -1,14 +1,10 @@
 use dam_domain::{Field, Kind, Object};
 
-/// The two kinds when a pulled object is not the kind we hold, which is what
-/// `merge_fields` refuses to merge.
 pub fn kind_change(ours: &Object, theirs: &Object) -> Option<(Kind, Kind)> {
     let (o, t) = (ours.kind(), theirs.kind());
     (o != t).then_some((o, t))
 }
 
-/// Copies the named fields from `theirs` onto a clone of `ours`. Anything not
-/// named, which includes every dam-only field, keeps ours.
 pub fn merge_fields(ours: &Object, theirs: &Object, fields: &[Field]) -> Object {
     let mut out = ours.clone();
     let has = |field: Field| fields.contains(&field);
@@ -40,8 +36,6 @@ pub fn merge_fields(ours: &Object, theirs: &Object, fields: &[Field]) -> Object 
         (Object::Task(o), Object::Task(t)) => {
             if has(Field::Done) {
                 o.done = t.done;
-                // The completion time goes with `done`: a reopen upstream
-                // clears the one dam recorded.
                 if !o.done {
                     o.completed_at = None;
                 }
@@ -149,9 +143,7 @@ mod tests {
         assert_eq!(kind_change(&ours, &ours), None);
     }
 
-    /// A task with every mergeable field set to a value distinct from its
-    /// `"a"` counterpart, so `changed_fields` reports the whole set.
-    fn task_variant(tag: &str) -> Task {
+    fn task_differing_in_every_field(tag: &str) -> Task {
         let mut t = Task::new(oid(1), format!("subject-{tag}"));
         let n: u8 = if tag == "a" { 1 } else { 2 };
         t.base.body = format!("body-{tag}");
@@ -174,9 +166,7 @@ mod tests {
         t
     }
 
-    /// An event with every mergeable field set to a value distinct from its
-    /// `"a"` counterpart, so `changed_fields` reports the whole set.
-    fn event_variant(tag: &str) -> Event {
+    fn event_differing_in_every_field(tag: &str) -> Event {
         let n: u8 = if tag == "a" { 1 } else { 2 };
         let mut e = Event::new(
             oid(1),
@@ -238,8 +228,8 @@ mod tests {
 
     #[test]
     fn every_task_field_moves_alone_and_nothing_else_does() {
-        let ours = Object::Task(task_variant("a"));
-        let theirs = Object::Task(task_variant("b"));
+        let ours = Object::Task(task_differing_in_every_field("a"));
+        let theirs = Object::Task(task_differing_in_every_field("b"));
         let fields = changed_fields(&ours, &theirs);
         assert_eq!(
             fields.len(),
@@ -254,8 +244,8 @@ mod tests {
 
     #[test]
     fn every_event_field_moves_alone_and_nothing_else_does() {
-        let ours = Object::Event(event_variant("a"));
-        let theirs = Object::Event(event_variant("b"));
+        let ours = Object::Event(event_differing_in_every_field("a"));
+        let theirs = Object::Event(event_differing_in_every_field("b"));
         let fields = changed_fields(&ours, &theirs);
         assert_eq!(
             fields.len(),
@@ -268,8 +258,6 @@ mod tests {
         }
     }
 
-    /// A remote carries no completion time, so a task it reopens must not keep
-    /// the one dam recorded when it was completed here.
     #[test]
     fn a_reopen_from_a_remote_clears_the_completion_time() {
         let mut ours = Task::new(oid(1), "t");
@@ -282,8 +270,6 @@ mod tests {
         assert_eq!(merged.completed_at, None);
     }
 
-    /// A remote that agrees the task is done says nothing about when, so the
-    /// time dam recorded stands.
     #[test]
     fn a_remote_that_agrees_it_is_done_leaves_the_completion_time_alone() {
         let mut ours = Task::new(oid(1), "t");
