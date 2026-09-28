@@ -90,7 +90,7 @@ fn apply(
     };
     let object = m.object.as_ref().ok_or(missing_object("create"))?;
     let id = written
-        .temp_id_mapping
+        .issued_id_by_temp_id
         .get(&m.idempotency_key)
         .ok_or_else(|| {
             Failure::Mutation("Todoist's answer names no id for the new object".to_string())

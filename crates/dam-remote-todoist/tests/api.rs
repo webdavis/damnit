@@ -62,7 +62,7 @@ fn a_write_sends_its_commands_as_a_form_field_and_reads_each_verdict() {
             serde_json::json!({"type": "item_close", "uuid": "u-1", "args": {}}),
         ])
         .unwrap();
-    assert_eq!(written.temp_id_mapping.get("t-1").unwrap(), "i9");
+    assert_eq!(written.issued_id_by_temp_id.get("t-1").unwrap(), "i9");
     assert_eq!(written.accepted("u-0"), Ok(()));
     assert_eq!(written.accepted("u-1"), Err("task not found".to_string()));
     assert!(written.accepted("u-2").is_err(), "no verdict is no success");
@@ -119,7 +119,7 @@ fn a_huge_error_body_is_bounded_to_one_short_line() {
         panic!("{err:?}")
     };
     assert!(
-        body.chars().count() <= dam_remote_todoist::api::MAX_ERROR_BODY,
+        body.chars().count() <= dam_remote_todoist::api::MAX_ERROR_BODY_CHARS,
         "{} characters reached dam",
         body.chars().count()
     );
