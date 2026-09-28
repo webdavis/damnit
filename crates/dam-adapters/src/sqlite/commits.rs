@@ -83,12 +83,16 @@ impl SqliteStore {
             .map_err(sql)?;
         heads
             .into_iter()
-            .map(|(id, message, at)| self.record(id, message, at))
+            .map(|(id, message, at)| self.head_with_its_changes(id, message, at))
             .collect()
     }
 
-    /// One commit head plus the changes it carries.
-    fn record(&self, id: String, message: String, at: String) -> Result<CommitRecord, StoreError> {
+    fn head_with_its_changes(
+        &self,
+        id: String,
+        message: String,
+        at: String,
+    ) -> Result<CommitRecord, StoreError> {
         Ok(CommitRecord {
             id: CommitId::parse(&id).map_err(|e| StoreError::Failed(e.to_string()))?,
             message,
@@ -109,10 +113,7 @@ impl SqliteStore {
         read_changes(&mut stmt, params![commit_id])
     }
 
-    /// Every commit this remote has not been told about, oldest first. The
-    /// filter is the query rather than a scan of the decoded log, so the work
-    /// is one pass over the unpushed commits and not over all of history.
-    pub(super) fn unpushed_commits(
+    pub(super) fn unpushed_commits_oldest_first(
         &self,
         remote: &RemoteName,
     ) -> Result<Vec<CommitRecord>, StoreError> {
@@ -132,7 +133,7 @@ impl SqliteStore {
         };
         heads
             .into_iter()
-            .map(|(id, message, at)| self.record(id, message, at))
+            .map(|(id, message, at)| self.head_with_its_changes(id, message, at))
             .collect()
     }
 
@@ -159,7 +160,7 @@ impl CommitRepository for SqliteStore {
         self.commit_log()
     }
     fn unpushed(&self, remote: &RemoteName) -> Result<Vec<CommitRecord>, StoreError> {
-        self.unpushed_commits(remote)
+        self.unpushed_commits_oldest_first(remote)
     }
     fn mark_pushed(&self, remote: &RemoteName, id: &CommitId) -> Result<(), StoreError> {
         self.mark_commit_pushed(remote, id)

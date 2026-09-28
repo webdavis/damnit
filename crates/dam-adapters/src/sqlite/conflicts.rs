@@ -8,10 +8,7 @@ use super::SqliteStore;
 use super::codec::{notice_from_json, notice_to_json, object_from_json, object_to_json};
 use super::objects::sql;
 
-/// How many notices the store keeps. `dam status` clears them all once the
-/// operator has read them; this bounds the table for an operator who never
-/// does, keeping the newest.
-const MAX_NOTICES: i64 = 1000;
+const NOTICES_KEPT_FOR_AN_OPERATOR_WHO_NEVER_CLEARS_THEM: i64 = 1000;
 
 impl SqliteStore {
     pub(super) fn record_conflict(
@@ -70,13 +67,10 @@ impl SqliteStore {
             .map_err(sql)
     }
 
-    /// Adds a notice and drops the oldest past `MAX_NOTICES`.
-    ///
-    /// The retention rule for this family: `dam status` clears the whole set
-    /// when the operator has read it, and an operator who never clears it
-    /// keeps the newest `MAX_NOTICES` rather than every notice dam ever
-    /// raised.
-    pub(super) fn push_notice(&self, notice: &Notice) -> Result<(), StoreError> {
+    pub(super) fn push_notice_dropping_the_oldest_past_the_cap(
+        &self,
+        notice: &Notice,
+    ) -> Result<(), StoreError> {
         self.in_savepoint("dam_notice", || {
             self.conn
                 .execute(
@@ -88,7 +82,7 @@ impl SqliteStore {
                 .execute(
                     "DELETE FROM notices WHERE id NOT IN \
                      (SELECT id FROM notices ORDER BY id DESC LIMIT ?1)",
-                    params![MAX_NOTICES],
+                    params![NOTICES_KEPT_FOR_AN_OPERATOR_WHO_NEVER_CLEARS_THEM],
                 )
                 .map(|_| ())
                 .map_err(sql)
@@ -167,7 +161,7 @@ impl ConflictRepository for SqliteStore {
 
 impl NoticeRepository for SqliteStore {
     fn add_notice(&self, notice: &Notice) -> Result<(), StoreError> {
-        self.push_notice(notice)
+        self.push_notice_dropping_the_oldest_past_the_cap(notice)
     }
     fn notices(&self) -> Result<Vec<Notice>, StoreError> {
         self.all_notices()
@@ -179,20 +173,23 @@ impl NoticeRepository for SqliteStore {
 
 #[cfg(test)]
 mod tests {
-    use super::MAX_NOTICES;
+    use super::NOTICES_KEPT_FOR_AN_OPERATOR_WHO_NEVER_CLEARS_THEM;
     #[test]
     fn a_notice_table_that_is_never_cleared_keeps_the_newest_and_drops_the_oldest() {
         let store = crate::sqlite::SqliteStore::in_memory().unwrap();
-        for n in 0..MAX_NOTICES + 5 {
+        for n in 0..NOTICES_KEPT_FOR_AN_OPERATOR_WHO_NEVER_CLEARS_THEM + 5 {
             store
-                .push_notice(&Notice::PullFailed {
+                .push_notice_dropping_the_oldest_past_the_cap(&Notice::PullFailed {
                     remote: RemoteName("t".into()),
                     why: format!("reason {n}"),
                 })
                 .unwrap();
         }
         let kept = store.all_notices().unwrap();
-        assert_eq!(kept.len() as i64, MAX_NOTICES);
+        assert_eq!(
+            kept.len() as i64,
+            NOTICES_KEPT_FOR_AN_OPERATOR_WHO_NEVER_CLEARS_THEM
+        );
         let oldest = match &kept[0] {
             Notice::PullFailed { why, .. } => why.clone(),
             other => panic!("{other:?}"),
