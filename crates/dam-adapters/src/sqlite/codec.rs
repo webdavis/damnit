@@ -33,7 +33,6 @@ pub(super) fn op_from_text(s: &str) -> Result<Op, StoreError> {
     }
 }
 
-/// Rebuilds a `Change` from a `stage` or `commit_changes` row's columns.
 pub(super) fn change_from_row(
     oid: &str,
     op: &str,
@@ -48,9 +47,6 @@ pub(super) fn change_from_row(
     })
 }
 
-/// Runs a prepared `oid, op, before_json, after_json` query and decodes every row.
-/// Shared by `stage`'s `staged()` and `commits`' `commit_changes()`, whose only
-/// difference is the SQL and its bind parameters.
 pub(super) fn read_changes(
     stmt: &mut rusqlite::Statement,
     params: impl Params,

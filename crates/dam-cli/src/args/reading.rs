@@ -1,6 +1,3 @@
-//! Reading the working layer by query or by saved filter, and the config
-//! catalogue a client renders those filters and its label picker from.
-
 use clap::{Args, Subcommand};
 
 #[derive(Args, Debug)]
@@ -16,7 +13,7 @@ pub(crate) struct CategoryArgs {
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum CategoryCommand {
-    /// List declared categories with their values and whether they are exclusive.
+    #[command(about = "List declared categories with their values and whether they are exclusive")]
     List,
 }
 
@@ -28,6 +25,6 @@ pub(crate) struct FilterArgs {
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum FilterCommand {
-    /// List saved filters with their queries.
+    #[command(about = "List saved filters with their queries")]
     List,
 }

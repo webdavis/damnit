@@ -1,16 +1,11 @@
-//! The bearer token, as a type that will not print itself.
-
 use std::fmt;
 
-/// The bearer token. `Debug` redacts it and there is no `Display`, so `expose`
-/// is the only way to the bytes.
 #[derive(Clone, PartialEq, Eq)]
 pub struct ApiToken(String);
 
 impl ApiToken {
-    /// The value itself. Call this only where it is sent as the Authorization header.
-    pub fn expose(&self) -> &str {
-        &self.0
+    pub fn bearer_authorization(&self) -> String {
+        format!("Bearer {}", self.0)
     }
 }
 

@@ -1,6 +1,4 @@
 #!/bin/sh
-# Answers capabilities, pulls one fixed task, echoes every push as ok.
-# Records the token it was given so the test can assert delivery.
 set -eu
 printf '%s\n' "${DAM_FAKE_API_TOKEN:-}" > "$FAKE_TOKEN_FILE"
 while IFS= read -r line; do

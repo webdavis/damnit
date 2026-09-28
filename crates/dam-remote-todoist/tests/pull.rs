@@ -47,9 +47,6 @@ fn pull_returns_every_live_object_and_names_the_removed_ones() {
     assert_eq!(server.seen.lock().unwrap()[0].path, "/sync");
 }
 
-/// The opening full sync is the first request a pull makes, so it is where a
-/// rate limit is most likely met. The refusal keeps its class and the retry
-/// time Todoist named, rather than reading like any other failed request.
 #[test]
 fn a_rate_limit_on_the_opening_sync_keeps_its_class_and_retry_time() {
     let _guard = support::guard("a_rate_limit_on_the_opening_sync_keeps_its_class_and_retry_time");

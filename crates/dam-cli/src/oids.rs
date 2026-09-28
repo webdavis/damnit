@@ -3,21 +3,24 @@ use dam_domain::Oid;
 
 use crate::error::CliError;
 
-const MIN_PREFIX: usize = 4;
+const SHORTEST_OID_PREFIX: usize = 4;
 
-/// Resolves the oid argument every verb that takes one accepts: a full oid, or a
-/// hex prefix at least `MIN_PREFIX` characters long that matches exactly one
-/// object. A prefix is matched against the working layer, so an object only the
-/// history still holds is reached by its full oid, which parses without a scan.
 pub(crate) fn resolve_oid(objects: &dyn ObjectRepository, text: &str) -> Result<Oid, CliError> {
     if let Ok(oid) = Oid::parse(text) {
         return Ok(oid);
     }
-    if text.len() < MIN_PREFIX || !text.chars().all(|c| c.is_ascii_hexdigit()) {
+    if text.len() < SHORTEST_OID_PREFIX || !text.chars().all(|c| c.is_ascii_hexdigit()) {
         return Err(CliError::Usage(format!(
-            "{text:?} is not an oid; give at least {MIN_PREFIX} hex characters"
+            "{text:?} is not an oid; give at least {SHORTEST_OID_PREFIX} hex characters"
         )));
     }
+    the_one_working_object_starting_with(objects, text)
+}
+
+fn the_one_working_object_starting_with(
+    objects: &dyn ObjectRepository,
+    text: &str,
+) -> Result<Oid, CliError> {
     let matches: Vec<Oid> = objects
         .all()?
         .into_iter()
@@ -79,5 +82,11 @@ mod tests {
             resolve_oid(&store, "abab"),
             Err(CliError::Ambiguous { .. })
         ));
+    }
+
+    #[test]
+    fn a_full_oid_resolves_without_a_scan_so_one_only_history_holds_is_reached() {
+        let store = SqliteStore::in_memory().unwrap();
+        assert_eq!(resolve_oid(&store, oid(0xcd).as_str()).unwrap(), oid(0xcd));
     }
 }

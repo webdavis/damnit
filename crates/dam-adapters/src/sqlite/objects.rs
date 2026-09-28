@@ -5,10 +5,7 @@ use rusqlite::{OptionalExtension, params};
 use super::SqliteStore;
 use super::codec::{object_from_json, object_to_json};
 
-/// The smallest string that sorts above every string starting with `prefix`,
-/// under the byte-wise comparison SQLite uses for TEXT. A path always ends in
-/// a separator, so raising that last byte is enough.
-fn just_past(prefix: &str) -> String {
+fn upper_bound_of_every_text_starting_with(prefix: &str) -> String {
     let mut bytes = prefix.as_bytes().to_vec();
     match bytes.last_mut() {
         Some(last) if *last < u8::MAX => *last += 1,
@@ -17,14 +14,29 @@ fn just_past(prefix: &str) -> String {
     String::from_utf8_lossy(&bytes).into_owned()
 }
 
-/// A busy or locked store is its own outcome: the work did not happen and a
-/// later attempt is the answer, which a flattened string cannot tell a caller.
 pub(super) fn sql(e: rusqlite::Error) -> StoreError {
     match e.sqlite_error_code() {
         Some(rusqlite::ErrorCode::DatabaseBusy | rusqlite::ErrorCode::DatabaseLocked) => {
             StoreError::Busy(e.to_string())
         }
         _ => StoreError::Failed(e.to_string()),
+    }
+}
+
+fn range_on_the_path_index_where_the_root_has_no_upper_bound<'a>(
+    prefix: &'a &str,
+    upper: &'a dyn rusqlite::ToSql,
+) -> (&'static str, Vec<&'a dyn rusqlite::ToSql>) {
+    if prefix.is_empty() {
+        (
+            "SELECT json, path FROM objects WHERE path > ?1",
+            vec![prefix],
+        )
+    } else {
+        (
+            "SELECT json, path FROM objects WHERE path > ?1 AND path < ?2",
+            vec![prefix, upper],
+        )
     }
 }
 
@@ -52,24 +64,11 @@ impl SqliteStore {
             .collect()
     }
 
-    /// Direct children: path starts with the parent and has exactly one more segment.
     pub(super) fn children(&self, path: &Path) -> Result<Vec<Object>, StoreError> {
         let prefix = path.as_str();
-        // A range rather than substr(path, ...), which is a function on the
-        // column and cannot use the objects_path index. Every path is under
-        // the root, so the root has a lower bound and no upper one.
-        let upper = just_past(prefix);
-        let (query, bounds): (&str, Vec<&dyn rusqlite::ToSql>) = if prefix.is_empty() {
-            (
-                "SELECT json, path FROM objects WHERE path > ?1",
-                vec![&prefix],
-            )
-        } else {
-            (
-                "SELECT json, path FROM objects WHERE path > ?1 AND path < ?2",
-                vec![&prefix, &upper],
-            )
-        };
+        let upper = upper_bound_of_every_text_starting_with(prefix);
+        let (query, bounds) =
+            range_on_the_path_index_where_the_root_has_no_upper_bound(&prefix, &upper);
         let mut stmt = self.conn.prepare(query).map_err(sql)?;
         let rows = stmt
             .query_map(bounds.as_slice(), |r| {
@@ -89,8 +88,6 @@ impl SqliteStore {
         Ok(out)
     }
 
-    /// Every object that depends on `oid`. The stored JSON is filtered in SQL
-    /// first, so only objects whose text holds the oid at all are decoded.
     pub(super) fn dependents(&self, oid: &Oid) -> Result<Vec<Oid>, StoreError> {
         let mut stmt = self
             .conn
@@ -218,10 +215,10 @@ mod tests {
 
     #[test]
     fn the_upper_bound_sits_above_every_path_under_the_prefix() {
-        assert_eq!(just_past("work/"), "work0");
-        assert!("work/a" < just_past("work/").as_str());
-        assert!("work/z/deep/" < just_past("work/").as_str());
-        assert!("work0" >= just_past("work/").as_str());
+        assert_eq!(upper_bound_of_every_text_starting_with("work/"), "work0");
+        assert!("work/a" < upper_bound_of_every_text_starting_with("work/").as_str());
+        assert!("work/z/deep/" < upper_bound_of_every_text_starting_with("work/").as_str());
+        assert!("work0" >= upper_bound_of_every_text_starting_with("work/").as_str());
     }
 
     #[test]

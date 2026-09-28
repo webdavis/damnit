@@ -1,19 +1,24 @@
 use dam_protocol::{Mutation, WireObject};
 
 use super::Failure;
-use super::commands::{command, creating_command, item_args, uuid_for};
+use super::commands::{ItemWrite, command, creating_command, item_args, repeatable_command_uuid};
 use super::shape::{Shape, shape_for};
 use crate::map::{Tree, split_remote_id};
 
-/// The Sync API commands one mutation becomes, and what they create.
 pub struct Plan {
     pub commands: Vec<serde_json::Value>,
-    /// Set when the commands create an object: the shape it takes, so the tree
-    /// can take it once Todoist answers with the id it issued.
     pub creates: Option<Shape>,
 }
 
-pub fn plan_for(tree: &Tree, m: &Mutation, pending: &[String]) -> Result<Plan, Failure> {
+pub fn resend_stable_temp_id(m: &Mutation) -> &str {
+    m.idempotency_key.as_str()
+}
+
+pub fn plan_for(
+    tree: &Tree,
+    m: &Mutation,
+    containers_filled_this_push: &[String],
+) -> Result<Plan, Failure> {
     match m.op.as_str() {
         "delete" => {
             let (kind, id) = addressed(m, "delete")?;
@@ -28,14 +33,14 @@ pub fn plan_for(tree: &Tree, m: &Mutation, pending: &[String]) -> Result<Plan, F
         }
         "create" => {
             let object = m.object.as_ref().ok_or(missing_object("create"))?;
-            create_plan(tree, m, object, pending)
+            create_plan(tree, m, object, containers_filled_this_push)
         }
         "update" => {
             let object = m.object.as_ref().ok_or(missing_object("update"))?;
             let (kind, id) = addressed(m, "update")?;
             update_plan(tree, m, object, kind, id)
         }
-        other => Err(Failure::Mutation(format!("unknown op {other:?}"))),
+        other => Err(Failure::OnlyThisMutation(format!("unknown op {other:?}"))),
     }
 }
 
@@ -43,12 +48,11 @@ fn create_plan(
     tree: &Tree,
     m: &Mutation,
     object: &WireObject,
-    pending: &[String],
+    containers_filled_this_push: &[String],
 ) -> Result<Plan, Failure> {
-    let shape = shape_for(tree, object, pending).map_err(Failure::Mutation)?;
-    // The placeholder is the mutation's own key, so a resend names the same
-    // one and Todoist's answer maps it back the same way.
-    let temp_id = m.idempotency_key.as_str();
+    let shape =
+        shape_for(tree, object, containers_filled_this_push).map_err(Failure::OnlyThisMutation)?;
+    let temp_id = resend_stable_temp_id(m);
     let mut commands = Vec::new();
     match &shape {
         Shape::Project { parent_id } => {
@@ -76,7 +80,7 @@ fn create_plan(
             section_id,
             parent_id,
         } => {
-            let mut args = item_args(object, None);
+            let mut args = item_args(object, ItemWrite::Create);
             args["project_id"] = project_id.clone().into();
             if let Some(s) = section_id {
                 args["section_id"] = s.clone().into();
@@ -145,10 +149,10 @@ fn update_plan(
                 commands.push(command(
                     "item_move",
                     numbered(m, n)?,
-                    move_args(tree, id, object)?,
+                    most_specific_container_move_args(tree, id, object)?,
                 ));
             }
-            let mut args = item_args(object, Some(&m.fields));
+            let mut args = item_args(object, ItemWrite::Update { changed: &m.fields });
             if args.as_object().is_some_and(|o| !o.is_empty()) {
                 args["id"] = id.into();
                 let n = commands.len();
@@ -175,11 +179,12 @@ fn update_plan(
     })
 }
 
-/// Todoist's move command takes exactly one of project_id, section_id or
-/// parent_id; the most specific container the new path resolves to is the one
-/// sent.
-fn move_args(tree: &Tree, id: &str, object: &WireObject) -> Result<serde_json::Value, Failure> {
-    match shape_for(tree, object, &[]).map_err(Failure::Mutation)? {
+fn most_specific_container_move_args(
+    tree: &Tree,
+    id: &str,
+    object: &WireObject,
+) -> Result<serde_json::Value, Failure> {
+    match shape_for(tree, object, &[]).map_err(Failure::OnlyThisMutation)? {
         Shape::Item {
             project_id,
             section_id,
@@ -189,29 +194,27 @@ fn move_args(tree: &Tree, id: &str, object: &WireObject) -> Result<serde_json::V
             (None, Some(s)) => serde_json::json!({ "id": id, "section_id": s }),
             (None, None) => serde_json::json!({ "id": id, "project_id": project_id }),
         }),
-        _ => Err(Failure::Mutation(
+        _ => Err(Failure::OnlyThisMutation(
             "a path change would move the task out of task position".into(),
         )),
     }
 }
 
-fn numbered(m: &Mutation, n: usize) -> Result<String, Failure> {
-    uuid_for(&m.idempotency_key, n).map_err(Failure::Mutation)
+fn numbered(m: &Mutation, ordinal: usize) -> Result<String, Failure> {
+    repeatable_command_uuid(&m.idempotency_key, ordinal).map_err(Failure::OnlyThisMutation)
 }
 
 pub fn missing_object(op: &str) -> Failure {
-    Failure::Mutation(format!("{op} without an object"))
+    Failure::OnlyThisMutation(format!("{op} without an object"))
 }
 
-/// The Todoist object a mutation names, refused by reason when the stored
-/// `remote_id` is absent or is not one Todoist could have issued.
 fn addressed<'m>(m: &'m Mutation, op: &str) -> Result<(char, &'m str), Failure> {
     let text = m
         .remote_id
         .as_deref()
-        .ok_or_else(|| Failure::Mutation(format!("{op} without a Todoist id")))?;
+        .ok_or_else(|| Failure::OnlyThisMutation(format!("{op} without a Todoist id")))?;
     split_remote_id(text)
-        .map_err(|e| Failure::Mutation(format!("{op} with an unusable Todoist id: {e}")))
+        .map_err(|e| Failure::OnlyThisMutation(format!("{op} with an unusable Todoist id: {e}")))
 }
 
 fn delete_verb(kind: char) -> &'static str {

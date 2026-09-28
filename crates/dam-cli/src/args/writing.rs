@@ -1,5 +1,3 @@
-//! The verbs that change an object: new, done, edit, mv and rm.
-
 use clap::Args;
 use dam_domain::{ChildDisposition, DependencyDisposition};
 
@@ -31,38 +29,45 @@ pub(crate) struct NewArgs {
 #[derive(Args, Debug)]
 pub(crate) struct DoneArgs {
     pub(crate) oid: String,
-    /// Complete it even though something it waits on is still open.
-    #[arg(long)]
+    #[arg(
+        long,
+        help = "Complete it even though something it waits on is still open"
+    )]
     pub(crate) force: bool,
-    /// Ask what happens to the open children and dependencies.
-    #[arg(long, requires = "force")]
+    #[arg(
+        long,
+        requires = "force",
+        help = "Ask what happens to the open children and dependencies"
+    )]
     pub(crate) interactive: bool,
-    /// What happens to open children, instead of asking. Default: keep.
     #[arg(
         long,
         requires = "force",
         conflicts_with = "interactive",
         value_name = "up|keep|into:<name>",
-        value_parser = child_disposition
+        value_parser = child_disposition,
+        help = "What happens to open children, instead of asking. Default: keep"
     )]
     pub(crate) children: Option<ChildDisposition>,
-    /// What happens to open dependency links, instead of asking. Default: keep.
     #[arg(
         long,
         requires = "force",
         conflicts_with = "interactive",
         value_name = "drop|keep",
-        value_parser = dependency_disposition
+        value_parser = dependency_disposition,
+        help = "What happens to open dependency links, instead of asking. Default: keep"
     )]
     pub(crate) depends: Option<DependencyDisposition>,
 }
 
-/// Flags for `dam edit`: fields to set directly, or `--editor` to open the object instead.
 #[derive(Args, Debug)]
 pub(crate) struct EditArgs {
     pub(crate) oid: String,
-    /// Open the object in your editor instead of passing flags.
-    #[arg(short = 'e', long)]
+    #[arg(
+        short = 'e',
+        long,
+        help = "Open the object in your editor instead of passing flags"
+    )]
     pub(crate) editor: bool,
     #[arg(long)]
     pub(crate) subject: Option<String>,
@@ -78,8 +83,7 @@ pub(crate) struct EditArgs {
     pub(crate) deadline: Option<String>,
     #[arg(long)]
     pub(crate) no_deadline: bool,
-    /// Reopen a completed task.
-    #[arg(long)]
+    #[arg(long, help = "Reopen a completed task")]
     pub(crate) undone: bool,
     #[arg(long = "label")]
     pub(crate) labels: Vec<String>,

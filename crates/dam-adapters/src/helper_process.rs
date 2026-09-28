@@ -1,6 +1,7 @@
 mod conversation;
 mod stderr_tail;
 
+use std::collections::BTreeMap;
 use std::ffi::OsString;
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
@@ -11,7 +12,6 @@ use dam_protocol::credential_variable;
 
 use conversation::ProcessHelper;
 
-/// Finds a `dam-remote-<name>` helper executable on a search path and spawns it as a child.
 pub struct ProcessLauncher {
     search_path: OsString,
 }
@@ -29,7 +29,6 @@ impl ProcessLauncher {
         }
     }
 
-    /// The first executable `dam-remote-<helper>` on the search path.
     pub fn find(&self, helper: &str) -> Option<PathBuf> {
         let name = format!("dam-remote-{helper}");
         std::env::split_paths(&self.search_path)
@@ -65,29 +64,16 @@ impl ProcessLauncher {
             .ok_or_else(|| HelperError::NotFound {
                 helper: format!("dam-remote-{}", remote.helper),
             })?;
-        let mut command = Command::new(program);
-        // Git's invocation: the remote's name, then the address its url names.
-        command.arg(&remote.name.0).arg(remote.address());
-        command
+        let mut child = Command::new(program)
+            .arg(&remote.name.0)
+            .arg(remote.address())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
-        // Every non-alphanumeric character folds to an underscore, so two
-        // names of one remote can land on one variable. Refuse rather than
-        // hand the helper whichever of the two was written last.
-        let mut taken: std::collections::BTreeMap<String, &str> = std::collections::BTreeMap::new();
-        for (name, value) in credentials {
-            let variable = credential_variable(&remote.name.0, name);
-            if let Some(first) = taken.insert(variable.clone(), name) {
-                return Err(HelperError::CollidingCredentials {
-                    first: first.to_string(),
-                    second: name.clone(),
-                    variable,
-                });
-            }
-            command.env(variable, value.expose());
-        }
-        let mut child = command
+            .stderr(Stdio::piped())
+            .envs(credential_environment_refusing_a_shared_variable(
+                remote,
+                credentials,
+            )?)
             .spawn()
             .map_err(|e| HelperError::Io(e.to_string()))?;
         let stdin = child
@@ -106,6 +92,26 @@ impl ProcessLauncher {
     }
 }
 
+fn credential_environment_refusing_a_shared_variable<'a>(
+    remote: &RemoteConfig,
+    credentials: &'a [(String, Secret)],
+) -> Result<Vec<(String, &'a str)>, HelperError> {
+    let mut first_name_of: BTreeMap<String, &str> = BTreeMap::new();
+    let mut environment = Vec::with_capacity(credentials.len());
+    for (name, value) in credentials {
+        let variable = credential_variable(&remote.name.0, name);
+        if let Some(first) = first_name_of.insert(variable.clone(), name) {
+            return Err(HelperError::CollidingCredentials {
+                first: first.to_string(),
+                second: name.clone(),
+                variable,
+            });
+        }
+        environment.push((variable, value.expose()));
+    }
+    Ok(environment)
+}
+
 #[cfg(test)]
 mod testing;
 
@@ -113,13 +119,13 @@ mod testing;
 mod tests {
     use dam_application::{HelperError, HelperLauncher, RemoteName};
 
-    use super::testing::{FAKE, install, remote};
+    use super::testing::{FAKE_THAT_ECHOES_ITS_TOKEN, install, remote};
     use super::*;
 
     #[test]
     fn find_locates_the_helper_by_name() {
         let dir = tempfile::tempdir().unwrap();
-        let launcher = install(dir.path(), FAKE);
+        let launcher = install(dir.path(), FAKE_THAT_ECHOES_ITS_TOKEN);
         assert!(launcher.find("t").is_some());
         assert!(launcher.find("missing").is_none());
     }
@@ -128,7 +134,7 @@ mod tests {
     fn a_non_executable_helper_is_not_found_by_name() {
         let dir = tempfile::tempdir().unwrap();
         let file = dir.path().join("dam-remote-t");
-        std::fs::write(&file, FAKE).unwrap();
+        std::fs::write(&file, FAKE_THAT_ECHOES_ITS_TOKEN).unwrap();
         std::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o644)).unwrap();
         let launcher = ProcessLauncher::with_search_path(dir.path().as_os_str());
         assert!(launcher.find("t").is_none());
@@ -156,7 +162,7 @@ mod tests {
     #[test]
     fn credentials_arrive_as_environment_and_calls_round_trip() {
         let dir = tempfile::tempdir().unwrap();
-        let launcher = install(dir.path(), FAKE);
+        let launcher = install(dir.path(), FAKE_THAT_ECHOES_ITS_TOKEN);
         let mut helper = launcher
             .launch(&remote(), &[("api_token".into(), "tok".into())])
             .unwrap();
@@ -193,7 +199,7 @@ mod tests {
     #[test]
     fn two_credential_names_that_become_one_variable_are_refused_by_name() {
         let dir = tempfile::tempdir().unwrap();
-        let launcher = install(dir.path(), FAKE);
+        let launcher = install(dir.path(), FAKE_THAT_ECHOES_ITS_TOKEN);
         let err = launcher
             .launch(
                 &remote(),
@@ -213,11 +219,8 @@ mod tests {
         );
     }
 
-    /// Git's invocation: the remote's name, then the address its url names. A
-    /// helper reads its credentials under that name, so the remote is named
-    /// apart from its helper here.
     #[test]
-    fn the_helper_is_given_its_remote_name_and_address() {
+    fn the_helper_is_given_its_remote_name_and_address_and_reads_credentials_under_that_name() {
         let dir = tempfile::tempdir().unwrap();
         let launcher = install(
             dir.path(),

@@ -107,3 +107,13 @@ fn broken_toml_names_its_line() {
     let err = super::parse_template(&text, &task(), date(2026, 9, 18), &tz()).unwrap_err();
     assert!(err.starts_with("line 4:"), "{err}");
 }
+
+#[test]
+fn an_optional_field_emptied_in_the_template_clears_it() {
+    let mut t = Task::new(oid(1), "milk");
+    t.due = Some(When::Day(date(2026, 9, 19)));
+    let object = Object::Task(t);
+    let text = super::render_template(&object).replace("due = \"2026-09-19\"", "due = \"\"");
+    let fields = super::parse_template(&text, &object, date(2026, 9, 18), &tz()).unwrap();
+    assert_eq!(fields.due, Some(None));
+}

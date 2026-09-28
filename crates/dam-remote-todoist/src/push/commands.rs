@@ -2,49 +2,42 @@ use dam_protocol::WireObject;
 
 use crate::map::api_priority;
 
-/// How many commands one mutation may become. The uuid of each is the
-/// mutation's key with its last character replaced by the command's ordinal,
-/// so the ordinal has one hex digit to fit in.
-const MAX_COMMANDS: usize = 16;
+const COMMAND_ORDINALS_IN_ONE_HEX_DIGIT: usize = 16;
 
-/// The shape dam's `idempotency_key` arrives in: a UUID whose last character
-/// dam leaves free for the ordinal.
-const KEY_LEN: usize = 36;
+const UUID_KEY_LEN: usize = 36;
 
-/// The uuid for command `n` of a mutation.
-///
-/// Todoist deduplicates by it: "Todoist will not execute a command that has
-/// same UUID as a previously executed command." So every command of a resent
-/// mutation has to repeat the uuid its first attempt used, which is why the
-/// number comes from the ordinal rather than from anything minted here.
-pub fn uuid_for(key: &str, n: usize) -> Result<String, String> {
-    if key.len() != KEY_LEN
-        || !key.bytes().enumerate().all(|(i, b)| {
-            if matches!(i, 8 | 13 | 18 | 23) {
+const UUID_HYPHEN_OFFSETS: [usize; 4] = [8, 13, 18, 23];
+
+pub fn repeatable_command_uuid(key: &str, ordinal: usize) -> Result<String, String> {
+    if !is_hyphenated_uuid(key) {
+        return Err(format!(
+            "an idempotency key is a {UUID_KEY_LEN}-character UUID, got {key:?}"
+        ));
+    }
+    if ordinal >= COMMAND_ORDINALS_IN_ONE_HEX_DIGIT {
+        return Err(format!(
+            "a mutation takes at most {COMMAND_ORDINALS_IN_ONE_HEX_DIGIT} commands"
+        ));
+    }
+    let key_without_its_free_last_character = &key[..UUID_KEY_LEN - 1];
+    Ok(format!("{key_without_its_free_last_character}{ordinal:x}"))
+}
+
+fn is_hyphenated_uuid(key: &str) -> bool {
+    key.len() == UUID_KEY_LEN
+        && key.bytes().enumerate().all(|(i, b)| {
+            if UUID_HYPHEN_OFFSETS.contains(&i) {
                 b == b'-'
             } else {
                 b.is_ascii_hexdigit()
             }
         })
-    {
-        return Err(format!(
-            "an idempotency key is a {KEY_LEN}-character UUID, got {key:?}"
-        ));
-    }
-    if n >= MAX_COMMANDS {
-        return Err(format!("a mutation takes at most {MAX_COMMANDS} commands"));
-    }
-    Ok(format!("{}{:x}", &key[..KEY_LEN - 1], n))
 }
 
-/// One Sync API command.
 pub fn command(kind: &str, uuid: String, args: serde_json::Value) -> serde_json::Value {
     serde_json::json!({ "type": kind, "uuid": uuid, "args": args })
 }
 
-/// A command that creates an object, with `temp_id` standing in for the id
-/// Todoist will issue. The real id comes back in the answer's
-/// `temp_id_mapping` under this same placeholder.
 pub fn creating_command(
     kind: &str,
     uuid: String,
@@ -54,11 +47,22 @@ pub fn creating_command(
     serde_json::json!({ "type": kind, "uuid": uuid, "temp_id": temp_id, "args": args })
 }
 
-/// `item_add` or `item_update` args for `object`. `only` is the changed-field
-/// list on an update and `None` on a create, which is also what decides
-/// whether an absent date is omitted or sent as `null` to clear one.
-pub fn item_args(object: &WireObject, only: Option<&[String]>) -> serde_json::Value {
-    let want = |f: &str| only.is_none_or(|fields| fields.iter().any(|x| x == f));
+pub enum ItemWrite<'f> {
+    Create,
+    Update { changed: &'f [String] },
+}
+
+impl ItemWrite<'_> {
+    fn touches(&self, field: &str) -> bool {
+        match self {
+            ItemWrite::Create => true,
+            ItemWrite::Update { changed } => changed.iter().any(|x| x == field),
+        }
+    }
+}
+
+pub fn item_args(object: &WireObject, write: ItemWrite) -> serde_json::Value {
+    let want = |f: &str| write.touches(f);
     let mut args = serde_json::Map::new();
     if want("subject") {
         args.insert("content".into(), object.subject.clone().into());
@@ -85,17 +89,15 @@ pub fn item_args(object: &WireObject, only: Option<&[String]>) -> serde_json::Va
             },
         );
     }
-    // A create has no prior deadline to clear, so an absent one is omitted
-    // rather than sent as the null that clears one.
     if want("deadline") {
-        match (&task.deadline, only) {
+        match (&task.deadline, &write) {
             (Some(date), _) => {
                 args.insert("deadline".into(), serde_json::json!({ "date": date }));
             }
-            (None, Some(_)) => {
+            (None, ItemWrite::Update { .. }) => {
                 args.insert("deadline".into(), serde_json::Value::Null);
             }
-            (None, None) => {}
+            (None, ItemWrite::Create) => {}
         }
     }
     serde_json::Value::Object(args)
@@ -110,21 +112,24 @@ mod tests {
     #[test]
     fn a_uuid_numbers_the_command_in_the_character_dam_left_free() {
         assert_eq!(
-            uuid_for(KEY, 0).unwrap(),
+            repeatable_command_uuid(KEY, 0).unwrap(),
             "0102030a-0b0c-4d0e-8f10-111213141500"
         );
         assert_eq!(
-            uuid_for(KEY, 2).unwrap(),
+            repeatable_command_uuid(KEY, 2).unwrap(),
             "0102030a-0b0c-4d0e-8f10-111213141502"
         );
-        assert_ne!(uuid_for(KEY, 0).unwrap(), uuid_for(KEY, 1).unwrap());
+        assert_ne!(
+            repeatable_command_uuid(KEY, 0).unwrap(),
+            repeatable_command_uuid(KEY, 1).unwrap()
+        );
     }
 
     #[test]
     fn a_key_that_is_not_a_uuid_is_refused_rather_than_sliced() {
         for bad in ["", "short", &"x".repeat(36), &"0".repeat(36)] {
-            assert!(uuid_for(bad, 0).is_err(), "{bad:?}");
+            assert!(repeatable_command_uuid(bad, 0).is_err(), "{bad:?}");
         }
-        assert!(uuid_for(KEY, MAX_COMMANDS).is_err());
+        assert!(repeatable_command_uuid(KEY, COMMAND_ORDINALS_IN_ONE_HEX_DIGIT).is_err());
     }
 }

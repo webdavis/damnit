@@ -1,6 +1,3 @@
-//! The durable store answers the same repository contract the in-memory
-//! double does, so a use case proved against one holds on the other.
-
 use dam_adapters::SqliteStore;
 use dam_application::testing::contract;
 

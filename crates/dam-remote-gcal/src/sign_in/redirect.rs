@@ -1,5 +1,3 @@
-//! The consent URL, and the single browser redirect that answers it.
-
 use std::io::{BufRead, Read, Write};
 use std::net::TcpListener;
 use std::time::Duration;
@@ -8,15 +6,13 @@ use super::SignInError;
 use crate::Endpoints;
 use crate::encoding::{form, percent_decoded};
 
-/// The one scope asked for. Read-only, so Google refuses a write whatever
-/// code tried one.
-pub(super) const SCOPE: &str = "https://www.googleapis.com/auth/calendar.events.readonly";
-/// How long the redirect may take once the browser has connected.
-const REDIRECT_READ_DEADLINE: Duration = Duration::from_secs(30);
-/// The most of the browser's request read; a redirect line is hundreds of bytes.
-const REDIRECT_READ_MAX: u64 = 8 * 1024;
-/// Google's words for a refusal on the redirect.
-const DENIALS: [&str; 5] = [
+const READ_ONLY_SCOPE_SO_GOOGLE_REFUSES_ANY_WRITE: &str =
+    "https://www.googleapis.com/auth/calendar.events.readonly";
+const OFFLINE_CONSENT_THAT_YIELDS_A_REFRESH_TOKEN: [(&str, &str); 2] =
+    [("access_type", "offline"), ("prompt", "consent")];
+const REDIRECT_READ_DEADLINE_ONCE_THE_BROWSER_CONNECTS: Duration = Duration::from_secs(30);
+const REDIRECT_REQUEST_READ_MAX_BYTES: u64 = 8 * 1024;
+const GOOGLE_WORDS_FOR_A_REFUSED_CONSENT: [&str; 5] = [
     "access_denied",
     "invalid_scope",
     "invalid_request",
@@ -31,39 +27,38 @@ pub(super) fn authorization_url(
     challenge: &str,
     state: &str,
 ) -> String {
+    let [access_type, prompt] = OFFLINE_CONSENT_THAT_YIELDS_A_REFRESH_TOKEN;
     let query = form(&[
         ("client_id", client_id),
         ("redirect_uri", redirect_uri),
         ("response_type", "code"),
-        ("scope", SCOPE),
+        ("scope", READ_ONLY_SCOPE_SO_GOOGLE_REFUSES_ANY_WRITE),
         ("code_challenge", challenge),
         ("code_challenge_method", "S256"),
         ("state", state),
-        ("access_type", "offline"),
-        ("prompt", "consent"),
+        access_type,
+        prompt,
     ]);
     format!("{}?{query}", endpoints.authorization)
 }
 
-/// One connection and one only: the operator is sitting at this walk, so the
-/// listener waits for the browser they were told to open, and the browser is
-/// told the outcome either way.
-pub(super) fn await_code(listener: &TcpListener, state: &str) -> Result<String, SignInError> {
+pub(super) fn await_the_one_browser_redirect(
+    listener: &TcpListener,
+    state: &str,
+) -> Result<String, SignInError> {
     let (mut stream, _) = listener.accept().map_err(|_| SignInError::Redirect)?;
     stream
-        .set_read_timeout(Some(REDIRECT_READ_DEADLINE))
+        .set_read_timeout(Some(REDIRECT_READ_DEADLINE_ONCE_THE_BROWSER_CONNECTS))
         .map_err(|_| SignInError::Redirect)?;
     let mut line = String::new();
-    std::io::BufReader::new((&stream).take(REDIRECT_READ_MAX))
+    std::io::BufReader::new((&stream).take(REDIRECT_REQUEST_READ_MAX_BYTES))
         .read_line(&mut line)
         .map_err(|_| SignInError::Redirect)?;
     let answered = code_of(&line, state);
-    let _ = stream.write_all(page(answered.is_ok()).as_bytes());
+    let _ = stream.write_all(page_telling_the_browser_the_outcome(answered.is_ok()).as_bytes());
     answered
 }
 
-/// The state is checked before the error: a redirect that does not carry
-/// this run's state is answered as not ours, whatever else it says.
 pub(super) fn code_of(request_line: &str, state: &str) -> Result<String, SignInError> {
     let query = request_line
         .split_whitespace()
@@ -82,7 +77,7 @@ pub(super) fn code_of(request_line: &str, state: &str) -> Result<String, SignInE
         return Err(SignInError::State);
     }
     if let Some(error) = stated("error") {
-        let word = DENIALS
+        let word = GOOGLE_WORDS_FOR_A_REFUSED_CONSENT
             .into_iter()
             .find(|d| *d == error)
             .unwrap_or("an error Google did not name");
@@ -93,7 +88,7 @@ pub(super) fn code_of(request_line: &str, state: &str) -> Result<String, SignInE
         .ok_or(SignInError::NoCode)
 }
 
-fn page(granted: bool) -> String {
+fn page_telling_the_browser_the_outcome(granted: bool) -> String {
     let body = if granted {
         "dam has the consent. Close this window and read the terminal."
     } else {
@@ -110,10 +105,8 @@ mod tests {
     use super::*;
     use crate::Endpoints;
 
-    /// Pinned byte for byte: a scope, a parameter or an encoding that moves is
-    /// a consent screen asking for something else.
     #[test]
-    fn the_authorization_url_asks_for_read_only_events_offline_with_pkce() {
+    fn the_authorization_url_asks_for_read_only_events_offline_with_pkce_byte_for_byte() {
         let url = authorization_url(
             &Endpoints::production(),
             "123.apps.googleusercontent.com",
@@ -140,7 +133,7 @@ mod tests {
     }
 
     #[test]
-    fn a_redirect_for_another_run_is_refused() {
+    fn a_redirect_for_another_run_is_refused_whatever_else_it_says() {
         assert_eq!(
             code_of("GET /?state=OTHER&code=c HTTP/1.1", "S1"),
             Err(SignInError::State)
@@ -155,8 +148,6 @@ mod tests {
         );
     }
 
-    /// Google's own word for a refusal is a fixed vocabulary, so it is named;
-    /// anything else in `error` is not quoted.
     #[test]
     fn a_refusal_in_the_browser_names_googles_word_and_nothing_else() {
         assert_eq!(

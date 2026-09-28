@@ -19,15 +19,14 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 
-/// The verbs that pull a stale remote before they answer, which is the set
-/// `--no-pull` acts on. Every one of them reaches `remote::maybe_pull_stale`.
 pub(crate) fn pulls_a_stale_remote(command: &Command) -> bool {
     matches!(command, Command::Ls(_) | Command::Show(_))
 }
 
-/// Every verb that reads or writes the store. The catalogue verbs are not
-/// here: `main` answers those out of config before a store is opened.
-pub(crate) fn dispatch(ctx: &mut Context, command: Command) -> Result<Report, CliError> {
+pub(crate) fn dispatch_a_verb_that_opens_the_store(
+    ctx: &mut Context,
+    command: Command,
+) -> Result<Report, CliError> {
     match command {
         Command::New(a) => new::run(ctx, a),
         Command::Done(a) => done::run(ctx, a),

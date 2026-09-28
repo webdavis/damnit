@@ -7,17 +7,13 @@ use dam_application::Refusal;
 
 use crate::error::CliError;
 
-/// How often a wait on the operator wakes to re-check for an interrupt.
-const TICK: Duration = Duration::from_millis(25);
+const INTERRUPT_RECHECK_INTERVAL: Duration = Duration::from_millis(25);
 
-/// Asks the operator a question, for verbs like `done --force --interactive` and remote add.
 pub(crate) trait Prompt {
     fn choose(&self, question: &str, options: &[&str]) -> Result<usize, CliError>;
     fn text(&self, question: &str) -> Result<String, CliError>;
 }
 
-/// Installed instead of `TerminalPrompt` for `--json`/`--toon`, so a verb
-/// that needs to ask a question fails instead of blocking on stdin.
 pub(crate) struct RefusingPrompt;
 
 impl Prompt for RefusingPrompt {
@@ -36,18 +32,16 @@ fn refused() -> CliError {
 
 #[derive(Default)]
 pub(crate) struct TerminalPrompt {
-    /// Filled by the first question asked, so a run that asks none leaves
-    /// stdin to whatever else inherits the terminal.
-    lines: OnceCell<Receiver<std::io::Result<String>>>,
+    stdin_lines_once_the_first_question_is_asked: OnceCell<Receiver<std::io::Result<String>>>,
 }
 
 impl TerminalPrompt {
-    /// One answer from the operator. Interrupting is `Cancelled`, and so is
-    /// the end of input.
-    fn line(&self) -> Result<String, CliError> {
-        let lines = self.lines.get_or_init(read_stdin_on_a_thread);
+    fn answer_unless_interrupted_or_at_end_of_input(&self) -> Result<String, CliError> {
+        let lines = self
+            .stdin_lines_once_the_first_question_is_asked
+            .get_or_init(read_stdin_on_a_thread_since_an_interrupt_cannot_break_a_blocking_read);
         loop {
-            match lines.recv_timeout(TICK) {
+            match lines.recv_timeout(INTERRUPT_RECHECK_INTERVAL) {
                 Ok(Ok(line)) => return Ok(line),
                 Ok(Err(e)) => return Err(CliError::Io(e.to_string())),
                 Err(RecvTimeoutError::Disconnected) => return Err(CliError::Cancelled),
@@ -61,11 +55,8 @@ impl TerminalPrompt {
     }
 }
 
-/// Reads stdin on its own thread, because the interrupt handler does not break
-/// a blocking read and `read_line` retries an interrupted one itself. The
-/// thread ends at the end of input, at the first error, or once nobody is
-/// listening.
-fn read_stdin_on_a_thread() -> Receiver<std::io::Result<String>> {
+fn read_stdin_on_a_thread_since_an_interrupt_cannot_break_a_blocking_read()
+-> Receiver<std::io::Result<String>> {
     let (tx, rx) = channel();
     std::thread::spawn(move || {
         loop {
@@ -98,7 +89,7 @@ impl Prompt for TerminalPrompt {
             write!(err, "> ")?;
             err.flush()?;
             if let Some(n) = self
-                .line()?
+                .answer_unless_interrupted_or_at_end_of_input()?
                 .trim()
                 .parse::<usize>()
                 .ok()
@@ -113,6 +104,9 @@ impl Prompt for TerminalPrompt {
         let mut err = std::io::stderr();
         write!(err, "{question} ")?;
         err.flush()?;
-        Ok(self.line()?.trim().to_string())
+        Ok(self
+            .answer_unless_interrupted_or_at_end_of_input()?
+            .trim()
+            .to_string())
     }
 }

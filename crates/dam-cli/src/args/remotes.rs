@@ -1,5 +1,3 @@
-//! Remotes and the commands that move objects across them.
-
 use clap::{Args, Subcommand};
 
 #[derive(Args, Debug)]
@@ -10,9 +8,9 @@ pub(crate) struct RemoteArgs {
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum RemoteCommand {
-    /// Add a remote to the config file.
+    #[command(about = "Add a remote to the config file")]
     Add { name: String, url: String },
-    /// List configured remotes.
+    #[command(about = "List configured remotes")]
     List,
 }
 

@@ -25,10 +25,8 @@ fn a_task_round_trips_with_a_day_due() {
     assert_eq!(from_wire(&wire).unwrap(), object);
 }
 
-/// The store is wire JSON, so the completion time has to survive the trip or
-/// a completed task loses it the moment dam writes it down.
 #[test]
-fn a_completion_time_round_trips_as_rfc_3339() {
+fn a_completion_time_round_trips_as_rfc_3339_since_the_store_is_wire_json() {
     let mut t = Task::new(oid(1), "milk");
     t.done = true;
     t.completed_at = Some("2026-09-18T15:04:05Z".parse().unwrap());
@@ -41,10 +39,8 @@ fn a_completion_time_round_trips_as_rfc_3339() {
     assert_eq!(from_wire(&wire).unwrap(), object);
 }
 
-/// A helper from an older protocol sends no completion time, and an open task
-/// never has one.
 #[test]
-fn an_absent_completion_time_reads_as_none_and_is_left_out() {
+fn an_absent_completion_time_as_an_older_helper_sends_reads_as_none_and_is_left_out() {
     let object = Object::Task(Task::new(oid(1), "milk"));
     let wire = to_wire(&object, None);
     assert_eq!(wire.task.as_ref().unwrap().completed_at, None);
@@ -53,8 +49,6 @@ fn an_absent_completion_time_reads_as_none_and_is_left_out() {
     assert_eq!(from_wire(&wire).unwrap(), object);
 }
 
-/// The time belongs to a completed task, so an open one never takes one off
-/// the wire, whatever a helper sends.
 #[test]
 fn an_open_task_does_not_take_a_completion_time_from_the_wire() {
     let mut wire = to_wire(&Object::Task(Task::new(oid(1), "milk")), None);
@@ -67,8 +61,6 @@ fn an_open_task_does_not_take_a_completion_time_from_the_wire() {
     assert_eq!(task.completed_at, None);
 }
 
-/// A completion time dam cannot read is a rejection naming the field, the way
-/// an unreadable due date is.
 #[test]
 fn an_unreadable_completion_time_is_rejected_naming_the_field() {
     let mut done = Task::new(oid(1), "milk");
@@ -127,10 +119,8 @@ fn an_unknown_kind_is_its_own_rejection() {
     assert_eq!(err.to_string(), "kind: cannot read \"note\"");
 }
 
-/// Each of the four rejections answers which class it belongs to, so a
-/// caller can branch or count by class rather than match on a sentence.
 #[test]
-fn each_rejection_class_is_distinguishable() {
+fn each_rejection_class_is_distinguishable_without_matching_a_sentence() {
     let good = to_wire(&Object::Task(Task::new(oid(5), "x")), None);
 
     let mut bad_oid = good.clone();
@@ -222,4 +212,53 @@ fn the_calendars_own_attendee_round_trips() {
     ];
     let object = Object::Event(event);
     assert_eq!(from_wire(&to_wire(&object, None)).unwrap(), object);
+}
+
+#[test]
+fn a_kind_or_field_this_dam_does_not_know_is_dropped_rather_than_refused() {
+    let caps = capabilities_from_wire(&dam_protocol::Capabilities {
+        protocol: dam_protocol::PROTOCOL_VERSION,
+        kinds: vec!["task".into(), "note".into()],
+        fields: vec!["subject".into(), "mood".into()],
+        credentials: vec!["api_token".into()],
+        incremental: true,
+    });
+    assert_eq!(caps.kinds, vec![dam_domain::Kind::Task]);
+    assert_eq!(caps.fields, vec![dam_domain::Field::Subject]);
+    assert_eq!(caps.credentials, vec!["api_token".to_string()]);
+    assert!(caps.incremental);
+}
+
+#[test]
+fn a_pulled_object_with_no_remote_id_is_rejected_under_an_empty_name() {
+    let response = dam_protocol::PullResponse {
+        objects: vec![to_wire(&Object::Task(Task::new(oid(1), "milk")), None)],
+        ..Default::default()
+    };
+    let outcome = pull_from_wire(response);
+    assert!(outcome.objects.is_empty());
+    assert_eq!(
+        outcome.rejected,
+        vec![dam_application::RejectedObject {
+            remote_id: String::new(),
+            why: "the object has no remote_id".into(),
+        }]
+    );
+}
+
+#[test]
+fn a_push_result_naming_no_valid_oid_is_dropped_since_no_change_can_own_it() {
+    let result = |oid: String, remote_id: &str| dam_protocol::MutationResult {
+        oid,
+        ok: true,
+        remote_id: Some(remote_id.into()),
+        why: None,
+    };
+    let outcomes = outcomes_from_wire(vec![
+        result("nothex".into(), "r0"),
+        result(oid(2).to_string(), "r2"),
+    ]);
+    assert_eq!(outcomes.len(), 1);
+    assert_eq!(outcomes[0].oid, oid(2));
+    assert_eq!(outcomes[0].remote_id.as_deref(), Some("r2"));
 }

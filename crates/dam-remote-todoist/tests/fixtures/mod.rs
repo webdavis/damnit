@@ -1,4 +1,3 @@
-// The builders and the fake service both push test binaries share.
 #![allow(dead_code)]
 
 use std::collections::HashSet;
@@ -29,9 +28,7 @@ pub fn sync_body_with_two_projects() -> serde_json::Value {
     })
 }
 
-/// A key of the shape dam mints: a UUID whose last character is left free for
-/// the helper to number a mutation's commands in.
-pub fn key(n: u8) -> String {
+pub fn key_with_its_last_character_free(n: u8) -> String {
     format!("0102030a-0b0c-4d0e-8f10-1112131415{n:x}0")
 }
 
@@ -39,7 +36,7 @@ pub fn mutation(op: &str, n: u8, remote_id: Option<&str>, object: Option<WireObj
     Mutation {
         op: op.into(),
         oid: format!("{n:x}").repeat(40),
-        idempotency_key: key(n),
+        idempotency_key: key_with_its_last_character_free(n),
         remote_id: remote_id.map(str::to_string),
         object,
         fields: vec![],
@@ -75,8 +72,6 @@ pub fn task(oid: &str, path: &str, subject: &str, done: bool) -> WireObject {
     }
 }
 
-/// An object whose `due` and `recurrence` are both gone, so an update naming
-/// only "due" sends the one field that clears the date.
 pub fn task_with_dates_cleared(oid: &str) -> WireObject {
     let mut t = task(oid, "Work/", "unused", false);
     t.task = Some(WireTask {
@@ -90,14 +85,11 @@ pub fn task_with_dates_cleared(oid: &str) -> WireObject {
     t
 }
 
-/// What the fake service did, as opposed to what it was asked to do.
 #[derive(Default)]
 pub struct Recorded {
-    /// One entry per command actually executed, in order.
     pub executed: Vec<serde_json::Value>,
-    /// Every command uuid ever seen, executed or deduplicated.
-    pub uuids: HashSet<String>,
-    pub issued: u32,
+    pub uuids_seen: HashSet<String>,
+    pub ids_issued: u32,
 }
 
 impl Recorded {
@@ -117,13 +109,9 @@ impl Recorded {
     }
 }
 
-/// A stand-in for Todoist's sync endpoint that remembers command uuids the way
-/// the documented one does: "Todoist will not execute a command that has same
-/// UUID as a previously executed command." `refuse` names a command type it
-/// answers with an error object instead of executing.
 pub fn todoist(
     tree: serde_json::Value,
-    refuse: Option<&'static str>,
+    refused_command_type: Option<&'static str>,
 ) -> (loopback::Loopback, Arc<Mutex<Recorded>>) {
     let state = Arc::new(Mutex::new(Recorded::default()));
     let inner = Arc::clone(&state);
@@ -137,11 +125,12 @@ pub fn todoist(
         for c in commands {
             let uuid = c["uuid"].as_str().unwrap_or_default().to_string();
             let kind = c["type"].as_str().unwrap_or_default();
-            if !recorded.uuids.insert(uuid.clone()) {
+            let seen_before = !recorded.uuids_seen.insert(uuid.clone());
+            if seen_before {
                 status.insert(uuid, "ok".into());
                 continue;
             }
-            if refuse == Some(kind) {
+            if refused_command_type == Some(kind) {
                 status.insert(
                     uuid,
                     serde_json::json!({"error_code": 15, "error": "refused by the test"}),
@@ -151,8 +140,11 @@ pub fn todoist(
             recorded.executed.push(c.clone());
             status.insert(uuid, "ok".into());
             if let Some(temp) = c["temp_id"].as_str() {
-                recorded.issued += 1;
-                mapping.insert(temp.to_string(), format!("new{}", recorded.issued).into());
+                recorded.ids_issued += 1;
+                mapping.insert(
+                    temp.to_string(),
+                    format!("new{}", recorded.ids_issued).into(),
+                );
             }
         }
         loopback::Reply::new(

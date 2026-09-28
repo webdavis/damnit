@@ -30,17 +30,19 @@ pub(crate) fn run_remote(ctx: &mut Context, args: RemoteArgs) -> Result<Report, 
     }
 }
 
-/// Pulls each remote whose `stale` is set and whose last pull is older than
-/// it. A failure to reach a remote is a notice, not an error, so a read
-/// never fails because the network did. `--no-pull` skips the whole pass, so
-/// the read touches nothing but the store.
 pub(crate) fn maybe_pull_stale(ctx: &mut Context) -> Result<(), CliError> {
     if ctx.no_pull {
         return Ok(());
     }
+    for name in remotes_past_their_stale_window(ctx) {
+        pull_leaving_a_notice_rather_than_failing_the_read(ctx, name)?;
+    }
+    Ok(())
+}
+
+fn remotes_past_their_stale_window(ctx: &Context) -> Vec<String> {
     let now = ctx.clock.now();
-    let due: Vec<String> = ctx
-        .config
+    ctx.config
         .remotes
         .iter()
         .filter_map(|r| {
@@ -51,22 +53,26 @@ pub(crate) fn maybe_pull_stale(ctx: &mut Context) -> Result<(), CliError> {
                 .is_none_or(|a| a.as_secs() >= i64::try_from(stale.as_secs()).unwrap_or(i64::MAX));
             is_due.then(|| r.name.0.clone())
         })
-        .collect();
-    for name in due {
-        if let Err(e) = pull(
-            Repositories::of(ctx.store.as_ref()),
-            ctx.launcher.as_ref(),
-            ctx.credentials.as_ref(),
-            ctx.clock.as_ref(),
-            ctx.random.as_ref(),
-            &ctx.config,
-            Some(&name),
-        ) {
-            ctx.store.add_notice(&Notice::PullFailed {
-                remote: RemoteName(name.clone()),
-                why: e.to_string(),
-            })?;
-        }
+        .collect()
+}
+
+fn pull_leaving_a_notice_rather_than_failing_the_read(
+    ctx: &Context,
+    name: String,
+) -> Result<(), CliError> {
+    if let Err(e) = pull(
+        Repositories::of(ctx.store.as_ref()),
+        ctx.launcher.as_ref(),
+        ctx.credentials.as_ref(),
+        ctx.clock.as_ref(),
+        ctx.random.as_ref(),
+        &ctx.config,
+        Some(&name),
+    ) {
+        ctx.store.add_notice(&Notice::PullFailed {
+            remote: RemoteName(name),
+            why: e.to_string(),
+        })?;
     }
     Ok(())
 }
@@ -82,7 +88,6 @@ mod tests {
     use std::cell::RefCell;
     use std::time::Duration;
 
-    /// One task as a remote sends it, under a remote id built from `tag`.
     fn incoming(tag: &str, subject: &str) -> IncomingObject {
         IncomingObject {
             remote_id: format!("r-{tag}"),
@@ -170,12 +175,13 @@ mod tests {
             deadline: None,
             path: None,
         });
-        // A launcher that cannot produce a helper, so reaching for one at all
-        // would leave a PullFailed notice behind.
         ctx.launcher = Box::new(FailingLauncher);
         maybe_pull_stale(&mut ctx).unwrap();
         assert!(ctx.store.all().unwrap().is_empty());
-        assert!(ctx.store.notices().unwrap().is_empty());
+        assert!(
+            ctx.store.notices().unwrap().is_empty(),
+            "reaching for the unreachable helper at all would have left a PullFailed notice"
+        );
         assert!(
             ctx.store
                 .last_pull(&RemoteName("t".into()))

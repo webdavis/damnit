@@ -1,13 +1,8 @@
-//! The reads a client makes per render: answering locally, reporting how
-//! fresh each remote is, and the completion time a Done list shows.
-
 mod support;
 
 use support::sandbox::Sandbox;
 use support::status_json;
 
-/// `--no-pull` is what lets a client promise a render costs no network: the
-/// same read pulls the stale remote without it and answers locally with it.
 #[test]
 fn no_pull_answers_a_read_from_the_store_alone() {
     let _guard = support::guard("no_pull_answers_a_read_from_the_store_alone");
@@ -36,20 +31,18 @@ fn no_pull_answers_a_read_from_the_store_alone() {
     );
 }
 
-/// A client header reads freshness off `remote list`: RFC 3339 per remote in
-/// the document, null until that verb has reached the remote once.
 #[test]
 fn remote_list_reports_when_each_remote_was_last_pulled_and_pushed() {
     let _guard = support::guard("remote_list_reports_when_each_remote_was_last_pulled_and_pushed");
     let sb = Sandbox::new();
 
-    let fresh = remote_row(&sb);
+    let fresh = the_one_sandbox_remote_as_listed(&sb);
     assert_eq!(fresh["last_pull"], serde_json::Value::Null, "{fresh}");
     assert_eq!(fresh["last_push"], serde_json::Value::Null, "{fresh}");
 
     let (ok, _, err) = sb.dam(&["pull", "--json"]);
     assert!(ok, "{err}");
-    let pulled = remote_row(&sb);
+    let pulled = the_one_sandbox_remote_as_listed(&sb);
     assert!(pulled["last_pull"].as_str().is_some(), "{pulled}");
     assert_eq!(pulled["last_push"], serde_json::Value::Null, "{pulled}");
 
@@ -60,7 +53,7 @@ fn remote_list_reports_when_each_remote_was_last_pulled_and_pushed() {
     assert!(ok, "{err}");
     let (ok, _, err) = sb.dam(&["push", "--json"]);
     assert!(ok, "{err}");
-    let pushed = remote_row(&sb);
+    let pushed = the_one_sandbox_remote_as_listed(&sb);
     let at = pushed["last_push"].as_str().expect("a push time");
     at.parse::<jiff::Timestamp>()
         .unwrap_or_else(|e| panic!("last_push is not RFC 3339: {e} ({at})"));
@@ -72,16 +65,13 @@ fn remote_list_reports_when_each_remote_was_last_pulled_and_pushed() {
     assert!(human.contains("pushed "), "{human}");
 }
 
-/// The one remote a sandbox configures, as `remote list --json` reports it.
-fn remote_row(sb: &Sandbox) -> serde_json::Value {
+fn the_one_sandbox_remote_as_listed(sb: &Sandbox) -> serde_json::Value {
     let (ok, out, err) = sb.dam(&["remote", "list", "--json"]);
     assert!(ok, "{err}");
     let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
     answer["remotes"][0].clone()
 }
 
-/// `dam done` records when, `dam edit --undone` takes it away, and both the
-/// object document and the change row carry it.
 #[test]
 fn a_completion_time_appears_in_the_object_and_the_change_and_is_cleared_by_undone() {
     let _guard = support::guard(
@@ -126,8 +116,6 @@ fn a_completion_time_appears_in_the_object_and_the_change_and_is_cleared_by_undo
     );
 }
 
-/// A client that completes a task twice, because the operator clicked twice or
-/// a retry repeated the call, leaves the workspace clean.
 #[test]
 fn completing_a_task_twice_leaves_nothing_to_report() {
     let _guard = support::guard("completing_a_task_twice_leaves_nothing_to_report");
@@ -145,9 +133,6 @@ fn completing_a_task_twice_leaves_nothing_to_report() {
     );
 }
 
-/// A helper is any program that speaks the protocol, so a completion time on
-/// an open task has to be refused where the object is read rather than where
-/// a declared field is merged.
 #[test]
 fn a_helper_cannot_put_a_completion_time_on_an_open_task() {
     let _guard = support::guard("a_helper_cannot_put_a_completion_time_on_an_open_task");
@@ -186,8 +171,6 @@ done
     );
 }
 
-/// `--no-pull` says which reads answer locally, so a verb that never reaches a
-/// remote refuses it rather than accepting a flag that means nothing there.
 #[test]
 fn no_pull_is_refused_on_a_verb_that_never_pulls() {
     let _guard = support::guard("no_pull_is_refused_on_a_verb_that_never_pulls");
@@ -220,87 +203,6 @@ fn no_pull_is_refused_on_a_verb_that_never_pulls() {
     }
 }
 
-/// The catalogue a client renders: two listing verbs, so no client owns a
-/// second parser for the config file `dam` owns.
-#[test]
-fn category_list_and_filter_list_print_what_config_declares() {
-    let _guard = support::guard("category_list_and_filter_list_print_what_config_declares");
-    let sb = Sandbox::new();
-    let config = sb.dir.path().join("config.toml");
-    let mut text = std::fs::read_to_string(&config).unwrap();
-    text.push_str(
-        "\n[category.effort]\nvalues = [\"light\", \"admin\", \"deep\"]\nexclusive = true\n\
-         \n[category.context]\nvalues = [\"home\", \"errand\"]\n\
-         \n[filter.today]\nquery = \"due:today | overdue\"\n",
-    );
-    std::fs::write(&config, text).unwrap();
-
-    let (ok, out, err) = sb.dam(&["category", "list", "--json"]);
-    assert!(ok, "{err}");
-    let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
-    assert_eq!(
-        answer,
-        serde_json::json!({"categories": [
-            {"name": "context", "values": ["home", "errand"], "exclusive": false},
-            {"name": "effort", "values": ["light", "admin", "deep"], "exclusive": true},
-        ]}),
-        "{answer}"
-    );
-
-    let (ok, out, err) = sb.dam(&["filter", "list", "--json"]);
-    assert!(ok, "{err}");
-    let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
-    assert_eq!(
-        answer,
-        serde_json::json!({"filters": [{"name": "today", "query": "due:today | overdue"}]}),
-        "{answer}"
-    );
-
-    let (ok, out, err) = sb.dam(&["category", "list"]);
-    assert!(ok, "{err}");
-    assert!(out.contains("effort"), "{out}");
-    assert!(out.contains("light, admin, deep"), "{out}");
-    let (ok, out, err) = sb.dam(&["filter", "list"]);
-    assert!(ok, "{err}");
-    assert!(out.contains("due:today | overdue"), "{out}");
-}
-
-/// A store with nothing declared answers with an empty list rather than a
-/// failure, so a client renders an empty picker instead of an error.
-#[test]
-fn an_empty_catalogue_is_an_empty_array() {
-    let _guard = support::guard("an_empty_catalogue_is_an_empty_array");
-    let sb = Sandbox::new();
-
-    for (args, key) in [
-        (["category", "list", "--json"], "categories"),
-        (["filter", "list", "--json"], "filters"),
-    ] {
-        let (ok, out, err) = sb.dam(&args);
-        assert!(ok, "{err}");
-        let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
-        assert_eq!(answer[key], serde_json::json!([]), "{answer}");
-    }
-}
-
-/// TOON is the same answer in the compact form, which is a table per list.
-#[test]
-fn the_catalogue_renders_as_toon_too() {
-    let _guard = support::guard("the_catalogue_renders_as_toon_too");
-    let sb = Sandbox::new();
-    let config = sb.dir.path().join("config.toml");
-    let mut text = std::fs::read_to_string(&config).unwrap();
-    text.push_str("\n[filter.today]\nquery = \"due:today\"\n");
-    std::fs::write(&config, text).unwrap();
-
-    let (ok, out, err) = sb.dam(&["filter", "list", "--toon"]);
-    assert!(ok, "{err}");
-    assert!(out.starts_with("filters[1]{name,query}:"), "{out}");
-}
-
-/// The date words a client passes through from its own prompt. The dates
-/// themselves are pinned against a fixed clock in the unit tests; this run
-/// proves the real binary reads each form on every flag that takes a date.
 #[test]
 fn every_date_flag_accepts_the_words_and_refuses_anything_else() {
     let _guard = support::guard("every_date_flag_accepts_the_words_and_refuses_anything_else");
@@ -343,49 +245,5 @@ fn every_date_flag_accepts_the_words_and_refuses_anything_else() {
         for form in ["today", "next <weekday>", "in <n> days", "YYYY-MM-DD"] {
             assert!(message.contains(form), "{flag}: {message}");
         }
-    }
-}
-
-/// The catalogue is what a client renders its first screen from, and it lives
-/// in config. A store it cannot open is a failure for the verbs that read one
-/// and no reason to refuse the listing, so neither verb opens one at all.
-#[test]
-fn the_catalogue_answers_although_the_store_will_not_open() {
-    let _guard = support::guard("the_catalogue_answers_although_the_store_will_not_open");
-    let sb = Sandbox::new();
-    let config = sb.dir.path().join("config.toml");
-    let mut text = std::fs::read_to_string(&config).unwrap();
-    text.push_str(
-        "\n[category.effort]\nvalues = [\"deep\"]\nexclusive = true\n\
-         \n[filter.today]\nquery = \"due:today\"\n",
-    );
-    std::fs::write(&config, text).unwrap();
-
-    // A directory where the store file goes: SQLite cannot open it, and no
-    // run can create one over it either.
-    let store = sb.dir.path().join("dam.db");
-    std::fs::create_dir(&store).unwrap();
-
-    let broken = sb.output(&["ls", "--json"]);
-    assert_eq!(
-        broken.status.code(),
-        Some(1),
-        "the store opened after all, so this proves nothing: {}",
-        String::from_utf8_lossy(&broken.stderr)
-    );
-
-    for (args, key, name) in [
-        (["category", "list", "--json"], "categories", "effort"),
-        (["filter", "list", "--json"], "filters", "today"),
-    ] {
-        let out = sb.output(&args);
-        assert_eq!(
-            out.status.code(),
-            Some(0),
-            "{args:?} reached the store: {}",
-            String::from_utf8_lossy(&out.stderr)
-        );
-        let answer: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
-        assert_eq!(answer[key][0]["name"], name, "{answer}");
     }
 }

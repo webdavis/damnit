@@ -1,20 +1,11 @@
-//! What the Todoist API can refuse with, and how an upstream body is cut down
-//! before it crosses into dam.
-
 use std::fmt;
 use std::time::Duration;
 
-/// How much of an upstream error body reaches dam, the ellipsis included. The
-/// body crosses the protocol, is stored as a notice and is printed by
-/// `dam status`, so it is cut to one line of at most this many characters.
-pub const MAX_ERROR_BODY: usize = 500;
+pub const MAX_ERROR_BODY_CHARS: usize = 500;
 
-/// The most bytes of any upstream answer this helper reads. dam receives a
-/// pull as one protocol line, so a sync larger than that line could never be
-/// delivered whatever was read of it. Naming it here keeps the helper from
-/// inheriting ureq's own 10 MiB default, which is below the line and would
-/// refuse a sync dam can still carry.
-pub const MAX_UPSTREAM_BODY: u64 = dam_protocol::MAX_LINE;
+const CUT_MARK: char = '\u{2026}';
+
+const MAX_UPSTREAM_BODY_BYTES: u64 = dam_protocol::MAX_LINE;
 
 #[derive(Debug)]
 pub enum ApiError {
@@ -22,23 +13,18 @@ pub enum ApiError {
         status: u16,
         body: String,
     },
-    /// Todoist is rate limiting this account. `retry_after` is its
-    /// `Retry-After` header when it sent one.
     RateLimited {
         retry_after: Option<Duration>,
         body: String,
     },
     Transport(String),
     Decode(String),
-    /// The account holds more than one full sync can carry. `limit` is the
-    /// ceiling in bytes that the answer passed.
-    TooLarge {
-        limit: u64,
+    PastOneSyncCeiling {
+        ceiling_bytes: u64,
     },
 }
 
 impl ApiError {
-    /// How long Todoist asked the caller to wait, when it said.
     pub fn retry_after(&self) -> Option<Duration> {
         match self {
             ApiError::RateLimited { retry_after, .. } => *retry_after,
@@ -68,9 +54,9 @@ impl fmt::Display for ApiError {
             ),
             ApiError::Transport(s) => write!(f, "reaching Todoist: {s}"),
             ApiError::Decode(s) => write!(f, "reading Todoist's answer: {s}"),
-            ApiError::TooLarge { limit } => write!(
+            ApiError::PastOneSyncCeiling { ceiling_bytes } => write!(
                 f,
-                "Todoist's answer is past the {limit} byte ceiling one full sync can carry"
+                "Todoist's answer is past the {ceiling_bytes} byte ceiling one full sync can carry"
             ),
         }
     }
@@ -78,33 +64,30 @@ impl fmt::Display for ApiError {
 
 impl std::error::Error for ApiError {}
 
-/// One line of at most `MAX_ERROR_BODY` characters. Every control character
-/// becomes a space so a single notice cannot rewrite the terminal or spill
-/// across lines, and a cut is marked with a trailing ellipsis.
-pub(super) fn bounded(text: &str) -> String {
-    let flat = text
-        .chars()
-        .map(|c| if c.is_control() { ' ' } else { c })
-        .collect::<String>();
+pub(super) fn one_short_line(text: &str) -> String {
+    let flat = control_characters_as_spaces(text);
     let trimmed = flat.trim();
-    match trimmed.char_indices().nth(MAX_ERROR_BODY - 1) {
+    match trimmed.char_indices().nth(MAX_ERROR_BODY_CHARS - 1) {
         None => trimmed.to_string(),
-        Some((cut, _)) => format!("{}\u{2026}", &trimmed[..cut]),
+        Some((cut, _)) => format!("{}{CUT_MARK}", &trimmed[..cut]),
     }
 }
 
-/// Todoist's status for a rate limit.
+fn control_characters_as_spaces(text: &str) -> String {
+    text.chars()
+        .map(|c| if c.is_control() { ' ' } else { c })
+        .collect()
+}
+
 const TOO_MANY_REQUESTS: u16 = 429;
 
 pub(super) fn read_json(
     response: ureq::http::Response<ureq::Body>,
 ) -> Result<serde_json::Value, ApiError> {
-    read_json_bounded(response, MAX_UPSTREAM_BODY)
+    read_json_within(response, MAX_UPSTREAM_BODY_BYTES)
 }
 
-/// `read_json` with the ceiling named, so the threshold is tested without
-/// building a body of the shipped size.
-fn read_json_bounded(
+fn read_json_within(
     response: ureq::http::Response<ureq::Body>,
     max: u64,
 ) -> Result<serde_json::Value, ApiError> {
@@ -121,19 +104,21 @@ fn read_json_bounded(
         .limit(max)
         .read_to_string()
         .map_err(|e| match e {
-            ureq::Error::BodyExceedsLimit(limit) => ApiError::TooLarge { limit },
+            ureq::Error::BodyExceedsLimit(ceiling_bytes) => {
+                ApiError::PastOneSyncCeiling { ceiling_bytes }
+            }
             other => ApiError::Transport(other.to_string()),
         })?;
     if status == TOO_MANY_REQUESTS {
         return Err(ApiError::RateLimited {
             retry_after,
-            body: bounded(&text),
+            body: one_short_line(&text),
         });
     }
     if !(200..300).contains(&status) {
         return Err(ApiError::Http {
             status,
-            body: bounded(&text),
+            body: one_short_line(&text),
         });
     }
     if text.trim().is_empty() {
@@ -153,26 +138,29 @@ mod tests {
             .unwrap()
     }
 
-    /// dam's answer to a pull is one protocol line, so a sync body past that
-    /// ceiling could never be delivered however much of it was read. Reading to
-    /// exactly there keeps the helper's own limit from being the narrower one.
     #[test]
-    fn the_upstream_body_ceiling_is_the_protocol_line() {
-        assert_eq!(MAX_UPSTREAM_BODY, dam_protocol::MAX_LINE);
+    fn the_upstream_body_ceiling_is_the_protocol_line_not_ureqs_narrower_default() {
+        assert_eq!(MAX_UPSTREAM_BODY_BYTES, dam_protocol::MAX_LINE);
     }
 
-    /// A body past the ceiling is its own refusal naming the limit, not the
-    /// transport failure ureq's own default cap reports it as.
     #[test]
-    fn a_body_past_the_ceiling_is_refused_by_name() {
-        let err = read_json_bounded(answer(r#"{"items":[1,2,3]}"#), 8).unwrap_err();
-        assert!(matches!(err, ApiError::TooLarge { limit: 8 }), "{err:?}");
+    fn a_body_past_the_ceiling_is_its_own_refusal_naming_the_ceiling_not_a_transport_failure() {
+        let err = read_json_within(answer(r#"{"items":[1,2,3]}"#), 8).unwrap_err();
+        assert!(
+            matches!(err, ApiError::PastOneSyncCeiling { ceiling_bytes: 8 }),
+            "{err:?}"
+        );
         assert!(err.to_string().contains('8'), "{err}");
     }
 
     #[test]
+    fn every_control_character_becomes_a_space_so_a_notice_cannot_rewrite_the_terminal() {
+        assert_eq!(one_short_line("red\u{1b}[31m\ttext\r\n"), "red [31m text");
+    }
+
+    #[test]
     fn a_body_inside_the_ceiling_decodes() {
-        let value = read_json_bounded(answer(r#"{"ok":true}"#), MAX_UPSTREAM_BODY).unwrap();
+        let value = read_json_within(answer(r#"{"ok":true}"#), MAX_UPSTREAM_BODY_BYTES).unwrap();
         assert_eq!(value["ok"], serde_json::json!(true));
     }
 }

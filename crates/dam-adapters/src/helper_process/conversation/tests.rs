@@ -1,6 +1,22 @@
+use std::time::{Duration, Instant};
+
 use dam_application::{ConfiguredDuration, HelperError, RemoteHelper};
 
 use super::super::testing::{install, remote};
+use super::ProcessHelper;
+
+const A_LOADED_MACHINE_STARTS_A_SHELL_WITHIN: Duration = Duration::from_secs(10);
+
+fn until_the_helper_has_complained(helper: &ProcessHelper) {
+    let give_up_at = Instant::now() + A_LOADED_MACHINE_STARTS_A_SHELL_WITHIN;
+    while helper.stderr_tail.text().is_none() {
+        assert!(
+            Instant::now() < give_up_at,
+            "the helper wrote nothing to standard error within {A_LOADED_MACHINE_STARTS_A_SHELL_WITHIN:?}"
+        );
+        std::thread::sleep(Duration::from_millis(10));
+    }
+}
 
 #[test]
 fn a_helper_that_dies_without_answering_quotes_what_it_complained_about() {
@@ -28,6 +44,7 @@ fn a_helper_that_never_answers_carries_its_complaint_into_the_timeout() {
         text: "100ms".into(),
     });
     let mut helper = launcher.spawn(&remote, &[]).unwrap();
+    until_the_helper_has_complained(&helper);
     match helper.capabilities().unwrap_err() {
         HelperError::Timeout { said, .. } => {
             assert_eq!(said.as_deref(), Some("waiting on the upstream api"))
@@ -136,14 +153,7 @@ fn a_helper_that_ignores_end_of_input_is_killed_at_drop() {
     let launcher = install(dir.path(), "#!/bin/sh\nwhile :; do sleep 0.05; done\n");
     let helper = launcher.spawn(&remote(), &[]).unwrap();
     let pid = helper.child.id().to_string();
-    // Dropped on a worker so a regression to an unbounded wait reddens the
-    // suite within the second instead of hanging it.
-    let dropped = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
-    let flag = std::sync::Arc::clone(&dropped);
-    std::thread::spawn(move || {
-        drop(helper);
-        flag.store(true, std::sync::atomic::Ordering::SeqCst);
-    });
+    let dropped = dropped_on_a_worker_so_an_unbounded_wait_cannot_hang_the_suite(helper);
     let give_up_at = std::time::Instant::now() + std::time::Duration::from_secs(1);
     while !dropped.load(std::sync::atomic::Ordering::SeqCst) {
         if std::time::Instant::now() >= give_up_at {
@@ -163,4 +173,16 @@ fn a_helper_that_ignores_end_of_input_is_killed_at_drop() {
             .success(),
         "the helper outlived its launcher"
     );
+}
+
+fn dropped_on_a_worker_so_an_unbounded_wait_cannot_hang_the_suite(
+    helper: ProcessHelper,
+) -> std::sync::Arc<std::sync::atomic::AtomicBool> {
+    let dropped = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let flag = std::sync::Arc::clone(&dropped);
+    std::thread::spawn(move || {
+        drop(helper);
+        flag.store(true, std::sync::atomic::Ordering::SeqCst);
+    });
+    dropped
 }

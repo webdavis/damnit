@@ -1,11 +1,3 @@
-//! The one-time consent walk that mints the refresh token a gcal remote reads.
-//!
-//! Google's installed-application flow: a loopback redirect on an ephemeral
-//! port, PKCE with S256, and `access_type=offline` with `prompt=consent`, which
-//! is what makes the exchange answer with a refresh token. The credentials
-//! travel in the exchange's request body and nowhere else, and every refusal
-//! is a fixed sentence naming the step.
-
 mod command_line;
 mod exchange;
 mod pkce;
@@ -18,9 +10,7 @@ use crate::{Endpoints, Secret};
 
 pub use command_line::{client_id, client_secret};
 
-/// The address the redirect comes back to. Loopback only: the code is a
-/// credential, and a listener on any other interface offers it to the network.
-const REDIRECT_HOST: &str = "127.0.0.1";
+const REDIRECT_HOST_KEEPING_THE_CODE_OFF_THE_NETWORK: &str = "127.0.0.1";
 
 #[derive(Debug)]
 pub struct Client {
@@ -97,9 +87,6 @@ impl SignIn {
         }
     }
 
-    /// One consent: the URL handed to `announce` for the operator to open, the
-    /// single redirect read off a loopback port, and the code exchanged. The
-    /// verifier and the state are minted here, so no caller can reuse one.
     pub fn mint(
         &self,
         client: &Client,
@@ -107,20 +94,22 @@ impl SignIn {
     ) -> Result<Secret, SignInError> {
         let verifier = pkce::random_token()?;
         let state = pkce::random_token()?;
-        let listener = TcpListener::bind((REDIRECT_HOST, 0)).map_err(|_| SignInError::Listener)?;
+        let listener = TcpListener::bind((REDIRECT_HOST_KEEPING_THE_CODE_OFF_THE_NETWORK, 0))
+            .map_err(|_| SignInError::Listener)?;
         let port = listener
             .local_addr()
             .map_err(|_| SignInError::Listener)?
             .port();
-        let redirect_uri = format!("http://{REDIRECT_HOST}:{port}");
+        let redirect_uri =
+            format!("http://{REDIRECT_HOST_KEEPING_THE_CODE_OFF_THE_NETWORK}:{port}");
         announce(&redirect::authorization_url(
             &self.endpoints,
             &client.id,
             &redirect_uri,
-            &pkce::challenge(&verifier),
+            &pkce::s256_challenge(&verifier),
             &state,
         ));
-        let code = redirect::await_code(&listener, &state)?;
+        let code = redirect::await_the_one_browser_redirect(&listener, &state)?;
         exchange::exchange(
             &self.agent,
             &self.endpoints.token,

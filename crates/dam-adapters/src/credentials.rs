@@ -30,13 +30,17 @@ impl CredentialSource for ProcessCredentialSource {
                         var: var.clone(),
                     })
             }
-            CredentialSpec::Command { name, argv } => run(name, argv),
+            CredentialSpec::Command { name, argv } => {
+                run_with_the_terminal_so_a_vault_cli_can_prompt(name, argv)
+            }
         }
     }
 }
 
-/// Standard input is inherited so an interactive vault CLI can prompt.
-fn run(name: &str, argv: &[String]) -> Result<Secret, CredentialError> {
+fn run_with_the_terminal_so_a_vault_cli_can_prompt(
+    name: &str,
+    argv: &[String],
+) -> Result<Secret, CredentialError> {
     let failed = |why: String| CredentialError::CommandFailed {
         name: name.to_string(),
         why,

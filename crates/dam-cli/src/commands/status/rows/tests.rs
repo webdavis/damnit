@@ -11,7 +11,6 @@ fn task(subject: &str) -> Object {
     Object::Task(Task::new(oid(1), subject))
 }
 
-/// A task carrying something in every field a change row reports.
 fn furnished_task() -> Object {
     let mut t = Task::new(oid(1), "buy oat milk");
     t.priority = Priority::new(1).unwrap();
@@ -124,10 +123,8 @@ fn a_delete_describes_the_object_it_removed() {
     assert_eq!(document["fields"], serde_json::json!([]));
 }
 
-/// A change row carries the completion time beside `done`, so a Done list
-/// renders from `status` without a second read of the log.
 #[test]
-fn a_completed_task_row_carries_when_it_was_completed() {
+fn a_completed_task_row_carries_when_it_was_completed_so_a_done_list_needs_no_log_read() {
     let mut completed = Task::new(oid(1), "a");
     completed.done = true;
     completed.completed_at = Some("2026-09-18T15:04:05Z".parse().unwrap());

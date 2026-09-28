@@ -3,9 +3,7 @@ use dam_domain::{Date, Object, Oid, Priority};
 
 use super::reader::TemplateReader;
 
-/// Every key a saved template may carry, per kind. A key outside the set is
-/// refused, because the operator who wrote it meant it to do something.
-const TASK_KEYS: [&str; 9] = [
+const KEYS_A_TASK_TEMPLATE_MAY_CARRY: [&str; 9] = [
     "subject",
     "body",
     "labels",
@@ -16,7 +14,7 @@ const TASK_KEYS: [&str; 9] = [
     "deadline",
     "attach",
 ];
-const EVENT_KEYS: [&str; 8] = [
+const KEYS_AN_EVENT_TEMPLATE_MAY_CARRY: [&str; 8] = [
     "subject",
     "body",
     "labels",
@@ -27,9 +25,6 @@ const EVENT_KEYS: [&str; 8] = [
     "location",
 ];
 
-/// Reads a saved template back as the difference from `current`: a field left
-/// unchanged in the text stays out of the result, and an optional field emptied
-/// in the text clears it. The error names the line that is wrong.
 pub fn parse_template(
     text: &str,
     current: &Object,
@@ -38,11 +33,11 @@ pub fn parse_template(
 ) -> Result<EditFields, String> {
     let reader = TemplateReader::parse(text)?;
     let known: &[&str] = match current {
-        Object::Task(_) => &TASK_KEYS,
-        Object::Event(_) => &EVENT_KEYS,
+        Object::Task(_) => &KEYS_A_TASK_TEMPLATE_MAY_CARRY,
+        Object::Event(_) => &KEYS_AN_EVENT_TEMPLATE_MAY_CARRY,
     };
-    if let Some(key) = reader.unknown_key(known) {
-        return Err(reader.refuse(key, format_args!("unknown field {key}")));
+    if let Some(key) = reader.first_unknown_key(known) {
+        return Err(reader.refuse_at_the_keys_line(key, format_args!("unknown field {key}")));
     }
 
     let mut fields = EditFields::default();
@@ -105,7 +100,9 @@ fn depends(
     let oids = texts
         .iter()
         .map(|t| {
-            Oid::parse(t).map_err(|e| reader.refuse("depends", format_args!("depends: {e:?}")))
+            Oid::parse(t).map_err(|e| {
+                reader.refuse_at_the_keys_line("depends", format_args!("depends: {e:?}"))
+            })
         })
         .collect::<Result<Vec<_>, _>>()?;
     let held = &current.base().depends;
@@ -126,7 +123,9 @@ fn task_fields(
             .as_integer()
             .and_then(|n| u8::try_from(n).ok())
             .and_then(|n| Priority::new(n).ok())
-            .ok_or_else(|| reader.refuse("priority", "priority must be 1, 2, 3 or 4"))?;
+            .ok_or_else(|| {
+                reader.refuse_at_the_keys_line("priority", "priority must be 1, 2, 3 or 4")
+            })?;
         if n != t.priority {
             fields.priority = Some(n);
         }
@@ -143,10 +142,9 @@ fn task_fields(
     if let Some(s) = reader.string("deadline")? {
         let value = match s.is_empty() {
             true => None,
-            false => Some(
-                s.parse::<Date>()
-                    .map_err(|e| reader.refuse("deadline", format_args!("deadline: {e}")))?,
-            ),
+            false => Some(s.parse::<Date>().map_err(|e| {
+                reader.refuse_at_the_keys_line("deadline", format_args!("deadline: {e}"))
+            })?),
         };
         if value != t.deadline {
             fields.deadline = Some(value);
@@ -155,10 +153,9 @@ fn task_fields(
     if let Some(s) = reader.string("attach")? {
         let value = match s.is_empty() {
             true => None,
-            false => Some(
-                Oid::parse(&s)
-                    .map_err(|e| reader.refuse("attach", format_args!("attach: {e:?}")))?,
-            ),
+            false => Some(Oid::parse(&s).map_err(|e| {
+                reader.refuse_at_the_keys_line("attach", format_args!("attach: {e:?}"))
+            })?),
         };
         if value != t.event {
             fields.attach = Some(value);

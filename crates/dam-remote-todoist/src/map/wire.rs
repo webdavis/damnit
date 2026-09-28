@@ -1,5 +1,3 @@
-//! One Todoist project, section or item as the wire object dam reads.
-
 use dam_protocol::{WireObject, WireTask};
 
 use super::{Tree, dam_priority, remote_id};

@@ -51,12 +51,18 @@ impl SqliteStore {
     }
 }
 
-impl StageRepository for SqliteStore {
-    /// Reading the staged change, coalescing it and writing the result is one
-    /// unit of work, so two dam processes staging the same object cannot
-    /// interleave and lose one of the two coalesces.
-    fn stage(&self, change: Change) -> Result<(), StoreError> {
+impl SqliteStore {
+    fn coalesce_as_one_unit_so_two_processes_cannot_lose_a_coalesce(
+        &self,
+        change: Change,
+    ) -> Result<(), StoreError> {
         self.in_savepoint("dam_stage", || self.coalesce_into_stage(change))
+    }
+}
+
+impl StageRepository for SqliteStore {
+    fn stage(&self, change: Change) -> Result<(), StoreError> {
+        self.coalesce_as_one_unit_so_two_processes_cannot_lose_a_coalesce(change)
     }
 
     fn unstage(&self, oid: &Oid) -> Result<(), StoreError> {

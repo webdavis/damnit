@@ -1,5 +1,3 @@
-//! Percent encoding both ways, form bodies, and unpadded base64url.
-
 pub(crate) fn percent_encoded(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
     for byte in text.bytes() {
@@ -49,9 +47,10 @@ pub(crate) fn form(fields: &[(&str, &str)]) -> String {
         .join("&")
 }
 
-const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+const URL_SAFE_ALPHABET: &[u8; 64] =
+    b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
-pub(crate) fn base64url(bytes: &[u8]) -> String {
+pub(crate) fn unpadded_base64url(bytes: &[u8]) -> String {
     let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
     for chunk in bytes.chunks(3) {
         let n = chunk
@@ -59,7 +58,7 @@ pub(crate) fn base64url(bytes: &[u8]) -> String {
             .enumerate()
             .fold(0u32, |n, (i, b)| n | u32::from(*b) << (16 - 8 * i));
         for i in 0..=chunk.len() {
-            out.push(ALPHABET[(n >> (18 - 6 * i) & 63) as usize] as char);
+            out.push(URL_SAFE_ALPHABET[(n >> (18 - 6 * i) & 63) as usize] as char);
         }
     }
     out
@@ -69,9 +68,8 @@ pub(crate) fn base64url(bytes: &[u8]) -> String {
 mod tests {
     use super::*;
 
-    /// RFC 4648 section 10's vectors, in the URL-safe alphabet with no padding.
     #[test]
-    fn base64url_matches_the_rfc_vectors() {
+    fn unpadded_base64url_matches_the_rfc_4648_section_10_vectors() {
         for (input, expected) in [
             ("", ""),
             ("f", "Zg"),
@@ -81,9 +79,9 @@ mod tests {
             ("fooba", "Zm9vYmE"),
             ("foobar", "Zm9vYmFy"),
         ] {
-            assert_eq!(base64url(input.as_bytes()), expected, "{input}");
+            assert_eq!(unpadded_base64url(input.as_bytes()), expected, "{input}");
         }
-        assert_eq!(base64url(&[0xfb, 0xff]), "-_8");
+        assert_eq!(unpadded_base64url(&[0xfb, 0xff]), "-_8");
     }
 
     #[test]
@@ -99,17 +97,20 @@ mod tests {
     fn percent_decoding_reads_escapes_and_plus_and_keeps_a_broken_escape() {
         assert_eq!(percent_decoded("a%20b+c%2F"), "a b c/");
         assert_eq!(percent_decoded("100%zz%4"), "100%zz%4");
-        // `u8::from_str_radix` accepts `+f`; an escape still needs two hex digits.
-        assert_eq!(percent_decoded("%+f"), "% f");
         assert_eq!(
             percent_decoded(&percent_encoded("4/0Ab_x&y=z")),
             "4/0Ab_x&y=z"
         );
     }
 
-    /// A credential carrying `&` or `=` must not compose a field nobody wrote.
     #[test]
-    fn a_form_body_encodes_names_and_values() {
+    fn an_escape_needs_two_hex_digits_though_from_str_radix_takes_a_leading_plus() {
+        assert_eq!(u8::from_str_radix("+f", 16), Ok(15));
+        assert_eq!(percent_decoded("%+f"), "% f");
+    }
+
+    #[test]
+    fn a_form_body_encodes_names_and_values_so_an_ampersand_or_equals_composes_no_field() {
         assert_eq!(form(&[("a", "1&b=2"), ("c d", "")]), "a=1%26b%3D2&c%20d=");
     }
 }

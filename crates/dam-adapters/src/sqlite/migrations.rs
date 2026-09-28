@@ -23,8 +23,9 @@ const V2: &str = r#"
 CREATE TABLE pushes (remote TEXT PRIMARY KEY, at TEXT NOT NULL);
 "#;
 
-/// Applies every migration above the file's `user_version`, in one transaction.
-pub(super) fn migrate(conn: &mut Connection) -> Result<(), rusqlite::Error> {
+pub(super) fn migrate_above_user_version_in_one_transaction(
+    conn: &mut Connection,
+) -> Result<(), rusqlite::Error> {
     let current: u32 = conn.pragma_query_value(None, "user_version", |r| r.get(0))?;
     if current >= VERSION {
         return Ok(());
@@ -44,8 +45,6 @@ pub(super) fn migrate(conn: &mut Connection) -> Result<(), rusqlite::Error> {
 mod tests {
     use super::*;
 
-    /// A store written by an earlier dam gains the newer tables in place,
-    /// keeping the rows it already held.
     #[test]
     fn a_version_one_store_migrates_up_and_keeps_its_rows() {
         let mut conn = Connection::open_in_memory().unwrap();
@@ -57,7 +56,7 @@ mod tests {
         )
         .unwrap();
 
-        migrate(&mut conn).unwrap();
+        migrate_above_user_version_in_one_transaction(&mut conn).unwrap();
 
         let version: u32 = conn
             .pragma_query_value(None, "user_version", |r| r.get(0))
@@ -79,8 +78,8 @@ mod tests {
     #[test]
     fn migrating_a_current_store_again_changes_nothing() {
         let mut conn = Connection::open_in_memory().unwrap();
-        migrate(&mut conn).unwrap();
-        migrate(&mut conn).unwrap();
+        migrate_above_user_version_in_one_transaction(&mut conn).unwrap();
+        migrate_above_user_version_in_one_transaction(&mut conn).unwrap();
         let version: u32 = conn
             .pragma_query_value(None, "user_version", |r| r.get(0))
             .unwrap();

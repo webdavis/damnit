@@ -48,7 +48,6 @@ mod tests {
         Oid::generate(&mut |x: &mut [u8]| x.fill(b))
     }
 
-    /// A task in the working layer with a commit behind it.
     fn committed_task(ctx: &Context, b: u8) -> Oid {
         let id = oid(b);
         ctx.store
@@ -115,8 +114,6 @@ mod tests {
         assert_eq!(report.data["unchanged"], serde_json::json!([]));
     }
 
-    /// restore is the first verb whose subject is often missing from the
-    /// working layer, which is the layer the prefix scan reads.
     #[test]
     fn a_removed_object_takes_its_full_oid_and_the_prefix_refusal_says_so() {
         let mut ctx = context();

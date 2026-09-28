@@ -1,10 +1,5 @@
-//! The words `done --children` and `done --depends` accept, one per answer
-//! the completion prompt offers.
-
 use dam_domain::{ChildDisposition, DependencyDisposition};
 
-/// `--children`: the words for the three answers the prompt offers, with the
-/// group's name carried inline so the flag needs no second value.
 pub(super) fn child_disposition(text: &str) -> Result<ChildDisposition, String> {
     match text.split_once(':') {
         Some(("into", name)) if !name.trim().is_empty() => {
@@ -38,10 +33,8 @@ mod tests {
         );
     }
 
-    /// A blank name would become a group task whose subject and path segment
-    /// are whitespace, so it is refused the way the empty one already is.
     #[test]
-    fn a_blank_group_name_is_refused() {
+    fn a_blank_group_name_is_refused_since_it_would_name_a_whitespace_group_task() {
         for blank in ["into:", "into: ", "into:\t", "into:   "] {
             assert!(child_disposition(blank).is_err(), "{blank:?}");
         }

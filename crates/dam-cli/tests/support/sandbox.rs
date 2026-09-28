@@ -1,6 +1,3 @@
-//! A `dam` run in a temporary home, with a fake helper on `PATH`. Shared by
-//! every test binary in this crate that drives the real executable.
-
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process::Command;
@@ -29,8 +26,6 @@ impl Sandbox {
         Sandbox { dir }
     }
 
-    /// A `dam` command line in this sandbox, with every path a run could read
-    /// pointed inside the temporary directory.
     pub fn command(&self, args: &[&str]) -> Command {
         let path = format!(
             "{}:{}",
@@ -67,7 +62,6 @@ impl Sandbox {
             .unwrap()
     }
 
-    /// The whole outcome of one run, for a case that asserts an exit code.
     pub fn output(&self, args: &[&str]) -> std::process::Output {
         self.spawn(args).wait_with_output().unwrap()
     }
@@ -81,7 +75,6 @@ impl Sandbox {
         )
     }
 
-    /// The oid of a newly created object, read off the line `new` printed.
     pub fn new_object(&self, args: &[&str]) -> String {
         let mut line = vec!["new"];
         line.extend_from_slice(args);
@@ -90,14 +83,23 @@ impl Sandbox {
         out.split_whitespace().next().unwrap().to_string()
     }
 
-    /// Replaces the helper with one that reads a request and never answers.
     pub fn install_silent_helper(&self) {
         let helper = self.dir.path().join("bin/dam-remote-fake");
         std::fs::write(&helper, "#!/bin/sh\nwhile :; do sleep 0.05; done\n").unwrap();
         std::fs::set_permissions(&helper, std::fs::Permissions::from_mode(0o755)).unwrap();
     }
 
-    /// True while a helper spawned out of this sandbox's bin directory is running.
+    pub fn no_helper_left_within(&self, margin: std::time::Duration) -> bool {
+        let give_up_at = std::time::Instant::now() + margin;
+        while self.helper_running() {
+            if std::time::Instant::now() >= give_up_at {
+                return false;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        true
+    }
+
     pub fn helper_running(&self) -> bool {
         Command::new("pgrep")
             .arg("-f")

@@ -1,12 +1,8 @@
-//! The Todoist resources a sync returns, and the write commands it takes.
-//! Data declaration only: what they mean in dam's terms is the mapper's
-//! business.
-
 use std::collections::HashMap;
 
 use serde::Deserialize;
 
-use super::error::bounded;
+use super::error::one_short_line;
 
 #[derive(Debug, Deserialize)]
 pub struct SyncResponse {
@@ -84,32 +80,46 @@ pub struct Deadline {
     pub date: String,
 }
 
-/// What Todoist answers a write with: its verdict on each command by uuid, and
-/// the id it issued for each object a command created, by the placeholder that
-/// command used.
 #[derive(Debug, Default, Deserialize)]
 pub struct SyncWrite {
-    #[serde(default)]
-    pub sync_status: HashMap<String, serde_json::Value>,
-    #[serde(default)]
-    pub temp_id_mapping: HashMap<String, String>,
+    #[serde(default, rename = "sync_status")]
+    pub verdict_by_uuid: HashMap<String, serde_json::Value>,
+    #[serde(default, rename = "temp_id_mapping")]
+    pub issued_id_by_temp_id: HashMap<String, String>,
 }
 
+const ACCEPTED_VERDICT: &str = "ok";
+
 impl SyncWrite {
-    /// Whether Todoist executed the command with this uuid. A verdict is the
-    /// string `"ok"` or an error object; anything else, a missing verdict
-    /// included, is a failure rather than a silent success.
     pub fn accepted(&self, uuid: &str) -> Result<(), String> {
-        match self.sync_status.get(uuid) {
-            Some(serde_json::Value::String(word)) if word == "ok" => Ok(()),
-            Some(serde_json::Value::Object(error)) => Err(bounded(
+        match self.verdict_by_uuid.get(uuid) {
+            Some(serde_json::Value::String(word)) if word == ACCEPTED_VERDICT => Ok(()),
+            Some(serde_json::Value::Object(error)) => Err(one_short_line(
                 error
                     .get("error")
                     .and_then(serde_json::Value::as_str)
                     .unwrap_or(&serde_json::Value::Object(error.clone()).to_string()),
             )),
-            Some(other) => Err(bounded(&other.to_string())),
+            Some(other) => Err(one_short_line(&other.to_string())),
             None => Err(format!("Todoist gave no verdict for command {uuid}")),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_verdict_that_is_neither_ok_nor_an_error_object_is_a_failure() {
+        let written = SyncWrite {
+            verdict_by_uuid: HashMap::from([
+                ("u-0".to_string(), serde_json::json!(true)),
+                ("u-1".to_string(), serde_json::json!("done")),
+            ]),
+            ..SyncWrite::default()
+        };
+        assert!(written.accepted("u-0").is_err());
+        assert!(written.accepted("u-1").is_err());
     }
 }

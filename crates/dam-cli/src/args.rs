@@ -1,6 +1,3 @@
-//! The command surface. Each group of verbs declares its own arguments in
-//! a module of its own; this file is the table clap parses them through.
-
 mod dispositions;
 mod reading;
 mod remotes;
@@ -25,18 +22,28 @@ pub(crate) use writing::{DoneArgs, EditArgs, MvArgs, NewArgs, RmArgs};
     about = "tasks and events, staged and committed like git"
 )]
 pub(crate) struct Cli {
-    /// Print the result as JSON, and a failure as one error document on stderr.
-    #[arg(long, global = true, conflicts_with = "toon")]
+    #[arg(
+        long,
+        global = true,
+        conflicts_with = "toon",
+        help = "Print the result as JSON, and a failure as one error document on stderr"
+    )]
     pub(crate) json: bool,
-    /// Print the result as TOON, a compact form for language models; errors as --json.
-    #[arg(long, global = true)]
+    #[arg(
+        long,
+        global = true,
+        help = "Print the result as TOON, a compact form for language models; errors as --json"
+    )]
     pub(crate) toon: bool,
     #[arg(long, global = true, env = "DAM_CONFIG", value_name = "FILE")]
     pub(crate) config: Option<PathBuf>,
     #[arg(long, global = true, env = "DAM_STORE", value_name = "FILE")]
     pub(crate) store: Option<PathBuf>,
-    /// Answer from the local store alone: no read pulls a stale remote.
-    #[arg(long, global = true)]
+    #[arg(
+        long,
+        global = true,
+        help = "Answer from the local store alone: no read pulls a stale remote"
+    )]
     pub(crate) no_pull: bool,
     #[command(subcommand)]
     pub(crate) command: Command,
@@ -44,45 +51,45 @@ pub(crate) struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum Command {
-    /// Create a task, or an event with --event.
+    #[command(about = "Create a task, or an event with --event")]
     New(NewArgs),
-    /// Mark a task done.
+    #[command(about = "Mark a task done")]
     Done(DoneArgs),
-    /// Change fields on an object.
+    #[command(about = "Change fields on an object")]
     Edit(EditArgs),
-    /// Move an object and its children to another path.
+    #[command(about = "Move an object and its children to another path")]
     Mv(MvArgs),
-    /// Remove an object from the working layer.
+    #[command(about = "Remove an object from the working layer")]
     Rm(RmArgs),
-    /// Stage changes.
+    #[command(about = "Stage changes")]
     Add(AddArgs),
-    /// Unstage changes.
+    #[command(about = "Unstage changes")]
     Reset(ResetArgs),
-    /// Set objects back to their last committed state, staged or not.
+    #[command(about = "Set objects back to their last committed state, staged or not")]
     Restore(RestoreArgs),
-    /// Record the stage as a commit.
+    #[command(about = "Record the stage as a commit")]
     Commit(CommitArgs),
-    /// List commits, newest first.
+    #[command(about = "List commits, newest first")]
     Log,
-    /// Show one object or one commit.
+    #[command(about = "Show one object or one commit")]
     Show(ShowArgs),
-    /// Working versus stage versus last commit, plus remote notices.
+    #[command(about = "Working versus stage versus last commit, plus remote notices")]
     Status(StatusArgs),
-    /// Unstaged changes, or staged with --staged.
+    #[command(about = "Unstaged changes, or staged with --staged")]
     Diff(DiffArgs),
-    /// List objects, optionally by query or saved filter.
+    #[command(about = "List objects, optionally by query or saved filter")]
     Ls(LsArgs),
-    /// The label categories config declares.
+    #[command(about = "The label categories config declares")]
     Category(CategoryArgs),
-    /// The saved filters config declares.
+    #[command(about = "The saved filters config declares")]
     Filter(FilterArgs),
-    /// Manage remotes.
+    #[command(about = "Manage remotes")]
     Remote(RemoteArgs),
-    /// Send unpushed commits to a remote, or to every remote.
+    #[command(about = "Send unpushed commits to a remote, or to every remote")]
     Push(PushArgs),
-    /// Fetch and merge from a remote, or from every remote.
+    #[command(about = "Fetch and merge from a remote, or from every remote")]
     Pull(PullArgs),
-    /// Settle a conflict for one object.
+    #[command(about = "Settle a conflict for one object")]
     Resolve(ResolveArgs),
 }
 

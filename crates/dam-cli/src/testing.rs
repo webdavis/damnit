@@ -1,5 +1,3 @@
-//! Test doubles for `Context`, consumed by every verb's own test module.
-
 use std::cell::{Cell, RefCell};
 
 use dam_adapters::SqliteStore;
@@ -11,9 +9,10 @@ use dam_application::{
 use dam_domain::{Categories, Date, Field, Kind, Timestamp};
 use jiff::civil::date;
 
-use crate::context::Context;
+use crate::context::{Context, terminal_pair_for_a_human_and_refusals_for_a_machine};
 use crate::error::CliError;
-use crate::prompt::{Prompt, RefusingPrompt};
+use crate::output::Format;
+use crate::prompt::Prompt;
 
 pub(crate) struct FixedClock(pub(crate) Date);
 impl Clock for FixedClock {
@@ -42,7 +41,6 @@ impl dam_application::Randomness for CountingRandom {
     }
 }
 
-/// Answers every choice with the scripted index and every text with the scripted string.
 pub(crate) struct ScriptedPrompt {
     pub(crate) choices: RefCell<Vec<usize>>,
     pub(crate) texts: RefCell<Vec<String>>,
@@ -56,7 +54,6 @@ impl Prompt for ScriptedPrompt {
     }
 }
 
-/// Returns the scripted text as the editor's save.
 pub(crate) struct ScriptedEditor(pub(crate) String);
 impl EditorSession for ScriptedEditor {
     fn edit(&self, _: &str) -> Result<String, EditorError> {
@@ -64,7 +61,6 @@ impl EditorSession for ScriptedEditor {
     }
 }
 
-/// Supplies no credential at all, whatever is asked for.
 pub(crate) struct MissingCredentials;
 impl CredentialSource for MissingCredentials {
     fn resolve(&self, spec: &CredentialSpec) -> Result<Secret, CredentialError> {
@@ -72,7 +68,6 @@ impl CredentialSource for MissingCredentials {
     }
 }
 
-/// A helper that accepts every task, pulls the scripted objects once, and reports every push as ok.
 #[derive(Debug)]
 pub(crate) struct EchoHelper {
     pub(crate) pulled: PullOutcome,
@@ -129,7 +124,6 @@ impl HelperLauncher for EchoLauncher {
     }
 }
 
-/// A launcher whose helper is never reachable, for the auto-pull failure path.
 #[derive(Debug)]
 pub(crate) struct FailingLauncher;
 impl HelperLauncher for FailingLauncher {
@@ -170,13 +164,11 @@ pub(crate) fn context() -> Context {
     }
 }
 
-/// A context wired the way `--json`/`--toon` wires one: any question refuses
-/// instead of blocking and there is no editor, matching what `Context::open`
-/// installs for those formats.
 pub(crate) fn machine_context() -> Context {
+    let (prompt, editor) = terminal_pair_for_a_human_and_refusals_for_a_machine(Format::Json);
     Context {
-        prompt: Box::new(RefusingPrompt),
-        editor: None,
+        prompt,
+        editor,
         ..context()
     }
 }

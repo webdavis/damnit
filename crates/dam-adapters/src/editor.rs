@@ -19,17 +19,17 @@ impl EnvEditor {
     }
 }
 
-/// VISUAL wins over EDITOR, a blank value falls through, and neither set means "vi".
-///
-/// The value is split on whitespace so it can carry arguments, except when the
-/// whole of it names a file that exists: an editor installed at a path with a
-/// space in it is then run as the one word it is rather than as a program and
-/// two arguments that do not exist.
+const EDITOR_WHEN_NEITHER_VARIABLE_IS_SET: &str = "vi";
+
 fn choose_command(visual: Option<String>, editor: Option<String>) -> Vec<String> {
     let raw = visual
         .filter(|v| !v.trim().is_empty())
         .or_else(|| editor.filter(|v| !v.trim().is_empty()))
-        .unwrap_or_else(|| "vi".into());
+        .unwrap_or_else(|| EDITOR_WHEN_NEITHER_VARIABLE_IS_SET.into());
+    split_into_arguments_unless_the_whole_names_a_file(&raw)
+}
+
+fn split_into_arguments_unless_the_whole_names_a_file(raw: &str) -> Vec<String> {
     let whole = raw.trim();
     if whole.contains(char::is_whitespace) && std::path::Path::new(whole).is_file() {
         return vec![whole.to_string()];

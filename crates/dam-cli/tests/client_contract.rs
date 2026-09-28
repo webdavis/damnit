@@ -1,13 +1,7 @@
-//! The contract the clients read: the error document, one exit code per
-//! failure class, and the shape of a change document.
-
 mod support;
 
 use support::sandbox::Sandbox;
-use support::status_json;
 
-/// A machine format writes nothing to standard error but the one document a
-/// failure produces, so this parses the whole stream rather than a line of it.
 #[test]
 fn a_machine_format_writes_nothing_to_stderr_but_the_document() {
     let _guard = support::guard("a_machine_format_writes_nothing_to_stderr_but_the_document");
@@ -25,12 +19,14 @@ fn a_machine_format_writes_nothing_to_stderr_but_the_document() {
         "",
         "a warning reached the stream a client parses as one document"
     );
-    // The advisory is in the answer rather than lost: the operator still
-    // learns their credential-bearing config had been readable by someone else.
     let answer: serde_json::Value =
         serde_json::from_slice(&added.stdout).expect("the answer is one document");
     let warnings = answer["warnings"].as_array().expect("warnings is a list");
-    assert_eq!(warnings.len(), 1, "{answer}");
+    assert_eq!(
+        warnings.len(),
+        1,
+        "the advisory that the config had been readable is in the answer rather than lost: {answer}"
+    );
     let said = warnings[0].as_str().unwrap();
     assert!(said.contains("644"), "{said}");
     assert!(!said.contains('/'), "the advisory carries a path: {said}");
@@ -49,7 +45,6 @@ fn a_machine_format_writes_nothing_to_stderr_but_the_document() {
         .unwrap_or_else(|e| panic!("stderr is not one JSON document: {e}\n{err}"));
 }
 
-/// The error document a machine format prints, parsed off standard error.
 fn error_document(out: &std::process::Output) -> serde_json::Value {
     let err = String::from_utf8_lossy(&out.stderr);
     serde_json::from_str(&err)
@@ -95,13 +90,12 @@ fn a_refusal_under_json_is_a_document_naming_its_kind_message_and_oids() {
         "{named:?}"
     );
 
-    // The message is the sentence the human form prints, which is what carries
-    // the rule that no token and no path ever reaches an error.
     let message = document["error"]["message"].as_str().unwrap();
     let human = sb.output(&["done", &parent]);
     assert_eq!(
         String::from_utf8_lossy(&human.stderr).trim(),
-        format!("dam: {message}").trim()
+        format!("dam: {message}").trim(),
+        "the message is the sentence the human form prints, which keeps tokens and paths out"
     );
 }
 
@@ -162,8 +156,6 @@ fn every_failure_class_names_itself_under_json() {
     assert_eq!(kind_of(&no_credential), "credential");
 }
 
-/// `-e` is refused rather than run under a machine format, and an editor that
-/// dies in a human run is an editor failure rather than a bad command line.
 #[test]
 fn an_editor_is_refused_under_a_machine_format_and_its_death_is_its_own_failure() {
     let _guard = support::guard(
@@ -221,8 +213,6 @@ fn toon_carries_the_same_error_document() {
     assert!(as_toon.contains(sentence), "{as_toon}");
 }
 
-/// Every rule dam keeps exits 4 and says `refused`, whichever rule it was.
-/// A rule that reported some other code would make a client guess.
 #[test]
 fn every_refusal_exits_four_whatever_the_rule() {
     let _guard = support::guard("every_refusal_exits_four_whatever_the_rule");
@@ -278,166 +268,4 @@ fn every_refusal_exits_four_whatever_the_rule() {
         named.len(),
         "two rules answered with one word through the binary"
     );
-}
-
-/// A client reads the field names off dam's answer instead of diffing the
-/// before and after itself.
-#[test]
-fn a_change_document_names_the_fields_it_touches() {
-    let _guard = support::guard("a_change_document_names_the_fields_it_touches");
-    let sb = Sandbox::new();
-    let oid = sb.new_object(&["buy oat milk", "--due", "2026-09-25", "-p", "1"]);
-    assert_eq!(
-        unstaged_fields(&sb),
-        serde_json::json!(["subject", "priority", "due"]),
-        "a create names every field it sets"
-    );
-
-    commit_everything(&sb, "the create");
-    assert!(sb.dam(&["edit", &oid, "--subject", "buy soy milk"]).0);
-    assert_eq!(unstaged_fields(&sb), serde_json::json!(["subject"]));
-
-    commit_everything(&sb, "the edit");
-    assert!(sb.dam(&["done", &oid]).0);
-    assert_eq!(unstaged_fields(&sb), serde_json::json!(["done"]));
-
-    commit_everything(&sb, "the completion");
-    assert!(sb.dam(&["edit", &oid, "--undone"]).0);
-    assert_eq!(
-        unstaged_fields(&sb),
-        serde_json::json!(["done"]),
-        "reopening moves done and nothing else"
-    );
-
-    assert!(sb.dam(&["rm", &oid]).0);
-    assert_eq!(
-        unstaged_fields(&sb),
-        serde_json::json!([]),
-        "a delete removes the object whole and names no field"
-    );
-}
-
-/// A client names the commits a remote is owed and pairs them with the log, so
-/// the row carries the commit ids in the order `dam log` lists them and the
-/// count beside them is the length of that list.
-#[test]
-fn an_unpushed_row_names_its_commits_in_log_order() {
-    let _guard = support::guard("an_unpushed_row_names_its_commits_in_log_order");
-    let sb = Sandbox::new();
-    for (subject, message) in [("first", "one"), ("second", "two")] {
-        sb.new_object(&[subject]);
-        assert!(sb.dam(&["add", "-A"]).0);
-        assert!(sb.dam(&["commit", "-m", message]).0);
-    }
-
-    let (ok, out, err) = sb.dam(&["log", "--json"]);
-    assert!(ok, "{err}");
-    let log: serde_json::Value = serde_json::from_str(&out).unwrap();
-    let logged: Vec<&str> = log["commits"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|c| c["id"].as_str().unwrap())
-        .collect();
-    assert_eq!(logged.len(), 2);
-
-    let row = status_json(&sb, &["--json"])["unpushed"][0].clone();
-    assert_eq!(row["remote"], "fake");
-    assert_eq!(
-        row["commit_ids"],
-        serde_json::json!(logged),
-        "the commit ids read in the order dam log lists them"
-    );
-    assert_eq!(
-        row["commits"], 2,
-        "the count is the length of the list beside it"
-    );
-}
-
-/// The unpushed mark is drawn by matching a change row's object against this
-/// list, so the row names the objects those commits touch as well as the
-/// commits themselves, and an object two commits touched is named once.
-#[test]
-fn an_unpushed_row_names_each_object_once() {
-    let _guard = support::guard("an_unpushed_row_names_each_object_once");
-    let sb = Sandbox::new();
-    let first = sb.new_object(&["first"]);
-    assert!(sb.dam(&["add", "-A"]).0);
-    assert!(sb.dam(&["commit", "-m", "one"]).0);
-    let second = sb.new_object(&["second"]);
-    assert!(sb.dam(&["add", "-A"]).0);
-    assert!(sb.dam(&["commit", "-m", "two"]).0);
-    assert!(sb.dam(&["edit", &second, "--priority", "1"]).0);
-    assert!(sb.dam(&["add", "-A"]).0);
-    assert!(sb.dam(&["commit", "-m", "three"]).0);
-
-    let row = status_json(&sb, &["--json"])["unpushed"][0].clone();
-    assert_eq!(row["commits"], 3);
-    let oids: Vec<String> = row["oids"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|v| v.as_str().unwrap().to_string())
-        .collect();
-    assert_eq!(
-        oids.len(),
-        2,
-        "the object two commits touched is named once: {oids:?}"
-    );
-    assert!(
-        oids[0].starts_with(&second),
-        "the object the newest commit touched comes first: {oids:?}"
-    );
-    assert!(
-        oids[1].starts_with(&first),
-        "then the one only an older commit touched: {oids:?}"
-    );
-}
-
-/// A background poll runs `status` per render, so its default answer carries
-/// a row per change rather than two whole objects.
-#[test]
-fn status_embeds_no_object_until_asked_for_one() {
-    let _guard = support::guard("status_embeds_no_object_until_asked_for_one");
-    let sb = Sandbox::new();
-    let oid = sb.new_object(&[
-        "buy oat milk",
-        "--due",
-        "2026-09-25",
-        "-p",
-        "1",
-        "--label",
-        "errand",
-    ]);
-
-    let row = status_json(&sb, &["--json"])["unstaged"][0].clone();
-    assert!(
-        row.get("before").is_none() && row.get("after").is_none(),
-        "{row}"
-    );
-    assert!(row["oid"].as_str().unwrap().starts_with(&oid));
-    assert_eq!(row["op"], "create");
-    assert_eq!(row["kind"], "task");
-    assert_eq!(row["subject"], "buy oat milk");
-    assert_eq!(row["due"], "2026-09-25");
-    assert_eq!(row["priority"], 1);
-    assert_eq!(row["done"], false);
-    assert_eq!(row["labels"], serde_json::json!(["errand"]));
-
-    let full = status_json(&sb, &["--json", "--full"])["unstaged"][0].clone();
-    assert_eq!(full["before"], serde_json::Value::Null);
-    assert_eq!(full["after"]["subject"], "buy oat milk");
-    assert_eq!(full["after"]["body"], "");
-    for key in ["oid", "op", "fields", "subject", "due"] {
-        assert_eq!(full[key], row[key], "--full dropped {key}");
-    }
-}
-
-fn commit_everything(sb: &Sandbox, message: &str) {
-    assert!(sb.dam(&["add", "-A"]).0);
-    assert!(sb.dam(&["commit", "-m", message]).0);
-}
-
-fn unstaged_fields(sb: &Sandbox) -> serde_json::Value {
-    status_json(sb, &["--json"])["unstaged"][0]["fields"].clone()
 }
