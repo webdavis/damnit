@@ -1,7 +1,3 @@
-//! The objects a helper sends and receives, as they appear on the wire. Data
-//! declaration only: what they mean in dam's own terms is the caller's
-//! business.
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -32,7 +28,6 @@ pub struct WireObject {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WireTask {
     pub done: bool,
-    /// RFC 3339 in UTC, when the task was completed.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub completed_at: Option<String>,
     pub priority: u8,

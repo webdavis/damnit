@@ -3,26 +3,18 @@ use std::io::{self, BufRead, Write};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
-/// One JSON document per line, newline terminated.
 pub fn write_line<T: Serialize>(out: &mut impl Write, value: &T) -> io::Result<()> {
     serde_json::to_writer(&mut *out, value).map_err(io::Error::other)?;
     out.write_all(b"\n")?;
     out.flush()
 }
 
-/// The most bytes one line may hold, its newline included. A helper that
-/// sends a stream with no newline in it would otherwise grow the read buffer
-/// until the process dies, which the request deadline does not bound.
 pub const MAX_LINE: u64 = 16 * 1024 * 1024;
 
-/// The next non-blank line as `T`; `None` at end of input. A line that is
-/// not `T`, is not UTF-8, or is longer than `MAX_LINE` is `InvalidData`.
 pub fn read_line<T: DeserializeOwned>(input: &mut impl BufRead) -> io::Result<Option<T>> {
     read_line_bounded(input, MAX_LINE)
 }
 
-/// `read_line` with the limit named, so the threshold is tested without
-/// building a line of the shipped size.
 fn read_line_bounded<T: DeserializeOwned>(
     input: &mut impl BufRead,
     max: u64,
@@ -30,7 +22,6 @@ fn read_line_bounded<T: DeserializeOwned>(
     let mut line = Vec::new();
     loop {
         line.clear();
-        // A fresh limit per line: the budget bounds one line, not the stream.
         let mut one_line = io::Read::take(&mut *input, max);
         let read = one_line.read_until(b'\n', &mut line)?;
         if read == 0 {
@@ -140,6 +131,14 @@ mod tests {
         let err = read_line::<Request>(&mut endless).unwrap_err();
         assert_eq!(err.kind(), std::io::ErrorKind::InvalidData);
         assert!(err.to_string().contains(&MAX_LINE.to_string()), "{err}");
+    }
+
+    #[test]
+    fn a_line_that_is_not_utf8_is_invalid_data() {
+        let mut input = Cursor::new(b"{\"cmd\":\"\xff\"}\n".to_vec());
+        let err = read_line::<Request>(&mut input).unwrap_err();
+        assert_eq!(err.kind(), std::io::ErrorKind::InvalidData);
+        assert!(err.to_string().contains("utf-8"), "{err}");
     }
 
     #[test]
