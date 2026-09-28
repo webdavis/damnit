@@ -106,6 +106,39 @@ fn creates_updates_and_deletes_become_the_right_commands() {
     );
 }
 
+#[test]
+fn a_depth_one_create_becomes_a_section_when_its_child_arrives_later_in_the_same_push() {
+    let _guard = support::guard(
+        "a_depth_one_create_becomes_a_section_when_its_child_arrives_later_in_the_same_push",
+    );
+    let (server, recorded) = todoist(sync_body(), None);
+    let api = TodoistApi::new(&server.base, "tok");
+    let mutations = vec![
+        mutation(
+            "create",
+            1,
+            None,
+            Some(task(&"1".repeat(40), "Work/", "Later", false)),
+        ),
+        mutation(
+            "create",
+            2,
+            None,
+            Some(task(&"2".repeat(40), "Work/Later/", "first step", false)),
+        ),
+    ];
+    let response = push(&api, mutations).unwrap();
+    assert!(
+        response.results.iter().all(|r| r.ok),
+        "{:?}",
+        response.results
+    );
+    assert_eq!(response.results[0].remote_id.as_deref(), Some("s:new1"));
+    let recorded = recorded.lock().unwrap();
+    assert_eq!(recorded.types(), vec!["section_add", "item_add"]);
+    assert_eq!(recorded.command("item_add")["args"]["section_id"], "new1");
+}
+
 /// Reopening a completed task reaches Todoist as the Sync API's own inverse of
 /// `item_close`, so `dam edit <oid> --undone` pushes like any other update.
 #[test]

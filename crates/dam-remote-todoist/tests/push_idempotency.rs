@@ -107,6 +107,27 @@ fn a_refused_command_fails_only_its_own_mutation() {
     assert_eq!(recorded.types(), vec!["item_add", "project_delete"]);
 }
 
+#[test]
+fn a_mutation_is_pushed_only_when_every_one_of_its_commands_is_accepted() {
+    let _guard =
+        support::guard("a_mutation_is_pushed_only_when_every_one_of_its_commands_is_accepted");
+    let (server, recorded) = todoist(sync_body(), Some("item_close"));
+    let api = TodoistApi::new(&server.base, "tok");
+    let mutations = vec![mutation(
+        "create",
+        1,
+        None,
+        Some(task(&"1".repeat(40), "Work/", "eggs", true)),
+    )];
+    let response = push(&api, mutations).unwrap();
+    assert!(!response.results[0].ok);
+    assert_eq!(
+        response.results[0].why.as_deref(),
+        Some("refused by the test")
+    );
+    assert_eq!(recorded.lock().unwrap().types(), vec!["item_add"]);
+}
+
 /// A failure reading the tree is not a per-mutation result: no mutation was
 /// attempted, so there is nothing to report against one.
 #[test]

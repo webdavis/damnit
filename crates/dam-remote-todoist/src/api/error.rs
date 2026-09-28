@@ -171,6 +171,11 @@ mod tests {
     }
 
     #[test]
+    fn every_control_character_becomes_a_space_so_a_notice_cannot_rewrite_the_terminal() {
+        assert_eq!(bounded("red\u{1b}[31m\ttext\r\n"), "red [31m text");
+    }
+
+    #[test]
     fn a_body_inside_the_ceiling_decodes() {
         let value = read_json_bounded(answer(r#"{"ok":true}"#), MAX_UPSTREAM_BODY).unwrap();
         assert_eq!(value["ok"], serde_json::json!(true));
