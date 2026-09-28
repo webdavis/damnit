@@ -1,6 +1,3 @@
-//! The operator's one-time walk: consent in the browser, the refresh token on
-//! standard output, and nothing written anywhere.
-
 use std::io::{IsTerminal, Write};
 
 use dam_remote_gcal::sign_in::{client_id, client_secret};

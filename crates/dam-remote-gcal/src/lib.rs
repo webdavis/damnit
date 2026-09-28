@@ -1,6 +1,3 @@
-//! The Google Calendar remote helper for dam. Read-only: it pulls events and
-//! never creates, changes or deletes one.
-
 pub(crate) mod encoding;
 pub mod endpoints;
 pub(crate) mod http;

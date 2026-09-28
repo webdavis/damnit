@@ -1,15 +1,9 @@
-//! A credential or token, as a type that will not print itself.
-
 use std::fmt;
 
-/// A credential or token. `Debug` redacts it and there is no `Display`, so
-/// `expose` is the only way to the bytes.
 #[derive(Clone, PartialEq, Eq)]
 pub struct Secret(String);
 
 impl Secret {
-    /// The value itself. Call this only where it is sent to Google or printed
-    /// for the operator to keep.
     pub fn expose(&self) -> &str {
         &self.0
     }
