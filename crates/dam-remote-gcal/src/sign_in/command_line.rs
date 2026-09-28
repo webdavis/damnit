@@ -1,6 +1,3 @@
-//! What the sign-in binary reads before it asks Google for anything: the
-//! client id from its arguments, and the client secret from a pipe.
-
 use std::io::Read;
 
 use crate::Secret;
@@ -75,10 +72,8 @@ mod tests {
         );
     }
 
-    /// A stray word may be the secret itself, pasted in the wrong place, so a
-    /// word that is not a flag is refused without being repeated.
     #[test]
-    fn a_stray_argument_is_refused_without_being_quoted() {
+    fn a_stray_argument_that_may_be_a_pasted_secret_is_refused_without_being_quoted() {
         let said = client_id(&words("--client-id a GOCSPX-stray")).unwrap_err();
         assert!(!said.contains("GOCSPX-stray"), "{said}");
         assert!(
@@ -87,8 +82,6 @@ mod tests {
         );
     }
 
-    /// A secret in argv is readable by every process on the machine, so the
-    /// flag is refused by name rather than failing as a typo would.
     #[test]
     fn a_client_secret_on_the_command_line_is_refused_by_name() {
         for line in [
@@ -101,8 +94,6 @@ mod tests {
         }
     }
 
-    /// Typed at a terminal the secret echoes into scrollback, so a terminal
-    /// on standard input is refused and the message says how to pipe it.
     #[test]
     fn the_secret_is_read_from_a_pipe_and_refused_from_a_terminal() {
         assert_eq!(
