@@ -26,8 +26,10 @@ wrote:
 
 `api_token` (the value, with `credentials = ["api_token"]` in the same table), `api_token_command`
 (a command that prints it) and `api_token_env` (a variable name) are the three forms; the command inherits your terminal, so a vault CLI that
-prompts works when you run `dam` yourself. `stale` makes reads pull first when the last pull is
-older than that. `deadline` (default `"60s"`) bounds how long one helper answer may take; past it
+prompts works when you run `dam` yourself. When more than one form of the same credential is set,
+the value wins over the command and the command over the variable. `stale` makes reads pull first when the last pull is
+older than that; a pull a read starts that fails leaves a notice in `dam status` rather than
+failing the read. `deadline` (default `"60s"`) bounds how long one helper answer may take; past it
 the helper is killed and the command fails. Ctrl-C at any point ends `dam` the same way, killing
 the helper and leaving the store as it was.
 
@@ -53,6 +55,30 @@ is "Testing", Google issues refresh tokens that expire after 7 days, and every p
 `invalid_grant` from then on until you sign in again. An app Google has not verified still works in
 production; the consent page shows a warning you click through once.
 
+`dam-gcal-sign-in` refuses a client secret on its command line, where every process on the machine
+can read it, and refuses a terminal on standard input, where a typed secret would echo: pipe it in.
+It listens for the browser on 127.0.0.1 only and waits as long as you take to open the URL; once the
+browser connects, the redirect has 30 seconds to arrive. The token is written to standard output
+and nowhere else, so if that write fails the token is lost and the command exits 1 and says to sign
+in again. A command line it refuses exits 2 before anything is asked of Google; a refused consent or
+exchange exits 1.
+
+## How Todoist maps
+
+A Todoist project is a top-level path, a section is the next level down, and a task's parent tasks
+are the levels below that: `Work/Now/milk/` is under the task `milk` in section `Now` of project
+`Work`. A `/` in a Todoist name becomes `-`, a blank name reads as `untitled-<id>`, an archived
+project comes in done, and dam's `p1` is Todoist's highest priority.
+
+A push goes the other way. An object at the top level becomes a project. One level down it becomes
+a task in that project, or a section when something lives under it or arrives under it in the same
+push. Deeper levels name existing parent tasks by their text, and a path naming no Todoist project
+fails that one object. A change counts as pushed only when Todoist accepts every command it became,
+and a retried push resends the first attempt's command ids, so Todoist never applies one twice. A
+rate limit stops the whole push and says how long Todoist asked to wait; any other failure stays
+with the object it happened on. An error Todoist sends back is cut to one line of at most 500
+characters before `dam status` shows it.
+
 ## Every day
 
     dam new "buy oat milk" --due tomorrow -p 1 --label errand
@@ -65,8 +91,19 @@ production; the consent page shows a warning you click through once.
 `--due`, `--deadline`, `--start` and `--end` all read the same words, in any case: `today`,
 `tomorrow`, a weekday (`mon` or `monday`, meaning its next occurrence after today, so naming today's
 own weekday is a week out), `next mon` for that same day, `in 3 days`, `in 2 weeks`, `in 1 month`,
-`YYYY-MM-DD`, and `YYYY-MM-DDTHH:MM` where a time makes sense. Anything else exits 2 with a message
-naming the accepted forms.
+`YYYY-MM-DD`, and `YYYY-MM-DDTHH:MM` where a time makes sense. A deadline is a whole day, so a time
+given to `--deadline` is dropped. Anything else exits 2 with a message naming the accepted forms.
+
+Every verb that takes an oid takes it whole or as a prefix of at least 4 hex characters that names
+one object in the working layer. An object only the history holds, such as one you removed, takes
+its full oid.
+
+`dam edit <oid> -e` opens the object as a TOML template in `$VISUAL`, else `$EDITOR`, else `vi`: a
+comment header naming the oid and kind, then one `key = value` line per field, where an empty
+string means none. Emptying an optional field clears it, a key the object's kind does not have is
+refused, a save that does not parse reopens the template with the error on its first line, and
+saving the template untouched cancels. Under `--json` or `--toon` it refuses instead of opening an
+editor.
 
 `dam edit <oid> --undone` reopens a task you completed by mistake, and
 `dam restore <oid>...` throws a working change away, back to the last commit and out of the stage.
@@ -158,4 +195,6 @@ flag says. Without those flags you get the plain `dam: <message>` line instead.
 | 3 | Cancelled: you interrupted, or a prompt could not be answered. |
 | 4 | `dam` refused by one of its own rules, and the message names the rule. |
 
-Every rule `dam` keeps reports code 4, and nothing else does, so one mapping covers every verb.
+Every rule `dam` keeps reports code 4, and nothing else does, so one mapping covers every verb. A
+`--recurrence` rule `dam` cannot read is the one flag value outside code 2: it exits 1, and its
+error document's kind is `parse`.
