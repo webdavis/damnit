@@ -1,5 +1,3 @@
-//! The parsed command line, asserted through clap itself.
-
 use super::*;
 use clap::Parser;
 use dam_domain::{ChildDisposition, DependencyDisposition};
@@ -95,10 +93,8 @@ fn each_disposition_word_parses_to_its_variant() {
     assert_eq!(done(&[]).depends, None);
 }
 
-/// clap renders an invalid value as the flag, the value and the accepted
-/// set, and points at --help rather than printing a usage line.
 #[test]
-fn a_disposition_outside_the_set_is_a_usage_error_naming_the_accepted_words() {
+fn a_disposition_outside_the_set_is_a_usage_error_naming_the_accepted_words_and_help() {
     for (bad, accepted) in [
         (vec!["--children", "sideways"], "up, keep, into:<name>"),
         (vec!["--children", "into:"], "up, keep, into:<name>"),
@@ -115,8 +111,6 @@ fn a_disposition_outside_the_set_is_a_usage_error_naming_the_accepted_words() {
     }
 }
 
-/// Ignoring `done.interactive` is what the flags are for; ignoring an
-/// --interactive the operator typed on the same line is a different thing.
 #[test]
 fn a_disposition_beside_an_explicit_interactive_is_refused() {
     for flag in [vec!["--children", "keep"], vec!["--depends", "drop"]] {

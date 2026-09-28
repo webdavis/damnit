@@ -1,5 +1,3 @@
-//! The stage, the history, and the two reads over them.
-
 use clap::Args;
 
 #[derive(Args, Debug)]
@@ -18,8 +16,10 @@ pub(crate) struct ResetArgs {
 
 #[derive(Args, Debug)]
 pub(crate) struct RestoreArgs {
-    /// The objects to set back, named in full or by oid prefix.
-    #[arg(required = true)]
+    #[arg(
+        required = true,
+        help = "The objects to set back, named in full or by oid prefix"
+    )]
     pub(crate) oids: Vec<String>,
 }
 
@@ -31,14 +31,16 @@ pub(crate) struct CommitArgs {
 
 #[derive(Args, Debug)]
 pub(crate) struct ShowArgs {
-    /// An object oid or a commit id, full or prefixed.
+    #[arg(help = "An object oid or a commit id, full or prefixed")]
     pub(crate) id: String,
 }
 
 #[derive(Args, Debug)]
 pub(crate) struct StatusArgs {
-    /// Embed the whole before and after object in every change; shapes --json and --toon only.
-    #[arg(long)]
+    #[arg(
+        long,
+        help = "Embed the whole before and after object in every change; shapes --json and --toon only"
+    )]
     pub(crate) full: bool,
 }
 
@@ -46,7 +48,9 @@ pub(crate) struct StatusArgs {
 pub(crate) struct DiffArgs {
     #[arg(long)]
     pub(crate) staged: bool,
-    /// Embed the whole before and after object in every change; shapes --json and --toon only.
-    #[arg(long)]
+    #[arg(
+        long,
+        help = "Embed the whole before and after object in every change; shapes --json and --toon only"
+    )]
     pub(crate) full: bool,
 }
