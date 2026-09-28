@@ -1,6 +1,3 @@
-//! What one pulled object should do against the local state: create it, fast
-//! forward it, raise a conflict, or nothing at all.
-
 use dam_domain::{Object, Oid};
 
 use crate::config::RemoteConfig;
@@ -16,14 +13,8 @@ pub(super) enum Incoming {
     Unchanged,
 }
 
-/// What each pulled object should do, plus the oids generated for objects
-/// with no local match yet, paired with the remote id each one maps to.
 pub(super) type Classified = (Vec<(Oid, Incoming)>, Vec<(Oid, String)>);
 
-/// Reads every pulled object against local state and decides what to do with
-/// it. Notices are the only thing it writes; no object is touched. `fresh`
-/// pairs a generated oid with the remote id it maps to, applied by the caller
-/// once classification succeeds.
 pub(super) fn classify(
     repos: Repositories<'_>,
     remote: &RemoteConfig,
@@ -34,7 +25,7 @@ pub(super) fn classify(
     let staged: Vec<Oid> = repos.stage.staged()?.into_iter().map(|c| c.oid).collect();
     let mut notices = repos.notices.notices()?;
     let mut planned = Vec::new();
-    let mut fresh = Vec::new();
+    let mut new_remote_id_mappings = Vec::new();
 
     for incoming in objects {
         let IncomingObject {
@@ -47,12 +38,10 @@ pub(super) fn classify(
         let oid = existing
             .clone()
             .unwrap_or_else(|| Oid::generate(&mut |b| random.fill(b)));
-        // The remote knows the object by its own id; the oid it is tracked
-        // by here is dam's to supply.
         object.base_mut().oid = oid.clone();
         let theirs_raw = object;
         if existing.is_none() {
-            fresh.push((oid.clone(), remote_id));
+            new_remote_id_mappings.push((oid.clone(), remote_id));
         }
         let local = repos.objects.get(&oid)?;
         if let Some((ours, theirs)) = local.as_ref().and_then(|l| kind_change(l, &theirs_raw)) {
@@ -61,7 +50,6 @@ pub(super) fn classify(
                 ours,
                 theirs,
             };
-            // The kinds keep disagreeing until someone acts, so say it once.
             if !notices.contains(&notice) {
                 repos.notices.add_notice(&notice)?;
                 notices.push(notice);
@@ -76,15 +64,13 @@ pub(super) fn classify(
             None => Incoming::Create(theirs),
             Some(ref l) if *l == theirs => Incoming::Unchanged,
             Some(ref l) => {
-                let base = repos.remote_tracking.remote_snapshot(&remote.name, &oid)?;
-                if base.as_ref() == Some(l) {
+                let last_seen_on_the_remote =
+                    repos.remote_tracking.remote_snapshot(&remote.name, &oid)?;
+                let ours_unmoved_since = last_seen_on_the_remote.as_ref() == Some(l);
+                let theirs_unmoved_since = last_seen_on_the_remote.as_ref() == Some(&theirs);
+                if ours_unmoved_since {
                     Incoming::FastForward(theirs)
-                } else if base.as_ref() == Some(&theirs) {
-                    // The remote holds what it held when we last looked, so
-                    // nothing is coming in; the difference is ours to push.
-                    // This is also what stops a conflict already raised, and
-                    // settled with ours, from being raised again on every pull
-                    // until the resolution reaches the remote.
+                } else if theirs_unmoved_since {
                     Incoming::Unchanged
                 } else {
                     let committed = repos.objects.committed(&oid)?;
@@ -97,5 +83,5 @@ pub(super) fn classify(
         };
         planned.push((oid, incoming));
     }
-    Ok((planned, fresh))
+    Ok((planned, new_remote_id_mappings))
 }

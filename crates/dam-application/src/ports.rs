@@ -1,6 +1,3 @@
-//! The ports a use case borrows. Each one is a capability the application
-//! names and an adapter supplies.
-
 mod environment;
 mod helper;
 mod store;

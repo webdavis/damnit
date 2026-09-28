@@ -16,19 +16,14 @@ pub struct Config {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RemoteConfig {
     pub name: RemoteName,
-    /// The word before `::` in the url; the helper is `dam-remote-<helper>`.
     pub helper: String,
-    /// The url exactly as configured, for `remote list` to echo back verbatim.
     pub url: String,
     pub credentials: Vec<CredentialSpec>,
     pub stale: Option<Duration>,
-    /// How long a single helper response may take before the helper is killed.
     pub deadline: Option<ConfiguredDuration>,
     pub path: Option<Path>,
 }
 
-/// A duration next to the text it was configured as, so a message about it
-/// echoes what the operator wrote rather than a normalized form.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConfiguredDuration {
     pub value: Duration,
@@ -59,8 +54,6 @@ pub struct FilterConfig {
 }
 
 impl RemoteConfig {
-    /// The text after `::` in the url, handed to the helper as its second
-    /// argument the way git hands one to `git-remote-<transport>`.
     pub fn address(&self) -> &str {
         self.url.split_once("::").map_or("", |(_, address)| address)
     }

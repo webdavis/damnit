@@ -113,12 +113,11 @@ mod tests {
     }
 
     #[test]
-    fn no_query_lists_everything_ordered() {
+    fn no_query_lists_everything_by_path_then_earlier_due_first() {
         let store = MemoryStore::new();
         seed(&store);
         let out = list(&store, &FixedClock(date(2026, 9, 18)), &config(), None).unwrap();
         let subjects: Vec<&str> = out.iter().map(|o| o.base().subject.as_str()).collect();
-        // root path first (b due 9/10 before a due 9/18), then later/
         assert_eq!(subjects, vec!["b", "a", "c"]);
     }
 

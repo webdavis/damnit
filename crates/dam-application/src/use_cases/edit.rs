@@ -3,7 +3,6 @@ use dam_domain::{Categories, Date, Object, Oid, Priority, Rule, When, cycle_in};
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
 
-/// Outer `None` leaves a field alone; `Some(None)` clears it; `Some(Some(v))` sets it.
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct EditFields {
     pub subject: Option<String>,
@@ -11,7 +10,6 @@ pub struct EditFields {
     pub priority: Option<Priority>,
     pub due: Option<Option<When>>,
     pub deadline: Option<Option<Date>>,
-    /// Reopens a completed task; refused on one that is already open.
     pub undone: bool,
     pub add_labels: Vec<String>,
     pub remove_labels: Vec<String>,
@@ -64,7 +62,6 @@ pub fn edit(
     Ok(next)
 }
 
-/// Apply `fields` to a copy without writing; the editor round trip and the cli preview use it.
 pub fn apply(object: &Object, fields: &EditFields) -> Result<Object, UseCaseError> {
     let mut next = object.clone();
     let is_task = matches!(next, Object::Task(_));

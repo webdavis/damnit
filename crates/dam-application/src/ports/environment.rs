@@ -1,6 +1,3 @@
-//! What dam asks the world outside the process for: today's date, fresh
-//! randomness, and the operator's editor.
-
 use dam_domain::{Date, Timestamp};
 
 pub trait Clock {
@@ -8,8 +5,6 @@ pub trait Clock {
     fn now(&self) -> Timestamp;
 }
 
-/// A source of entropy for a new identifier. Shared rather than owned, so a
-/// use case that mints one borrows it alongside everything else it reads.
 pub trait Randomness {
     fn fill(&self, buf: &mut [u8]);
 }
