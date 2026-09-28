@@ -1,6 +1,22 @@
+use std::time::{Duration, Instant};
+
 use dam_application::{ConfiguredDuration, HelperError, RemoteHelper};
 
 use super::super::testing::{install, remote};
+use super::ProcessHelper;
+
+const A_LOADED_MACHINE_STARTS_A_SHELL_WITHIN: Duration = Duration::from_secs(10);
+
+fn until_the_helper_has_complained(helper: &ProcessHelper) {
+    let give_up_at = Instant::now() + A_LOADED_MACHINE_STARTS_A_SHELL_WITHIN;
+    while helper.stderr_tail.text().is_none() {
+        assert!(
+            Instant::now() < give_up_at,
+            "the helper wrote nothing to standard error within {A_LOADED_MACHINE_STARTS_A_SHELL_WITHIN:?}"
+        );
+        std::thread::sleep(Duration::from_millis(10));
+    }
+}
 
 #[test]
 fn a_helper_that_dies_without_answering_quotes_what_it_complained_about() {
@@ -28,6 +44,7 @@ fn a_helper_that_never_answers_carries_its_complaint_into_the_timeout() {
         text: "100ms".into(),
     });
     let mut helper = launcher.spawn(&remote, &[]).unwrap();
+    until_the_helper_has_complained(&helper);
     match helper.capabilities().unwrap_err() {
         HelperError::Timeout { said, .. } => {
             assert_eq!(said.as_deref(), Some("waiting on the upstream api"))
