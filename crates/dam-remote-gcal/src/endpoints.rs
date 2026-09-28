@@ -1,6 +1,3 @@
-//! Where the three Google calls go: the consent page, the token endpoint and
-//! the Calendar API.
-
 use std::env::VarError;
 
 pub const BASE_URL_VARIABLE: &str = "DAM_GCAL_BASE_URL";
@@ -21,9 +18,8 @@ impl Endpoints {
         }
     }
 
-    /// All three under one test server, which is what the loopback double serves.
     pub fn loopback(base: &str) -> Result<Endpoints, String> {
-        let base = checked_base(base)?;
+        let base = loopback_base_only(base)?;
         Ok(Endpoints {
             authorization: format!("{base}/o/oauth2/v2/auth"),
             token: format!("{base}/token"),
@@ -35,8 +31,6 @@ impl Endpoints {
         Endpoints::from_variable(std::env::var(BASE_URL_VARIABLE))
     }
 
-    /// Unset means Google. Set means the loopback seam, and a value that is not
-    /// Unicode is refused like any other address the seam will not take.
     fn from_variable(value: Result<String, VarError>) -> Result<Endpoints, String> {
         match value {
             Ok(base) => Endpoints::loopback(&base),
@@ -49,9 +43,7 @@ impl Endpoints {
     }
 }
 
-/// `DAM_GCAL_BASE_URL` is a test seam. Only a loopback address is accepted,
-/// so the variable cannot send a credential to another host.
-fn checked_base(value: &str) -> Result<String, String> {
+fn loopback_base_only(value: &str) -> Result<String, String> {
     let refused = || {
         format!(
             "DAM_GCAL_BASE_URL is a test seam and must be http://127.0.0.1:<port> or \
@@ -96,10 +88,8 @@ mod tests {
         assert!(Endpoints::loopback("http://localhost:9").is_ok());
     }
 
-    /// A set variable is never read as unset, which would point the walk at
-    /// Google while the operator meant a test server.
     #[test]
-    fn a_base_url_that_is_not_unicode_is_refused() {
+    fn a_base_url_that_is_not_unicode_is_refused_rather_than_read_as_unset() {
         let not_unicode = std::env::VarError::NotUnicode(std::ffi::OsString::from("x"));
         let err = Endpoints::from_variable(Err(not_unicode)).unwrap_err();
         assert!(err.contains(BASE_URL_VARIABLE), "{err}");
@@ -113,10 +103,8 @@ mod tests {
         );
     }
 
-    /// The seam carries a refresh token and a client secret to whatever it
-    /// names, so it names nothing but this machine.
     #[test]
-    fn the_seam_refuses_every_address_but_loopback() {
+    fn the_seam_that_carries_credentials_refuses_every_address_but_loopback() {
         for refused in [
             "https://oauth2.googleapis.com",
             "http://evil.test:8080",
