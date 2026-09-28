@@ -4,9 +4,7 @@ use dam_application::{RemoteConfig, RemoteName};
 
 use super::ProcessLauncher;
 
-/// A shell helper that answers capabilities with its DAM_T_API_TOKEN value in
-/// `credentials`, answers pull with no objects, and reports one push success.
-pub(super) const FAKE: &str = r#"#!/bin/sh
+pub(super) const FAKE_THAT_ECHOES_ITS_TOKEN: &str = r#"#!/bin/sh
 while IFS= read -r line; do
   case "$line" in
 *'"capabilities"'*) printf '{"protocol":1,"kinds":["task"],"fields":["subject"],"credentials":["api_token","%s"],"incremental":false}\n' "$DAM_T_API_TOKEN" ;;
@@ -17,13 +15,16 @@ while IFS= read -r line; do
 done
 "#;
 
-/// The oid the fake helper answers a push with, valid so it survives the
-/// translation back into dam's own vocabulary.
-pub(super) const FAKE_OID: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const VALID_OID_SO_THE_PUSH_ANSWER_TRANSLATES_BACK: &str =
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
 pub(super) fn install(dir: &std::path::Path, body: &str) -> ProcessLauncher {
     let file = dir.join("dam-remote-t");
-    std::fs::write(&file, body.replace("$OID", FAKE_OID)).unwrap();
+    std::fs::write(
+        &file,
+        body.replace("$OID", VALID_OID_SO_THE_PUSH_ANSWER_TRANSLATES_BACK),
+    )
+    .unwrap();
     std::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o755)).unwrap();
     ProcessLauncher::with_search_path(dir.as_os_str())
 }

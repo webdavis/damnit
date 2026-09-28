@@ -153,14 +153,7 @@ fn a_helper_that_ignores_end_of_input_is_killed_at_drop() {
     let launcher = install(dir.path(), "#!/bin/sh\nwhile :; do sleep 0.05; done\n");
     let helper = launcher.spawn(&remote(), &[]).unwrap();
     let pid = helper.child.id().to_string();
-    // Dropped on a worker so a regression to an unbounded wait reddens the
-    // suite within the second instead of hanging it.
-    let dropped = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
-    let flag = std::sync::Arc::clone(&dropped);
-    std::thread::spawn(move || {
-        drop(helper);
-        flag.store(true, std::sync::atomic::Ordering::SeqCst);
-    });
+    let dropped = dropped_on_a_worker_so_an_unbounded_wait_cannot_hang_the_suite(helper);
     let give_up_at = std::time::Instant::now() + std::time::Duration::from_secs(1);
     while !dropped.load(std::sync::atomic::Ordering::SeqCst) {
         if std::time::Instant::now() >= give_up_at {
@@ -180,4 +173,16 @@ fn a_helper_that_ignores_end_of_input_is_killed_at_drop() {
             .success(),
         "the helper outlived its launcher"
     );
+}
+
+fn dropped_on_a_worker_so_an_unbounded_wait_cannot_hang_the_suite(
+    helper: ProcessHelper,
+) -> std::sync::Arc<std::sync::atomic::AtomicBool> {
+    let dropped = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let flag = std::sync::Arc::clone(&dropped);
+    std::thread::spawn(move || {
+        drop(helper);
+        flag.store(true, std::sync::atomic::Ordering::SeqCst);
+    });
+    dropped
 }
