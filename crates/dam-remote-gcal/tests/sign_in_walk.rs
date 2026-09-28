@@ -124,3 +124,40 @@ fn a_consent_refused_in_the_browser_sends_no_exchange() {
     assert!(page.contains("refused"), "{page}");
     assert!(google.seen().is_empty());
 }
+
+#[test]
+fn the_client_secret_travels_in_the_exchange_body_and_nowhere_else() {
+    let _guard = support::guard("the_client_secret_travels_in_the_exchange_body_and_nowhere_else");
+    let mut routes = HashMap::new();
+    routes.insert(
+        "POST /token",
+        vec![Reply::json(
+            200,
+            serde_json::json!({"refresh_token": REFRESH}),
+        )],
+    );
+    let google = loopback::serve(routes);
+    let mut browser = None;
+    let mut announced = String::new();
+    sign_in_against(&google)
+        .mint(&client(), &mut |url| {
+            announced = url.to_string();
+            browser = Some(play_the_browser_returning_its_page(url, |state| {
+                format!("state={state}&code=c")
+            }));
+        })
+        .unwrap();
+    let _ = browser.unwrap().join();
+    let seen = google.seen();
+    assert!(!announced.contains(CLIENT_SECRET), "{announced}");
+    assert_eq!(seen.len(), 1);
+    assert!(!seen[0].query.contains(CLIENT_SECRET), "{}", seen[0].query);
+    assert_eq!(seen[0].authorization, None);
+    assert_eq!(
+        seen[0]
+            .decoded_form
+            .get("client_secret")
+            .map(String::as_str),
+        Some(CLIENT_SECRET)
+    );
+}
