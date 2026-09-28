@@ -2,7 +2,6 @@ use dam_protocol::WireObject;
 
 use crate::map::Tree;
 
-/// What a dam object at this path becomes on Todoist.
 #[derive(Debug)]
 pub enum Shape {
     Project {
@@ -18,34 +17,54 @@ pub enum Shape {
     },
 }
 
-/// Depth 0 is a project. Depth 1 is a section when something already lives (or is about to
-/// land, this push) under `<path><subject>/`, otherwise a task in the project. Depth 2+ resolves
-/// each further segment to a parent item by content.
 pub fn shape_for(
     tree: &Tree,
     object: &WireObject,
-    pending_paths: &[String],
+    containers_filled_this_push: &[String],
 ) -> Result<Shape, String> {
     let segments: Vec<&str> = object.path.split('/').filter(|s| !s.is_empty()).collect();
-    if segments.is_empty() {
+    let Some(project_name) = segments.first() else {
         return Ok(Shape::Project { parent_id: None });
-    }
-    let project_path = format!("{}/", segments[0]);
+    };
+    let project_path = format!("{project_name}/");
     let project_id = tree
         .project_id_for(&project_path)
-        .ok_or_else(|| format!("no Todoist project named {:?}", segments[0]))?
+        .ok_or_else(|| format!("no Todoist project named {project_name:?}"))?
         .to_string();
     if segments.len() == 1 {
-        let own = format!("{}{}/", object.path, object.subject);
-        if tree.has_children_at(&own) || pending_paths.contains(&own) {
-            return Ok(Shape::Section { project_id });
-        }
-        return Ok(Shape::Item {
+        return Ok(section_if_anything_lives_or_lands_under_it(
+            tree,
+            object,
+            containers_filled_this_push,
             project_id,
-            section_id: None,
-            parent_id: None,
-        });
+        ));
     }
+    task_under_parent_tasks_by_content(tree, &segments, project_path, project_id)
+}
+
+fn section_if_anything_lives_or_lands_under_it(
+    tree: &Tree,
+    object: &WireObject,
+    containers_filled_this_push: &[String],
+    project_id: String,
+) -> Shape {
+    let own = format!("{}{}/", object.path, object.subject);
+    if tree.has_children_at(&own) || containers_filled_this_push.contains(&own) {
+        return Shape::Section { project_id };
+    }
+    Shape::Item {
+        project_id,
+        section_id: None,
+        parent_id: None,
+    }
+}
+
+fn task_under_parent_tasks_by_content(
+    tree: &Tree,
+    segments: &[&str],
+    project_path: String,
+    project_id: String,
+) -> Result<Shape, String> {
     let section_path = format!("{}{}/", project_path, segments[1]);
     let section_id = tree.section_id_for(&section_path).map(str::to_string);
     let mut walked = if section_id.is_some() {
@@ -133,12 +152,16 @@ mod tests {
     }
 
     #[test]
-    fn depth_decides_the_shape() {
-        let t = tree();
+    fn depth_zero_is_a_project() {
         assert!(matches!(
-            shape_for(&t, &object("", "Home"), &[]).unwrap(),
+            shape_for(&tree(), &object("", "Home"), &[]).unwrap(),
             Shape::Project { parent_id: None }
         ));
+    }
+
+    #[test]
+    fn depth_one_is_a_task_unless_something_lives_or_lands_under_it_then_a_section() {
+        let t = tree();
         assert!(matches!(
             shape_for(&t, &object("Work/", "Later"), &[]).unwrap(),
             Shape::Item {
@@ -150,6 +173,15 @@ mod tests {
             shape_for(&t, &object("Work/", "Later"), &["Work/Later/".into()]).unwrap(),
             Shape::Section { .. }
         ));
+        assert!(matches!(
+            shape_for(&t, &object("Work/", "Now"), &[]).unwrap(),
+            Shape::Section { .. }
+        ));
+    }
+
+    #[test]
+    fn deeper_segments_name_a_section_then_parent_tasks_by_content() {
+        let t = tree();
         match shape_for(&t, &object("Work/Now/", "eggs"), &[]).unwrap() {
             Shape::Item {
                 project_id,
@@ -166,7 +198,11 @@ mod tests {
             Shape::Item { parent_id, .. } => assert_eq!(parent_id.as_deref(), Some("i1")),
             other => panic!("{other:?}"),
         }
-        let err = shape_for(&t, &object("Nope/", "x"), &[]).unwrap_err();
+    }
+
+    #[test]
+    fn a_path_naming_no_todoist_project_is_refused_by_that_name() {
+        let err = shape_for(&tree(), &object("Nope/", "x"), &[]).unwrap_err();
         assert!(err.contains("Nope"));
     }
 }
