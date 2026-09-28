@@ -74,9 +74,9 @@ mod tests {
     #[test]
     fn show_finds_an_object_or_a_commit_by_prefix() {
         let mut ctx = context();
-        // Byte 1 collides with CountingRandom's first fill (0 -> 1), which
-        // would make this object's oid equal the commit id it produces below.
-        let oid = Oid::generate(&mut |x: &mut [u8]| x.fill(3));
+        let oid = Oid::generate(&mut |x: &mut [u8]| {
+            x.fill(A_BYTE_APART_FROM_THE_COMMIT_ID_COUNTING_RANDOM_FILLS_FIRST)
+        });
         ctx.store
             .put(&Object::Task(Task::new(oid.clone(), "milk")))
             .unwrap();
@@ -113,11 +113,10 @@ mod tests {
         ));
     }
 
-    /// Fills every byte with `0xab` except the last, which counts up from
-    /// the constructor argument: the same twin-prefix technique `oids.rs`
-    /// uses for oids, applied to the ids two separate commits get.
-    struct TwinRandom(std::cell::Cell<u8>);
-    impl dam_application::Randomness for TwinRandom {
+    const A_BYTE_APART_FROM_THE_COMMIT_ID_COUNTING_RANDOM_FILLS_FIRST: u8 = 3;
+
+    struct TwinPrefixRandom(std::cell::Cell<u8>);
+    impl dam_application::Randomness for TwinPrefixRandom {
         fn fill(&self, buf: &mut [u8]) {
             buf.fill(0xab);
             let len = buf.len();
@@ -129,7 +128,7 @@ mod tests {
     #[test]
     fn an_ambiguous_commit_prefix_names_every_match() {
         let mut ctx = context();
-        ctx.random = Box::new(TwinRandom(std::cell::Cell::new(1)));
+        ctx.random = Box::new(TwinPrefixRandom(std::cell::Cell::new(1)));
         ctx.store
             .put(&Object::Task(Task::new(
                 Oid::generate(&mut |x: &mut [u8]| x.fill(9)),

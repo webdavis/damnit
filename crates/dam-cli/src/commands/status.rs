@@ -17,19 +17,19 @@ pub(crate) fn run_status(ctx: &mut Context, args: StatusArgs) -> Result<Report, 
     let remotes: Vec<_> = ctx.config.remotes.iter().map(|r| r.name.clone()).collect();
     let s = status(Repositories::of(ctx.store.as_ref()), &remotes)?;
     let mut human = Vec::new();
-    section(&mut human, "Staged:", s.staged.iter().map(change_line));
-    section(
+    titled_section_unless_empty(&mut human, "Staged:", s.staged.iter().map(change_line));
+    titled_section_unless_empty(
         &mut human,
         "Not staged:",
         s.unstaged.iter().map(change_line),
     );
-    section(
+    titled_section_unless_empty(
         &mut human,
         "Conflicts:",
         s.conflicts.iter().map(conflict_line),
     );
-    section(&mut human, "Notices:", s.notices.iter().map(notice_line));
-    section(
+    titled_section_unless_empty(&mut human, "Notices:", s.notices.iter().map(notice_line));
+    titled_section_unless_empty(
         &mut human,
         "Unpushed:",
         s.unpushed
@@ -79,8 +79,6 @@ pub(crate) fn run_diff(ctx: &mut Context, args: DiffArgs) -> Result<Report, CliE
     })
 }
 
-/// One remote's owed commits in `dam log`'s order, the count beside them,
-/// which is the length of that list, and the objects those commits touch.
 fn unpushed_json(unpushed: &Unpushed) -> serde_json::Value {
     serde_json::json!({
         "remote": unpushed.remote.0,
@@ -94,8 +92,6 @@ fn change_documents(changes: &[Change], full: bool) -> Result<Vec<serde_json::Va
     changes.iter().map(|c| change_json(c, full)).collect()
 }
 
-/// One line naming every credential held as a value in the config file, which
-/// the design spec has `dam status` warn about.
 fn literal_credential_warning(ctx: &Context) -> Option<String> {
     let literals: Vec<String> = ctx
         .config
@@ -117,8 +113,11 @@ fn literal_credential_warning(ctx: &Context) -> Option<String> {
     ))
 }
 
-/// Pushes a titled block of already-indented lines, skipping an empty section.
-fn section(out: &mut Vec<String>, title: &str, lines: impl Iterator<Item = String>) {
+fn titled_section_unless_empty(
+    out: &mut Vec<String>,
+    title: &str,
+    lines: impl Iterator<Item = String>,
+) {
     let lines: Vec<String> = lines.collect();
     if lines.is_empty() {
         return;

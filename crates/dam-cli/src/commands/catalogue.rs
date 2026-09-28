@@ -1,9 +1,3 @@
-//! `dam category list` and `dam filter list`: what config declares, printed
-//! by `dam` so no client owns a second parser for the file `dam` owns.
-//!
-//! Both read config and nothing else, so `main` answers them before it opens
-//! a store: a damaged store cannot fail a listing that never reads one.
-
 use dam_application::Config;
 
 use crate::args::{CategoryCommand, FilterCommand};

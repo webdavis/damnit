@@ -1,5 +1,3 @@
-//! `dam remote list`: every remote with how fresh it is.
-
 use dam_application::RemoteConfig;
 use dam_domain::Timestamp;
 
@@ -7,8 +5,6 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 
-/// Every remote with the times it was last reached, so a client header can
-/// say how fresh what it is showing is.
 pub(super) fn run(ctx: &Context) -> Result<Report, CliError> {
     let now = ctx.clock.now();
     let mut lines = Vec::with_capacity(ctx.config.remotes.len());
@@ -27,8 +23,6 @@ pub(super) fn run(ctx: &Context) -> Result<Report, CliError> {
     })
 }
 
-/// When each sync verb last completed against one remote, `None` for one it
-/// has never reached.
 struct Synced {
     pulled: Option<Timestamp>,
     pushed: Option<Timestamp>,
@@ -59,17 +53,17 @@ fn remote_json(r: &RemoteConfig, synced: &Synced) -> serde_json::Value {
     })
 }
 
-/// "pulled 4m ago", or "never pulled" for a remote that verb has not reached.
 fn when_phrase(verb: &str, at: Option<Timestamp>, now: Timestamp) -> String {
     match at {
         None => format!("never {verb}"),
-        Some(at) => format!("{verb} {}", ago(now, at)),
+        Some(at) => format!(
+            "{verb} {}",
+            ago_to_one_unit_and_never_in_the_future(now, at)
+        ),
     }
 }
 
-/// How long ago `then` was, to one unit. A clock that has gone backwards
-/// reads as the present rather than as the future.
-fn ago(now: Timestamp, then: Timestamp) -> String {
+fn ago_to_one_unit_and_never_in_the_future(now: Timestamp, then: Timestamp) -> String {
     const MINUTE: i64 = 60;
     const HOUR: i64 = 60 * MINUTE;
     const DAY: i64 = 24 * HOUR;
@@ -93,10 +87,8 @@ mod tests {
     use crate::testing::context;
     use dam_application::RemoteName;
 
-    /// The times a header renders: RFC 3339 in the document, a phrase in the
-    /// human line, and null for a remote neither verb has reached yet.
     #[test]
-    fn remote_list_reports_the_last_pull_and_the_last_push() {
+    fn remote_list_reports_the_last_pull_and_push_as_rfc_3339_a_phrase_or_null() {
         let mut ctx = context();
         let t = RemoteName("t".into());
         ctx.config.remotes.push(RemoteConfig {
@@ -148,5 +140,15 @@ mod tests {
             },
         )
         .unwrap()
+    }
+
+    #[test]
+    fn a_clock_gone_backwards_reads_as_just_now_rather_than_the_future() {
+        let now = context().clock.now();
+        let later = now + std::time::Duration::from_secs(7200);
+        assert_eq!(
+            ago_to_one_unit_and_never_in_the_future(now, later),
+            "just now"
+        );
     }
 }

@@ -1,5 +1,3 @@
-//! One staged or unstaged change, and one conflict, rendered both ways.
-
 use dam_application::Conflict;
 use dam_domain::{Change, Field, Object, Op, When, changed_fields, touched_fields};
 
@@ -30,16 +28,13 @@ pub(crate) fn change_line(change: &Change) -> String {
     }
 }
 
-/// One change as a client reads it: what moved, and enough of the resulting
-/// object to render a row. `full` embeds the whole before and after object
-/// beside that, which is what a client wants only when it needs every field.
 pub(crate) fn change_json(change: &Change, full: bool) -> Result<serde_json::Value, CliError> {
     let fields: Vec<&str> = touched_fields(change).iter().map(Field::as_str).collect();
     let mut row = serde_json::Map::new();
     row.insert("oid".into(), change.oid.to_string().into());
     row.insert("op".into(), op_name(change.op).into());
     row.insert("fields".into(), fields.into());
-    row.extend(state_json(change));
+    row.extend(state_left_behind_or_the_removed_objects_json(change));
     if full {
         let before = change.before.as_ref().map(object_json).transpose()?;
         let after = change.after.as_ref().map(object_json).transpose()?;
@@ -57,9 +52,9 @@ fn op_name(op: Op) -> &'static str {
     }
 }
 
-/// The fields a client shows in a list, read off the state the change left
-/// behind. A delete leaves none, so its row describes the object it removed.
-fn state_json(change: &Change) -> serde_json::Map<String, serde_json::Value> {
+fn state_left_behind_or_the_removed_objects_json(
+    change: &Change,
+) -> serde_json::Map<String, serde_json::Value> {
     let mut state = serde_json::Map::new();
     let Some(object) = change.after.as_ref().or(change.before.as_ref()) else {
         return state;

@@ -1,6 +1,3 @@
-//! One notice as a line the operator reads and as the object a client reads.
-//! A notice is something upstream did that dam reports and never acts on.
-
 use dam_application::Notice;
 
 pub(super) fn notice_line(n: &Notice) -> String {
@@ -32,14 +29,13 @@ pub(super) fn notice_line(n: &Notice) -> String {
         Notice::KindChanged { oid, ours, theirs } => format!(
             "{} is {} {ours} here and {} {theirs} upstream",
             oid.short(),
-            article(ours.as_str()),
-            article(theirs.as_str())
+            article_a_reworded_or_added_kind_still_reads_with(ours.as_str()),
+            article_a_reworded_or_added_kind_still_reads_with(theirs.as_str())
         ),
     }
 }
 
-/// The article a kind word takes, so a reworded or added kind still reads.
-fn article(word: &str) -> &'static str {
+fn article_a_reworded_or_added_kind_still_reads_with(word: &str) -> &'static str {
     match word.chars().next() {
         Some('a' | 'e' | 'i' | 'o' | 'u') => "an",
         _ => "a",
