@@ -9,7 +9,7 @@ pub use memory_store::MemoryStore;
 
 pub mod prelude {
     pub use crate::ports::{
-        CommitRepository, ConflictRepository, NoticeRepository, ObjectRepository,
-        RemoteTrackingRepository, StageRepository,
+        AcceptedKindsRepository, CommitRepository, ConflictRepository, NoticeRepository,
+        ObjectRepository, RemoteTrackingRepository, StageRepository,
     };
 }

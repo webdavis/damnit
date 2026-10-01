@@ -34,7 +34,7 @@ pub fn push(
     let targets = select_remotes(config, remote)?;
     let mut reports = Vec::with_capacity(targets.len());
     for target in targets {
-        let (mut helper, caps) = connect(launcher, credentials, target)?;
+        let (mut helper, caps) = connect(launcher, credentials, repos.accepted_kinds, target)?;
         reports.push(push_one(repos, helper.as_mut(), &caps, clock, target)?);
     }
     Ok(reports)

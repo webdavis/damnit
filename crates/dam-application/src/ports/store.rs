@@ -130,49 +130,7 @@ pub trait Transactional {
     ) -> Result<(), UseCaseError>;
 }
 
-pub trait Store:
-    ObjectRepository
-    + StageRepository
-    + CommitRepository
-    + RemoteTrackingRepository
-    + ConflictRepository
-    + NoticeRepository
-    + Transactional
-{
-}
-
-impl<T> Store for T where
-    T: ObjectRepository
-        + StageRepository
-        + CommitRepository
-        + RemoteTrackingRepository
-        + ConflictRepository
-        + NoticeRepository
-        + Transactional
-{
-}
-
-#[derive(Clone, Copy)]
-pub struct Repositories<'a> {
-    pub objects: &'a dyn ObjectRepository,
-    pub stage: &'a dyn StageRepository,
-    pub commits: &'a dyn CommitRepository,
-    pub remote_tracking: &'a dyn RemoteTrackingRepository,
-    pub conflicts: &'a dyn ConflictRepository,
-    pub notices: &'a dyn NoticeRepository,
-    pub transaction: &'a dyn Transactional,
-}
-
-impl<'a> Repositories<'a> {
-    pub fn of(store: &'a dyn Store) -> Repositories<'a> {
-        Repositories {
-            objects: store,
-            stage: store,
-            commits: store,
-            remote_tracking: store,
-            conflicts: store,
-            notices: store,
-            transaction: store,
-        }
-    }
+pub trait AcceptedKindsRepository {
+    fn accepted_kinds(&self, remote: &RemoteName) -> Result<Option<Vec<Kind>>, StoreError>;
+    fn set_accepted_kinds(&self, remote: &RemoteName, kinds: &[Kind]) -> Result<(), StoreError>;
 }

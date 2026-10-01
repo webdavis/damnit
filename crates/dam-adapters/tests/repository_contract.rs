@@ -41,3 +41,8 @@ fn it_keeps_the_transactional_contract() {
     let store = store();
     contract::transactional_contract(&store, &store, &store);
 }
+
+#[test]
+fn it_keeps_the_accepted_kinds_repository_contract() {
+    contract::accepted_kinds_repository_contract(&store());
+}

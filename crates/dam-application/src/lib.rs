@@ -15,10 +15,10 @@ pub use dam_domain::{Blocker, ChildDisposition, DependencyDisposition, Dispositi
 pub use errors::{Refusal, UseCaseError};
 pub use merge::{kind_change, merge_fields};
 pub use ports::{
-    Clock, CommitRepository, Conflict, ConflictRepository, CredentialError, CredentialSource,
-    EditorError, EditorSession, HelperError, HelperLauncher, Notice, NoticeRepository,
-    ObjectRepository, Randomness, RemoteHelper, RemoteName, RemoteTrackingRepository, Repositories,
-    StageRepository, Store, StoreError, Transactional,
+    AcceptedKindsRepository, Clock, CommitRepository, Conflict, ConflictRepository,
+    CredentialError, CredentialSource, EditorError, EditorSession, HelperError, HelperLauncher,
+    Notice, NoticeRepository, ObjectRepository, Randomness, RemoteHelper, RemoteName,
+    RemoteTrackingRepository, Repositories, StageRepository, Store, StoreError, Transactional,
 };
 pub use remote::{
     IncomingObject, MutationOp, MutationOutcome, PullOutcome, RejectedObject, RemoteCapabilities,

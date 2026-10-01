@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 
-use dam_domain::{Change, CommitId, CommitRecord, Object, Oid, Path, Timestamp, coalesce};
+use dam_domain::{Change, CommitId, CommitRecord, Kind, Object, Oid, Path, Timestamp, coalesce};
 
 use crate::errors::UseCaseError;
 use crate::ports::{
@@ -24,6 +24,7 @@ struct Inner {
     retries: BTreeMap<RemoteName, Vec<Oid>>,
     last_pulls: BTreeMap<RemoteName, Timestamp>,
     last_pushes: BTreeMap<RemoteName, Timestamp>,
+    accepted_kinds: BTreeMap<RemoteName, Vec<Kind>>,
 }
 
 #[derive(Default)]
@@ -173,4 +174,5 @@ impl CommitRepository for MemoryStore {
     }
 }
 
+mod accepted_kinds;
 mod remote_state;

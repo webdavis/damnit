@@ -163,6 +163,11 @@ mod tests {
     }
 
     #[test]
+    fn it_keeps_the_accepted_kinds_repository_contract() {
+        contract::accepted_kinds_repository_contract(&MemoryStore::new());
+    }
+
+    #[test]
     fn it_keeps_the_conflict_repository_contract() {
         let store = MemoryStore::new();
         contract::conflict_repository_contract(&store, &store);
