@@ -103,3 +103,21 @@ impl Event {
         }
     }
 }
+
+impl Event {
+    pub fn span(&self, zone: &jiff::tz::TimeZone) -> Option<(crate::Timestamp, crate::Timestamp)> {
+        Some((self.start.instant(zone)?, self.end.instant(zone)?))
+    }
+
+    pub fn holds_time(&self) -> bool {
+        self.status != EventStatus::Cancelled
+            && self.transparency == Transparency::Busy
+            && !self
+                .attendees
+                .iter()
+                .any(|a| a.is_self && a.response == ResponseStatus::Declined)
+    }
+}
+
+#[cfg(test)]
+mod tests;
