@@ -7,7 +7,10 @@ pub mod credentials;
 pub(crate) mod encoding;
 pub mod endpoints;
 pub(crate) mod http;
+pub(crate) mod map;
+mod memory;
 pub(crate) mod oauth_error;
+pub mod pull;
 pub mod secret;
 pub mod sign_in;
 
@@ -15,5 +18,6 @@ pub use api_error::ApiError;
 pub use credentials::Credentials;
 pub use endpoints::{BASE_URL_VARIABLE, Endpoints};
 pub use http::agent as http_agent;
+pub use map::{MapError, remote_id};
 pub use secret::Secret;
 pub use sign_in::{Client, SignIn, SignInError};
