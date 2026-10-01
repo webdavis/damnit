@@ -1,13 +1,20 @@
-use std::fmt;
-
 use dam_domain::{Blocker, LabelViolation, Oid};
 
 use crate::ports::{CredentialError, EditorError, HelperError, StoreError};
 
+mod refusal_display;
+mod use_case_display;
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum Refusal {
-    Blocked { oid: Oid, blockers: Vec<Blocker> },
-    Cycle { oid: Oid, path: Vec<Oid> },
+    Blocked {
+        oid: Oid,
+        blockers: Vec<Blocker>,
+    },
+    Cycle {
+        oid: Oid,
+        path: Vec<Oid>,
+    },
     Labels(LabelViolation),
     UnknownCategory(String),
     NoSuchObject(String),
@@ -17,13 +24,23 @@ pub enum Refusal {
     NotAnEvent(Oid),
     NotCompleted(Oid),
     NotCommitted(Oid),
-    DirtyOnPull { oid: Oid },
+    DirtyOnPull {
+        oid: Oid,
+    },
     MoveInsideItself(Oid),
     NothingToCommit,
     NeedsAnAnswer,
     NeedsAnEditor,
     UnresolvedConflicts(usize),
-    MissingCredential { remote: String, name: String },
+    MissingCredential {
+        remote: String,
+        name: String,
+    },
+    StaleRemote {
+        remote: String,
+        age: Option<u64>,
+        limit: u64,
+    },
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -57,6 +74,7 @@ impl Refusal {
             Refusal::NeedsAnEditor => "needs_an_editor",
             Refusal::UnresolvedConflicts(_) => "unresolved_conflicts",
             Refusal::MissingCredential { .. } => "missing_credential",
+            Refusal::StaleRemote { .. } => "stale_remote",
         }
     }
 }
@@ -84,143 +102,6 @@ impl From<CredentialError> for UseCaseError {
 impl From<EditorError> for UseCaseError {
     fn from(e: EditorError) -> UseCaseError {
         UseCaseError::Editor(e)
-    }
-}
-
-impl fmt::Display for Refusal {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Refusal::Blocked { oid, blockers } => {
-                writeln!(f, "{} cannot be completed:", oid.short())?;
-                for b in blockers {
-                    match b {
-                        Blocker::OpenDependency(d) => {
-                            writeln!(f, "  depends on {} which is open", d.short())?
-                        }
-                        Blocker::OpenChild(c) => writeln!(f, "  child {} is open", c.short())?,
-                    }
-                }
-                f.write_str("use --force to complete it anyway, or --force --interactive to decide what happens to them")
-            }
-            Refusal::Cycle { oid, path } => {
-                let chain: Vec<&str> = path.iter().map(|o| o.short()).collect();
-                write!(
-                    f,
-                    "{} cannot depend on that: it would form a cycle through {}",
-                    oid.short(),
-                    chain.join(" -> ")
-                )
-            }
-            Refusal::Labels(v) => write!(f, "{v}"),
-            Refusal::UnknownCategory(n) => write!(f, "{n:?} is not a declared category"),
-            Refusal::NoSuchObject(s) => write!(f, "no object matches {s:?}"),
-            Refusal::NoWorkingObject(s) => write!(
-                f,
-                "no object in the working layer matches {s:?}; one removed from it is named by its full oid"
-            ),
-            Refusal::NoSuchRemote(s) => write!(f, "no remote named {s:?}"),
-            Refusal::NotATask(o) => {
-                write!(f, "{} is an event; events are not completed", o.short())
-            }
-            Refusal::NotAnEvent(o) => write!(
-                f,
-                "{} is a task; start, end and location are event fields",
-                o.short()
-            ),
-            Refusal::NotCompleted(o) => write!(
-                f,
-                "{} is not completed, so there is nothing to reopen",
-                o.short()
-            ),
-            Refusal::NotCommitted(o) => write!(
-                f,
-                "{} has no commit behind it; dam rm removes it instead",
-                o.short()
-            ),
-            Refusal::DirtyOnPull { oid } => write!(
-                f,
-                "{} changed upstream and has uncommitted local changes; commit or reset it, then pull again",
-                oid.short()
-            ),
-            Refusal::UnresolvedConflicts(n) => {
-                write!(f, "{n} conflicts are unresolved; run dam resolve")
-            }
-            Refusal::MoveInsideItself(o) => {
-                write!(f, "{} cannot move inside itself", o.short())
-            }
-            Refusal::NothingToCommit => f.write_str("nothing to commit"),
-            Refusal::NeedsAnAnswer => f.write_str(
-                "a question needs an answer; drop --json/--toon to answer interactively",
-            ),
-            Refusal::NeedsAnEditor => {
-                f.write_str("-e opens an editor; drop --json/--toon to use it")
-            }
-            Refusal::MissingCredential { remote, name } => {
-                write!(
-                    f,
-                    "remote {remote:?} needs {name}; set {name}, {name}_command or {name}_env in its config"
-                )
-            }
-        }
-    }
-}
-
-impl fmt::Display for UseCaseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            UseCaseError::Refused(r) => write!(f, "{r}"),
-            UseCaseError::Store(StoreError::Busy(why)) => {
-                write!(f, "the store is busy, another dam is writing it: {why}")
-            }
-            UseCaseError::Store(StoreError::Failed(why)) => write!(f, "storage: {why}"),
-            UseCaseError::Helper(HelperError::NotFound { helper }) => {
-                write!(f, "{helper} was not found on PATH")
-            }
-            UseCaseError::Helper(HelperError::Protocol(s)) => {
-                write!(f, "the helper answered something dam cannot read: {s}")
-            }
-            UseCaseError::Helper(HelperError::UnsupportedProtocol {
-                helper,
-                found,
-                supported,
-            }) => write!(
-                f,
-                "helper {helper} speaks protocol version {found}; dam speaks {supported}, so upgrade dam or use an older helper"
-            ),
-            UseCaseError::Helper(HelperError::CollidingCredentials {
-                first,
-                second,
-                variable,
-            }) => write!(
-                f,
-                "credentials {first} and {second} both become {variable}; rename one of them"
-            ),
-            UseCaseError::Helper(HelperError::Io(s)) => write!(f, "talking to the helper: {s}"),
-            UseCaseError::Helper(HelperError::Remote(s)) => write!(f, "the remote refused: {s}"),
-            UseCaseError::Helper(HelperError::Timeout {
-                helper,
-                deadline,
-                said,
-            }) => {
-                write!(f, "helper {helper} gave no answer within {deadline}")?;
-                match said {
-                    Some(text) => write!(f, "; it said: {text}"),
-                    None => Ok(()),
-                }
-            }
-            UseCaseError::Helper(HelperError::Cancelled) => f.write_str("cancelled"),
-            UseCaseError::Credential(CredentialError::Missing(n)) => {
-                write!(f, "credential {n} has no source")
-            }
-            UseCaseError::Credential(CredentialError::CommandFailed { name, why }) => {
-                write!(f, "the command for {name} failed: {why}")
-            }
-            UseCaseError::Credential(CredentialError::EnvUnset { name, var }) => {
-                write!(f, "{name}: the variable {var} is not set")
-            }
-            UseCaseError::Editor(e) => write!(f, "editor: {}", e.0),
-            UseCaseError::Parse(s) => write!(f, "{s}"),
-        }
     }
 }
 

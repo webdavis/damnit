@@ -25,9 +25,11 @@ pub use remote::{
     RemoteMutation,
 };
 pub use secret::Secret;
+pub use use_cases::agenda::{Scheduled, Window, agenda};
 pub use use_cases::commit::{commit, log};
 pub use use_cases::complete::{CompletePlan, Completed, complete, plan_complete};
 pub use use_cases::edit::{EditFields, apply, edit};
+pub use use_cases::freshness::require_fresh;
 pub use use_cases::list::list;
 pub use use_cases::new_object::{NewEvent, NewTask, new_event, new_task};
 pub use use_cases::pull::{PullReport, pull};

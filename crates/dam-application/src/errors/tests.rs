@@ -5,7 +5,7 @@ fn oid() -> Oid {
     Oid::generate(&mut |x: &mut [u8]| x.fill(1))
 }
 
-const HAND_COUNTED_RULES: usize = 18;
+const HAND_COUNTED_RULES: usize = 19;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -27,6 +27,7 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::NeedsAnEditor => 15,
         Refusal::UnresolvedConflicts(_) => 16,
         Refusal::MissingCredential { .. } => 17,
+        Refusal::StaleRemote { .. } => 18,
     }
 }
 
@@ -61,6 +62,11 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
         Refusal::MissingCredential {
             remote: "todoist".into(),
             name: "api_token".into(),
+        },
+        Refusal::StaleRemote {
+            remote: "gcal".into(),
+            age: None,
+            limit: 60,
         },
     ]
 }
