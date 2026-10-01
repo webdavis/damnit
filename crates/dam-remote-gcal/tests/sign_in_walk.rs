@@ -70,6 +70,7 @@ fn a_granted_consent_is_exchanged_for_the_refresh_token() {
 
 #[test]
 fn the_tests_own_s256_is_the_rfc_7636_appendix_b_example() {
+    let _guard = support::guard("the_tests_own_s256_is_the_rfc_7636_appendix_b_example");
     assert_eq!(
         s256_computed_apart_from_the_code_under_test("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"),
         "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
