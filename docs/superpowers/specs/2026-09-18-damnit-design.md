@@ -426,7 +426,9 @@ or a push left to read, and `unpushed` is one row per configured remote.
 ```
 
 `commit_ids` names the commits that remote has not been told about, newest first, which is the
-order `dam log` prints history in, so a client pairs the two lists without sorting either.
+order `dam log` prints history in, so a client pairs the two lists without sorting either. A commit
+counts only when it changes an object of a kind that remote accepts, as its helper last declared;
+before dam has connected to a remote, every commit counts.
 `commits` is the length of that list, so a statusline reads one field and a client offering to
 open a commit reads the other.
 
