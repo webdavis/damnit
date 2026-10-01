@@ -13,6 +13,10 @@ path = "src/lib.rs"
 name = "dam-gcal-sign-in"
 path = "src/bin/dam-gcal-sign-in.rs"
 
+[[bin]]
+name = "dam-remote-gcal"
+path = "src/main.rs"
+
 [dependencies]
 dam-protocol = { path = "../dam-protocol" }
 getrandom.workspace = true

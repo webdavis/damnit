@@ -11,7 +11,9 @@ pub(crate) mod map;
 mod memory;
 pub(crate) mod oauth_error;
 pub mod pull;
+pub mod push;
 pub mod secret;
+pub mod serve;
 pub mod sign_in;
 
 pub use api_error::ApiError;

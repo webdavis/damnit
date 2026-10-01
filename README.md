@@ -39,7 +39,7 @@ the helper and leaving the store as it was.
 
     cargo install --git https://github.com/webdavis/damnit dam-remote-gcal
 
-That installs `dam-gcal-sign-in`, which you run once.
+That installs `dam-remote-gcal`, which dam runs, and `dam-gcal-sign-in`, which you run once.
 
 Google needs an OAuth client of type "Desktop app" with the Google Calendar API enabled on its
 project. Keep its client id and client secret in your vault, then sign in:
@@ -62,6 +62,26 @@ browser connects, the redirect has 30 seconds to arrive. The token is written to
 and nowhere else, so if that write fails the token is lost and the command exits 1 and says to sign
 in again. A command line it refuses exits 2 before anything is asked of Google; a refused consent or
 exchange exits 1.
+
+Then the remote. The address after `gcal::` names the calendars to read, comma-separated; empty
+means your primary calendar:
+
+    dam remote add gcal gcal::primary
+
+    [remote.gcal]
+    url = "gcal::primary"
+    client_id_command = ["security", "find-generic-password", "-w", "-s", "Google dam client id"]
+    client_secret_command = ["security", "find-generic-password", "-w", "-s", "Google dam client"]
+    refresh_token_command = ["security", "find-generic-password", "-w", "-s", "Google dam refresh"]
+
+A pull reads the week behind and the ninety days ahead, recurring events as their instances, and
+files each event under a folder named after its calendar's title. The remote is read-only: it
+declares no kinds, so `dam push` sends it nothing, and an event you make or change in dam stays in
+dam. `path` narrows what a push sends, so it does nothing for this remote.
+
+Pull it on a schedule: run `dam pull gcal` every few minutes from cron, launchd or a systemd timer,
+somewhere the three credential commands work without a terminal. Setting `stale` also keeps it
+fresh, but then whichever read finds it stale waits on Google first.
 
 ## How Todoist maps
 
