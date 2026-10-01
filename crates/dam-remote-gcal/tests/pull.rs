@@ -3,16 +3,16 @@ mod support;
 
 use std::collections::HashMap;
 
+use dam_remote_gcal::Endpoints;
 use dam_remote_gcal::calendar_api::CalendarApi;
 use dam_remote_gcal::pull::{pull, window};
-use dam_remote_gcal::{Endpoints, http_agent};
 use loopback::Reply;
 
 const NOW: &str = "2026-09-22T12:00:00Z";
 
 fn api(base: &str) -> CalendarApi {
     CalendarApi::new(
-        http_agent(),
+        support::agent(),
         &Endpoints::loopback(base).unwrap(),
         "ya29.A".into(),
     )

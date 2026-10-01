@@ -7,7 +7,7 @@ const CALL_DEADLINE: Duration = Duration::from_secs(30);
 
 const REDIRECTS_FOLLOWED_SO_NO_CREDENTIAL_REACHES_ANOTHER_HOST: u32 = 0;
 
-pub fn agent() -> ureq::Agent {
+pub(crate) fn agent() -> ureq::Agent {
     ureq::Agent::config_builder()
         .timeout_global(Some(CALL_DEADLINE))
         .max_redirects(REDIRECTS_FOLLOWED_SO_NO_CREDENTIAL_REACHES_ANOTHER_HOST)

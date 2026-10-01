@@ -5,7 +5,8 @@ use dam_protocol::{PullResponse, Request, Response, read_line, write_line};
 use crate::access::access_token;
 use crate::address::calendars;
 use crate::calendar_api::CalendarApi;
-use crate::{Credentials, Endpoints, capabilities, http_agent, pull, push};
+use crate::http::agent;
+use crate::{Credentials, Endpoints, capabilities, pull, push};
 
 pub fn answer_each_request_line(
     input: &mut impl BufRead,
@@ -47,7 +48,7 @@ fn answer(request: Request, remote: &str, address: &str) -> Response {
 fn pull_now(remote: &str, address: &str, since: Option<&str>) -> Result<PullResponse, String> {
     let credentials = Credentials::from_env(remote)?;
     let endpoints = Endpoints::from_env()?;
-    let agent = http_agent();
+    let agent = agent();
     let access = access_token(&agent, &endpoints, &credentials).map_err(|e| e.to_string())?;
     let api = CalendarApi::new(agent, &endpoints, access);
     pull::pull(&api, &calendars(address), since, jiff::Timestamp::now()).map_err(|e| e.to_string())

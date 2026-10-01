@@ -4,7 +4,7 @@ mod support;
 use std::collections::HashMap;
 
 use dam_remote_gcal::access::access_token;
-use dam_remote_gcal::{ApiError, Client, Credentials, Endpoints, http_agent};
+use dam_remote_gcal::{ApiError, Client, Credentials, Endpoints};
 use loopback::Reply;
 
 const CLIENT_SECRET: &str = "GOCSPX-SUPERSECRETCLIENT";
@@ -36,7 +36,7 @@ fn the_refresh_grant_sends_the_three_credentials_in_a_form_and_reads_the_access_
         serde_json::json!({"access_token": "ya29.ACCESS", "expires_in": 3599, "token_type": "Bearer"}),
     ));
     let token = access_token(
-        &http_agent(),
+        &support::agent(),
         &Endpoints::loopback(&google.base).unwrap(),
         &credentials(),
     )
@@ -63,7 +63,7 @@ fn a_revoked_refresh_token_says_to_sign_in_again_and_quotes_nothing() {
         }),
     ));
     let err = access_token(
-        &http_agent(),
+        &support::agent(),
         &Endpoints::loopback(&google.base).unwrap(),
         &credentials(),
     )
@@ -90,7 +90,7 @@ fn an_answer_without_an_access_token_is_refused_without_quoting_it() {
         serde_json::json!({"token_type": "Bearer", "echo": REFRESH}),
     ));
     let err = access_token(
-        &http_agent(),
+        &support::agent(),
         &Endpoints::loopback(&google.base).unwrap(),
         &credentials(),
     )
@@ -116,7 +116,7 @@ fn an_empty_access_token_is_refused() {
         serde_json::json!({"access_token": "", "token_type": "Bearer"}),
     ));
     let err = access_token(
-        &http_agent(),
+        &support::agent(),
         &Endpoints::loopback(&google.base).unwrap(),
         &credentials(),
     )
@@ -141,7 +141,7 @@ fn a_token_endpoint_nobody_answers_is_an_exchange_that_did_not_reach_google() {
     let base = format!("http://{}", closed.local_addr().unwrap());
     drop(closed);
     let err = access_token(
-        &http_agent(),
+        &support::agent(),
         &Endpoints::loopback(&base).unwrap(),
         &credentials(),
     )
@@ -170,7 +170,7 @@ fn an_error_never_debug_prints_a_credential() {
         serde_json::json!({"error": "invalid_client", "e": CLIENT_SECRET}),
     ));
     let err = access_token(
-        &http_agent(),
+        &support::agent(),
         &Endpoints::loopback(&google.base).unwrap(),
         &credentials(),
     )
@@ -189,7 +189,7 @@ fn window() -> Window {
 
 fn api(base: &str) -> CalendarApi {
     CalendarApi::new(
-        http_agent(),
+        support::agent(),
         &Endpoints::loopback(base).unwrap(),
         "ya29.ACCESS".into(),
     )
