@@ -569,6 +569,19 @@ points it at a test server instead of Todoist. It accepts only `http://127.0.0.1
 `http://localhost:<port>` and refuses anything else, so the variable cannot send the bearer token
 to another host.
 
+`dam-remote-gcal`, version one, is read-only. Its address names the calendars it reads,
+comma-separated, and an empty address reads the primary calendar: `gcal::primary,team@group.calendar.google.com`.
+A pull reads the week behind and the ninety days ahead, with recurring events as their instances,
+so it declares no `recurrence`, and none of `labels`, `depends` or `reminders`, which stay `dam`'s
+own. It files each event under a path named after its calendar's title. An event Google
+cancelled, one that left that window early, and every event of a calendar taken off the address
+arrive by id as cancelled, so none of them keeps reading as busy; one that comes back arrives
+whole and is confirmed again. It declares no kinds, so `dam` pushes it nothing (see the protocol's
+`kinds`); a push that reaches it anyway is refused per mutation, and nothing reaches Google. It
+reads one variable of its own, `DAM_GCAL_BASE_URL`, under the same loopback-only rule as the
+Todoist helper's. Keep it fresh with a scheduled `dam pull gcal` rather than `stale`, so no read
+waits on Google.
+
 **Signing in.** The package also installs `dam-gcal-sign-in`, which the operator runs once:
 `dam-gcal-sign-in --client-id <id>`, the client secret piped on standard input and refused from a
 terminal or an argument. It walks Google's installed-app consent (a loopback redirect, PKCE with
@@ -618,8 +631,7 @@ url = "gcal::"
 client_id_command = ["keepassxc-cli", "show", "-a", "UserName", "~/vault.kdbx", "Google :: dam"]
 client_secret_command = ["keepassxc-cli", "show", "-a", "Password", "~/vault.kdbx", "Google :: dam"]
 refresh_token_command = ["keepassxc-cli", "show", "-a", "refresh", "~/vault.kdbx", "Google :: dam"]
-stale = "5m"
-path = "calendar/"
+# url = "gcal::primary,team@group.calendar.google.com" reads two calendars; pull it on a schedule
 
 [category.effort]
 values = ["light", "admin", "deep"]
