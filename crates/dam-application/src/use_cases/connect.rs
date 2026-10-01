@@ -1,12 +1,13 @@
 use crate::config::RemoteConfig;
 use crate::credentials::resolve_credentials;
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{CredentialSource, HelperLauncher, RemoteHelper};
+use crate::ports::{AcceptedKindsRepository, CredentialSource, HelperLauncher, RemoteHelper};
 use crate::remote::RemoteCapabilities;
 
 pub(crate) fn connect(
     launcher: &dyn HelperLauncher,
     credentials: &dyn CredentialSource,
+    accepted_kinds: &dyn AcceptedKindsRepository,
     remote: &RemoteConfig,
 ) -> Result<(Box<dyn RemoteHelper>, RemoteCapabilities), UseCaseError> {
     let configured: Vec<String> = remote
@@ -24,6 +25,7 @@ pub(crate) fn connect(
         }
         .into());
     }
+    accepted_kinds.set_accepted_kinds(&remote.name, &caps.kinds)?;
     Ok((helper, caps))
 }
 

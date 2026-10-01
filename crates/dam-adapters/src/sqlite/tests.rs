@@ -1,5 +1,5 @@
 use super::*;
-use dam_application::StageRepository;
+use dam_application::{StageRepository, StoreError};
 use std::os::unix::fs::PermissionsExt;
 
 #[test]

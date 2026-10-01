@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use dam_domain::{Change, CommitId, Object, Oid, diff};
+use dam_domain::{Change, CommitId, Kind, Object, Oid, diff};
 
 use crate::errors::UseCaseError;
 use crate::ports::{
@@ -25,7 +25,8 @@ pub struct Unpushed {
 pub fn status(repos: Repositories<'_>, remotes: &[RemoteName]) -> Result<Status, UseCaseError> {
     let mut unpushed = Vec::new();
     for remote in remotes {
-        unpushed.push(unpushed_for(repos.commits, remote)?);
+        let accepted = repos.accepted_kinds.accepted_kinds(remote)?;
+        unpushed.push(unpushed_for(repos.commits, remote, accepted.as_deref())?);
     }
     Ok(Status {
         staged: diff_staged(repos.stage)?,
@@ -39,13 +40,22 @@ pub fn status(repos: Repositories<'_>, remotes: &[RemoteName]) -> Result<Status,
 fn unpushed_for(
     commits: &dyn CommitRepository,
     remote: &RemoteName,
+    accepted: Option<&[Kind]>,
 ) -> Result<Unpushed, UseCaseError> {
     let mut commit_ids = Vec::new();
     let mut oids = Vec::new();
     let mut named = BTreeSet::new();
     let newest_first = commits.unpushed(remote)?.into_iter().rev();
     for record in newest_first {
-        for change in &record.changes {
+        let owed: Vec<&Change> = record
+            .changes
+            .iter()
+            .filter(|change| taken_by(accepted, change))
+            .collect();
+        if owed.is_empty() {
+            continue;
+        }
+        for change in owed {
             if named.insert(change.oid.clone()) {
                 oids.push(change.oid.clone());
             }
@@ -57,6 +67,17 @@ fn unpushed_for(
         commit_ids,
         oids,
     })
+}
+
+fn taken_by(accepted: Option<&[Kind]>, change: &Change) -> bool {
+    let Some(kinds) = accepted else {
+        return true;
+    };
+    change
+        .after
+        .as_ref()
+        .or(change.before.as_ref())
+        .is_some_and(|object| kinds.contains(&object.kind()))
 }
 
 pub fn diff_staged(stage: &dyn StageRepository) -> Result<Vec<Change>, UseCaseError> {
@@ -92,130 +113,4 @@ pub fn diff_working(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::testing::prelude::*;
-    use crate::testing::{FixedClock, FixedRandom, MemoryStore, oid};
-    use crate::use_cases::commit::commit;
-    use crate::use_cases::stage::add;
-    use dam_domain::{Object, Op, Task};
-    use jiff::civil::date;
-
-    #[test]
-    fn a_fully_staged_change_is_not_also_unstaged() {
-        let store = MemoryStore::new();
-        let repos = Repositories::of(&store);
-        store.put(&Object::Task(Task::new(oid(1), "a"))).unwrap();
-        add(&store, &store, &[oid(1)]).unwrap();
-        let s = status(repos, &[]).unwrap();
-        assert_eq!(s.staged.len(), 1);
-        assert!(s.unstaged.is_empty());
-    }
-
-    #[test]
-    fn an_edit_after_staging_shows_as_unstaged_on_top_of_the_stage() {
-        let store = MemoryStore::new();
-        let repos = Repositories::of(&store);
-        store.put(&Object::Task(Task::new(oid(1), "a"))).unwrap();
-        add(&store, &store, &[oid(1)]).unwrap();
-        let mut t = store.get(&oid(1)).unwrap().unwrap();
-        t.base_mut().subject = "b".into();
-        store.put(&t).unwrap();
-        let s = status(repos, &[]).unwrap();
-        assert_eq!(s.staged[0].after.as_ref().unwrap().base().subject, "a");
-        assert_eq!(s.unstaged[0].op, Op::Update);
-        assert_eq!(s.unstaged[0].after.as_ref().unwrap().base().subject, "b");
-    }
-
-    #[test]
-    fn unpushed_names_each_commit_newest_first() {
-        let store = MemoryStore::new();
-        let clock = FixedClock(date(2026, 9, 18));
-        let random = FixedRandom::new(5);
-        store.put(&Object::Task(Task::new(oid(1), "a"))).unwrap();
-        add(&store, &store, &[oid(1)]).unwrap();
-        let first = commit(&store, &store, &clock, &random, "first").unwrap();
-        store.put(&Object::Task(Task::new(oid(2), "b"))).unwrap();
-        add(&store, &store, &[oid(2)]).unwrap();
-        let second = commit(&store, &store, &clock, &random, "second").unwrap();
-        let remote = RemoteName("todoist".into());
-        let s = status(Repositories::of(&store), std::slice::from_ref(&remote)).unwrap();
-        assert_eq!(s.unpushed[0].remote, remote);
-        assert_eq!(s.unpushed[0].commit_ids, vec![second.id, first.id]);
-    }
-
-    #[test]
-    fn unpushed_names_each_object_once_in_first_appearance_order() {
-        let store = MemoryStore::new();
-        let clock = FixedClock(date(2026, 9, 18));
-        let random = FixedRandom::new(5);
-        for byte in [1u8, 2] {
-            store.put(&Object::Task(Task::new(oid(byte), "a"))).unwrap();
-            add(&store, &store, &[oid(byte)]).unwrap();
-            commit(&store, &store, &clock, &random, "create").unwrap();
-        }
-        let mut second = store.get(&oid(2)).unwrap().unwrap();
-        second.base_mut().subject = "changed again".into();
-        store.put(&second).unwrap();
-        add(&store, &store, &[oid(2)]).unwrap();
-        commit(&store, &store, &clock, &random, "touch it again").unwrap();
-
-        let remote = RemoteName("todoist".into());
-        let s = status(Repositories::of(&store), std::slice::from_ref(&remote)).unwrap();
-        assert_eq!(s.unpushed[0].commit_ids.len(), 3);
-        assert_eq!(s.unpushed[0].oids, vec![oid(2), oid(1)]);
-    }
-
-    #[test]
-    fn a_remote_owed_nothing_gets_a_row_with_empty_lists() {
-        let store = MemoryStore::new();
-        let remote = RemoteName("todoist".into());
-        let s = status(Repositories::of(&store), std::slice::from_ref(&remote)).unwrap();
-        assert_eq!(s.unpushed.len(), 1);
-        assert!(s.unpushed[0].commit_ids.is_empty());
-        assert!(s.unpushed[0].oids.is_empty());
-    }
-
-    #[test]
-    fn unpushed_counts_per_remote() {
-        let store = MemoryStore::new();
-        let repos = Repositories::of(&store);
-        store.put(&Object::Task(Task::new(oid(1), "a"))).unwrap();
-        add(&store, &store, &[oid(1)]).unwrap();
-        commit(
-            &store,
-            &store,
-            &FixedClock(date(2026, 9, 18)),
-            &FixedRandom::new(5),
-            "m",
-        )
-        .unwrap();
-        let remote = RemoteName("todoist".into());
-        let s = status(repos, std::slice::from_ref(&remote)).unwrap();
-        assert_eq!(s.unpushed.len(), 1);
-        assert_eq!(s.unpushed[0].remote, remote);
-        assert_eq!(s.unpushed[0].commit_ids.len(), 1);
-    }
-
-    #[test]
-    fn a_working_delete_not_yet_staged_shows_as_an_unstaged_delete() {
-        let store = MemoryStore::new();
-        store.put(&Object::Task(Task::new(oid(1), "a"))).unwrap();
-        add(&store, &store, &[oid(1)]).unwrap();
-        commit(
-            &store,
-            &store,
-            &FixedClock(date(2026, 9, 18)),
-            &FixedRandom::new(5),
-            "m",
-        )
-        .unwrap();
-        store.delete(&oid(1)).unwrap();
-        let s = diff_working(&store, &store, &store).unwrap();
-        assert_eq!(s.len(), 1);
-        assert_eq!(s[0].op, Op::Delete);
-        let staged = crate::use_cases::stage::add_all(&store, &store, &store).unwrap();
-        assert_eq!(staged.len(), 1);
-        assert_eq!(staged[0].op, Op::Delete);
-    }
-}
+mod tests;

@@ -1,5 +1,3 @@
-use dam_domain::{Change, CommitId, CommitRecord, Object, Oid, Op};
-
 use crate::config::{Config, RemoteConfig};
 use crate::errors::UseCaseError;
 use crate::ports::{
@@ -11,10 +9,12 @@ use crate::use_cases::push::select_remotes;
 
 mod cancelled;
 mod classify;
+mod land;
 mod notices;
 
-use classify::{Incoming, classify};
-use notices::{note_cancelled, record_removals};
+use classify::classify;
+use land::land;
+use notices::record_removals;
 
 #[derive(Debug)]
 pub struct PullReport {
@@ -37,7 +37,7 @@ pub fn pull(
 ) -> Result<Vec<PullReport>, UseCaseError> {
     let mut reports = Vec::new();
     for target in select_remotes(config, remote)? {
-        let (mut helper, caps) = connect(launcher, credentials, target)?;
+        let (mut helper, caps) = connect(launcher, credentials, repos.accepted_kinds, target)?;
         let since = repos.remote_tracking.sync_token(&target.name)?;
         let response = helper.pull(since.as_deref())?;
         reports.push(apply(repos, clock, random, target, &caps, response)?);
@@ -95,78 +95,6 @@ fn apply(
         .transaction
         .in_transaction(&mut land_everything_as_one_unit)?;
     Ok(report)
-}
-
-fn land(
-    repos: Repositories<'_>,
-    clock: &dyn Clock,
-    random: &dyn Randomness,
-    remote: &RemoteConfig,
-    planned: Vec<(Oid, Incoming)>,
-    report: &mut PullReport,
-) -> Result<(), UseCaseError> {
-    let mut landed = Vec::new();
-    for (oid, incoming) in planned {
-        match incoming {
-            Incoming::Unchanged => report.unchanged += 1,
-            Incoming::Create(o) | Incoming::FastForward(o) => {
-                let is_create = repos.objects.get(&oid)?.is_none();
-                repos.objects.put(&o)?;
-                repos
-                    .remote_tracking
-                    .set_remote_snapshot(&remote.name, &o)?;
-                landed.push((
-                    oid,
-                    if is_create { Op::Create } else { Op::Update },
-                    o.clone(),
-                ));
-                if is_create {
-                    report.created += 1
-                } else {
-                    report.updated += 1
-                }
-                note_cancelled(repos.objects, repos.notices, &o)?;
-            }
-            Incoming::Conflict(o) => {
-                repos.conflicts.mark_conflict(&remote.name, &oid, &o)?;
-                repos
-                    .remote_tracking
-                    .set_remote_snapshot(&remote.name, &o)?;
-                report.conflicts += 1;
-                note_cancelled(repos.objects, repos.notices, &o)?;
-            }
-        }
-    }
-    if landed.is_empty() {
-        return Ok(());
-    }
-    commit_as_already_pushed(repos, clock, random, remote, landed)
-}
-
-fn commit_as_already_pushed(
-    repos: Repositories<'_>,
-    clock: &dyn Clock,
-    random: &dyn Randomness,
-    remote: &RemoteConfig,
-    landed: Vec<(Oid, Op, Object)>,
-) -> Result<(), UseCaseError> {
-    let record = CommitRecord {
-        id: CommitId::generate(&mut |b| random.fill(b)),
-        message: format!("pull from {}", remote.name.0),
-        at: clock.now(),
-        changes: landed
-            .into_iter()
-            .map(|(oid, op, after)| Change {
-                oid,
-                op,
-                before: None,
-                after: Some(after),
-            })
-            .collect(),
-    };
-    repos.commits.commit(&record)?;
-    repos.commits.mark_pushed(&remote.name, &record.id)?;
-    Ok(())
 }
 
 #[cfg(test)]

@@ -1,6 +1,6 @@
 use rusqlite::Connection;
 
-pub(super) const VERSION: u32 = 2;
+pub(super) const VERSION: u32 = 3;
 
 const V1: &str = r#"
 CREATE TABLE objects (oid TEXT PRIMARY KEY, kind TEXT NOT NULL, path TEXT NOT NULL, json TEXT NOT NULL);
@@ -23,6 +23,10 @@ const V2: &str = r#"
 CREATE TABLE pushes (remote TEXT PRIMARY KEY, at TEXT NOT NULL);
 "#;
 
+const V3: &str = r#"
+CREATE TABLE accepted_kinds (remote TEXT PRIMARY KEY, kinds TEXT NOT NULL);
+"#;
+
 pub(super) fn migrate_above_user_version_in_one_transaction(
     conn: &mut Connection,
 ) -> Result<(), rusqlite::Error> {
@@ -37,52 +41,12 @@ pub(super) fn migrate_above_user_version_in_one_transaction(
     if current < 2 {
         tx.execute_batch(V2)?;
     }
+    if current < 3 {
+        tx.execute_batch(V3)?;
+    }
     tx.pragma_update(None, "user_version", VERSION)?;
     tx.commit()
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_version_one_store_migrates_up_and_keeps_its_rows() {
-        let mut conn = Connection::open_in_memory().unwrap();
-        conn.execute_batch(V1).unwrap();
-        conn.pragma_update(None, "user_version", 1u32).unwrap();
-        conn.execute(
-            "INSERT INTO pulls (remote, at) VALUES ('todoist', '1970-01-01T00:00:00Z')",
-            [],
-        )
-        .unwrap();
-
-        migrate_above_user_version_in_one_transaction(&mut conn).unwrap();
-
-        let version: u32 = conn
-            .pragma_query_value(None, "user_version", |r| r.get(0))
-            .unwrap();
-        assert_eq!(version, VERSION);
-        conn.execute(
-            "INSERT INTO pushes (remote, at) VALUES ('todoist', '1970-01-01T00:01:00Z')",
-            [],
-        )
-        .unwrap();
-        let pulled: String = conn
-            .query_row("SELECT at FROM pulls WHERE remote = 'todoist'", [], |r| {
-                r.get(0)
-            })
-            .unwrap();
-        assert_eq!(pulled, "1970-01-01T00:00:00Z");
-    }
-
-    #[test]
-    fn migrating_a_current_store_again_changes_nothing() {
-        let mut conn = Connection::open_in_memory().unwrap();
-        migrate_above_user_version_in_one_transaction(&mut conn).unwrap();
-        migrate_above_user_version_in_one_transaction(&mut conn).unwrap();
-        let version: u32 = conn
-            .pragma_query_value(None, "user_version", |r| r.get(0))
-            .unwrap();
-        assert_eq!(version, VERSION);
-    }
-}
+mod tests;
