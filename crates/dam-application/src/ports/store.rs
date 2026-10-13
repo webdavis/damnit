@@ -1,9 +1,49 @@
+use std::fmt;
+
 use dam_domain::{Change, CommitId, CommitRecord, Kind, Object, Oid, Path, Timestamp};
 
 use crate::errors::UseCaseError;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct RemoteName(pub String);
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum RemoteNameError {
+    Empty,
+    OutsideTheAlphabet(String),
+}
+
+impl RemoteName {
+    pub fn parse(text: &str) -> Result<RemoteName, RemoteNameError> {
+        if text.is_empty() {
+            return Err(RemoteNameError::Empty);
+        }
+        if !text.chars().all(is_a_toml_bare_key_character) {
+            return Err(RemoteNameError::OutsideTheAlphabet(text.to_string()));
+        }
+        Ok(RemoteName(text.to_string()))
+    }
+}
+
+fn is_a_toml_bare_key_character(c: char) -> bool {
+    c.is_ascii_alphanumeric() || c == '-' || c == '_'
+}
+
+impl fmt::Display for RemoteNameError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            RemoteNameError::Empty => f.write_str("a remote name cannot be empty"),
+            RemoteNameError::OutsideTheAlphabet(name) => {
+                write!(
+                    f,
+                    "remote name {name:?} may hold only letters, digits, - and _"
+                )
+            }
+        }
+    }
+}
+
+impl std::error::Error for RemoteNameError {}
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum StoreError {
@@ -133,4 +173,28 @@ pub trait Transactional {
 pub trait AcceptedKindsRepository {
     fn accepted_kinds(&self, remote: &RemoteName) -> Result<Option<Vec<Kind>>, StoreError>;
     fn set_accepted_kinds(&self, remote: &RemoteName, kinds: &[Kind]) -> Result<(), StoreError>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_remote_name_is_a_toml_bare_key() {
+        assert_eq!(
+            RemoteName::parse("to-do_1"),
+            Ok(RemoteName("to-do_1".into()))
+        );
+        assert_eq!(
+            RemoteName::parse("a.b").unwrap_err().to_string(),
+            "remote name \"a.b\" may hold only letters, digits, - and _"
+        );
+        for bad in ["bad name", "x]", "a\nb", "caf\u{e9}"] {
+            assert_eq!(
+                RemoteName::parse(bad),
+                Err(RemoteNameError::OutsideTheAlphabet(bad.into()))
+            );
+        }
+        assert_eq!(RemoteName::parse(""), Err(RemoteNameError::Empty));
+    }
 }

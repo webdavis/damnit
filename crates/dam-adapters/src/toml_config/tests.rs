@@ -83,6 +83,15 @@ fn a_remote_without_a_helper_prefix_is_invalid() {
 }
 
 #[test]
+fn a_hand_written_remote_name_outside_the_bare_key_set_is_refused_by_name() {
+    let err = parse_config("[remote.\"a.b\"]\nurl = \"t::\"\n").unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "config: remote name \"a.b\" may hold only letters, digits, - and _"
+    );
+}
+
+#[test]
 fn a_command_credential_must_be_an_array() {
     let err = parse_config("[remote.x]\nurl = \"t::\"\napi_token_command = \"a b\"\n").unwrap_err();
     assert!(matches!(err, ConfigError::Invalid(m) if m.contains("api_token_command")));

@@ -5,6 +5,7 @@ use toml::{Table, Value};
 use super::{ConfigError, parse_duration};
 
 pub(super) fn parse_remote(name: &str, t: &Table) -> Result<RemoteConfig, ConfigError> {
+    let remote_name = RemoteName::parse(name).map_err(|e| ConfigError::Invalid(e.to_string()))?;
     let url = t
         .get("url")
         .and_then(Value::as_str)
@@ -49,7 +50,7 @@ pub(super) fn parse_remote(name: &str, t: &Table) -> Result<RemoteConfig, Config
     }
     let credentials = one_spec_per_name_at_its_highest_precedence(candidates);
     Ok(RemoteConfig {
-        name: RemoteName(name.to_string()),
+        name: remote_name,
         helper: helper.to_string(),
         url: url.to_string(),
         credentials,

@@ -11,16 +11,17 @@ use crate::output::Report;
 pub(crate) fn run_remote(ctx: &mut Context, args: RemoteArgs) -> Result<Report, CliError> {
     match args.command {
         RemoteCommand::Add { name, url } => {
-            let warning = append_remote(&ctx.config_path, &name, &url)?;
+            let name = RemoteName::parse(&name).map_err(|e| CliError::Usage(e.to_string()))?;
+            let warning = append_remote(&ctx.config_path, &name.0, &url)?;
             ctx.config = load_config(&ctx.config_path)?;
-            let mut human = format!("added {name} ({url})");
+            let mut human = format!("added {} ({url})", name.0);
             if let Some(why) = &warning {
                 human.insert_str(0, &format!("warning: {why}\n"));
             }
             Ok(Report {
                 human,
                 data: serde_json::json!({
-                    "name": name,
+                    "name": name.0,
                     "url": url,
                     "warnings": Vec::from_iter(warning),
                 }),
@@ -96,6 +97,33 @@ mod tests {
                 subject,
             )),
         }
+    }
+
+    fn add(name: &str, url: &str) -> RemoteArgs {
+        RemoteArgs {
+            command: RemoteCommand::Add {
+                name: name.into(),
+                url: url.into(),
+            },
+        }
+    }
+
+    #[test]
+    fn remote_add_refuses_a_name_outside_the_bare_key_set_and_leaves_the_config_as_it_was() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut ctx = context();
+        ctx.config_path = dir.path().join("config.toml");
+        run_remote(&mut ctx, add("fake", "fake::")).unwrap();
+        let before = std::fs::read(&ctx.config_path).unwrap();
+        for name in ["a.b", "bad name", "x]"] {
+            let err = run_remote(&mut ctx, add(name, "t::")).unwrap_err();
+            assert_eq!(err.exit_code(), 2, "{name}");
+            assert_eq!(
+                err.to_string(),
+                format!("remote name {name:?} may hold only letters, digits, - and _")
+            );
+        }
+        assert_eq!(std::fs::read(&ctx.config_path).unwrap(), before);
     }
 
     #[test]
