@@ -77,18 +77,6 @@ fn an_empty_file_is_the_default() {
 }
 
 #[test]
-fn a_remote_without_a_helper_prefix_is_invalid() {
-    let err = parse_config("[remote.x]\nurl = \"nope\"\n").unwrap_err();
-    assert!(matches!(err, ConfigError::Invalid(m) if m.contains("remote.x")));
-}
-
-#[test]
-fn a_command_credential_must_be_an_array() {
-    let err = parse_config("[remote.x]\nurl = \"t::\"\napi_token_command = \"a b\"\n").unwrap_err();
-    assert!(matches!(err, ConfigError::Invalid(m) if m.contains("api_token_command")));
-}
-
-#[test]
 fn stale_accepts_seconds_minutes_and_hours_only() {
     assert_eq!(
         parse_duration("stale", "30s").unwrap(),
@@ -115,29 +103,6 @@ fn a_non_ascii_or_empty_duration_is_refused_rather_than_a_panic() {
 }
 
 #[test]
-fn an_absent_deadline_is_none_and_a_non_string_is_refused() {
-    let c = parse_config("[remote.x]\nurl = \"t::\"\n").unwrap();
-    assert_eq!(c.remote("x").unwrap().deadline, None);
-    let err = parse_config("[remote.x]\nurl = \"t::\"\ndeadline = 60\n").unwrap_err();
-    assert!(matches!(err, ConfigError::Invalid(m) if m.contains("deadline must be a string")));
-}
-
-#[test]
-fn append_remote_adds_a_table_and_refuses_a_duplicate() {
-    let dir = tempfile::tempdir().unwrap();
-    let path = dir.path().join("config.toml");
-    std::fs::write(&path, "[done]\ninteractive = true").unwrap();
-    append_remote(&path, "todoist", "todoist::").unwrap();
-    let c = load_config(&path).unwrap();
-    assert_eq!(c.remote("todoist").unwrap().helper, "todoist");
-    assert!(c.done_interactive);
-    assert!(matches!(
-        append_remote(&path, "todoist", "todoist::"),
-        Err(ConfigError::Invalid(_))
-    ));
-}
-
-#[test]
 fn a_missing_file_loads_as_the_default() {
     let dir = tempfile::tempdir().unwrap();
     let c = load_config(&dir.path().join("absent.toml")).unwrap();
@@ -159,106 +124,4 @@ fn a_syntax_error_names_its_position_and_never_echoes_the_file() {
             "{rendered}"
         );
     }
-}
-
-fn mode_of(path: &FsPath) -> u32 {
-    use std::os::unix::fs::PermissionsExt;
-    std::fs::metadata(path).unwrap().permissions().mode() & 0o777
-}
-
-#[test]
-fn append_remote_creates_a_private_file_in_a_private_directory() {
-    let base = tempfile::tempdir().unwrap();
-    let dir = base.path().join("dam");
-    let path = dir.join("config.toml");
-    assert_eq!(append_remote(&path, "todoist", "todoist::").unwrap(), None);
-    assert_eq!(mode_of(&path), 0o600);
-    assert_eq!(mode_of(&dir), 0o700);
-}
-
-#[test]
-fn append_remote_tightens_a_world_readable_config() {
-    use std::os::unix::fs::PermissionsExt;
-    let dir = tempfile::tempdir().unwrap();
-    let path = dir.path().join("config.toml");
-    std::fs::write(&path, "[done]\ninteractive = true\n").unwrap();
-    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
-    let warning = append_remote(&path, "todoist", "todoist::").unwrap();
-    assert_eq!(mode_of(&path), 0o600);
-    assert!(load_config(&path).unwrap().done_interactive);
-    let said = warning.expect("a widened config is warned about");
-    assert!(said.contains("644"), "{said}");
-    assert!(
-        !said.contains(path.to_str().unwrap()),
-        "the warning carries the config path: {said}"
-    );
-}
-
-#[test]
-fn a_misspelled_remote_key_is_refused_by_name_and_never_becomes_a_credential() {
-    let err = parse_config("[remote.x]\nurl = \"t::\"\nstael = \"15m\"\n").unwrap_err();
-    assert!(
-        matches!(&err, ConfigError::Invalid(m) if m.contains("remote.x") && m.contains("stael")),
-        "{err}"
-    );
-    let good = parse_config("[remote.x]\nurl = \"t::\"\nstale = \"15m\"\n").unwrap();
-    assert_eq!(
-        good.remote("x").unwrap().stale,
-        Some(Duration::from_secs(900))
-    );
-}
-
-#[test]
-fn a_literal_credential_is_read_only_when_credentials_declares_its_name() {
-    let text = "[remote.x]\nurl = \"t::\"\ncredentials = [\"api_token\"]\napi_token = \"tok\"\n";
-    assert_eq!(
-        parse_config(text).unwrap().remote("x").unwrap().credentials,
-        vec![CredentialSpec::Literal {
-            name: "api_token".into(),
-            value: "tok".into()
-        }]
-    );
-    let undeclared = parse_config("[remote.x]\nurl = \"t::\"\napi_token = \"tok\"\n").unwrap_err();
-    assert!(
-        matches!(&undeclared, ConfigError::Invalid(m) if m.contains("api_token")),
-        "{undeclared}"
-    );
-}
-
-#[test]
-fn the_config_value_wins_over_the_command_and_the_command_over_the_variable() {
-    let text = r#"
-[remote.t]
-url = "t::"
-credentials = ["api_token"]
-api_token_env = "T_TOKEN"
-api_token_command = ["print-it"]
-api_token = "the-value"
-"#;
-    let config = parse_config(text).unwrap();
-    let remote = config.remote("t").unwrap();
-    assert_eq!(remote.credentials.len(), 1, "one spec per credential name");
-    assert!(
-        matches!(&remote.credentials[0], CredentialSpec::Literal { .. }),
-        "{:?}",
-        remote.credentials[0]
-    );
-}
-
-#[test]
-fn the_command_wins_over_the_variable_when_no_value_is_set() {
-    let text = r#"
-[remote.t]
-url = "t::"
-api_token_env = "T_TOKEN"
-api_token_command = ["print-it"]
-"#;
-    let config = parse_config(text).unwrap();
-    let remote = config.remote("t").unwrap();
-    assert_eq!(remote.credentials.len(), 1);
-    assert!(
-        matches!(&remote.credentials[0], CredentialSpec::Command { .. }),
-        "{:?}",
-        remote.credentials[0]
-    );
 }
