@@ -167,3 +167,6 @@ fn parse_credential(remote: &str, key: &str, value: &Value) -> Result<Credential
         value: Secret::from(literal),
     })
 }
+
+#[cfg(test)]
+mod tests;
