@@ -169,17 +169,11 @@ pub fn append_remote(
     name: &str,
     url: &str,
 ) -> Result<Option<OperatorWarning>, ConfigError> {
-    let existing = match std::fs::read_to_string(path) {
+    let mut text = match std::fs::read_to_string(path) {
         Ok(t) => t,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
         Err(e) => return Err(ConfigError::Io(e.to_string())),
     };
-    if parse_config(&existing)?.remote(name).is_some() {
-        return Err(ConfigError::Invalid(format!(
-            "remote {name} already exists"
-        )));
-    }
-    let mut text = existing;
     if !text.is_empty() && !text.ends_with('\n') {
         text.push('\n');
     }
@@ -190,6 +184,7 @@ pub fn append_remote(
         "[remote.{name}]\nurl = {}\n",
         Value::String(url.to_string())
     ));
+    readable_with_the_new_remote(&text, name)?;
     let dir = parent_of(path);
     DirBuilder::new()
         .recursive(true)
@@ -197,6 +192,12 @@ pub fn append_remote(
         .create(&dir)
         .map_err(io_error)?;
     replace_atomically_readable_by_its_owner_alone(path, &text)
+}
+
+fn readable_with_the_new_remote(text: &str, name: &str) -> Result<(), ConfigError> {
+    parse_config(text)?.remote(name).map(|_| ()).ok_or_else(|| {
+        ConfigError::Invalid(format!("the new config would not hold remote {name:?}"))
+    })
 }
 
 fn parent_of(path: &FsPath) -> PathBuf {

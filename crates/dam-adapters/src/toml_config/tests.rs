@@ -132,7 +132,7 @@ fn an_absent_deadline_is_none_and_a_non_string_is_refused() {
 }
 
 #[test]
-fn append_remote_adds_a_table_and_refuses_a_duplicate() {
+fn append_remote_adds_a_table() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("config.toml");
     std::fs::write(&path, "[done]\ninteractive = true").unwrap();
@@ -140,10 +140,31 @@ fn append_remote_adds_a_table_and_refuses_a_duplicate() {
     let c = load_config(&path).unwrap();
     assert_eq!(c.remote("todoist").unwrap().helper, "todoist");
     assert!(c.done_interactive);
-    assert!(matches!(
-        append_remote(&path, "todoist", "todoist::"),
-        Err(ConfigError::Invalid(_))
-    ));
+}
+
+#[test]
+fn append_remote_refuses_a_config_it_cannot_read_back_and_leaves_the_file_as_it_was() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("config.toml");
+    append_remote(&path, "todoist", "todoist::").unwrap();
+    let before = std::fs::read(&path).unwrap();
+    let refused = [
+        ("a.b", "config: remote.a needs a url"),
+        ("x]", "config is not TOML"),
+        (
+            "\"q\"",
+            "config: the new config would not hold remote \"\\\"q\\\"\"",
+        ),
+        (
+            "todoist",
+            "config is not TOML: line 4, column 9: duplicate key",
+        ),
+    ];
+    for (name, why) in refused {
+        let err = append_remote(&path, name, "t::").unwrap_err().to_string();
+        assert!(err.contains(why), "{name}: {err}");
+    }
+    assert_eq!(std::fs::read(&path).unwrap(), before);
 }
 
 #[test]
