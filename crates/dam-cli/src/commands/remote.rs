@@ -1,7 +1,7 @@
 mod listing;
 
-use dam_adapters::{append_remote, load_config};
-use dam_application::{Notice, RemoteName, Repositories, pull};
+use dam_adapters::append_remote;
+use dam_application::{Notice, Refusal, RemoteName, Repositories, pull};
 
 use crate::args::{RemoteArgs, RemoteCommand};
 use crate::context::Context;
@@ -12,8 +12,10 @@ pub(crate) fn run_remote(ctx: &mut Context, args: RemoteArgs) -> Result<Report, 
     match args.command {
         RemoteCommand::Add { name, url } => {
             let name = RemoteName::parse(&name).map_err(|e| CliError::Usage(e.to_string()))?;
+            if ctx.config.remote(&name.0).is_some() {
+                return Err(Refusal::RemoteExists(name.0).into());
+            }
             let warning = append_remote(&ctx.config_path, &name.0, &url)?;
-            ctx.config = load_config(&ctx.config_path)?;
             let mut human = format!("added {} ({url})", name.0);
             if let Some(why) = &warning {
                 human.insert_str(0, &format!("warning: {why}\n"));
@@ -83,6 +85,7 @@ mod tests {
     use super::*;
     use crate::args::{RemoteArgs, RemoteCommand};
     use crate::testing::{EchoLauncher, FailingLauncher, context};
+    use dam_adapters::load_config;
     use dam_application::{IncomingObject, PullOutcome};
     use dam_application::{RemoteConfig, RemoteName};
     use dam_domain::{Object, Oid, Task};
@@ -127,20 +130,25 @@ mod tests {
     }
 
     #[test]
-    fn remote_add_writes_the_config_and_list_reads_it_back() {
+    fn remote_add_refuses_a_duplicate_as_a_rule() {
         let dir = tempfile::tempdir().unwrap();
         let mut ctx = context();
         ctx.config_path = dir.path().join("config.toml");
-        run_remote(
-            &mut ctx,
-            RemoteArgs {
-                command: RemoteCommand::Add {
-                    name: "todoist".into(),
-                    url: "todoist::default".into(),
-                },
-            },
-        )
-        .unwrap();
+        run_remote(&mut ctx, add("fake", "fake::")).unwrap();
+        ctx.config = load_config(&ctx.config_path).unwrap();
+        let err = run_remote(&mut ctx, add("fake", "fake::")).unwrap_err();
+        assert_eq!(err.exit_code(), 4);
+        assert_eq!(err.to_string(), "remote fake already exists");
+        assert_eq!(err.document()["error"]["rule"], "remote_exists");
+    }
+
+    #[test]
+    fn remote_add_writes_the_config_and_the_next_run_lists_it() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut ctx = context();
+        ctx.config_path = dir.path().join("config.toml");
+        run_remote(&mut ctx, add("todoist", "todoist::default")).unwrap();
+        ctx.config = load_config(&ctx.config_path).unwrap();
         let report = run_remote(
             &mut ctx,
             RemoteArgs {
