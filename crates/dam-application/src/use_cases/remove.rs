@@ -2,7 +2,7 @@ use dam_domain::Oid;
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
-use crate::use_cases::subtree::{last_segment, move_subtree};
+use crate::use_cases::subtree::{children, move_into};
 
 pub struct RemovePlan {
     pub oid: Oid,
@@ -15,11 +15,11 @@ pub fn plan_remove(objects: &dyn ObjectRepository, oid: &Oid) -> Result<RemovePl
     let object = objects
         .get(oid)?
         .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
-    let path = object.base().path.clone();
+    let owned = object.base().owned_folder();
     let all = objects.all()?;
     let descendants = all
         .iter()
-        .filter(|o| o.oid() != oid && o.base().path.is_within(&path))
+        .filter(|o| owned.as_ref().is_some_and(|f| o.base().path.is_within(f)))
         .map(|o| o.oid().clone())
         .collect();
     let dependents = objects.dependents_of(oid)?;
@@ -41,13 +41,8 @@ pub fn remove(objects: &dyn ObjectRepository, oid: &Oid) -> Result<RemovePlan, U
     let object = objects
         .get(oid)?
         .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
-    let old = object.base().path.clone();
-    let up = old.parent().unwrap_or_default();
-    for child in objects.children_of(&old)? {
-        let new = up
-            .join(&last_segment(&child.base().path))
-            .map_err(|e| UseCaseError::Parse(e.to_string()))?;
-        move_subtree(objects, child.oid(), &new)?;
+    for child in children(objects, object.base())? {
+        move_into(objects, child.oid(), &object.base().path)?;
     }
     for dependent in &plan.dependents {
         if let Some(mut d) = objects.get(dependent)? {
@@ -67,43 +62,64 @@ mod tests {
     use dam_domain::{Event, Object, Path, Task, When};
     use jiff::civil::date;
 
-    fn put(store: &MemoryStore, byte: u8, path: &str) -> Oid {
-        let mut t = Task::new(oid(byte), format!("t{byte}"));
+    fn put(store: &MemoryStore, byte: u8, subject: &str, path: &str) -> Oid {
+        let mut t = Task::new(oid(byte), subject);
         t.base.path = Path::parse(path).unwrap();
         store.put(&Object::Task(t)).unwrap();
         oid(byte)
     }
 
+    fn path_of(store: &MemoryStore, id: &Oid) -> String {
+        store
+            .get(id)
+            .unwrap()
+            .unwrap()
+            .base()
+            .path
+            .as_str()
+            .to_string()
+    }
+
     #[test]
     fn plan_lists_descendants_dependents_and_attached() {
         let store = MemoryStore::new();
-        let p = put(&store, 1, "p");
-        let c = put(&store, 2, "p/c");
-        let d = put(&store, 3, "");
+        let plan = put(&store, 1, "plan", "");
+        let step = put(&store, 2, "step", "plan");
+        let detail = put(&store, 3, "detail", "plan/step");
+        let d = put(&store, 4, "dependent", "");
         let mut dep = store.get(&d).unwrap().unwrap();
-        dep.base_mut().depends.push(p.clone());
+        dep.base_mut().depends.push(plan.clone());
         store.put(&dep).unwrap();
-        let plan = plan_remove(&store, &p).unwrap();
-        assert_eq!(plan.descendants, vec![c]);
-        assert_eq!(plan.dependents, vec![d]);
+        let found = plan_remove(&store, &plan).unwrap();
+        assert_eq!(found.descendants, vec![step, detail]);
+        assert_eq!(found.dependents, vec![d]);
     }
 
     #[test]
     fn remove_moves_children_up_and_drops_dependency_edges() {
         let store = MemoryStore::new();
-        let p = put(&store, 1, "top/p");
-        let c = put(&store, 2, "top/p/c");
-        let d = put(&store, 3, "");
+        let plan = put(&store, 1, "plan", "work");
+        let step = put(&store, 2, "step", "work/plan");
+        let d = put(&store, 3, "dependent", "");
         let mut dep = store.get(&d).unwrap().unwrap();
-        dep.base_mut().depends.push(p.clone());
+        dep.base_mut().depends.push(plan.clone());
         store.put(&dep).unwrap();
-        remove(&store, &p).unwrap();
-        assert!(store.get(&p).unwrap().is_none());
-        assert_eq!(
-            store.get(&c).unwrap().unwrap().base().path.as_str(),
-            "top/c/"
-        );
+        remove(&store, &plan).unwrap();
+        assert!(store.get(&plan).unwrap().is_none());
+        assert_eq!(path_of(&store, &step), "work/");
         assert!(store.get(&d).unwrap().unwrap().base().depends.is_empty());
+    }
+
+    #[test]
+    fn removing_a_task_leaves_objects_in_other_folders_alone() {
+        let store = MemoryStore::new();
+        let offsite = put(&store, 1, "plan the offsite", "work");
+        let note = put(&store, 2, "unrelated project note", "work/clients");
+        let another = put(&store, 3, "another", "work/clients/acme");
+        let plan = remove(&store, &offsite).unwrap();
+        assert!(plan.descendants.is_empty());
+        assert_eq!(path_of(&store, &note), "work/clients/");
+        assert_eq!(path_of(&store, &another), "work/clients/acme/");
     }
 
     #[test]

@@ -11,9 +11,9 @@ fn oid(b: u8) -> Oid {
 
 fn parent_and_child(ctx: &Context) {
     let mut p = Task::new(oid(1), "parent");
-    p.base.path = Path::parse("p").unwrap();
+    p.base.path = Path::parse("top").unwrap();
     let mut c = Task::new(oid(2), "child");
-    c.base.path = Path::parse("p/c").unwrap();
+    c.base.path = Path::parse("top/parent").unwrap();
     ctx.store.put(&Object::Task(p)).unwrap();
     ctx.store.put(&Object::Task(c)).unwrap();
 }
@@ -29,6 +29,16 @@ fn path_of(ctx: &Context, b: u8) -> String {
         .path
         .as_str()
         .to_string()
+}
+
+fn is_done(ctx: &Context, b: u8) -> bool {
+    ctx.store
+        .get(&oid(b))
+        .unwrap()
+        .unwrap()
+        .as_task()
+        .unwrap()
+        .done
 }
 
 fn a_prompt_with_no_answers_so_any_question_cancels() -> ScriptedPrompt {
@@ -72,15 +82,7 @@ fn force_marks_it_done_and_prints_done() {
     parent_and_child(&ctx);
     let report = run(&mut ctx, args(&oid(1), true, false)).unwrap();
     assert_eq!(report.human, "done");
-    assert!(
-        ctx.store
-            .get(&oid(1))
-            .unwrap()
-            .unwrap()
-            .as_task()
-            .unwrap()
-            .done
-    );
+    assert!(is_done(&ctx, 1));
 }
 
 #[test]
@@ -94,8 +96,8 @@ fn interactive_asks_and_moves_children_up() {
     run(&mut ctx, args(&oid(1), true, true)).unwrap();
     assert_eq!(
         path_of(&ctx, 2),
-        "c/",
-        "up keeps the child's own name one level up, beside its former parent"
+        "top/",
+        "up puts the child beside its former parent"
     );
 }
 
@@ -111,7 +113,7 @@ fn config_interactive_applies_to_a_plain_force() {
     run(&mut ctx, args(&oid(1), true, false)).unwrap();
     assert_eq!(
         path_of(&ctx, 2),
-        "c/",
+        "top/",
         "the child moved, so the prompt was asked rather than skipped"
     );
 }
@@ -123,15 +125,7 @@ fn a_machine_format_refuses_to_ask_instead_of_blocking() {
     let err = run(&mut ctx, args(&oid(1), true, true)).unwrap_err();
     assert_eq!(err.to_string(), Refusal::NeedsAnAnswer.to_string());
     assert_eq!(err.exit_code(), 4);
-    assert!(
-        !ctx.store
-            .get(&oid(1))
-            .unwrap()
-            .unwrap()
-            .as_task()
-            .unwrap()
-            .done
-    );
+    assert!(!is_done(&ctx, 1));
 }
 
 #[test]
@@ -148,24 +142,10 @@ fn dispositions_complete_a_blocked_parent_without_a_terminal() {
     )
     .unwrap();
     assert_eq!(report.human, "done");
-    assert!(
-        ctx.store
-            .get(&oid(1))
-            .unwrap()
-            .unwrap()
-            .as_task()
-            .unwrap()
-            .done
-    );
+    assert!(is_done(&ctx, 1));
     assert_eq!(
-        ctx.store
-            .get(&oid(2))
-            .unwrap()
-            .unwrap()
-            .base()
-            .path
-            .as_str(),
-        "p/c/",
+        path_of(&ctx, 2),
+        "top/parent/",
         "keep leaves the child where it is"
     );
 }
@@ -184,16 +164,7 @@ fn a_disposition_flag_asks_nothing_even_when_config_says_interactive() {
         },
     )
     .unwrap();
-    assert_eq!(
-        ctx.store
-            .get(&oid(2))
-            .unwrap()
-            .unwrap()
-            .base()
-            .path
-            .as_str(),
-        "c/"
-    );
+    assert_eq!(path_of(&ctx, 2), "top/");
 }
 
 #[test]

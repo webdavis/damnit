@@ -53,10 +53,10 @@ mod tests {
     #[test]
     fn removing_a_parent_moves_its_child_up_and_says_so() {
         let mut ctx = context();
-        let mut p = Task::new(oid(1), "p");
-        p.base.path = Path::parse("p").unwrap();
-        let mut c = Task::new(oid(2), "c");
-        c.base.path = Path::parse("p/c").unwrap();
+        let mut p = Task::new(oid(1), "plan");
+        p.base.path = Path::parse("work").unwrap();
+        let mut c = Task::new(oid(2), "step");
+        c.base.path = Path::parse("work/plan").unwrap();
         ctx.store.put(&Object::Task(p)).unwrap();
         ctx.store.put(&Object::Task(c)).unwrap();
         let report = run(
@@ -67,6 +67,16 @@ mod tests {
         )
         .unwrap();
         assert!(ctx.store.get(&oid(1)).unwrap().is_none());
+        assert_eq!(
+            ctx.store
+                .get(&oid(2))
+                .unwrap()
+                .unwrap()
+                .base()
+                .path
+                .as_str(),
+            "work/"
+        );
         assert!(report.human.contains(oid(2).short()));
         assert_eq!(report.data["descendants"].as_array().unwrap().len(), 1);
     }

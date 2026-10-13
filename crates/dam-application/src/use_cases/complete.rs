@@ -5,7 +5,7 @@ use dam_domain::{
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{Clock, ObjectRepository, Randomness};
-use crate::use_cases::subtree::{last_segment, move_subtree};
+use crate::use_cases::subtree::{children, move_into};
 
 pub struct CompletePlan {
     pub oid: Oid,
@@ -29,8 +29,7 @@ pub fn plan_complete(
             open_deps.push(dep.clone());
         }
     }
-    let open_children: Vec<Oid> = objects
-        .children_of(&task.base.path)?
+    let open_children: Vec<Oid> = children(objects, &task.base)?
         .iter()
         .filter(|c| c.as_task().is_some_and(|t| !t.done))
         .map(|c| c.oid().clone())
@@ -94,8 +93,7 @@ fn apply_dispositions(
     d: Dispositions,
 ) -> Result<(), UseCaseError> {
     let mut task = load_task(objects, oid)?;
-    let parent_path = task.base.path.parent().unwrap_or_default();
-    let children: Vec<Oid> = found
+    let open_children: Vec<Oid> = found
         .iter()
         .filter_map(|b| match b {
             Blocker::OpenChild(c) => Some(c.clone()),
@@ -112,28 +110,23 @@ fn apply_dispositions(
 
     let target = match d.children {
         ChildDisposition::Keep => None,
-        ChildDisposition::Up => Some(parent_path.clone()),
-        ChildDisposition::Into(_) if children.is_empty() => None,
+        ChildDisposition::Up => Some(task.base.path.clone()),
+        ChildDisposition::Into(_) if open_children.is_empty() => None,
         ChildDisposition::Into(name) => {
             let group_oid = Oid::generate(&mut |b| random.fill(b));
             let mut group = Task::new(group_oid, name.clone());
-            group.base.path = parent_path
-                .join(&name)
-                .map_err(|e| UseCaseError::Parse(e.to_string()))?;
-            let path = group.base.path.clone();
+            group.base.path = task.base.path.clone();
+            let folder = group
+                .base
+                .owned_folder()
+                .ok_or_else(|| UseCaseError::Parse(format!("{name:?} cannot name a folder")))?;
             objects.put(&Object::Task(group))?;
-            Some(path)
+            Some(folder)
         }
     };
-    if let Some(target) = target {
-        for child in &children {
-            if let Some(c) = objects.get(child)? {
-                let segment = last_segment(&c.base().path);
-                let to = target
-                    .join(&segment)
-                    .map_err(|e| UseCaseError::Parse(e.to_string()))?;
-                move_subtree(objects, child, &to)?;
-            }
+    if let Some(folder) = target {
+        for child in &open_children {
+            move_into(objects, child, &folder)?;
         }
     }
     if d.dependencies == DependencyDisposition::Drop {

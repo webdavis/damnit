@@ -1,10 +1,11 @@
+mod children;
 mod dispositions;
 
 use super::*;
 use crate::ports::StoreError;
 use crate::testing::prelude::*;
 use crate::testing::{FixedClock, FixedRandom, MemoryStore, oid};
-use dam_domain::{Blocker, Event, Object, Path, Task, When};
+use dam_domain::{Event, Object, Path, Task, When};
 use jiff::civil::date;
 
 struct FailingGetStore {
@@ -23,7 +24,7 @@ impl ObjectRepository for FailingGetStore {
         Ok(Vec::new())
     }
     fn all(&self) -> Result<Vec<Object>, StoreError> {
-        unimplemented!()
+        Ok(self.objects.clone())
     }
     fn dependents_of(&self, _oid: &Oid) -> Result<Vec<Oid>, StoreError> {
         unimplemented!()
@@ -39,12 +40,33 @@ impl ObjectRepository for FailingGetStore {
     }
 }
 
-pub(super) fn put_task(store: &MemoryStore, byte: u8, path: &str, done: bool) -> Oid {
-    let mut t = Task::new(oid(byte), format!("t{byte}"));
+pub(super) fn put_task(
+    store: &MemoryStore,
+    byte: u8,
+    subject: &str,
+    path: &str,
+    done: bool,
+) -> Oid {
+    let mut t = Task::new(oid(byte), subject);
     t.base.path = Path::parse(path).unwrap();
     t.done = done;
     store.put(&Object::Task(t)).unwrap();
     oid(byte)
+}
+
+pub(super) fn path_of(store: &MemoryStore, id: &Oid) -> String {
+    store
+        .get(id)
+        .unwrap()
+        .unwrap()
+        .base()
+        .path
+        .as_str()
+        .to_string()
+}
+
+fn task_of(store: &MemoryStore, id: &Oid) -> Task {
+    store.get(id).unwrap().unwrap().as_task().unwrap().clone()
 }
 
 pub(super) fn today() -> FixedClock {
@@ -54,65 +76,19 @@ pub(super) fn today() -> FixedClock {
 #[test]
 fn an_unblocked_task_is_done() {
     let store = MemoryStore::new();
-    let id = put_task(&store, 1, "", false);
+    let id = put_task(&store, 1, "milk", "", false);
     assert!(plan_complete(&store, &id).unwrap().blockers.is_empty());
     assert_eq!(
         complete(&store, &today(), &FixedRandom::new(9), &id, Force::No).unwrap(),
         Completed::Done
     );
-    assert!(store.get(&id).unwrap().unwrap().as_task().unwrap().done);
-}
-
-#[test]
-fn open_children_and_dependencies_block_and_force_no_refuses() {
-    let store = MemoryStore::new();
-    let parent = put_task(&store, 1, "p", false);
-    let child = put_task(&store, 2, "p/c", false);
-    let dep = put_task(&store, 3, "", false);
-    let mut p = store.get(&parent).unwrap().unwrap();
-    p.base_mut().depends.push(dep.clone());
-    store.put(&p).unwrap();
-    let plan = plan_complete(&store, &parent).unwrap();
-    assert_eq!(
-        plan.blockers,
-        vec![
-            Blocker::OpenDependency(dep.clone()),
-            Blocker::OpenChild(child.clone())
-        ]
-    );
-    let err = complete(&store, &today(), &FixedRandom::new(9), &parent, Force::No).unwrap_err();
-    assert!(matches!(
-        err,
-        UseCaseError::Refused(Refusal::Blocked { .. })
-    ));
-    assert!(!store.get(&parent).unwrap().unwrap().as_task().unwrap().done);
-}
-
-#[test]
-fn done_children_do_not_block() {
-    let store = MemoryStore::new();
-    let parent = put_task(&store, 1, "p", false);
-    put_task(&store, 2, "p/c", true);
-    assert!(plan_complete(&store, &parent).unwrap().blockers.is_empty());
-}
-
-#[test]
-fn force_yes_completes_and_leaves_children_where_they_are() {
-    let store = MemoryStore::new();
-    let parent = put_task(&store, 1, "p", false);
-    let child = put_task(&store, 2, "p/c", false);
-    complete(&store, &today(), &FixedRandom::new(9), &parent, Force::Yes).unwrap();
-    assert!(store.get(&parent).unwrap().unwrap().as_task().unwrap().done);
-    assert_eq!(
-        store.get(&child).unwrap().unwrap().base().path.as_str(),
-        "p/c/"
-    );
+    assert!(task_of(&store, &id).done);
 }
 
 #[test]
 fn a_recurring_task_rolls_forward_instead_of_closing() {
     let store = MemoryStore::new();
-    let id = put_task(&store, 1, "", false);
+    let id = put_task(&store, 1, "water the plants", "", false);
     let mut t = store.get(&id).unwrap().unwrap();
     t.base_mut().recurrence = Some("every week".into());
     if let Object::Task(task) = &mut t {
@@ -126,9 +102,9 @@ fn a_recurring_task_rolls_forward_instead_of_closing() {
             next_due: date(2026, 9, 25)
         }
     );
-    let t = store.get(&id).unwrap().unwrap();
-    assert!(!t.as_task().unwrap().done);
-    assert_eq!(t.as_task().unwrap().due, Some(When::Day(date(2026, 9, 25))));
+    let t = task_of(&store, &id);
+    assert!(!t.done);
+    assert_eq!(t.due, Some(When::Day(date(2026, 9, 25))));
 }
 
 #[test]
@@ -164,21 +140,11 @@ fn a_store_error_while_checking_a_dependency_propagates() {
 #[test]
 fn completing_a_task_records_when_it_happened() {
     let store = MemoryStore::new();
-    let id = put_task(&store, 1, "", false);
+    let id = put_task(&store, 1, "milk", "", false);
     let clock = FixedClock(date(2026, 9, 18));
-    assert_eq!(
-        store
-            .get(&id)
-            .unwrap()
-            .unwrap()
-            .as_task()
-            .unwrap()
-            .completed_at,
-        None
-    );
+    assert_eq!(task_of(&store, &id).completed_at, None);
     complete(&store, &clock, &FixedRandom::new(1), &id, Force::No).unwrap();
-    let task = store.get(&id).unwrap().unwrap();
-    let task = task.as_task().unwrap();
+    let task = task_of(&store, &id);
     assert!(task.done);
     assert_eq!(task.completed_at, Some(clock.now()));
 }
@@ -198,8 +164,7 @@ fn a_task_that_rolls_forward_records_no_completion_time() {
         Force::No,
     )
     .unwrap();
-    let task = store.get(&oid(1)).unwrap().unwrap();
-    let task = task.as_task().unwrap();
+    let task = task_of(&store, &oid(1));
     assert!(!task.done);
     assert_eq!(task.completed_at, None);
 }
@@ -207,7 +172,7 @@ fn a_task_that_rolls_forward_records_no_completion_time() {
 #[test]
 fn completing_an_already_completed_task_changes_nothing() {
     let store = MemoryStore::new();
-    let id = put_task(&store, 1, "", false);
+    let id = put_task(&store, 1, "milk", "", false);
     let first = FixedClock(date(2026, 9, 18));
     complete(&store, &first, &FixedRandom::new(1), &id, Force::No).unwrap();
     let after_first = store.get(&id).unwrap().unwrap();
@@ -224,7 +189,7 @@ fn completing_an_already_completed_task_changes_nothing() {
 #[test]
 fn a_dependency_that_no_longer_exists_counts_as_closed() {
     let store = MemoryStore::new();
-    let id = put_task(&store, 1, "", false);
+    let id = put_task(&store, 1, "milk", "", false);
     let mut t = store.get(&id).unwrap().unwrap();
     t.base_mut().depends.push(oid(3));
     store.put(&t).unwrap();
