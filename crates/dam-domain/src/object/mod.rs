@@ -1,4 +1,5 @@
 mod event;
+mod folder;
 mod task;
 
 use std::collections::BTreeSet;

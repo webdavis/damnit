@@ -1,146 +1,110 @@
 use super::super::*;
-use super::{put_task, today};
+use super::{path_of, put_task, today};
 use crate::testing::prelude::*;
 use crate::testing::{FixedRandom, MemoryStore, oid};
+
+fn with(children: ChildDisposition) -> Force {
+    Force::With(Dispositions {
+        children,
+        dependencies: DependencyDisposition::Keep,
+    })
+}
 
 #[test]
 fn interactive_up_moves_children_beside_the_parent() {
     let store = MemoryStore::new();
-    let parent = put_task(&store, 1, "top/p", false);
-    let child = put_task(&store, 2, "top/p/c", false);
-    let d = Dispositions {
-        children: ChildDisposition::Up,
-        dependencies: DependencyDisposition::Keep,
-    };
+    let plan = put_task(&store, 1, "plan", "work", false);
+    let step = put_task(&store, 2, "step", "work/plan", false);
     complete(
         &store,
         &today(),
         &FixedRandom::new(9),
-        &parent,
-        Force::With(d),
+        &plan,
+        with(ChildDisposition::Up),
     )
     .unwrap();
-    assert_eq!(
-        store.get(&child).unwrap().unwrap().base().path.as_str(),
-        "top/c/"
-    );
+    assert_eq!(path_of(&store, &step), "work/");
 }
 
 #[test]
-fn interactive_into_groups_children_under_a_new_task() {
+fn interactive_into_groups_children_under_a_new_task_beside_the_parent() {
     let store = MemoryStore::new();
-    let parent = put_task(&store, 1, "p", false);
-    let child = put_task(&store, 2, "p/c", false);
-    let d = Dispositions {
-        children: ChildDisposition::Into("leftovers".into()),
-        dependencies: DependencyDisposition::Keep,
-    };
+    let plan = put_task(&store, 1, "plan", "work", false);
+    let step = put_task(&store, 2, "step", "work/plan", false);
     complete(
         &store,
         &today(),
         &FixedRandom::new(9),
-        &parent,
-        Force::With(d),
+        &plan,
+        with(ChildDisposition::Into("leftovers".into())),
     )
     .unwrap();
     let group = store.get(&oid(9)).unwrap().unwrap();
     assert_eq!(group.base().subject, "leftovers");
-    assert_eq!(group.base().path.as_str(), "leftovers/");
-    assert_eq!(
-        store.get(&child).unwrap().unwrap().base().path.as_str(),
-        "leftovers/c/"
-    );
+    assert_eq!(group.base().path.as_str(), "work/");
+    assert_eq!(path_of(&store, &step), "work/leftovers/");
 }
 
 #[test]
 fn interactive_up_carries_a_grandchild_along() {
     let store = MemoryStore::new();
-    let parent = put_task(&store, 1, "p", false);
-    let child = put_task(&store, 2, "p/c", false);
-    let grandchild = put_task(&store, 4, "p/c/g", false);
-    let d = Dispositions {
-        children: ChildDisposition::Up,
-        dependencies: DependencyDisposition::Keep,
-    };
+    let plan = put_task(&store, 1, "plan", "work", false);
+    let step = put_task(&store, 2, "step", "work/plan", false);
+    let detail = put_task(&store, 4, "detail", "work/plan/step", false);
     complete(
         &store,
         &today(),
         &FixedRandom::new(9),
-        &parent,
-        Force::With(d),
+        &plan,
+        with(ChildDisposition::Up),
     )
     .unwrap();
-    assert_eq!(
-        store.get(&child).unwrap().unwrap().base().path.as_str(),
-        "c/"
-    );
-    assert_eq!(
-        store
-            .get(&grandchild)
-            .unwrap()
-            .unwrap()
-            .base()
-            .path
-            .as_str(),
-        "c/g/"
-    );
+    assert_eq!(path_of(&store, &step), "work/");
+    assert_eq!(path_of(&store, &detail), "work/step/");
 }
 
 #[test]
 fn interactive_into_carries_a_grandchild_along() {
     let store = MemoryStore::new();
-    let parent = put_task(&store, 1, "p", false);
-    let child = put_task(&store, 2, "p/c", false);
-    let grandchild = put_task(&store, 4, "p/c/g", false);
-    let d = Dispositions {
-        children: ChildDisposition::Into("later".into()),
-        dependencies: DependencyDisposition::Keep,
-    };
+    let plan = put_task(&store, 1, "plan", "work", false);
+    let step = put_task(&store, 2, "step", "work/plan", false);
+    let detail = put_task(&store, 4, "detail", "work/plan/step", false);
     complete(
         &store,
         &today(),
         &FixedRandom::new(9),
-        &parent,
-        Force::With(d),
+        &plan,
+        with(ChildDisposition::Into("later".into())),
     )
     .unwrap();
-    assert_eq!(
-        store.get(&child).unwrap().unwrap().base().path.as_str(),
-        "later/c/"
-    );
-    assert_eq!(
-        store
-            .get(&grandchild)
-            .unwrap()
-            .unwrap()
-            .base()
-            .path
-            .as_str(),
-        "later/c/g/"
-    );
+    assert_eq!(path_of(&store, &step), "work/later/");
+    assert_eq!(path_of(&store, &detail), "work/later/step/");
 }
 
 #[test]
 fn interactive_into_with_no_open_children_creates_no_group() {
     let store = MemoryStore::new();
-    let id = put_task(&store, 1, "", false);
-    let dep = put_task(&store, 3, "", false);
+    let id = put_task(&store, 1, "milk", "", false);
+    let dep = put_task(&store, 3, "blocker", "", false);
     let mut t = store.get(&id).unwrap().unwrap();
     t.base_mut().depends.push(dep);
     store.put(&t).unwrap();
-    let d = Dispositions {
-        children: ChildDisposition::Into("later".into()),
-        dependencies: DependencyDisposition::Keep,
-    };
-    complete(&store, &today(), &FixedRandom::new(9), &id, Force::With(d)).unwrap();
+    complete(
+        &store,
+        &today(),
+        &FixedRandom::new(9),
+        &id,
+        with(ChildDisposition::Into("later".into())),
+    )
+    .unwrap();
     assert!(store.get(&oid(9)).unwrap().is_none());
 }
 
 #[test]
 fn interactive_drop_removes_open_dependencies() {
     let store = MemoryStore::new();
-    let id = put_task(&store, 1, "", false);
-    let dep = put_task(&store, 3, "", false);
+    let id = put_task(&store, 1, "milk", "", false);
+    let dep = put_task(&store, 3, "blocker", "", false);
     let mut t = store.get(&id).unwrap().unwrap();
     t.base_mut().depends.push(dep);
     store.put(&t).unwrap();
