@@ -65,6 +65,10 @@ pub(super) fn path_of(store: &MemoryStore, id: &Oid) -> String {
         .to_string()
 }
 
+fn task_of(store: &MemoryStore, id: &Oid) -> Task {
+    store.get(id).unwrap().unwrap().as_task().unwrap().clone()
+}
+
 pub(super) fn today() -> FixedClock {
     FixedClock(date(2026, 9, 18))
 }
@@ -78,7 +82,7 @@ fn an_unblocked_task_is_done() {
         complete(&store, &today(), &FixedRandom::new(9), &id, Force::No).unwrap(),
         Completed::Done
     );
-    assert!(store.get(&id).unwrap().unwrap().as_task().unwrap().done);
+    assert!(task_of(&store, &id).done);
 }
 
 #[test]
@@ -98,9 +102,9 @@ fn a_recurring_task_rolls_forward_instead_of_closing() {
             next_due: date(2026, 9, 25)
         }
     );
-    let t = store.get(&id).unwrap().unwrap();
-    assert!(!t.as_task().unwrap().done);
-    assert_eq!(t.as_task().unwrap().due, Some(When::Day(date(2026, 9, 25))));
+    let t = task_of(&store, &id);
+    assert!(!t.done);
+    assert_eq!(t.due, Some(When::Day(date(2026, 9, 25))));
 }
 
 #[test]
@@ -138,19 +142,9 @@ fn completing_a_task_records_when_it_happened() {
     let store = MemoryStore::new();
     let id = put_task(&store, 1, "milk", "", false);
     let clock = FixedClock(date(2026, 9, 18));
-    assert_eq!(
-        store
-            .get(&id)
-            .unwrap()
-            .unwrap()
-            .as_task()
-            .unwrap()
-            .completed_at,
-        None
-    );
+    assert_eq!(task_of(&store, &id).completed_at, None);
     complete(&store, &clock, &FixedRandom::new(1), &id, Force::No).unwrap();
-    let task = store.get(&id).unwrap().unwrap();
-    let task = task.as_task().unwrap();
+    let task = task_of(&store, &id);
     assert!(task.done);
     assert_eq!(task.completed_at, Some(clock.now()));
 }
@@ -170,8 +164,7 @@ fn a_task_that_rolls_forward_records_no_completion_time() {
         Force::No,
     )
     .unwrap();
-    let task = store.get(&oid(1)).unwrap().unwrap();
-    let task = task.as_task().unwrap();
+    let task = task_of(&store, &oid(1));
     assert!(!task.done);
     assert_eq!(task.completed_at, None);
 }

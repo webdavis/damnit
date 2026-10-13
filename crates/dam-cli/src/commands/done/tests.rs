@@ -31,6 +31,16 @@ fn path_of(ctx: &Context, b: u8) -> String {
         .to_string()
 }
 
+fn is_done(ctx: &Context, b: u8) -> bool {
+    ctx.store
+        .get(&oid(b))
+        .unwrap()
+        .unwrap()
+        .as_task()
+        .unwrap()
+        .done
+}
+
 fn a_prompt_with_no_answers_so_any_question_cancels() -> ScriptedPrompt {
     ScriptedPrompt {
         choices: RefCell::new(vec![]),
@@ -72,15 +82,7 @@ fn force_marks_it_done_and_prints_done() {
     parent_and_child(&ctx);
     let report = run(&mut ctx, args(&oid(1), true, false)).unwrap();
     assert_eq!(report.human, "done");
-    assert!(
-        ctx.store
-            .get(&oid(1))
-            .unwrap()
-            .unwrap()
-            .as_task()
-            .unwrap()
-            .done
-    );
+    assert!(is_done(&ctx, 1));
 }
 
 #[test]
@@ -123,15 +125,7 @@ fn a_machine_format_refuses_to_ask_instead_of_blocking() {
     let err = run(&mut ctx, args(&oid(1), true, true)).unwrap_err();
     assert_eq!(err.to_string(), Refusal::NeedsAnAnswer.to_string());
     assert_eq!(err.exit_code(), 4);
-    assert!(
-        !ctx.store
-            .get(&oid(1))
-            .unwrap()
-            .unwrap()
-            .as_task()
-            .unwrap()
-            .done
-    );
+    assert!(!is_done(&ctx, 1));
 }
 
 #[test]
@@ -148,23 +142,9 @@ fn dispositions_complete_a_blocked_parent_without_a_terminal() {
     )
     .unwrap();
     assert_eq!(report.human, "done");
-    assert!(
-        ctx.store
-            .get(&oid(1))
-            .unwrap()
-            .unwrap()
-            .as_task()
-            .unwrap()
-            .done
-    );
+    assert!(is_done(&ctx, 1));
     assert_eq!(
-        ctx.store
-            .get(&oid(2))
-            .unwrap()
-            .unwrap()
-            .base()
-            .path
-            .as_str(),
+        path_of(&ctx, 2),
         "top/parent/",
         "keep leaves the child where it is"
     );
@@ -184,16 +164,7 @@ fn a_disposition_flag_asks_nothing_even_when_config_says_interactive() {
         },
     )
     .unwrap();
-    assert_eq!(
-        ctx.store
-            .get(&oid(2))
-            .unwrap()
-            .unwrap()
-            .base()
-            .path
-            .as_str(),
-        "top/"
-    );
+    assert_eq!(path_of(&ctx, 2), "top/");
 }
 
 #[test]
