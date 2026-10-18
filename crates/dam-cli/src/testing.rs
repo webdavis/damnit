@@ -54,10 +54,25 @@ impl Prompt for ScriptedPrompt {
     }
 }
 
-pub(crate) struct ScriptedEditor(pub(crate) String);
+pub(crate) type Save = Box<dyn Fn(&str) -> String>;
+
+pub(crate) struct ScriptedEditor(RefCell<Vec<Save>>);
+impl ScriptedEditor {
+    pub(crate) fn saving(saves: Vec<Save>) -> ScriptedEditor {
+        ScriptedEditor(RefCell::new(saves))
+    }
+    pub(crate) fn saving_unchanged() -> ScriptedEditor {
+        ScriptedEditor::saving(vec![])
+    }
+}
 impl EditorSession for ScriptedEditor {
-    fn edit(&self, _: &str) -> Result<String, EditorError> {
-        Ok(self.0.clone())
+    fn edit(&self, opened: &str) -> Result<String, EditorError> {
+        let mut saves = self.0.borrow_mut();
+        Ok(if saves.is_empty() {
+            opened.to_string()
+        } else {
+            saves.remove(0)(opened)
+        })
     }
 }
 
@@ -154,7 +169,7 @@ pub(crate) fn context() -> Context {
             pulled: RefCell::new(None),
         }),
         credentials: Box::new(MissingCredentials),
-        editor: Some(Box::new(ScriptedEditor(String::new()))),
+        editor: Some(Box::new(ScriptedEditor::saving_unchanged())),
         prompt: Box::new(ScriptedPrompt {
             choices: RefCell::new(vec![]),
             texts: RefCell::new(vec![]),

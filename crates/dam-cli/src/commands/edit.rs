@@ -122,4 +122,6 @@ fn reopened_with_the_parse_error_as_its_first_line(saved: &str, why: &str) -> St
 }
 
 #[cfg(test)]
+mod editor_tests;
+#[cfg(test)]
 mod tests;
