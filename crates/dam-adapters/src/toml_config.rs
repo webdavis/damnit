@@ -4,13 +4,13 @@ use std::time::Duration;
 
 use dam_application::{Config, FilterConfig};
 use dam_domain::{Categories, Category};
-use toml::Table;
-use toml::Value;
 
 mod append;
 mod remote;
+mod strict_table;
 pub use append::append_remote;
 use remote::parse_remote;
+pub(crate) use strict_table::{Place, StrictTable, parse_toml};
 
 #[derive(Debug)]
 pub enum ConfigError {
@@ -30,6 +30,12 @@ impl fmt::Display for ConfigError {
 }
 
 impl std::error::Error for ConfigError {}
+
+impl From<String> for ConfigError {
+    fn from(refusal: String) -> ConfigError {
+        ConfigError::Invalid(refusal)
+    }
+}
 
 fn home_dir() -> PathBuf {
     std::env::var_os("HOME")
@@ -59,37 +65,32 @@ pub fn load_config(path: &FsPath) -> Result<Config, ConfigError> {
     }
 }
 
+const SECTIONS: [&str; 4] = ["done", "remote", "category", "filter"];
+
 pub fn parse_config(text: &str) -> Result<Config, ConfigError> {
-    let root: Table = text
-        .parse()
-        .map_err(|e: toml::de::Error| syntax_error_without_the_echoed_line(text, &e))?;
-    let done_interactive = root
-        .get("done")
-        .and_then(|d| d.get("interactive"))
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
-    let remotes = named_tables(&root, "remote")?
+    let table = parse_toml(text).map_err(ConfigError::Syntax)?;
+    let root = StrictTable::new(text, &table, Place::TopLevel, &SECTIONS)?;
+    let done_interactive = match root.section("done", &["interactive"])? {
+        Some(done) => done.bool("interactive")?.unwrap_or(false),
+        None => false,
+    };
+    let remotes = root
+        .tables_in("remote")?
         .into_iter()
-        .map(|(name, t)| parse_remote(name, t))
+        .map(|(name, t)| parse_remote(name, &t))
         .collect::<Result<Vec<_>, _>>()?;
-    let categories = named_tables(&root, "category")?
+    let categories = root
+        .tables_in("category")?
         .into_iter()
-        .map(|(name, t)| parse_category(name, t))
+        .map(|(name, t)| parse_category(name, &t))
         .collect::<Result<Vec<_>, _>>()?;
     let categories = Categories::new(categories)
         .map_err(|e| ConfigError::Invalid(format!("category: {e:?}")))?;
-    let filters = named_tables(&root, "filter")?
+    let filters = root
+        .tables_in("filter")?
         .into_iter()
-        .map(|(name, t)| {
-            let query = t.get("query").and_then(Value::as_str).ok_or_else(|| {
-                ConfigError::Invalid(format!("filter.{name} needs a query string"))
-            })?;
-            Ok(FilterConfig {
-                name: name.to_string(),
-                query: query.to_string(),
-            })
-        })
-        .collect::<Result<Vec<_>, ConfigError>>()?;
+        .map(|(name, t)| parse_filter(name, &t))
+        .collect::<Result<Vec<_>, _>>()?;
     Ok(Config {
         done_interactive,
         remotes,
@@ -98,47 +99,23 @@ pub fn parse_config(text: &str) -> Result<Config, ConfigError> {
     })
 }
 
-fn syntax_error_without_the_echoed_line(text: &str, e: &toml::de::Error) -> ConfigError {
-    let Some(span) = e.span() else {
-        return ConfigError::Syntax(e.message().to_string());
-    };
-    let before = &text[..span.start.min(text.len())];
-    let line = before.matches('\n').count() + 1;
-    let column = before.rsplit('\n').next().unwrap_or("").chars().count() + 1;
-    ConfigError::Syntax(format!("line {line}, column {column}: {}", e.message()))
+fn parse_filter(name: &str, t: &StrictTable) -> Result<FilterConfig, ConfigError> {
+    t.only(&["query"])?;
+    let query = t
+        .string("query")?
+        .ok_or_else(|| ConfigError::Invalid(format!("filter.{name} needs a query string")))?;
+    Ok(FilterConfig {
+        name: name.to_string(),
+        query,
+    })
 }
 
-fn named_tables<'a>(root: &'a Table, key: &str) -> Result<Vec<(&'a str, &'a Table)>, ConfigError> {
-    let Some(section) = root.get(key) else {
-        return Ok(Vec::new());
-    };
-    let table = section
-        .as_table()
-        .ok_or_else(|| ConfigError::Invalid(format!("[{key}] must hold named tables")))?;
-    table
-        .iter()
-        .map(|(name, v)| {
-            v.as_table()
-                .map(|t| (name.as_str(), t))
-                .ok_or_else(|| ConfigError::Invalid(format!("{key}.{name} must be a table")))
-        })
-        .collect()
-}
-
-fn parse_category(name: &str, t: &Table) -> Result<Category, ConfigError> {
+fn parse_category(name: &str, t: &StrictTable) -> Result<Category, ConfigError> {
+    t.only(&["values", "exclusive"])?;
     let values = t
-        .get("values")
-        .and_then(Value::as_array)
+        .string_array("values", "an array of strings")?
         .ok_or_else(|| ConfigError::Invalid(format!("category.{name} needs values")))?;
-    let values = values
-        .iter()
-        .map(|v| {
-            v.as_str().map(str::to_string).ok_or_else(|| {
-                ConfigError::Invalid(format!("category.{name}: values must be strings"))
-            })
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-    let exclusive = t.get("exclusive").and_then(Value::as_bool).unwrap_or(false);
+    let exclusive = t.bool("exclusive")?.unwrap_or(false);
     Ok(Category {
         name: name.to_string(),
         values,

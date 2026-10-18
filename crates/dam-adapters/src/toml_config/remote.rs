@@ -1,14 +1,13 @@
 use dam_application::{ConfiguredDuration, CredentialSpec, RemoteConfig, RemoteName, Secret};
 use dam_domain::Path;
-use toml::{Table, Value};
+use toml::Value;
 
-use super::{ConfigError, parse_duration};
+use super::{ConfigError, StrictTable, parse_duration};
 
-pub(super) fn parse_remote(name: &str, t: &Table) -> Result<RemoteConfig, ConfigError> {
+pub(super) fn parse_remote(name: &str, t: &StrictTable) -> Result<RemoteConfig, ConfigError> {
     let remote_name = RemoteName::parse(name).map_err(|e| ConfigError::Invalid(e.to_string()))?;
     let url = t
-        .get("url")
-        .and_then(Value::as_str)
+        .string("url")?
         .ok_or_else(|| ConfigError::Invalid(format!("remote.{name} needs a url")))?;
     let helper = url
         .split_once("::")
@@ -19,33 +18,28 @@ pub(super) fn parse_remote(name: &str, t: &Table) -> Result<RemoteConfig, Config
                 "remote.{name}: url {url:?} must look like <helper>::"
             ))
         })?;
-    let stale = optional_duration_keeping_its_text(name, t, "stale")?.map(|d| d.value);
-    let deadline = optional_duration_keeping_its_text(name, t, "deadline")?;
+    let stale = optional_duration_keeping_its_text(t, "stale")?.map(|d| d.value);
+    let deadline = optional_duration_keeping_its_text(t, "deadline")?;
     let path = t
-        .get("path")
-        .map(|v| {
-            v.as_str()
-                .ok_or_else(|| {
-                    ConfigError::Invalid(format!("remote.{name}: path must be a string"))
-                })
-                .and_then(|p| {
-                    Path::parse(p)
-                        .map_err(|e| ConfigError::Invalid(format!("remote.{name}: path: {e:?}")))
-                })
+        .string("path")?
+        .map(|p| {
+            Path::parse(&p).map_err(|e| ConfigError::Invalid(format!("remote.{name}: path: {e:?}")))
         })
         .transpose()?;
-    let declared = names_declared_under_credentials(name, t)?;
+    let declared = t
+        .string_array("credentials", "an array of names")?
+        .unwrap_or_default();
     let mut candidates: Vec<(u8, CredentialSpec)> = Vec::new();
-    for (key, value) in t {
-        if SETTING_KEYS.contains(&key.as_str()) {
+    for (key, value) in t.keys() {
+        if SETTING_KEYS.contains(&key) {
             continue;
         }
         if !is_credential_key(key, &declared) {
-            return Err(unknown_key(name, key));
+            return Err(unknown_key(t, key));
         }
         candidates.push((
             precedence_value_then_command_then_variable(key),
-            parse_credential(name, key, value)?,
+            parse_credential(t, key, value)?,
         ));
     }
     let credentials = one_spec_per_name_at_its_highest_precedence(candidates);
@@ -61,23 +55,6 @@ pub(super) fn parse_remote(name: &str, t: &Table) -> Result<RemoteConfig, Config
 }
 
 const SETTING_KEYS: [&str; 5] = ["url", "stale", "deadline", "path", "credentials"];
-
-fn names_declared_under_credentials(remote: &str, t: &Table) -> Result<Vec<String>, ConfigError> {
-    let invalid = |why: &str| ConfigError::Invalid(format!("remote.{remote}: credentials {why}"));
-    let Some(value) = t.get("credentials") else {
-        return Ok(Vec::new());
-    };
-    value
-        .as_array()
-        .ok_or_else(|| invalid("must be an array of names"))?
-        .iter()
-        .map(|v| {
-            v.as_str()
-                .map(str::to_string)
-                .ok_or_else(|| invalid("must be an array of strings"))
-        })
-        .collect()
-}
 
 fn precedence_value_then_command_then_variable(key: &str) -> u8 {
     if key.ends_with("_command") {
@@ -101,49 +78,34 @@ fn is_credential_key(key: &str, declared: &[String]) -> bool {
     key.ends_with("_command") || key.ends_with("_env") || declared.iter().any(|d| d == key)
 }
 
-fn unknown_key(remote: &str, key: &str) -> ConfigError {
+fn unknown_key(t: &StrictTable, key: &str) -> ConfigError {
     ConfigError::Invalid(format!(
-        "remote.{remote}: {key} is not a key dam knows. The settings are {}; a credential is \
-         <name>_command, <name>_env, or <name> with <name> listed in credentials",
+        "{}. The settings are {}; a credential is <name>_command, <name>_env, or <name> with \
+         <name> listed in credentials",
+        t.refuse(key, format_args!("unknown key {key}")),
         SETTING_KEYS.join(", ")
     ))
 }
 
 fn optional_duration_keeping_its_text(
-    remote: &str,
-    t: &Table,
+    t: &StrictTable,
     key: &str,
 ) -> Result<Option<ConfiguredDuration>, ConfigError> {
-    t.get(key)
-        .map(|v| {
-            v.as_str()
-                .ok_or_else(|| {
-                    ConfigError::Invalid(format!("remote.{remote}: {key} must be a string"))
-                })
-                .and_then(|text| {
-                    parse_duration(key, text).map(|value| ConfiguredDuration {
-                        value,
-                        text: text.to_string(),
-                    })
-                })
-        })
+    t.string(key)?
+        .map(|text| parse_duration(key, &text).map(|value| ConfiguredDuration { value, text }))
         .transpose()
 }
 
-fn parse_credential(remote: &str, key: &str, value: &Value) -> Result<CredentialSpec, ConfigError> {
-    let invalid = |why: &str| ConfigError::Invalid(format!("remote.{remote}: {key} {why}"));
+fn parse_credential(
+    t: &StrictTable,
+    key: &str,
+    value: &Value,
+) -> Result<CredentialSpec, ConfigError> {
+    let invalid = |why: &str| ConfigError::Invalid(t.refuse(key, format_args!("{key} {why}")));
     if let Some(name) = key.strip_suffix("_command") {
-        let argv = value
-            .as_array()
-            .ok_or_else(|| invalid("must be an array of words"))?;
-        let argv = argv
-            .iter()
-            .map(|w| {
-                w.as_str()
-                    .map(str::to_string)
-                    .ok_or_else(|| invalid("must be an array of strings"))
-            })
-            .collect::<Result<Vec<_>, _>>()?;
+        let argv = t
+            .string_array(key, "an array of words")?
+            .expect("the key came from this table");
         if argv.is_empty() {
             return Err(invalid("must name a command"));
         }

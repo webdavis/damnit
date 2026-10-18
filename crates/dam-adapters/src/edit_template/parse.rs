@@ -1,29 +1,8 @@
 use dam_application::EditFields;
 use dam_domain::{Date, Object, Oid, Priority};
 
-use super::reader::TemplateReader;
-
-const KEYS_A_TASK_TEMPLATE_MAY_CARRY: [&str; 9] = [
-    "subject",
-    "body",
-    "labels",
-    "depends",
-    "recurrence",
-    "priority",
-    "due",
-    "deadline",
-    "attach",
-];
-const KEYS_AN_EVENT_TEMPLATE_MAY_CARRY: [&str; 8] = [
-    "subject",
-    "body",
-    "labels",
-    "depends",
-    "recurrence",
-    "start",
-    "end",
-    "location",
-];
+use super::reader::{template_reader, when};
+use crate::toml_config::{StrictTable, parse_toml};
 
 pub fn parse_template(
     text: &str,
@@ -31,14 +10,8 @@ pub fn parse_template(
     today: Date,
     tz: &jiff::tz::TimeZone,
 ) -> Result<EditFields, String> {
-    let reader = TemplateReader::parse(text)?;
-    let known: &[&str] = match current {
-        Object::Task(_) => &KEYS_A_TASK_TEMPLATE_MAY_CARRY,
-        Object::Event(_) => &KEYS_AN_EVENT_TEMPLATE_MAY_CARRY,
-    };
-    if let Some(key) = reader.first_unknown_key(known) {
-        return Err(reader.refuse_at_the_keys_line(key, format_args!("unknown field {key}")));
-    }
+    let table = parse_toml(text)?;
+    let reader = template_reader(text, &table, current)?;
 
     let mut fields = EditFields::default();
     let b = current.base();
@@ -67,11 +40,7 @@ pub fn parse_template(
     Ok(fields)
 }
 
-fn labels(
-    reader: &TemplateReader,
-    current: &Object,
-    fields: &mut EditFields,
-) -> Result<(), String> {
+fn labels(reader: &StrictTable, current: &Object, fields: &mut EditFields) -> Result<(), String> {
     let Some(labels) = reader.string_array("labels", "an array of strings")? else {
         return Ok(());
     };
@@ -89,20 +58,14 @@ fn labels(
     Ok(())
 }
 
-fn depends(
-    reader: &TemplateReader,
-    current: &Object,
-    fields: &mut EditFields,
-) -> Result<(), String> {
+fn depends(reader: &StrictTable, current: &Object, fields: &mut EditFields) -> Result<(), String> {
     let Some(texts) = reader.string_array("depends", "an array of oids")? else {
         return Ok(());
     };
     let oids = texts
         .iter()
         .map(|t| {
-            Oid::parse(t).map_err(|e| {
-                reader.refuse_at_the_keys_line("depends", format_args!("depends: {e:?}"))
-            })
+            Oid::parse(t).map_err(|e| reader.refuse("depends", format_args!("depends: {e:?}")))
         })
         .collect::<Result<Vec<_>, _>>()?;
     let held = &current.base().depends;
@@ -112,7 +75,7 @@ fn depends(
 }
 
 fn task_fields(
-    reader: &TemplateReader,
+    reader: &StrictTable,
     today: Date,
     tz: &jiff::tz::TimeZone,
     t: &dam_domain::Task,
@@ -123,9 +86,7 @@ fn task_fields(
             .as_integer()
             .and_then(|n| u8::try_from(n).ok())
             .and_then(|n| Priority::new(n).ok())
-            .ok_or_else(|| {
-                reader.refuse_at_the_keys_line("priority", "priority must be 1, 2, 3 or 4")
-            })?;
+            .ok_or_else(|| reader.refuse("priority", "priority must be 1, 2, 3 or 4"))?;
         if n != t.priority {
             fields.priority = Some(n);
         }
@@ -133,7 +94,7 @@ fn task_fields(
     if let Some(s) = reader.string("due")? {
         let value = match s.is_empty() {
             true => None,
-            false => Some(reader.when("due", &s, today, tz)?),
+            false => Some(when(reader, "due", &s, today, tz)?),
         };
         if value != t.due {
             fields.due = Some(value);
@@ -142,9 +103,10 @@ fn task_fields(
     if let Some(s) = reader.string("deadline")? {
         let value = match s.is_empty() {
             true => None,
-            false => Some(s.parse::<Date>().map_err(|e| {
-                reader.refuse_at_the_keys_line("deadline", format_args!("deadline: {e}"))
-            })?),
+            false => Some(
+                s.parse::<Date>()
+                    .map_err(|e| reader.refuse("deadline", format_args!("deadline: {e}")))?,
+            ),
         };
         if value != t.deadline {
             fields.deadline = Some(value);
@@ -153,9 +115,10 @@ fn task_fields(
     if let Some(s) = reader.string("attach")? {
         let value = match s.is_empty() {
             true => None,
-            false => Some(Oid::parse(&s).map_err(|e| {
-                reader.refuse_at_the_keys_line("attach", format_args!("attach: {e:?}"))
-            })?),
+            false => Some(
+                Oid::parse(&s)
+                    .map_err(|e| reader.refuse("attach", format_args!("attach: {e:?}")))?,
+            ),
         };
         if value != t.event {
             fields.attach = Some(value);
@@ -165,20 +128,20 @@ fn task_fields(
 }
 
 fn event_fields(
-    reader: &TemplateReader,
+    reader: &StrictTable,
     today: Date,
     tz: &jiff::tz::TimeZone,
     e: &dam_domain::Event,
     fields: &mut EditFields,
 ) -> Result<(), String> {
     if let Some(s) = reader.string("start")? {
-        let value = reader.when("start", &s, today, tz)?;
+        let value = when(reader, "start", &s, today, tz)?;
         if value != e.start {
             fields.start = Some(value);
         }
     }
     if let Some(s) = reader.string("end")? {
-        let value = reader.when("end", &s, today, tz)?;
+        let value = when(reader, "end", &s, today, tz)?;
         if value != e.end {
             fields.end = Some(value);
         }

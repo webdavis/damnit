@@ -20,6 +20,6 @@ This is a deferral with a date on it rather than an omission. Before 1.0, a conf
 meaning and the only protection is the release note. At 1.0 the file gets a version key and the same
 refuse-a-newer-one rule the store already has.
 
-Until then, the strict decoding is what carries the weight: every key in a remote table is refused
-by name unless `dam` knows it, so a misspelled or retired key is a refusal rather than a silent
-default.
+Until then, the strict decoding is what carries the weight: every section of the file refuses an
+unknown key and a value of the wrong type by name, naming the key and its table in one line, so a
+misspelled or retired key, or a misspelled section, is a refusal rather than a silent default.

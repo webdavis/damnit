@@ -87,8 +87,7 @@ fn hostile_subject_text_survives_a_render_and_a_parse_unchanged() {
 fn a_misspelled_field_is_refused_rather_than_dropped() {
     let text = super::render_template(&task()).replace("subject =", "subjectt =");
     let err = super::parse_template(&text, &task(), date(2026, 9, 18), &tz()).unwrap_err();
-    assert!(err.contains("subjectt"), "{err}");
-    assert!(err.starts_with("line 3:"), "{err}");
+    assert_eq!(err, "line 3: unknown key subjectt");
 }
 
 #[test]
@@ -105,7 +104,10 @@ fn a_field_belonging_to_the_other_kind_is_refused_by_name() {
 fn broken_toml_names_its_line() {
     let text = super::render_template(&task()).replace("body = \"\"", "body = \"unterminated");
     let err = super::parse_template(&text, &task(), date(2026, 9, 18), &tz()).unwrap_err();
-    assert!(err.starts_with("line 4:"), "{err}");
+    assert_eq!(
+        err,
+        "line 4, column 21: invalid basic string, expected `\"`"
+    );
 }
 
 #[test]

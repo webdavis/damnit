@@ -125,3 +125,53 @@ fn a_syntax_error_names_its_position_and_never_echoes_the_file() {
         );
     }
 }
+
+#[test]
+fn a_non_bool_interactive_is_refused_by_name() {
+    let err = parse_config("[done]\ninteractive = \"yes\"\n").unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "config: interactive must be true or false in [done]"
+    );
+}
+
+#[test]
+fn a_misspelled_section_is_refused_rather_than_dropped() {
+    let err = parse_config("[remtoe.x]\nurl = \"t::\"\n").unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "config: unknown key remtoe at the top level"
+    );
+}
+
+#[test]
+fn a_misspelled_done_key_is_refused_by_name() {
+    let err = parse_config("[done]\ninteractve = true\n").unwrap_err();
+    assert_eq!(err.to_string(), "config: unknown key interactve in [done]");
+}
+
+#[test]
+fn an_extra_filter_key_is_refused_by_name() {
+    let err = parse_config("[filter.x]\nquery = \"due:today\"\ncolour = \"red\"\n").unwrap_err();
+    assert_eq!(err.to_string(), "config: unknown key colour in [filter.x]");
+}
+
+#[test]
+fn a_non_bool_exclusive_is_refused_by_name() {
+    let err = parse_config("[category.c]\nvalues = [\"a\"]\nexclusive = \"no\"\n").unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "config: exclusive must be true or false in [category.c]"
+    );
+}
+
+#[test]
+fn a_section_that_is_not_a_table_is_refused_by_name() {
+    let err = parse_config("done = true\n").unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "config: done must be a table at the top level"
+    );
+    let err = parse_config("[filter]\nx = 1\n").unwrap_err();
+    assert_eq!(err.to_string(), "config: x must be a table in [filter]");
+}
