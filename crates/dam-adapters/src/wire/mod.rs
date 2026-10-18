@@ -11,6 +11,8 @@ use dam_protocol::{Capabilities, Mutation, MutationResult, PullResponse};
 pub use decode::{WireError, from_wire};
 pub use encode::to_wire;
 
+const NO_REMOTE_ID: &str = "an object with no remote id was skipped";
+
 fn placeholder_oid_until_the_application_resolves_the_remote_id() -> Oid {
     Oid::generate(&mut |b: &mut [u8]| b.fill(0))
 }
@@ -31,7 +33,7 @@ pub fn pull_from_wire(response: PullResponse) -> PullOutcome {
         let Some(remote_id) = wire.remote_id.take() else {
             rejected.push(RejectedObject {
                 remote_id: String::new(),
-                why: "the object has no remote_id".into(),
+                why: NO_REMOTE_ID.into(),
             });
             continue;
         };
@@ -44,6 +46,19 @@ pub fn pull_from_wire(response: PullResponse) -> PullOutcome {
             }),
         }
     }
+    rejected.extend(
+        response
+            .unreadable
+            .into_iter()
+            .map(|unreadable| RejectedObject {
+                why: if unreadable.remote_id.is_empty() {
+                    NO_REMOTE_ID.into()
+                } else {
+                    unreadable.why
+                },
+                remote_id: unreadable.remote_id,
+            }),
+    );
     PullOutcome {
         objects,
         rejected,
@@ -89,3 +104,6 @@ pub fn outcomes_from_wire(results: Vec<MutationResult>) -> Vec<MutationOutcome> 
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod pull_tests;

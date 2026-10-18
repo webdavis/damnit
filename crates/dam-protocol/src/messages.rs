@@ -80,15 +80,55 @@ impl<'de> Deserialize<'de> for Response {
 const KEYS_THAT_MARK_A_PULL_RESPONSE: [&str; 4] = ["objects", "removed", "cancelled", "sync"];
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(from = "PullResponseDoc")]
 pub struct PullResponse {
-    #[serde(default)]
     pub objects: Vec<WireObject>,
-    #[serde(default)]
+    #[serde(skip)]
+    pub unreadable: Vec<UnreadableObject>,
     pub removed: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub cancelled: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sync: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UnreadableObject {
+    pub remote_id: String,
+    pub why: String,
+}
+
+#[derive(Deserialize)]
+struct PullResponseDoc {
+    #[serde(default)]
+    objects: Vec<serde_json::Value>,
+    #[serde(default)]
+    removed: Vec<String>,
+    #[serde(default)]
+    cancelled: Vec<String>,
+    #[serde(default)]
+    sync: Option<String>,
+}
+
+impl From<PullResponseDoc> for PullResponse {
+    fn from(doc: PullResponseDoc) -> PullResponse {
+        let mut response = PullResponse {
+            removed: doc.removed,
+            cancelled: doc.cancelled,
+            sync: doc.sync,
+            ..PullResponse::default()
+        };
+        for value in doc.objects {
+            let remote_id = value["remote_id"].as_str().unwrap_or_default().to_string();
+            match unreadable::read_object(&value) {
+                Ok(object) => response.objects.push(object),
+                Err(why) => response
+                    .unreadable
+                    .push(UnreadableObject { remote_id, why }),
+            }
+        }
+        response
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -119,6 +159,8 @@ pub struct MutationResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub why: Option<String>,
 }
+
+mod unreadable;
 
 #[cfg(test)]
 mod tests;

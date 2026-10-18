@@ -65,7 +65,10 @@ fn apply(
         for rejected in &response.rejected {
             repos.notices.add_notice(&Notice::PullFailed {
                 remote: remote.name.clone(),
-                why: format!("{}: {}", rejected.remote_id, rejected.why),
+                why: match rejected.remote_id.as_str() {
+                    "" => rejected.why.clone(),
+                    remote_id => format!("{remote_id}: {}", rejected.why),
+                },
             })?;
         }
         let mut objects = std::mem::take(&mut response.objects);
