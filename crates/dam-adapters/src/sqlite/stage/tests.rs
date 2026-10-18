@@ -59,22 +59,6 @@ fn stage_coalesces_and_commit_moves_the_stage_into_history() {
 }
 
 #[test]
-fn commit_clears_only_the_oids_it_touched() {
-    let s = SqliteStore::in_memory().unwrap();
-    let a = task(1, "");
-    let b = task(2, "");
-    s.put(&a).unwrap();
-    s.put(&b).unwrap();
-    s.stage(diff(&oid(1), None, Some(&a)).unwrap()).unwrap();
-    s.stage(diff(&oid(2), None, Some(&b)).unwrap()).unwrap();
-    s.commit(&record(9, vec![diff(&oid(1), None, Some(&a)).unwrap()]))
-        .unwrap();
-    let left = s.staged().unwrap();
-    assert_eq!(left.len(), 1);
-    assert_eq!(left[0].oid, oid(2));
-}
-
-#[test]
 fn unpushed_commits_come_oldest_first() {
     let s = SqliteStore::in_memory().unwrap();
     s.commit(&record(2, vec![])).unwrap();

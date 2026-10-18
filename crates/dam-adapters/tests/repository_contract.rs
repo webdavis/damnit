@@ -21,6 +21,12 @@ fn it_keeps_the_commit_repository_contract() {
 }
 
 #[test]
+fn it_keeps_the_commit_clears_the_stage_contract() {
+    let store = store();
+    contract::commit_clears_the_stage_contract(&store, &store);
+}
+
+#[test]
 fn it_keeps_the_remote_tracking_repository_contract() {
     contract::remote_tracking_repository_contract(&store());
 }
