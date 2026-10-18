@@ -48,7 +48,16 @@ fn open_children_and_dependencies_block_and_force_no_refuses() {
         err,
         UseCaseError::Refused(Refusal::Blocked { .. })
     ));
-    assert!(!store.get(&plan).unwrap().unwrap().as_task().unwrap().done);
+    assert!(
+        !store
+            .get(&plan)
+            .unwrap()
+            .unwrap()
+            .as_task()
+            .unwrap()
+            .completion
+            .is_done()
+    );
 }
 
 #[test]
@@ -65,6 +74,15 @@ fn force_yes_completes_and_leaves_children_where_they_are() {
     let plan = put_task(&store, 1, "plan", "work", false);
     let step = put_task(&store, 2, "step", "work/plan", false);
     complete(&store, &today(), &FixedRandom::new(9), &plan, Force::Yes).unwrap();
-    assert!(store.get(&plan).unwrap().unwrap().as_task().unwrap().done);
+    assert!(
+        store
+            .get(&plan)
+            .unwrap()
+            .unwrap()
+            .as_task()
+            .unwrap()
+            .completion
+            .is_done()
+    );
     assert_eq!(path_of(&store, &step), "work/plan/");
 }

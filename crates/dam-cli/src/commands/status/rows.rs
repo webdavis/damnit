@@ -66,10 +66,10 @@ fn state_left_behind_or_the_removed_objects_json(
     state.insert("labels".into(), base.labels.iter().cloned().collect());
     match object {
         Object::Task(t) => {
-            state.insert("done".into(), t.done.into());
+            state.insert("done".into(), t.completion.is_done().into());
             state.insert(
                 "completed_at".into(),
-                t.completed_at.map(|at| at.to_string()).into(),
+                t.completion.at().map(|at| at.to_string()).into(),
             );
             state.insert("priority".into(), t.priority.get().into());
             state.insert("due".into(), t.due.as_ref().map(When::to_text).into());

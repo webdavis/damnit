@@ -1,7 +1,7 @@
 use super::*;
 use crate::args::EditArgs;
 use crate::testing::{ScriptedEditor, context, machine_context};
-use dam_domain::{Object, Oid, Task};
+use dam_domain::{Completion, Object, Oid, Task};
 
 fn oid(b: u8) -> Oid {
     Oid::generate(&mut |x: &mut [u8]| x.fill(b))
@@ -151,7 +151,7 @@ fn a_machine_format_refuses_to_open_an_editor() {
 fn undone_reopens_a_completed_task_as_one_update_naming_done() {
     let mut ctx = context();
     let mut task = Task::new(oid(1), "milk");
-    task.done = true;
+    task.completion = Completion::Done { at: None };
     ctx.store.put(&Object::Task(task)).unwrap();
     dam_application::add(ctx.store.as_ref(), ctx.store.as_ref(), &[oid(1)]).unwrap();
     dam_application::commit(
@@ -177,7 +177,8 @@ fn undone_reopens_a_completed_task_as_one_update_naming_done() {
             .unwrap()
             .as_task()
             .unwrap()
-            .done
+            .completion
+            .is_done()
     );
     let changes =
         dam_application::diff_working(ctx.store.as_ref(), ctx.store.as_ref(), ctx.store.as_ref())

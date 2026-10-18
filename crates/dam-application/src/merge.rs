@@ -1,4 +1,4 @@
-use dam_domain::{Field, Kind, Object};
+use dam_domain::{Completion, Field, Kind, Object};
 
 pub fn kind_change(ours: &Object, theirs: &Object) -> Option<(Kind, Kind)> {
     let (o, t) = (ours.kind(), theirs.kind());
@@ -35,10 +35,12 @@ pub fn merge_fields(ours: &Object, theirs: &Object, fields: &[Field]) -> Object 
     match (&mut out, theirs) {
         (Object::Task(o), Object::Task(t)) => {
             if has(Field::Done) {
-                o.done = t.done;
-                if !o.done {
-                    o.completed_at = None;
-                }
+                o.completion = match (&o.completion, &t.completion) {
+                    (Completion::Done { at: Some(_) }, Completion::Done { at: None }) => {
+                        o.completion.clone()
+                    }
+                    _ => t.completion.clone(),
+                };
             }
             if has(Field::Priority) {
                 o.priority = t.priority
@@ -160,7 +162,11 @@ mod tests {
         } else {
             Priority::LOWEST
         };
-        t.done = tag != "a";
+        t.completion = if tag == "a" {
+            Completion::Open
+        } else {
+            Completion::Done { at: None }
+        };
         t.due = Some(When::Day(date(2026, 1, n as i8)));
         t.deadline = Some(date(2026, 2, n as i8));
         t.event = Some(oid(92 + n));
@@ -262,26 +268,64 @@ mod tests {
     #[test]
     fn a_reopen_from_a_remote_clears_the_completion_time() {
         let mut ours = Task::new(oid(1), "t");
-        ours.done = true;
-        ours.completed_at = Some(jiff::Timestamp::UNIX_EPOCH);
+        ours.completion = Completion::Done {
+            at: Some(jiff::Timestamp::UNIX_EPOCH),
+        };
         let theirs = Task::new(oid(1), "t");
         let merged = merge_fields(&Object::Task(ours), &Object::Task(theirs), &[Field::Done]);
         let merged = merged.as_task().unwrap();
-        assert!(!merged.done);
-        assert_eq!(merged.completed_at, None);
+        assert_eq!(merged.completion, Completion::Open);
     }
 
     #[test]
     fn a_remote_that_agrees_it_is_done_leaves_the_completion_time_alone() {
         let mut ours = Task::new(oid(1), "t");
-        ours.done = true;
-        ours.completed_at = Some(jiff::Timestamp::UNIX_EPOCH);
+        ours.completion = Completion::Done {
+            at: Some(jiff::Timestamp::UNIX_EPOCH),
+        };
         let mut theirs = Task::new(oid(1), "t");
-        theirs.done = true;
+        theirs.completion = Completion::Done { at: None };
         let merged = merge_fields(&Object::Task(ours), &Object::Task(theirs), &[Field::Done]);
         assert_eq!(
-            merged.as_task().unwrap().completed_at,
-            Some(jiff::Timestamp::UNIX_EPOCH)
+            merged.as_task().unwrap().completion,
+            Completion::Done {
+                at: Some(jiff::Timestamp::UNIX_EPOCH)
+            }
+        );
+    }
+
+    #[test]
+    fn a_remote_completion_time_replaces_the_local_one() {
+        let mut ours = Task::new(oid(1), "t");
+        ours.completion = Completion::Done {
+            at: Some(jiff::Timestamp::UNIX_EPOCH),
+        };
+        let mut theirs = Task::new(oid(1), "t");
+        theirs.completion = Completion::Done {
+            at: Some(jiff::Timestamp::MAX),
+        };
+        let merged = merge_fields(&Object::Task(ours), &Object::Task(theirs), &[Field::Done]);
+        assert_eq!(
+            merged.as_task().unwrap().completion,
+            Completion::Done {
+                at: Some(jiff::Timestamp::MAX)
+            }
+        );
+    }
+
+    #[test]
+    fn a_remote_completion_time_is_kept_when_the_task_was_open() {
+        let ours = Task::new(oid(1), "t");
+        let mut theirs = Task::new(oid(1), "t");
+        theirs.completion = Completion::Done {
+            at: Some(jiff::Timestamp::MAX),
+        };
+        let merged = merge_fields(&Object::Task(ours), &Object::Task(theirs), &[Field::Done]);
+        assert_eq!(
+            merged.as_task().unwrap().completion,
+            Completion::Done {
+                at: Some(jiff::Timestamp::MAX)
+            }
         );
     }
 }

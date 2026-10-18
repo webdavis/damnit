@@ -1,5 +1,7 @@
 use super::*;
-use crate::{Categories, Category, Event, Object, Oid, Path, Priority, Task, Transparency, When};
+use crate::{
+    Categories, Category, Completion, Event, Object, Oid, Path, Priority, Task, Transparency, When,
+};
 use jiff::civil::date;
 
 fn oid(b: u8) -> Oid {
@@ -9,7 +11,11 @@ fn oid(b: u8) -> Oid {
 fn task(due: Option<Date>, done: bool) -> Object {
     let mut t = Task::new(oid(1), "x");
     t.due = due.map(When::Day);
-    t.done = done;
+    t.completion = if done {
+        Completion::Done { at: None }
+    } else {
+        Completion::Open
+    };
     Object::Task(t)
 }
 

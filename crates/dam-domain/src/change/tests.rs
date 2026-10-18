@@ -1,5 +1,5 @@
 use super::*;
-use crate::{Event, Field, Object, Oid, Priority, Task, When};
+use crate::{Completion, Event, Field, Object, Oid, Priority, Task, When};
 
 fn oid(b: u8) -> Oid {
     Oid::generate(&mut |x: &mut [u8]| x.fill(b))
@@ -68,7 +68,7 @@ fn changed_fields_names_what_moved() {
     let a = task("a");
     let mut t = Task::new(oid(1), "a");
     t.priority = Priority::HIGHEST;
-    t.done = true;
+    t.completion = Completion::Done { at: None };
     let b = Object::Task(t);
     assert_eq!(changed_fields(&a, &b), vec![Field::Priority, Field::Done]);
     assert!(changed_fields(&a, &a).is_empty());
@@ -79,4 +79,18 @@ fn changed_fields_reports_kind_when_a_task_and_an_event_are_compared() {
     let start = When::Day(jiff::civil::date(2026, 9, 25));
     let event = Object::Event(Event::new(oid(1), "a", start.clone(), start));
     assert_eq!(changed_fields(&task("a"), &event), vec![Field::Kind]);
+}
+
+#[test]
+fn a_change_to_the_completion_time_alone_names_done() {
+    let mut before = Task::new(oid(1), "a");
+    before.completion = Completion::Done { at: None };
+    let mut after = before.clone();
+    after.completion = Completion::Done {
+        at: Some(crate::Timestamp::UNIX_EPOCH),
+    };
+    assert_eq!(
+        changed_fields(&Object::Task(before), &Object::Task(after)),
+        vec![Field::Done]
+    );
 }

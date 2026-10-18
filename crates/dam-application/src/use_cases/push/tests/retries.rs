@@ -6,7 +6,7 @@ use crate::testing::prelude::*;
 use crate::testing::{EchoCredentials, FixedClock, FixedRandom, MemoryStore, oid};
 use crate::use_cases::commit::commit;
 use crate::use_cases::stage::add_all;
-use dam_domain::{Field, Object, Task};
+use dam_domain::{Completion, Field, Object, Task};
 use jiff::civil::date;
 
 fn answering(ok: bool) -> impl Fn(&[RemoteMutation]) -> Vec<MutationOutcome> + Clone {
@@ -79,7 +79,7 @@ fn a_retry_keeps_the_failed_field_when_a_later_commit_changes_another() {
     push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
 
     let mut done = Task::new(oid(1), "renamed");
-    done.done = true;
+    done.completion = Completion::Done { at: None };
     store.put(&Object::Task(done)).unwrap();
     add_all(&store, &store, &store).unwrap();
     commit(

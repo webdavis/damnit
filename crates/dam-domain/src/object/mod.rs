@@ -10,7 +10,7 @@ pub use event::{
     Attachment, Attendee, Conference, Event, EventStatus, EventType, Person, ResponseStatus,
     Transparency, Visibility,
 };
-pub use task::Task;
+pub use task::{Completion, Task};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Kind {
@@ -139,7 +139,7 @@ mod tests {
         let t = Task::new(oid(1), "buy milk");
         assert_eq!(t.base.subject, "buy milk");
         assert_eq!(t.base.path, Path::root());
-        assert!(!t.done);
+        assert_eq!(t.completion, Completion::Open);
         assert_eq!(t.priority, Priority::LOWEST);
         assert!(t.due.is_none() && t.deadline.is_none() && t.event.is_none());
         assert!(t.base.labels.is_empty() && t.base.depends.is_empty());

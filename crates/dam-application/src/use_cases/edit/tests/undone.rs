@@ -2,15 +2,16 @@ use super::super::*;
 use super::seed;
 use crate::testing::prelude::*;
 use crate::testing::{MemoryStore, oid};
-use dam_domain::{Categories, Event, Object, Task, When};
+use dam_domain::{Categories, Completion, Event, Object, Task, When};
 use jiff::civil::date;
 
 #[test]
 fn undone_reopens_a_completed_task() {
     let store = MemoryStore::new();
     let mut task = Task::new(oid(1), "t1");
-    task.done = true;
-    task.completed_at = Some(jiff::Timestamp::UNIX_EPOCH);
+    task.completion = Completion::Done {
+        at: Some(jiff::Timestamp::UNIX_EPOCH),
+    };
     store.put(&Object::Task(task)).unwrap();
     let id = oid(1);
     let out = edit(
@@ -23,12 +24,7 @@ fn undone_reopens_a_completed_task() {
         },
     )
     .unwrap();
-    assert!(!out.as_task().unwrap().done);
-    assert_eq!(
-        out.as_task().unwrap().completed_at,
-        None,
-        "an open task carries no completion time"
-    );
+    assert_eq!(out.as_task().unwrap().completion, Completion::Open);
     assert_eq!(store.get(&id).unwrap(), Some(out));
 }
 

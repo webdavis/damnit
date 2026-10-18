@@ -38,7 +38,8 @@ fn is_done(ctx: &Context, b: u8) -> bool {
         .unwrap()
         .as_task()
         .unwrap()
-        .done
+        .completion
+        .is_done()
 }
 
 fn a_prompt_with_no_answers_so_any_question_cancels() -> ScriptedPrompt {

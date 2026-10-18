@@ -1,6 +1,6 @@
 use dam_domain::{
-    Blocker, ChildDisposition, Date, DependencyDisposition, Dispositions, Force, Object, Oid,
-    Recurrence, Task, When, blockers, roll_forward,
+    Blocker, ChildDisposition, Completion, Date, DependencyDisposition, Dispositions, Force,
+    Object, Oid, Recurrence, Task, When, blockers, roll_forward,
 };
 
 use crate::errors::{Refusal, UseCaseError};
@@ -32,7 +32,7 @@ pub fn plan_complete(
     }
     let open_children: Vec<Oid> = children(objects, &task.base)?
         .iter()
-        .filter(|c| c.as_task().is_some_and(|t| !t.done))
+        .filter(|c| c.as_task().is_some_and(|t| !t.completion.is_done()))
         .map(|c| c.oid().clone())
         .collect();
     Ok(CompletePlan {
@@ -70,10 +70,11 @@ pub fn complete(
                 Completed::RolledForward { next_due: next }
             }
             None => {
-                if !task.done {
-                    task.completed_at = Some(clock.now());
+                if !task.completion.is_done() {
+                    task.completion = Completion::Done {
+                        at: Some(clock.now()),
+                    };
                 }
-                task.done = true;
                 Completed::Done
             }
         };
@@ -154,7 +155,7 @@ fn load_task(objects: &dyn ObjectRepository, oid: &Oid) -> Result<Task, UseCaseE
 }
 
 fn is_an_open_task(objects: &dyn ObjectRepository, oid: &Oid) -> Result<bool, UseCaseError> {
-    Ok(matches!(objects.get(oid)?, Some(Object::Task(t)) if !t.done))
+    Ok(matches!(objects.get(oid)?, Some(Object::Task(t)) if !t.completion.is_done()))
 }
 
 #[cfg(test)]

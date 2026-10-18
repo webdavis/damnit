@@ -63,7 +63,7 @@ pub(crate) fn object_line(object: &Object) -> String {
     let mut cols = vec![b.oid.short().to_string()];
     match object {
         Object::Task(t) => {
-            cols.push(if t.done {
+            cols.push(if t.completion.is_done() {
                 "done".into()
             } else {
                 format!("p{}", t.priority.get())

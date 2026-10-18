@@ -2,10 +2,28 @@ use super::Base;
 use crate::{Date, Oid, Priority, Timestamp, When};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Completion {
+    Open,
+    Done { at: Option<Timestamp> },
+}
+
+impl Completion {
+    pub fn is_done(&self) -> bool {
+        matches!(self, Completion::Done { .. })
+    }
+
+    pub fn at(&self) -> Option<Timestamp> {
+        match self {
+            Completion::Done { at } => *at,
+            Completion::Open => None,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Task {
     pub base: Base,
-    pub done: bool,
-    pub completed_at: Option<Timestamp>,
+    pub completion: Completion,
     pub priority: Priority,
     pub due: Option<When>,
     pub deadline: Option<Date>,
@@ -16,8 +34,7 @@ impl Task {
     pub fn new(oid: Oid, subject: impl Into<String>) -> Task {
         Task {
             base: Base::new(oid, subject),
-            done: false,
-            completed_at: None,
+            completion: Completion::Open,
             priority: Priority::default(),
             due: None,
             deadline: None,
