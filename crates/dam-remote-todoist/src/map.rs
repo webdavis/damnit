@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
+use dam_protocol::WireObject;
+
 use crate::api::{Item, Project, Section, SyncResponse};
 
 fn one_path_segment(name: &str, id: &str) -> String {
@@ -113,6 +115,14 @@ impl Tree {
                 !i.is_deleted && i.content == content && self.item_path(i).as_deref() == Some(path)
             })
             .map(|i| i.id.as_str())
+    }
+
+    pub fn held_wire(&self, kind: char, id: &str) -> Option<WireObject> {
+        match kind {
+            'p' => self.projects.get(id).map(|p| project_to_wire(self, p)),
+            's' => self.sections.get(id).map(|s| section_to_wire(self, s)),
+            _ => None,
+        }
     }
 
     pub fn add_project(&mut self, p: Project) {

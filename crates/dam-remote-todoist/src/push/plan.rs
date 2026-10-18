@@ -121,7 +121,8 @@ fn update_plan(
     let mut refused = None;
     match kind {
         'p' | 's' => {
-            refused = fields_the_container_cannot_carry(kind, &m.fields);
+            let held = tree.held_wire(kind, id);
+            refused = fields_the_container_cannot_carry(kind, &m.fields, object, held.as_ref());
             if changed("subject") {
                 let verb = if kind == 'p' {
                     "project_update"
