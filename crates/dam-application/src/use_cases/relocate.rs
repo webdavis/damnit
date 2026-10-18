@@ -2,31 +2,34 @@ use dam_domain::{Oid, Path};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
+use crate::use_cases::atomically::atomically;
 use crate::use_cases::subtree::{last_segment, move_subtree};
 
 pub fn relocate(objects: &dyn ObjectRepository, oid: &Oid, to: &Path) -> Result<(), UseCaseError> {
-    let object = objects
-        .get(oid)?
-        .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
-    let old = object.base().path.clone();
-    let sits_at_the_shared_root = old.as_str().is_empty();
-    if !sits_at_the_shared_root && to.is_within(&old) {
-        return Err(Refusal::MoveInsideItself(oid.clone()).into());
-    }
-    let new = if sits_at_the_shared_root {
-        to.clone()
-    } else {
-        to.join(&last_segment(&old))
-            .map_err(|e| UseCaseError::Parse(e.to_string()))?
-    };
-    move_subtree(objects, oid, &new)
+    atomically(objects, || {
+        let object = objects
+            .get(oid)?
+            .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
+        let old = object.base().path.clone();
+        let sits_at_the_shared_root = old.as_str().is_empty();
+        if !sits_at_the_shared_root && to.is_within(&old) {
+            return Err(Refusal::MoveInsideItself(oid.clone()).into());
+        }
+        let new = if sits_at_the_shared_root {
+            to.clone()
+        } else {
+            to.join(&last_segment(&old))
+                .map_err(|e| UseCaseError::Parse(e.to_string()))?
+        };
+        move_subtree(objects, oid, &new)
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::testing::prelude::*;
-    use crate::testing::{MemoryStore, oid};
+    use crate::testing::{FaultyStore, MemoryStore, oid};
     use dam_domain::{Object, Task};
 
     fn put(store: &MemoryStore, byte: u8, path: &str) -> Oid {
@@ -71,5 +74,16 @@ mod tests {
             store.get(&x).unwrap().unwrap().base().path.as_str(),
             "work/"
         );
+    }
+
+    #[test]
+    fn mv_that_fails_between_parent_and_child_moves_neither() {
+        let store = FaultyStore::new(MemoryStore::new());
+        let p = put(&store.inner, 1, "a/p");
+        put(&store.inner, 2, "a/p/c");
+        put(&store.inner, 3, "a/p/d");
+        store.assert_unchanged_when_any_write_fails(|| {
+            relocate(&store, &p, &Path::parse("b").unwrap())
+        });
     }
 }
