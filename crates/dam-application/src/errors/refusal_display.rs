@@ -1,24 +1,18 @@
 use std::fmt;
 
-use dam_domain::Blocker;
+use dam_domain::{Blocker, Oid};
 
 use super::Refusal;
 
 impl fmt::Display for Refusal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Refusal::Blocked { oid, blockers } => {
-                writeln!(f, "{} cannot be completed:", oid.short())?;
-                for b in blockers {
-                    match b {
-                        Blocker::OpenDependency(d) => {
-                            writeln!(f, "  depends on {} which is open", d.short())?
-                        }
-                        Blocker::OpenChild(c) => writeln!(f, "  child {} is open", c.short())?,
-                    }
-                }
-                f.write_str("use --force to complete it anyway, or --force --interactive to decide what happens to them")
-            }
+            Refusal::Blocked { oid, blockers } => write!(
+                f,
+                "{} has {}; pass --force to complete it anyway",
+                oid.short(),
+                open_blockers(blockers)
+            ),
             Refusal::Cycle { oid, path } => {
                 let chain: Vec<&str> = path.iter().map(|o| o.short()).collect();
                 write!(
@@ -104,4 +98,34 @@ impl fmt::Display for Refusal {
             ),
         }
     }
+}
+
+fn open_blockers(blockers: &[Blocker]) -> String {
+    let children: Vec<&Oid> = blockers
+        .iter()
+        .filter_map(|b| match b {
+            Blocker::OpenChild(c) => Some(c),
+            Blocker::OpenDependency(_) => None,
+        })
+        .collect();
+    let dependencies: Vec<&Oid> = blockers
+        .iter()
+        .filter_map(|b| match b {
+            Blocker::OpenDependency(d) => Some(d),
+            Blocker::OpenChild(_) => None,
+        })
+        .collect();
+    let group = |oids: &[&Oid], one: &str, many: &str| {
+        let shorts: Vec<&str> = oids.iter().map(|o| o.short()).collect();
+        let noun = if oids.len() == 1 { one } else { many };
+        format!("{} open {noun}: {}", oids.len(), shorts.join(", "))
+    };
+    let mut groups = Vec::new();
+    if !children.is_empty() {
+        groups.push(group(&children, "child", "children"));
+    }
+    if !dependencies.is_empty() {
+        groups.push(group(&dependencies, "dependency", "dependencies"));
+    }
+    groups.join(" and ")
 }

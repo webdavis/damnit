@@ -221,7 +221,7 @@ With `--json` or `--toon` a failure prints one document on standard error and no
 output:
 
     {"error": {"kind": "refused", "rule": "blocked",
-     "message": "98d8780 cannot be completed: child a9db854 is open",
+     "message": "98d8780 has 1 open child: a9db854; pass --force to complete it anyway",
      "oids": ["98d878013fb0e026d37170e7ceed6707192ae99a",
               "a9db854060d1943ef9eb9f6d7a8ac0b1ace45d77"]}}
 
