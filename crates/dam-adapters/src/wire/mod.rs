@@ -44,6 +44,15 @@ pub fn pull_from_wire(response: PullResponse) -> PullOutcome {
             }),
         }
     }
+    rejected.extend(
+        response
+            .unreadable
+            .into_iter()
+            .map(|unreadable| RejectedObject {
+                remote_id: unreadable.remote_id,
+                why: unreadable.why,
+            }),
+    );
     PullOutcome {
         objects,
         rejected,
@@ -89,3 +98,6 @@ pub fn outcomes_from_wire(results: Vec<MutationResult>) -> Vec<MutationOutcome> 
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod pull_tests;

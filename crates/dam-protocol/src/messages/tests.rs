@@ -126,8 +126,8 @@ fn pull_round_trips_the_fixtures() {
     let res = PullResponse {
         objects: vec![milk("buy milk", false)],
         removed: vec!["r9".into()],
-        cancelled: vec![],
         sync: Some("tok-2".into()),
+        ..PullResponse::default()
     };
     assert_eq!(
         serde_json::to_string(&res).unwrap(),
@@ -203,15 +203,7 @@ fn a_shape_is_named_without_the_text_the_response_carries() {
 fn a_pull_response_with_an_unknown_field_still_deserializes_as_pull() {
     let r: Response =
         serde_json::from_str(r#"{"objects":[],"removed":[],"cursor":"abc"}"#).unwrap();
-    assert_eq!(
-        r,
-        Response::Pull(PullResponse {
-            objects: vec![],
-            removed: vec![],
-            cancelled: vec![],
-            sync: None,
-        })
-    );
+    assert_eq!(r, Response::Pull(PullResponse::default()));
 }
 
 #[test]
