@@ -16,7 +16,7 @@ pub(super) fn changes_to_send(
     unpushed: &[dam_domain::CommitRecord],
 ) -> Result<OwedChanges, UseCaseError> {
     let mut changes = coalesced_with_the_commit_of_their_last_change(unpushed);
-    add_an_update_since_the_remote_snapshot_for_each_retry_not_already_owed(
+    declare_each_retry_since_the_remote_snapshot(
         objects,
         commits,
         remote_tracking,
@@ -46,7 +46,7 @@ fn coalesced_with_the_commit_of_their_last_change(
     changes
 }
 
-fn add_an_update_since_the_remote_snapshot_for_each_retry_not_already_owed(
+fn declare_each_retry_since_the_remote_snapshot(
     objects: &dyn ObjectRepository,
     commits: &dyn CommitRepository,
     remote_tracking: &dyn RemoteTrackingRepository,
@@ -54,11 +54,10 @@ fn add_an_update_since_the_remote_snapshot_for_each_retry_not_already_owed(
     changes: &mut OwedChanges,
 ) -> Result<(), UseCaseError> {
     for oid in commits.push_retries(&remote.name)? {
-        if changes.contains_key(&oid) {
-            continue;
-        }
-        if let Some(current) = objects.committed(&oid)? {
-            let before = remote_tracking.remote_snapshot(&remote.name, &oid)?;
+        let before = remote_tracking.remote_snapshot(&remote.name, &oid)?;
+        if let Some((owed, _)) = changes.get_mut(&oid) {
+            owed.before = before;
+        } else if let Some(current) = objects.committed(&oid)? {
             changes.insert(
                 oid.clone(),
                 (

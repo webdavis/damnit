@@ -39,6 +39,7 @@ fn new_add_commit_push_pull_and_ls_work_across_processes() {
     let (ok, out, err) = sb.dam(&["pull"]);
     assert!(ok, "{err}");
     assert!(out.contains("1 new"), "{out}");
+    assert!(out.contains("0 updated"), "{out}");
 
     let (ok, out, _) = sb.dam(&["ls", "--json"]);
     assert!(ok);
@@ -59,6 +60,9 @@ fn new_add_commit_push_pull_and_ls_work_across_processes() {
     let (ok, out, _) = sb.dam(&["show", &oid[..7]]);
     assert!(ok);
     assert!(out.contains("buy oat milk"));
+    assert!(out.contains("p1"), "{out}");
+    assert!(out.contains("2026-09-25"), "{out}");
+    assert!(out.contains("errand"), "{out}");
 
     let (ok, _, err) = sb.dam(&["done", &oid[..7]]);
     assert!(ok, "{err}");
