@@ -8,6 +8,8 @@ use crate::Categories;
 pub enum QueryError {
     Empty,
     Unexpected(String),
+    MissingOperator(String),
+    EndsEarly,
     BadValue { key: String, value: String },
     Unclosed,
     TooDeep,
@@ -23,6 +25,19 @@ enum Tok {
     Open,
     Close,
     Word(String),
+}
+
+impl fmt::Display for Tok {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Tok::And => f.write_str("&"),
+            Tok::Or => f.write_str("|"),
+            Tok::Not => f.write_str("!"),
+            Tok::Open => f.write_str("("),
+            Tok::Close => f.write_str(")"),
+            Tok::Word(w) => f.write_str(w),
+        }
+    }
 }
 
 fn lex(text: &str) -> Vec<Tok> {
@@ -87,7 +102,7 @@ pub fn parse(text: &str, categories: &Categories) -> Result<Expr, QueryError> {
     match p.peek() {
         None => Ok(expr),
         Some(Tok::Close) => Err(QueryError::Unexpected(")".into())),
-        Some(t) => Err(QueryError::Unexpected(format!("{t:?}"))),
+        Some(t) => Err(QueryError::MissingOperator(t.to_string())),
     }
 }
 
@@ -153,9 +168,8 @@ impl Parser<'_> {
                 }
             }),
             Some(Tok::Word(w)) => term(&w, self.categories).map(Expr::Term),
-            Some(Tok::Close) => Err(QueryError::Unexpected(")".into())),
-            Some(other) => Err(QueryError::Unexpected(format!("{other:?}"))),
-            None => Err(QueryError::Unexpected("end".into())),
+            Some(other) => Err(QueryError::Unexpected(other.to_string())),
+            None => Err(QueryError::EndsEarly),
         }
     }
 }
@@ -165,6 +179,8 @@ impl fmt::Display for QueryError {
         match self {
             QueryError::Empty => f.write_str("the query is empty"),
             QueryError::Unexpected(t) => write!(f, "unexpected {t} in query"),
+            QueryError::MissingOperator(t) => write!(f, "expected & or | before {t}"),
+            QueryError::EndsEarly => f.write_str("the query ends where a term was expected"),
             QueryError::BadValue { key, value } => write!(f, "{key}: cannot read {value:?}"),
             QueryError::Unclosed => f.write_str("a ( has no matching )"),
             QueryError::TooDeep => write!(

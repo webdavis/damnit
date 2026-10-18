@@ -178,6 +178,12 @@ fn each_exit_code_means_one_thing() {
         Some(2),
         "a flag value dam refuses to read"
     );
+    let unreadable = sb.output(&["ls", "due:today due:tomorrow"]);
+    assert_eq!(unreadable.status.code(), Some(2), "a query dam cannot read");
+    assert_eq!(
+        String::from_utf8_lossy(&unreadable.stderr).trim(),
+        "dam: expected & or | before due:tomorrow"
+    );
 }
 
 #[test]

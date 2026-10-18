@@ -280,10 +280,20 @@ mod tests {
                 value: "someday".into()
             })
         );
+        assert_eq!(parse("due:today |"), Err(QueryError::EndsEarly));
+    }
+
+    #[test]
+    fn an_error_names_what_was_typed_in_plain_words() {
+        let said = |q: &str| parse(q).unwrap_err().to_string();
         assert_eq!(
-            parse("due:today |"),
-            Err(QueryError::Unexpected("end".into()))
+            said("due:today due:tomorrow"),
+            "expected & or | before due:tomorrow"
         );
+        assert_eq!(said("p1 &"), "the query ends where a term was expected");
+        assert_eq!(said("& p1"), "unexpected & in query");
+        assert_eq!(said("p1)"), "unexpected ) in query");
+        assert_eq!(said("due:someday"), "due: cannot read \"someday\"");
     }
 
     #[test]

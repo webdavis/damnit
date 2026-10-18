@@ -1,4 +1,4 @@
-use dam_domain::{Blocker, LabelViolation, Oid};
+use dam_domain::{Blocker, LabelViolation, Oid, QueryError};
 
 use crate::ports::{CredentialError, EditorError, HelperError, StoreError};
 
@@ -57,6 +57,7 @@ pub enum UseCaseError {
     Credential(CredentialError),
     Editor(EditorError),
     Parse(String),
+    Query(QueryError),
 }
 
 impl Refusal {

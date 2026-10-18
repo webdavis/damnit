@@ -1,6 +1,6 @@
 use super::*;
 use dam_application::EditorError;
-use dam_domain::Blocker;
+use dam_domain::{Blocker, QueryError};
 
 fn oid(byte: u8) -> Oid {
     Oid::generate(&mut |x: &mut [u8]| x.fill(byte))
@@ -68,4 +68,14 @@ fn a_config_file_that_cannot_be_read_is_a_store_failure_and_a_bad_one_a_parse_fa
         CliError::Config(ConfigError::Syntax("x".into())).kind(),
         "parse"
     );
+}
+
+#[test]
+fn a_query_dam_cannot_read_exits_two_and_is_of_kind_parse() {
+    let error = CliError::UseCase(UseCaseError::Query(QueryError::MissingOperator(
+        "due:tomorrow".into(),
+    )));
+    assert_eq!(error.exit_code(), 2);
+    assert_eq!(error.document()["error"]["kind"], "parse");
+    assert_eq!(error.to_string(), "expected & or | before due:tomorrow");
 }

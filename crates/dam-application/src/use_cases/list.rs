@@ -35,7 +35,7 @@ fn query_error(e: QueryError) -> UseCaseError {
         QueryError::NotAValue { category, value } => {
             Refusal::NotACategoryValue { category, value }.into()
         }
-        e => UseCaseError::Parse(e.to_string()),
+        e => UseCaseError::Query(e),
     }
 }
 
@@ -176,7 +176,7 @@ mod tests {
     }
 
     #[test]
-    fn a_bad_query_is_a_parse_error() {
+    fn a_bad_query_is_a_query_error_naming_what_was_typed() {
         let store = MemoryStore::new();
         let err = list(
             &store,
@@ -185,6 +185,7 @@ mod tests {
             Some("(due:today"),
         )
         .unwrap_err();
-        assert!(matches!(err, UseCaseError::Parse(_)));
+        assert_eq!(err, UseCaseError::Query(QueryError::Unclosed));
+        assert_eq!(err.to_string(), "a ( has no matching )");
     }
 }

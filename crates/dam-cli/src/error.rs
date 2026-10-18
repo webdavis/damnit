@@ -29,7 +29,9 @@ const KIND_OF_AN_EDITOR_FAILURE_NO_DOCUMENT_CARRIES: &str = "editor";
 impl CliError {
     pub(crate) fn exit_code(&self) -> i32 {
         match self {
-            CliError::Usage(_) | CliError::Ambiguous { .. } => EXIT_USAGE_AS_CLAP_EXITS,
+            CliError::Usage(_)
+            | CliError::Ambiguous { .. }
+            | CliError::UseCase(UseCaseError::Query(_)) => EXIT_USAGE_AS_CLAP_EXITS,
             CliError::Cancelled => EXIT_CANCELLED,
             CliError::UseCase(UseCaseError::Refused(_)) => EXIT_REFUSED_BY_A_RULE,
             _ => EXIT_FAILED,
@@ -48,7 +50,9 @@ impl CliError {
             CliError::UseCase(UseCaseError::Editor(_)) => {
                 KIND_OF_AN_EDITOR_FAILURE_NO_DOCUMENT_CARRIES
             }
-            CliError::UseCase(UseCaseError::Parse(_)) | CliError::Config(_) => "parse",
+            CliError::UseCase(UseCaseError::Parse(_))
+            | CliError::UseCase(UseCaseError::Query(_))
+            | CliError::Config(_) => "parse",
             CliError::Usage(_) | CliError::Ambiguous { .. } => "usage",
             CliError::Cancelled => "cancelled",
         }
