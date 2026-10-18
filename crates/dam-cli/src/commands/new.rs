@@ -67,7 +67,7 @@ pub(crate) fn run(ctx: &mut Context, args: NewArgs) -> Result<Report, CliError> 
     let object = ctx
         .store
         .get(&oid)?
-        .ok_or_else(|| CliError::Io("the new object did not persist".into()))?;
+        .ok_or_else(|| CliError::Internal("the new object did not persist".into()))?;
     Ok(Report {
         human: format!("{}  {}", oid.short(), object.base().subject),
         data: object_json(&object)?,

@@ -71,6 +71,46 @@ fn a_config_file_that_cannot_be_read_is_a_store_failure_and_a_bad_one_a_parse_fa
 }
 
 #[test]
+fn a_broken_invariant_is_internal_and_a_failed_read_or_write_is_store() {
+    let internal = CliError::Internal("the new object did not persist".into());
+    assert_eq!(internal.exit_code(), 1);
+    assert_eq!(internal.document()["error"]["kind"], "internal");
+    assert_eq!(internal.to_string(), "the new object did not persist");
+    assert_eq!(CliError::Io("disk".into()).kind(), "store");
+}
+
+#[test]
+fn every_kind_the_readme_lists_is_one_dam_reports() {
+    let readme =
+        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../../README.md")).unwrap();
+    let kinds = [
+        CliError::UseCase(UseCaseError::Refused(Refusal::NothingToCommit)),
+        CliError::Io("x".into()),
+        CliError::UseCase(UseCaseError::Helper(
+            dam_application::HelperError::Cancelled,
+        )),
+        CliError::UseCase(UseCaseError::Credential(
+            dam_application::CredentialError::Missing("x".into()),
+        )),
+        CliError::UseCase(UseCaseError::Editor(EditorError("x".into()))),
+        CliError::UseCase(UseCaseError::Parse("x".into())),
+        CliError::Usage("x".into()),
+        CliError::Cancelled,
+        CliError::Internal("x".into()),
+    ]
+    .map(|e| format!("`{}`", e.kind()));
+    let sentence: String = readme
+        .lines()
+        .skip_while(|l| !l.starts_with("`kind` is one of"))
+        .take(2)
+        .collect::<Vec<&str>>()
+        .join(" ");
+    for kind in &kinds {
+        assert!(sentence.contains(kind.as_str()), "{sentence} lacks {kind}");
+    }
+}
+
+#[test]
 fn a_query_dam_cannot_read_exits_two_and_is_of_kind_parse() {
     let error = CliError::UseCase(UseCaseError::Query(QueryError::MissingOperator(
         "due:tomorrow".into(),

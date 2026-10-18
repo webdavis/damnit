@@ -17,6 +17,7 @@ pub(crate) enum CliError {
     Ambiguous { text: String, matches: Vec<Oid> },
     Cancelled,
     Io(String),
+    Internal(String),
 }
 
 const EXIT_FAILED: i32 = 1;
@@ -55,6 +56,7 @@ impl CliError {
             | CliError::Config(_) => "parse",
             CliError::Usage(_) | CliError::Ambiguous { .. } => "usage",
             CliError::Cancelled => "cancelled",
+            CliError::Internal(_) => "internal",
         }
     }
 
@@ -91,7 +93,7 @@ impl fmt::Display for CliError {
             CliError::UseCase(e) => write!(f, "{e}"),
             CliError::Config(e) => write!(f, "{e}"),
             CliError::Open(e) => write!(f, "{e}"),
-            CliError::Usage(s) | CliError::Io(s) => f.write_str(s),
+            CliError::Usage(s) | CliError::Io(s) | CliError::Internal(s) => f.write_str(s),
             CliError::Ambiguous { text, matches } => {
                 let shorts: Vec<&str> = matches.iter().map(Oid::short).collect();
                 write!(
