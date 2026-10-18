@@ -2,6 +2,7 @@ mod dispositions;
 mod reading;
 mod remotes;
 mod staging;
+mod values;
 mod writing;
 
 use std::path::PathBuf;
@@ -97,5 +98,7 @@ pub(crate) enum Command {
     Resolve(ResolveArgs),
 }
 
+#[cfg(test)]
+mod help_text_tests;
 #[cfg(test)]
 mod tests;

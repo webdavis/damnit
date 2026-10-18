@@ -1,16 +1,13 @@
 use std::collections::BTreeSet;
 
-use dam_application::{NewEvent, NewTask, new_event, new_task};
-use dam_domain::Path;
-
 use crate::args::NewArgs;
-use crate::commands::parsing::{deadline_flag, priority_flag, when_flag};
+use crate::commands::parsing::{deadline_flag, when_flag};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::{Report, object_json};
+use dam_application::{NewEvent, NewTask, new_event, new_task};
 
 pub(crate) fn run(ctx: &mut Context, args: NewArgs) -> Result<Report, CliError> {
-    let path = Path::parse(&args.path).map_err(|e| CliError::Usage(format!("--path: {e:?}")))?;
     let labels: BTreeSet<String> = args.labels.into_iter().collect();
     let oid = if args.event {
         let start = when_flag(
@@ -33,7 +30,7 @@ pub(crate) fn run(ctx: &mut Context, args: NewArgs) -> Result<Report, CliError> 
             &ctx.config.categories,
             NewEvent {
                 subject: args.subject,
-                path,
+                path: args.path,
                 start,
                 end,
                 labels,
@@ -41,11 +38,7 @@ pub(crate) fn run(ctx: &mut Context, args: NewArgs) -> Result<Report, CliError> 
             },
         )?
     } else {
-        let priority = args
-            .priority
-            .map(priority_flag)
-            .transpose()?
-            .unwrap_or_default();
+        let priority = args.priority.unwrap_or_default();
         let due = args
             .due
             .as_deref()
@@ -62,7 +55,7 @@ pub(crate) fn run(ctx: &mut Context, args: NewArgs) -> Result<Report, CliError> 
             &ctx.config.categories,
             NewTask {
                 subject: args.subject,
-                path,
+                path: args.path,
                 priority,
                 due,
                 deadline,
@@ -86,13 +79,13 @@ mod tests {
     use super::*;
     use crate::args::NewArgs;
     use crate::testing::context;
-    use dam_domain::Object;
+    use dam_domain::{Object, Path, Priority};
 
     fn args(subject: &str) -> NewArgs {
         NewArgs {
             subject: subject.into(),
             event: false,
-            path: String::new(),
+            path: Path::root(),
             due: None,
             priority: None,
             deadline: None,
@@ -109,9 +102,9 @@ mod tests {
         let report = run(
             &mut ctx,
             NewArgs {
-                path: "inbox".into(),
+                path: Path::parse("inbox").unwrap(),
                 due: Some("tomorrow".into()),
-                priority: Some(1),
+                priority: Some(Priority::HIGHEST),
                 labels: vec!["errand".into()],
                 ..args("milk")
             },
@@ -161,23 +154,13 @@ mod tests {
     }
 
     #[test]
-    fn a_bad_date_or_priority_is_a_usage_error() {
+    fn a_bad_date_is_a_usage_error() {
         let mut ctx = context();
         assert!(matches!(
             run(
                 &mut ctx,
                 NewArgs {
                     due: Some("someday".into()),
-                    ..args("x")
-                }
-            ),
-            Err(CliError::Usage(_))
-        ));
-        assert!(matches!(
-            run(
-                &mut ctx,
-                NewArgs {
-                    priority: Some(9),
                     ..args("x")
                 }
             ),

@@ -1,19 +1,20 @@
 use clap::Args;
-use dam_domain::{ChildDisposition, DependencyDisposition};
+use dam_domain::{ChildDisposition, DependencyDisposition, Path, Priority};
 
 use super::dispositions::{child_disposition, dependency_disposition};
+use super::values::{path_arg, priority_arg};
 
 #[derive(Args, Debug)]
 pub(crate) struct NewArgs {
     pub(crate) subject: String,
     #[arg(long)]
     pub(crate) event: bool,
-    #[arg(long, default_value = "")]
-    pub(crate) path: String,
+    #[arg(long, default_value = "", value_parser = path_arg)]
+    pub(crate) path: Path,
     #[arg(long)]
     pub(crate) due: Option<String>,
-    #[arg(short = 'p', long)]
-    pub(crate) priority: Option<u8>,
+    #[arg(short = 'p', long, value_parser = priority_arg)]
+    pub(crate) priority: Option<Priority>,
     #[arg(long)]
     pub(crate) deadline: Option<String>,
     #[arg(long = "label")]
@@ -73,8 +74,8 @@ pub(crate) struct EditArgs {
     pub(crate) subject: Option<String>,
     #[arg(long)]
     pub(crate) body: Option<String>,
-    #[arg(short = 'p', long)]
-    pub(crate) priority: Option<u8>,
+    #[arg(short = 'p', long, value_parser = priority_arg)]
+    pub(crate) priority: Option<Priority>,
     #[arg(long, conflicts_with = "no_due")]
     pub(crate) due: Option<String>,
     #[arg(long)]
@@ -114,7 +115,8 @@ pub(crate) struct EditArgs {
 #[derive(Args, Debug)]
 pub(crate) struct MvArgs {
     pub(crate) oid: String,
-    pub(crate) path: String,
+    #[arg(value_parser = path_arg)]
+    pub(crate) path: Path,
 }
 
 #[derive(Args, Debug)]

@@ -1,4 +1,9 @@
+use std::time::Duration;
+
 use clap::{Args, Subcommand};
+use dam_application::RemoteName;
+
+use super::values::max_age_arg;
 
 #[derive(Args, Debug)]
 pub(crate) struct LsArgs {
@@ -22,10 +27,11 @@ pub(crate) struct AgendaArgs {
     #[arg(
         long = "max-age",
         value_name = "REMOTE=DURATION",
+        value_parser = max_age_arg,
         help = "Refuse to answer when REMOTE last pulled longer ago than DURATION (such as 90s, 15m \
                 or 2h), or never. Repeatable"
     )]
-    pub(crate) max_age: Vec<String>,
+    pub(crate) max_age: Vec<(RemoteName, Duration)>,
 }
 
 #[derive(Args, Debug)]
