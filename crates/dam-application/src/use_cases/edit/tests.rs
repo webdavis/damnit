@@ -1,3 +1,4 @@
+mod faults;
 mod undone;
 
 use super::*;
