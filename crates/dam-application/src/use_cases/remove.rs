@@ -2,6 +2,7 @@ use dam_domain::Oid;
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
+use crate::use_cases::atomically::atomically;
 use crate::use_cases::subtree::{children, move_into};
 
 pub struct RemovePlan {
@@ -37,28 +38,30 @@ pub fn plan_remove(objects: &dyn ObjectRepository, oid: &Oid) -> Result<RemovePl
 }
 
 pub fn remove(objects: &dyn ObjectRepository, oid: &Oid) -> Result<RemovePlan, UseCaseError> {
-    let plan = plan_remove(objects, oid)?;
-    let object = objects
-        .get(oid)?
-        .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
-    for child in children(objects, object.base())? {
-        move_into(objects, child.oid(), &object.base().path)?;
-    }
-    for dependent in &plan.dependents {
-        if let Some(mut d) = objects.get(dependent)? {
-            d.base_mut().depends.retain(|x| x != oid);
-            objects.put(&d)?;
+    atomically(objects, || {
+        let plan = plan_remove(objects, oid)?;
+        let object = objects
+            .get(oid)?
+            .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
+        for child in children(objects, object.base())? {
+            move_into(objects, child.oid(), &object.base().path)?;
         }
-    }
-    objects.delete(oid)?;
-    Ok(plan)
+        for dependent in &plan.dependents {
+            if let Some(mut d) = objects.get(dependent)? {
+                d.base_mut().depends.retain(|x| x != oid);
+                objects.put(&d)?;
+            }
+        }
+        objects.delete(oid)?;
+        Ok(plan)
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::testing::prelude::*;
-    use crate::testing::{MemoryStore, oid};
+    use crate::testing::{FaultyStore, MemoryStore, oid};
     use dam_domain::{Event, Object, Path, Task, When};
     use jiff::civil::date;
 
@@ -141,5 +144,14 @@ mod tests {
         assert_eq!(plan.attached, vec![oid(6)]);
         let kept = store.get(&oid(6)).unwrap().unwrap();
         assert_eq!(kept.as_task().unwrap().event, Some(oid(5)));
+    }
+
+    #[test]
+    fn rm_that_fails_between_two_children_moves_neither() {
+        let store = FaultyStore::new(MemoryStore::new());
+        let plan = put(&store.inner, 1, "p", "top");
+        put(&store.inner, 2, "a", "top/p");
+        put(&store.inner, 3, "b", "top/p");
+        store.assert_unchanged_when_any_write_fails(|| remove(&store, &plan).map(drop));
     }
 }

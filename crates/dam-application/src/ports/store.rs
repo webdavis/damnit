@@ -95,7 +95,7 @@ pub enum Notice {
     },
 }
 
-pub trait ObjectRepository {
+pub trait ObjectRepository: Transactional {
     fn get(&self, oid: &Oid) -> Result<Option<Object>, StoreError>;
     fn all(&self) -> Result<Vec<Object>, StoreError>;
     fn children_of(&self, path: &Path) -> Result<Vec<Object>, StoreError>;

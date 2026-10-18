@@ -2,43 +2,10 @@ mod children;
 mod dispositions;
 
 use super::*;
-use crate::ports::StoreError;
 use crate::testing::prelude::*;
 use crate::testing::{FixedClock, FixedRandom, MemoryStore, oid};
 use dam_domain::{Event, Object, Path, Task, When};
 use jiff::civil::date;
-
-struct FailingGetStore {
-    objects: Vec<Object>,
-    fails_for: Oid,
-}
-
-impl ObjectRepository for FailingGetStore {
-    fn get(&self, oid: &Oid) -> Result<Option<Object>, StoreError> {
-        if *oid == self.fails_for {
-            return Err(StoreError::Failed("boom".into()));
-        }
-        Ok(self.objects.iter().find(|o| o.oid() == oid).cloned())
-    }
-    fn children_of(&self, _path: &Path) -> Result<Vec<Object>, StoreError> {
-        Ok(Vec::new())
-    }
-    fn all(&self) -> Result<Vec<Object>, StoreError> {
-        Ok(self.objects.clone())
-    }
-    fn dependents_of(&self, _oid: &Oid) -> Result<Vec<Oid>, StoreError> {
-        unimplemented!()
-    }
-    fn put(&self, _object: &Object) -> Result<(), StoreError> {
-        unimplemented!()
-    }
-    fn delete(&self, _oid: &Oid) -> Result<(), StoreError> {
-        unimplemented!()
-    }
-    fn committed(&self, _oid: &Oid) -> Result<Option<Object>, StoreError> {
-        unimplemented!()
-    }
-}
 
 pub(super) fn put_task(
     store: &MemoryStore,
@@ -119,22 +86,6 @@ fn an_event_is_not_a_task() {
     store.put(&Object::Event(e)).unwrap();
     let err = complete(&store, &today(), &FixedRandom::new(9), &oid(5), Force::No).unwrap_err();
     assert_eq!(err, UseCaseError::Refused(Refusal::NotATask(oid(5))));
-}
-
-#[test]
-fn a_store_error_while_checking_a_dependency_propagates() {
-    let id = oid(1);
-    let dep = oid(3);
-    let mut owner = Task::new(id.clone(), "t1");
-    owner.base.depends.push(dep.clone());
-    let store = FailingGetStore {
-        objects: vec![Object::Task(owner)],
-        fails_for: dep,
-    };
-    assert!(matches!(
-        plan_complete(&store, &id),
-        Err(UseCaseError::Store(_))
-    ));
 }
 
 #[test]

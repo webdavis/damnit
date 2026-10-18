@@ -1,7 +1,7 @@
 use super::super::*;
 use super::{path_of, put_task, today};
 use crate::testing::prelude::*;
-use crate::testing::{FixedRandom, MemoryStore, oid};
+use crate::testing::{FaultyStore, FixedRandom, MemoryStore, oid};
 
 fn with(children: ChildDisposition) -> Force {
     Force::With(Dispositions {
@@ -115,4 +115,35 @@ fn interactive_drop_removes_open_dependencies() {
     complete(&store, &today(), &FixedRandom::new(9), &id, Force::With(d)).unwrap();
     let t = store.get(&id).unwrap().unwrap();
     assert!(t.base().depends.is_empty() && t.as_task().unwrap().done);
+}
+
+#[test]
+fn done_up_that_fails_between_two_children_moves_neither() {
+    let store = FaultyStore::new(MemoryStore::new());
+    let plan = put_task(&store.inner, 1, "plan", "work", false);
+    put_task(&store.inner, 2, "step", "work/plan", false);
+    put_task(&store.inner, 3, "other step", "work/plan", false);
+    let random = FixedRandom::new(9);
+    store.assert_unchanged_when_any_write_fails(|| {
+        complete(&store, &today(), &random, &plan, with(ChildDisposition::Up)).map(drop)
+    });
+}
+
+#[test]
+fn done_into_that_fails_after_creating_the_group_leaves_no_group_behind() {
+    let store = FaultyStore::new(MemoryStore::new());
+    let plan = put_task(&store.inner, 1, "plan", "work", false);
+    put_task(&store.inner, 2, "step", "work/plan", false);
+    let dep = put_task(&store.inner, 3, "blocker", "", false);
+    let mut t = store.inner.get(&plan).unwrap().unwrap();
+    t.base_mut().depends.push(dep);
+    store.inner.put(&t).unwrap();
+    let d = Dispositions {
+        children: ChildDisposition::Into("leftovers".into()),
+        dependencies: DependencyDisposition::Drop,
+    };
+    let random = FixedRandom::new(9);
+    store.assert_unchanged_when_any_write_fails(|| {
+        complete(&store, &today(), &random, &plan, Force::With(d.clone())).map(drop)
+    });
 }

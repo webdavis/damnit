@@ -5,6 +5,7 @@ use dam_domain::{
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{Clock, ObjectRepository, Randomness};
+use crate::use_cases::atomically::atomically;
 use crate::use_cases::subtree::{children, move_into};
 
 pub struct CompletePlan {
@@ -47,36 +48,38 @@ pub fn complete(
     oid: &Oid,
     force: Force,
 ) -> Result<Completed, UseCaseError> {
-    let plan = plan_complete(objects, oid)?;
-    if !plan.blockers.is_empty() {
-        match force {
-            Force::No => {
-                return Err(Refusal::Blocked {
-                    oid: oid.clone(),
-                    blockers: plan.blockers,
+    atomically(objects, || {
+        let plan = plan_complete(objects, oid)?;
+        if !plan.blockers.is_empty() {
+            match force {
+                Force::No => {
+                    return Err(Refusal::Blocked {
+                        oid: oid.clone(),
+                        blockers: plan.blockers,
+                    }
+                    .into());
                 }
-                .into());
+                Force::Yes => {}
+                Force::With(d) => apply_dispositions(objects, random, oid, &plan.blockers, d)?,
             }
-            Force::Yes => {}
-            Force::With(d) => apply_dispositions(objects, random, oid, &plan.blockers, d)?,
         }
-    }
-    let mut task = load_task(objects, oid)?;
-    let outcome = match next_due_if_recurring(&task, clock.today()) {
-        Some(next) => {
-            task.due = Some(When::Day(next));
-            Completed::RolledForward { next_due: next }
-        }
-        None => {
-            if !task.done {
-                task.completed_at = Some(clock.now());
+        let mut task = load_task(objects, oid)?;
+        let outcome = match next_due_if_recurring(&task, clock.today()) {
+            Some(next) => {
+                task.due = Some(When::Day(next));
+                Completed::RolledForward { next_due: next }
             }
-            task.done = true;
-            Completed::Done
-        }
-    };
-    objects.put(&Object::Task(task))?;
-    Ok(outcome)
+            None => {
+                if !task.done {
+                    task.completed_at = Some(clock.now());
+                }
+                task.done = true;
+                Completed::Done
+            }
+        };
+        objects.put(&Object::Task(task))?;
+        Ok(outcome)
+    })
 }
 
 fn next_due_if_recurring(task: &Task, today: Date) -> Option<Date> {
