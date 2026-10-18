@@ -99,4 +99,6 @@ pub(crate) enum Command {
 }
 
 #[cfg(test)]
+mod help_text_tests;
+#[cfg(test)]
 mod tests;
