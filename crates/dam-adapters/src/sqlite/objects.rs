@@ -109,17 +109,12 @@ impl SqliteStore {
     }
 
     pub(super) fn put_object(&self, object: &Object) -> Result<(), StoreError> {
-        let kind = match object {
-            Object::Task(_) => "task",
-            Object::Event(_) => "event",
-        };
         self.conn
             .execute(
-                "INSERT INTO objects (oid, kind, path, json) VALUES (?1, ?2, ?3, ?4)
-                 ON CONFLICT(oid) DO UPDATE SET kind = excluded.kind, path = excluded.path, json = excluded.json",
+                "INSERT INTO objects (oid, kind, path, json) VALUES (?1, '', ?2, ?3)
+                 ON CONFLICT(oid) DO UPDATE SET path = excluded.path, json = excluded.json",
                 params![
                     object.oid().as_str(),
-                    kind,
                     object.base().path.as_str(),
                     object_to_json(object)?
                 ],
