@@ -8,7 +8,7 @@ pub(super) fn parse_remote(name: &str, t: &StrictTable) -> Result<RemoteConfig, 
     let remote_name = RemoteName::parse(name).map_err(|e| ConfigError::Invalid(e.to_string()))?;
     let url = t
         .string("url")?
-        .ok_or_else(|| ConfigError::Invalid(format!("remote.{name} needs a url")))?;
+        .ok_or_else(|| ConfigError::Invalid(t.refuse("url", "url is missing")))?;
     let helper = url
         .split_once("::")
         .map(|(h, _)| h)

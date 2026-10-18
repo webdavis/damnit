@@ -20,7 +20,7 @@ fn append_remote_refuses_a_config_it_cannot_read_back_and_leaves_the_file_as_it_
     append_remote(&path, "todoist", "todoist::").unwrap();
     let before = std::fs::read(&path).unwrap();
     let refused = [
-        ("a.b", "config: remote.a needs a url"),
+        ("a.b", "config: url is missing in [remote.a]"),
         ("x]", "config is not TOML"),
         (
             "\"q\"",
