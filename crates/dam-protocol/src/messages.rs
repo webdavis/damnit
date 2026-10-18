@@ -120,12 +120,11 @@ impl From<PullResponseDoc> for PullResponse {
         };
         for value in doc.objects {
             let remote_id = value["remote_id"].as_str().unwrap_or_default().to_string();
-            match serde_json::from_value(value) {
+            match unreadable::read_object(&value) {
                 Ok(object) => response.objects.push(object),
-                Err(why) => response.unreadable.push(UnreadableObject {
-                    remote_id,
-                    why: why.to_string(),
-                }),
+                Err(why) => response
+                    .unreadable
+                    .push(UnreadableObject { remote_id, why }),
             }
         }
         response
@@ -160,6 +159,8 @@ pub struct MutationResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub why: Option<String>,
 }
+
+mod unreadable;
 
 #[cfg(test)]
 mod tests;

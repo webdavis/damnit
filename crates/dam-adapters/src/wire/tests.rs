@@ -241,7 +241,7 @@ fn a_pulled_object_with_no_remote_id_is_rejected_under_an_empty_name() {
         outcome.rejected,
         vec![dam_application::RejectedObject {
             remote_id: String::new(),
-            why: "the object has no remote_id".into(),
+            why: "an object with no remote id was skipped".into(),
         }]
     );
 }
