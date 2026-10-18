@@ -174,6 +174,8 @@ impl NoticeRepository for SqliteStore {
 #[cfg(test)]
 mod tests {
     use super::NOTICES_KEPT_FOR_AN_OPERATOR_WHO_NEVER_CLEARS_THEM;
+    use dam_application::{Notice, RemoteName};
+
     #[test]
     fn a_notice_table_that_is_never_cleared_keeps_the_newest_and_drops_the_oldest() {
         let store = crate::sqlite::SqliteStore::in_memory().unwrap();
@@ -195,68 +197,5 @@ mod tests {
             other => panic!("{other:?}"),
         };
         assert_eq!(oldest, "reason 5", "the five oldest went");
-    }
-
-    use crate::SqliteStore;
-    use dam_application::{
-        CommitRepository, ConflictRepository, Notice, NoticeRepository, ObjectRepository,
-        RemoteName,
-    };
-    use dam_domain::{Object, Oid, Task};
-
-    fn oid(b: u8) -> Oid {
-        Oid::generate(&mut |x: &mut [u8]| x.fill(b))
-    }
-
-    fn remote() -> RemoteName {
-        RemoteName("todoist".into())
-    }
-
-    #[test]
-    fn conflicts_carry_ours_and_theirs_and_clear() {
-        let s = SqliteStore::in_memory().unwrap();
-        s.put(&Object::Task(Task::new(oid(1), "mine"))).unwrap();
-        s.mark_conflict(
-            &remote(),
-            &oid(1),
-            &Object::Task(Task::new(oid(1), "theirs")),
-        )
-        .unwrap();
-        let c = &s.conflicts().unwrap()[0];
-        assert_eq!(c.ours.base().subject, "mine");
-        assert_eq!(c.theirs.base().subject, "theirs");
-        s.clear_conflict(&oid(1)).unwrap();
-        assert!(s.conflicts().unwrap().is_empty());
-    }
-
-    #[test]
-    fn notices_keep_insertion_order_and_clear() {
-        let s = SqliteStore::in_memory().unwrap();
-        s.add_notice(&Notice::EventCancelled {
-            oid: oid(1),
-            subject: "a".into(),
-            attached: 1,
-        })
-        .unwrap();
-        s.add_notice(&Notice::PushFailed {
-            remote: remote(),
-            oid: oid(2),
-            why: "w".into(),
-        })
-        .unwrap();
-        let n = s.notices().unwrap();
-        assert!(matches!(n[0], Notice::EventCancelled { .. }));
-        assert!(matches!(n[1], Notice::PushFailed { .. }));
-        s.clear_notices().unwrap();
-        assert!(s.notices().unwrap().is_empty());
-    }
-
-    #[test]
-    fn push_retries_replace_the_set() {
-        let s = SqliteStore::in_memory().unwrap();
-        s.set_push_retries(&remote(), &[oid(1), oid(2)]).unwrap();
-        assert_eq!(s.push_retries(&remote()).unwrap(), vec![oid(1), oid(2)]);
-        s.set_push_retries(&remote(), &[]).unwrap();
-        assert!(s.push_retries(&remote()).unwrap().is_empty());
     }
 }

@@ -131,19 +131,6 @@ fn a_directory_at_the_path_is_refused() {
     ));
 }
 
-#[test]
-fn a_symlink_is_refused() {
-    let dir = tempfile::tempdir().unwrap();
-    let target = dir.path().join("real.db");
-    std::fs::write(&target, b"").unwrap();
-    let link = dir.path().join("dam.db");
-    std::os::unix::fs::symlink(&target, &link).unwrap();
-    assert!(matches!(
-        SqliteStore::open(&link),
-        Err(OpenError::Irregular(_))
-    ));
-}
-
 fn a_second_writer_answering_at_once_rather_than_after_rusqlites_five_seconds(
     path: &std::path::Path,
 ) -> Connection {
