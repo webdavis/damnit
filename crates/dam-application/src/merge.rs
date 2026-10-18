@@ -36,9 +36,11 @@ pub fn merge_fields(ours: &Object, theirs: &Object, fields: &[Field]) -> Object 
         (Object::Task(o), Object::Task(t)) => {
             if has(Field::Done) {
                 o.done = t.done;
-                if !o.done {
-                    o.completed_at = None;
-                }
+                o.completed_at = match (t.done, t.completed_at, o.completed_at) {
+                    (false, _, _) => None,
+                    (true, Some(at), _) => Some(at),
+                    (true, None, ours) => ours,
+                };
             }
             if has(Field::Priority) {
                 o.priority = t.priority
@@ -283,5 +285,32 @@ mod tests {
             merged.as_task().unwrap().completed_at,
             Some(jiff::Timestamp::UNIX_EPOCH)
         );
+    }
+
+    #[test]
+    fn a_remote_completion_time_replaces_the_local_one() {
+        let mut ours = Task::new(oid(1), "t");
+        ours.done = true;
+        ours.completed_at = Some(jiff::Timestamp::UNIX_EPOCH);
+        let mut theirs = Task::new(oid(1), "t");
+        theirs.done = true;
+        theirs.completed_at = Some(jiff::Timestamp::MAX);
+        let merged = merge_fields(&Object::Task(ours), &Object::Task(theirs), &[Field::Done]);
+        assert_eq!(
+            merged.as_task().unwrap().completed_at,
+            Some(jiff::Timestamp::MAX)
+        );
+    }
+
+    #[test]
+    fn a_remote_completion_time_is_kept_when_the_task_was_open() {
+        let ours = Task::new(oid(1), "t");
+        let mut theirs = Task::new(oid(1), "t");
+        theirs.done = true;
+        theirs.completed_at = Some(jiff::Timestamp::MAX);
+        let merged = merge_fields(&Object::Task(ours), &Object::Task(theirs), &[Field::Done]);
+        let merged = merged.as_task().unwrap();
+        assert!(merged.done);
+        assert_eq!(merged.completed_at, Some(jiff::Timestamp::MAX));
     }
 }
