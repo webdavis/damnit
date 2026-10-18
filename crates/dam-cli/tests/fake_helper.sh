@@ -4,17 +4,20 @@ printf '%s\n' "${DAM_FAKE_API_TOKEN:-}" > "$FAKE_TOKEN_FILE"
 remote="$(dirname "$PUSH_LOG")/remote"
 upstream='{"oid":"","remote_id":"up-1","kind":"task","subject":"from upstream","body":"","path":"","labels":[],"depends":[],"reminders":[],"recurrence":null,"task":{"done":false,"priority":2,"due":null,"deadline":null,"event":null},"event":null}'
 remember() {
-  fields=$(printf '%s' "$1" | grep -o '"fields":\[[^]]*\]')
-  case "$fields" in *'"subject"'*) printf '%s' "$1" | grep -o '"subject":"[^"]*"' | head -1 | cut -d: -f2- > "$remote.subject" ;; esac
-  case "$fields" in *'"done"'*) printf '%s' "$1" | grep -o '"done":[a-z]*' | head -1 | cut -d: -f2 > "$remote.done" ;; esac
+  [ -e "$remote.kept" ] || echo "{}" > "$remote.kept"
+  printf '%s' "$1" | jq -c --slurpfile kept "${remote}.kept" '
+    .mutations[0] as $m | reduce $m.fields[] as $k (($kept[0] // {});
+      if $k | IN("done","priority","due","deadline") then .task[$k] = $m.object.task[$k] else .[$k] = $m.object[$k] end)' > "$remote.next"
+  mv "$remote.next" "$remote.kept"
 }
+base='{"oid":"","remote_id":"r1","kind":"task","subject":"","body":"","path":"","labels":[],"depends":[],"reminders":[],"recurrence":null,"task":{"done":false,"priority":2,"due":null,"deadline":null,"event":null},"event":null}'
 while IFS= read -r line; do
   case "$line" in
     *'"capabilities"'*) printf '{"protocol":1,"kinds":["task"],"fields":["subject","body","path","labels","done","priority","due","deadline"],"credentials":["api_token"],"incremental":false}\n' ;;
     *'"pull"'*)
       objects="$upstream"
-      if [ -e "$remote.subject" ]; then
-        objects="$objects,{\"oid\":\"\",\"remote_id\":\"r1\",\"kind\":\"task\",\"subject\":$(cat "$remote.subject"),\"body\":\"\",\"path\":\"\",\"labels\":[],\"depends\":[],\"reminders\":[],\"recurrence\":null,\"task\":{\"done\":$(cat "$remote.done" 2>/dev/null || echo false),\"priority\":2,\"due\":null,\"deadline\":null,\"event\":null},\"event\":null}"
+      if [ -e "$remote.kept" ]; then
+        objects="$objects,$(printf '%s' "$base" | jq -c --slurpfile kept "$remote.kept" '. * $kept[0]')"
       fi
       printf '{"objects":[%s],"removed":[],"sync":null}\n' "$objects" ;;
     *'"push"'*)
