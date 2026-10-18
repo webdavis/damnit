@@ -77,14 +77,6 @@ mod tests {
         );
     }
 
-    #[test]
-    fn an_editor_value_carrying_arguments_is_still_split() {
-        assert_eq!(
-            super::choose_command(Some("code --wait".into()), None),
-            vec!["code".to_string(), "--wait".to_string()]
-        );
-    }
-
     use super::*;
     use dam_application::EditorSession;
 

@@ -8,7 +8,7 @@ use dam_application::{
 use dam_domain::{Field, Kind, Oid};
 use dam_protocol::{Capabilities, Mutation, MutationResult, PullResponse};
 
-pub use decode::{WireError, from_wire};
+pub use decode::from_wire;
 pub use encode::to_wire;
 
 const NO_REMOTE_ID: &str = "an object with no remote id was skipped";

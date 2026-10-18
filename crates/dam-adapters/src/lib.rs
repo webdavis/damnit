@@ -9,10 +9,9 @@ mod sqlite;
 mod toml_config;
 mod wire;
 
-pub use cancel::{cancellation_requested, catch_interrupts, request_cancellation};
+pub use cancel::{cancellation_requested, catch_interrupts};
 pub use clock::SystemClock;
 pub use credentials::ProcessCredentialSource;
-pub use dam_protocol::credential_variable;
 pub use edit_template::{parse_template, render_template};
 pub use editor::EnvEditor;
 pub use helper_process::ProcessLauncher;
@@ -22,4 +21,4 @@ pub use toml_config::{
     ConfigError, append_remote, default_config_path, default_store_path, load_config,
     parse_duration,
 };
-pub use wire::{WireError, from_wire, to_wire};
+pub use wire::to_wire;
