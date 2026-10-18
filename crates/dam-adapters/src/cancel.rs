@@ -15,8 +15,6 @@ extern "C" fn interrupt_handler_that_only_stores_the_flag(_: libc::c_int) {
 }
 
 pub fn catch_interrupts() -> bool {
-    // SAFETY: the handler only flips one shared on/off switch, which is safe to do even in the
-    // middle of other code, and the handler this replaces is never looked at.
     let installed = unsafe {
         libc::signal(
             libc::SIGINT,
@@ -33,8 +31,6 @@ mod tests {
     #[test]
     fn an_interrupt_after_the_handler_is_installed_sets_the_flag() {
         assert!(catch_interrupts());
-        // SAFETY: raising the interrupt here only runs the handler above, and all it does is
-        // flip one shared on/off switch.
         unsafe { libc::raise(libc::SIGINT) };
         assert!(cancellation_requested());
         leave_the_flag_as_the_rest_of_the_test_process_found_it();
