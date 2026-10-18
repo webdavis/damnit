@@ -21,6 +21,7 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
         | Refusal::NoSuchObject(_)
         | Refusal::NoWorkingObject(_)
         | Refusal::NoSuchRemote(_)
+        | Refusal::RemoteExists(_)
         | Refusal::UnresolvedConflicts(_)
         | Refusal::MissingCredential { .. }
         | Refusal::StaleRemote { .. }

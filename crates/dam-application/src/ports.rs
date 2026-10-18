@@ -8,6 +8,6 @@ pub use helper::{CredentialError, CredentialSource, HelperError, HelperLauncher,
 pub use repositories::{Repositories, Store};
 pub use store::{
     AcceptedKindsRepository, CommitRepository, Conflict, ConflictRepository, Notice,
-    NoticeRepository, ObjectRepository, RemoteName, RemoteTrackingRepository, StageRepository,
-    StoreError, Transactional,
+    NoticeRepository, ObjectRepository, RemoteName, RemoteNameError, RemoteTrackingRepository,
+    StageRepository, StoreError, Transactional,
 };

@@ -240,7 +240,7 @@ flag says. Without those flags you get the plain `dam: <message>` line instead.
 |---|---|
 | 0 | The command did what it was asked. |
 | 1 | `dam` failed: a store, config, helper, editor or io failure. |
-| 2 | The command line was wrong: an unknown argument or subcommand, a flag value `dam` refuses to read, or an oid prefix that names more than one object. |
+| 2 | The command line was wrong: an unknown argument or subcommand, a value `dam` refuses to read, or an oid prefix that names more than one object. |
 | 3 | Cancelled: you interrupted, or a prompt could not be answered. |
 | 4 | `dam` refused by one of its own rules, and the message names the rule. |
 

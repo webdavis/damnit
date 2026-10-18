@@ -36,6 +36,7 @@ impl fmt::Display for Refusal {
                 "no object in the working layer matches {s:?}; one removed from it is named by its full oid"
             ),
             Refusal::NoSuchRemote(s) => write!(f, "no remote named {s:?}"),
+            Refusal::RemoteExists(name) => write!(f, "remote {name} already exists"),
             Refusal::NotATask(o) => {
                 write!(f, "{} is an event; events are not completed", o.short())
             }

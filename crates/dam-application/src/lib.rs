@@ -18,7 +18,8 @@ pub use ports::{
     AcceptedKindsRepository, Clock, CommitRepository, Conflict, ConflictRepository,
     CredentialError, CredentialSource, EditorError, EditorSession, HelperError, HelperLauncher,
     Notice, NoticeRepository, ObjectRepository, Randomness, RemoteHelper, RemoteName,
-    RemoteTrackingRepository, Repositories, StageRepository, Store, StoreError, Transactional,
+    RemoteNameError, RemoteTrackingRepository, Repositories, StageRepository, Store, StoreError,
+    Transactional,
 };
 pub use remote::{
     IncomingObject, MutationOp, MutationOutcome, PullOutcome, RejectedObject, RemoteCapabilities,

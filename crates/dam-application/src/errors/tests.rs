@@ -5,7 +5,7 @@ fn oid() -> Oid {
     Oid::generate(&mut |x: &mut [u8]| x.fill(1))
 }
 
-const HAND_COUNTED_RULES: usize = 19;
+const HAND_COUNTED_RULES: usize = 20;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -28,6 +28,7 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::UnresolvedConflicts(_) => 16,
         Refusal::MissingCredential { .. } => 17,
         Refusal::StaleRemote { .. } => 18,
+        Refusal::RemoteExists(_) => 19,
     }
 }
 
@@ -49,6 +50,7 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
         Refusal::NoSuchObject("abab".into()),
         Refusal::NoWorkingObject("abab".into()),
         Refusal::NoSuchRemote("todoist".into()),
+        Refusal::RemoteExists("todoist".into()),
         Refusal::NotATask(oid()),
         Refusal::NotAnEvent(oid()),
         Refusal::NotCompleted(oid()),
