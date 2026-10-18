@@ -61,7 +61,13 @@ fn push_one(
     remote: &RemoteConfig,
 ) -> Result<PushReport, UseCaseError> {
     let unpushed = repos.commits.unpushed(&remote.name)?;
-    let changes = changes_to_send(repos.objects, repos.commits, remote, &unpushed)?;
+    let changes = changes_to_send(
+        repos.objects,
+        repos.commits,
+        repos.remote_tracking,
+        remote,
+        &unpushed,
+    )?;
 
     let mut mutations = Vec::new();
     let mut after_by_oid: BTreeMap<Oid, Object> = BTreeMap::new();

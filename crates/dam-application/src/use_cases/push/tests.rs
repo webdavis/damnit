@@ -4,6 +4,7 @@ mod keys;
 mod last_push;
 mod read_only;
 mod refusals;
+mod retries;
 mod verbs;
 
 use std::cell::RefCell;

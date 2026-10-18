@@ -11,11 +11,18 @@ use crate::use_cases::push::idempotency::{Origin, key};
 pub(super) fn changes_to_send(
     objects: &dyn ObjectRepository,
     commits: &dyn CommitRepository,
+    remote_tracking: &dyn RemoteTrackingRepository,
     remote: &RemoteConfig,
     unpushed: &[dam_domain::CommitRecord],
 ) -> Result<OwedChanges, UseCaseError> {
     let mut changes = coalesced_with_the_commit_of_their_last_change(unpushed);
-    add_a_committed_update_for_each_retry_not_already_owed(objects, commits, remote, &mut changes)?;
+    add_an_update_since_the_remote_snapshot_for_each_retry_not_already_owed(
+        objects,
+        commits,
+        remote_tracking,
+        remote,
+        &mut changes,
+    )?;
     Ok(changes)
 }
 
@@ -39,9 +46,10 @@ fn coalesced_with_the_commit_of_their_last_change(
     changes
 }
 
-fn add_a_committed_update_for_each_retry_not_already_owed(
+fn add_an_update_since_the_remote_snapshot_for_each_retry_not_already_owed(
     objects: &dyn ObjectRepository,
     commits: &dyn CommitRepository,
+    remote_tracking: &dyn RemoteTrackingRepository,
     remote: &RemoteConfig,
     changes: &mut OwedChanges,
 ) -> Result<(), UseCaseError> {
@@ -50,13 +58,14 @@ fn add_a_committed_update_for_each_retry_not_already_owed(
             continue;
         }
         if let Some(current) = objects.committed(&oid)? {
+            let before = remote_tracking.remote_snapshot(&remote.name, &oid)?;
             changes.insert(
                 oid.clone(),
                 (
                     Change {
                         oid,
                         op: Op::Update,
-                        before: None,
+                        before,
                         after: Some(current),
                     },
                     None,

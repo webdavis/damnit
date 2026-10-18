@@ -39,6 +39,8 @@ impl Sandbox {
             .env("DAM_CONFIG", self.dir.path().join("config.toml"))
             .env("DAM_STORE", self.dir.path().join("dam.db"))
             .env("FAKE_TOKEN_FILE", self.dir.path().join("token.txt"))
+            .env("PUSH_LOG", self.dir.path().join("pushes.jsonl"))
+            .env("FAIL_NEXT_PUSH", self.dir.path().join("fail-next-push"))
             .env("HOME", self.dir.path())
             .env("XDG_CONFIG_HOME", self.dir.path().join("config"))
             .env("XDG_DATA_HOME", self.dir.path().join("data"))
@@ -83,6 +85,18 @@ impl Sandbox {
         let (ok, out, err) = self.dam(&line);
         assert!(ok, "{err}");
         out.split_whitespace().next().unwrap().to_string()
+    }
+
+    pub fn fail_next_push(&self) {
+        std::fs::write(self.dir.path().join("fail-next-push"), "").unwrap();
+    }
+
+    pub fn pushes(&self) -> Vec<serde_json::Value> {
+        std::fs::read_to_string(self.dir.path().join("pushes.jsonl"))
+            .unwrap_or_default()
+            .lines()
+            .map(|line| serde_json::from_str(line).unwrap())
+            .collect()
     }
 
     pub fn install_silent_helper(&self) {
