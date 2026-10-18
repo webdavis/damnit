@@ -114,7 +114,7 @@ fn interactive_drop_removes_open_dependencies() {
     };
     complete(&store, &today(), &FixedRandom::new(9), &id, Force::With(d)).unwrap();
     let t = store.get(&id).unwrap().unwrap();
-    assert!(t.base().depends.is_empty() && t.as_task().unwrap().done);
+    assert!(t.base().depends.is_empty() && t.as_task().unwrap().completion.is_done());
 }
 
 #[test]

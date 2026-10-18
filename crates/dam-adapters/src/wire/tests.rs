@@ -1,6 +1,6 @@
 use super::*;
 use dam_domain::{
-    Attendee, Event, Object, Oid, Priority, ResponseStatus, Task, Transparency, When,
+    Attendee, Completion, Event, Object, Oid, Priority, ResponseStatus, Task, Transparency, When,
 };
 use jiff::civil::date;
 
@@ -28,8 +28,9 @@ fn a_task_round_trips_with_a_day_due() {
 #[test]
 fn a_completion_time_round_trips_as_rfc_3339_since_the_store_is_wire_json() {
     let mut t = Task::new(oid(1), "milk");
-    t.done = true;
-    t.completed_at = Some("2026-09-18T15:04:05Z".parse().unwrap());
+    t.completion = Completion::Done {
+        at: Some("2026-09-18T15:04:05Z".parse().unwrap()),
+    };
     let object = Object::Task(t);
     let wire = to_wire(&object, None);
     assert_eq!(
@@ -57,14 +58,13 @@ fn an_open_task_does_not_take_a_completion_time_from_the_wire() {
     task.completed_at = Some("2020-01-01T00:00:00Z".into());
     let object = from_wire(&wire).unwrap();
     let task = object.as_task().unwrap();
-    assert!(!task.done);
-    assert_eq!(task.completed_at, None);
+    assert_eq!(task.completion, Completion::Open);
 }
 
 #[test]
 fn an_unreadable_completion_time_is_rejected_naming_the_field() {
     let mut done = Task::new(oid(1), "milk");
-    done.done = true;
+    done.completion = Completion::Done { at: None };
     let mut wire = to_wire(&Object::Task(done), None);
     wire.task.as_mut().unwrap().completed_at = Some("last tuesday".into());
     let err = from_wire(&wire).unwrap_err();

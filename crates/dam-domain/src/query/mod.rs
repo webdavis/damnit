@@ -58,10 +58,10 @@ fn term_matches(term: &Term, object: &Object, today: Date) -> bool {
     let task = object.as_task();
     let event = object.as_event();
     match term {
-        Term::Done => task.is_some_and(|t| t.done),
-        Term::Overdue => {
-            task.is_some_and(|t| !t.done && t.due.as_ref().is_some_and(|d| d.date() < today))
-        }
+        Term::Done => task.is_some_and(|t| t.completion.is_done()),
+        Term::Overdue => task.is_some_and(|t| {
+            !t.completion.is_done() && t.due.as_ref().is_some_and(|d| d.date() < today)
+        }),
         Term::Kind(kind) => object.kind() == *kind,
         Term::Due(sel) => {
             task.is_some_and(|t| date_matches(sel, t.due.as_ref().map(|d| d.date()), today))

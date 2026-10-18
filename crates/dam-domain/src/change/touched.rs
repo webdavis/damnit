@@ -1,5 +1,5 @@
 use super::*;
-use crate::{Field, Object, Oid, Path, Priority, Task, When};
+use crate::{Completion, Field, Object, Oid, Path, Priority, Task, When};
 use jiff::civil::date;
 
 fn oid(b: u8) -> Oid {
@@ -21,7 +21,7 @@ fn an_edited_field_is_the_only_one_named() {
 #[test]
 fn reopening_a_task_names_done_alone() {
     let mut done = Task::new(oid(1), "a");
-    done.done = true;
+    done.completion = Completion::Done { at: None };
     let before = Object::Task(done);
     let after = task("a");
     let change = diff(&oid(1), Some(&before), Some(&after)).unwrap();

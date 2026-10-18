@@ -4,7 +4,7 @@ mod dispositions;
 use super::*;
 use crate::testing::prelude::*;
 use crate::testing::{FixedClock, FixedRandom, MemoryStore, oid};
-use dam_domain::{Event, Object, Path, Recurrence, Task, When};
+use dam_domain::{Completion, Event, Object, Path, Recurrence, Task, When};
 use jiff::civil::date;
 
 pub(super) fn put_task(
@@ -16,7 +16,11 @@ pub(super) fn put_task(
 ) -> Oid {
     let mut t = Task::new(oid(byte), subject);
     t.base.path = Path::parse(path).unwrap();
-    t.done = done;
+    t.completion = if done {
+        Completion::Done { at: None }
+    } else {
+        Completion::Open
+    };
     store.put(&Object::Task(t)).unwrap();
     oid(byte)
 }
@@ -49,7 +53,7 @@ fn an_unblocked_task_is_done() {
         complete(&store, &today(), &FixedRandom::new(9), &id, Force::No).unwrap(),
         Completed::Done
     );
-    assert!(task_of(&store, &id).done);
+    assert!(task_of(&store, &id).completion.is_done());
 }
 
 #[test]
@@ -70,7 +74,7 @@ fn a_recurring_task_rolls_forward_instead_of_closing() {
         }
     );
     let t = task_of(&store, &id);
-    assert!(!t.done);
+    assert!(!t.completion.is_done());
     assert_eq!(t.due, Some(When::Day(date(2026, 9, 25))));
 }
 
@@ -90,7 +94,7 @@ fn a_rule_dam_cannot_read_is_refused_and_the_task_stays_open() {
         err.to_string(),
         "cannot roll \"every other week\" forward; complete it in Todoist or set --recurrence"
     );
-    assert!(!task_of(&store, &id).done);
+    assert!(!task_of(&store, &id).completion.is_done());
 }
 
 #[test]
@@ -112,11 +116,15 @@ fn completing_a_task_records_when_it_happened() {
     let store = MemoryStore::new();
     let id = put_task(&store, 1, "milk", "", false);
     let clock = FixedClock(date(2026, 9, 18));
-    assert_eq!(task_of(&store, &id).completed_at, None);
+    assert_eq!(task_of(&store, &id).completion, Completion::Open);
     complete(&store, &clock, &FixedRandom::new(1), &id, Force::No).unwrap();
     let task = task_of(&store, &id);
-    assert!(task.done);
-    assert_eq!(task.completed_at, Some(clock.now()));
+    assert_eq!(
+        task.completion,
+        Completion::Done {
+            at: Some(clock.now())
+        }
+    );
 }
 
 #[test]
@@ -135,8 +143,7 @@ fn a_task_that_rolls_forward_records_no_completion_time() {
     )
     .unwrap();
     let task = task_of(&store, &oid(1));
-    assert!(!task.done);
-    assert_eq!(task.completed_at, None);
+    assert_eq!(task.completion, Completion::Open);
 }
 
 #[test]

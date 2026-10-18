@@ -1,4 +1,4 @@
-use dam_domain::{Categories, Date, Object, Oid, Priority, Recurrence, When, cycle_in};
+use dam_domain::{Categories, Completion, Date, Object, Oid, Priority, Recurrence, When, cycle_in};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
@@ -124,11 +124,10 @@ pub fn apply(object: &Object, fields: &EditFields) -> Result<Object, UseCaseErro
                 t.event = a.clone();
             }
             if fields.undone {
-                if !t.done {
+                if !t.completion.is_done() {
                     return Err(Refusal::NotCompleted(t.base.oid.clone()).into());
                 }
-                t.done = false;
-                t.completed_at = None;
+                t.completion = Completion::Open;
             }
         }
         Object::Event(e) => {

@@ -1,4 +1,4 @@
-use dam_domain::{Event, Object, Oid, Path, Priority, Task, When, diff};
+use dam_domain::{Completion, Event, Object, Oid, Path, Priority, Task, When, diff};
 use jiff::civil::date;
 
 use super::change_json;
@@ -30,7 +30,7 @@ fn an_edit_names_the_field_it_moved() {
 #[test]
 fn a_reopened_task_names_done() {
     let mut completed = Task::new(oid(1), "a");
-    completed.done = true;
+    completed.completion = Completion::Done { at: None };
     let change = diff(&oid(1), Some(&Object::Task(completed)), Some(&task("a"))).unwrap();
     assert_eq!(
         change_json(&change, false).unwrap()["fields"],
@@ -126,8 +126,9 @@ fn a_delete_describes_the_object_it_removed() {
 #[test]
 fn a_completed_task_row_carries_when_it_was_completed_so_a_done_list_needs_no_log_read() {
     let mut completed = Task::new(oid(1), "a");
-    completed.done = true;
-    completed.completed_at = Some("2026-09-18T15:04:05Z".parse().unwrap());
+    completed.completion = Completion::Done {
+        at: Some("2026-09-18T15:04:05Z".parse().unwrap()),
+    };
     let change = diff(&oid(1), Some(&task("a")), Some(&Object::Task(completed))).unwrap();
     let document = change_json(&change, false).unwrap();
     assert_eq!(document["done"], true);

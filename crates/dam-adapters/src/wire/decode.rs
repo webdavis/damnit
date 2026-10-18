@@ -1,8 +1,8 @@
 use std::collections::BTreeSet;
 
 use dam_domain::{
-    Attachment, Attendee, Base, Conference, Date, Event, EventStatus, EventType, Object, Oid,
-    OidError, Path, PathError, Person, Priority, PriorityError, Recurrence, Reminder,
+    Attachment, Attendee, Base, Completion, Conference, Date, Event, EventStatus, EventType,
+    Object, Oid, OidError, Path, PathError, Person, Priority, PriorityError, Recurrence, Reminder,
     ResponseStatus, Task, Timestamp, Transparency, Visibility, When,
 };
 use dam_protocol::{WireObject, WireTask};
@@ -109,8 +109,7 @@ pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
     match (wire.kind.as_str(), &wire.task, &wire.event) {
         ("task", Some(t), _) => Ok(Object::Task(Task {
             base,
-            done: t.done,
-            completed_at: completion_time_of_a_done_task(t)?,
+            completion: completion(t)?,
             priority: Priority::new(t.priority).map_err(|why| WireError::Priority {
                 value: t.priority.to_string(),
                 why,
@@ -201,15 +200,19 @@ pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
     }
 }
 
-fn completion_time_of_a_done_task(t: &WireTask) -> Result<Option<Timestamp>, WireError> {
-    t.completed_at
+fn completion(t: &WireTask) -> Result<Completion, WireError> {
+    if !t.done {
+        return Ok(Completion::Open);
+    }
+    let at = t
+        .completed_at
         .as_deref()
-        .filter(|_| t.done)
         .map(|at| {
             at.parse::<Timestamp>()
                 .map_err(|_| date("completed_at")(at.to_string()))
         })
-        .transpose()
+        .transpose()?;
+    Ok(Completion::Done { at })
 }
 
 fn parse_when(text: &str) -> Result<When, String> {
