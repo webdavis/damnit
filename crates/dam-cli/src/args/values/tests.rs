@@ -64,3 +64,30 @@ fn a_priority_outside_one_to_four_is_refused_with_the_range_in_words() {
         );
     }
 }
+
+#[test]
+fn a_max_age_is_a_remote_name_and_a_duration_or_a_refusal_naming_the_part_at_fault() {
+    for (bad, told) in [
+        ("fake", "expected <remote>=<number><s|m|h>"),
+        ("=1h", "a remote name cannot be empty"),
+        ("fa ke=1h", "may hold only letters, digits, - and _"),
+        ("fake=", "is not a duration such as 90s, 15m or 2h"),
+        ("fake=soon", "is not a duration such as 90s, 15m or 2h"),
+        ("fake=1d", "is not a duration such as 90s, 15m or 2h"),
+    ] {
+        let said = refusal(&["dam", "agenda", "--max-age", bad]);
+        assert!(said.contains("--max-age"), "{bad:?}: {said}");
+        assert!(said.contains(told), "{bad:?}: {said}");
+    }
+    assert!(
+        Cli::try_parse_from([
+            "dam",
+            "agenda",
+            "--max-age",
+            "fake=1h",
+            "--max-age",
+            "b_2=90s"
+        ])
+        .is_ok()
+    );
+}
