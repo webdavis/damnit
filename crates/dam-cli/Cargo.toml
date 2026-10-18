@@ -14,7 +14,7 @@ path = "src/main.rs"
 dam-domain = { path = "../dam-domain" }
 dam-application = { path = "../dam-application" }
 dam-adapters = { path = "../dam-adapters" }
-clap = { workspace = true, features = ["env"] }
+clap = { workspace = true, features = ["env", "wrap_help"] }
 serde_json.workspace = true
 jiff.workspace = true
 toon-format.workspace = true

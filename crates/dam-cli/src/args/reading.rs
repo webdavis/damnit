@@ -7,29 +7,29 @@ use super::values::max_age_arg;
 
 #[derive(Args, Debug)]
 pub(crate) struct LsArgs {
+    #[arg(help = "Narrow the list by a query, such as due:today, or a saved filter's name")]
     pub(crate) query: Option<String>,
 }
 
 #[derive(Args, Debug)]
 pub(crate) struct AgendaArgs {
-    #[arg(help = "A query or saved filter that narrows the events, read the way `ls` reads one")]
+    #[arg(help = "Narrow the events by a query or saved filter, read the way `ls` reads one")]
     pub(crate) query: Option<String>,
     #[arg(
         long,
-        help = "Where the window opens: a date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM. Default: now"
+        help = "Open the window at a date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM. Default: now"
     )]
     pub(crate) from: Option<String>,
     #[arg(
         long,
-        help = "Where the window closes, exclusive. Default: 24 hours after it opens"
+        help = "Close the window here, exclusive. Default: 24 hours after it opens"
     )]
     pub(crate) to: Option<String>,
     #[arg(
         long = "max-age",
         value_name = "REMOTE=DURATION",
         value_parser = max_age_arg,
-        help = "Refuse to answer when REMOTE last pulled longer ago than DURATION (such as 90s, 15m \
-                or 2h), or never. Repeatable"
+        help = "Refuse when REMOTE last pulled over DURATION ago, such as 15m. Repeatable"
     )]
     pub(crate) max_age: Vec<(RemoteName, Duration)>,
 }
