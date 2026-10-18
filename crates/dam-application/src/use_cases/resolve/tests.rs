@@ -3,7 +3,7 @@ mod round_trip;
 use super::*;
 use crate::ports::RemoteName;
 use crate::testing::prelude::*;
-use crate::testing::{FixedClock, FixedRandom, MemoryStore, oid};
+use crate::testing::{FaultyStore, FixedClock, FixedRandom, MemoryStore, oid};
 use crate::use_cases::commit::commit;
 use crate::use_cases::stage::add_all;
 use dam_domain::{Object, Task};
@@ -131,4 +131,20 @@ fn resolving_a_non_conflict_is_refused() {
         err,
         UseCaseError::Refused(Refusal::NoSuchObject(_))
     ));
+}
+
+#[test]
+fn resolve_that_fails_between_its_writes_changes_nothing() {
+    let store = FaultyStore::new(conflicted());
+    store.assert_unchanged_when_any_write_fails(|| {
+        resolve(
+            &store,
+            &store,
+            &store,
+            &FixedClock(jiff::civil::date(2026, 9, 18)),
+            &FixedRandom::new(3),
+            &oid(1),
+            Side::Theirs,
+        )
+    });
 }

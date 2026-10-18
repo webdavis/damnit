@@ -52,8 +52,11 @@ pub(super) fn launcher(
     let l = ScriptedLauncher {
         make: Box::new(move || ScriptedHelper {
             caps: task_caps(),
-            pull_answer: PullOutcome::default(),
-            push_answer: Box::new(answer.clone()),
+            pull_answer: Ok(PullOutcome::default()),
+            push_answer: Box::new({
+                let answer = answer.clone();
+                move |ms| Ok(answer(ms))
+            }),
             pushed: seen.clone(),
             pulled_since: Rc::new(RefCell::new(vec![])),
         }),

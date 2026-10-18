@@ -1,9 +1,15 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use super::super::*;
 use super::{clock, committed_task, config, launcher};
 use crate::errors::Refusal;
-use crate::ports::Repositories;
+use crate::ports::{HelperError, Repositories};
+use crate::remote::PullOutcome;
 use crate::testing::prelude::*;
-use crate::testing::{EchoCredentials, MemoryStore, oid};
+use crate::testing::{
+    EchoCredentials, MemoryStore, ScriptedHelper, ScriptedLauncher, oid, task_caps,
+};
 use dam_domain::{Object, Task};
 
 #[test]
@@ -63,4 +69,44 @@ fn a_credential_the_config_does_not_supply_is_refused_by_name() {
         1,
         "one process, even when the capabilities it reported cannot be met"
     );
+}
+
+#[test]
+fn a_helper_that_times_out_leaves_the_store_as_it_was() {
+    let store = MemoryStore::new();
+    committed_task(&store, 1);
+    store
+        .set_accepted_kinds(&RemoteName("todoist".into()), &task_caps().kinds)
+        .unwrap();
+    let before = store.clone();
+    let timeout = HelperError::Timeout {
+        helper: "todoist".into(),
+        deadline: "30s".into(),
+        said: None,
+    };
+    let answer = timeout.clone();
+    let l = ScriptedLauncher {
+        make: Box::new(move || ScriptedHelper {
+            caps: task_caps(),
+            pull_answer: Ok(PullOutcome::default()),
+            push_answer: Box::new({
+                let answer = answer.clone();
+                move |_| Err(answer.clone())
+            }),
+            pushed: Rc::new(RefCell::new(vec![])),
+            pulled_since: Rc::new(RefCell::new(vec![])),
+        }),
+        launched_with: Rc::new(RefCell::new(vec![])),
+    };
+    let err = push(
+        Repositories::of(&store),
+        &l,
+        &EchoCredentials,
+        &clock(),
+        &config(),
+        None,
+    )
+    .unwrap_err();
+    assert_eq!(err, UseCaseError::Helper(timeout));
+    assert_eq!(store, before);
 }

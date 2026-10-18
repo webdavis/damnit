@@ -2,6 +2,7 @@ use dam_domain::{Categories, Date, Object, Oid, Priority, Rule, When, cycle_in};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
+use crate::use_cases::atomically::atomically;
 
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct EditFields {
@@ -28,38 +29,40 @@ pub fn edit(
     oid: &Oid,
     fields: EditFields,
 ) -> Result<Object, UseCaseError> {
-    let current = objects
-        .get(oid)?
-        .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
-    let next = apply(&current, &fields)?;
-    categories
-        .check(&next.base().labels)
-        .map_err(Refusal::Labels)?;
-    if !fields.add_depends.is_empty() {
-        let edges = |o: &Oid| {
-            objects
-                .get(o)
-                .ok()
-                .flatten()
-                .map(|x| x.base().depends.clone())
-                .unwrap_or_default()
-        };
-        if let Some(path) = cycle_in(&fields.add_depends, oid, &edges) {
-            return Err(Refusal::Cycle {
-                oid: oid.clone(),
-                path,
+    atomically(objects, || {
+        let current = objects
+            .get(oid)?
+            .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
+        let next = apply(&current, &fields)?;
+        categories
+            .check(&next.base().labels)
+            .map_err(Refusal::Labels)?;
+        if !fields.add_depends.is_empty() {
+            let edges = |o: &Oid| {
+                objects
+                    .get(o)
+                    .ok()
+                    .flatten()
+                    .map(|x| x.base().depends.clone())
+                    .unwrap_or_default()
+            };
+            if let Some(path) = cycle_in(&fields.add_depends, oid, &edges) {
+                return Err(Refusal::Cycle {
+                    oid: oid.clone(),
+                    path,
+                }
+                .into());
             }
-            .into());
         }
-    }
-    if let Some(Some(event)) = &fields.attach {
-        match objects.get(event)? {
-            Some(Object::Event(_)) => {}
-            _ => return Err(Refusal::NoSuchObject(event.short().to_string()).into()),
+        if let Some(Some(event)) = &fields.attach {
+            match objects.get(event)? {
+                Some(Object::Event(_)) => {}
+                _ => return Err(Refusal::NoSuchObject(event.short().to_string()).into()),
+            }
         }
-    }
-    objects.put(&next)?;
-    Ok(next)
+        objects.put(&next)?;
+        Ok(next)
+    })
 }
 
 pub fn apply(object: &Object, fields: &EditFields) -> Result<Object, UseCaseError> {

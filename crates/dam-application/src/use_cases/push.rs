@@ -8,6 +8,7 @@ use crate::ports::{
     Clock, CredentialSource, HelperLauncher, Notice, RemoteHelper, RemoteName, Repositories,
 };
 use crate::remote::{MutationOp, MutationOutcome, RemoteCapabilities};
+use crate::use_cases::atomically::atomically;
 use crate::use_cases::connect::connect;
 
 #[derive(Debug)]
@@ -100,67 +101,70 @@ fn push_one(
         helper.push(mutations)?
     };
 
-    let mut failed = Vec::new();
-    let mut retries = Vec::new();
-    let mut answered: BTreeSet<Oid> = BTreeSet::new();
-    for outcome in outcomes {
-        let oid = outcome.oid;
-        let first_answer_about_a_sent_oid =
-            sent_oids.contains(&oid) && answered.insert(oid.clone());
-        if !first_answer_about_a_sent_oid {
-            continue;
+    let failed = atomically(repos.transaction, || {
+        let mut failed = Vec::new();
+        let mut retries = Vec::new();
+        let mut answered: BTreeSet<Oid> = BTreeSet::new();
+        for outcome in outcomes {
+            let oid = outcome.oid;
+            let first_answer_about_a_sent_oid =
+                sent_oids.contains(&oid) && answered.insert(oid.clone());
+            if !first_answer_about_a_sent_oid {
+                continue;
+            }
+            if outcome.ok {
+                if let Some(id) = &outcome.remote_id {
+                    repos
+                        .remote_tracking
+                        .map_remote_id(&remote.name, &oid, id)?;
+                }
+                if deletes.contains(&oid) {
+                    repos
+                        .remote_tracking
+                        .clear_remote_mapping(&remote.name, &oid)?;
+                } else if let Some(after) = after_by_oid.get(&oid) {
+                    repos
+                        .remote_tracking
+                        .set_remote_snapshot(&remote.name, after)?;
+                }
+            } else {
+                let why = outcome
+                    .why
+                    .unwrap_or_else(|| "the remote gave no reason".into());
+                repos.notices.add_notice(&Notice::PushFailed {
+                    remote: remote.name.clone(),
+                    oid: oid.clone(),
+                    why: why.clone(),
+                })?;
+                retries.push(oid.clone());
+                failed.push((oid, why));
+            }
         }
-        if outcome.ok {
-            if let Some(id) = &outcome.remote_id {
-                repos
-                    .remote_tracking
-                    .map_remote_id(&remote.name, &oid, id)?;
-            }
-            if deletes.contains(&oid) {
-                repos
-                    .remote_tracking
-                    .clear_remote_mapping(&remote.name, &oid)?;
-            } else if let Some(after) = after_by_oid.get(&oid) {
-                repos
-                    .remote_tracking
-                    .set_remote_snapshot(&remote.name, after)?;
-            }
-        } else {
-            let why = outcome
-                .why
-                .unwrap_or_else(|| "the remote gave no reason".into());
+
+        let mut unanswered = BTreeSet::new();
+        for oid in sent_oids.difference(&answered).cloned() {
+            let why = "no answer from helper".to_string();
             repos.notices.add_notice(&Notice::PushFailed {
                 remote: remote.name.clone(),
                 oid: oid.clone(),
                 why: why.clone(),
             })?;
             retries.push(oid.clone());
+            unanswered.insert(oid.clone());
             failed.push((oid, why));
         }
-    }
-
-    let mut unanswered = BTreeSet::new();
-    for oid in sent_oids.difference(&answered).cloned() {
-        let why = "no answer from helper".to_string();
-        repos.notices.add_notice(&Notice::PushFailed {
-            remote: remote.name.clone(),
-            oid: oid.clone(),
-            why: why.clone(),
-        })?;
-        retries.push(oid.clone());
-        unanswered.insert(oid.clone());
-        failed.push((oid, why));
-    }
-    repos.commits.set_push_retries(&remote.name, &retries)?;
-    for record in &unpushed {
-        if record.changes.iter().any(|c| unanswered.contains(&c.oid)) {
-            continue;
+        repos.commits.set_push_retries(&remote.name, &retries)?;
+        for record in &unpushed {
+            if record.changes.iter().any(|c| unanswered.contains(&c.oid)) {
+                continue;
+            }
+            repos.commits.mark_pushed(&remote.name, &record.id)?;
         }
-        repos.commits.mark_pushed(&remote.name, &record.id)?;
-    }
-    repos
-        .remote_tracking
-        .set_last_push(&remote.name, clock.now())?;
+        repos
+            .remote_tracking
+            .set_last_push(&remote.name, clock.now())?;
+        Ok(failed)
+    })?;
     Ok(PushReport {
         remote: remote.name.clone(),
         sent,

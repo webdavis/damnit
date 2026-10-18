@@ -48,12 +48,12 @@ impl Clock for FixedClock {
     }
 }
 
-type PushAnswer = Box<dyn Fn(&[RemoteMutation]) -> Vec<MutationOutcome>>;
+type PushAnswer = Box<dyn Fn(&[RemoteMutation]) -> Result<Vec<MutationOutcome>, HelperError>>;
 type LaunchedWith = Rc<RefCell<Vec<Vec<(String, Secret)>>>>;
 
 pub struct ScriptedHelper {
     pub caps: RemoteCapabilities,
-    pub pull_answer: PullOutcome,
+    pub pull_answer: Result<PullOutcome, HelperError>,
     pub push_answer: PushAnswer,
     pub pushed: Rc<RefCell<Vec<RemoteMutation>>>,
     pub pulled_since: Rc<RefCell<Vec<Option<String>>>>,
@@ -73,13 +73,13 @@ impl RemoteHelper for ScriptedHelper {
         self.pulled_since
             .borrow_mut()
             .push(since.map(|s| s.to_string()));
-        Ok(self.pull_answer.clone())
+        self.pull_answer.clone()
     }
     fn push(
         &mut self,
         mutations: Vec<RemoteMutation>,
     ) -> Result<Vec<MutationOutcome>, HelperError> {
-        let outcomes = (self.push_answer)(&mutations);
+        let outcomes = (self.push_answer)(&mutations)?;
         self.pushed.borrow_mut().extend(mutations);
         Ok(outcomes)
     }

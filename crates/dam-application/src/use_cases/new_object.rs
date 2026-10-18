@@ -4,6 +4,7 @@ use dam_domain::{Categories, Date, Event, Object, Oid, Path, Priority, Task, Whe
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{ObjectRepository, Randomness};
+use crate::use_cases::atomically::atomically;
 
 pub struct NewTask {
     pub subject: String,
@@ -30,17 +31,19 @@ pub fn new_task(
     categories: &Categories,
     input: NewTask,
 ) -> Result<Oid, UseCaseError> {
-    categories.check(&input.labels).map_err(Refusal::Labels)?;
-    let oid = Oid::generate(&mut |b| random.fill(b));
-    let mut task = Task::new(oid.clone(), input.subject);
-    task.base.path = input.path;
-    task.base.labels = input.labels;
-    task.base.body = input.body;
-    task.priority = input.priority;
-    task.due = input.due;
-    task.deadline = input.deadline;
-    objects.put(&Object::Task(task))?;
-    Ok(oid)
+    atomically(objects, || {
+        categories.check(&input.labels).map_err(Refusal::Labels)?;
+        let oid = Oid::generate(&mut |b| random.fill(b));
+        let mut task = Task::new(oid.clone(), input.subject);
+        task.base.path = input.path;
+        task.base.labels = input.labels;
+        task.base.body = input.body;
+        task.priority = input.priority;
+        task.due = input.due;
+        task.deadline = input.deadline;
+        objects.put(&Object::Task(task))?;
+        Ok(oid)
+    })
 }
 
 pub fn new_event(
@@ -49,21 +52,23 @@ pub fn new_event(
     categories: &Categories,
     input: NewEvent,
 ) -> Result<Oid, UseCaseError> {
-    categories.check(&input.labels).map_err(Refusal::Labels)?;
-    let oid = Oid::generate(&mut |b| random.fill(b));
-    let mut event = Event::new(oid.clone(), input.subject, input.start, input.end);
-    event.base.path = input.path;
-    event.base.labels = input.labels;
-    event.base.body = input.body;
-    objects.put(&Object::Event(event))?;
-    Ok(oid)
+    atomically(objects, || {
+        categories.check(&input.labels).map_err(Refusal::Labels)?;
+        let oid = Oid::generate(&mut |b| random.fill(b));
+        let mut event = Event::new(oid.clone(), input.subject, input.start, input.end);
+        event.base.path = input.path;
+        event.base.labels = input.labels;
+        event.base.body = input.body;
+        objects.put(&Object::Event(event))?;
+        Ok(oid)
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::testing::prelude::*;
-    use crate::testing::{FixedRandom, MemoryStore, oid};
+    use crate::testing::{FaultyStore, FixedRandom, MemoryStore, oid};
     use dam_domain::Category;
 
     fn input(subject: &str, labels: &[&str]) -> NewTask {
@@ -138,5 +143,41 @@ mod tests {
         )
         .unwrap();
         assert!(matches!(store.get(&id).unwrap(), Some(Object::Event(_))));
+    }
+
+    #[test]
+    fn a_new_task_that_fails_at_its_write_leaves_nothing_behind() {
+        let store = FaultyStore::new(MemoryStore::new());
+        store.assert_unchanged_when_any_write_fails(|| {
+            new_task(
+                &store,
+                &FixedRandom::new(7),
+                &Categories::default(),
+                input("milk", &[]),
+            )
+            .map(drop)
+        });
+    }
+
+    #[test]
+    fn a_new_event_that_fails_at_its_write_leaves_nothing_behind() {
+        let store = FaultyStore::new(MemoryStore::new());
+        let day = When::Day(jiff::civil::date(2026, 9, 25));
+        store.assert_unchanged_when_any_write_fails(|| {
+            new_event(
+                &store,
+                &FixedRandom::new(2),
+                &Categories::default(),
+                NewEvent {
+                    subject: "dentist".into(),
+                    path: Path::root(),
+                    start: day.clone(),
+                    end: day.clone(),
+                    labels: Default::default(),
+                    body: String::new(),
+                },
+            )
+            .map(drop)
+        });
     }
 }

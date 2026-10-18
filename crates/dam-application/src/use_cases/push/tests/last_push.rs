@@ -3,7 +3,7 @@ use super::{clock, committed_task, config, launcher};
 use crate::ports::Repositories;
 use crate::remote::MutationOutcome;
 use crate::testing::prelude::*;
-use crate::testing::{EchoCredentials, MemoryStore};
+use crate::testing::{EchoCredentials, FaultyStore, MemoryStore, task_caps};
 
 #[test]
 fn a_push_that_reached_the_remote_records_when_it_did() {
@@ -59,4 +59,36 @@ fn a_push_whose_mutations_the_remote_refused_still_records_when_it_did() {
         store.last_push(&RemoteName("todoist".into())).unwrap(),
         Some(clock().now())
     );
+}
+
+#[test]
+fn push_bookkeeping_that_fails_midway_records_nothing() {
+    let store = FaultyStore::new(MemoryStore::new());
+    let todoist = RemoteName("todoist".into());
+    committed_task(&store.inner, 1);
+    store
+        .inner
+        .set_accepted_kinds(&todoist, &task_caps().kinds)
+        .unwrap();
+    let (l, _) = launcher(|ms| {
+        ms.iter()
+            .map(|m| MutationOutcome {
+                oid: m.oid.clone(),
+                ok: true,
+                remote_id: Some("r1".into()),
+                why: None,
+            })
+            .collect()
+    });
+    store.assert_unchanged_when_any_write_fails(|| {
+        push(
+            Repositories::of(&store),
+            &l,
+            &EchoCredentials,
+            &clock(),
+            &config(),
+            None,
+        )
+        .map(drop)
+    });
 }

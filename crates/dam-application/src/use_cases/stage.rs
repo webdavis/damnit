@@ -4,8 +4,17 @@ use dam_domain::{Change, Oid, diff};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{CommitRepository, ObjectRepository, StageRepository};
+use crate::use_cases::atomically::atomically;
 
 pub fn add(
+    objects: &dyn ObjectRepository,
+    stage: &dyn StageRepository,
+    oids: &[Oid],
+) -> Result<Vec<Change>, UseCaseError> {
+    atomically(objects, || stage_each(objects, stage, oids))
+}
+
+fn stage_each(
     objects: &dyn ObjectRepository,
     stage: &dyn StageRepository,
     oids: &[Oid],
@@ -50,10 +59,12 @@ pub fn add_all(
     stage: &dyn StageRepository,
     commits: &dyn CommitRepository,
 ) -> Result<Vec<Change>, UseCaseError> {
-    let list: Vec<Oid> = working_and_ever_committed_oids(objects, commits)?
-        .into_iter()
-        .collect();
-    add(objects, stage, &list)
+    atomically(objects, || {
+        let list: Vec<Oid> = working_and_ever_committed_oids(objects, commits)?
+            .into_iter()
+            .collect();
+        stage_each(objects, stage, &list)
+    })
 }
 
 pub fn reset(stage: &dyn StageRepository, oids: &[Oid]) -> Result<(), UseCaseError> {
@@ -70,7 +81,7 @@ pub fn reset(stage: &dyn StageRepository, oids: &[Oid]) -> Result<(), UseCaseErr
 mod tests {
     use super::*;
     use crate::testing::prelude::*;
-    use crate::testing::{MemoryStore, oid};
+    use crate::testing::{FaultyStore, MemoryStore, oid};
     use dam_domain::{Object, Op, Task};
 
     fn seed(store: &MemoryStore, byte: u8) -> Oid {
@@ -167,5 +178,23 @@ mod tests {
             err,
             UseCaseError::Refused(Refusal::NoSuchObject(_))
         ));
+    }
+
+    #[test]
+    fn add_that_fails_between_two_objects_stages_neither() {
+        let store = FaultyStore::new(MemoryStore::new());
+        let a = seed(&store.inner, 1);
+        let b = seed(&store.inner, 2);
+        store.assert_unchanged_when_any_write_fails(|| {
+            add(&store, &store, &[a.clone(), b.clone()]).map(drop)
+        });
+    }
+
+    #[test]
+    fn add_all_that_fails_between_two_objects_stages_neither() {
+        let store = FaultyStore::new(MemoryStore::new());
+        seed(&store.inner, 1);
+        seed(&store.inner, 2);
+        store.assert_unchanged_when_any_write_fails(|| add_all(&store, &store, &store).map(drop));
     }
 }
