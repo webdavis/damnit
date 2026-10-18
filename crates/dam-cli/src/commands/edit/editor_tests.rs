@@ -90,3 +90,24 @@ fn a_machine_format_refuses_to_open_an_editor() {
     assert_eq!(err.to_string(), Refusal::NeedsAnEditor.to_string());
     assert_eq!(err.exit_code(), 4);
 }
+
+#[test]
+fn a_bad_save_kept_as_it_was_reopened_reports_the_parse_error_not_a_cancel() {
+    let mut ctx = context();
+    ctx.store
+        .put(&Object::Task(Task::new(oid(1), "milk")))
+        .unwrap();
+    ctx.editor = Some(Box::new(ScriptedEditor::saving(vec![Box::new(|_| {
+        "priority = \"high\"\n".into()
+    })])));
+    let err = run(
+        &mut ctx,
+        EditArgs {
+            editor: true,
+            ..args(&oid(1))
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err.exit_code(), 2, "{err}");
+    assert!(err.to_string().contains("priority"), "{err}");
+}

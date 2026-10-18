@@ -92,11 +92,15 @@ fn through_editor(ctx: &Context, oid: &Oid) -> Result<EditFields, CliError> {
     let editor = ctx.editor.as_ref().ok_or(Refusal::NeedsAnEditor)?;
     let original = render_template(&current);
     let mut opened = original.clone();
+    let mut last_error = None;
     loop {
         let saved = editor
             .edit(&opened)
             .map_err(|e| CliError::UseCase(UseCaseError::Editor(e)))?;
-        if saved == opened || saved == original {
+        if saved == opened {
+            return Err(last_error.map_or(CliError::Cancelled, CliError::Usage));
+        }
+        if saved == original {
             return Err(CliError::Cancelled);
         }
         match parse_template(&saved, &current, ctx.clock.today(), &ctx.tz) {
@@ -107,6 +111,7 @@ fn through_editor(ctx: &Context, oid: &Oid) -> Result<EditFields, CliError> {
                     return Err(CliError::Usage(why));
                 }
                 opened = reopened;
+                last_error = Some(why);
             }
         }
     }
