@@ -39,7 +39,7 @@ pub(crate) fn run_pull(ctx: &mut Context, args: PullArgs) -> Result<Report, CliE
 
 pub(crate) fn run_resolve(ctx: &mut Context, args: ResolveArgs) -> Result<Report, CliError> {
     let oid = resolve_oid(ctx.store.as_ref(), &args.oid)?;
-    let side = if args.theirs {
+    let side = if args.side.theirs {
         Side::Theirs
     } else {
         Side::Ours
@@ -53,7 +53,7 @@ pub(crate) fn run_resolve(ctx: &mut Context, args: ResolveArgs) -> Result<Report
         &oid,
         side,
     )?;
-    let word = if args.theirs { "theirs" } else { "ours" };
+    let word = if args.side.theirs { "theirs" } else { "ours" };
     Ok(Report {
         human: format!("{} resolved with {word}", oid.short()),
         data: serde_json::json!({ "oid": oid.to_string(), "side": word }),
@@ -106,10 +106,11 @@ fn pull_json(r: &PullReport) -> serde_json::Value {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::args::{AddArgs, CommitArgs, PullArgs, PushArgs, ResolveArgs};
+    use crate::args::{AddArgs, Cli, Command, CommitArgs, PullArgs, PushArgs};
     use crate::commands::commit::run_commit;
     use crate::commands::stage::run_add;
     use crate::testing::{EchoLauncher, context};
+    use clap::Parser;
     use dam_application::{IncomingObject, PullOutcome};
     use dam_application::{RemoteConfig, RemoteName};
     use dam_domain::{Object, Oid, Task};
@@ -224,15 +225,14 @@ mod tests {
         .unwrap();
         assert_eq!(report.data["remotes"][0]["conflicts"], 1);
         assert_eq!(ctx.store.conflicts().unwrap().len(), 1);
-        run_resolve(
-            &mut ctx,
-            ResolveArgs {
-                oid: oid.short().into(),
-                ours: false,
-                theirs: true,
-            },
-        )
-        .unwrap();
+        let Command::Resolve(args) =
+            Cli::try_parse_from(["dam", "resolve", oid.short(), "--theirs"])
+                .unwrap()
+                .command
+        else {
+            panic!("wrong command")
+        };
+        run_resolve(&mut ctx, args).unwrap();
         assert!(ctx.store.conflicts().unwrap().is_empty());
         assert_eq!(
             ctx.store.get(&oid).unwrap().unwrap().base().subject,

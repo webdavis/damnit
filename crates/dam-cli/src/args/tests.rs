@@ -46,7 +46,10 @@ fn no_pull_is_global_and_defaults_to_pulling() {
 #[test]
 fn resolve_needs_exactly_one_side() {
     assert!(Cli::try_parse_from(["dam", "resolve", "abc", "--ours"]).is_ok());
-    assert!(Cli::try_parse_from(["dam", "resolve", "abc"]).is_err());
+    assert!(Cli::try_parse_from(["dam", "resolve", "abc", "--theirs"]).is_ok());
+    let err = Cli::try_parse_from(["dam", "resolve", "abc"]).unwrap_err();
+    assert_eq!(err.exit_code(), 2);
+    assert!(err.to_string().contains("<--ours|--theirs>"), "{err}");
     assert!(Cli::try_parse_from(["dam", "resolve", "abc", "--ours", "--theirs"]).is_err());
 }
 

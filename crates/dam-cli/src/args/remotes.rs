@@ -27,7 +27,14 @@ pub(crate) struct PullArgs {
 #[derive(Args, Debug)]
 pub(crate) struct ResolveArgs {
     pub(crate) oid: String,
-    #[arg(long, conflicts_with = "theirs", required_unless_present = "theirs")]
+    #[command(flatten)]
+    pub(crate) side: Side,
+}
+
+#[derive(Args, Debug)]
+#[group(required = true, multiple = false)]
+pub(crate) struct Side {
+    #[arg(long)]
     pub(crate) ours: bool,
     #[arg(long)]
     pub(crate) theirs: bool,
