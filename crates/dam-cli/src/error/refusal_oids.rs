@@ -18,6 +18,7 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
         | Refusal::DirtyOnPull { oid } => vec![named(oid)],
         Refusal::Labels(_)
         | Refusal::UnknownCategory(_)
+        | Refusal::NotACategoryValue { .. }
         | Refusal::NoSuchObject(_)
         | Refusal::NoWorkingObject(_)
         | Refusal::NoSuchRemote(_)

@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-use dam_domain::{Categories, Date, Expr, Object, Term, matches, parse_query};
+use dam_domain::{Date, Object, QueryError, matches, parse_query};
 
 use crate::config::Config;
 use crate::errors::{Refusal, UseCaseError};
@@ -16,9 +16,7 @@ pub fn list(
         None => None,
         Some(q) => {
             let text = config.filter(q).map(|f| f.query.as_str()).unwrap_or(q);
-            let expr = parse_query(text).map_err(|e| UseCaseError::Parse(e.to_string()))?;
-            check_categories(&expr, &config.categories)?;
-            Some(expr)
+            Some(parse_query(text, &config.categories).map_err(query_error)?)
         }
     };
     let today = clock.today();
@@ -31,20 +29,13 @@ pub fn list(
     Ok(out)
 }
 
-fn check_categories(expr: &Expr, categories: &Categories) -> Result<(), UseCaseError> {
-    match expr {
-        Expr::And(a, b) | Expr::Or(a, b) => {
-            check_categories(a, categories)?;
-            check_categories(b, categories)
+fn query_error(e: QueryError) -> UseCaseError {
+    match e {
+        QueryError::UnknownCategory(name) => Refusal::UnknownCategory(name).into(),
+        QueryError::NotAValue { category, value } => {
+            Refusal::NotACategoryValue { category, value }.into()
         }
-        Expr::Not(a) => check_categories(a, categories),
-        Expr::Term(Term::Category { name, .. }) => {
-            if categories.category_of_name(name).is_none() {
-                return Err(Refusal::UnknownCategory(name.clone()).into());
-            }
-            Ok(())
-        }
-        Expr::Term(_) => Ok(()),
+        e => UseCaseError::Query(e),
     }
 }
 
@@ -136,6 +127,27 @@ mod tests {
     }
 
     #[test]
+    fn a_category_term_refuses_a_value_of_another_category() {
+        let store = MemoryStore::new();
+        seed(&store);
+        let err = list(
+            &store,
+            &FixedClock(date(2026, 9, 18)),
+            &config(),
+            Some("effort:home"),
+        )
+        .unwrap_err();
+        assert_eq!(
+            err,
+            UseCaseError::Refused(Refusal::NotACategoryValue {
+                category: "effort".into(),
+                value: "home".into()
+            })
+        );
+        assert_eq!(err.to_string(), "home is not a value of category effort");
+    }
+
+    #[test]
     fn a_category_term_checks_the_category_exists() {
         let store = MemoryStore::new();
         seed(&store);
@@ -164,7 +176,7 @@ mod tests {
     }
 
     #[test]
-    fn a_bad_query_is_a_parse_error() {
+    fn a_bad_query_is_a_query_error_naming_what_was_typed() {
         let store = MemoryStore::new();
         let err = list(
             &store,
@@ -173,6 +185,7 @@ mod tests {
             Some("(due:today"),
         )
         .unwrap_err();
-        assert!(matches!(err, UseCaseError::Parse(_)));
+        assert_eq!(err, UseCaseError::Query(QueryError::Unclosed));
+        assert_eq!(err.to_string(), "a ( has no matching )");
     }
 }

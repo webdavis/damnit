@@ -1,8 +1,8 @@
 use super::parse::QueryError;
 use super::{DateSel, Term};
-use crate::{Kind, Oid, Path, Priority, Transparency};
+use crate::{Categories, Kind, Oid, Path, Priority, Transparency};
 
-pub(super) fn term(word: &str) -> Result<Term, QueryError> {
+pub(super) fn term(word: &str, categories: &Categories) -> Result<Term, QueryError> {
     if let Some(label) = word.strip_prefix('@') {
         return Ok(Term::Label(label.to_string()));
     }
@@ -12,6 +12,7 @@ pub(super) fn term(word: &str) -> Result<Term, QueryError> {
             .map_err(|_| bad("priority", word));
     }
     let (key, value) = match word.split_once(':') {
+        Some((_, "")) => return Err(QueryError::Unexpected(word.to_string())),
         Some(kv) => kv,
         None => {
             return match word {
@@ -46,11 +47,21 @@ pub(super) fn term(word: &str) -> Result<Term, QueryError> {
         }),
         "attached" => Term::Attached(Oid::parse(value).map_err(|_| bad(key, value))?),
         "subject" => Term::Subject(value.to_string()),
-        name => Term::Category {
-            name: name.to_string(),
-            value: value.to_string(),
-        },
+        name => category_value(name, value, categories)?,
     })
+}
+
+fn category_value(name: &str, value: &str, categories: &Categories) -> Result<Term, QueryError> {
+    let category = categories
+        .category_of_name(name)
+        .ok_or_else(|| QueryError::UnknownCategory(name.to_string()))?;
+    if !category.values.iter().any(|v| v == value) {
+        return Err(QueryError::NotAValue {
+            category: name.to_string(),
+            value: value.to_string(),
+        });
+    }
+    Ok(Term::Label(value.to_string()))
 }
 
 fn date_sel(key: &str, value: &str) -> Result<DateSel, QueryError> {

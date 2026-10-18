@@ -58,6 +58,7 @@ impl fmt::Display for UseCaseError {
             }
             UseCaseError::Editor(e) => write!(f, "editor: {}", e.0),
             UseCaseError::Parse(s) => write!(f, "{s}"),
+            UseCaseError::Query(e) => write!(f, "{e}"),
         }
     }
 }
