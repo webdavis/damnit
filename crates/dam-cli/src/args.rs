@@ -22,30 +22,45 @@ pub(crate) use writing::{DoneArgs, EditArgs, MvArgs, NewArgs, RmArgs};
 #[command(
     name = "dam",
     version,
-    about = "tasks and events, staged and committed like git"
+    about = "Track tasks and events, staged and committed like git",
+    max_term_width = 100
 )]
 pub(crate) struct Cli {
     #[arg(
         long,
         global = true,
         conflicts_with = "toon",
-        help = "Print the result as JSON, and a failure as one error document on stderr"
+        help = "Print JSON, and a failure as one error document on stderr"
     )]
     pub(crate) json: bool,
     #[arg(
         long,
         global = true,
-        help = "Print the result as TOON, a compact form for language models; errors as --json"
+        help = "Print TOON, a compact form for language models; errors as --json"
     )]
     pub(crate) toon: bool,
-    #[arg(long, global = true, env = "DAM_CONFIG", value_name = "FILE")]
+    #[arg(
+        long,
+        global = true,
+        env = "DAM_CONFIG",
+        hide_env_values = true,
+        value_name = "FILE",
+        help = "Read the config from FILE. Default: ${XDG_CONFIG_HOME:-~/.config}/dam/config.toml"
+    )]
     pub(crate) config: Option<PathBuf>,
-    #[arg(long, global = true, env = "DAM_STORE", value_name = "FILE")]
+    #[arg(
+        long,
+        global = true,
+        env = "DAM_STORE",
+        hide_env_values = true,
+        value_name = "FILE",
+        help = "Open the store at FILE. Default: ${XDG_DATA_HOME:-~/.local/share}/dam/dam.db"
+    )]
     pub(crate) store: Option<PathBuf>,
     #[arg(
         long,
         global = true,
-        help = "Answer from the local store alone: no read pulls a stale remote"
+        help = "Never pull a stale remote first; answer from the local store"
     )]
     pub(crate) no_pull: bool,
     #[command(subcommand)]
@@ -76,17 +91,17 @@ pub(crate) enum Command {
     Log,
     #[command(about = "Show one object or one commit")]
     Show(ShowArgs),
-    #[command(about = "Working versus stage versus last commit, plus remote notices")]
+    #[command(about = "Show what changed, what is staged and what a remote reported")]
     Status(StatusArgs),
-    #[command(about = "Unstaged changes, or staged with --staged")]
+    #[command(about = "Show unstaged changes, or staged ones with --staged")]
     Diff(DiffArgs),
     #[command(about = "List objects, optionally by query or saved filter")]
     Ls(LsArgs),
-    #[command(about = "Events over a window, each with whether it holds time")]
+    #[command(about = "Show events over a window, each with whether it holds time")]
     Agenda(AgendaArgs),
-    #[command(about = "The label categories config declares")]
+    #[command(about = "Read the label categories the config declares")]
     Category(CategoryArgs),
-    #[command(about = "The saved filters config declares")]
+    #[command(about = "Read the saved filters the config declares")]
     Filter(FilterArgs),
     #[command(about = "Manage remotes")]
     Remote(RemoteArgs),
