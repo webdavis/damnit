@@ -161,3 +161,21 @@ fn a_rate_limit_is_its_own_outcome_and_carries_the_retry_time() {
         "the reason is named even with no retry time: {without}"
     );
 }
+
+#[test]
+fn a_redirected_write_is_not_followed_and_the_other_host_sees_nothing() {
+    let _guard =
+        support::guard("a_redirected_write_is_not_followed_and_the_other_host_sees_nothing");
+    let elsewhere = loopback::serve(HashMap::new());
+    let target = format!("{}/sync", elsewhere.base);
+    let todoist = loopback::serve_with(move |_| {
+        loopback::Reply::new(307, serde_json::json!({})).with_header("Location", target.clone())
+    });
+    let api = TodoistApi::new(&todoist.base, "tok");
+    let err = api
+        .sync_commands(&[serde_json::json!({"type": "item_add", "uuid": "u-0", "args": {}})])
+        .unwrap_err();
+    assert!(matches!(err, ApiError::Http { status: 307, .. }), "{err:?}");
+    assert_eq!(todoist.seen.lock().unwrap().len(), 1);
+    assert!(elsewhere.seen.lock().unwrap().is_empty());
+}
