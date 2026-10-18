@@ -107,13 +107,17 @@ fn through_editor(ctx: &Context, oid: &Oid) -> Result<EditFields, CliError> {
     };
     let reopened = reopened_with_the_parse_error_as_its_first_line(&saved, &why);
     let saved = save(&reopened)?;
-    if saved == reopened {
-        return Err(CliError::Usage(why));
-    }
     if saved == original {
         return Err(CliError::Cancelled);
     }
-    parse(&saved).map_err(CliError::Usage)
+    let refused = |why: String| match editor.keep(&saved) {
+        Ok(path) => CliError::Usage(format!("{why}; your edit is kept at {}", path.display())),
+        Err(e) => CliError::Usage(format!("{why}; your edit could not be kept: {}", e.0)),
+    };
+    if saved == reopened {
+        return Err(refused(why));
+    }
+    parse(&saved).map_err(refused)
 }
 
 fn reopened_with_the_parse_error_as_its_first_line(saved: &str, why: &str) -> String {

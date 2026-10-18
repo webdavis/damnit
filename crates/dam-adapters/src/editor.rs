@@ -1,4 +1,5 @@
 use std::io::Write;
+use std::path::PathBuf;
 use std::process::Command;
 
 use dam_application::{EditorError, EditorSession};
@@ -43,14 +44,7 @@ impl EditorSession for EnvEditor {
             .command
             .split_first()
             .ok_or_else(|| EditorError("no editor configured; set VISUAL or EDITOR".into()))?;
-        let mut file = tempfile::Builder::new()
-            .prefix("dam-edit-")
-            .suffix(".toml")
-            .tempfile()
-            .map_err(|e| EditorError(e.to_string()))?;
-        file.write_all(text.as_bytes())
-            .map_err(|e| EditorError(e.to_string()))?;
-        file.flush().map_err(|e| EditorError(e.to_string()))?;
+        let file = file_holding(text)?;
         let status = Command::new(program)
             .args(args)
             .arg(file.path())
@@ -61,6 +55,25 @@ impl EditorSession for EnvEditor {
         }
         std::fs::read_to_string(file.path()).map_err(|e| EditorError(e.to_string()))
     }
+
+    fn keep(&self, saved: &str) -> Result<PathBuf, EditorError> {
+        file_holding(saved)?
+            .keep()
+            .map(|(_, path)| path)
+            .map_err(|e| EditorError(e.to_string()))
+    }
+}
+
+fn file_holding(text: &str) -> Result<tempfile::NamedTempFile, EditorError> {
+    let mut file = tempfile::Builder::new()
+        .prefix("dam-edit-")
+        .suffix(".toml")
+        .tempfile()
+        .map_err(|e| EditorError(e.to_string()))?;
+    file.write_all(text.as_bytes())
+        .map_err(|e| EditorError(e.to_string()))?;
+    file.flush().map_err(|e| EditorError(e.to_string()))?;
+    Ok(file)
 }
 
 #[cfg(test)]
@@ -89,6 +102,13 @@ mod tests {
             "dam-test".into(),
         ]);
         assert_eq!(editor.edit("original\n").unwrap(), "original\nedited\n");
+    }
+
+    #[test]
+    fn a_kept_save_stays_on_disk_with_its_text() {
+        let path = EnvEditor::with_command(vec![]).keep("typed\n").unwrap();
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "typed\n");
+        std::fs::remove_file(path).unwrap();
     }
 
     #[test]

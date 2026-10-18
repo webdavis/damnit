@@ -56,10 +56,10 @@ impl Prompt for ScriptedPrompt {
 
 pub(crate) type Save = Box<dyn Fn(&str) -> String>;
 
-pub(crate) struct ScriptedEditor(RefCell<Vec<Save>>);
+pub(crate) struct ScriptedEditor(RefCell<Vec<Save>>, tempfile::TempDir);
 impl ScriptedEditor {
     pub(crate) fn saving(saves: Vec<Save>) -> ScriptedEditor {
-        ScriptedEditor(RefCell::new(saves))
+        ScriptedEditor(RefCell::new(saves), tempfile::tempdir().unwrap())
     }
     pub(crate) fn saving_unchanged() -> ScriptedEditor {
         ScriptedEditor::saving(vec![])
@@ -73,6 +73,11 @@ impl EditorSession for ScriptedEditor {
         } else {
             saves.remove(0)(opened)
         })
+    }
+    fn keep(&self, saved: &str) -> Result<std::path::PathBuf, EditorError> {
+        let path = self.1.path().join("kept.toml");
+        std::fs::write(&path, saved).map_err(|e| EditorError(e.to_string()))?;
+        Ok(path)
     }
 }
 

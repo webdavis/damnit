@@ -110,6 +110,7 @@ fn a_bad_save_kept_as_it_was_reopened_reports_the_parse_error_not_a_cancel() {
     .unwrap_err();
     assert_eq!(err.exit_code(), 2, "{err}");
     assert!(err.to_string().contains("priority"), "{err}");
+    assert!(err.to_string().contains("; your edit is kept at "), "{err}");
 }
 
 #[test]
@@ -140,4 +141,37 @@ fn a_second_save_that_still_does_not_parse_is_refused_instead_of_reopened_foreve
     assert_eq!(err.exit_code(), 2, "{err}");
     assert!(err.to_string().contains("duplicate key"), "{err}");
     assert_eq!(opened.get(), 2, "the editor reopened more than once");
+}
+
+#[test]
+fn a_refused_second_save_keeps_the_typed_text_in_a_file_the_refusal_names() {
+    let mut ctx = context();
+    ctx.store
+        .put(&Object::Task(Task::new(oid(1), "milk")))
+        .unwrap();
+    ctx.editor = Some(Box::new(ScriptedEditor::saving(vec![
+        Box::new(|text| {
+            text.replace("body = \"\"", "body = \"a long typed note\"")
+                .replace("priority = 4", "priority = \"high\"")
+        }),
+        Box::new(|text| format!("{text}priority = \"high\"\n")),
+    ])));
+    let err = run(
+        &mut ctx,
+        EditArgs {
+            editor: true,
+            ..args(&oid(1))
+        },
+    )
+    .unwrap_err();
+    let message = err.to_string();
+    let (refusal, kept) = message
+        .split_once("; your edit is kept at ")
+        .unwrap_or_else(|| panic!("no kept file named: {message}"));
+    assert_eq!(refusal, "line 13, column 1: duplicate key");
+    assert!(
+        std::fs::read_to_string(kept)
+            .unwrap()
+            .contains("body = \"a long typed note\"")
+    );
 }
