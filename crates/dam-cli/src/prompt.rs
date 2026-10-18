@@ -80,24 +80,12 @@ fn read_stdin_on_a_thread_since_an_interrupt_cannot_break_a_blocking_read()
 
 impl Prompt for TerminalPrompt {
     fn choose(&self, question: &str, options: &[&str]) -> Result<usize, CliError> {
-        let mut err = std::io::stderr();
-        loop {
-            writeln!(err, "{question}")?;
-            for (i, o) in options.iter().enumerate() {
-                writeln!(err, "  {}) {o}", i + 1)?;
-            }
-            write!(err, "> ")?;
-            err.flush()?;
-            if let Some(n) = self
-                .answer_unless_interrupted_or_at_end_of_input()?
-                .trim()
-                .parse::<usize>()
-                .ok()
-                .filter(|n| (1..=options.len()).contains(n))
-            {
-                return Ok(n - 1);
-            }
-        }
+        choose_asking_once(
+            &mut std::io::stderr(),
+            &mut || self.answer_unless_interrupted_or_at_end_of_input(),
+            question,
+            options,
+        )
     }
 
     fn text(&self, question: &str) -> Result<String, CliError> {
@@ -110,3 +98,39 @@ impl Prompt for TerminalPrompt {
             .to_string())
     }
 }
+
+fn choose_asking_once(
+    err: &mut dyn Write,
+    answer: &mut dyn FnMut() -> Result<String, CliError>,
+    question: &str,
+    options: &[&str],
+) -> Result<usize, CliError> {
+    writeln!(err, "{question}")?;
+    for (i, o) in options.iter().enumerate() {
+        writeln!(err, "  {}) {o}", i + 1)?;
+    }
+    loop {
+        write!(err, "> ")?;
+        err.flush()?;
+        match answer()?
+            .trim()
+            .parse::<usize>()
+            .ok()
+            .filter(|n| (1..=options.len()).contains(n))
+        {
+            Some(n) => return Ok(n - 1),
+            None => writeln!(err, "answer {}", one_of_the_numbers(options.len()))?,
+        }
+    }
+}
+
+fn one_of_the_numbers(count: usize) -> String {
+    let numbers: Vec<String> = (1..=count).map(|n| n.to_string()).collect();
+    match numbers.split_last() {
+        Some((last, rest)) if !rest.is_empty() => format!("{} or {last}", rest.join(", ")),
+        _ => numbers.concat(),
+    }
+}
+
+#[cfg(test)]
+mod tests;
