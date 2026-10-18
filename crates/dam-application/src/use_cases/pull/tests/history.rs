@@ -41,5 +41,5 @@ fn a_pulled_update_records_the_object_it_replaced() {
     )
     .unwrap();
     let pulled = &store.log().unwrap()[0].changes[0];
-    assert_eq!(pulled.before, Some(old));
+    assert_eq!(pulled.before(), Some(&old));
 }

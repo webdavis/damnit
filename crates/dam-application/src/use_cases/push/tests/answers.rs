@@ -75,7 +75,7 @@ fn a_mutation_the_helper_never_answered_is_a_failure() {
     ));
     let still_unpushed = store.unpushed(&RemoteName("todoist".into())).unwrap();
     assert_eq!(still_unpushed.len(), 1);
-    assert!(still_unpushed[0].changes.iter().any(|c| c.oid == oid(2)));
+    assert!(still_unpushed[0].changes.iter().any(|c| *c.oid() == oid(2)));
 }
 
 #[test]

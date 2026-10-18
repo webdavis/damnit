@@ -20,7 +20,11 @@ pub fn restore(
     atomically(objects, || {
         let oids = each_once(oids);
         let committed = every_commit_before_writing_any(objects, &oids)?;
-        let staged: BTreeSet<Oid> = stage.staged()?.into_iter().map(|c| c.oid).collect();
+        let staged: BTreeSet<Oid> = stage
+            .staged()?
+            .into_iter()
+            .map(|c| c.oid().clone())
+            .collect();
         let mut restored = Vec::with_capacity(oids.len());
         for (oid, object) in oids.into_iter().zip(committed) {
             let changed = staged.contains(oid) || objects.get(oid)?.as_ref() != Some(&object);

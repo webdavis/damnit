@@ -151,7 +151,7 @@ fn an_unrelated_staged_object_stays_staged_after_a_pull() {
             .staged()
             .unwrap()
             .iter()
-            .map(|c| c.oid.clone())
+            .map(|c| c.oid().clone())
             .collect::<Vec<_>>(),
         vec![oid(2)]
     );

@@ -85,8 +85,8 @@ fn push_one(
             Some(mutation) => {
                 if mutation.op == MutationOp::Delete {
                     deletes.insert(mutation.oid.clone());
-                } else if let Some(after) = &change.after {
-                    after_by_oid.insert(change.oid.clone(), after.clone());
+                } else if let Some(after) = change.after() {
+                    after_by_oid.insert(change.oid().clone(), after.clone());
                 }
                 mutations.push(mutation);
             }
@@ -155,7 +155,7 @@ fn push_one(
         }
         repos.commits.set_push_retries(&remote.name, &retries)?;
         for record in &unpushed {
-            if record.changes.iter().any(|c| unanswered.contains(&c.oid)) {
+            if record.changes.iter().any(|c| unanswered.contains(c.oid())) {
                 continue;
             }
             repos.commits.mark_pushed(&remote.name, &record.id)?;

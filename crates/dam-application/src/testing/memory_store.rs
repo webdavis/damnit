@@ -100,7 +100,7 @@ impl StageRepository for MemoryStore {
         self.0
             .borrow_mut()
             .staged
-            .insert(change.oid.clone(), change);
+            .insert(change.oid().clone(), change);
         Ok(())
     }
     fn unstage(&self, oid: &Oid) -> Result<(), StoreError> {
@@ -120,11 +120,11 @@ impl CommitRepository for MemoryStore {
     fn commit(&self, record: &CommitRecord) -> Result<(), StoreError> {
         let mut inner = self.0.borrow_mut();
         for change in &record.changes {
-            match &change.after {
-                Some(after) => inner.committed.insert(change.oid.clone(), after.clone()),
-                None => inner.committed.remove(&change.oid),
+            match change.after() {
+                Some(after) => inner.committed.insert(change.oid().clone(), after.clone()),
+                None => inner.committed.remove(change.oid()),
             };
-            inner.staged.remove(&change.oid);
+            inner.staged.remove(change.oid());
         }
         inner.commits.push(record.clone());
         Ok(())

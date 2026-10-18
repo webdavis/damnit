@@ -10,57 +10,58 @@ fn task(subject: &str) -> Object {
 }
 
 #[test]
-fn diff_reports_create_update_delete_and_nothing() {
-    let a = task("a");
-    let b = task("b");
-    assert_eq!(diff(&oid(1), None, Some(&a)).unwrap().op, Op::Create);
-    assert_eq!(diff(&oid(1), Some(&a), Some(&b)).unwrap().op, Op::Update);
-    assert_eq!(diff(&oid(1), Some(&a), None).unwrap().op, Op::Delete);
-    assert!(diff(&oid(1), Some(&a), Some(&a)).is_none());
-    assert!(diff(&oid(1), None, None).is_none());
+fn a_create_then_an_update_nets_to_a_create_of_the_final_state() {
+    assert_eq!(
+        Change::between(None, Some(task("b"))),
+        Some(Change::Create { after: task("b") })
+    );
 }
 
 #[test]
-fn coalesce_create_then_update_is_a_create_of_the_final_state() {
-    let a = task("a");
-    let b = task("b");
-    let c = diff(&oid(1), None, Some(&a)).unwrap();
-    let u = diff(&oid(1), Some(&a), Some(&b)).unwrap();
-    let out = coalesce(c, u).unwrap();
-    assert_eq!(out.op, Op::Create);
-    assert_eq!(out.after, Some(b));
+fn a_create_then_a_delete_nets_to_nothing() {
+    assert_eq!(Change::between(None, None), None);
 }
 
 #[test]
-fn coalesce_create_then_delete_is_nothing() {
-    let a = task("a");
-    let c = diff(&oid(1), None, Some(&a)).unwrap();
-    let d = diff(&oid(1), Some(&a), None).unwrap();
-    assert!(coalesce(c, d).is_none());
+fn two_updates_net_to_one_from_the_first_before_to_the_last_after() {
+    assert_eq!(
+        Change::between(Some(task("a")), Some(task("c"))),
+        Some(Change::Update {
+            before: task("a"),
+            after: task("c")
+        })
+    );
 }
 
 #[test]
-fn coalesce_update_then_update_keeps_the_first_before() {
-    let a = task("a");
-    let b = task("b");
-    let c = task("c");
-    let u1 = diff(&oid(1), Some(&a), Some(&b)).unwrap();
-    let u2 = diff(&oid(1), Some(&b), Some(&c)).unwrap();
-    let out = coalesce(u1, u2).unwrap();
-    assert_eq!(out.op, Op::Update);
-    assert_eq!(out.before, Some(a));
-    assert_eq!(out.after, Some(c));
+fn an_update_then_a_delete_nets_to_a_delete_of_the_original() {
+    assert_eq!(
+        Change::between(Some(task("a")), None),
+        Some(Change::Delete { before: task("a") })
+    );
 }
 
 #[test]
-fn coalesce_update_then_delete_is_a_delete_of_the_original() {
-    let a = task("a");
-    let b = task("b");
-    let u = diff(&oid(1), Some(&a), Some(&b)).unwrap();
-    let d = diff(&oid(1), Some(&b), None).unwrap();
-    let out = coalesce(u, d).unwrap();
-    assert_eq!(out.op, Op::Delete);
-    assert_eq!(out.before, Some(a));
+fn an_edit_then_its_undo_nets_to_nothing() {
+    assert_eq!(Change::between(Some(task("a")), Some(task("a"))), None);
+}
+
+#[test]
+fn each_change_reads_its_op_sides_and_oid_from_its_variant() {
+    let update = Change::Update {
+        before: task("a"),
+        after: task("b"),
+    };
+    assert_eq!(update.op(), Op::Update);
+    assert_eq!(update.before(), Some(&task("a")));
+    assert_eq!(update.after(), Some(&task("b")));
+    assert_eq!(update.oid(), &oid(1));
+    assert_eq!(update.object(), &task("b"));
+    let delete = Change::Delete { before: task("a") };
+    assert_eq!((delete.op(), delete.after()), (Op::Delete, None));
+    assert_eq!(delete.object(), &task("a"));
+    let create = Change::Create { after: task("a") };
+    assert_eq!((create.op(), create.before()), (Op::Create, None));
 }
 
 #[test]

@@ -12,9 +12,7 @@ mod weekday;
 mod when;
 
 pub use category::{Categories, Category, CategoryError, LabelViolation};
-pub use change::{
-    Change, CommitId, CommitRecord, Op, changed_fields, coalesce, diff, touched_fields,
-};
+pub use change::{Change, CommitId, CommitRecord, Op, changed_fields, touched_fields};
 pub use completion::{
     Blocker, ChildDisposition, DependencyDisposition, Dispositions, Force, Tracked, blockers,
     cycle_in,

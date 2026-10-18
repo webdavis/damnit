@@ -1,4 +1,4 @@
-use dam_domain::{Change, CommitId, CommitRecord, Oid, Op};
+use dam_domain::{Change, CommitId, CommitRecord, Oid};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{Clock, CommitRepository, ConflictRepository, ObjectRepository, Randomness};
@@ -32,12 +32,7 @@ pub fn resolve(
             }
             Side::Ours => ("ours", conflict.theirs, conflict.ours),
         };
-        let resolution = Change {
-            oid: oid.clone(),
-            op: Op::Update,
-            before: Some(before),
-            after: Some(after),
-        };
+        let resolution = Change::Update { before, after };
         let message = format!("resolve {} with {word}", oid.short());
         commit_as_the_last_unpushed_word(commits, clock, random, message, resolution)?;
         conflicts.clear_conflict(oid)?;

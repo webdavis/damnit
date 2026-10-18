@@ -1,4 +1,4 @@
-use dam_domain::{Change, CommitId, CommitRecord, Oid, diff};
+use dam_domain::{Change, CommitId, CommitRecord, Oid};
 
 use super::PullReport;
 use super::classify::Incoming;
@@ -26,7 +26,7 @@ pub(super) fn land(
                     .remote_tracking
                     .set_remote_snapshot(&remote.name, &o)?;
                 let committed = repos.objects.committed(&oid)?;
-                landed.extend(diff(&oid, committed.as_ref(), Some(&o)));
+                landed.extend(Change::between(committed, Some(o.clone())));
                 if is_create {
                     report.created += 1
                 } else {

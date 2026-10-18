@@ -27,9 +27,9 @@ fn an_edit_after_staging_shows_as_unstaged_on_top_of_the_stage() {
     t.base_mut().subject = "b".into();
     store.put(&t).unwrap();
     let s = status(repos, &[]).unwrap();
-    assert_eq!(s.staged[0].after.as_ref().unwrap().base().subject, "a");
-    assert_eq!(s.unstaged[0].op, Op::Update);
-    assert_eq!(s.unstaged[0].after.as_ref().unwrap().base().subject, "b");
+    assert_eq!(s.staged[0].after().unwrap().base().subject, "a");
+    assert_eq!(s.unstaged[0].op(), Op::Update);
+    assert_eq!(s.unstaged[0].after().unwrap().base().subject, "b");
 }
 
 #[test]
@@ -118,10 +118,10 @@ fn a_working_delete_not_yet_staged_shows_as_an_unstaged_delete() {
     store.delete(&oid(1)).unwrap();
     let s = diff_working(&store, &store, &store).unwrap();
     assert_eq!(s.len(), 1);
-    assert_eq!(s[0].op, Op::Delete);
+    assert_eq!(s[0].op(), Op::Delete);
     let staged = crate::use_cases::stage::add_all(&store, &store, &store).unwrap();
     assert_eq!(staged.len(), 1);
-    assert_eq!(staged[0].op, Op::Delete);
+    assert_eq!(staged[0].op(), Op::Delete);
 }
 
 fn commit_one(store: &MemoryStore, object: Object, seed: u8) -> CommitId {

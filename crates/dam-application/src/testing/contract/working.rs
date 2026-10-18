@@ -1,5 +1,5 @@
 use crate::ports::{ObjectRepository, StageRepository};
-use dam_domain::{Change, Object, Oid, Op, Path};
+use dam_domain::{Change, Object, Oid, Path};
 
 use super::{oid, task};
 
@@ -102,10 +102,7 @@ pub fn stage_repository_contract(stage: &dyn StageRepository) {
 }
 
 fn staged_create(byte: u8, subject: &str) -> Change {
-    Change {
-        oid: oid(byte),
-        op: Op::Create,
-        before: None,
-        after: Some(task(byte, subject, "")),
+    Change::Create {
+        after: task(byte, subject, ""),
     }
 }

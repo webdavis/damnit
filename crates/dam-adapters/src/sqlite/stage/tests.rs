@@ -1,6 +1,6 @@
 use crate::SqliteStore;
 use dam_application::{CommitRepository, ObjectRepository, RemoteName, StageRepository};
-use dam_domain::{CommitId, CommitRecord, Object, Oid, Path, Task, diff};
+use dam_domain::{Change, CommitId, CommitRecord, Object, Oid, Path, Task};
 
 fn oid(b: u8) -> Oid {
     Oid::generate(&mut |x: &mut [u8]| x.fill(b))
@@ -12,7 +12,7 @@ fn task(b: u8, path: &str) -> Object {
     Object::Task(t)
 }
 
-fn record(b: u8, changes: Vec<dam_domain::Change>) -> CommitRecord {
+fn record(b: u8, changes: Vec<Change>) -> CommitRecord {
     CommitRecord {
         id: CommitId::generate(&mut |x| x.fill(b)),
         message: "m".into(),
@@ -44,8 +44,7 @@ fn commit_moves_the_stage_into_history() {
     let s = SqliteStore::in_memory().unwrap();
     let a = task(1, "");
     s.put(&a).unwrap();
-    s.put_staged(diff(&oid(1), None, Some(&a)).unwrap())
-        .unwrap();
+    s.put_staged(Change::Create { after: a.clone() }).unwrap();
     s.commit(&record(9, s.staged().unwrap())).unwrap();
     assert!(s.staged().unwrap().is_empty());
     assert_eq!(s.committed(&oid(1)).unwrap(), Some(a));

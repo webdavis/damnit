@@ -1,5 +1,5 @@
 use crate::ports::{CommitRepository, RemoteTrackingRepository, StageRepository};
-use dam_domain::{Change, CommitRecord, Op, Timestamp};
+use dam_domain::{Change, CommitRecord, Timestamp};
 
 use super::{commit_id, oid, remote, task};
 
@@ -80,11 +80,8 @@ pub(super) fn record(byte: u8, message: &str, object: u8) -> CommitRecord {
         id: commit_id(byte),
         message: message.to_string(),
         at: Timestamp::UNIX_EPOCH,
-        changes: vec![Change {
-            oid: oid(object),
-            op: Op::Create,
-            before: None,
-            after: Some(task(object, message, "")),
+        changes: vec![Change::Create {
+            after: task(object, message, ""),
         }],
     }
 }

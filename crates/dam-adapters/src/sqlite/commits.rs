@@ -30,41 +30,41 @@ impl SqliteStore {
             )
             .map_err(sql)?;
         for (ord, change) in record.changes.iter().enumerate() {
-            let before = change.before.as_ref().map(object_to_json).transpose()?;
-            let after = change.after.as_ref().map(object_to_json).transpose()?;
+            let before = change.before().map(object_to_json).transpose()?;
+            let after = change.after().map(object_to_json).transpose()?;
             self.conn.execute(
                 "INSERT INTO commit_changes (commit_id, ord, oid, op, before_json, after_json) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
                 params![
                     record.id.as_str(),
                     ord as i64,
-                    change.oid.as_str(),
-                    op_to_text(change.op),
+                    change.oid().as_str(),
+                    op_to_text(change.op()),
                     before,
                     after
                 ],
             )
             .map_err(sql)?;
-            match &change.after {
+            match change.after() {
                 Some(after) => self
                     .conn
                     .execute(
                         "INSERT INTO committed (oid, json) VALUES (?1, ?2)
                          ON CONFLICT(oid) DO UPDATE SET json = excluded.json",
-                        params![change.oid.as_str(), object_to_json(after)?],
+                        params![change.oid().as_str(), object_to_json(after)?],
                     )
                     .map_err(sql)?,
                 None => self
                     .conn
                     .execute(
                         "DELETE FROM committed WHERE oid = ?1",
-                        params![change.oid.as_str()],
+                        params![change.oid().as_str()],
                     )
                     .map_err(sql)?,
             };
             self.conn
                 .execute(
                     "DELETE FROM stage WHERE oid = ?1",
-                    params![change.oid.as_str()],
+                    params![change.oid().as_str()],
                 )
                 .map_err(sql)?;
         }
@@ -107,7 +107,7 @@ impl SqliteStore {
         let mut stmt = self
             .conn
             .prepare(
-                "SELECT oid, op, before_json, after_json FROM commit_changes WHERE commit_id = ?1 ORDER BY ord",
+                "SELECT op, before_json, after_json FROM commit_changes WHERE commit_id = ?1 ORDER BY ord",
             )
             .map_err(sql)?;
         read_changes(&mut stmt, params![commit_id])

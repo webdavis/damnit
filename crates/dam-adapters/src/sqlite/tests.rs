@@ -88,11 +88,8 @@ fn staging_inside_an_open_unit_rolls_back_with_it() {
     let dir = tempfile::tempdir().unwrap();
     let store = SqliteStore::open(&dir.path().join("dam.db")).unwrap();
     let oid = dam_domain::Oid::generate(&mut |b: &mut [u8]| b.fill(7));
-    let change = dam_domain::Change {
-        oid: oid.clone(),
-        op: dam_domain::Op::Create,
-        before: None,
-        after: Some(dam_domain::Object::Task(dam_domain::Task::new(oid, "milk"))),
+    let change = dam_domain::Change::Create {
+        after: dam_domain::Object::Task(dam_domain::Task::new(oid, "milk")),
     };
     let outcome = store.in_savepoint::<(), StoreError>("dam_test", || {
         store.put_staged(change.clone())?;

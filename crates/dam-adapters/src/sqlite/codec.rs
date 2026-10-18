@@ -33,18 +33,22 @@ pub(super) fn op_from_text(s: &str) -> Result<Op, StoreError> {
     }
 }
 
-pub(super) fn change_from_row(
-    oid: &str,
+fn change_from_row(
     op: &str,
     before: Option<String>,
     after: Option<String>,
 ) -> Result<Change, StoreError> {
-    Ok(Change {
-        oid: Oid::parse(oid).map_err(|e| StoreError::Failed(e.to_string()))?,
-        op: op_from_text(op)?,
-        before: before.map(|j| object_from_json(&j)).transpose()?,
-        after: after.map(|j| object_from_json(&j)).transpose()?,
-    })
+    let op = op_from_text(op)?;
+    let before = before.map(|j| object_from_json(&j)).transpose()?;
+    let after = after.map(|j| object_from_json(&j)).transpose()?;
+    Change::between(before, after)
+        .filter(|change| change.op() == op)
+        .ok_or_else(|| {
+            StoreError::Failed(format!(
+                "stored {} change disagrees with its before and after",
+                op_to_text(op)
+            ))
+        })
 }
 
 pub(super) fn read_changes(
@@ -54,15 +58,14 @@ pub(super) fn read_changes(
     stmt.query_map(params, |r| {
         Ok((
             r.get::<_, String>(0)?,
-            r.get::<_, String>(1)?,
+            r.get::<_, Option<String>>(1)?,
             r.get::<_, Option<String>>(2)?,
-            r.get::<_, Option<String>>(3)?,
         ))
     })
     .map_err(sql)?
     .map(|r| {
         r.map_err(sql)
-            .and_then(|(o, op, b, a)| change_from_row(&o, &op, b, a))
+            .and_then(|(op, b, a)| change_from_row(&op, b, a))
     })
     .collect()
 }
@@ -209,6 +212,32 @@ mod tests {
             assert_eq!(op_from_text(op_to_text(op)).unwrap(), op);
         }
         assert!(op_from_text("bogus").is_err());
+    }
+
+    #[test]
+    fn a_stored_change_reads_back_only_when_its_op_agrees_with_its_sides() {
+        let milk = object_to_json(&Object::Task(Task::new(oid(1), "milk"))).unwrap();
+        let oat = object_to_json(&Object::Task(Task::new(oid(1), "oat milk"))).unwrap();
+        assert_eq!(
+            change_from_row("update", Some(milk.clone()), Some(oat.clone()))
+                .unwrap()
+                .op(),
+            Op::Update
+        );
+        for (op, before, after) in [
+            ("update", None, Some(oat.clone())),
+            ("create", Some(milk.clone()), Some(oat)),
+            ("update", Some(milk.clone()), Some(milk.clone())),
+            ("delete", None, Some(milk)),
+            ("create", None, None),
+        ] {
+            assert_eq!(
+                change_from_row(op, before, after),
+                Err(StoreError::Failed(format!(
+                    "stored {op} change disagrees with its before and after"
+                )))
+            );
+        }
     }
 
     #[test]

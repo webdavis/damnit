@@ -9,12 +9,60 @@ pub enum Op {
     Delete,
 }
 
+#[allow(
+    clippy::large_enum_variant,
+    reason = "every variant holds its sides by value, with no indirection"
+)]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Change {
-    pub oid: Oid,
-    pub op: Op,
-    pub before: Option<Object>,
-    pub after: Option<Object>,
+pub enum Change {
+    Create { after: Object },
+    Update { before: Object, after: Object },
+    Delete { before: Object },
+}
+
+impl Change {
+    pub fn between(before: Option<Object>, after: Option<Object>) -> Option<Change> {
+        match (before, after) {
+            (None, None) => None,
+            (None, Some(after)) => Some(Change::Create { after }),
+            (Some(before), None) => Some(Change::Delete { before }),
+            (Some(before), Some(after)) if before == after => None,
+            (Some(before), Some(after)) => Some(Change::Update { before, after }),
+        }
+    }
+
+    pub fn op(&self) -> Op {
+        match self {
+            Change::Create { .. } => Op::Create,
+            Change::Update { .. } => Op::Update,
+            Change::Delete { .. } => Op::Delete,
+        }
+    }
+
+    pub fn before(&self) -> Option<&Object> {
+        match self {
+            Change::Create { .. } => None,
+            Change::Update { before, .. } | Change::Delete { before } => Some(before),
+        }
+    }
+
+    pub fn after(&self) -> Option<&Object> {
+        match self {
+            Change::Create { after } | Change::Update { after, .. } => Some(after),
+            Change::Delete { .. } => None,
+        }
+    }
+
+    pub fn object(&self) -> &Object {
+        match self {
+            Change::Create { after } | Change::Update { after, .. } => after,
+            Change::Delete { before } => before,
+        }
+    }
+
+    pub fn oid(&self) -> &Oid {
+        self.object().oid()
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -50,49 +98,6 @@ pub struct CommitRecord {
     pub message: String,
     pub at: Timestamp,
     pub changes: Vec<Change>,
-}
-
-pub fn diff(oid: &Oid, before: Option<&Object>, after: Option<&Object>) -> Option<Change> {
-    let op = match (before, after) {
-        (None, None) => return None,
-        (None, Some(_)) => Op::Create,
-        (Some(_), None) => Op::Delete,
-        (Some(b), Some(a)) if b == a => return None,
-        (Some(_), Some(_)) => Op::Update,
-    };
-    Some(Change {
-        oid: oid.clone(),
-        op,
-        before: before.cloned(),
-        after: after.cloned(),
-    })
-}
-
-pub fn coalesce(first: Change, second: Change) -> Option<Change> {
-    let oid = first.oid.clone();
-    match (first.op, second.op) {
-        (Op::Create, Op::Delete) => None,
-        (Op::Create, Op::Update) => Some(Change {
-            oid,
-            op: Op::Create,
-            before: None,
-            after: second.after,
-        }),
-        (Op::Update, Op::Update) => Some(Change {
-            oid,
-            op: Op::Update,
-            before: first.before,
-            after: second.after,
-        }),
-        (Op::Update, Op::Delete) => Some(Change {
-            oid,
-            op: Op::Delete,
-            before: first.before,
-            after: None,
-        }),
-        (Op::Delete, Op::Create) => diff(&oid, first.before.as_ref(), second.after.as_ref()),
-        (_, _) => Some(second),
-    }
 }
 
 pub fn changed_fields(before: &Object, after: &Object) -> Vec<Field> {
@@ -184,10 +189,10 @@ pub fn changed_fields(before: &Object, after: &Object) -> Vec<Field> {
 }
 
 pub fn touched_fields(change: &Change) -> Vec<Field> {
-    match (&change.before, &change.after) {
-        (Some(before), Some(after)) => changed_fields(before, after),
-        (None, Some(after)) => fields_a_create_sets(after),
-        _ => Vec::new(),
+    match change {
+        Change::Update { before, after } => changed_fields(before, after),
+        Change::Create { after } => fields_a_create_sets(after),
+        Change::Delete { .. } => Vec::new(),
     }
 }
 
