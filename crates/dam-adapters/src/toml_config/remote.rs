@@ -82,7 +82,7 @@ fn unknown_key(t: &StrictTable, key: &str) -> ConfigError {
     ConfigError::Invalid(format!(
         "{}. The settings are {}; a credential is <name>_command, <name>_env, or <name> with \
          <name> listed in credentials",
-        t.refuse(format_args!("unknown key {key}")),
+        t.refuse(key, format_args!("unknown key {key}")),
         SETTING_KEYS.join(", ")
     ))
 }
@@ -101,7 +101,7 @@ fn parse_credential(
     key: &str,
     value: &Value,
 ) -> Result<CredentialSpec, ConfigError> {
-    let invalid = |why: &str| ConfigError::Invalid(t.refuse(format_args!("{key} {why}")));
+    let invalid = |why: &str| ConfigError::Invalid(t.refuse(key, format_args!("{key} {why}")));
     if let Some(name) = key.strip_suffix("_command") {
         let argv = t
             .string_array(key, "an array of words")?

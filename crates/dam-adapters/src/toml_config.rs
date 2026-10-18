@@ -69,7 +69,7 @@ const SECTIONS: [&str; 4] = ["done", "remote", "category", "filter"];
 
 pub fn parse_config(text: &str) -> Result<Config, ConfigError> {
     let table = parse_toml(text).map_err(ConfigError::Syntax)?;
-    let root = StrictTable::new(&table, Place::TopLevel, &SECTIONS)?;
+    let root = StrictTable::new(text, &table, Place::TopLevel, &SECTIONS)?;
     let done_interactive = match root.section("done", &["interactive"])? {
         Some(done) => done.bool("interactive")?.unwrap_or(false),
         None => false,

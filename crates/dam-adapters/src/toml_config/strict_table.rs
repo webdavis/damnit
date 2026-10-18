@@ -3,11 +3,13 @@ use std::fmt::Display;
 use toml::{Table, Value};
 
 pub(crate) enum Place {
+    Line,
     TopLevel,
     Section(String),
 }
 
 pub(crate) struct StrictTable<'a> {
+    text: &'a str,
     table: &'a Table,
     place: Place,
 }
@@ -24,18 +26,19 @@ pub(crate) fn parse_toml(text: &str) -> Result<Table, String> {
 
 impl<'a> StrictTable<'a> {
     pub(crate) fn new(
+        text: &'a str,
         table: &'a Table,
         place: Place,
         known: &[&str],
     ) -> Result<StrictTable<'a>, String> {
-        let strict = StrictTable { table, place };
+        let strict = StrictTable { text, table, place };
         strict.only(known)?;
         Ok(strict)
     }
 
     pub(crate) fn only(&self, known: &[&str]) -> Result<(), String> {
         match self.first_unknown_key(known) {
-            Some(key) => Err(self.refuse(format_args!("unknown key {key}"))),
+            Some(key) => Err(self.refuse(key, format_args!("unknown key {key}"))),
             None => Ok(()),
         }
     }
@@ -51,8 +54,16 @@ impl<'a> StrictTable<'a> {
         self.table.iter().map(|(k, v)| (k.as_str(), v))
     }
 
-    pub(crate) fn refuse(&self, what: impl Display) -> String {
+    pub(crate) fn get(&self, key: &str) -> Option<&'a Value> {
+        self.table.get(key)
+    }
+
+    pub(crate) fn refuse(&self, key: &str, what: impl Display) -> String {
         match &self.place {
+            Place::Line => match one_based_line_of_bare_key(self.text, key) {
+                Some(line) => format!("line {line}: {what}"),
+                None => what.to_string(),
+            },
             Place::TopLevel => format!("{what} at the top level"),
             Place::Section(name) => format!("{what} in [{name}]"),
         }
@@ -81,11 +92,12 @@ impl<'a> StrictTable<'a> {
                 Value::Table(table) => Ok((
                     name.as_str(),
                     StrictTable {
+                        text: self.text,
                         table,
                         place: Place::Section(format!("{key}.{name}")),
                     },
                 )),
-                _ => Err(parent.refuse(format_args!("{name} must be a table"))),
+                _ => Err(parent.refuse(name, format_args!("{name} must be a table"))),
             })
             .collect()
     }
@@ -93,8 +105,12 @@ impl<'a> StrictTable<'a> {
     fn table_at(&self, key: &str, place: Place) -> Result<Option<StrictTable<'a>>, String> {
         match self.table.get(key) {
             None => Ok(None),
-            Some(Value::Table(table)) => Ok(Some(StrictTable { table, place })),
-            Some(_) => Err(self.refuse(format_args!("{key} must be a table"))),
+            Some(Value::Table(table)) => Ok(Some(StrictTable {
+                text: self.text,
+                table,
+                place,
+            })),
+            Some(_) => Err(self.refuse(key, format_args!("{key} must be a table"))),
         }
     }
 
@@ -102,7 +118,7 @@ impl<'a> StrictTable<'a> {
         match self.table.get(key) {
             None => Ok(None),
             Some(Value::Boolean(b)) => Ok(Some(*b)),
-            Some(_) => Err(self.refuse(format_args!("{key} must be true or false"))),
+            Some(_) => Err(self.refuse(key, format_args!("{key} must be true or false"))),
         }
     }
 
@@ -110,7 +126,7 @@ impl<'a> StrictTable<'a> {
         match self.table.get(key) {
             None => Ok(None),
             Some(Value::String(s)) => Ok(Some(s.clone())),
-            Some(_) => Err(self.refuse(format_args!("{key} must be a string"))),
+            Some(_) => Err(self.refuse(key, format_args!("{key} must be a string"))),
         }
     }
 
@@ -127,7 +143,7 @@ impl<'a> StrictTable<'a> {
             .and_then(|a| a.iter().map(|x| x.as_str().map(str::to_string)).collect());
         items
             .map(Some)
-            .ok_or_else(|| self.refuse(format_args!("{key} must be {what}")))
+            .ok_or_else(|| self.refuse(key, format_args!("{key} must be {what}")))
     }
 }
 
@@ -145,3 +161,16 @@ fn clamped_to_a_char_boundary(text: &str, offset: usize) -> usize {
     }
     end
 }
+
+fn one_based_line_of_bare_key(text: &str, key: &str) -> Option<usize> {
+    text.lines()
+        .position(|line| {
+            let line = line.trim_start();
+            line.strip_prefix(key)
+                .is_some_and(|rest| rest.trim_start().starts_with('='))
+        })
+        .map(|i| i + 1)
+}
+
+#[cfg(test)]
+mod tests;

@@ -105,7 +105,7 @@ fn a_field_belonging_to_the_other_kind_is_refused_by_name() {
 fn broken_toml_names_its_line() {
     let text = super::render_template(&task()).replace("body = \"\"", "body = \"unterminated");
     let err = super::parse_template(&text, &task(), date(2026, 9, 18), &tz()).unwrap_err();
-    assert!(err.starts_with("line 4:"), "{err}");
+    assert!(err.starts_with("line 4,"), "{err}");
 }
 
 #[test]
