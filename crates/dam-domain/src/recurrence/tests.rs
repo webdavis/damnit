@@ -29,20 +29,26 @@ fn the_widest_weekly_interval_with_weekdays_still_steps_from_any_day() {
 fn text_dam_reads_is_a_dam_rule_and_any_other_text_is_the_remotes() {
     assert_eq!(
         Recurrence::parse("every 2 weeks on mon"),
-        Recurrence::Dam(Rule::parse("every 2 weeks on mon").unwrap())
+        Recurrence::Dam {
+            text: "every 2 weeks on mon".into(),
+            rule: Rule::parse("every 2 weeks on mon").unwrap()
+        }
     );
     assert_eq!(
         Recurrence::parse("every other week"),
         Recurrence::Remote("every other week".into())
     );
-    assert_eq!(
-        Recurrence::parse("every other week").to_string(),
-        "every other week"
-    );
-    assert_eq!(
-        Recurrence::parse("every week on Monday").to_string(),
-        "every week on mon"
-    );
+}
+
+#[test]
+fn a_recurrence_displays_as_the_text_it_was_given() {
+    for text in [
+        "every other week",
+        "every week on Monday",
+        "every month on 20,5",
+    ] {
+        assert_eq!(Recurrence::parse(text).to_string(), text);
+    }
 }
 
 #[test]

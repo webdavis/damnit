@@ -2,6 +2,8 @@ mod support;
 
 use support::sandbox::Sandbox;
 
+const PULLED_EVERY_WEEK_ON_MONDAY: &str = r#"{"oid":"","remote_id":"up-1","kind":"task","subject":"water the plants","body":"","path":"","labels":[],"depends":[],"reminders":[],"recurrence":"every week on Monday","task":{"done":false,"priority":2,"due":"2026-10-05","deadline":null,"event":null},"event":null}"#;
+
 const PULLED_EVERY_OTHER_WEEK: &str = r#"{"oid":"","remote_id":"up-1","kind":"task","subject":"water the plants","body":"","path":"","labels":[],"depends":[],"reminders":[],"recurrence":"every other week","task":{"done":false,"priority":2,"due":"2026-10-01","deadline":null,"event":null},"event":null}"#;
 
 #[test]
@@ -58,4 +60,47 @@ fn a_rule_the_stepper_cannot_serve_is_refused_at_the_edit_with_one_plain_line() 
         assert_eq!(out.status.code(), Some(1), "{rule}");
         assert_eq!(String::from_utf8_lossy(&out.stderr), said);
     }
+}
+
+#[test]
+fn a_rule_is_stored_as_typed_not_as_the_parser_would_spell_it() {
+    let _guard = support::guard("a_rule_is_stored_as_typed_not_as_the_parser_would_spell_it");
+    let sb = Sandbox::new();
+    let oid = sb.new_object(&["probe"]);
+    assert!(
+        sb.dam(&["edit", &oid, "--recurrence", "every week on Monday"])
+            .0
+    );
+    let (ok, out, _) = sb.dam(&["show", &oid, "--json", "--no-pull"]);
+    assert!(ok);
+    let shown: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(shown["recurrence"], "every week on Monday");
+    assert!(
+        sb.store_bytes()
+            .contains(r#""recurrence":"every week on Monday""#)
+    );
+}
+
+#[test]
+fn a_pulled_rule_goes_back_to_the_remote_spelled_as_it_came() {
+    let _guard = support::guard("a_pulled_rule_goes_back_to_the_remote_spelled_as_it_came");
+    let sb = Sandbox::new();
+    sb.install_helper_pulling(PULLED_EVERY_WEEK_ON_MONDAY);
+    let (ok, _, err) = sb.dam(&["pull"]);
+    assert!(ok, "{err}");
+    let (ok, out, _) = sb.dam(&["ls", "--json", "--no-pull"]);
+    assert!(ok);
+    let listed: serde_json::Value = serde_json::from_str(&out).unwrap();
+    let oid = listed["objects"][0]["oid"].as_str().unwrap().to_string();
+    assert!(sb.dam(&["edit", &oid, "--due", "2026-10-12"]).0);
+    assert!(sb.dam(&["add", "-A"]).0);
+    assert!(sb.dam(&["commit", "-m", "move it"]).0);
+    let (ok, _, err) = sb.dam(&["push"]);
+    assert!(ok, "{err}");
+    let sent = sb.pushes().pop().unwrap();
+    assert_eq!(sent["mutations"][0]["fields"], serde_json::json!(["due"]));
+    assert_eq!(
+        sent["mutations"][0]["object"]["recurrence"],
+        "every week on Monday"
+    );
 }

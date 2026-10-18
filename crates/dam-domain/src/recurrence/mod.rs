@@ -71,24 +71,27 @@ pub struct Rule {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Recurrence {
-    Dam(Rule),
+    Dam { text: String, rule: Rule },
     Remote(String),
 }
 
 impl Recurrence {
+    pub fn dam(text: &str) -> Result<Recurrence, RuleError> {
+        Rule::parse(text).map(|rule| Recurrence::Dam {
+            text: text.to_string(),
+            rule,
+        })
+    }
+
     pub fn parse(text: &str) -> Recurrence {
-        match Rule::parse(text) {
-            Ok(rule) => Recurrence::Dam(rule),
-            Err(_) => Recurrence::Remote(text.to_string()),
-        }
+        Recurrence::dam(text).unwrap_or_else(|_| Recurrence::Remote(text.to_string()))
     }
 }
 
 impl std::fmt::Display for Recurrence {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Recurrence::Dam(rule) => f.write_str(&rule.to_text()),
-            Recurrence::Remote(text) => f.write_str(text),
+            Recurrence::Dam { text, .. } | Recurrence::Remote(text) => f.write_str(text),
         }
     }
 }

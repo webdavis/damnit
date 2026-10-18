@@ -88,7 +88,7 @@ fn next_due_if_recurring(task: &Task, today: Date) -> Result<Option<Date>, UseCa
         Some(Recurrence::Remote(text)) => {
             return Err(Refusal::UnreadableRecurrence(text.clone()).into());
         }
-        Some(Recurrence::Dam(rule)) => rule,
+        Some(Recurrence::Dam { rule, .. }) => rule,
     };
     let due = task.due.as_ref().map(|d| d.date()).unwrap_or(today);
     Ok(roll_forward(rule, due, today))

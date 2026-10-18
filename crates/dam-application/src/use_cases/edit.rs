@@ -1,4 +1,4 @@
-use dam_domain::{Categories, Date, Object, Oid, Priority, Recurrence, Rule, When, cycle_in};
+use dam_domain::{Categories, Date, Object, Oid, Priority, Recurrence, When, cycle_in};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
@@ -104,10 +104,9 @@ pub fn apply(object: &Object, fields: &EditFields) -> Result<Object, UseCaseErro
     if let Some(r) = &fields.recurrence {
         base.recurrence = r
             .as_deref()
-            .map(Rule::parse)
+            .map(Recurrence::dam)
             .transpose()
-            .map_err(|e| UseCaseError::Parse(e.to_string()))?
-            .map(Recurrence::Dam);
+            .map_err(|e| UseCaseError::Parse(e.to_string()))?;
     }
 
     match &mut next {
