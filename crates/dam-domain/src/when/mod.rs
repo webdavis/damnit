@@ -54,19 +54,19 @@ impl When {
             return text
                 .parse::<jiff::Zoned>()
                 .map(When::At)
-                .map_err(|e| friendly_hint_with_cause(text, &e));
+                .map_err(|_| friendly_hint(text));
         }
         if names_a_local_time {
             return text
                 .parse::<jiff::civil::DateTime>()
-                .map_err(|e| friendly_hint_with_cause(text, &e))?
+                .map_err(|_| friendly_hint(text))?
                 .to_zoned(tz.clone())
                 .map(When::At)
-                .map_err(|e| friendly_hint_with_cause(text, &e));
+                .map_err(|_| friendly_hint(text));
         }
         text.parse::<Date>()
             .map(When::Day)
-            .map_err(|e| friendly_hint_with_cause(text, &e))
+            .map_err(|_| friendly_hint(text))
     }
 
     pub fn to_text(&self) -> String {
@@ -77,9 +77,9 @@ impl When {
     }
 }
 
-fn friendly_hint_with_cause(text: &str, cause: &dyn std::fmt::Display) -> WhenError {
+fn friendly_hint(text: &str) -> WhenError {
     WhenError(format!(
-        "cannot read {text:?} as a date; use {}, YYYY-MM-DD or YYYY-MM-DDTHH:MM: {cause}",
+        "cannot read {text:?} as a date; use {}, YYYY-MM-DD or YYYY-MM-DDTHH:MM",
         words::ACCEPTED_FORMS
     ))
 }

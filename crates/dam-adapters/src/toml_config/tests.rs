@@ -145,6 +145,24 @@ fn a_misspelled_section_is_refused_rather_than_dropped() {
 }
 
 #[test]
+fn a_missing_key_is_named_with_its_table() {
+    let missing = [
+        (
+            "[remote.x]\nstale = \"1m\"\n",
+            "config: url is missing in [remote.x]",
+        ),
+        (
+            "[category.c]\nexclusive = true\n",
+            "config: values is missing in [category.c]",
+        ),
+        ("[filter.f]\n", "config: query is missing in [filter.f]"),
+    ];
+    for (text, why) in missing {
+        assert_eq!(parse_config(text).unwrap_err().to_string(), why);
+    }
+}
+
+#[test]
 fn a_misspelled_done_key_is_refused_by_name() {
     let err = parse_config("[done]\ninteractve = true\n").unwrap_err();
     assert_eq!(err.to_string(), "config: unknown key interactve in [done]");

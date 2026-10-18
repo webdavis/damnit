@@ -103,7 +103,7 @@ fn parse_filter(name: &str, t: &StrictTable) -> Result<FilterConfig, ConfigError
     t.only(&["query"])?;
     let query = t
         .string("query")?
-        .ok_or_else(|| ConfigError::Invalid(format!("filter.{name} needs a query string")))?;
+        .ok_or_else(|| ConfigError::Invalid(t.refuse("query", "query is missing")))?;
     Ok(FilterConfig {
         name: name.to_string(),
         query,
@@ -114,7 +114,7 @@ fn parse_category(name: &str, t: &StrictTable) -> Result<Category, ConfigError> 
     t.only(&["values", "exclusive"])?;
     let values = t
         .string_array("values", "an array of strings")?
-        .ok_or_else(|| ConfigError::Invalid(format!("category.{name} needs values")))?;
+        .ok_or_else(|| ConfigError::Invalid(t.refuse("values", "values is missing")))?;
     let exclusive = t.bool("exclusive")?.unwrap_or(false);
     Ok(Category {
         name: name.to_string(),

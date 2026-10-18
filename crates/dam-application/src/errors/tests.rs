@@ -1,11 +1,15 @@
 use super::*;
-use dam_domain::{LabelViolation, Oid};
+use dam_domain::{Blocker, LabelViolation, Oid, Tracked};
 
 fn oid() -> Oid {
-    Oid::generate(&mut |x: &mut [u8]| x.fill(1))
+    oid_of(1)
 }
 
-const HAND_COUNTED_RULES: usize = 22;
+fn oid_of(byte: u8) -> Oid {
+    Oid::generate(&mut |x: &mut [u8]| x.fill(byte))
+}
+
+const HAND_COUNTED_RULES: usize = 23;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -29,8 +33,9 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::MissingCredential { .. } => 17,
         Refusal::StaleRemote { .. } => 18,
         Refusal::RemoteExists(_) => 19,
-        Refusal::UnreadableRecurrence(_) => 20,
+        Refusal::UnreadableRecurrence { .. } => 20,
         Refusal::NotACategoryValue { .. } => 21,
+        Refusal::NoConflict(_) => 22,
     }
 }
 
@@ -38,7 +43,7 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
     vec![
         Refusal::Blocked {
             oid: oid(),
-            blockers: vec![],
+            blockers: vec![Blocker::OpenChild(oid_of(2))],
         },
         Refusal::Cycle {
             oid: oid(),
@@ -72,11 +77,15 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
             age: None,
             limit: 60,
         },
-        Refusal::UnreadableRecurrence("every other week".into()),
+        Refusal::UnreadableRecurrence {
+            rule: "every other week".into(),
+            tracked: Tracked::No,
+        },
         Refusal::NotACategoryValue {
             category: "effort".into(),
             value: "home".into(),
         },
+        Refusal::NoConflict(oid()),
     ]
 }
 
@@ -128,4 +137,42 @@ fn every_name_is_lower_snake_case_and_says_something() {
             "{name} is not snake_case"
         );
     }
+}
+
+#[test]
+fn no_refusal_spans_more_than_one_line() {
+    for refusal in one_sample_of_every_refusal() {
+        let text = refusal.to_string();
+        assert!(!text.contains('\n'), "{text:?}");
+    }
+}
+
+#[test]
+fn a_blocked_task_names_its_open_children_and_dependencies_in_one_line() {
+    let blocked = |blockers| Refusal::Blocked {
+        oid: oid_of(1),
+        blockers,
+    };
+    assert_eq!(
+        blocked(vec![
+            Blocker::OpenChild(oid_of(2)),
+            Blocker::OpenChild(oid_of(3)),
+            Blocker::OpenChild(oid_of(4)),
+        ])
+        .to_string(),
+        "0101010 has 3 open children: 0202020, 0303030, 0404040; pass --force to complete it anyway"
+    );
+    assert_eq!(
+        blocked(vec![Blocker::OpenDependency(oid_of(2))]).to_string(),
+        "0101010 has 1 open dependency: 0202020; pass --force to complete it anyway"
+    );
+    assert_eq!(
+        blocked(vec![
+            Blocker::OpenDependency(oid_of(3)),
+            Blocker::OpenChild(oid_of(2)),
+            Blocker::OpenDependency(oid_of(4)),
+        ])
+        .to_string(),
+        "0101010 has 1 open child: 0202020 and 2 open dependencies: 0303030, 0404040; pass --force to complete it anyway"
+    );
 }

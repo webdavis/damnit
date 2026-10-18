@@ -15,6 +15,7 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
         | Refusal::MoveInsideItself(oid)
         | Refusal::NotCompleted(oid)
         | Refusal::NotCommitted(oid)
+        | Refusal::NoConflict(oid)
         | Refusal::DirtyOnPull { oid } => vec![named(oid)],
         Refusal::Labels(_)
         | Refusal::UnknownCategory(_)
@@ -26,7 +27,7 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
         | Refusal::UnresolvedConflicts(_)
         | Refusal::MissingCredential { .. }
         | Refusal::StaleRemote { .. }
-        | Refusal::UnreadableRecurrence(_)
+        | Refusal::UnreadableRecurrence { .. }
         | Refusal::NothingToCommit
         | Refusal::NeedsAnAnswer
         | Refusal::NeedsAnEditor => Vec::new(),

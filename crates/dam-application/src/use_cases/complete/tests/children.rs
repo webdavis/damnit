@@ -12,7 +12,15 @@ fn a_root_task_with_objects_in_subfolders_has_no_children() {
     put_task(&store, 3, "another", "work/clients/acme", false);
     assert!(plan_complete(&store, &milk).unwrap().blockers.is_empty());
     assert_eq!(
-        complete(&store, &today(), &FixedRandom::new(9), &milk, Force::No).unwrap(),
+        complete(
+            &store,
+            &today(),
+            &FixedRandom::new(9),
+            &milk,
+            Force::No,
+            Tracked::No
+        )
+        .unwrap(),
         Completed::Done
     );
 }
@@ -43,7 +51,15 @@ fn open_children_and_dependencies_block_and_force_no_refuses() {
             Blocker::OpenChild(step.clone())
         ]
     );
-    let err = complete(&store, &today(), &FixedRandom::new(9), &plan, Force::No).unwrap_err();
+    let err = complete(
+        &store,
+        &today(),
+        &FixedRandom::new(9),
+        &plan,
+        Force::No,
+        Tracked::No,
+    )
+    .unwrap_err();
     assert!(matches!(
         err,
         UseCaseError::Refused(Refusal::Blocked { .. })
@@ -73,7 +89,15 @@ fn force_yes_completes_and_leaves_children_where_they_are() {
     let store = MemoryStore::new();
     let plan = put_task(&store, 1, "plan", "work", false);
     let step = put_task(&store, 2, "step", "work/plan", false);
-    complete(&store, &today(), &FixedRandom::new(9), &plan, Force::Yes).unwrap();
+    complete(
+        &store,
+        &today(),
+        &FixedRandom::new(9),
+        &plan,
+        Force::Yes,
+        Tracked::No,
+    )
+    .unwrap();
     assert!(
         store
             .get(&plan)

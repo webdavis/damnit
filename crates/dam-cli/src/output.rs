@@ -21,11 +21,10 @@ pub(crate) struct Report {
 pub(crate) fn render(format: Format, report: &Report) -> Result<String, CliError> {
     match format {
         Format::Human => Ok(report.human.clone()),
-        Format::Json => {
-            serde_json::to_string_pretty(&report.data).map_err(|e| CliError::Io(e.to_string()))
-        }
+        Format::Json => serde_json::to_string_pretty(&report.data)
+            .map_err(|e| CliError::Internal(e.to_string())),
         Format::Toon => {
-            toon_format::encode_default(&report.data).map_err(|e| CliError::Io(e.to_string()))
+            toon_format::encode_default(&report.data).map_err(|e| CliError::Internal(e.to_string()))
         }
     }
 }
@@ -55,7 +54,7 @@ pub(crate) fn print(format: Format, report: &Report) -> Result<(), CliError> {
 }
 
 pub(crate) fn object_json(object: &Object) -> Result<serde_json::Value, CliError> {
-    serde_json::to_value(to_wire(object, None)).map_err(|e| CliError::Io(e.to_string()))
+    serde_json::to_value(to_wire(object, None)).map_err(|e| CliError::Internal(e.to_string()))
 }
 
 pub(crate) fn object_line(object: &Object) -> String {

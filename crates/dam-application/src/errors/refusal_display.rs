@@ -1,24 +1,18 @@
 use std::fmt;
 
-use dam_domain::Blocker;
+use dam_domain::{Blocker, Oid, Tracked};
 
 use super::Refusal;
 
 impl fmt::Display for Refusal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Refusal::Blocked { oid, blockers } => {
-                writeln!(f, "{} cannot be completed:", oid.short())?;
-                for b in blockers {
-                    match b {
-                        Blocker::OpenDependency(d) => {
-                            writeln!(f, "  depends on {} which is open", d.short())?
-                        }
-                        Blocker::OpenChild(c) => writeln!(f, "  child {} is open", c.short())?,
-                    }
-                }
-                f.write_str("use --force to complete it anyway, or --force --interactive to decide what happens to them")
-            }
+            Refusal::Blocked { oid, blockers } => write!(
+                f,
+                "{} has {}; pass --force to complete it anyway",
+                oid.short(),
+                open_blockers(blockers)
+            ),
             Refusal::Cycle { oid, path } => {
                 let chain: Vec<&str> = path.iter().map(|o| o.short()).collect();
                 write!(
@@ -98,10 +92,48 @@ impl fmt::Display for Refusal {
                 f,
                 "remote {remote:?} last pulled {age}s ago, longer than --max-age allows ({limit}s); run dam pull {remote}"
             ),
-            Refusal::UnreadableRecurrence(text) => write!(
+            Refusal::UnreadableRecurrence {
+                rule,
+                tracked: Tracked::ByRemote,
+            } => write!(
                 f,
-                "cannot roll {text:?} forward; complete it in Todoist or set --recurrence"
+                "cannot roll {rule:?} forward; complete it in Todoist or set --recurrence"
             ),
+            Refusal::UnreadableRecurrence {
+                rule,
+                tracked: Tracked::No,
+            } => write!(f, "cannot roll {rule:?} forward; set --recurrence"),
+            Refusal::NoConflict(o) => write!(f, "{} has no conflict to resolve", o.short()),
         }
     }
+}
+
+fn open_blockers(blockers: &[Blocker]) -> String {
+    let children: Vec<&Oid> = blockers
+        .iter()
+        .filter_map(|b| match b {
+            Blocker::OpenChild(c) => Some(c),
+            Blocker::OpenDependency(_) => None,
+        })
+        .collect();
+    let dependencies: Vec<&Oid> = blockers
+        .iter()
+        .filter_map(|b| match b {
+            Blocker::OpenDependency(d) => Some(d),
+            Blocker::OpenChild(_) => None,
+        })
+        .collect();
+    let group = |oids: &[&Oid], one: &str, many: &str| {
+        let shorts: Vec<&str> = oids.iter().map(|o| o.short()).collect();
+        let noun = if oids.len() == 1 { one } else { many };
+        format!("{} open {noun}: {}", oids.len(), shorts.join(", "))
+    };
+    let mut groups = Vec::new();
+    if !children.is_empty() {
+        groups.push(group(&children, "child", "children"));
+    }
+    if !dependencies.is_empty() {
+        groups.push(group(&dependencies, "dependency", "dependencies"));
+    }
+    groups.join(" and ")
 }

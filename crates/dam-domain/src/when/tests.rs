@@ -87,8 +87,10 @@ fn a_malformed_plain_date_gets_the_friendly_hint() {
     let today = date(2026, 9, 18);
     let tz = jiff::tz::TimeZone::UTC;
     let err = When::parse_human("someday", today, &tz).unwrap_err();
-    assert!(err.0.contains("cannot read"), "{}", err.0);
-    assert!(err.0.contains("next <weekday>"), "{}", err.0);
+    assert_eq!(
+        err.0,
+        "cannot read \"someday\" as a date; use today, tomorrow, a weekday such as mon or monday, next <weekday>, in <n> days|weeks|months, YYYY-MM-DD or YYYY-MM-DDTHH:MM"
+    );
 }
 
 #[test]
@@ -96,7 +98,11 @@ fn a_malformed_local_time_gets_the_friendly_hint() {
     let today = date(2026, 9, 18);
     let tz = jiff::tz::TimeZone::UTC;
     let err = When::parse_human("2026-13-45T09:00", today, &tz).unwrap_err();
-    assert!(err.0.contains("cannot read"), "{}", err.0);
+    assert!(
+        err.0.ends_with("YYYY-MM-DD or YYYY-MM-DDTHH:MM"),
+        "{}",
+        err.0
+    );
 }
 
 #[test]
@@ -104,5 +110,9 @@ fn a_malformed_zoned_timestamp_gets_the_friendly_hint() {
     let today = date(2026, 9, 18);
     let tz = jiff::tz::TimeZone::UTC;
     let err = When::parse_human("2026-09-25T09:00[Nowhere/Nope]", today, &tz).unwrap_err();
-    assert!(err.0.contains("cannot read"), "{}", err.0);
+    assert!(
+        err.0.ends_with("YYYY-MM-DD or YYYY-MM-DDTHH:MM"),
+        "{}",
+        err.0
+    );
 }

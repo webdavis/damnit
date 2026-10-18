@@ -1,4 +1,4 @@
-use dam_domain::{Blocker, LabelViolation, Oid, QueryError};
+use dam_domain::{Blocker, LabelViolation, Oid, QueryError, Tracked};
 
 use crate::ports::{CredentialError, EditorError, HelperError, StoreError};
 
@@ -46,7 +46,11 @@ pub enum Refusal {
         age: Option<u64>,
         limit: u64,
     },
-    UnreadableRecurrence(String),
+    UnreadableRecurrence {
+        rule: String,
+        tracked: Tracked,
+    },
+    NoConflict(Oid),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -84,7 +88,8 @@ impl Refusal {
             Refusal::UnresolvedConflicts(_) => "unresolved_conflicts",
             Refusal::MissingCredential { .. } => "missing_credential",
             Refusal::StaleRemote { .. } => "stale_remote",
-            Refusal::UnreadableRecurrence(_) => "unreadable_recurrence",
+            Refusal::UnreadableRecurrence { .. } => "unreadable_recurrence",
+            Refusal::NoConflict(_) => "no_conflict",
         }
     }
 }

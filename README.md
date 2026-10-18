@@ -221,11 +221,12 @@ With `--json` or `--toon` a failure prints one document on standard error and no
 output:
 
     {"error": {"kind": "refused", "rule": "blocked",
-     "message": "98d8780 cannot be completed: child a9db854 is open",
+     "message": "98d8780 has 1 open child: a9db854; pass --force to complete it anyway",
      "oids": ["98d878013fb0e026d37170e7ceed6707192ae99a",
               "a9db854060d1943ef9eb9f6d7a8ac0b1ace45d77"]}}
 
-`kind` is one of `refused`, `store`, `helper`, `credential`, `parse`, `usage` and `cancelled`.
+`kind` is one of `refused`, `store`, `helper`, `credential`, `editor`, `parse`, `usage`,
+`cancelled` and `internal`, the last meaning a bug in `dam` itself.
 `rule` names which rule a refusal broke, such as `blocked`, `no_such_object` or
 `nothing_to_commit`, and is null for every other kind. `oids` names the objects the message names,
 in the order it names them.
@@ -240,7 +241,7 @@ flag says. Without those flags you get the plain `dam: <message>` line instead.
 | Code | Meaning |
 |---|---|
 | 0 | The command did what it was asked. |
-| 1 | `dam` failed: a store, config, helper, editor or io failure. |
+| 1 | `dam` failed: a store, config, helper, editor or io failure, or a bug in `dam` itself. |
 | 2 | The command line was wrong: an unknown argument or subcommand, a value `dam` refuses to read, a query `dam` cannot read, or an oid prefix that names more than one object. |
 | 3 | Cancelled: you interrupted, or a prompt could not be answered. |
 | 4 | `dam` refused by one of its own rules, and the message names the rule. |

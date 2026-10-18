@@ -1,10 +1,11 @@
 mod children;
 mod dispositions;
+mod recurrence;
 
 use super::*;
 use crate::testing::prelude::*;
 use crate::testing::{FixedClock, FixedRandom, MemoryStore, oid};
-use dam_domain::{Completion, Event, Object, Path, Recurrence, Task, When};
+use dam_domain::{Completion, Event, Object, Path, Task, Tracked, When};
 use jiff::civil::date;
 
 pub(super) fn put_task(
@@ -36,7 +37,7 @@ pub(super) fn path_of(store: &MemoryStore, id: &Oid) -> String {
         .to_string()
 }
 
-fn task_of(store: &MemoryStore, id: &Oid) -> Task {
+pub(super) fn task_of(store: &MemoryStore, id: &Oid) -> Task {
     store.get(id).unwrap().unwrap().as_task().unwrap().clone()
 }
 
@@ -50,51 +51,18 @@ fn an_unblocked_task_is_done() {
     let id = put_task(&store, 1, "milk", "", false);
     assert!(plan_complete(&store, &id).unwrap().blockers.is_empty());
     assert_eq!(
-        complete(&store, &today(), &FixedRandom::new(9), &id, Force::No).unwrap(),
+        complete(
+            &store,
+            &today(),
+            &FixedRandom::new(9),
+            &id,
+            Force::No,
+            Tracked::No
+        )
+        .unwrap(),
         Completed::Done
     );
     assert!(task_of(&store, &id).completion.is_done());
-}
-
-#[test]
-fn a_recurring_task_rolls_forward_instead_of_closing() {
-    let store = MemoryStore::new();
-    let id = put_task(&store, 1, "water the plants", "", false);
-    let mut t = store.get(&id).unwrap().unwrap();
-    t.base_mut().recurrence = Some(Recurrence::parse("every week"));
-    if let Object::Task(task) = &mut t {
-        task.due = Some(When::Day(date(2026, 9, 18)));
-    }
-    store.put(&t).unwrap();
-    let out = complete(&store, &today(), &FixedRandom::new(9), &id, Force::No).unwrap();
-    assert_eq!(
-        out,
-        Completed::RolledForward {
-            next_due: date(2026, 9, 25)
-        }
-    );
-    let t = task_of(&store, &id);
-    assert!(!t.completion.is_done());
-    assert_eq!(t.due, Some(When::Day(date(2026, 9, 25))));
-}
-
-#[test]
-fn a_rule_dam_cannot_read_is_refused_and_the_task_stays_open() {
-    let store = MemoryStore::new();
-    let id = put_task(&store, 1, "water the plants", "", false);
-    let mut t = store.get(&id).unwrap().unwrap();
-    t.base_mut().recurrence = Some(Recurrence::parse("every other week"));
-    store.put(&t).unwrap();
-    let err = complete(&store, &today(), &FixedRandom::new(9), &id, Force::No).unwrap_err();
-    assert_eq!(
-        err,
-        UseCaseError::Refused(Refusal::UnreadableRecurrence("every other week".into()))
-    );
-    assert_eq!(
-        err.to_string(),
-        "cannot roll \"every other week\" forward; complete it in Todoist or set --recurrence"
-    );
-    assert!(!task_of(&store, &id).completion.is_done());
 }
 
 #[test]
@@ -107,7 +75,15 @@ fn an_event_is_not_a_task() {
         When::Day(date(2026, 1, 2)),
     );
     store.put(&Object::Event(e)).unwrap();
-    let err = complete(&store, &today(), &FixedRandom::new(9), &oid(5), Force::No).unwrap_err();
+    let err = complete(
+        &store,
+        &today(),
+        &FixedRandom::new(9),
+        &oid(5),
+        Force::No,
+        Tracked::No,
+    )
+    .unwrap_err();
     assert_eq!(err, UseCaseError::Refused(Refusal::NotATask(oid(5))));
 }
 
@@ -117,7 +93,15 @@ fn completing_a_task_records_when_it_happened() {
     let id = put_task(&store, 1, "milk", "", false);
     let clock = FixedClock(date(2026, 9, 18));
     assert_eq!(task_of(&store, &id).completion, Completion::Open);
-    complete(&store, &clock, &FixedRandom::new(1), &id, Force::No).unwrap();
+    complete(
+        &store,
+        &clock,
+        &FixedRandom::new(1),
+        &id,
+        Force::No,
+        Tracked::No,
+    )
+    .unwrap();
     let task = task_of(&store, &id);
     assert_eq!(
         task.completion,
@@ -128,34 +112,31 @@ fn completing_a_task_records_when_it_happened() {
 }
 
 #[test]
-fn a_task_that_rolls_forward_records_no_completion_time() {
-    let store = MemoryStore::new();
-    let mut t = Task::new(oid(1), "water the plants");
-    t.base.recurrence = Some(Recurrence::parse("every day"));
-    t.due = Some(When::Day(date(2026, 9, 18)));
-    store.put(&Object::Task(t)).unwrap();
-    complete(
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(1),
-        &oid(1),
-        Force::No,
-    )
-    .unwrap();
-    let task = task_of(&store, &oid(1));
-    assert_eq!(task.completion, Completion::Open);
-}
-
-#[test]
 fn completing_an_already_completed_task_changes_nothing() {
     let store = MemoryStore::new();
     let id = put_task(&store, 1, "milk", "", false);
     let first = FixedClock(date(2026, 9, 18));
-    complete(&store, &first, &FixedRandom::new(1), &id, Force::No).unwrap();
+    complete(
+        &store,
+        &first,
+        &FixedRandom::new(1),
+        &id,
+        Force::No,
+        Tracked::No,
+    )
+    .unwrap();
     let after_first = store.get(&id).unwrap().unwrap();
 
     let later = FixedClock(date(2026, 9, 19));
-    complete(&store, &later, &FixedRandom::new(1), &id, Force::No).unwrap();
+    complete(
+        &store,
+        &later,
+        &FixedRandom::new(1),
+        &id,
+        Force::No,
+        Tracked::No,
+    )
+    .unwrap();
     assert_eq!(
         store.get(&id).unwrap().unwrap(),
         after_first,
