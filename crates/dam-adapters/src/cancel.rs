@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 static CANCELLATION_REQUESTED: AtomicBool = AtomicBool::new(false);
 
-pub fn request_cancellation() {
+fn request_cancellation() {
     CANCELLATION_REQUESTED.store(true, Ordering::Relaxed);
 }
 

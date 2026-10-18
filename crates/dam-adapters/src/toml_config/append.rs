@@ -7,13 +7,7 @@ use toml::Value;
 
 use super::{ConfigError, parse_config};
 
-pub type OperatorWarning = String;
-
-pub fn append_remote(
-    path: &FsPath,
-    name: &str,
-    url: &str,
-) -> Result<Option<OperatorWarning>, ConfigError> {
+pub fn append_remote(path: &FsPath, name: &str, url: &str) -> Result<Option<String>, ConfigError> {
     let mut text = match std::fs::read_to_string(path) {
         Ok(t) => t,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
@@ -59,7 +53,7 @@ fn io_error(e: std::io::Error) -> ConfigError {
 fn replace_atomically_readable_by_its_owner_alone(
     path: &FsPath,
     text: &str,
-) -> Result<Option<OperatorWarning>, ConfigError> {
+) -> Result<Option<String>, ConfigError> {
     let mode_before = match std::fs::metadata(path) {
         Ok(meta) => meta.permissions().mode() & 0o777,
         Err(_) => 0,

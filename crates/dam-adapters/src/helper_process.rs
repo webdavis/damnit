@@ -29,7 +29,7 @@ impl ProcessLauncher {
         }
     }
 
-    pub fn find(&self, helper: &str) -> Option<PathBuf> {
+    fn find(&self, helper: &str) -> Option<PathBuf> {
         let name = format!("dam-remote-{helper}");
         std::env::split_paths(&self.search_path)
             .map(|dir| dir.join(&name))

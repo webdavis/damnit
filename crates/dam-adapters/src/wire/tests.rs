@@ -2,6 +2,7 @@ use super::*;
 use dam_domain::{
     Attendee, Completion, Event, Object, Oid, Priority, ResponseStatus, Task, Transparency, When,
 };
+use decode::WireError;
 use jiff::civil::date;
 
 fn oid(b: u8) -> Oid {
