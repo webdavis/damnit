@@ -80,3 +80,15 @@ fn changed_fields_reports_kind_when_a_task_and_an_event_are_compared() {
     let event = Object::Event(Event::new(oid(1), "a", start.clone(), start));
     assert_eq!(changed_fields(&task("a"), &event), vec![Field::Kind]);
 }
+
+#[test]
+fn a_change_to_the_completion_time_alone_names_done() {
+    let mut before = Task::new(oid(1), "a");
+    before.done = true;
+    let mut after = before.clone();
+    after.completed_at = Some(crate::Timestamp::UNIX_EPOCH);
+    assert_eq!(
+        changed_fields(&Object::Task(before), &Object::Task(after)),
+        vec![Field::Done]
+    );
+}

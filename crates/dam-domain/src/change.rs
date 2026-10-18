@@ -124,7 +124,7 @@ pub fn changed_fields(before: &Object, after: &Object) -> Vec<Field> {
             if b.priority != a.priority {
                 out.push(Field::Priority);
             }
-            if b.done != a.done {
+            if (b.done, b.completed_at) != (a.done, a.completed_at) {
                 out.push(Field::Done);
             }
             if b.due != a.due {
