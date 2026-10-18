@@ -33,16 +33,14 @@ fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
         priority: args.priority,
         ..EditFields::default()
     };
-    f.due = match (args.due, args.no_due) {
-        (Some(d), _) => Some(Some(when_flag(ctx, "due", &d)?)),
-        (None, true) => Some(None),
-        (None, false) => None,
-    };
-    f.deadline = match (args.deadline, args.no_deadline) {
-        (Some(d), _) => Some(Some(deadline_flag(ctx, &d)?)),
-        (None, true) => Some(None),
-        (None, false) => None,
-    };
+    f.due = set_or_clear(
+        args.due.map(|d| when_flag(ctx, "due", &d)).transpose()?,
+        args.no_due,
+    );
+    f.deadline = set_or_clear(
+        args.deadline.map(|d| deadline_flag(ctx, &d)).transpose()?,
+        args.no_deadline,
+    );
     f.undone = args.undone;
     f.add_labels = args.labels;
     f.remove_labels = args.unlabels;
@@ -56,16 +54,11 @@ fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
         .iter()
         .map(|d| oid_of("undepends", d))
         .collect::<Result<Vec<Oid>, _>>()?;
-    f.recurrence = match (args.recurrence, args.no_recurrence) {
-        (Some(r), _) => Some(Some(r)),
-        (None, true) => Some(None),
-        (None, false) => None,
-    };
-    f.attach = match (args.attach, args.detach) {
-        (Some(e), _) => Some(Some(oid_of("attach", &e)?)),
-        (None, true) => Some(None),
-        (None, false) => None,
-    };
+    f.recurrence = set_or_clear(args.recurrence, args.no_recurrence);
+    f.attach = set_or_clear(
+        args.attach.map(|e| oid_of("attach", &e)).transpose()?,
+        args.detach,
+    );
     f.start = args
         .start
         .as_deref()
@@ -76,12 +69,16 @@ fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
         .as_deref()
         .map(|s| when_flag(ctx, "end", s))
         .transpose()?;
-    f.location = match (args.location, args.no_location) {
-        (Some(l), _) => Some(Some(l)),
+    f.location = set_or_clear(args.location, args.no_location);
+    Ok(f)
+}
+
+fn set_or_clear<T>(value: Option<T>, clear: bool) -> Option<Option<T>> {
+    match (value, clear) {
+        (Some(v), _) => Some(Some(v)),
         (None, true) => Some(None),
         (None, false) => None,
-    };
-    Ok(f)
+    }
 }
 
 fn through_editor(ctx: &Context, oid: &Oid) -> Result<EditFields, CliError> {
