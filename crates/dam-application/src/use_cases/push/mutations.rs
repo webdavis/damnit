@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use dam_domain::{Change, CommitId, Field, Oid, Op, changed_fields, coalesce};
+use dam_domain::{Change, CommitId, Field, Oid, Op, changed_fields, diff};
 
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
@@ -15,7 +15,7 @@ pub(super) fn changes_to_send(
     remote: &RemoteConfig,
     unpushed: &[dam_domain::CommitRecord],
 ) -> Result<OwedChanges, UseCaseError> {
-    let mut changes = coalesced_with_the_commit_of_their_last_change(unpushed);
+    let mut changes = net_changes_with_the_commit_of_their_last_change(unpushed);
     declare_each_retry_since_the_remote_snapshot(
         objects,
         commits,
@@ -28,14 +28,14 @@ pub(super) fn changes_to_send(
 
 type OwedChanges = BTreeMap<Oid, (Change, Option<CommitId>)>;
 
-fn coalesced_with_the_commit_of_their_last_change(
+fn net_changes_with_the_commit_of_their_last_change(
     unpushed: &[dam_domain::CommitRecord],
 ) -> OwedChanges {
     let mut changes = OwedChanges::new();
     for record in unpushed {
         for change in &record.changes {
             let merged = match changes.remove(&change.oid) {
-                Some((previous, _)) => coalesce(previous, change.clone()),
+                Some((first, _)) => diff(&change.oid, first.before.as_ref(), change.after.as_ref()),
                 None => Some(change.clone()),
             };
             if let Some(c) = merged {
