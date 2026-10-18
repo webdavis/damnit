@@ -218,7 +218,7 @@ fn every_refusal_exits_four_whatever_the_rule() {
     let _guard = support::guard("every_refusal_exits_four_whatever_the_rule");
     let sb = Sandbox::new();
     let parent = sb.new_object(&["parent"]);
-    let child = sb.new_object(&["child", "--path", "parent/"]);
+    sb.new_object(&["child", "--path", "parent/"]);
 
     let refusals: Vec<(&str, Vec<&str>)> = vec![
         ("an empty stage", vec!["commit", "-m", "nothing"]),
@@ -229,7 +229,7 @@ fn every_refusal_exits_four_whatever_the_rule() {
         ("a completion with an open child", vec!["done", &parent]),
         (
             "a move into its own path",
-            vec!["mv", &child, "parent/here"],
+            vec!["mv", &parent, "parent/here"],
         ),
         (
             "an event field on a task",
