@@ -71,6 +71,7 @@ fn status_warns_once_when_a_credential_is_a_value_in_the_config_file() {
     assert_eq!(warnings.len(), 1, "{}", report.human);
     assert!(warnings[0].contains("todoist.api_token"), "{}", warnings[0]);
     assert!(!report.human.contains("SUPERSECRETTOKEN"));
+    assert_eq!(report.data["warnings"], serde_json::json!([warnings[0]]));
 }
 
 #[test]
@@ -82,6 +83,7 @@ fn status_does_not_warn_when_no_credential_is_a_value_in_the_config_file() {
     }])];
     let report = super::run_status(&mut ctx, StatusArgs { full: false }).unwrap();
     assert!(!report.human.contains("warning:"), "{}", report.human);
+    assert_eq!(report.data["warnings"], serde_json::json!([]));
 }
 
 #[test]
