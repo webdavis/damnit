@@ -1,4 +1,4 @@
-use dam_domain::{Change, CommitId, CommitRecord, Object, Oid, Op};
+use dam_domain::{Change, CommitId, CommitRecord, Oid, diff};
 
 use super::PullReport;
 use super::classify::Incoming;
@@ -25,11 +25,8 @@ pub(super) fn land(
                 repos
                     .remote_tracking
                     .set_remote_snapshot(&remote.name, &o)?;
-                landed.push((
-                    oid,
-                    if is_create { Op::Create } else { Op::Update },
-                    o.clone(),
-                ));
+                let committed = repos.objects.committed(&oid)?;
+                landed.extend(diff(&oid, committed.as_ref(), Some(&o)));
                 if is_create {
                     report.created += 1
                 } else {
@@ -58,21 +55,13 @@ fn commit_as_already_pushed(
     clock: &dyn Clock,
     random: &dyn Randomness,
     remote: &RemoteConfig,
-    landed: Vec<(Oid, Op, Object)>,
+    landed: Vec<Change>,
 ) -> Result<(), UseCaseError> {
     let record = CommitRecord {
         id: CommitId::generate(&mut |b| random.fill(b)),
         message: format!("pull from {}", remote.name.0),
         at: clock.now(),
-        changes: landed
-            .into_iter()
-            .map(|(oid, op, after)| Change {
-                oid,
-                op,
-                before: None,
-                after: Some(after),
-            })
-            .collect(),
+        changes: landed,
     };
     repos.commits.commit(&record)?;
     repos.commits.mark_pushed(&remote.name, &record.id)?;
