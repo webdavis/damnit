@@ -1,5 +1,5 @@
 use crate::SqliteStore;
-use dam_application::{CommitRepository, ObjectRepository, StageRepository};
+use dam_application::{CommitRepository, ObjectRepository, RemoteName, StageRepository};
 use dam_domain::{CommitId, CommitRecord, Object, Oid, Op, Path, Task, diff};
 
 fn oid(b: u8) -> Oid {
@@ -72,4 +72,24 @@ fn commit_clears_only_the_oids_it_touched() {
     let left = s.staged().unwrap();
     assert_eq!(left.len(), 1);
     assert_eq!(left[0].oid, oid(2));
+}
+
+#[test]
+fn unpushed_commits_come_oldest_first() {
+    let s = SqliteStore::in_memory().unwrap();
+    s.commit(&record(2, vec![])).unwrap();
+    s.commit(&record(1, vec![])).unwrap();
+    let unpushed: Vec<CommitId> = s
+        .unpushed(&RemoteName("t".into()))
+        .unwrap()
+        .into_iter()
+        .map(|r| r.id)
+        .collect();
+    assert_eq!(
+        unpushed,
+        vec![
+            CommitId::generate(&mut |x| x.fill(2)),
+            CommitId::generate(&mut |x| x.fill(1)),
+        ]
+    );
 }

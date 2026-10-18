@@ -260,3 +260,6 @@ impl RemoteTrackingRepository for SqliteStore {
         self.set_last_push_of(remote, at)
     }
 }
+
+#[cfg(test)]
+mod tests;
