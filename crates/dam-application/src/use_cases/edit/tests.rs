@@ -168,7 +168,10 @@ fn a_bad_recurrence_is_a_parse_error_and_a_good_one_is_kept() {
         },
     )
     .unwrap();
-    assert_eq!(out.base().recurrence.as_deref(), Some("every! week"));
+    assert_eq!(
+        out.base().recurrence.as_ref().map(ToString::to_string),
+        Some("every! week".into())
+    );
 }
 
 #[test]

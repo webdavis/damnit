@@ -2,8 +2,8 @@ use std::collections::BTreeSet;
 
 use dam_domain::{
     Attachment, Attendee, Base, Conference, Date, Event, EventStatus, EventType, Object, Oid,
-    OidError, Path, PathError, Person, Priority, PriorityError, Reminder, ResponseStatus, Task,
-    Timestamp, Transparency, Visibility, When,
+    OidError, Path, PathError, Person, Priority, PriorityError, Recurrence, Reminder,
+    ResponseStatus, Task, Timestamp, Transparency, Visibility, When,
 };
 use dam_protocol::{WireObject, WireTask};
 
@@ -104,7 +104,7 @@ pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
             .iter()
             .map(|m| Reminder { minutes_before: *m })
             .collect(),
-        recurrence: wire.recurrence.clone(),
+        recurrence: wire.recurrence.as_deref().map(Recurrence::parse),
     };
     match (wire.kind.as_str(), &wire.task, &wire.event) {
         ("task", Some(t), _) => Ok(Object::Task(Task {

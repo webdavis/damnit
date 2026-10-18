@@ -99,6 +99,35 @@ impl Sandbox {
             .collect()
     }
 
+    pub fn store_bytes(&self) -> String {
+        let db = self.dir.path().join("dam.db");
+        let mut bytes = std::fs::read(&db).unwrap();
+        bytes.extend(std::fs::read(db.with_extension("db-wal")).unwrap_or_default());
+        String::from_utf8_lossy(&bytes).into_owned()
+    }
+
+    pub fn install_helper_pulling(&self, task_json: &str) {
+        let script = format!(
+            r#"#!/bin/sh
+set -eu
+while IFS= read -r line; do
+  case "$line" in
+    *'"capabilities"'*) printf '{{"protocol":1,"kinds":["task"],"fields":["subject","due"],"credentials":["api_token"],"incremental":false}}\n' ;;
+    *'"pull"'*) printf '{{"objects":[{task_json}],"removed":[],"sync":null}}\n' ;;
+    *'"push"'*)
+      printf '%s\n' "$line" >> "$PUSH_LOG"
+      oid="$(printf '%s' "$line" | grep -o '"oid":"[0-9a-f]*"' | head -1 | cut -d'"' -f4)"
+      printf '{{"results":[{{"oid":"%s","ok":true,"remote_id":"up-1","why":null}}]}}\n' "$oid" ;;
+    *) printf '{{"error":"unknown request"}}\n' ;;
+  esac
+done
+"#
+        );
+        let helper = self.dir.path().join("bin/dam-remote-fake");
+        std::fs::write(&helper, script).unwrap();
+        std::fs::set_permissions(&helper, std::fs::Permissions::from_mode(0o755)).unwrap();
+    }
+
     pub fn install_silent_helper(&self) {
         let helper = self.dir.path().join("bin/dam-remote-fake");
         std::fs::write(&helper, "#!/bin/sh\nwhile :; do sleep 0.05; done\n").unwrap();

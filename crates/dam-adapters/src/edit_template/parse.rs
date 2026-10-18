@@ -60,7 +60,7 @@ pub fn parse_template(
     depends(&reader, current, &mut fields)?;
     if let Some(s) = reader.string("recurrence")? {
         let value = (!s.is_empty()).then_some(s);
-        if value != b.recurrence {
+        if value != b.recurrence.as_ref().map(ToString::to_string) {
             fields.recurrence = Some(value);
         }
     }

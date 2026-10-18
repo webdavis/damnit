@@ -27,6 +27,6 @@ pub use oid::{Oid, OidError};
 pub use path::{Path, PathError};
 pub use priority::{Priority, PriorityError};
 pub use query::{DateSel, Expr, QueryError, Term, matches, parse as parse_query};
-pub use recurrence::{Anchor, Freq, Rule, RuleError, roll_forward};
+pub use recurrence::{Anchor, Freq, Recurrence, Rule, RuleError, roll_forward};
 pub use weekday::{parse_weekday, weekday_text};
 pub use when::{Date, Timestamp, When, WhenError};

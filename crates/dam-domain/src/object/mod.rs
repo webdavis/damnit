@@ -4,7 +4,7 @@ mod task;
 
 use std::collections::BTreeSet;
 
-use crate::{Oid, Path};
+use crate::{Oid, Path, Recurrence};
 
 pub use event::{
     Attachment, Attendee, Conference, Event, EventStatus, EventType, Person, ResponseStatus,
@@ -55,7 +55,7 @@ pub struct Base {
     pub labels: BTreeSet<String>,
     pub depends: Vec<Oid>,
     pub reminders: Vec<Reminder>,
-    pub recurrence: Option<String>,
+    pub recurrence: Option<Recurrence>,
 }
 
 impl Base {

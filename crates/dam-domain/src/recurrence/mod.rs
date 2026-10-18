@@ -1,11 +1,14 @@
+mod error;
 mod parse;
+
+use std::num::NonZeroU32;
 
 use jiff::civil::Weekday;
 use jiff::{Span, ToSpan};
 
 use crate::Date;
 
-pub use parse::RuleError;
+pub use error::RuleError;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Freq {
@@ -58,21 +61,47 @@ pub enum Anchor {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Rule {
-    pub freq: Freq,
-    pub interval: u32,
-    pub by_day: Vec<Weekday>,
-    pub by_month_day: Vec<i8>,
-    pub until: Option<Date>,
-    pub anchor: Anchor,
+    freq: Freq,
+    interval: NonZeroU32,
+    by_day: Vec<Weekday>,
+    by_month_day: Vec<i8>,
+    until: Option<Date>,
+    anchor: Anchor,
 }
 
-const MAX_DAYS_SCANNED_BEFORE_GIVING_UP: i32 = 366 * 4;
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Recurrence {
+    Dam { text: String, rule: Rule },
+    Remote(String),
+}
+
+impl Recurrence {
+    pub fn dam(text: &str) -> Result<Recurrence, RuleError> {
+        Rule::parse(text).map(|rule| Recurrence::Dam {
+            text: text.to_string(),
+            rule,
+        })
+    }
+
+    pub fn parse(text: &str) -> Recurrence {
+        Recurrence::dam(text).unwrap_or_else(|_| Recurrence::Remote(text.to_string()))
+    }
+}
+
+impl std::fmt::Display for Recurrence {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Recurrence::Dam { text, .. } | Recurrence::Remote(text) => f.write_str(text),
+        }
+    }
+}
+
+pub(crate) const WIDEST_WEEKLY_INTERVAL_WITH_WEEKDAYS: u32 = 208;
+const MAX_DAYS_SCANNED_BEFORE_GIVING_UP: i32 =
+    (WIDEST_WEEKLY_INTERVAL_WITH_WEEKDAYS as i32 + 1) * 7;
 
 impl Rule {
     pub fn next_after(&self, date: Date) -> Option<Date> {
-        if self.interval == 0 {
-            return None;
-        }
         let candidate = match self.freq {
             Freq::Weekly if !self.by_day.is_empty() => self.next_weekly_on(date),
             Freq::Monthly if !self.by_month_day.is_empty() => self.next_monthly_on(date),
@@ -85,17 +114,17 @@ impl Rule {
     }
 
     fn step(&self) -> Option<Span> {
-        span(self.freq, self.interval)
+        span(self.freq, self.interval.get())
     }
 
     fn next_weekly_on(&self, from: Date) -> Option<Date> {
         let anchor_week = week_start(from);
-        let interval = i64::from(self.interval);
+        let interval = i64::from(self.interval.get());
         let mut day = from;
         for _ in 0..MAX_DAYS_SCANNED_BEFORE_GIVING_UP {
             day = day.tomorrow().ok()?;
             let weeks_between = i64::from((week_start(day) - anchor_week).get_days() / 7);
-            if self.by_day.contains(&day.weekday()) && weeks_between % interval == 0 {
+            if self.by_day.contains(&day.weekday()) && weeks_between.rem_euclid(interval) == 0 {
                 return Some(day);
             }
         }

@@ -4,7 +4,7 @@ mod dispositions;
 use super::*;
 use crate::testing::prelude::*;
 use crate::testing::{FixedClock, FixedRandom, MemoryStore, oid};
-use dam_domain::{Event, Object, Path, Task, When};
+use dam_domain::{Event, Object, Path, Recurrence, Task, When};
 use jiff::civil::date;
 
 pub(super) fn put_task(
@@ -57,7 +57,7 @@ fn a_recurring_task_rolls_forward_instead_of_closing() {
     let store = MemoryStore::new();
     let id = put_task(&store, 1, "water the plants", "", false);
     let mut t = store.get(&id).unwrap().unwrap();
-    t.base_mut().recurrence = Some("every week".into());
+    t.base_mut().recurrence = Some(Recurrence::parse("every week"));
     if let Object::Task(task) = &mut t {
         task.due = Some(When::Day(date(2026, 9, 18)));
     }
@@ -72,6 +72,25 @@ fn a_recurring_task_rolls_forward_instead_of_closing() {
     let t = task_of(&store, &id);
     assert!(!t.done);
     assert_eq!(t.due, Some(When::Day(date(2026, 9, 25))));
+}
+
+#[test]
+fn a_rule_dam_cannot_read_is_refused_and_the_task_stays_open() {
+    let store = MemoryStore::new();
+    let id = put_task(&store, 1, "water the plants", "", false);
+    let mut t = store.get(&id).unwrap().unwrap();
+    t.base_mut().recurrence = Some(Recurrence::parse("every other week"));
+    store.put(&t).unwrap();
+    let err = complete(&store, &today(), &FixedRandom::new(9), &id, Force::No).unwrap_err();
+    assert_eq!(
+        err,
+        UseCaseError::Refused(Refusal::UnreadableRecurrence("every other week".into()))
+    );
+    assert_eq!(
+        err.to_string(),
+        "cannot roll \"every other week\" forward; complete it in Todoist or set --recurrence"
+    );
+    assert!(!task_of(&store, &id).done);
 }
 
 #[test]
@@ -104,7 +123,7 @@ fn completing_a_task_records_when_it_happened() {
 fn a_task_that_rolls_forward_records_no_completion_time() {
     let store = MemoryStore::new();
     let mut t = Task::new(oid(1), "water the plants");
-    t.base.recurrence = Some("every day".into());
+    t.base.recurrence = Some(Recurrence::parse("every day"));
     t.due = Some(When::Day(date(2026, 9, 18)));
     store.put(&Object::Task(t)).unwrap();
     complete(

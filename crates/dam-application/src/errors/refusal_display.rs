@@ -95,6 +95,10 @@ impl fmt::Display for Refusal {
                 f,
                 "remote {remote:?} last pulled {age}s ago, longer than --max-age allows ({limit}s); run dam pull {remote}"
             ),
+            Refusal::UnreadableRecurrence(text) => write!(
+                f,
+                "cannot roll {text:?} forward; complete it in Todoist or set --recurrence"
+            ),
         }
     }
 }

@@ -64,7 +64,7 @@ mod tests {
         let tz = jiff::tz::TimeZone::UTC;
         for text in ["mon", "monday", "Monday", "MON"] {
             let rule = crate::Rule::parse(&format!("every week on {text}")).unwrap();
-            assert_eq!(rule.by_day, vec![Weekday::Monday], "{text}");
+            assert_eq!(rule.to_text(), "every week on mon", "{text}");
             let when = crate::When::parse_human(text, friday, &tz).unwrap();
             assert_eq!(when.date().weekday(), Weekday::Monday, "{text}");
         }
