@@ -22,7 +22,7 @@ mod tests {
     use crate::args::LsArgs;
     use crate::testing::context;
     use dam_application::FilterConfig;
-    use dam_domain::{Object, Oid, Task, When};
+    use dam_domain::{Categories, Category, Object, Oid, Task, When};
     use jiff::civil::date;
 
     #[test]
@@ -73,6 +73,26 @@ mod tests {
         .unwrap();
         assert_eq!(saved.human.lines().count(), 1);
         assert!(saved.human.contains("today"));
+    }
+
+    #[test]
+    fn a_value_of_another_category_is_refused_and_names_both() {
+        let mut ctx = context();
+        ctx.config.categories = Categories::new(vec![Category {
+            name: "effort".into(),
+            values: vec!["deep".into()],
+            exclusive: true,
+        }])
+        .unwrap();
+        let err = super::run_ls(
+            &mut ctx,
+            LsArgs {
+                query: Some("effort:home".into()),
+            },
+        )
+        .unwrap_err();
+        assert_eq!(err.exit_code(), 4);
+        assert_eq!(err.to_string(), "home is not a value of category effort");
     }
 
     #[test]

@@ -30,6 +30,9 @@ impl fmt::Display for Refusal {
             }
             Refusal::Labels(v) => write!(f, "{v}"),
             Refusal::UnknownCategory(n) => write!(f, "{n:?} is not a declared category"),
+            Refusal::NotACategoryValue { category, value } => {
+                write!(f, "{value} is not a value of category {category}")
+            }
             Refusal::NoSuchObject(s) => write!(f, "no object matches {s:?}"),
             Refusal::NoWorkingObject(s) => write!(
                 f,

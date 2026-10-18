@@ -2,6 +2,7 @@ use std::fmt;
 
 use super::Expr;
 use super::term::term;
+use crate::Categories;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum QueryError {
@@ -10,6 +11,8 @@ pub enum QueryError {
     BadValue { key: String, value: String },
     Unclosed,
     TooDeep,
+    UnknownCategory(String),
+    NotAValue { category: String, value: String },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -62,13 +65,14 @@ fn lex(text: &str) -> Vec<Tok> {
 
 const MAX_RECURSIVE_DESCENT_DEPTH: usize = 64;
 
-struct Parser {
+struct Parser<'c> {
     toks: Vec<Tok>,
     at: usize,
     depth: usize,
+    categories: &'c Categories,
 }
 
-pub fn parse(text: &str) -> Result<Expr, QueryError> {
+pub fn parse(text: &str, categories: &Categories) -> Result<Expr, QueryError> {
     let toks = lex(text);
     if toks.is_empty() {
         return Err(QueryError::Empty);
@@ -77,6 +81,7 @@ pub fn parse(text: &str) -> Result<Expr, QueryError> {
         toks,
         at: 0,
         depth: 0,
+        categories,
     };
     let expr = p.or()?;
     match p.peek() {
@@ -86,7 +91,7 @@ pub fn parse(text: &str) -> Result<Expr, QueryError> {
     }
 }
 
-impl Parser {
+impl Parser<'_> {
     fn peek(&self) -> Option<&Tok> {
         self.toks.get(self.at)
     }
@@ -147,7 +152,7 @@ impl Parser {
                     _ => Err(QueryError::Unclosed),
                 }
             }),
-            Some(Tok::Word(w)) => term(&w).map(Expr::Term),
+            Some(Tok::Word(w)) => term(&w, self.categories).map(Expr::Term),
             Some(Tok::Close) => Err(QueryError::Unexpected(")".into())),
             Some(other) => Err(QueryError::Unexpected(format!("{other:?}"))),
             None => Err(QueryError::Unexpected("end".into())),
@@ -166,6 +171,10 @@ impl fmt::Display for QueryError {
                 f,
                 "the query nests deeper than {MAX_RECURSIVE_DESCENT_DEPTH}"
             ),
+            QueryError::UnknownCategory(n) => write!(f, "{n:?} is not a declared category"),
+            QueryError::NotAValue { category, value } => {
+                write!(f, "{value} is not a value of category {category}")
+            }
         }
     }
 }

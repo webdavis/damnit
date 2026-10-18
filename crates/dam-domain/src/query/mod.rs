@@ -120,7 +120,9 @@ fn week_start(date: Date) -> Date {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Event, Object, Oid, Path, Priority, Task, Transparency, When};
+    use crate::{
+        Categories, Category, Event, Object, Oid, Path, Priority, Task, Transparency, When,
+    };
     use jiff::civil::date;
 
     fn oid(b: u8) -> Oid {
@@ -135,6 +137,19 @@ mod tests {
     }
 
     const TODAY: Date = date(2026, 9, 18);
+
+    fn effort() -> Categories {
+        Categories::new(vec![Category {
+            name: "effort".into(),
+            values: vec!["light".into(), "deep".into()],
+            exclusive: true,
+        }])
+        .unwrap()
+    }
+
+    fn parse(query: &str) -> Result<Expr, QueryError> {
+        super::parse(query, &effort())
+    }
 
     fn hit(query: &str, object: &Object) -> bool {
         matches(&parse(query).unwrap(), object, TODAY)
@@ -232,20 +247,26 @@ mod tests {
     }
 
     #[test]
-    fn an_unrecognized_key_parses_as_a_category_term_a_caller_can_check() {
-        let expr = parse("pat:work/").unwrap();
-        match expr {
-            Expr::Term(Term::Category { name, value }) => {
-                assert_eq!(name, "pat");
-                assert_eq!(value, "work/");
-                assert!(
-                    crate::Categories::default()
-                        .category_of_name(&name)
-                        .is_none()
-                );
-            }
-            other => panic!("{other:?}"),
-        }
+    fn a_category_term_matches_only_a_value_of_that_category() {
+        let mut t = Task::new(oid(7), "x");
+        t.base.labels.insert("home".into());
+        let o = Object::Task(t);
+        assert!(hit("@home", &o));
+        assert_eq!(
+            parse("effort:home"),
+            Err(QueryError::NotAValue {
+                category: "effort".into(),
+                value: "home".into()
+            })
+        );
+        assert_eq!(
+            parse("mood:happy"),
+            Err(QueryError::UnknownCategory("mood".into()))
+        );
+        assert_eq!(
+            parse("effort:home").unwrap_err().to_string(),
+            "home is not a value of category effort"
+        );
     }
 
     #[test]

@@ -17,6 +17,10 @@ pub enum Refusal {
     },
     Labels(LabelViolation),
     UnknownCategory(String),
+    NotACategoryValue {
+        category: String,
+        value: String,
+    },
     NoSuchObject(String),
     NoWorkingObject(String),
     NoSuchRemote(String),
@@ -62,6 +66,7 @@ impl Refusal {
             Refusal::Cycle { .. } => "cycle",
             Refusal::Labels(_) => "exclusive_label",
             Refusal::UnknownCategory(_) => "unknown_category",
+            Refusal::NotACategoryValue { .. } => "not_a_category_value",
             Refusal::NoSuchObject(_) => "no_such_object",
             Refusal::NoWorkingObject(_) => "no_working_object",
             Refusal::NoSuchRemote(_) => "no_such_remote",
