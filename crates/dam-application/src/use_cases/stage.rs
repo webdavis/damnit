@@ -17,9 +17,12 @@ pub fn add(
         if working.is_none() && committed.is_none() {
             return Err(Refusal::NoSuchObject(oid.short().to_string()).into());
         }
-        if let Some(change) = diff(oid, committed.as_ref(), working.as_ref()) {
-            stage.stage(change.clone())?;
-            staged.push(change);
+        match diff(oid, committed.as_ref(), working.as_ref()) {
+            Some(change) => {
+                stage.stage(change.clone())?;
+                staged.push(change);
+            }
+            None => stage.unstage(oid)?,
         }
     }
     Ok(staged)
@@ -99,6 +102,32 @@ mod tests {
         };
         store.commit(&record).unwrap();
         assert!(add(&store, &store, &[id]).unwrap().is_empty());
+    }
+
+    #[test]
+    fn add_unstages_an_object_edited_back_to_its_committed_state() {
+        let store = MemoryStore::new();
+        let id = seed(&store, 1);
+        let record = dam_domain::CommitRecord {
+            id: dam_domain::CommitId::generate(&mut |b| b.fill(9)),
+            message: "m".into(),
+            at: jiff::Timestamp::UNIX_EPOCH,
+            changes: add(&store, &store, std::slice::from_ref(&id)).unwrap(),
+        };
+        store.commit(&record).unwrap();
+        store
+            .put(&Object::Task(Task::new(id.clone(), "edited")))
+            .unwrap();
+        add(&store, &store, std::slice::from_ref(&id)).unwrap();
+        store
+            .put(&Object::Task(Task::new(id.clone(), "t1")))
+            .unwrap();
+        assert!(
+            add(&store, &store, std::slice::from_ref(&id))
+                .unwrap()
+                .is_empty()
+        );
+        assert!(store.staged().unwrap().is_empty());
     }
 
     #[test]
