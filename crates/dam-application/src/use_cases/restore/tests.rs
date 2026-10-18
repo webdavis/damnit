@@ -1,6 +1,6 @@
 use super::*;
 use crate::testing::prelude::*;
-use crate::testing::{FixedClock, FixedRandom, MemoryStore, oid};
+use crate::testing::{FaultyStore, FixedClock, FixedRandom, MemoryStore, oid};
 use crate::use_cases::commit::commit;
 use crate::use_cases::stage::add;
 use dam_domain::{Object, Task};
@@ -132,4 +132,16 @@ fn an_oid_neither_layer_knows_is_no_such_object() {
         err,
         UseCaseError::Refused(Refusal::NoSuchObject(oid(9).short().to_string()))
     );
+}
+
+#[test]
+fn restore_that_fails_between_two_objects_restores_neither() {
+    let store = FaultyStore::new(MemoryStore::new());
+    let a = committed_task(&store.inner, 1);
+    let b = committed_task(&store.inner, 2);
+    retitle(&store.inner, &a, "edited a");
+    retitle(&store.inner, &b, "edited b");
+    store.assert_unchanged_when_any_write_fails(|| {
+        restore(&store, &store, &[a.clone(), b.clone()]).map(drop)
+    });
 }

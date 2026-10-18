@@ -4,6 +4,7 @@ use dam_domain::{Object, Oid};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{ObjectRepository, StageRepository};
+use crate::use_cases::atomically::atomically;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Restored {
@@ -16,22 +17,24 @@ pub fn restore(
     stage: &dyn StageRepository,
     oids: &[Oid],
 ) -> Result<Vec<Restored>, UseCaseError> {
-    let oids = each_once(oids);
-    let committed = every_commit_before_writing_any(objects, &oids)?;
-    let staged: BTreeSet<Oid> = stage.staged()?.into_iter().map(|c| c.oid).collect();
-    let mut restored = Vec::with_capacity(oids.len());
-    for (oid, object) in oids.into_iter().zip(committed) {
-        let changed = staged.contains(oid) || objects.get(oid)?.as_ref() != Some(&object);
-        if changed {
-            objects.put(&object)?;
-            stage.unstage(oid)?;
+    atomically(objects, || {
+        let oids = each_once(oids);
+        let committed = every_commit_before_writing_any(objects, &oids)?;
+        let staged: BTreeSet<Oid> = stage.staged()?.into_iter().map(|c| c.oid).collect();
+        let mut restored = Vec::with_capacity(oids.len());
+        for (oid, object) in oids.into_iter().zip(committed) {
+            let changed = staged.contains(oid) || objects.get(oid)?.as_ref() != Some(&object);
+            if changed {
+                objects.put(&object)?;
+                stage.unstage(oid)?;
+            }
+            restored.push(Restored {
+                oid: oid.clone(),
+                changed,
+            });
         }
-        restored.push(Restored {
-            oid: oid.clone(),
-            changed,
-        });
-    }
-    Ok(restored)
+        Ok(restored)
+    })
 }
 
 fn each_once(oids: &[Oid]) -> Vec<&Oid> {
