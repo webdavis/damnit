@@ -84,7 +84,7 @@ fn a_unit_of_work_holds_the_write_lock_from_its_first_statement() {
 }
 
 #[test]
-fn staging_inside_an_open_unit_takes_its_savepoint_so_an_outer_failure_rolls_it_back() {
+fn staging_inside_an_open_unit_rolls_back_with_it() {
     let dir = tempfile::tempdir().unwrap();
     let store = SqliteStore::open(&dir.path().join("dam.db")).unwrap();
     let oid = dam_domain::Oid::generate(&mut |b: &mut [u8]| b.fill(7));
@@ -95,7 +95,7 @@ fn staging_inside_an_open_unit_takes_its_savepoint_so_an_outer_failure_rolls_it_
         after: Some(dam_domain::Object::Task(dam_domain::Task::new(oid, "milk"))),
     };
     let outcome = store.in_savepoint::<(), StoreError>("dam_test", || {
-        store.stage(change.clone())?;
+        store.put_staged(change.clone())?;
         assert_eq!(store.staged().unwrap().len(), 1);
         Err(StoreError::Failed("the caller gave up".into()))
     });

@@ -28,7 +28,7 @@ fn stage_each(
         }
         match diff(oid, committed.as_ref(), working.as_ref()) {
             Some(change) => {
-                stage.stage(change.clone())?;
+                stage.put_staged(change.clone())?;
                 staged.push(change);
             }
             None => stage.unstage(oid)?,

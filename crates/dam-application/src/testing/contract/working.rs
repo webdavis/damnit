@@ -75,58 +75,37 @@ pub(super) fn oids_of(objects: Vec<Object>) -> Vec<Oid> {
 pub fn stage_repository_contract(stage: &dyn StageRepository) {
     assert!(stage.staged().unwrap().is_empty());
 
-    let created = task(1, "created", "");
-    stage
-        .stage(Change {
-            oid: oid(1),
-            op: Op::Create,
-            before: None,
-            after: Some(created.clone()),
-        })
-        .unwrap();
-    assert_eq!(stage.staged().unwrap().len(), 1);
+    let created = staged_create(1, "created");
+    stage.put_staged(created.clone()).unwrap();
+    assert_eq!(stage.staged().unwrap(), vec![created]);
 
-    let edited = task(1, "edited", "");
-    stage
-        .stage(Change {
-            oid: oid(1),
-            op: Op::Update,
-            before: Some(created.clone()),
-            after: Some(edited.clone()),
-        })
-        .unwrap();
-    let staged = stage.staged().unwrap();
-    assert_eq!(staged.len(), 1, "one oid stages once");
-    assert_eq!(staged[0].op, Op::Create, "a create absorbs a later update");
-    assert_eq!(staged[0].after, Some(edited.clone()));
-
-    stage
-        .stage(Change {
-            oid: oid(1),
-            op: Op::Delete,
-            before: Some(edited),
-            after: None,
-        })
-        .unwrap();
-    assert!(
-        stage.staged().unwrap().is_empty(),
-        "a create then a delete stages nothing"
+    let edited = staged_create(1, "edited");
+    stage.put_staged(edited.clone()).unwrap();
+    assert_eq!(
+        stage.staged().unwrap(),
+        vec![edited],
+        "a second put for one oid replaces the first"
     );
 
-    stage
-        .stage(Change {
-            oid: oid(2),
-            op: Op::Create,
-            before: None,
-            after: Some(task(2, "other", "")),
-        })
-        .unwrap();
+    let other = staged_create(2, "other");
+    stage.put_staged(other.clone()).unwrap();
+    stage.unstage(&oid(1)).unwrap();
+    assert_eq!(stage.staged().unwrap(), vec![other.clone()]);
     stage.unstage(&oid(1)).unwrap();
     assert_eq!(
-        stage.staged().unwrap().len(),
-        1,
+        stage.staged().unwrap(),
+        vec![other],
         "unstaging an oid that is not staged leaves the others alone"
     );
     stage.unstage_all().unwrap();
     assert!(stage.staged().unwrap().is_empty());
+}
+
+fn staged_create(byte: u8, subject: &str) -> Change {
+    Change {
+        oid: oid(byte),
+        op: Op::Create,
+        before: None,
+        after: Some(task(byte, subject, "")),
+    }
 }

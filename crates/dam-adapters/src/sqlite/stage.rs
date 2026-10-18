@@ -1,43 +1,13 @@
 use dam_application::{StageRepository, StoreError};
-use dam_domain::{Change, Oid, coalesce};
-use rusqlite::{OptionalExtension, params};
+use dam_domain::{Change, Oid};
+use rusqlite::params;
 
 use super::SqliteStore;
-use super::codec::{change_from_row, object_to_json, op_to_text, read_changes};
+use super::codec::{object_to_json, op_to_text, read_changes};
 use super::objects::sql;
 
-impl SqliteStore {
-    fn staged_change(&self, oid: &Oid) -> Result<Option<Change>, StoreError> {
-        self.conn
-            .query_row(
-                "SELECT op, before_json, after_json FROM stage WHERE oid = ?1",
-                params![oid.as_str()],
-                |r| {
-                    Ok((
-                        r.get::<_, String>(0)?,
-                        r.get::<_, Option<String>>(1)?,
-                        r.get::<_, Option<String>>(2)?,
-                    ))
-                },
-            )
-            .optional()
-            .map_err(sql)?
-            .map(|(op, b, a)| change_from_row(oid.as_str(), &op, b, a))
-            .transpose()
-    }
-
-    fn coalesce_into_stage(&self, change: Change) -> Result<(), StoreError> {
-        let merged = match self.staged_change(&change.oid)? {
-            Some(existing) => coalesce(existing, change.clone()),
-            None => Some(change.clone()),
-        };
-        match merged {
-            Some(c) => self.write_stage(&c),
-            None => self.unstage(&change.oid),
-        }
-    }
-
-    fn write_stage(&self, change: &Change) -> Result<(), StoreError> {
+impl StageRepository for SqliteStore {
+    fn put_staged(&self, change: Change) -> Result<(), StoreError> {
         let before = change.before.as_ref().map(object_to_json).transpose()?;
         let after = change.after.as_ref().map(object_to_json).transpose()?;
         self.conn
@@ -48,21 +18,6 @@ impl SqliteStore {
             )
             .map(|_| ())
             .map_err(sql)
-    }
-}
-
-impl SqliteStore {
-    fn coalesce_as_one_unit_so_two_processes_cannot_lose_a_coalesce(
-        &self,
-        change: Change,
-    ) -> Result<(), StoreError> {
-        self.in_savepoint("dam_stage", || self.coalesce_into_stage(change))
-    }
-}
-
-impl StageRepository for SqliteStore {
-    fn stage(&self, change: Change) -> Result<(), StoreError> {
-        self.coalesce_as_one_unit_so_two_processes_cannot_lose_a_coalesce(change)
     }
 
     fn unstage(&self, oid: &Oid) -> Result<(), StoreError> {

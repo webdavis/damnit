@@ -12,7 +12,7 @@ pub fn transactional_contract(
     transaction
         .in_transaction(&mut || {
             objects.put(&task(1, "kept", ""))?;
-            stage.stage(Change {
+            stage.put_staged(Change {
                 oid: oid(1),
                 op: Op::Create,
                 before: None,

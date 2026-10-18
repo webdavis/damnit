@@ -65,8 +65,8 @@ pub fn commit_clears_the_stage_contract(
 ) {
     let committed = record(1, "committed", 1);
     let left = record(2, "left staged", 2).changes.remove(0);
-    stage.stage(committed.changes[0].clone()).unwrap();
-    stage.stage(left.clone()).unwrap();
+    stage.put_staged(committed.changes[0].clone()).unwrap();
+    stage.put_staged(left.clone()).unwrap();
     commits.commit(&committed).unwrap();
     assert_eq!(
         stage.staged().unwrap(),

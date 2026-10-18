@@ -106,7 +106,7 @@ pub trait ObjectRepository: Transactional {
 }
 
 pub trait StageRepository {
-    fn stage(&self, change: Change) -> Result<(), StoreError>;
+    fn put_staged(&self, change: Change) -> Result<(), StoreError>;
     fn unstage(&self, oid: &Oid) -> Result<(), StoreError>;
     fn unstage_all(&self) -> Result<(), StoreError>;
     fn staged(&self) -> Result<Vec<Change>, StoreError>;
