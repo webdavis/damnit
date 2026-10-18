@@ -14,7 +14,7 @@ fn new_with_flags_parses() {
             assert_eq!(a.subject, "buy milk");
             assert_eq!(a.path.as_str(), "inbox/");
             assert_eq!(a.due.as_deref(), Some("tomorrow"));
-            assert_eq!(a.priority, Some(1));
+            assert_eq!(a.priority.map(dam_domain::Priority::get), Some(1));
             assert_eq!(a.labels, vec!["errand".to_string()]);
         }
         _ => panic!("wrong command"),

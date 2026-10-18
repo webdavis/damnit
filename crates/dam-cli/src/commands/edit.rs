@@ -3,7 +3,7 @@ use dam_application::{EditFields, Refusal, UseCaseError, edit};
 use dam_domain::Oid;
 
 use crate::args::EditArgs;
-use crate::commands::parsing::{deadline_flag, priority_flag, when_flag};
+use crate::commands::parsing::{deadline_flag, when_flag};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::oids::resolve_oid;
@@ -30,9 +30,9 @@ fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
     let mut f = EditFields {
         subject: args.subject,
         body: args.body,
+        priority: args.priority,
         ..EditFields::default()
     };
-    f.priority = args.priority.map(priority_flag).transpose()?;
     f.due = match (args.due, args.no_due) {
         (Some(d), _) => Some(Some(when_flag(ctx, "due", &d)?)),
         (None, true) => Some(None),

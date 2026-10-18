@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use crate::args::NewArgs;
-use crate::commands::parsing::{deadline_flag, priority_flag, when_flag};
+use crate::commands::parsing::{deadline_flag, when_flag};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::{Report, object_json};
@@ -38,11 +38,7 @@ pub(crate) fn run(ctx: &mut Context, args: NewArgs) -> Result<Report, CliError> 
             },
         )?
     } else {
-        let priority = args
-            .priority
-            .map(priority_flag)
-            .transpose()?
-            .unwrap_or_default();
+        let priority = args.priority.unwrap_or_default();
         let due = args
             .due
             .as_deref()
@@ -83,7 +79,7 @@ mod tests {
     use super::*;
     use crate::args::NewArgs;
     use crate::testing::context;
-    use dam_domain::{Object, Path};
+    use dam_domain::{Object, Path, Priority};
 
     fn args(subject: &str) -> NewArgs {
         NewArgs {
@@ -108,7 +104,7 @@ mod tests {
             NewArgs {
                 path: Path::parse("inbox").unwrap(),
                 due: Some("tomorrow".into()),
-                priority: Some(1),
+                priority: Some(Priority::HIGHEST),
                 labels: vec!["errand".into()],
                 ..args("milk")
             },
@@ -158,23 +154,13 @@ mod tests {
     }
 
     #[test]
-    fn a_bad_date_or_priority_is_a_usage_error() {
+    fn a_bad_date_is_a_usage_error() {
         let mut ctx = context();
         assert!(matches!(
             run(
                 &mut ctx,
                 NewArgs {
                     due: Some("someday".into()),
-                    ..args("x")
-                }
-            ),
-            Err(CliError::Usage(_))
-        ));
-        assert!(matches!(
-            run(
-                &mut ctx,
-                NewArgs {
-                    priority: Some(9),
                     ..args("x")
                 }
             ),

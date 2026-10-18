@@ -42,3 +42,25 @@ fn a_path_is_normalised_at_the_boundary() {
         assert_eq!(a.path.as_str(), stored);
     }
 }
+
+#[test]
+fn a_priority_outside_one_to_four_is_refused_with_the_range_in_words() {
+    for bad in ["0", "5", "9", "high", ""] {
+        let said = refusal(&["dam", "new", "x", "-p", bad]);
+        assert!(
+            said.contains("priority is 1 (highest) to 4"),
+            "{bad:?}: {said}"
+        );
+        let said = refusal(&["dam", "edit", "abcd", "--priority", bad]);
+        assert!(
+            said.contains("priority is 1 (highest) to 4"),
+            "{bad:?}: {said}"
+        );
+    }
+    for ok in ["1", "2", "3", "4"] {
+        assert!(
+            Cli::try_parse_from(["dam", "new", "x", "-p", ok]).is_ok(),
+            "{ok}"
+        );
+    }
+}
