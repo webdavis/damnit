@@ -64,7 +64,7 @@ pub fn complete(
             }
         }
         let mut task = load_task(objects, oid)?;
-        let outcome = match next_due_if_recurring(&task, clock.today()) {
+        let outcome = match next_due_if_recurring(&task, clock.today())? {
             Some(next) => {
                 task.due = Some(When::Day(next));
                 Completed::RolledForward { next_due: next }
@@ -82,10 +82,13 @@ pub fn complete(
     })
 }
 
-fn next_due_if_recurring(task: &Task, today: Date) -> Option<Date> {
-    let rule = Rule::parse(task.base.recurrence.as_deref()?).ok()?;
+fn next_due_if_recurring(task: &Task, today: Date) -> Result<Option<Date>, UseCaseError> {
+    let Some(text) = task.base.recurrence.as_deref() else {
+        return Ok(None);
+    };
+    let rule = Rule::parse(text).map_err(|_| Refusal::UnreadableRecurrence(text.to_string()))?;
     let due = task.due.as_ref().map(|d| d.date()).unwrap_or(today);
-    roll_forward(&rule, due, today)
+    Ok(roll_forward(&rule, due, today))
 }
 
 fn apply_dispositions(

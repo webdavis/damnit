@@ -99,6 +99,24 @@ impl Sandbox {
             .collect()
     }
 
+    pub fn install_helper_pulling(&self, task_json: &str) {
+        let script = format!(
+            r#"#!/bin/sh
+set -eu
+while IFS= read -r line; do
+  case "$line" in
+    *'"capabilities"'*) printf '{{"protocol":1,"kinds":["task"],"fields":["subject"],"credentials":["api_token"],"incremental":false}}\n' ;;
+    *'"pull"'*) printf '{{"objects":[{task_json}],"removed":[],"sync":null}}\n' ;;
+    *) printf '{{"error":"unknown request"}}\n' ;;
+  esac
+done
+"#
+        );
+        let helper = self.dir.path().join("bin/dam-remote-fake");
+        std::fs::write(&helper, script).unwrap();
+        std::fs::set_permissions(&helper, std::fs::Permissions::from_mode(0o755)).unwrap();
+    }
+
     pub fn install_silent_helper(&self) {
         let helper = self.dir.path().join("bin/dam-remote-fake");
         std::fs::write(&helper, "#!/bin/sh\nwhile :; do sleep 0.05; done\n").unwrap();

@@ -75,6 +75,25 @@ fn a_recurring_task_rolls_forward_instead_of_closing() {
 }
 
 #[test]
+fn a_rule_dam_cannot_read_is_refused_and_the_task_stays_open() {
+    let store = MemoryStore::new();
+    let id = put_task(&store, 1, "water the plants", "", false);
+    let mut t = store.get(&id).unwrap().unwrap();
+    t.base_mut().recurrence = Some("every other week".into());
+    store.put(&t).unwrap();
+    let err = complete(&store, &today(), &FixedRandom::new(9), &id, Force::No).unwrap_err();
+    assert_eq!(
+        err,
+        UseCaseError::Refused(Refusal::UnreadableRecurrence("every other week".into()))
+    );
+    assert_eq!(
+        err.to_string(),
+        "cannot roll \"every other week\" forward; complete it in Todoist or set --recurrence"
+    );
+    assert!(!task_of(&store, &id).done);
+}
+
+#[test]
 fn an_event_is_not_a_task() {
     let store = MemoryStore::new();
     let e = Event::new(

@@ -5,7 +5,7 @@ fn oid() -> Oid {
     Oid::generate(&mut |x: &mut [u8]| x.fill(1))
 }
 
-const HAND_COUNTED_RULES: usize = 20;
+const HAND_COUNTED_RULES: usize = 21;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -29,6 +29,7 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::MissingCredential { .. } => 17,
         Refusal::StaleRemote { .. } => 18,
         Refusal::RemoteExists(_) => 19,
+        Refusal::UnreadableRecurrence(_) => 20,
     }
 }
 
@@ -70,6 +71,7 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
             age: None,
             limit: 60,
         },
+        Refusal::UnreadableRecurrence("every other week".into()),
     ]
 }
 
