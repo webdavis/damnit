@@ -1,6 +1,7 @@
 use dam_protocol::{Mutation, WireObject};
 
 use super::Failure;
+use super::carried::fields_the_container_cannot_carry;
 use super::commands::{ItemWrite, command, creating_command, item_args, repeatable_command_uuid};
 use super::shape::{Shape, shape_for};
 use crate::map::{Tree, split_remote_id};
@@ -8,6 +9,7 @@ use crate::map::{Tree, split_remote_id};
 pub struct Plan {
     pub commands: Vec<serde_json::Value>,
     pub creates: Option<Shape>,
+    pub refused: Option<String>,
 }
 
 pub fn resend_stable_temp_id(m: &Mutation) -> &str {
@@ -29,6 +31,7 @@ pub fn plan_for(
                     serde_json::json!({ "id": id }),
                 )],
                 creates: None,
+                refused: None,
             })
         }
         "create" => {
@@ -101,6 +104,7 @@ fn create_plan(
     Ok(Plan {
         commands,
         creates: Some(shape),
+        refused: None,
     })
 }
 
@@ -114,8 +118,11 @@ fn update_plan(
     let changed = |f: &str| m.fields.iter().any(|x| x == f);
     let done = object.task.as_ref().is_some_and(|t| t.done);
     let mut commands = Vec::new();
+    let mut refused = None;
     match kind {
         'p' | 's' => {
+            let held = tree.held_wire(kind, id);
+            refused = fields_the_container_cannot_carry(kind, &m.fields, object, held.as_ref());
             if changed("subject") {
                 let verb = if kind == 'p' {
                     "project_update"
@@ -176,6 +183,7 @@ fn update_plan(
     Ok(Plan {
         commands,
         creates: None,
+        refused,
     })
 }
 

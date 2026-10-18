@@ -1,3 +1,4 @@
+mod carried;
 mod commands;
 mod plan;
 mod shape;
@@ -69,18 +70,20 @@ fn apply(
     containers_filled: &[String],
 ) -> Result<Option<String>, Failure> {
     let plan = plan_for(tree, m, containers_filled)?;
-    if plan.commands.is_empty() {
-        return Ok(m.remote_id.clone());
+    let written = match plan.commands.is_empty() {
+        true => None,
+        false => Some(send_every_command(api, &plan.commands)?),
+    };
+    if let Some(why) = plan.refused {
+        return Err(Failure::OnlyThisMutation(why));
     }
-    let written = api.sync_commands(&plan.commands)?;
-    require_every_command_accepted(&written, &plan.commands)?;
     let Some(shape) = plan.creates else {
         return Ok(m.remote_id.clone());
     };
     let object = m.object.as_ref().ok_or(missing_object("create"))?;
     let id = written
-        .issued_id_by_temp_id
-        .get(resend_stable_temp_id(m))
+        .as_ref()
+        .and_then(|w| w.issued_id_by_temp_id.get(resend_stable_temp_id(m)))
         .ok_or_else(|| {
             Failure::OnlyThisMutation("Todoist's answer names no id for the new object".to_string())
         })?
@@ -88,15 +91,16 @@ fn apply(
     Ok(Some(add_created_to_tree(tree, object, shape, id)))
 }
 
-fn require_every_command_accepted(
-    written: &SyncWrite,
+fn send_every_command(
+    api: &TodoistApi,
     commands: &[serde_json::Value],
-) -> Result<(), Failure> {
+) -> Result<SyncWrite, Failure> {
+    let written = api.sync_commands(commands)?;
     for sent in commands {
         let uuid = sent["uuid"].as_str().unwrap_or_default();
         written.accepted(uuid).map_err(Failure::OnlyThisMutation)?;
     }
-    Ok(())
+    Ok(written)
 }
 
 fn add_created_to_tree(tree: &mut Tree, object: &WireObject, shape: Shape, id: String) -> String {

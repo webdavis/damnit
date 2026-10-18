@@ -23,6 +23,7 @@ impl TodoistApi {
         let config = ureq::Agent::config_builder()
             .timeout_global(Some(std::time::Duration::from_secs(30)))
             .timeout_await_100(Some(std::time::Duration::ZERO))
+            .max_redirects(0)
             .http_status_as_error(false)
             .build();
         TodoistApi {
