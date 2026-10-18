@@ -1,7 +1,7 @@
 use super::tests::{args, oid};
 use super::*;
 use crate::args::EditArgs;
-use crate::testing::{ScriptedEditor, context, machine_context};
+use crate::testing::{Save, ScriptedEditor, context, machine_context};
 use dam_domain::{Object, Task};
 
 #[test]
@@ -110,4 +110,34 @@ fn a_bad_save_kept_as_it_was_reopened_reports_the_parse_error_not_a_cancel() {
     .unwrap_err();
     assert_eq!(err.exit_code(), 2, "{err}");
     assert!(err.to_string().contains("priority"), "{err}");
+}
+
+#[test]
+fn a_second_save_that_still_does_not_parse_is_refused_instead_of_reopened_forever() {
+    let mut ctx = context();
+    ctx.store
+        .put(&Object::Task(Task::new(oid(1), "milk")))
+        .unwrap();
+    let opened = std::rc::Rc::new(std::cell::Cell::new(0));
+    let saves = (0..5)
+        .map(|_| {
+            let opened = opened.clone();
+            Box::new(move |text: &str| {
+                opened.set(opened.get() + 1);
+                format!("{text}priority = \"high\"\n")
+            }) as Save
+        })
+        .collect();
+    ctx.editor = Some(Box::new(ScriptedEditor::saving(saves)));
+    let err = run(
+        &mut ctx,
+        EditArgs {
+            editor: true,
+            ..args(&oid(1))
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err.exit_code(), 2, "{err}");
+    assert!(err.to_string().contains("duplicate key"), "{err}");
+    assert_eq!(opened.get(), 2, "the editor reopened more than once");
 }

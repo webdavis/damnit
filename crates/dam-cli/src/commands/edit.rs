@@ -91,30 +91,29 @@ fn through_editor(ctx: &Context, oid: &Oid) -> Result<EditFields, CliError> {
         .ok_or_else(|| Refusal::NoWorkingObject(oid.short().to_string()))?;
     let editor = ctx.editor.as_ref().ok_or(Refusal::NeedsAnEditor)?;
     let original = render_template(&current);
-    let mut opened = original.clone();
-    let mut last_error = None;
-    loop {
-        let saved = editor
-            .edit(&opened)
-            .map_err(|e| CliError::UseCase(UseCaseError::Editor(e)))?;
-        if saved == opened {
-            return Err(last_error.map_or(CliError::Cancelled, CliError::Usage));
-        }
-        if saved == original {
-            return Err(CliError::Cancelled);
-        }
-        match parse_template(&saved, &current, ctx.clock.today(), &ctx.tz) {
-            Ok(fields) => return Ok(fields),
-            Err(why) => {
-                let reopened = reopened_with_the_parse_error_as_its_first_line(&saved, &why);
-                if reopened == opened {
-                    return Err(CliError::Usage(why));
-                }
-                opened = reopened;
-                last_error = Some(why);
-            }
-        }
+    let parse = |saved: &str| parse_template(saved, &current, ctx.clock.today(), &ctx.tz);
+    let save = |opened: &str| {
+        editor
+            .edit(opened)
+            .map_err(|e| CliError::UseCase(UseCaseError::Editor(e)))
+    };
+    let saved = save(&original)?;
+    if saved == original {
+        return Err(CliError::Cancelled);
     }
+    let why = match parse(&saved) {
+        Ok(fields) => return Ok(fields),
+        Err(why) => why,
+    };
+    let reopened = reopened_with_the_parse_error_as_its_first_line(&saved, &why);
+    let saved = save(&reopened)?;
+    if saved == reopened {
+        return Err(CliError::Usage(why));
+    }
+    if saved == original {
+        return Err(CliError::Cancelled);
+    }
+    parse(&saved).map_err(CliError::Usage)
 }
 
 fn reopened_with_the_parse_error_as_its_first_line(saved: &str, why: &str) -> String {
