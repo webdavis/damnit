@@ -52,8 +52,8 @@ fn declaring(ids: &[&str], fields: Vec<Field>) -> ScriptedLauncher {
     ScriptedLauncher {
         make: Box::new(move || ScriptedHelper {
             caps: caps.clone(),
-            pull_answer: answer.clone(),
-            push_answer: Box::new(|_| vec![]),
+            pull_answer: Ok(answer.clone()),
+            push_answer: Box::new(|_| Ok(vec![])),
             pushed: Rc::new(RefCell::new(vec![])),
             pulled_since: Rc::new(RefCell::new(vec![])),
         }),

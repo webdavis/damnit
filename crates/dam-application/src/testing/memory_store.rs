@@ -9,7 +9,7 @@ use crate::ports::{
     Transactional,
 };
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 struct Inner {
     working: BTreeMap<Oid, Object>,
     committed: BTreeMap<Oid, Object>,
@@ -27,7 +27,7 @@ struct Inner {
     accepted_kinds: BTreeMap<RemoteName, Vec<Kind>>,
 }
 
-#[derive(Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct MemoryStore(RefCell<Inner>);
 
 impl MemoryStore {

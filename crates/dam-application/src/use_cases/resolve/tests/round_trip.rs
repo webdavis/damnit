@@ -55,19 +55,20 @@ fn recording_launcher_that_accepts_every_push(
     let l = ScriptedLauncher {
         make: Box::new(move || ScriptedHelper {
             caps: task_caps(),
-            pull_answer: PullOutcome {
+            pull_answer: Ok(PullOutcome {
                 objects: objects.clone(),
                 ..PullOutcome::default()
-            },
+            }),
             push_answer: Box::new(|ms| {
-                ms.iter()
+                Ok(ms
+                    .iter()
                     .map(|m| MutationOutcome {
                         oid: m.oid.clone(),
                         ok: true,
                         remote_id: Some("r1".into()),
                         why: None,
                     })
-                    .collect()
+                    .collect())
             }),
             pushed: seen.clone(),
             pulled_since: Rc::new(RefCell::new(vec![])),

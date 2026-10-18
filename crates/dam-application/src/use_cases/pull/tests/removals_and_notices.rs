@@ -82,11 +82,11 @@ fn a_cancelled_event_with_attached_tasks_is_reported() {
     let l = ScriptedLauncher {
         make: Box::new(move || ScriptedHelper {
             caps: caps.clone(),
-            pull_answer: PullOutcome {
+            pull_answer: Ok(PullOutcome {
                 objects: vec![w.clone()],
                 ..PullOutcome::default()
-            },
-            push_answer: Box::new(|_| vec![]),
+            }),
+            push_answer: Box::new(|_| Ok(vec![])),
             pushed: Rc::new(RefCell::new(vec![])),
             pulled_since: Rc::new(RefCell::new(vec![])),
         }),
@@ -211,11 +211,11 @@ fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
     let l = ScriptedLauncher {
         make: Box::new(move || ScriptedHelper {
             caps: caps.clone(),
-            pull_answer: PullOutcome {
+            pull_answer: Ok(PullOutcome {
                 objects: vec![w.clone()],
                 ..PullOutcome::default()
-            },
-            push_answer: Box::new(|_| vec![]),
+            }),
+            push_answer: Box::new(|_| Ok(vec![])),
             pushed: Rc::new(RefCell::new(vec![])),
             pulled_since: Rc::new(RefCell::new(vec![])),
         }),

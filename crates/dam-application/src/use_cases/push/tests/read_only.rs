@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::ports::{RemoteName, Repositories};
-use crate::remote::{MutationOutcome, PullOutcome, RemoteCapabilities, RemoteMutation};
+use crate::remote::{PullOutcome, RemoteCapabilities, RemoteMutation};
 use crate::testing::prelude::*;
 use crate::testing::{EchoCredentials, MemoryStore, ScriptedHelper, ScriptedLauncher, task_caps};
 use crate::use_cases::push::push;
@@ -21,8 +21,8 @@ fn a_remote_that_declares_no_kinds_is_sent_nothing_and_owed_nothing() {
                 kinds: vec![],
                 ..task_caps()
             },
-            pull_answer: PullOutcome::default(),
-            push_answer: Box::new(|_: &[RemoteMutation]| -> Vec<MutationOutcome> {
+            pull_answer: Ok(PullOutcome::default()),
+            push_answer: Box::new(|_: &[RemoteMutation]| {
                 panic!("a remote that declares no kinds was sent a push")
             }),
             pushed: seen.clone(),

@@ -1,6 +1,7 @@
 mod accepted_kinds;
 mod cancellations;
 mod conflicts_and_refusals;
+mod helper_failures;
 mod kind_change;
 mod removals_and_notices;
 
@@ -49,8 +50,8 @@ pub(super) fn launcher(answer: PullOutcome) -> ScriptedLauncher {
     ScriptedLauncher {
         make: Box::new(move || ScriptedHelper {
             caps: task_caps(),
-            pull_answer: answer.clone(),
-            push_answer: Box::new(|_| vec![]),
+            pull_answer: Ok(answer.clone()),
+            push_answer: Box::new(|_| Ok(vec![])),
             pushed: Rc::new(RefCell::new(vec![])),
             pulled_since: Rc::new(RefCell::new(vec![])),
         }),

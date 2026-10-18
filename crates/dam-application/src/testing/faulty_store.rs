@@ -1,14 +1,18 @@
 use std::cell::Cell;
 
-use dam_domain::{Change, Object, Oid, Path};
+use dam_domain::{Object, Oid, Path};
 
 use crate::errors::UseCaseError;
-use crate::ports::{ObjectRepository, StageRepository, StoreError, Transactional};
+use crate::ports::{ObjectRepository, StoreError, Transactional};
 use crate::testing::MemoryStore;
+
+mod history;
+mod remote_state;
 
 pub struct FaultyStore {
     pub inner: MemoryStore,
     writes_before_failing: Cell<usize>,
+    inside_a_unit_of_work: Cell<bool>,
 }
 
 impl FaultyStore {
@@ -16,6 +20,7 @@ impl FaultyStore {
         FaultyStore {
             inner,
             writes_before_failing: Cell::new(usize::MAX),
+            inside_a_unit_of_work: Cell::new(false),
         }
     }
 
@@ -27,13 +32,12 @@ impl FaultyStore {
         &self,
         run: impl Fn() -> Result<(), UseCaseError>,
     ) {
-        let before = self.snapshot();
+        let before = self.inner.clone();
         for index in 0.. {
             self.fail_at_write(index);
             match run() {
                 Err(UseCaseError::Store(StoreError::Busy(_))) => assert_eq!(
-                    self.snapshot(),
-                    before,
+                    self.inner, before,
                     "the store changed after write {index} failed"
                 ),
                 Ok(()) => {
@@ -45,11 +49,10 @@ impl FaultyStore {
         }
     }
 
-    fn snapshot(&self) -> (Vec<Object>, Vec<Change>) {
-        (self.inner.all().unwrap(), self.inner.staged().unwrap())
-    }
-
     fn write(&self) -> Result<(), StoreError> {
+        if !self.inside_a_unit_of_work.get() {
+            return Err(StoreError::Failed("a write outside a unit of work".into()));
+        }
         match self.writes_before_failing.get() {
             0 => Err(StoreError::Busy("database is locked".into())),
             left => {
@@ -91,6 +94,9 @@ impl Transactional for FaultyStore {
         &self,
         work: &mut dyn FnMut() -> Result<(), UseCaseError>,
     ) -> Result<(), UseCaseError> {
-        self.inner.in_transaction(work)
+        let outer = self.inside_a_unit_of_work.replace(true);
+        let done = self.inner.in_transaction(work);
+        self.inside_a_unit_of_work.set(outer);
+        done
     }
 }

@@ -2,7 +2,7 @@ use crate::config::{CredentialSpec, RemoteConfig};
 use crate::remote::{MutationOutcome, PullOutcome, RemoteCapabilities, RemoteMutation};
 use crate::secret::Secret;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum HelperError {
     NotFound {
         helper: String,
