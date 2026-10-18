@@ -34,17 +34,6 @@ pub(crate) fn move_into(
     Ok(())
 }
 
-pub(crate) fn move_subtree(
-    objects: &dyn ObjectRepository,
-    oid: &Oid,
-    to: &Path,
-) -> Result<(), UseCaseError> {
-    let object = objects
-        .get(oid)?
-        .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
-    move_folder(objects, &object.base().path, to)
-}
-
 fn move_folder(objects: &dyn ObjectRepository, from: &Path, to: &Path) -> Result<(), UseCaseError> {
     for mut object in objects.all()? {
         if !object.base().path.is_within(from) {
@@ -56,15 +45,6 @@ fn move_folder(objects: &dyn ObjectRepository, from: &Path, to: &Path) -> Result
         objects.put(&object)?;
     }
     Ok(())
-}
-
-pub(crate) fn last_segment(path: &Path) -> String {
-    path.as_str()
-        .trim_end_matches('/')
-        .rsplit('/')
-        .next()
-        .unwrap_or("")
-        .to_string()
 }
 
 #[cfg(test)]
@@ -116,23 +96,5 @@ mod tests {
         move_into(&store, &step, &Path::parse("work").unwrap()).unwrap();
         assert_eq!(path_of(&store, &step), "work/");
         assert_eq!(path_of(&store, &detail), "work/step/");
-    }
-
-    #[test]
-    fn move_subtree_carries_everything_within_the_old_path() {
-        let store = MemoryStore::new();
-        let c = put(&store, 2, "c", "p/c");
-        let g = put(&store, 3, "g", "p/c/g");
-        move_subtree(&store, &c, &Path::parse("c").unwrap()).unwrap();
-        assert_eq!(path_of(&store, &c), "c/");
-        assert_eq!(path_of(&store, &g), "c/g/");
-    }
-
-    #[test]
-    fn move_subtree_of_a_leaf_touches_only_itself() {
-        let store = MemoryStore::new();
-        let c = put(&store, 2, "c", "p/c");
-        move_subtree(&store, &c, &Path::parse("elsewhere").unwrap()).unwrap();
-        assert_eq!(path_of(&store, &c), "elsewhere/");
     }
 }
