@@ -52,6 +52,15 @@ fn a_zero_interval_cannot_advance_rather_than_dividing_by_zero() {
 }
 
 #[test]
+fn the_widest_weekly_interval_with_weekdays_still_steps_from_any_day() {
+    let rule = Rule::parse("every 208 weeks on sun").unwrap();
+    let monday = date(2026, 9, 21);
+    assert_eq!(rule.next_after(monday), Some(date(2026, 9, 27)));
+    let sunday = date(2026, 9, 27);
+    assert_eq!(rule.next_after(sunday), Some(date(2030, 9, 22)));
+}
+
+#[test]
 fn every_week_from_a_friday_lands_on_the_next_friday() {
     let rule = Rule::parse("every week").unwrap();
     assert_eq!(rule.next_after(date(2026, 9, 18)), Some(date(2026, 9, 25)));

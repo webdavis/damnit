@@ -66,7 +66,9 @@ pub struct Rule {
     pub anchor: Anchor,
 }
 
-const MAX_DAYS_SCANNED_BEFORE_GIVING_UP: i32 = 366 * 4;
+pub(crate) const WIDEST_WEEKLY_INTERVAL_WITH_WEEKDAYS: u32 = 208;
+const MAX_DAYS_SCANNED_BEFORE_GIVING_UP: i32 =
+    (WIDEST_WEEKLY_INTERVAL_WITH_WEEKDAYS as i32 + 1) * 7;
 
 impl Rule {
     pub fn next_after(&self, date: Date) -> Option<Date> {

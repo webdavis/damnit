@@ -32,3 +32,30 @@ fn done_refuses_a_pulled_rule_dam_cannot_read_and_the_task_stays_open() {
     let shown: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_eq!(shown["task"]["done"], false, "{shown}");
 }
+
+#[test]
+fn a_rule_the_stepper_cannot_serve_is_refused_at_the_edit_with_one_plain_line() {
+    let _guard = support::guard(
+        "a_rule_the_stepper_cannot_serve_is_refused_at_the_edit_with_one_plain_line",
+    );
+    let sb = Sandbox::new();
+    let oid = sb.new_object(&["probe"]);
+    for (rule, said) in [
+        (
+            "every day on mon",
+            "dam: on mon names weekdays, which only a weekly rule takes; try every week on mon\n",
+        ),
+        (
+            "every week on 5",
+            "dam: on 5 names days of the month, which only a monthly rule takes; try every month on 5\n",
+        ),
+        (
+            "every 210 weeks on mon",
+            "dam: interval must be 1 to 208 weeks when weekdays are named, got \"210\"\n",
+        ),
+    ] {
+        let out = sb.output(&["edit", &oid, "--recurrence", rule]);
+        assert_eq!(out.status.code(), Some(1), "{rule}");
+        assert_eq!(String::from_utf8_lossy(&out.stderr), said);
+    }
+}

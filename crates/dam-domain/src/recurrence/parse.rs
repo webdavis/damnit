@@ -2,7 +2,7 @@ use std::fmt;
 
 use jiff::civil::Weekday;
 
-use super::{Anchor, Freq, Rule};
+use super::{Anchor, Freq, Rule, WIDEST_WEEKLY_INTERVAL_WITH_WEEKDAYS};
 use crate::weekday::{parse_weekday, weekday_text};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -17,6 +17,8 @@ pub enum RuleError {
     },
     BadDay(String),
     BadDate(String),
+    WeekdaysWantWeekly(String),
+    MonthDaysWantMonthly(String),
 }
 
 impl Rule {
@@ -91,6 +93,19 @@ impl Rule {
         rule.by_day.dedup();
         rule.by_month_day.sort_unstable();
         rule.by_month_day.dedup();
+        if !rule.by_day.is_empty() && freq != Freq::Weekly {
+            return Err(RuleError::WeekdaysWantWeekly(rule.weekday_list()));
+        }
+        if !rule.by_month_day.is_empty() && freq != Freq::Monthly {
+            return Err(RuleError::MonthDaysWantMonthly(rule.month_day_list()));
+        }
+        if !rule.by_day.is_empty() && interval > WIDEST_WEEKLY_INTERVAL_WITH_WEEKDAYS {
+            return Err(RuleError::IntervalTooLarge {
+                got: interval.to_string(),
+                unit: "weeks when weekdays are named",
+                max: WIDEST_WEEKLY_INTERVAL_WITH_WEEKDAYS,
+            });
+        }
         Ok(rule)
     }
 
@@ -105,17 +120,25 @@ impl Rule {
         out.push(' ');
         out.push_str(self.freq.unit_text(self.interval != 1));
         if !self.by_day.is_empty() {
-            let days: Vec<&str> = self.by_day.iter().map(|d| weekday_text(*d)).collect();
-            out.push_str(&format!(" on {}", days.join(",")));
+            out.push_str(&format!(" on {}", self.weekday_list()));
         }
         if !self.by_month_day.is_empty() {
-            let days: Vec<String> = self.by_month_day.iter().map(|d| d.to_string()).collect();
-            out.push_str(&format!(" on {}", days.join(",")));
+            out.push_str(&format!(" on {}", self.month_day_list()));
         }
         if let Some(until) = self.until {
             out.push_str(&format!(" until {until}"));
         }
         out
+    }
+
+    fn weekday_list(&self) -> String {
+        let days: Vec<&str> = self.by_day.iter().map(|d| weekday_text(*d)).collect();
+        days.join(",")
+    }
+
+    fn month_day_list(&self) -> String {
+        let days: Vec<String> = self.by_month_day.iter().map(|d| d.to_string()).collect();
+        days.join(",")
     }
 }
 
@@ -138,6 +161,14 @@ impl fmt::Display for RuleError {
                  such as mon or Monday, or a day of the month from 1 to 31"
             ),
             RuleError::BadDate(w) => write!(f, "until wants YYYY-MM-DD, got {w:?}"),
+            RuleError::WeekdaysWantWeekly(days) => write!(
+                f,
+                "on {days} names weekdays, which only a weekly rule takes; try every week on {days}"
+            ),
+            RuleError::MonthDaysWantMonthly(days) => write!(
+                f,
+                "on {days} names days of the month, which only a monthly rule takes; try every month on {days}"
+            ),
         }
     }
 }
@@ -180,6 +211,44 @@ mod tests {
             assert!(said.contains(part), "{said}");
         }
         assert!(Rule::parse("every 1043497 weeks").is_ok());
+    }
+
+    #[test]
+    fn an_on_list_the_frequency_does_not_use_is_refused_with_the_rule_that_takes_it() {
+        assert_eq!(
+            Rule::parse("every day on mon").unwrap_err().to_string(),
+            "on mon names weekdays, which only a weekly rule takes; try every week on mon"
+        );
+        assert_eq!(
+            Rule::parse("every week on 5").unwrap_err().to_string(),
+            "on 5 names days of the month, which only a monthly rule takes; try every month on 5"
+        );
+        assert_eq!(
+            Rule::parse("every year on 1,15").unwrap_err().to_string(),
+            "on 1,15 names days of the month, which only a monthly rule takes; try every month on 1,15"
+        );
+        assert!(Rule::parse("every week on mon").is_ok());
+        assert!(Rule::parse("every month on 5").is_ok());
+    }
+
+    #[test]
+    fn a_weekly_interval_the_weekday_scan_cannot_reach_is_refused() {
+        assert_eq!(
+            Rule::parse("every 210 weeks on mon")
+                .unwrap_err()
+                .to_string(),
+            "interval must be 1 to 208 weeks when weekdays are named, got \"210\""
+        );
+        assert_eq!(
+            Rule::parse("every 209 weeks on mon"),
+            Err(RuleError::IntervalTooLarge {
+                got: "209".into(),
+                unit: "weeks when weekdays are named",
+                max: 208,
+            })
+        );
+        assert!(Rule::parse("every 208 weeks on mon").is_ok());
+        assert!(Rule::parse("every 210 weeks").is_ok());
     }
 
     #[test]
