@@ -24,7 +24,7 @@ pub fn resolve(
             .conflicts()?
             .into_iter()
             .find(|c| c.oid == *oid)
-            .ok_or_else(|| Refusal::NoSuchObject(format!("conflict on {}", oid.short())))?;
+            .ok_or_else(|| Refusal::NoConflict(oid.clone()))?;
         let (word, before, after) = match side {
             Side::Theirs => {
                 objects.put(&conflict.theirs)?;

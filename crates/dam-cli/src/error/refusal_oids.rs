@@ -15,6 +15,7 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
         | Refusal::MoveInsideItself(oid)
         | Refusal::NotCompleted(oid)
         | Refusal::NotCommitted(oid)
+        | Refusal::NoConflict(oid)
         | Refusal::DirtyOnPull { oid } => vec![named(oid)],
         Refusal::Labels(_)
         | Refusal::UnknownCategory(_)

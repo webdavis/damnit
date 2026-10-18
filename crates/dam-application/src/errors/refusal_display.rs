@@ -96,6 +96,7 @@ impl fmt::Display for Refusal {
                 f,
                 "cannot roll {text:?} forward; complete it in Todoist or set --recurrence"
             ),
+            Refusal::NoConflict(o) => write!(f, "{} has no conflict to resolve", o.short()),
         }
     }
 }

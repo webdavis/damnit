@@ -127,10 +127,8 @@ fn resolving_a_non_conflict_is_refused() {
         Side::Ours,
     )
     .unwrap_err();
-    assert!(matches!(
-        err,
-        UseCaseError::Refused(Refusal::NoSuchObject(_))
-    ));
+    assert_eq!(err, UseCaseError::Refused(Refusal::NoConflict(oid(1))));
+    assert_eq!(err.to_string(), "0101010 has no conflict to resolve");
 }
 
 #[test]

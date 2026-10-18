@@ -47,6 +47,7 @@ pub enum Refusal {
         limit: u64,
     },
     UnreadableRecurrence(String),
+    NoConflict(Oid),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -85,6 +86,7 @@ impl Refusal {
             Refusal::MissingCredential { .. } => "missing_credential",
             Refusal::StaleRemote { .. } => "stale_remote",
             Refusal::UnreadableRecurrence(_) => "unreadable_recurrence",
+            Refusal::NoConflict(_) => "no_conflict",
         }
     }
 }
