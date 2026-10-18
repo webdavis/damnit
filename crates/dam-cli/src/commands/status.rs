@@ -136,3 +136,5 @@ fn titled_section_unless_empty(
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod warning_tests;
