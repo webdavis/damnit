@@ -8,6 +8,12 @@ pub enum Blocker {
     OpenChild(Oid),
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Tracked {
+    No,
+    ByRemote,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Force {
     No,

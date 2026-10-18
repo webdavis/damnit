@@ -1,5 +1,5 @@
 use super::*;
-use dam_domain::{Blocker, LabelViolation, Oid};
+use dam_domain::{Blocker, LabelViolation, Oid, Tracked};
 
 fn oid() -> Oid {
     oid_of(1)
@@ -33,7 +33,7 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::MissingCredential { .. } => 17,
         Refusal::StaleRemote { .. } => 18,
         Refusal::RemoteExists(_) => 19,
-        Refusal::UnreadableRecurrence(_) => 20,
+        Refusal::UnreadableRecurrence { .. } => 20,
         Refusal::NotACategoryValue { .. } => 21,
         Refusal::NoConflict(_) => 22,
     }
@@ -77,7 +77,10 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
             age: None,
             limit: 60,
         },
-        Refusal::UnreadableRecurrence("every other week".into()),
+        Refusal::UnreadableRecurrence {
+            rule: "every other week".into(),
+            tracked: Tracked::No,
+        },
         Refusal::NotACategoryValue {
             category: "effort".into(),
             value: "home".into(),

@@ -27,7 +27,7 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
         | Refusal::UnresolvedConflicts(_)
         | Refusal::MissingCredential { .. }
         | Refusal::StaleRemote { .. }
-        | Refusal::UnreadableRecurrence(_)
+        | Refusal::UnreadableRecurrence { .. }
         | Refusal::NothingToCommit
         | Refusal::NeedsAnAnswer
         | Refusal::NeedsAnEditor => Vec::new(),

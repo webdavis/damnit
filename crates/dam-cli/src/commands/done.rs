@@ -1,6 +1,6 @@
 use dam_application::{
-    Blocker, ChildDisposition, Completed, DependencyDisposition, Dispositions, Force, complete,
-    plan_complete,
+    Blocker, ChildDisposition, Completed, DependencyDisposition, Dispositions, Force, Tracked,
+    complete, plan_complete,
 };
 
 use crate::args::DoneArgs;
@@ -8,6 +8,7 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::oids::resolve_oid;
 use crate::output::Report;
+use dam_domain::Oid;
 
 pub(crate) fn run(ctx: &mut Context, args: DoneArgs) -> Result<Report, CliError> {
     let oid = resolve_oid(ctx.store.as_ref(), &args.oid)?;
@@ -19,6 +20,7 @@ pub(crate) fn run(ctx: &mut Context, args: DoneArgs) -> Result<Report, CliError>
         ctx.random.as_ref(),
         &oid,
         force,
+        tracked_by_a_remote(ctx, &oid)?,
     )?;
     let human = match outcome {
         Completed::Done => "done".to_string(),
@@ -28,6 +30,15 @@ pub(crate) fn run(ctx: &mut Context, args: DoneArgs) -> Result<Report, CliError>
         data: serde_json::json!({ "oid": oid.to_string(), "result": human }),
         human,
     })
+}
+
+fn tracked_by_a_remote(ctx: &Context, oid: &Oid) -> Result<Tracked, CliError> {
+    for remote in &ctx.config.remotes {
+        if ctx.store.remote_id(&remote.name, oid)?.is_some() {
+            return Ok(Tracked::ByRemote);
+        }
+    }
+    Ok(Tracked::No)
 }
 
 fn how_far_this_run_forces(

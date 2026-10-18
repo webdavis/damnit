@@ -1,6 +1,6 @@
 use std::fmt;
 
-use dam_domain::{Blocker, Oid};
+use dam_domain::{Blocker, Oid, Tracked};
 
 use super::Refusal;
 
@@ -92,10 +92,17 @@ impl fmt::Display for Refusal {
                 f,
                 "remote {remote:?} last pulled {age}s ago, longer than --max-age allows ({limit}s); run dam pull {remote}"
             ),
-            Refusal::UnreadableRecurrence(text) => write!(
+            Refusal::UnreadableRecurrence {
+                rule,
+                tracked: Tracked::ByRemote,
+            } => write!(
                 f,
-                "cannot roll {text:?} forward; complete it in Todoist or set --recurrence"
+                "cannot roll {rule:?} forward; complete it in Todoist or set --recurrence"
             ),
+            Refusal::UnreadableRecurrence {
+                rule,
+                tracked: Tracked::No,
+            } => write!(f, "cannot roll {rule:?} forward; set --recurrence"),
             Refusal::NoConflict(o) => write!(f, "{} has no conflict to resolve", o.short()),
         }
     }

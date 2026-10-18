@@ -1,3 +1,5 @@
+mod recurrence;
+
 use super::*;
 use crate::args::DoneArgs;
 use crate::testing::{ScriptedPrompt, context, machine_context};
@@ -5,7 +7,7 @@ use dam_application::{ChildDisposition, DependencyDisposition, Refusal};
 use dam_domain::{Object, Oid, Path, Task};
 use std::cell::RefCell;
 
-fn oid(b: u8) -> Oid {
+pub(super) fn oid(b: u8) -> Oid {
     Oid::generate(&mut |x: &mut [u8]| x.fill(b))
 }
 
@@ -49,7 +51,7 @@ fn a_prompt_with_no_answers_so_any_question_cancels() -> ScriptedPrompt {
     }
 }
 
-fn args(oid: &Oid, force: bool, interactive: bool) -> DoneArgs {
+pub(super) fn args(oid: &Oid, force: bool, interactive: bool) -> DoneArgs {
     DoneArgs {
         oid: oid.as_str().into(),
         force,

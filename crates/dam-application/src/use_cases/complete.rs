@@ -1,6 +1,6 @@
 use dam_domain::{
     Blocker, ChildDisposition, Completion, Date, DependencyDisposition, Dispositions, Force,
-    Object, Oid, Recurrence, Task, When, blockers, roll_forward,
+    Object, Oid, Recurrence, Task, Tracked, When, blockers, roll_forward,
 };
 
 use crate::errors::{Refusal, UseCaseError};
@@ -47,6 +47,7 @@ pub fn complete(
     random: &dyn Randomness,
     oid: &Oid,
     force: Force,
+    tracked: Tracked,
 ) -> Result<Completed, UseCaseError> {
     atomically(objects, || {
         let plan = plan_complete(objects, oid)?;
@@ -64,7 +65,7 @@ pub fn complete(
             }
         }
         let mut task = load_task(objects, oid)?;
-        let outcome = match next_due_if_recurring(&task, clock.today())? {
+        let outcome = match next_due_if_recurring(&task, clock.today(), tracked)? {
             Some(next) => {
                 task.due = Some(When::Day(next));
                 Completed::RolledForward { next_due: next }
@@ -83,11 +84,19 @@ pub fn complete(
     })
 }
 
-fn next_due_if_recurring(task: &Task, today: Date) -> Result<Option<Date>, UseCaseError> {
+fn next_due_if_recurring(
+    task: &Task,
+    today: Date,
+    tracked: Tracked,
+) -> Result<Option<Date>, UseCaseError> {
     let rule = match &task.base.recurrence {
         None => return Ok(None),
         Some(Recurrence::Remote(text)) => {
-            return Err(Refusal::UnreadableRecurrence(text.clone()).into());
+            return Err(Refusal::UnreadableRecurrence {
+                rule: text.clone(),
+                tracked,
+            }
+            .into());
         }
         Some(Recurrence::Dam { rule, .. }) => rule,
     };

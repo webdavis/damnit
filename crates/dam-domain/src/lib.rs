@@ -16,7 +16,8 @@ pub use change::{
     Change, CommitId, CommitRecord, Op, changed_fields, coalesce, diff, touched_fields,
 };
 pub use completion::{
-    Blocker, ChildDisposition, DependencyDisposition, Dispositions, Force, blockers, cycle_in,
+    Blocker, ChildDisposition, DependencyDisposition, Dispositions, Force, Tracked, blockers,
+    cycle_in,
 };
 pub use field::Field;
 pub use object::{
