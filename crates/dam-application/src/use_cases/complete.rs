@@ -1,6 +1,6 @@
 use dam_domain::{
-    Blocker, ChildDisposition, Date, DependencyDisposition, Dispositions, Force, Object, Oid, Rule,
-    Task, When, blockers, roll_forward,
+    Blocker, ChildDisposition, Date, DependencyDisposition, Dispositions, Force, Object, Oid,
+    Recurrence, Task, When, blockers, roll_forward,
 };
 
 use crate::errors::{Refusal, UseCaseError};
@@ -83,12 +83,15 @@ pub fn complete(
 }
 
 fn next_due_if_recurring(task: &Task, today: Date) -> Result<Option<Date>, UseCaseError> {
-    let Some(text) = task.base.recurrence.as_deref() else {
-        return Ok(None);
+    let rule = match &task.base.recurrence {
+        None => return Ok(None),
+        Some(Recurrence::Remote(text)) => {
+            return Err(Refusal::UnreadableRecurrence(text.clone()).into());
+        }
+        Some(Recurrence::Dam(rule)) => rule,
     };
-    let rule = Rule::parse(text).map_err(|_| Refusal::UnreadableRecurrence(text.to_string()))?;
     let due = task.due.as_ref().map(|d| d.date()).unwrap_or(today);
-    Ok(roll_forward(&rule, due, today))
+    Ok(roll_forward(rule, due, today))
 }
 
 fn apply_dispositions(

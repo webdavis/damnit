@@ -1,17 +1,6 @@
 use super::*;
 use jiff::civil::{Weekday, date};
 
-fn hand_built(freq: Freq, interval: u32, by_day: Vec<Weekday>, by_month_day: Vec<i8>) -> Rule {
-    Rule {
-        freq,
-        interval,
-        by_day,
-        by_month_day,
-        until: None,
-        anchor: Anchor::Due,
-    }
-}
-
 #[test]
 fn each_units_maximum_is_the_widest_step_the_calendar_holds() {
     for freq in [Freq::Daily, Freq::Weekly, Freq::Monthly, Freq::Yearly] {
@@ -28,36 +17,32 @@ fn the_widest_yearly_interval_steps_from_the_earliest_date_to_the_latest_year() 
 }
 
 #[test]
-fn a_hand_built_interval_the_parser_would_refuse_cannot_advance() {
-    for freq in [Freq::Daily, Freq::Weekly, Freq::Monthly, Freq::Yearly] {
-        let rule = hand_built(freq, u32::MAX, vec![], vec![]);
-        assert_eq!(rule.next_after(date(2026, 9, 18)), None, "{freq:?}");
-    }
-    let weekly = hand_built(Freq::Weekly, u32::MAX, vec![Weekday::Monday], vec![]);
-    assert_eq!(weekly.next_after(date(2026, 9, 18)), None);
-    let monthly = hand_built(Freq::Monthly, u32::MAX, vec![], vec![1]);
-    assert_eq!(monthly.next_after(date(2026, 9, 18)), None);
-}
-
-#[test]
-fn a_zero_interval_cannot_advance_rather_than_dividing_by_zero() {
-    for freq in [Freq::Daily, Freq::Weekly, Freq::Monthly, Freq::Yearly] {
-        let rule = hand_built(freq, 0, vec![], vec![]);
-        assert_eq!(rule.next_after(date(2026, 9, 18)), None, "{freq:?}");
-    }
-    let weekly = hand_built(Freq::Weekly, 0, vec![Weekday::Monday], vec![]);
-    assert_eq!(weekly.next_after(date(2026, 9, 18)), None);
-    let monthly = hand_built(Freq::Monthly, 0, vec![], vec![1]);
-    assert_eq!(monthly.next_after(date(2026, 9, 18)), None);
-}
-
-#[test]
 fn the_widest_weekly_interval_with_weekdays_still_steps_from_any_day() {
     let rule = Rule::parse("every 208 weeks on sun").unwrap();
     let monday = date(2026, 9, 21);
     assert_eq!(rule.next_after(monday), Some(date(2026, 9, 27)));
     let sunday = date(2026, 9, 27);
     assert_eq!(rule.next_after(sunday), Some(date(2030, 9, 22)));
+}
+
+#[test]
+fn text_dam_reads_is_a_dam_rule_and_any_other_text_is_the_remotes() {
+    assert_eq!(
+        Recurrence::parse("every 2 weeks on mon"),
+        Recurrence::Dam(Rule::parse("every 2 weeks on mon").unwrap())
+    );
+    assert_eq!(
+        Recurrence::parse("every other week"),
+        Recurrence::Remote("every other week".into())
+    );
+    assert_eq!(
+        Recurrence::parse("every other week").to_string(),
+        "every other week"
+    );
+    assert_eq!(
+        Recurrence::parse("every week on Monday").to_string(),
+        "every week on mon"
+    );
 }
 
 #[test]

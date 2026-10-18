@@ -43,7 +43,10 @@ pub fn render_template(object: &Object) -> String {
                 .collect(),
         ),
     );
-    line("recurrence", empty_when_none(b.recurrence.clone()));
+    line(
+        "recurrence",
+        empty_when_none(b.recurrence.as_ref().map(ToString::to_string)),
+    );
     if let Object::Task(t) = object {
         line(
             "attach",

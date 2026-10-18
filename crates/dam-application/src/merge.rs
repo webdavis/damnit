@@ -107,7 +107,8 @@ mod tests {
     use crate::testing::oid;
     use dam_domain::{
         Attachment, Attendee, Conference, Event, EventStatus, EventType, Object, Path, Person,
-        Priority, Reminder, ResponseStatus, Task, Transparency, Visibility, When, changed_fields,
+        Priority, Recurrence, Reminder, ResponseStatus, Task, Transparency, Visibility, When,
+        changed_fields,
     };
     use jiff::civil::date;
 
@@ -153,7 +154,7 @@ mod tests {
         t.base.reminders = vec![Reminder {
             minutes_before: n as i64,
         }];
-        t.base.recurrence = Some(format!("every {n} days"));
+        t.base.recurrence = Some(Recurrence::parse(&format!("every {n} days")));
         t.priority = if tag == "a" {
             Priority::HIGHEST
         } else {
@@ -181,7 +182,7 @@ mod tests {
         e.base.reminders = vec![Reminder {
             minutes_before: n as i64,
         }];
-        e.base.recurrence = Some(format!("every {n} days"));
+        e.base.recurrence = Some(Recurrence::parse(&format!("every {n} days")));
         e.timezone = Some(format!("Zone/{tag}"));
         e.location = Some(format!("Room {tag}"));
         e.attendees = vec![Attendee {
