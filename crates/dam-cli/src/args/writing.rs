@@ -1,15 +1,16 @@
 use clap::Args;
-use dam_domain::{ChildDisposition, DependencyDisposition};
+use dam_domain::{ChildDisposition, DependencyDisposition, Path};
 
 use super::dispositions::{child_disposition, dependency_disposition};
+use super::values::path_arg;
 
 #[derive(Args, Debug)]
 pub(crate) struct NewArgs {
     pub(crate) subject: String,
     #[arg(long)]
     pub(crate) event: bool,
-    #[arg(long, default_value = "")]
-    pub(crate) path: String,
+    #[arg(long, default_value = "", value_parser = path_arg)]
+    pub(crate) path: Path,
     #[arg(long)]
     pub(crate) due: Option<String>,
     #[arg(short = 'p', long)]
@@ -114,7 +115,8 @@ pub(crate) struct EditArgs {
 #[derive(Args, Debug)]
 pub(crate) struct MvArgs {
     pub(crate) oid: String,
-    pub(crate) path: String,
+    #[arg(value_parser = path_arg)]
+    pub(crate) path: Path,
 }
 
 #[derive(Args, Debug)]

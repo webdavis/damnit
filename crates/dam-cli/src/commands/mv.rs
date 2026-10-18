@@ -1,5 +1,4 @@
 use dam_application::relocate;
-use dam_domain::Path;
 
 use crate::args::MvArgs;
 use crate::context::Context;
@@ -9,9 +8,7 @@ use crate::output::{Report, object_json, object_line};
 
 pub(crate) fn run(ctx: &mut Context, args: MvArgs) -> Result<Report, CliError> {
     let oid = resolve_oid(ctx.store.as_ref(), &args.oid)?;
-    let to =
-        Path::parse(&args.path).map_err(|e| CliError::Usage(format!("{}: {e:?}", args.path)))?;
-    relocate(ctx.store.as_ref(), &oid, &to)?;
+    relocate(ctx.store.as_ref(), &oid, &args.path)?;
     let object = ctx
         .store
         .get(&oid)?
@@ -27,7 +24,7 @@ mod tests {
     use super::*;
     use crate::args::MvArgs;
     use crate::testing::context;
-    use dam_domain::{Object, Oid, Task};
+    use dam_domain::{Object, Oid, Path, Task};
 
     #[test]
     fn mv_relocates() {
@@ -40,7 +37,7 @@ mod tests {
             &mut ctx,
             MvArgs {
                 oid: oid.as_str().into(),
-                path: "work/".into(),
+                path: Path::parse("work/").unwrap(),
             },
         )
         .unwrap();
