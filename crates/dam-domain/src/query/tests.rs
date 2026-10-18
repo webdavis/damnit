@@ -143,6 +143,10 @@ fn a_category_term_matches_only_a_value_of_that_category() {
         parse("effort:home").unwrap_err().to_string(),
         "home is not a value of category effort"
     );
+    assert_eq!(
+        parse("effort:").unwrap_err().to_string(),
+        "unexpected effort: in query"
+    );
 }
 
 #[test]

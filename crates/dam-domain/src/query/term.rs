@@ -12,6 +12,7 @@ pub(super) fn term(word: &str, categories: &Categories) -> Result<Term, QueryErr
             .map_err(|_| bad("priority", word));
     }
     let (key, value) = match word.split_once(':') {
+        Some((_, "")) => return Err(QueryError::Unexpected(word.to_string())),
         Some(kv) => kv,
         None => {
             return match word {
