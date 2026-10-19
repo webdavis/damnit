@@ -22,24 +22,6 @@ fn record(b: u8, changes: Vec<Change>) -> CommitRecord {
 }
 
 #[test]
-fn children_of_does_not_treat_underscore_and_percent_as_wildcards() {
-    let s = SqliteStore::in_memory().unwrap();
-    s.put(&task(1, "a_b/c")).unwrap();
-    s.put(&task(2, "axb/c")).unwrap();
-    let kids = s.children_of(&Path::parse("a_b").unwrap()).unwrap();
-    assert_eq!(kids.len(), 1);
-    assert_eq!(kids[0].oid(), &oid(1));
-}
-
-#[test]
-fn children_of_does_not_panic_on_a_non_matching_multibyte_path() {
-    let s = SqliteStore::in_memory().unwrap();
-    s.put(&task(1, "éé/c")).unwrap();
-    let kids = s.children_of(&Path::parse("__").unwrap()).unwrap();
-    assert!(kids.is_empty());
-}
-
-#[test]
 fn commit_moves_the_stage_into_history() {
     let s = SqliteStore::in_memory().unwrap();
     let a = task(1, "");

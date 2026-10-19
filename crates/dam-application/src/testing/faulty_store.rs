@@ -1,6 +1,6 @@
 use std::cell::{Cell, RefCell};
 
-use dam_domain::{Object, Oid, Path};
+use dam_domain::{Object, Oid};
 
 use crate::errors::UseCaseError;
 use crate::ports::{ObjectRepository, StoreError, Transactional};
@@ -84,9 +84,6 @@ impl ObjectRepository for FaultyStore {
     }
     fn all(&self) -> Result<Vec<Object>, StoreError> {
         self.inner.all()
-    }
-    fn children_of(&self, path: &Path) -> Result<Vec<Object>, StoreError> {
-        self.inner.children_of(path)
     }
     fn dependents_of(&self, oid: &Oid) -> Result<Vec<Oid>, StoreError> {
         self.inner.dependents_of(oid)

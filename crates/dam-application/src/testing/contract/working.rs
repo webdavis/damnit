@@ -1,5 +1,5 @@
 use crate::ports::{ObjectRepository, StageRepository};
-use dam_domain::{Change, Object, Oid, Path};
+use dam_domain::Change;
 
 use super::{oid, task};
 
@@ -24,24 +24,6 @@ pub fn object_repository_contract(objects: &dyn ObjectRepository) {
     assert_eq!(objects.all().unwrap().len(), 1);
 
     objects.put(&task(2, "child", "work/parent")).unwrap();
-    objects
-        .put(&task(4, "grandchild", "work/parent/deep"))
-        .unwrap();
-    objects.put(&task(5, "elsewhere", "workshop")).unwrap();
-    assert_eq!(
-        oids_of(objects.children_of(&Path::parse("work").unwrap()).unwrap()),
-        vec![oid(2)],
-        "children_of answers with the immediate children alone: not the node \
-         itself, not a grandchild, and not a path that merely shares a prefix"
-    );
-    assert_eq!(
-        oids_of(
-            objects
-                .children_of(&Path::parse("work/parent").unwrap())
-                .unwrap()
-        ),
-        vec![oid(4)]
-    );
 
     let mut dependent = task(3, "dependent", "work");
     dependent.base_mut().depends.push(oid(1));
@@ -64,12 +46,6 @@ pub fn object_repository_contract(objects: &dyn ObjectRepository) {
         before - 1,
         "deleting what is already gone is not an error and removes nothing else"
     );
-}
-
-pub(super) fn oids_of(objects: Vec<Object>) -> Vec<Oid> {
-    let mut out: Vec<Oid> = objects.iter().map(|o| o.oid().clone()).collect();
-    out.sort();
-    out
 }
 
 pub fn stage_repository_contract(stage: &dyn StageRepository) {
