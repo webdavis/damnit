@@ -113,3 +113,32 @@ fn an_unreachable_stale_remote_leaves_a_notice_and_no_last_pull() {
         Some(Notice::PullFailed { remote: r, .. }) if *r == remote()
     ));
 }
+
+fn pulled_ago(ago: Duration) -> MemoryStore {
+    let store = MemoryStore::new();
+    let at = clock()
+        .now()
+        .checked_sub(jiff::SignedDuration::try_from(ago).unwrap())
+        .unwrap();
+    store.set_last_pull(&remote(), at).unwrap();
+    store
+}
+
+#[test]
+fn a_remote_pulled_exactly_one_window_ago_is_fresh_and_one_second_later_stale() {
+    let at_the_window = pulled_ago(MINUTE);
+    let launcher = answering(one_object());
+    refresh(&at_the_window, &launcher, &config(Some(MINUTE))).unwrap();
+    assert_eq!(
+        launches(&launcher),
+        0,
+        "a pull exactly one window old is fresh"
+    );
+    let past_it = pulled_ago(MINUTE + Duration::from_secs(1));
+    refresh(&past_it, &launcher, &config(Some(MINUTE))).unwrap();
+    assert_eq!(
+        launches(&launcher),
+        1,
+        "a pull older than the window is stale"
+    );
+}

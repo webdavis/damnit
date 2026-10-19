@@ -18,13 +18,12 @@ pub fn require_fresh(
         let remote = config
             .remote(name)
             .ok_or_else(|| Refusal::NoSuchRemote(name.clone()))?;
-        let age = age_of_last_pull(remote_tracking, clock, &remote.name)?.map(|a| a.as_secs());
-        let limit = bound.as_secs();
-        if age.is_none_or(|a| a > limit) {
+        let age = age_of_last_pull(remote_tracking, clock, &remote.name)?;
+        if is_stale(age, *bound) {
             return Err(Refusal::StaleRemote {
                 remote: name.clone(),
-                age,
-                limit,
+                age: age.map(|a| a.as_secs()),
+                limit: bound.as_secs(),
             }
             .into());
         }
@@ -45,7 +44,7 @@ pub fn refresh_stale(
             continue;
         };
         let age = age_of_last_pull(repos.remote_tracking, clock, &remote.name).unwrap_or(None);
-        if age.is_none_or(|a| a.as_secs() >= window.as_secs()) {
+        if is_stale(age, window) {
             let pulled = pull(
                 repos,
                 launcher,
@@ -64,6 +63,10 @@ pub fn refresh_stale(
         }
     }
     Ok(())
+}
+
+fn is_stale(age: Option<Duration>, window: Duration) -> bool {
+    age.is_none_or(|a| a.as_secs() > window.as_secs())
 }
 
 fn age_of_last_pull(
