@@ -113,12 +113,7 @@ fn reopened_with_the_parse_error_as_its_first_line<T>(
     saved: &str,
     parse: impl Fn(&str) -> Result<T, String>,
 ) -> String {
-    let body = saved
-        .lines()
-        .filter(|l| !l.starts_with("# error:"))
-        .collect::<Vec<_>>()
-        .join("\n");
-    let headed = |why: &str| format!("# error: {why}\n{body}\n");
+    let headed = |why: &str| format!("# error: {why}\n{saved}");
     match parse(&headed("")) {
         Ok(_) => headed(""),
         Err(why) => headed(&why),
@@ -129,5 +124,7 @@ fn reopened_with_the_parse_error_as_its_first_line<T>(
 mod editor_tests;
 #[cfg(test)]
 mod line_number_tests;
+#[cfg(test)]
+mod reopen_tests;
 #[cfg(test)]
 mod tests;
