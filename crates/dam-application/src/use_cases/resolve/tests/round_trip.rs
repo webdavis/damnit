@@ -1,83 +1,18 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+mod doubles;
 
 use super::super::*;
 use super::remote;
-use crate::config::{Config, CredentialSpec, RemoteConfig};
 use crate::ports::Repositories;
-use crate::remote::{
-    IncomingObject, MutationOutcome, MutationVerdict, PullOutcome, RemoteMutation,
-};
 use crate::service::Dam;
 use crate::testing::prelude::*;
-use crate::testing::{
-    EchoCredentials, FixedClock, FixedRandom, Fixture, MemoryStore, ScriptedHelper,
-    ScriptedLauncher, oid, task_caps,
-};
+use crate::testing::{EchoCredentials, FixedClock, FixedRandom, Fixture, MemoryStore, oid};
 use crate::use_cases::pull::pull;
 use crate::use_cases::push::push;
 use dam_domain::{Object, Task};
+use doubles::{
+    config, launcher_that_accepts_every_push, recording_launcher_that_accepts_every_push, upstream,
+};
 use jiff::civil::date;
-
-fn config() -> Config {
-    Config {
-        remotes: vec![RemoteConfig {
-            name: remote(),
-            helper: "todoist".into(),
-            url: "todoist::".into(),
-            credentials: vec![CredentialSpec::Literal {
-                name: "api_token".into(),
-                value: "t".into(),
-            }],
-            stale: None,
-            deadline: None,
-            path: None,
-        }],
-        ..Config::default()
-    }
-}
-
-fn upstream(subject: &str) -> IncomingObject {
-    IncomingObject {
-        remote_id: "r1".into(),
-        object: Object::Task(Task::new(oid(0), subject)),
-    }
-}
-
-fn launcher_that_accepts_every_push(objects: Vec<IncomingObject>) -> ScriptedLauncher {
-    recording_launcher_that_accepts_every_push(objects).0
-}
-
-fn recording_launcher_that_accepts_every_push(
-    objects: Vec<IncomingObject>,
-) -> (ScriptedLauncher, Rc<RefCell<Vec<RemoteMutation>>>) {
-    let pushed = Rc::new(RefCell::new(Vec::new()));
-    let seen = pushed.clone();
-    let l = ScriptedLauncher {
-        make: Box::new(move || ScriptedHelper {
-            caps: task_caps(),
-            pull_answer: Ok(PullOutcome {
-                objects: objects.clone(),
-                ..PullOutcome::default()
-            }),
-            push_answer: Box::new(|ms| {
-                Ok(ms
-                    .iter()
-                    .map(|m| MutationOutcome {
-                        oid: m.oid.clone(),
-                        verdict: MutationVerdict::Accepted {
-                            remote_id: Some("r1".into()),
-                        },
-                    })
-                    .collect())
-            }),
-            pushed: seen.clone(),
-            pulled_since: Rc::new(RefCell::new(vec![])),
-        }),
-        launched_with: Rc::new(RefCell::new(vec![])),
-    };
-    (l, pushed)
-}
 
 fn both_sides_moved_off_one_base() -> MemoryStore {
     let store = MemoryStore::new();
