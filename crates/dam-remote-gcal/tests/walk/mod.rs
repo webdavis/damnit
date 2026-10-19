@@ -6,7 +6,7 @@ use std::net::TcpStream;
 use dam_remote_gcal::{Client, Endpoints, Secret, SignIn, SignInError};
 use sha2::Digest;
 
-use crate::loopback::{self, Loopback};
+use dam_helper::testing::{self, Loopback};
 
 pub const CLIENT_SECRET: &str = "GOCSPX-SUPERSECRETCLIENT";
 pub const REFRESH: &str = "1//0gSUPERSECRETREFRESH";
@@ -52,7 +52,7 @@ pub fn play_the_browser_returning_its_page(
     url: &str,
     redirect_query_for_state: impl Fn(&str) -> String,
 ) -> std::thread::JoinHandle<String> {
-    let asked = loopback::decoded_fields(query_of(url));
+    let asked = testing::decoded_fields(query_of(url));
     let field = |name: &str| asked.get(name).cloned().unwrap_or_default();
     let address = field("redirect_uri")
         .trim_start_matches("http://")

@@ -1,17 +1,16 @@
-mod loopback;
-mod support;
 mod walk;
 
+use dam_helper::testing;
 use std::collections::HashMap;
 
 use dam_remote_gcal::SignInError;
-use loopback::Reply;
+use testing::Reply;
 use walk::{CLIENT_SECRET, REFRESH, mint_with_the_browser_granting_code_c};
 
 #[test]
 fn a_refused_exchange_names_the_status_and_googles_word_and_quotes_nothing() {
     let _guard =
-        support::guard("a_refused_exchange_names_the_status_and_googles_word_and_quotes_nothing");
+        testing::guard("a_refused_exchange_names_the_status_and_googles_word_and_quotes_nothing");
     let mut routes = HashMap::new();
     routes.insert(
         "POST /token",
@@ -22,7 +21,7 @@ fn a_refused_exchange_names_the_status_and_googles_word_and_quotes_nothing() {
             }),
         )],
     );
-    let google = loopback::serve(routes);
+    let google = testing::serve(routes);
     let err = mint_with_the_browser_granting_code_c(&google).unwrap_err();
     assert_eq!(
         err,
@@ -41,14 +40,14 @@ fn a_refused_exchange_names_the_status_and_googles_word_and_quotes_nothing() {
 
 #[test]
 fn an_exchange_answering_no_refresh_token_is_refused_by_name() {
-    let _guard = support::guard("an_exchange_answering_no_refresh_token_is_refused_by_name");
+    let _guard = testing::guard("an_exchange_answering_no_refresh_token_is_refused_by_name");
     for answered in [
         serde_json::json!({"access_token": "ya29.A", "expires_in": 3599}),
         serde_json::json!({"access_token": "ya29.A", "refresh_token": ""}),
     ] {
         let mut routes = HashMap::new();
         routes.insert("POST /token", vec![Reply::json(200, answered.clone())]);
-        let google = loopback::serve(routes);
+        let google = testing::serve(routes);
         let err = mint_with_the_browser_granting_code_c(&google).unwrap_err();
         assert_eq!(err, SignInError::NoRefreshToken, "{answered}");
     }
@@ -56,7 +55,7 @@ fn an_exchange_answering_no_refresh_token_is_refused_by_name() {
 
 #[test]
 fn an_exchange_answer_that_is_not_json_is_reported_unreadable() {
-    let _guard = support::guard("an_exchange_answer_that_is_not_json_is_reported_unreadable");
+    let _guard = testing::guard("an_exchange_answer_that_is_not_json_is_reported_unreadable");
     let mut routes = HashMap::new();
     let page = Reply {
         status: 200,
@@ -64,7 +63,7 @@ fn an_exchange_answer_that_is_not_json_is_reported_unreadable() {
         headers: vec![],
     };
     routes.insert("POST /token", vec![page]);
-    let google = loopback::serve(routes);
+    let google = testing::serve(routes);
     let err = mint_with_the_browser_granting_code_c(&google).unwrap_err();
     assert_eq!(
         err,
@@ -78,7 +77,7 @@ fn an_exchange_answer_that_is_not_json_is_reported_unreadable() {
 
 #[test]
 fn a_redirect_from_the_token_endpoint_is_its_answer_so_no_credential_follows_it() {
-    let _guard = support::guard(
+    let _guard = testing::guard(
         "a_redirect_from_the_token_endpoint_is_its_answer_so_no_credential_follows_it",
     );
     let mut elsewhere_routes = HashMap::new();
@@ -89,16 +88,16 @@ fn a_redirect_from_the_token_endpoint_is_its_answer_so_no_credential_follows_it(
             serde_json::json!({"refresh_token": REFRESH}),
         )],
     );
-    let elsewhere = loopback::serve(elsewhere_routes);
+    let elsewhere = testing::serve(elsewhere_routes);
     let mut routes = HashMap::new();
     routes.insert(
         "POST /token",
         vec![
             Reply::json(307, serde_json::json!({}))
-                .with_header("Location", &format!("{}/token", elsewhere.base)),
+                .with_header("Location", format!("{}/token", elsewhere.base)),
         ],
     );
-    let google = loopback::serve(routes);
+    let google = testing::serve(routes);
     let err = mint_with_the_browser_granting_code_c(&google).unwrap_err();
     assert_eq!(
         err,

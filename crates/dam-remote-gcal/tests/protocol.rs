@@ -1,13 +1,11 @@
-mod loopback;
-mod support;
-
+use dam_helper::testing;
 use std::collections::HashMap;
 use std::io::Write;
 use std::process::{Command, Stdio};
 
 use dam_protocol::{Capabilities, PullResponse, PushResponse, Reply as Answer};
-use loopback::Reply;
 use serde::de::DeserializeOwned;
+use testing::Reply;
 
 const CLIENT_SECRET: &str = "GOCSPX-SUPERSECRETCLIENT";
 const REFRESH: &str = "1//0gSUPERSECRETREFRESH";
@@ -58,7 +56,7 @@ fn read<T: DeserializeOwned>(line: &str) -> Answer<T> {
     serde_json::from_str(line).unwrap()
 }
 
-fn google() -> loopback::Loopback {
+fn google() -> testing::Loopback {
     let mut routes = HashMap::new();
     routes.insert(
         "POST /token",
@@ -77,12 +75,12 @@ fn google() -> loopback::Loopback {
             }]}),
         )],
     );
-    loopback::serve(routes)
+    testing::serve(routes)
 }
 
 #[test]
 fn capabilities_need_no_credentials_and_a_pull_names_the_missing_variable_only() {
-    let _guard = support::guard(
+    let _guard = testing::guard(
         "capabilities_need_no_credentials_and_a_pull_names_the_missing_variable_only",
     );
     let home = tempfile::tempdir().unwrap();
@@ -103,7 +101,7 @@ fn capabilities_need_no_credentials_and_a_pull_names_the_missing_variable_only()
 
 #[test]
 fn a_pull_reaches_the_token_endpoint_then_the_calendar_and_answers_dams_document() {
-    let _guard = support::guard(
+    let _guard = testing::guard(
         "a_pull_reaches_the_token_endpoint_then_the_calendar_and_answers_dams_document",
     );
     let home = tempfile::tempdir().unwrap();
@@ -133,7 +131,7 @@ fn a_pull_reaches_the_token_endpoint_then_the_calendar_and_answers_dams_document
 #[test]
 fn a_remote_under_another_name_reads_its_own_credentials_and_its_address() {
     let _guard =
-        support::guard("a_remote_under_another_name_reads_its_own_credentials_and_its_address");
+        testing::guard("a_remote_under_another_name_reads_its_own_credentials_and_its_address");
     let home = tempfile::tempdir().unwrap();
     let google = google();
     let (responses, _) = converse(
@@ -152,7 +150,7 @@ fn a_remote_under_another_name_reads_its_own_credentials_and_its_address() {
 
 #[test]
 fn a_push_is_refused_per_mutation_without_a_credential_or_a_request() {
-    let _guard = support::guard("a_push_is_refused_per_mutation_without_a_credential_or_a_request");
+    let _guard = testing::guard("a_push_is_refused_per_mutation_without_a_credential_or_a_request");
     let home = tempfile::tempdir().unwrap();
     let google = google();
     let push = r#"{"cmd":"push","mutations":[{"op":"update","oid":"0101010101010101010101010101010101010101","idempotency_key":"k","remote_id":"primary/a","fields":["subject"]}]}"#;
@@ -170,7 +168,7 @@ fn a_push_is_refused_per_mutation_without_a_credential_or_a_request() {
 
 #[test]
 fn a_request_that_does_not_decode_is_answered_and_the_loop_goes_on() {
-    let _guard = support::guard("a_request_that_does_not_decode_is_answered_and_the_loop_goes_on");
+    let _guard = testing::guard("a_request_that_does_not_decode_is_answered_and_the_loop_goes_on");
     let home = tempfile::tempdir().unwrap();
     let (responses, _) = converse(
         helper(home.path(), &["gcal", ""], "http://127.0.0.1:1"),
@@ -187,7 +185,7 @@ fn a_request_that_does_not_decode_is_answered_and_the_loop_goes_on() {
 
 #[test]
 fn any_invocation_but_remote_and_address_is_a_usage_error() {
-    let _guard = support::guard("any_invocation_but_remote_and_address_is_a_usage_error");
+    let _guard = testing::guard("any_invocation_but_remote_and_address_is_a_usage_error");
     let home = tempfile::tempdir().unwrap();
     for args in [&[][..], &["gcal"][..], &["gcal", "", "extra"][..]] {
         let out = helper(home.path(), args, "http://127.0.0.1:1")

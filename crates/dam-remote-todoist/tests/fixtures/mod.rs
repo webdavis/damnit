@@ -3,9 +3,8 @@
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
+use dam_helper::testing;
 use dam_protocol::{Mutation, WireObject, WireTask};
-
-use crate::loopback;
 
 pub fn sync_body() -> serde_json::Value {
     serde_json::json!({
@@ -112,12 +111,13 @@ impl Recorded {
 pub fn todoist(
     tree: serde_json::Value,
     refused_command_type: Option<&'static str>,
-) -> (loopback::Loopback, Arc<Mutex<Recorded>>) {
+) -> (testing::Loopback, Arc<Mutex<Recorded>>) {
     let state = Arc::new(Mutex::new(Recorded::default()));
     let inner = Arc::clone(&state);
-    let server = loopback::serve_with(move |seen| {
-        let Some(commands) = seen.body.get("commands").and_then(|c| c.as_array()) else {
-            return loopback::Reply::new(200, tree.clone());
+    let server = testing::serve_with(move |seen| {
+        let body = seen.json();
+        let Some(commands) = body.get("commands").and_then(|c| c.as_array()) else {
+            return testing::Reply::json(200, tree.clone());
         };
         let mut recorded = inner.lock().unwrap();
         let mut status = serde_json::Map::new();
@@ -147,7 +147,7 @@ pub fn todoist(
                 );
             }
         }
-        loopback::Reply::new(
+        testing::Reply::json(
             200,
             serde_json::json!({"sync_status": status, "temp_id_mapping": mapping}),
         )

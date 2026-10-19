@@ -244,6 +244,8 @@ name = "dam-helper"
 version = "0.1.0"
 dependencies = [
  "dam-protocol",
+ "serde_json",
+ "ureq",
 ]
 
 [[package]]

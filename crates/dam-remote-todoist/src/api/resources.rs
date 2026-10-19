@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::Deserialize;
 
-use super::error::one_short_line;
+use dam_helper::one_line;
 
 #[derive(Debug, Deserialize)]
 pub struct SyncResponse {
@@ -94,13 +94,13 @@ impl SyncWrite {
     pub fn accepted(&self, uuid: &str) -> Result<(), String> {
         match self.verdict_by_uuid.get(uuid) {
             Some(serde_json::Value::String(word)) if word == ACCEPTED_VERDICT => Ok(()),
-            Some(serde_json::Value::Object(error)) => Err(one_short_line(
+            Some(serde_json::Value::Object(error)) => Err(one_line(
                 error
                     .get("error")
                     .and_then(serde_json::Value::as_str)
                     .unwrap_or(&serde_json::Value::Object(error.clone()).to_string()),
             )),
-            Some(other) => Err(one_short_line(&other.to_string())),
+            Some(other) => Err(one_line(&other.to_string())),
             None => Err(format!("Todoist gave no verdict for command {uuid}")),
         }
     }

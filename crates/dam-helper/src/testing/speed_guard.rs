@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::time::{Duration, Instant};
 
 const BUDGET: Duration = Duration::from_secs(1);

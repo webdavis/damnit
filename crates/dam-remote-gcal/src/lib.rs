@@ -6,7 +6,6 @@ pub mod capabilities;
 pub mod credentials;
 pub(crate) mod encoding;
 pub mod endpoints;
-pub(crate) mod http;
 pub(crate) mod map;
 mod memory;
 pub(crate) mod oauth_error;

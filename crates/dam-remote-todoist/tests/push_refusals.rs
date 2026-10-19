@@ -1,15 +1,13 @@
-mod support;
-
 mod fixtures;
-mod loopback;
 
+use dam_helper::testing;
 use dam_remote_todoist::api::TodoistApi;
 use dam_remote_todoist::push::push;
 use fixtures::{mutation, sync_body, task, todoist, with_fields};
 
 #[test]
 fn a_project_path_change_and_a_section_done_change_are_refused_and_send_nothing() {
-    let _guard = support::guard(
+    let _guard = testing::guard(
         "a_project_path_change_and_a_section_done_change_are_refused_and_send_nothing",
     );
     let (server, recorded) = todoist(sync_body(), None);
@@ -53,7 +51,7 @@ fn a_project_path_change_and_a_section_done_change_are_refused_and_send_nothing(
 
 #[test]
 fn a_rename_with_a_path_change_sends_the_rename_and_is_refused_for_the_path_only() {
-    let _guard = support::guard(
+    let _guard = testing::guard(
         "a_rename_with_a_path_change_sends_the_rename_and_is_refused_for_the_path_only",
     );
     let (server, recorded) = todoist(sync_body(), None);
