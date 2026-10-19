@@ -1,11 +1,10 @@
 mod error;
 mod resources;
-mod token;
 
 pub use error::{ApiError, MAX_ERROR_BODY_CHARS};
 pub use resources::{Deadline, Due, Item, Project, Section, SyncResponse, SyncWrite};
-pub use token::ApiToken;
 
+use dam_helper::Secret;
 use dam_protocol::credential_variable;
 use error::read_json;
 
@@ -15,7 +14,7 @@ pub const PRODUCTION_BASE: &str = "https://api.todoist.com/api/v1";
 pub struct TodoistApi {
     agent: ureq::Agent,
     base: String,
-    token: ApiToken,
+    token: Secret,
 }
 
 impl TodoistApi {
@@ -61,11 +60,15 @@ impl TodoistApi {
         let response = self
             .agent
             .post(format!("{}/sync", self.base))
-            .header("Authorization", &self.token.bearer_authorization())
+            .header("Authorization", &self.authorization())
             .send_form([("commands", encoded.as_str())])
             .map_err(|e| ApiError::Transport(e.to_string()))?;
         let value = read_json(response)?;
         serde_json::from_value(value).map_err(|e| ApiError::Decode(e.to_string()))
+    }
+
+    fn authorization(&self) -> String {
+        format!("Bearer {}", self.token.expose())
     }
 
     pub fn post(
@@ -76,7 +79,7 @@ impl TodoistApi {
         let response = self
             .agent
             .post(format!("{}{path}", self.base))
-            .header("Authorization", &self.token.bearer_authorization())
+            .header("Authorization", &self.authorization())
             .send_json(body)
             .map_err(|e| ApiError::Transport(e.to_string()))?;
         read_json(response)

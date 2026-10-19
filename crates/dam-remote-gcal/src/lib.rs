@@ -12,13 +12,12 @@ mod memory;
 pub(crate) mod oauth_error;
 pub mod pull;
 pub mod push;
-pub mod secret;
 pub mod serve;
 pub mod sign_in;
 
 pub use api_error::ApiError;
 pub use credentials::Credentials;
+pub use dam_helper::Secret;
 pub use endpoints::{BASE_URL_VARIABLE, Endpoints};
 pub use map::{MapError, remote_id};
-pub use secret::Secret;
 pub use sign_in::{Client, SignIn, SignInError};

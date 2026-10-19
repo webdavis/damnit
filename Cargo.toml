@@ -8,6 +8,7 @@ members = [
   "crates/dam-cli",
   "crates/dam-remote-todoist",
   "crates/dam-remote-gcal",
+  "crates/dam-helper",
 ]
 
 [workspace.package]

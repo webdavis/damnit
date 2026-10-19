@@ -240,6 +240,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "dam-helper"
+version = "0.1.0"
+
+[[package]]
 name = "dam-protocol"
 version = "0.1.0"
 dependencies = [
@@ -252,6 +256,7 @@ dependencies = [
 name = "dam-remote-gcal"
 version = "0.1.0"
 dependencies = [
+ "dam-helper",
  "dam-protocol",
  "getrandom 0.3.4",
  "jiff",
@@ -266,6 +271,7 @@ dependencies = [
 name = "dam-remote-todoist"
 version = "0.1.0"
 dependencies = [
+ "dam-helper",
  "dam-protocol",
  "serde",
  "serde_json",
