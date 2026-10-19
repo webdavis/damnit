@@ -63,7 +63,6 @@ pub fn complete(
                     }
                     .into());
                 }
-                Force::Yes => {}
                 Force::With(d) => apply_dispositions(objects, random, oid, &plan.blockers, d)?,
             }
         }

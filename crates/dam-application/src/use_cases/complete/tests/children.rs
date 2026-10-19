@@ -85,7 +85,7 @@ fn done_children_do_not_block() {
 }
 
 #[test]
-fn force_yes_completes_and_leaves_children_where_they_are() {
+fn forcing_with_default_dispositions_completes_and_leaves_children_where_they_are() {
     let store = MemoryStore::new();
     let plan = put_task(&store, 1, "plan", "work", false);
     let step = put_task(&store, 2, "step", "work/plan", false);
@@ -94,7 +94,7 @@ fn force_yes_completes_and_leaves_children_where_they_are() {
         &today(),
         &FixedRandom::new(9),
         &plan,
-        Force::Yes,
+        Force::With(Dispositions::default()),
         Tracked::No,
     )
     .unwrap();

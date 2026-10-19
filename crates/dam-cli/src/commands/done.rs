@@ -49,15 +49,12 @@ fn how_far_this_run_forces(
     if !args.force {
         return Ok(Force::No);
     }
-    if blockers.is_empty() {
-        return Ok(Force::Yes);
-    }
     match dispositions_answered_on_the_command_line_over_any_config(args) {
         Some(d) => Ok(Force::With(d)),
         None if args.interactive || ctx.config.done_interactive => {
             Ok(Force::With(ask(ctx, blockers)?))
         }
-        None => Ok(Force::Yes),
+        None => Ok(Force::With(Dispositions::default())),
     }
 }
 

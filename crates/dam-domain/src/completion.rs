@@ -23,7 +23,6 @@ pub enum Tracked {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Force {
     No,
-    Yes,
     With(Dispositions),
 }
 
