@@ -1,4 +1,4 @@
-use dam_application::{Refusal, UseCaseError, log, resolve_object};
+use dam_application::{Refusal, UseCaseError, resolve_commit, resolve_object};
 use dam_domain::Object;
 
 use crate::args::ShowArgs;
@@ -33,31 +33,18 @@ pub(crate) fn run_show(ctx: &mut Context, args: ShowArgs) -> Result<Report, CliE
             data: object_json(&object)?,
         });
     }
-    let matches: Vec<_> = log(ctx.store.as_ref())?
-        .into_iter()
-        .filter(|c| c.id.as_str().starts_with(&args.id))
-        .collect();
-    match matches.as_slice() {
-        [record] => {
-            let mut human = vec![commit_line(record)];
-            human.extend(
-                record
-                    .changes
-                    .iter()
-                    .map(|c| format!("  {}", change_line(c))),
-            );
-            Ok(Report {
-                human: human.join("\n"),
-                data: commit_json(record)?,
-            })
-        }
-        [] => Err(UseCaseError::Refused(Refusal::NoSuchObject(args.id)).into()),
-        many => Err(CliError::Usage(format!(
-            "{} matches {} commits",
-            args.id,
-            many.len()
-        ))),
-    }
+    let record = resolve_commit(ctx.store.as_ref(), &args.id)?;
+    let mut human = vec![commit_line(&record)];
+    human.extend(
+        record
+            .changes
+            .iter()
+            .map(|c| format!("  {}", change_line(c))),
+    );
+    Ok(Report {
+        human: human.join("\n"),
+        data: commit_json(&record)?,
+    })
 }
 
 fn working_object_named(ctx: &Context, text: &str) -> Result<Option<Object>, CliError> {
@@ -184,12 +171,15 @@ mod tests {
             },
         )
         .unwrap_err();
-        match err {
-            CliError::Usage(msg) => {
-                assert!(msg.contains("abababab"), "{msg}");
-                assert!(msg.contains("2 commits"), "{msg}");
-            }
-            other => panic!("expected a usage error, got {other:?}"),
-        }
+        let ids: Vec<String> = ctx
+            .store
+            .log()
+            .unwrap()
+            .iter()
+            .map(|c| c.id.to_string())
+            .collect();
+        assert_eq!(err.exit_code(), 2);
+        assert_eq!(err.document()["error"]["rule"], "ambiguous_prefix");
+        assert_eq!(err.document()["error"]["oids"], serde_json::json!(ids));
     }
 }

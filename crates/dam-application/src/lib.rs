@@ -32,7 +32,7 @@ pub use use_cases::edit::{EditFields, apply, edit};
 pub use use_cases::freshness::{refresh_stale, require_fresh};
 pub use use_cases::list::list;
 pub use use_cases::new_object::{NewEvent, NewTask, new_event, new_task};
-pub use use_cases::prefix::resolve_object;
+pub use use_cases::prefix::{resolve_commit, resolve_object};
 pub use use_cases::pull::{PullReport, pull};
 pub use use_cases::push::{PushReport, push};
 pub use use_cases::relocate::relocate;

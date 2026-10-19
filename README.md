@@ -228,8 +228,9 @@ output:
 `kind` is one of `refused`, `store`, `helper`, `credential`, `editor`, `parse`, `usage`,
 `cancelled` and `internal`, the last meaning a bug in `dam` itself.
 `rule` names which rule a refusal broke, such as `blocked`, `no_such_object` or
-`nothing_to_commit`, and is null for every other kind. `oids` names the objects the message names,
-in the order it names them.
+`nothing_to_commit`, and is null for every other kind except an ambiguous oid prefix, a `usage`
+failure with rule `ambiguous_prefix`. `oids` names the objects the message names, in the order it
+names them.
 
 Standard error carries that one document and nothing else, so parse the whole stream; a run that
 succeeds writes nothing there. The exception is an argument clap rejects before `dam` runs, such as

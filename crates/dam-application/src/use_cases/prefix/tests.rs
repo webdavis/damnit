@@ -1,4 +1,4 @@
-use dam_domain::{Object, Task};
+use dam_domain::{CommitId, CommitRecord, Object, Task, Timestamp};
 
 use super::*;
 use crate::testing::prelude::*;
@@ -70,5 +70,79 @@ fn a_prefix_naming_two_objects_lists_both() {
             matches: vec![twin(1).to_string(), twin(2).to_string()],
         }
         .into())
+    );
+}
+
+fn commit_numbered(last: u8) -> CommitRecord {
+    CommitRecord {
+        id: CommitId::generate(&mut |x: &mut [u8]| {
+            x.fill(0xab);
+            x[19] = last;
+        }),
+        message: format!("c{last}"),
+        at: Timestamp::UNIX_EPOCH,
+        changes: vec![],
+    }
+}
+
+fn history_of(commits: &[CommitRecord]) -> MemoryStore {
+    let store = MemoryStore::new();
+    for c in commits {
+        store.commit(c).unwrap();
+    }
+    store
+}
+
+#[test]
+fn a_commit_prefix_naming_one_commit_resolves_to_it() {
+    let store = history_of(&[commit_numbered(1)]);
+    assert_eq!(resolve_commit(&store, "abab"), Ok(commit_numbered(1)));
+}
+
+#[test]
+fn a_commit_prefix_naming_two_commits_lists_both_newest_first() {
+    let store = history_of(&[commit_numbered(1), commit_numbered(2)]);
+    assert_eq!(
+        resolve_commit(&store, "abab"),
+        Err(Refusal::AmbiguousPrefix {
+            text: "abab".into(),
+            matches: vec![
+                commit_numbered(2).id.to_string(),
+                commit_numbered(1).id.to_string()
+            ],
+        }
+        .into())
+    );
+}
+
+#[test]
+fn a_commit_prefix_naming_nothing_or_too_short_is_refused() {
+    let store = history_of(&[commit_numbered(1)]);
+    assert_eq!(
+        resolve_commit(&store, "cdcd"),
+        Err(Refusal::NoSuchObject("cdcd".into()).into())
+    );
+    assert_eq!(
+        resolve_commit(&store, "ab"),
+        Err(UseCaseError::NotAnOid("ab".into()))
+    );
+}
+
+#[test]
+fn an_ambiguous_prefix_names_each_match_by_its_short_id() {
+    let refused = Refusal::AmbiguousPrefix {
+        text: "abab".into(),
+        matches: vec![
+            oid(0xab).to_string(),
+            Oid::generate(&mut |x: &mut [u8]| {
+                x.fill(0);
+                x[..2].fill(0xab);
+            })
+            .to_string(),
+        ],
+    };
+    assert_eq!(
+        refused.to_string(),
+        "abab matches more than one id: abababa, abab000; give more characters"
     );
 }

@@ -71,7 +71,6 @@ impl CliError {
 
     pub(crate) fn rule(&self) -> Option<&'static str> {
         match self {
-            CliError::UseCase(UseCaseError::Refused(Refusal::AmbiguousPrefix { .. })) => None,
             CliError::UseCase(UseCaseError::Refused(refusal)) => Some(refusal.name()),
             _ => None,
         }

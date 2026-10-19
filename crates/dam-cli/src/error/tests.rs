@@ -49,6 +49,7 @@ fn an_ambiguous_prefix_is_a_usage_failure_listing_what_it_matched() {
     });
     assert_eq!(error.exit_code(), 2);
     assert_eq!(error.document()["error"]["kind"], "usage");
+    assert_eq!(error.document()["error"]["rule"], "ambiguous_prefix");
     assert_eq!(
         error.document()["error"]["oids"],
         serde_json::json!([oid(5).to_string(), oid(6).to_string()])

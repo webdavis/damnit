@@ -36,7 +36,7 @@ impl fmt::Display for Refusal {
                 let shorts: Vec<&str> = matches.iter().map(|m| short(m)).collect();
                 write!(
                     f,
-                    "{text} matches more than one object: {}",
+                    "{text} matches more than one id: {}; give more characters",
                     shorts.join(", ")
                 )
             }
