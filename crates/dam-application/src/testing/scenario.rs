@@ -1,4 +1,4 @@
-use dam_domain::{Event, Object, Oid, Task, When};
+use dam_domain::{Event, Object, Oid, Path, Task, When};
 use jiff::SignedDuration;
 use jiff::civil::date;
 
@@ -134,4 +134,21 @@ pub fn event(byte: u8) -> Object {
         When::Day(date(2026, 1, 1)),
         When::Day(date(2026, 1, 2)),
     ))
+}
+
+pub fn task_in(byte: u8, subject: &str, path: &str) -> Task {
+    let mut t = Task::new(oid(byte), subject);
+    t.base.path = Path::parse(path).unwrap();
+    t
+}
+
+impl Scenario {
+    pub fn filed(&self, task: Task) -> &Scenario {
+        self.working(Object::Task(task))
+    }
+
+    pub fn path_of(&self, oid: &Oid) -> String {
+        let object = self.store.get(oid).unwrap().unwrap();
+        object.base().path.as_str().to_string()
+    }
 }

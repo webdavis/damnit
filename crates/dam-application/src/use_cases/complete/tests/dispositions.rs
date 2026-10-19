@@ -1,7 +1,6 @@
 use super::super::*;
-use super::{at, filed, path_of};
 use crate::testing::prelude::*;
-use crate::testing::{FaultyStore, Scenario, oid};
+use crate::testing::{FaultyStore, Scenario, oid, task_in};
 
 fn with(children: ChildDisposition) -> Force {
     Force::With(Dispositions {
@@ -12,18 +11,17 @@ fn with(children: ChildDisposition) -> Force {
 
 fn plan_with_a_step() -> (Scenario, Oid, Oid) {
     let s = Scenario::default().drawing_from(9);
-    let plan = filed(&s, at(1, "plan", "work"));
-    let step = filed(&s, at(2, "step", "work/plan"));
-    (s, plan, step)
+    s.filed(task_in(1, "plan", "work"))
+        .filed(task_in(2, "step", "work/plan"));
+    (s, oid(1), oid(2))
 }
 
 fn milk_blocked_by_an_open_dependency() -> (Scenario, Oid) {
     let s = Scenario::default().drawing_from(9);
-    let mut milk = at(1, "milk", "");
+    let mut milk = task_in(1, "milk", "");
     milk.base.depends.push(oid(3));
-    let id = filed(&s, milk);
-    filed(&s, at(3, "blocker", ""));
-    (s, id)
+    s.filed(milk).filed(task_in(3, "blocker", ""));
+    (s, oid(1))
 }
 
 #[test]
@@ -32,7 +30,7 @@ fn interactive_up_moves_children_beside_the_parent() {
     s.dam()
         .complete(&plan, with(ChildDisposition::Up), Tracked::No)
         .unwrap();
-    assert_eq!(path_of(&s, &step), "work/");
+    assert_eq!(s.path_of(&step), "work/");
 }
 
 #[test]
@@ -48,24 +46,26 @@ fn interactive_into_groups_children_under_a_new_task_beside_the_parent() {
     let group = s.store.get(&oid(9)).unwrap().unwrap();
     assert_eq!(group.base().subject, "leftovers");
     assert_eq!(group.base().path.as_str(), "work/");
-    assert_eq!(path_of(&s, &step), "work/leftovers/");
+    assert_eq!(s.path_of(&step), "work/leftovers/");
 }
 
 #[test]
 fn interactive_up_carries_a_grandchild_along() {
     let (s, plan, step) = plan_with_a_step();
-    let detail = filed(&s, at(4, "detail", "work/plan/step"));
+    s.filed(task_in(4, "detail", "work/plan/step"));
+    let detail = oid(4);
     s.dam()
         .complete(&plan, with(ChildDisposition::Up), Tracked::No)
         .unwrap();
-    assert_eq!(path_of(&s, &step), "work/");
-    assert_eq!(path_of(&s, &detail), "work/step/");
+    assert_eq!(s.path_of(&step), "work/");
+    assert_eq!(s.path_of(&detail), "work/step/");
 }
 
 #[test]
 fn interactive_into_carries_a_grandchild_along() {
     let (s, plan, step) = plan_with_a_step();
-    let detail = filed(&s, at(4, "detail", "work/plan/step"));
+    s.filed(task_in(4, "detail", "work/plan/step"));
+    let detail = oid(4);
     s.dam()
         .complete(
             &plan,
@@ -73,8 +73,8 @@ fn interactive_into_carries_a_grandchild_along() {
             Tracked::No,
         )
         .unwrap();
-    assert_eq!(path_of(&s, &step), "work/later/");
-    assert_eq!(path_of(&s, &detail), "work/later/step/");
+    assert_eq!(s.path_of(&step), "work/later/");
+    assert_eq!(s.path_of(&detail), "work/later/step/");
 }
 
 #[test]
@@ -105,7 +105,7 @@ fn interactive_drop_removes_open_dependencies() {
 #[test]
 fn done_up_that_fails_between_two_children_moves_neither() {
     let (s, plan, _) = plan_with_a_step();
-    filed(&s, at(3, "other step", "work/plan"));
+    s.filed(task_in(3, "other step", "work/plan"));
     let store = FaultyStore::new(s.store);
     let dam = s.fixture.dam(&store);
     store.assert_unchanged_when_any_write_fails(|| {
@@ -117,11 +117,12 @@ fn done_up_that_fails_between_two_children_moves_neither() {
 #[test]
 fn done_into_that_fails_after_creating_the_group_leaves_no_group_behind() {
     let s = Scenario::default().drawing_from(9);
-    let mut plan = at(1, "plan", "work");
+    let mut plan = task_in(1, "plan", "work");
     plan.base.depends.push(oid(3));
-    let plan = filed(&s, plan);
-    filed(&s, at(2, "step", "work/plan"));
-    filed(&s, at(3, "blocker", ""));
+    s.filed(plan)
+        .filed(task_in(2, "step", "work/plan"))
+        .filed(task_in(3, "blocker", ""));
+    let plan = oid(1);
     let d = Dispositions {
         children: ChildDisposition::Into("leftovers".into()),
         dependencies: DependencyDisposition::Drop,

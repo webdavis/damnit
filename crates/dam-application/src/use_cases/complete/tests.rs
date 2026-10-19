@@ -5,32 +5,9 @@ mod recurrence;
 use super::*;
 use crate::ports::Clock;
 use crate::testing::prelude::*;
-use crate::testing::{FixedClock, FixedRandom, Fixture, Scenario, event, oid};
-use dam_domain::{Completion, Object, Path, Task, Tracked};
+use crate::testing::{FixedClock, FixedRandom, Fixture, Scenario, event, oid, task_in};
+use dam_domain::{Completion, Task, Tracked};
 use jiff::civil::date;
-
-pub(super) fn at(byte: u8, subject: &str, path: &str) -> Task {
-    let mut t = Task::new(oid(byte), subject);
-    t.base.path = Path::parse(path).unwrap();
-    t
-}
-
-pub(super) fn filed(s: &Scenario, task: Task) -> Oid {
-    let id = task.base.oid.clone();
-    s.working(Object::Task(task));
-    id
-}
-
-pub(super) fn path_of(s: &Scenario, id: &Oid) -> String {
-    s.store
-        .get(id)
-        .unwrap()
-        .unwrap()
-        .base()
-        .path
-        .as_str()
-        .to_string()
-}
 
 pub(super) fn task_of(s: &Scenario, id: &Oid) -> Task {
     s.store.get(id).unwrap().unwrap().as_task().unwrap().clone()
@@ -39,7 +16,8 @@ pub(super) fn task_of(s: &Scenario, id: &Oid) -> Task {
 #[test]
 fn an_unblocked_task_is_done() {
     let s = Scenario::default().drawing_from(9);
-    let id = filed(&s, at(1, "milk", ""));
+    s.filed(task_in(1, "milk", ""));
+    let id = oid(1);
     let dam = s.dam();
     assert!(dam.plan_complete(&id).unwrap().blockers.is_empty());
     assert_eq!(
@@ -63,7 +41,8 @@ fn an_event_is_not_a_task() {
 #[test]
 fn completing_a_task_records_when_it_happened() {
     let s = Scenario::default().drawing_from(1);
-    let id = filed(&s, at(1, "milk", ""));
+    s.filed(task_in(1, "milk", ""));
+    let id = oid(1);
     assert_eq!(task_of(&s, &id).completion, Completion::Open);
     s.dam().complete(&id, Force::No, Tracked::No).unwrap();
     assert_eq!(
@@ -77,7 +56,8 @@ fn completing_a_task_records_when_it_happened() {
 #[test]
 fn completing_an_already_completed_task_changes_nothing() {
     let s = Scenario::default().drawing_from(1);
-    let id = filed(&s, at(1, "milk", ""));
+    s.filed(task_in(1, "milk", ""));
+    let id = oid(1);
     s.dam().complete(&id, Force::No, Tracked::No).unwrap();
     let after_first = s.store.get(&id).unwrap().unwrap();
 
@@ -100,8 +80,9 @@ fn completing_an_already_completed_task_changes_nothing() {
 #[test]
 fn a_dependency_that_no_longer_exists_counts_as_closed() {
     let s = Scenario::default();
-    let mut milk = at(1, "milk", "");
+    let mut milk = task_in(1, "milk", "");
     milk.base.depends.push(oid(3));
-    let id = filed(&s, milk);
+    s.filed(milk);
+    let id = oid(1);
     assert!(s.dam().plan_complete(&id).unwrap().blockers.is_empty());
 }
