@@ -3,6 +3,7 @@ use std::io::{BufRead, Write};
 use std::sync::mpsc::{Receiver, RecvTimeoutError, channel};
 use std::time::Duration;
 
+use dam_adapters::Interrupt;
 use dam_application::Refusal;
 
 use crate::error::CliError;
@@ -30,12 +31,19 @@ fn refused() -> CliError {
     Refusal::NeedsAnAnswer.into()
 }
 
-#[derive(Default)]
 pub(crate) struct TerminalPrompt {
+    interrupt: Interrupt,
     stdin_lines_once_the_first_question_is_asked: OnceCell<Receiver<std::io::Result<String>>>,
 }
 
 impl TerminalPrompt {
+    pub(crate) fn new(interrupt: Interrupt) -> TerminalPrompt {
+        TerminalPrompt {
+            interrupt,
+            stdin_lines_once_the_first_question_is_asked: OnceCell::new(),
+        }
+    }
+
     fn answer_unless_interrupted_or_at_end_of_input(&self) -> Result<String, CliError> {
         let lines = self
             .stdin_lines_once_the_first_question_is_asked
@@ -46,7 +54,7 @@ impl TerminalPrompt {
                 Ok(Err(e)) => return Err(CliError::Io(e.to_string())),
                 Err(RecvTimeoutError::Disconnected) => return Err(CliError::Cancelled),
                 Err(RecvTimeoutError::Timeout) => {
-                    if dam_adapters::cancellation_requested() {
+                    if self.interrupt.requested() {
                         return Err(CliError::Cancelled);
                     }
                 }

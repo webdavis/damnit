@@ -1,6 +1,6 @@
 use std::cell::{Cell, RefCell};
 
-use dam_adapters::SqliteStore;
+use dam_adapters::{Interrupt, SqliteStore};
 use dam_application::{
     Clock, Config, CredentialError, CredentialSource, CredentialSpec, HelperError, HelperLauncher,
     MutationOutcome, MutationVerdict, PullOutcome, RemoteCapabilities, RemoteConfig, RemoteHelper,
@@ -186,7 +186,8 @@ pub(crate) fn context() -> Context {
 }
 
 pub(crate) fn machine_context() -> Context {
-    let (prompt, editor) = terminal_pair_for_a_human_and_refusals_for_a_machine(Format::Json);
+    let (prompt, editor) =
+        terminal_pair_for_a_human_and_refusals_for_a_machine(Format::Json, &Interrupt::default());
     Context {
         prompt,
         editor,

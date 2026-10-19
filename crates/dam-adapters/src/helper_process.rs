@@ -10,22 +10,23 @@ use std::process::{Command, Stdio};
 use dam_application::{HelperError, HelperLauncher, RemoteConfig, RemoteHelper, Secret};
 use dam_protocol::credential_variable;
 
+use crate::Interrupt;
 use conversation::ProcessHelper;
 
 pub struct ProcessLauncher {
     search_path: OsString,
+    interrupt: Interrupt,
 }
 
 impl ProcessLauncher {
-    pub fn from_env() -> ProcessLauncher {
-        ProcessLauncher {
-            search_path: std::env::var_os("PATH").unwrap_or_default(),
-        }
+    pub fn from_env(interrupt: Interrupt) -> ProcessLauncher {
+        ProcessLauncher::with_search_path(std::env::var_os("PATH").unwrap_or_default(), interrupt)
     }
 
-    pub fn with_search_path(path: impl Into<OsString>) -> ProcessLauncher {
+    pub fn with_search_path(path: impl Into<OsString>, interrupt: Interrupt) -> ProcessLauncher {
         ProcessLauncher {
             search_path: path.into(),
+            interrupt,
         }
     }
 
@@ -88,7 +89,14 @@ impl ProcessLauncher {
             .stderr
             .take()
             .ok_or_else(|| HelperError::Io("the child has no stderr".into()))?;
-        Ok(ProcessHelper::new(child, stdin, stdout, stderr, remote))
+        Ok(ProcessHelper::new(
+            child,
+            stdin,
+            stdout,
+            stderr,
+            remote,
+            self.interrupt.clone(),
+        ))
     }
 }
 
@@ -136,7 +144,8 @@ mod tests {
         let file = dir.path().join("dam-remote-t");
         std::fs::write(&file, FAKE_THAT_ECHOES_ITS_TOKEN).unwrap();
         std::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o644)).unwrap();
-        let launcher = ProcessLauncher::with_search_path(dir.path().as_os_str());
+        let launcher =
+            ProcessLauncher::with_search_path(dir.path().as_os_str(), Interrupt::default());
         assert!(launcher.find("t").is_none());
         let err = launcher.launch(&remote(), &[]).unwrap_err();
         assert_eq!(
@@ -149,7 +158,8 @@ mod tests {
 
     #[test]
     fn a_missing_helper_is_not_found_by_name() {
-        let launcher = ProcessLauncher::with_search_path("/nonexistent-dam-dir");
+        let launcher =
+            ProcessLauncher::with_search_path("/nonexistent-dam-dir", Interrupt::default());
         let err = launcher.launch(&remote(), &[]).unwrap_err();
         assert_eq!(
             err,

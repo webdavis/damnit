@@ -1,7 +1,8 @@
 use std::path::{Path, PathBuf};
 
 use dam_adapters::{
-    OsRandom, ProcessCredentialSource, ProcessLauncher, SqliteStore, SystemClock, load_config,
+    Interrupt, OsRandom, ProcessCredentialSource, ProcessLauncher, SqliteStore, SystemClock,
+    load_config,
 };
 use dam_application::{Clock, Config, CredentialSource, HelperLauncher, Randomness, Store};
 
@@ -30,17 +31,19 @@ impl Context {
         store_path: &Path,
         format: Format,
         no_pull: bool,
+        interrupt: &Interrupt,
     ) -> Result<Context, CliError> {
         let config = load_config(&config_path)?;
         let store = SqliteStore::open(store_path)?;
-        let (prompt, editor) = terminal_pair_for_a_human_and_refusals_for_a_machine(format);
+        let (prompt, editor) =
+            terminal_pair_for_a_human_and_refusals_for_a_machine(format, interrupt);
         Ok(Context {
             store: Box::new(store),
             config,
             config_path,
             clock: Box::new(SystemClock),
             random: Box::new(OsRandom),
-            launcher: Box::new(ProcessLauncher::from_env()),
+            launcher: Box::new(ProcessLauncher::from_env(interrupt.clone())),
             credentials: Box::new(ProcessCredentialSource::from_env()),
             editor,
             prompt,
@@ -52,10 +55,11 @@ impl Context {
 
 pub(crate) fn terminal_pair_for_a_human_and_refusals_for_a_machine(
     format: Format,
+    interrupt: &Interrupt,
 ) -> (Box<dyn Prompt>, Option<Box<dyn EditorSession>>) {
     match format {
         Format::Human => (
-            Box::new(TerminalPrompt::default()),
+            Box::new(TerminalPrompt::new(interrupt.clone())),
             Some(Box::new(EnvEditor::from_env())),
         ),
         Format::Json | Format::Toon => (Box::new(RefusingPrompt), None),

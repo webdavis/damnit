@@ -14,6 +14,7 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 
 use super::stderr_tail::{StderrTail, keep_the_tail_until_end_of_input};
+use crate::Interrupt;
 use crate::wire::{capabilities_from_wire, mutation_to_wire, outcomes_from_wire, pull_from_wire};
 
 const ANSWER_DEADLINE_WHEN_THE_REMOTE_NAMES_NONE: Duration = Duration::from_secs(60);
@@ -46,6 +47,7 @@ pub(super) struct ProcessHelper {
     deadline: Duration,
     deadline_as_written: String,
     killed: bool,
+    interrupt: Interrupt,
 }
 
 impl ProcessHelper {
@@ -55,6 +57,7 @@ impl ProcessHelper {
         stdout: ChildStdout,
         stderr: ChildStderr,
         remote: &RemoteConfig,
+        interrupt: Interrupt,
     ) -> ProcessHelper {
         let (tx, answers) = channel();
         std::thread::spawn(move || {
@@ -84,6 +87,7 @@ impl ProcessHelper {
                     ANSWER_DEADLINE_WHEN_THE_REMOTE_NAMES_NONE_AS_WRITTEN.to_string()
                 }),
             killed: false,
+            interrupt,
         }
     }
 
@@ -137,7 +141,7 @@ impl ProcessHelper {
                     });
                 }
                 Err(RecvTimeoutError::Timeout) => {
-                    if crate::cancel::cancellation_requested() {
+                    if self.interrupt.requested() {
                         self.kill_and_reap();
                         return Err(HelperError::Cancelled);
                     }
