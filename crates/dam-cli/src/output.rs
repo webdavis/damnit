@@ -1,10 +1,8 @@
 use std::io::Write;
 
-use dam_adapters::to_wire;
 use dam_domain::Object;
 
 use crate::error::CliError;
-use crate::view::row;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Format {
@@ -54,14 +52,6 @@ pub(crate) fn print(format: Format, report: &Report) -> Result<(), CliError> {
     Ok(())
 }
 
-pub(crate) fn object_json(object: &Object) -> Result<serde_json::Value, CliError> {
-    serde_json::to_value(to_wire(object, None)).map_err(|e| CliError::Internal(e.to_string()))
-}
-
-pub(crate) fn object_line(object: &Object) -> String {
-    row(&object_cells(object))
-}
-
 pub(crate) fn object_cells(object: &Object) -> Vec<String> {
     let b = object.base();
     let mut cols = vec![b.oid.short().to_string()];
@@ -100,11 +90,12 @@ pub(crate) fn object_cells(object: &Object) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::view::{ObjectRow, report};
     use dam_domain::{Oid, Path, Priority, Task, When};
     use jiff::civil::date;
 
     #[test]
-    fn object_line_has_short_oid_priority_due_subject_labels_and_path() {
+    fn an_object_row_has_short_oid_priority_due_subject_labels_and_path() {
         let mut t = Task::new(
             Oid::generate(&mut |x: &mut [u8]| x.fill(0x3f)),
             "buy oat milk",
@@ -113,7 +104,7 @@ mod tests {
         t.due = Some(When::Day(date(2026, 9, 25)));
         t.base.labels.insert("errand".into());
         t.base.path = Path::parse("work").unwrap();
-        let line = object_line(&Object::Task(t));
+        let line = report(&ObjectRow(&Object::Task(t))).unwrap().human;
         assert_eq!(
             line,
             "3f3f3f3  p2  2026-09-25  buy oat milk  [errand]  work/"

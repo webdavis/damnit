@@ -12,8 +12,8 @@ mod rows;
 mod view;
 
 use notices::NoticeRow;
+pub(crate) use rows::ChangeRow;
 use rows::ConflictRow;
-pub(crate) use rows::{ChangeRow, change_line};
 use view::{DiffView, StatusView, UnpushedRow};
 
 pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliError> {

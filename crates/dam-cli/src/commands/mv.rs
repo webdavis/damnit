@@ -3,7 +3,8 @@ use dam_application::{relocate, resolve_object};
 use crate::args::MvArgs;
 use crate::context::Context;
 use crate::error::CliError;
-use crate::output::{Report, object_json, object_line};
+use crate::output::Report;
+use crate::view::{ObjectRow, report};
 
 pub(crate) fn run(ctx: &Context, args: MvArgs) -> Result<Report, CliError> {
     let oid = resolve_object(ctx.store.as_ref(), &args.oid)?;
@@ -12,10 +13,7 @@ pub(crate) fn run(ctx: &Context, args: MvArgs) -> Result<Report, CliError> {
         .store
         .get(&oid)?
         .ok_or_else(|| CliError::Internal("the moved object did not persist".into()))?;
-    Ok(Report {
-        human: object_line(&object),
-        data: object_json(&object)?,
-    })
+    report(&ObjectRow(&object))
 }
 
 #[cfg(test)]

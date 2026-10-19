@@ -88,7 +88,7 @@ fn the_full_row_is_the_same_row_plus_the_objects() {
     let full = change_json(&change, true).unwrap();
     let mut expected = change_json(&change, false).unwrap();
     expected["before"] = serde_json::Value::Null;
-    expected["after"] = crate::output::object_json(&after).unwrap();
+    expected["after"] = serde_json::to_value(dam_adapters::to_wire(&after, None)).unwrap();
     assert_eq!(full, expected);
     assert_eq!(full["after"]["body"], "");
 }

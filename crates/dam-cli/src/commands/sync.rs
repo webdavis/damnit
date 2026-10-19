@@ -1,11 +1,14 @@
-use dam_application::{
-    PullReport, PushReport, Repositories, Side, pull, push, resolve, resolve_object,
-};
+use dam_application::{Repositories, Side, pull, push, resolve, resolve_object};
 
 use crate::args::{PullArgs, PushArgs, ResolveArgs};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
+use crate::view::report;
+
+mod view;
+
+use view::{PullRow, Pulled, PushRow, Pushed, Resolved};
 
 pub(crate) fn run_push(ctx: &Context, args: PushArgs) -> Result<Report, CliError> {
     let reports = push(
@@ -16,9 +19,8 @@ pub(crate) fn run_push(ctx: &Context, args: PushArgs) -> Result<Report, CliError
         &ctx.config,
         args.remote.as_deref(),
     )?;
-    Ok(Report {
-        human: reports.iter().map(push_line).collect::<Vec<_>>().join("\n"),
-        data: serde_json::json!({ "remotes": reports.iter().map(push_json).collect::<Vec<_>>() }),
+    report(&Pushed {
+        remotes: reports.iter().map(PushRow::new).collect(),
     })
 }
 
@@ -32,9 +34,8 @@ pub(crate) fn run_pull(ctx: &Context, args: PullArgs) -> Result<Report, CliError
         &ctx.config,
         args.remote.as_deref(),
     )?;
-    Ok(Report {
-        human: reports.iter().map(pull_line).collect::<Vec<_>>().join("\n"),
-        data: serde_json::json!({ "remotes": reports.iter().map(pull_json).collect::<Vec<_>>() }),
+    report(&Pulled {
+        remotes: reports.iter().map(PullRow::new).collect(),
     })
 }
 
@@ -54,54 +55,8 @@ pub(crate) fn run_resolve(ctx: &Context, args: ResolveArgs) -> Result<Report, Cl
         &oid,
         side,
     )?;
-    let word = if args.side.theirs { "theirs" } else { "ours" };
-    Ok(Report {
-        human: format!("{} resolved with {word}", oid.short()),
-        data: serde_json::json!({ "oid": oid.to_string(), "side": word }),
-    })
-}
-
-fn push_line(r: &PushReport) -> String {
-    let mut line = format!(
-        "{}: {} sent, {} ok, {} failed, {} skipped",
-        r.remote.0,
-        r.sent,
-        r.succeeded,
-        r.failed.len(),
-        r.skipped
-    );
-    for (oid, why) in &r.failed {
-        line.push_str(&format!("\n  {}: {why}", oid.short()));
-    }
-    line
-}
-
-fn push_json(r: &PushReport) -> serde_json::Value {
-    serde_json::json!({
-        "remote": r.remote.0,
-        "sent": r.sent,
-        "succeeded": r.succeeded,
-        "skipped": r.skipped,
-        "failed": r.failed.iter().map(|(o, w)| serde_json::json!({ "oid": o.to_string(), "why": w })).collect::<Vec<_>>(),
-    })
-}
-
-fn pull_line(r: &PullReport) -> String {
-    format!(
-        "{}: {} new, {} updated, {} unchanged, {} conflict(s), {} removed upstream",
-        r.remote.0, r.created, r.updated, r.unchanged, r.conflicts, r.removed_upstream
-    )
-}
-
-fn pull_json(r: &PullReport) -> serde_json::Value {
-    serde_json::json!({
-        "remote": r.remote.0,
-        "created": r.created,
-        "updated": r.updated,
-        "unchanged": r.unchanged,
-        "conflicts": r.conflicts,
-        "removed_upstream": r.removed_upstream,
-    })
+    let side = if args.side.theirs { "theirs" } else { "ours" };
+    report(&Resolved { oid: &oid, side })
 }
 
 #[cfg(test)]

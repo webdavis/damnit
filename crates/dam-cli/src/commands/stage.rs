@@ -2,10 +2,41 @@ use dam_application::{add, add_all, reset, resolve_object};
 use dam_domain::Oid;
 
 use crate::args::{AddArgs, ResetArgs};
-use crate::commands::status::{ChangeRow, change_line};
+use crate::commands::status::ChangeRow;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
+use crate::view::{Human, View, displays, report};
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct Staged<'a> {
+    staged: Vec<ChangeRow<'a>>,
+}
+
+impl View for Staged<'_> {
+    fn human(&self) -> Human {
+        Human::Lines(self.staged.iter().map(ChangeRow::line).collect())
+    }
+}
+
+#[derive(Serialize)]
+struct Unstaged<'a> {
+    #[serde(serialize_with = "displays")]
+    unstaged: &'a [Oid],
+}
+
+impl View for Unstaged<'_> {
+    fn human(&self) -> Human {
+        Human::Lines(vec![match self.unstaged {
+            [] => "unstaged everything".to_string(),
+            oids => format!(
+                "unstaged {}",
+                oids.iter().map(Oid::short).collect::<Vec<_>>().join(", ")
+            ),
+        }])
+    }
+}
 
 pub(crate) fn run_add(ctx: &Context, args: AddArgs) -> Result<Report, CliError> {
     let changes = if args.all {
@@ -18,14 +49,8 @@ pub(crate) fn run_add(ctx: &Context, args: AddArgs) -> Result<Report, CliError> 
             .collect::<Result<Vec<Oid>, _>>()?;
         add(ctx.store.as_ref(), ctx.store.as_ref(), &oids)?
     };
-    let staged: Vec<ChangeRow> = changes.iter().map(|c| ChangeRow::new(c, false)).collect();
-    Ok(Report {
-        human: changes
-            .iter()
-            .map(change_line)
-            .collect::<Vec<_>>()
-            .join("\n"),
-        data: serde_json::json!({ "staged": staged }),
+    report(&Staged {
+        staged: changes.iter().map(|c| ChangeRow::new(c, false)).collect(),
     })
 }
 
@@ -36,18 +61,7 @@ pub(crate) fn run_reset(ctx: &Context, args: ResetArgs) -> Result<Report, CliErr
         .map(|t| resolve_object(ctx.store.as_ref(), t))
         .collect::<Result<Vec<Oid>, _>>()?;
     reset(ctx.store.as_ref(), &oids)?;
-    let human = if oids.is_empty() {
-        "unstaged everything".to_string()
-    } else {
-        format!(
-            "unstaged {}",
-            oids.iter().map(Oid::short).collect::<Vec<_>>().join(", ")
-        )
-    };
-    Ok(Report {
-        data: serde_json::json!({ "unstaged": oids.iter().map(ToString::to_string).collect::<Vec<_>>() }),
-        human,
-    })
+    report(&Unstaged { unstaged: &oids })
 }
 
 #[cfg(test)]

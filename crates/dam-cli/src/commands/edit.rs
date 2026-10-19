@@ -6,7 +6,8 @@ use crate::args::EditArgs;
 use crate::commands::parsing::{deadline_flag, when_flag};
 use crate::context::Context;
 use crate::error::CliError;
-use crate::output::{Report, object_json, object_line};
+use crate::output::Report;
+use crate::view::{ObjectRow, report};
 
 pub(crate) fn run(ctx: &Context, args: EditArgs) -> Result<Report, CliError> {
     let oid = resolve_object(ctx.store.as_ref(), &args.oid)?;
@@ -16,10 +17,7 @@ pub(crate) fn run(ctx: &Context, args: EditArgs) -> Result<Report, CliError> {
         from_flags(ctx, args)?
     };
     let object = edit(ctx.store.as_ref(), &ctx.config.categories, &oid, fields)?;
-    Ok(Report {
-        human: object_line(&object),
-        data: object_json(&object)?,
-    })
+    report(&ObjectRow(&object))
 }
 
 fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {

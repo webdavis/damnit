@@ -1,40 +1,49 @@
 use dam_application::{remove, resolve_object};
 use dam_domain::Oid;
+use serde::Serialize;
 
 use crate::args::RmArgs;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
+use crate::view::{Human, View, display, displays, report};
+
+#[derive(Serialize)]
+struct Removed<'a> {
+    #[serde(serialize_with = "display")]
+    oid: &'a Oid,
+    #[serde(serialize_with = "displays")]
+    descendants: &'a [Oid],
+    #[serde(serialize_with = "displays")]
+    dependents: &'a [Oid],
+    #[serde(serialize_with = "displays")]
+    attached: &'a [Oid],
+}
+
+impl View for Removed<'_> {
+    fn human(&self) -> Human {
+        let shorts = |v: &[Oid]| v.iter().map(Oid::short).collect::<Vec<_>>().join(", ");
+        let mut lines = vec![format!("removed {}", self.oid.short())];
+        let mut follow = |title: &str, oids: &[Oid]| {
+            if !oids.is_empty() {
+                lines.push(format!("{title}: {}", shorts(oids)));
+            }
+        };
+        follow("moved up", self.descendants);
+        follow("no longer depend on it", self.dependents);
+        follow("still attached to it", self.attached);
+        Human::Lines(lines)
+    }
+}
 
 pub(crate) fn run(ctx: &Context, args: RmArgs) -> Result<Report, CliError> {
     let oid = resolve_object(ctx.store.as_ref(), &args.oid)?;
     let plan = remove(ctx.store.as_ref(), &oid)?;
-    let shorts = |v: &[Oid]| v.iter().map(Oid::short).collect::<Vec<_>>().join(", ");
-    let mut human = format!("removed {}", oid.short());
-    if !plan.descendants.is_empty() {
-        human.push_str(&format!("\nmoved up: {}", shorts(&plan.descendants)));
-    }
-    if !plan.dependents.is_empty() {
-        human.push_str(&format!(
-            "\nno longer depend on it: {}",
-            shorts(&plan.dependents)
-        ));
-    }
-    if !plan.attached.is_empty() {
-        human.push_str(&format!(
-            "\nstill attached to it: {}",
-            shorts(&plan.attached)
-        ));
-    }
-    let ids = |v: &[Oid]| v.iter().map(ToString::to_string).collect::<Vec<_>>();
-    Ok(Report {
-        human,
-        data: serde_json::json!({
-            "oid": oid.to_string(),
-            "descendants": ids(&plan.descendants),
-            "dependents": ids(&plan.dependents),
-            "attached": ids(&plan.attached),
-        }),
+    report(&Removed {
+        oid: &oid,
+        descendants: &plan.descendants,
+        dependents: &plan.dependents,
+        attached: &plan.attached,
     })
 }
 

@@ -7,7 +7,22 @@ use crate::args::DoneArgs;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
+use crate::view::{Human, View, display, report};
 use dam_domain::Oid;
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct Finished<'a> {
+    #[serde(serialize_with = "display")]
+    oid: &'a Oid,
+    result: String,
+}
+
+impl View for Finished<'_> {
+    fn human(&self) -> Human {
+        Human::Lines(vec![self.result.clone()])
+    }
+}
 
 pub(crate) fn run(ctx: &Context, args: DoneArgs) -> Result<Report, CliError> {
     let oid = resolve_object(ctx.store.as_ref(), &args.oid)?;
@@ -21,14 +36,11 @@ pub(crate) fn run(ctx: &Context, args: DoneArgs) -> Result<Report, CliError> {
         force,
         tracked_by_a_remote(ctx, &oid)?,
     )?;
-    let human = match outcome {
+    let result = match outcome {
         Completed::Done => "done".to_string(),
         Completed::RolledForward { next_due } => format!("rolled forward to {next_due}"),
     };
-    Ok(Report {
-        data: serde_json::json!({ "oid": oid.to_string(), "result": human }),
-        human,
-    })
+    report(&Finished { oid: &oid, result })
 }
 
 fn tracked_by_a_remote(ctx: &Context, oid: &Oid) -> Result<Tracked, CliError> {
