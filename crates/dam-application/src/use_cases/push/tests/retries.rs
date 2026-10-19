@@ -1,10 +1,8 @@
-use super::super::*;
 use super::{clock, committed_task, config, launcher};
-use crate::ports::Repositories;
 use crate::remote::{MutationOp, MutationOutcome, MutationVerdict, RemoteMutation};
 use crate::service::Dam;
 use crate::testing::prelude::*;
-use crate::testing::{EchoCredentials, FixedClock, FixedRandom, Fixture, MemoryStore, oid};
+use crate::testing::{FixedClock, FixedRandom, Fixture, MemoryStore, oid, remotes_launched_by};
 use dam_domain::{Completion, Field, Object, Task};
 use jiff::civil::date;
 
@@ -29,10 +27,16 @@ fn answering(ok: bool) -> impl Fn(&[RemoteMutation]) -> Vec<MutationOutcome> + C
 #[test]
 fn a_retry_declares_only_the_fields_of_the_change_that_failed() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     committed_task(&store, 1);
     let (l, _) = launcher(answering(true));
-    push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), None)
+    .unwrap();
 
     store
         .put(&Object::Task(Task::new(oid(1), "renamed")))
@@ -46,11 +50,25 @@ fn a_retry_declares_only_the_fields_of_the_change_that_failed() {
     dam.add_all().unwrap();
     dam.commit("rename").unwrap();
     let (l, _) = launcher(answering(false));
-    let reports = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    let reports = Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), None)
+    .unwrap();
     assert_eq!(reports[0].failed.len(), 1);
 
     let (l, pushed) = launcher(answering(true));
-    let reports = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    let reports = Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), None)
+    .unwrap();
     assert_eq!(reports[0].succeeded, 1);
     let sent = pushed.borrow();
     assert_eq!(sent.len(), 1);
@@ -61,10 +79,16 @@ fn a_retry_declares_only_the_fields_of_the_change_that_failed() {
 #[test]
 fn a_retry_keeps_the_failed_field_when_a_later_commit_changes_another() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     committed_task(&store, 1);
     let (l, _) = launcher(answering(true));
-    push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), None)
+    .unwrap();
 
     store
         .put(&Object::Task(Task::new(oid(1), "renamed")))
@@ -80,7 +104,14 @@ fn a_retry_keeps_the_failed_field_when_a_later_commit_changes_another() {
     .commit("rename")
     .unwrap();
     let (l, _) = launcher(answering(false));
-    push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), None)
+    .unwrap();
 
     let mut done = Task::new(oid(1), "renamed");
     done.completion = Completion::Done { at: None };
@@ -94,7 +125,14 @@ fn a_retry_keeps_the_failed_field_when_a_later_commit_changes_another() {
     .commit("done")
     .unwrap();
     let (l, pushed) = launcher(answering(true));
-    let reports = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    let reports = Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), None)
+    .unwrap();
     assert_eq!(reports[0].succeeded, 1);
     let sent = pushed.borrow();
     assert_eq!(sent[0].fields, vec![Field::Subject, Field::Done]);

@@ -2,16 +2,15 @@ use jiff::civil::date;
 
 use super::super::*;
 use super::{config, launcher, remote};
-use crate::ports::{Notice, Repositories};
+use crate::ports::Notice;
 use crate::remote::{IncomingObject, PullOutcome};
 use crate::testing::prelude::*;
-use crate::testing::{EchoCredentials, FixedClock, FixedRandom, MemoryStore, oid};
+use crate::testing::{FixedClock, FixedRandom, MemoryStore, oid, remotes_launched_by};
 use dam_domain::{Event, Kind, Object, Task, When};
 
 #[test]
 fn a_kind_change_upstream_keeps_ours_and_raises_a_notice() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "mine"))).unwrap();
     store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
     let theirs = IncomingObject {
@@ -28,15 +27,13 @@ fn a_kind_change_upstream_keeps_ours_and_raises_a_notice() {
         removed: vec![],
         ..PullOutcome::default()
     });
-    let reports = pull(
-        repos,
-        &l,
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(42),
-        &config(),
-        None,
-    )
+    let reports = Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(42),
+        config: &config(),
+    }
+    .pull(remotes_launched_by(&l), None)
     .unwrap();
     assert_eq!(reports[0].unchanged, 1);
     assert_eq!(
@@ -56,7 +53,6 @@ fn a_kind_change_upstream_keeps_ours_and_raises_a_notice() {
 #[test]
 fn a_kind_change_is_noticed_once_however_often_it_is_pulled() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "mine"))).unwrap();
     store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
     let theirs = IncomingObject {
@@ -74,15 +70,13 @@ fn a_kind_change_is_noticed_once_however_often_it_is_pulled() {
         ..PullOutcome::default()
     });
     for _ in 0..2 {
-        pull(
-            repos,
-            &l,
-            &EchoCredentials,
-            &FixedClock(date(2026, 9, 18)),
-            &FixedRandom::new(42),
-            &config(),
-            None,
-        )
+        Dam {
+            store: &store,
+            clock: &FixedClock(date(2026, 9, 18)),
+            random: &FixedRandom::new(42),
+            config: &config(),
+        }
+        .pull(remotes_launched_by(&l), None)
         .unwrap();
     }
     assert_eq!(store.notices().unwrap().len(), 1);

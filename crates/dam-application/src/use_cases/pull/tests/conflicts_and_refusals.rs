@@ -3,17 +3,15 @@ use jiff::civil::date;
 use super::super::*;
 use super::{config, incoming, launcher, remote};
 use crate::errors::Refusal;
-use crate::ports::Repositories;
 use crate::remote::{PullOutcome, RejectedObject};
 use crate::service::Dam;
 use crate::testing::prelude::*;
-use crate::testing::{EchoCredentials, FixedClock, FixedRandom, Fixture, MemoryStore, oid};
+use crate::testing::{FixedClock, FixedRandom, Fixture, MemoryStore, oid, remotes_launched_by};
 use dam_domain::{Object, Task};
 
 #[test]
 fn both_sides_changed_is_a_conflict_and_nothing_is_overwritten() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "base"))).unwrap();
     let fixture = Fixture::default();
     let dam = fixture.dam(&store);
@@ -43,15 +41,13 @@ fn both_sides_changed_is_a_conflict_and_nothing_is_overwritten() {
         removed: vec![],
         ..PullOutcome::default()
     });
-    let reports = pull(
-        repos,
-        &l,
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(42),
-        &config(),
-        None,
-    )
+    let reports = Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(42),
+        config: &config(),
+    }
+    .pull(remotes_launched_by(&l), None)
     .unwrap();
     assert_eq!(reports[0].conflicts, 1);
     assert_eq!(store.get(&oid(1)).unwrap().unwrap().base().subject, "mine");
@@ -62,7 +58,6 @@ fn both_sides_changed_is_a_conflict_and_nothing_is_overwritten() {
 #[test]
 fn uncommitted_local_work_stops_the_pull_before_anything_is_written() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "base"))).unwrap();
     let fixture = Fixture {
         random: FixedRandom::new(9),
@@ -85,15 +80,13 @@ fn uncommitted_local_work_stops_the_pull_before_anything_is_written() {
         cancelled: vec![],
         sync: Some("s9".into()),
     });
-    let err = pull(
-        repos,
-        &l,
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(42),
-        &config(),
-        None,
-    )
+    let err = Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(42),
+        config: &config(),
+    }
+    .pull(remotes_launched_by(&l), None)
     .unwrap_err();
     assert_eq!(
         err,
@@ -106,7 +99,6 @@ fn uncommitted_local_work_stops_the_pull_before_anything_is_written() {
 #[test]
 fn a_refused_pull_leaves_none_of_its_own_notices_behind() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "base"))).unwrap();
     let fixture = Fixture {
         random: FixedRandom::new(9),
@@ -132,15 +124,13 @@ fn a_refused_pull_leaves_none_of_its_own_notices_behind() {
         cancelled: vec![],
         sync: Some("s9".into()),
     });
-    let err = pull(
-        repos,
-        &l,
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(42),
-        &config(),
-        None,
-    )
+    let err = Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(42),
+        config: &config(),
+    }
+    .pull(remotes_launched_by(&l), None)
     .unwrap_err();
     assert_eq!(
         err,

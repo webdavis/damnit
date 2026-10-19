@@ -2,10 +2,9 @@ use jiff::civil::date;
 
 use super::super::*;
 use super::{config, incoming, launcher, remote};
-use crate::ports::Repositories;
 use crate::remote::PullOutcome;
 use crate::testing::prelude::*;
-use crate::testing::{EchoCredentials, FixedClock, FixedRandom, Fixture, MemoryStore, oid};
+use crate::testing::{FixedClock, FixedRandom, Fixture, MemoryStore, oid, remotes_launched_by};
 use dam_domain::{Object, Task};
 
 #[test]
@@ -26,15 +25,13 @@ fn a_pulled_update_records_the_object_it_replaced() {
         objects: vec![incoming("new", "r1")],
         ..PullOutcome::default()
     });
-    pull(
-        Repositories::of(&store),
-        &l,
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(42),
-        &config(),
-        None,
-    )
+    Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(42),
+        config: &config(),
+    }
+    .pull(remotes_launched_by(&l), None)
     .unwrap();
     let pulled = &store.log().unwrap()[0].changes[0];
     assert_eq!(pulled.before(), Some(&old));

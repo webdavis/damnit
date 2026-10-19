@@ -15,14 +15,13 @@ use std::rc::Rc;
 use jiff::civil::date;
 
 use super::*;
-use crate::config::{CredentialSpec, RemoteConfig};
+use crate::config::{Config, CredentialSpec, RemoteConfig};
 use crate::errors::Refusal;
-use crate::ports::Repositories;
 use crate::remote::{IncomingObject, PullOutcome};
 use crate::testing::prelude::*;
 use crate::testing::{
-    EchoCredentials, FixedClock, FixedRandom, Fixture, MemoryStore, ScriptedHelper,
-    ScriptedLauncher, oid, task_caps,
+    FixedClock, FixedRandom, Fixture, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
+    remotes_launched_by, task_caps,
 };
 use dam_domain::{Object, Task};
 
@@ -71,7 +70,6 @@ pub(super) fn incoming(subject: &str, remote_id: &str) -> IncomingObject {
 #[test]
 fn a_new_upstream_object_is_created_locally_with_a_fresh_oid_and_mapped() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     let l = launcher(PullOutcome {
         objects: vec![incoming("from todoist", "r1")],
         rejected: vec![],
@@ -79,15 +77,13 @@ fn a_new_upstream_object_is_created_locally_with_a_fresh_oid_and_mapped() {
         cancelled: vec![],
         sync: Some("s1".into()),
     });
-    let reports = pull(
-        repos,
-        &l,
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(42),
-        &config(),
-        None,
-    )
+    let reports = Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(42),
+        config: &config(),
+    }
+    .pull(remotes_launched_by(&l), None)
     .unwrap();
     assert_eq!(reports[0].created, 1);
     let local = store.get(&oid(42)).unwrap().unwrap();
@@ -103,7 +99,6 @@ fn a_new_upstream_object_is_created_locally_with_a_fresh_oid_and_mapped() {
 #[test]
 fn a_fast_forward_updates_a_clean_local_object() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "old"))).unwrap();
     let fixture = Fixture {
         random: FixedRandom::new(9),
@@ -121,15 +116,13 @@ fn a_fast_forward_updates_a_clean_local_object() {
         removed: vec![],
         ..PullOutcome::default()
     });
-    let reports = pull(
-        repos,
-        &l,
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(42),
-        &config(),
-        None,
-    )
+    let reports = Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(42),
+        config: &config(),
+    }
+    .pull(remotes_launched_by(&l), None)
     .unwrap();
     assert_eq!(reports[0].updated, 1);
     assert_eq!(store.get(&oid(1)).unwrap().unwrap().base().subject, "new");
@@ -142,7 +135,6 @@ fn a_fast_forward_updates_a_clean_local_object() {
 #[test]
 fn dam_only_fields_survive_a_pull() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     let mut t = Task::new(oid(1), "old");
     t.base.depends.push(oid(7));
     store.put(&Object::Task(t.clone())).unwrap();
@@ -162,15 +154,13 @@ fn dam_only_fields_survive_a_pull() {
         removed: vec![],
         ..PullOutcome::default()
     });
-    pull(
-        repos,
-        &l,
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(42),
-        &config(),
-        None,
-    )
+    Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(42),
+        config: &config(),
+    }
+    .pull(remotes_launched_by(&l), None)
     .unwrap();
     assert_eq!(
         store.get(&oid(1)).unwrap().unwrap().base().depends,
@@ -185,15 +175,13 @@ fn a_pull_commit_is_already_pushed_to_the_remote_it_came_from() {
         objects: vec![incoming("from todoist", "r1")],
         ..PullOutcome::default()
     });
-    pull(
-        Repositories::of(&store),
-        &l,
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(42),
-        &config(),
-        None,
-    )
+    Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(42),
+        config: &config(),
+    }
+    .pull(remotes_launched_by(&l), None)
     .unwrap();
     assert_eq!(store.log().unwrap().len(), 1);
     assert!(store.unpushed(&remote()).unwrap().is_empty());

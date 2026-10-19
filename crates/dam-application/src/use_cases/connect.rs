@@ -1,12 +1,12 @@
 use crate::config::RemoteConfig;
 use crate::credentials::resolve_credentials;
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{AcceptedKindsRepository, CredentialSource, HelperLauncher, RemoteHelper};
+use crate::ports::{AcceptedKindsRepository, RemoteHelper};
 use crate::remote::RemoteCapabilities;
+use crate::service::Remotes;
 
 pub(crate) fn connect(
-    launcher: &dyn HelperLauncher,
-    credentials: &dyn CredentialSource,
+    remotes: Remotes<'_>,
     accepted_kinds: &dyn AcceptedKindsRepository,
     remote: &RemoteConfig,
 ) -> Result<(Box<dyn RemoteHelper>, RemoteCapabilities), UseCaseError> {
@@ -15,8 +15,8 @@ pub(crate) fn connect(
         .iter()
         .map(|spec| spec.name().to_string())
         .collect();
-    let resolved = resolve_credentials(credentials, remote, &configured)?;
-    let mut helper = launcher.launch(remote, &resolved)?;
+    let resolved = resolve_credentials(remotes.credentials, remote, &configured)?;
+    let mut helper = remotes.launcher.launch(remote, &resolved)?;
     let caps = helper.capabilities()?;
     if let Some(name) = declared_by_the_helper_but_not_configured(&caps, &configured) {
         return Err(Refusal::MissingCredential {

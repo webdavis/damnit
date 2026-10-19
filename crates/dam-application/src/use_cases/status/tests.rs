@@ -8,12 +8,11 @@ use jiff::civil::date;
 #[test]
 fn a_fully_staged_change_is_not_also_unstaged() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "a"))).unwrap();
     let fixture = Fixture::default();
     let dam = fixture.dam(&store);
     dam.add(&[oid(1)]).unwrap();
-    let s = status(repos, &[]).unwrap();
+    let s = dam.status(&[]).unwrap();
     assert_eq!(s.staged.len(), 1);
     assert!(s.unstaged.is_empty());
 }
@@ -21,7 +20,6 @@ fn a_fully_staged_change_is_not_also_unstaged() {
 #[test]
 fn an_edit_after_staging_shows_as_unstaged_on_top_of_the_stage() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "a"))).unwrap();
     let fixture = Fixture::default();
     let dam = fixture.dam(&store);
@@ -29,7 +27,7 @@ fn an_edit_after_staging_shows_as_unstaged_on_top_of_the_stage() {
     let mut t = store.get(&oid(1)).unwrap().unwrap();
     t.base_mut().subject = "b".into();
     store.put(&t).unwrap();
-    let s = status(repos, &[]).unwrap();
+    let s = dam.status(&[]).unwrap();
     assert_eq!(s.staged[0].after().unwrap().base().subject, "a");
     assert_eq!(s.unstaged[0].op(), Op::Update);
     assert_eq!(s.unstaged[0].after().unwrap().base().subject, "b");
@@ -53,7 +51,7 @@ fn unpushed_names_each_commit_newest_first() {
     dam.add(&[oid(2)]).unwrap();
     let second = dam.commit("second").unwrap();
     let remote = RemoteName("todoist".into());
-    let s = status(Repositories::of(&store), std::slice::from_ref(&remote)).unwrap();
+    let s = dam.status(std::slice::from_ref(&remote)).unwrap();
     assert_eq!(s.unpushed[0].remote, remote);
     assert_eq!(s.unpushed[0].commit_ids, vec![second.id, first.id]);
 }
@@ -81,7 +79,7 @@ fn unpushed_names_each_object_once_in_first_appearance_order() {
     dam.commit("touch it again").unwrap();
 
     let remote = RemoteName("todoist".into());
-    let s = status(Repositories::of(&store), std::slice::from_ref(&remote)).unwrap();
+    let s = dam.status(std::slice::from_ref(&remote)).unwrap();
     assert_eq!(s.unpushed[0].commit_ids.len(), 3);
     assert_eq!(s.unpushed[0].oids, vec![oid(2), oid(1)]);
 }
@@ -90,7 +88,10 @@ fn unpushed_names_each_object_once_in_first_appearance_order() {
 fn a_remote_owed_nothing_gets_a_row_with_empty_lists() {
     let store = MemoryStore::new();
     let remote = RemoteName("todoist".into());
-    let s = status(Repositories::of(&store), std::slice::from_ref(&remote)).unwrap();
+    let s = Fixture::default()
+        .dam(&store)
+        .status(std::slice::from_ref(&remote))
+        .unwrap();
     assert_eq!(s.unpushed.len(), 1);
     assert!(s.unpushed[0].commit_ids.is_empty());
     assert!(s.unpushed[0].oids.is_empty());
@@ -99,7 +100,6 @@ fn a_remote_owed_nothing_gets_a_row_with_empty_lists() {
 #[test]
 fn unpushed_counts_per_remote() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "a"))).unwrap();
     let fixture = Fixture {
         random: FixedRandom::new(5),
@@ -109,7 +109,7 @@ fn unpushed_counts_per_remote() {
     dam.add(&[oid(1)]).unwrap();
     dam.commit("m").unwrap();
     let remote = RemoteName("todoist".into());
-    let s = status(repos, std::slice::from_ref(&remote)).unwrap();
+    let s = dam.status(std::slice::from_ref(&remote)).unwrap();
     assert_eq!(s.unpushed.len(), 1);
     assert_eq!(s.unpushed[0].remote, remote);
     assert_eq!(s.unpushed[0].commit_ids.len(), 1);
@@ -165,7 +165,10 @@ fn a_commit_is_owed_only_to_the_remotes_that_accept_one_of_its_kinds() {
     let never_connected = RemoteName("new".into());
     store.set_accepted_kinds(&todoist, &[Kind::Task]).unwrap();
     store.set_accepted_kinds(&gcal, &[]).unwrap();
-    let s = status(Repositories::of(&store), &[todoist, gcal, never_connected]).unwrap();
+    let s = Fixture::default()
+        .dam(&store)
+        .status(&[todoist, gcal, never_connected])
+        .unwrap();
     assert_eq!(s.unpushed[0].commit_ids, vec![task_commit.clone()]);
     assert_eq!(s.unpushed[0].oids, vec![oid(1)]);
     assert!(s.unpushed[1].commit_ids.is_empty());
@@ -187,7 +190,7 @@ fn a_mixed_commit_owes_a_remote_only_the_objects_of_kinds_it_accepts() {
     let both = dam.commit("m").unwrap();
     let todoist = RemoteName("todoist".into());
     store.set_accepted_kinds(&todoist, &[Kind::Task]).unwrap();
-    let s = status(Repositories::of(&store), std::slice::from_ref(&todoist)).unwrap();
+    let s = dam.status(std::slice::from_ref(&todoist)).unwrap();
     assert_eq!(s.unpushed[0].commit_ids, vec![both.id]);
     assert_eq!(s.unpushed[0].oids, vec![oid(1)]);
 }

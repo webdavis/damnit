@@ -1,11 +1,10 @@
 use dam_domain::{CommitRecord, Oid};
 
-use crate::config::{Config, RemoteConfig};
+use crate::config::RemoteConfig;
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{
-    Clock, CredentialSource, HelperLauncher, Notice, RemoteHelper, RemoteName, Repositories,
-};
+use crate::ports::{Notice, RemoteHelper, RemoteName};
 use crate::remote::RemoteCapabilities;
+use crate::service::{Dam, Remotes};
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::connect::connect;
 
@@ -18,94 +17,83 @@ pub struct PushReport {
     pub skipped: usize,
 }
 
-pub fn push(
-    repos: Repositories<'_>,
-    launcher: &dyn HelperLauncher,
-    credentials: &dyn CredentialSource,
-    clock: &dyn Clock,
-    config: &Config,
-    remote: Option<&str>,
-) -> Result<Vec<PushReport>, UseCaseError> {
-    let conflicts = repos.conflicts.conflicts()?.len();
-    if conflicts > 0 {
-        return Err(Refusal::UnresolvedConflicts(conflicts).into());
+impl Dam<'_> {
+    pub fn push(
+        &self,
+        remotes: Remotes<'_>,
+        remote: Option<&str>,
+    ) -> Result<Vec<PushReport>, UseCaseError> {
+        let conflicts = self.store.conflicts()?.len();
+        if conflicts > 0 {
+            return Err(Refusal::UnresolvedConflicts(conflicts).into());
+        }
+        let targets = self.config.select_remotes(remote)?;
+        let mut reports = Vec::with_capacity(targets.len());
+        for target in targets {
+            let (mut helper, caps) = connect(remotes, self.store, target)?;
+            reports.push(self.push_one(helper.as_mut(), &caps, target)?);
+        }
+        Ok(reports)
     }
-    let targets = config.select_remotes(remote)?;
-    let mut reports = Vec::with_capacity(targets.len());
-    for target in targets {
-        let (mut helper, caps) = connect(launcher, credentials, repos.accepted_kinds, target)?;
-        reports.push(push_one(repos, helper.as_mut(), &caps, clock, target)?);
-    }
-    Ok(reports)
-}
 
-fn push_one(
-    repos: Repositories<'_>,
-    helper: &mut dyn RemoteHelper,
-    caps: &RemoteCapabilities,
-    clock: &dyn Clock,
-    remote: &RemoteConfig,
-) -> Result<PushReport, UseCaseError> {
-    let unpushed = repos.commits.unpushed(&remote.name)?;
-    let changes = changes_to_send(
-        repos.objects,
-        repos.commits,
-        repos.remote_tracking,
-        remote,
-        &unpushed,
-    )?;
-    let Plan { mutations, skipped } = plan(repos.remote_tracking, caps, remote, changes)?;
-    let outcomes = if mutations.is_empty() {
-        vec![]
-    } else {
-        helper.push(mutations.clone())?
-    };
-    let settlement = reconcile(&mutations, outcomes);
-    atomically(repos.transaction, || {
-        apply(repos, clock, remote, &unpushed, &settlement)
-    })?;
-    let sent = mutations.len();
-    Ok(PushReport {
-        remote: remote.name.clone(),
-        sent,
-        succeeded: sent.saturating_sub(settlement.failed.len()),
-        failed: settlement.failed,
-        skipped,
-    })
-}
-
-fn apply(
-    repos: Repositories<'_>,
-    clock: &dyn Clock,
-    remote: &RemoteConfig,
-    unpushed: &[CommitRecord],
-    settlement: &Settlement,
-) -> Result<(), UseCaseError> {
-    let tracking = repos.remote_tracking;
-    for (oid, id) in &settlement.map {
-        tracking.map_remote_id(&remote.name, oid, id)?;
-    }
-    for oid in &settlement.clear {
-        tracking.clear_remote_mapping(&remote.name, oid)?;
-    }
-    for after in &settlement.snapshot {
-        tracking.set_remote_snapshot(&remote.name, after)?;
-    }
-    for (oid, why) in &settlement.failed {
-        repos.notices.add_notice(&Notice::PushFailed {
-            remote: remote.name.clone(),
-            oid: oid.clone(),
-            why: why.clone(),
+    fn push_one(
+        &self,
+        helper: &mut dyn RemoteHelper,
+        caps: &RemoteCapabilities,
+        remote: &RemoteConfig,
+    ) -> Result<PushReport, UseCaseError> {
+        let unpushed = self.store.unpushed(&remote.name)?;
+        let changes = changes_to_send(self.store, remote, &unpushed)?;
+        let Plan { mutations, skipped } = plan(self.store, caps, remote, changes)?;
+        let outcomes = if mutations.is_empty() {
+            vec![]
+        } else {
+            helper.push(mutations.clone())?
+        };
+        let settlement = reconcile(&mutations, outcomes);
+        atomically(self.store, || {
+            self.settle_push(remote, &unpushed, &settlement)
         })?;
+        let sent = mutations.len();
+        Ok(PushReport {
+            remote: remote.name.clone(),
+            sent,
+            succeeded: sent.saturating_sub(settlement.failed.len()),
+            failed: settlement.failed,
+            skipped,
+        })
     }
-    repos
-        .commits
-        .set_push_retries(&remote.name, &settlement.retries())?;
-    for id in settlement.pushed(unpushed) {
-        repos.commits.mark_pushed(&remote.name, id)?;
+
+    fn settle_push(
+        &self,
+        remote: &RemoteConfig,
+        unpushed: &[CommitRecord],
+        settlement: &Settlement,
+    ) -> Result<(), UseCaseError> {
+        let store = self.store;
+        for (oid, id) in &settlement.map {
+            store.map_remote_id(&remote.name, oid, id)?;
+        }
+        for oid in &settlement.clear {
+            store.clear_remote_mapping(&remote.name, oid)?;
+        }
+        for after in &settlement.snapshot {
+            store.set_remote_snapshot(&remote.name, after)?;
+        }
+        for (oid, why) in &settlement.failed {
+            store.add_notice(&Notice::PushFailed {
+                remote: remote.name.clone(),
+                oid: oid.clone(),
+                why: why.clone(),
+            })?;
+        }
+        store.set_push_retries(&remote.name, &settlement.retries())?;
+        for id in settlement.pushed(unpushed) {
+            store.mark_pushed(&remote.name, id)?;
+        }
+        store.set_last_push(&remote.name, self.clock.now())?;
+        Ok(())
     }
-    tracking.set_last_push(&remote.name, clock.now())?;
-    Ok(())
 }
 
 mod idempotency;

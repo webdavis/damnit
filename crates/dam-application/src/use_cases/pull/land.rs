@@ -5,74 +5,70 @@ use super::classify::Incoming;
 use super::notices::note_cancelled;
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
-use crate::ports::{Clock, Randomness, Repositories};
+use crate::ports::Store;
+use crate::service::Dam;
 use crate::use_cases::commit::record;
 
-pub(super) fn land(
-    repos: Repositories<'_>,
-    clock: &dyn Clock,
-    random: &dyn Randomness,
-    remote: &RemoteConfig,
-    planned: Vec<(Oid, Incoming)>,
-    report: &mut PullReport,
-) -> Result<(), UseCaseError> {
-    let mut landed = Vec::new();
-    for (oid, incoming) in planned {
-        match incoming {
-            Incoming::Unchanged => report.unchanged += 1,
-            Incoming::Create(o) => {
-                landed.extend(take_theirs(repos, remote, &oid, o)?);
-                report.created += 1;
-            }
-            Incoming::FastForward(o) => {
-                landed.extend(take_theirs(repos, remote, &oid, o)?);
-                report.updated += 1;
-            }
-            Incoming::Conflict(conflict) => {
-                repos.conflicts.mark_conflict(&conflict)?;
-                repos
-                    .remote_tracking
-                    .set_remote_snapshot(&remote.name, &conflict.theirs)?;
-                report.conflicts += 1;
-                note_cancelled(repos.objects, repos.notices, &conflict.theirs)?;
+impl Dam<'_> {
+    pub(super) fn land(
+        &self,
+        remote: &RemoteConfig,
+        planned: Vec<(Oid, Incoming)>,
+        report: &mut PullReport,
+    ) -> Result<(), UseCaseError> {
+        let mut landed = Vec::new();
+        for (oid, incoming) in planned {
+            match incoming {
+                Incoming::Unchanged => report.unchanged += 1,
+                Incoming::Create(o) => {
+                    landed.extend(take_theirs(self.store, remote, &oid, o)?);
+                    report.created += 1;
+                }
+                Incoming::FastForward(o) => {
+                    landed.extend(take_theirs(self.store, remote, &oid, o)?);
+                    report.updated += 1;
+                }
+                Incoming::Conflict(conflict) => {
+                    self.store.mark_conflict(&conflict)?;
+                    self.store
+                        .set_remote_snapshot(&remote.name, &conflict.theirs)?;
+                    report.conflicts += 1;
+                    note_cancelled(self.store, &conflict.theirs)?;
+                }
             }
         }
+        if landed.is_empty() {
+            return Ok(());
+        }
+        self.commit_as_already_pushed(remote, landed)
     }
-    if landed.is_empty() {
-        return Ok(());
+
+    fn commit_as_already_pushed(
+        &self,
+        remote: &RemoteConfig,
+        landed: Vec<Change>,
+    ) -> Result<(), UseCaseError> {
+        let pulled = record(
+            self.clock,
+            self.random,
+            format!("pull from {}", remote.name.0),
+            landed,
+        );
+        self.store.commit(&pulled)?;
+        self.store.mark_pushed(&remote.name, &pulled.id)?;
+        Ok(())
     }
-    commit_as_already_pushed(repos, clock, random, remote, landed)
 }
 
 fn take_theirs(
-    repos: Repositories<'_>,
+    store: &dyn Store,
     remote: &RemoteConfig,
     oid: &Oid,
     theirs: Object,
 ) -> Result<Option<Change>, UseCaseError> {
-    repos.objects.put(&theirs)?;
-    repos
-        .remote_tracking
-        .set_remote_snapshot(&remote.name, &theirs)?;
-    let committed = repos.objects.committed(oid)?;
-    note_cancelled(repos.objects, repos.notices, &theirs)?;
+    store.put(&theirs)?;
+    store.set_remote_snapshot(&remote.name, &theirs)?;
+    let committed = store.committed(oid)?;
+    note_cancelled(store, &theirs)?;
     Ok(Change::between(committed, Some(theirs)))
-}
-
-fn commit_as_already_pushed(
-    repos: Repositories<'_>,
-    clock: &dyn Clock,
-    random: &dyn Randomness,
-    remote: &RemoteConfig,
-    landed: Vec<Change>,
-) -> Result<(), UseCaseError> {
-    let pulled = record(
-        clock,
-        random,
-        format!("pull from {}", remote.name.0),
-        landed,
-    );
-    repos.commits.commit(&pulled)?;
-    repos.commits.mark_pushed(&remote.name, &pulled.id)?;
-    Ok(())
 }

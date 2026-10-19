@@ -2,10 +2,10 @@ use jiff::civil::date;
 
 use super::super::*;
 use super::{config, incoming, launcher, remote};
-use crate::ports::{Notice, Repositories};
+use crate::ports::Notice;
 use crate::remote::{PullOutcome, RejectedObject};
 use crate::testing::prelude::*;
-use crate::testing::{EchoCredentials, FixedClock, FixedRandom, MemoryStore};
+use crate::testing::{FixedClock, FixedRandom, MemoryStore, remotes_launched_by};
 
 fn rejecting(remote_id: &str, why: &str) -> PullOutcome {
     PullOutcome {
@@ -18,15 +18,13 @@ fn rejecting(remote_id: &str, why: &str) -> PullOutcome {
 }
 
 fn pull_from(store: &MemoryStore, answer: PullOutcome) {
-    pull(
-        Repositories::of(store),
-        &launcher(answer),
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(1),
-        &config(),
-        None,
-    )
+    Dam {
+        store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(1),
+        config: &config(),
+    }
+    .pull(remotes_launched_by(&launcher(answer)), None)
     .unwrap();
 }
 

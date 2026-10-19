@@ -5,19 +5,18 @@ use jiff::civil::date;
 
 use super::super::*;
 use super::{config, incoming, launcher, remote};
-use crate::ports::{Notice, Repositories};
+use crate::ports::{Clock, Notice};
 use crate::remote::{IncomingObject, PullOutcome};
 use crate::testing::prelude::*;
 use crate::testing::{
-    EchoCredentials, FixedClock, FixedRandom, Fixture, MemoryStore, ScriptedHelper,
-    ScriptedLauncher, oid, task_caps,
+    FixedClock, FixedRandom, Fixture, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
+    remotes_launched_by, task_caps,
 };
 use dam_domain::{Field, Kind, Object, Task};
 
 #[test]
 fn a_removal_upstream_is_a_notice_not_a_deletion() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     store
         .put(&Object::Task(Task::new(oid(1), "keep me")))
         .unwrap();
@@ -30,15 +29,13 @@ fn a_removal_upstream_is_a_notice_not_a_deletion() {
         removed: vec!["r1".into()],
         ..PullOutcome::default()
     });
-    let reports = pull(
-        repos,
-        &l,
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(42),
-        &config(),
-        None,
-    )
+    let reports = Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(42),
+        config: &config(),
+    }
+    .pull(remotes_launched_by(&l), None)
     .unwrap();
     assert_eq!(reports[0].removed_upstream, 1);
     assert!(store.get(&oid(1)).unwrap().is_some());
@@ -53,7 +50,6 @@ fn a_removal_upstream_is_a_notice_not_a_deletion() {
 #[test]
 fn a_cancelled_event_with_attached_tasks_is_reported() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     let event = dam_domain::Event::new(
         oid(5),
         "meeting",
@@ -90,15 +86,13 @@ fn a_cancelled_event_with_attached_tasks_is_reported() {
         }),
         launched_with: Rc::new(RefCell::new(vec![])),
     };
-    pull(
-        repos,
-        &l,
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(42),
-        &config(),
-        None,
-    )
+    Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(42),
+        config: &config(),
+    }
+    .pull(remotes_launched_by(&l), None)
     .unwrap();
     assert!(matches!(
         store.notices().unwrap().last(),
@@ -110,7 +104,6 @@ fn a_cancelled_event_with_attached_tasks_is_reported() {
 #[test]
 fn an_unrelated_staged_object_stays_staged_after_a_pull() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "base"))).unwrap();
     let fixture = Fixture {
         random: FixedRandom::new(9),
@@ -132,15 +125,13 @@ fn an_unrelated_staged_object_stays_staged_after_a_pull() {
         removed: vec![],
         ..PullOutcome::default()
     });
-    pull(
-        repos,
-        &l,
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(42),
-        &config(),
-        None,
-    )
+    Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(42),
+        config: &config(),
+    }
+    .pull(remotes_launched_by(&l), None)
     .unwrap();
     assert_eq!(
         store
@@ -156,18 +147,15 @@ fn an_unrelated_staged_object_stays_staged_after_a_pull() {
 #[test]
 fn a_pull_records_when_it_happened() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     let l = launcher(PullOutcome::default());
     let clock = FixedClock(date(2026, 9, 18));
-    pull(
-        repos,
-        &l,
-        &EchoCredentials,
-        &clock,
-        &FixedRandom::new(1),
-        &config(),
-        None,
-    )
+    Dam {
+        store: &store,
+        clock: &clock,
+        random: &FixedRandom::new(1),
+        config: &config(),
+    }
+    .pull(remotes_launched_by(&l), None)
     .unwrap();
     assert_eq!(store.last_pull(&remote()).unwrap(), Some(clock.now()));
 }
