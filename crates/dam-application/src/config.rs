@@ -31,6 +31,24 @@ pub struct ConfiguredDuration {
     pub text: String,
 }
 
+impl ConfiguredDuration {
+    pub fn parse(text: &str) -> Option<ConfiguredDuration> {
+        let mut chars = text.chars();
+        let unit = chars.next_back()?;
+        let n: u64 = chars.as_str().parse().ok()?;
+        let secs = match unit {
+            's' => Some(n),
+            'm' => n.checked_mul(60),
+            'h' => n.checked_mul(3600),
+            _ => None,
+        }?;
+        Some(ConfiguredDuration {
+            value: Duration::from_secs(secs),
+            text: text.to_string(),
+        })
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum CredentialSpec {
     Literal { name: String, value: Secret },
@@ -123,5 +141,27 @@ mod tests {
         assert_eq!(remote.address(), "primary,team@group.calendar.google.com");
         remote.url = "todoist::".into();
         assert_eq!(remote.address(), "");
+    }
+
+    fn seconds(text: &str) -> Option<u64> {
+        ConfiguredDuration::parse(text).map(|d| d.value.as_secs())
+    }
+
+    #[test]
+    fn a_duration_is_seconds_minutes_or_hours_and_keeps_its_text() {
+        assert_eq!(seconds("30s"), Some(30));
+        assert_eq!(seconds("15m"), Some(900));
+        assert_eq!(seconds("2h"), Some(7200));
+        assert_eq!(ConfiguredDuration::parse("2h").unwrap().text, "2h");
+        assert_eq!(seconds("15"), None);
+        assert_eq!(seconds("1d"), None);
+    }
+
+    #[test]
+    fn a_non_ascii_empty_or_overflowing_duration_is_refused_rather_than_a_panic() {
+        assert_eq!(seconds("15\u{00b5}"), None);
+        assert_eq!(seconds(""), None);
+        assert_eq!(seconds("\u{201c}2m\u{201d}"), None);
+        assert_eq!(seconds("18446744073709551615h"), None);
     }
 }

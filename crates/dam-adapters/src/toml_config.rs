@@ -1,5 +1,4 @@
 use std::path::{Path as FsPath, PathBuf};
-use std::time::Duration;
 
 use dam_application::{Config, ConfigError, FilterConfig};
 use dam_domain::{Categories, Category};
@@ -97,21 +96,6 @@ fn parse_category(name: &str, t: &StrictTable) -> Result<Category, ConfigError> 
         values,
         exclusive,
     })
-}
-
-pub fn parse_duration(field: &str, text: &str) -> Result<Duration, ConfigError> {
-    let bad = || ConfigError::Invalid(format!("{field} {text:?}: expected <number><s|m|h>"));
-    let mut chars = text.chars();
-    let unit = chars.next_back().ok_or_else(bad)?;
-    let n: u64 = chars.as_str().parse().map_err(|_| bad())?;
-    let secs = match unit {
-        's' => Some(n),
-        'm' => n.checked_mul(60),
-        'h' => n.checked_mul(3600),
-        _ => return Err(bad()),
-    }
-    .ok_or_else(bad)?;
-    Ok(Duration::from_secs(secs))
 }
 
 #[cfg(test)]

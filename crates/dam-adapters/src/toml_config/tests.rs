@@ -77,32 +77,6 @@ fn an_empty_file_is_the_default() {
 }
 
 #[test]
-fn stale_accepts_seconds_minutes_and_hours_only() {
-    assert_eq!(
-        parse_duration("stale", "30s").unwrap(),
-        Duration::from_secs(30)
-    );
-    assert_eq!(
-        parse_duration("stale", "15m").unwrap(),
-        Duration::from_secs(900)
-    );
-    assert_eq!(
-        parse_duration("stale", "2h").unwrap(),
-        Duration::from_secs(7200)
-    );
-    assert!(parse_duration("stale", "15").is_err());
-    assert!(parse_duration("stale", "1d").is_err());
-}
-
-#[test]
-fn a_non_ascii_or_empty_duration_is_refused_rather_than_a_panic() {
-    assert!(parse_duration("stale", "15\u{00b5}").is_err());
-    assert!(parse_duration("stale", "").is_err());
-    assert!(parse_duration("deadline", "\u{201c}2m\u{201d}").is_err());
-    assert!(parse_duration("stale", "18446744073709551615h").is_err());
-}
-
-#[test]
 fn a_missing_file_loads_as_the_default() {
     let dir = tempfile::tempdir().unwrap();
     let c = load_config(&dir.path().join("absent.toml")).unwrap();

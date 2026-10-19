@@ -16,15 +16,13 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 
 use super::stderr_tail::{StderrTail, keep_the_tail_until_end_of_input};
+use crate::Interrupt;
 use crate::wire::{capabilities_from_wire, mutation_to_wire, outcomes_from_wire, pull_from_wire};
-use crate::{Interrupt, parse_duration};
 
 const DEFAULT_ANSWER_DEADLINE: &str = "60s";
 
 fn answer_deadline_when_the_remote_names_none() -> ConfiguredDuration {
-    let text = DEFAULT_ANSWER_DEADLINE.to_string();
-    let value = parse_duration("deadline", &text).expect("the default deadline parses");
-    ConfiguredDuration { value, text }
+    ConfiguredDuration::parse(DEFAULT_ANSWER_DEADLINE).expect("the default deadline parses")
 }
 
 const RECHECK_INTERVAL: Duration = Duration::from_millis(25);

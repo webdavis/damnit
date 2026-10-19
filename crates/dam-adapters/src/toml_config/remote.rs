@@ -2,7 +2,7 @@ use dam_application::{ConfiguredDuration, CredentialSpec, RemoteConfig, RemoteNa
 use dam_domain::Path;
 use toml::Value;
 
-use super::{ConfigError, StrictTable, parse_duration};
+use super::{ConfigError, StrictTable};
 
 pub(super) fn parse_remote(name: &str, t: &StrictTable) -> Result<RemoteConfig, ConfigError> {
     let remote_name = RemoteName::parse(name).map_err(|e| ConfigError::Invalid(e.to_string()))?;
@@ -92,7 +92,11 @@ fn optional_duration_keeping_its_text(
     key: &str,
 ) -> Result<Option<ConfiguredDuration>, ConfigError> {
     t.string(key)?
-        .map(|text| parse_duration(key, &text).map(|value| ConfiguredDuration { value, text }))
+        .map(|text| {
+            ConfiguredDuration::parse(&text).ok_or_else(|| {
+                ConfigError::Invalid(format!("{key} {text:?}: expected <number><s|m|h>"))
+            })
+        })
         .transpose()
 }
 
