@@ -31,6 +31,7 @@ The version only grows, and these three rules are what "grows" means:
 3. **A helper above `PROTOCOL_VERSION` is refused by name.** `dam` drives every version up to its
    own and refuses anything above it, naming both numbers, rather than driving a newer helper with
    older semantics. A helper written against version 1 keeps working against every later `dam`.
+   Version 0 never existed, and a helper declaring it is refused.
 
 A line longer than `MAX_LINE` bytes, its newline included, is refused. The budget is per line, so
 the length of a conversation is not bounded.
