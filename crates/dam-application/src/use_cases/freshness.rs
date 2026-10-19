@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{Clock, Notice, RemoteName, RemoteTrackingRepository, StoreError};
+use crate::ports::{Clock, HelperError, Notice, RemoteName, RemoteTrackingRepository, StoreError};
 use crate::service::{Dam, Remotes};
 
 impl Dam<'_> {
@@ -34,13 +34,16 @@ impl Dam<'_> {
                 continue;
             };
             let age = age_of_last_pull(self.store, self.clock, &remote.name)?;
-            if is_stale(age, window)
-                && let Err(e) = self.pull(remotes, Some(&remote.name.0))
-            {
-                self.store.add_notice(&Notice::PullFailed {
+            if !is_stale(age, window) {
+                continue;
+            }
+            match self.pull(remotes, Some(&remote.name.0)) {
+                Ok(_) => {}
+                Err(e @ UseCaseError::Helper(HelperError::Cancelled)) => return Err(e),
+                Err(e) => self.store.add_notice(&Notice::PullFailed {
                     remote: remote.name.clone(),
                     why: say(&e),
-                })?;
+                })?,
             }
         }
         Ok(())

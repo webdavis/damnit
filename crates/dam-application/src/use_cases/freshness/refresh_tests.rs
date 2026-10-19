@@ -65,6 +65,18 @@ fn an_unreachable_stale_remote_leaves_a_notice_and_no_last_pull() {
     ));
 }
 
+#[test]
+fn a_cancelled_stale_refresh_stops_the_read_and_leaves_no_notice() {
+    let s = stale_after(Some(MINUTE));
+    let launcher = answering(Err(HelperError::Cancelled));
+    assert_eq!(
+        refresh(&s, &launcher),
+        Err(UseCaseError::Helper(HelperError::Cancelled))
+    );
+    assert_eq!(s.store.notices().unwrap(), vec![]);
+    assert_eq!(s.store.last_pull(&todoist()).unwrap(), None);
+}
+
 fn pulled_ago(ago: Duration) -> Scenario {
     let s = stale_after(Some(MINUTE));
     s.pulled_ago(jiff::SignedDuration::try_from(ago).unwrap());
