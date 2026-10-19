@@ -4,23 +4,16 @@ mod undone;
 
 use super::*;
 use crate::testing::prelude::*;
-use crate::testing::{Fixture, MemoryStore, oid};
-use dam_domain::{Event, Object, Task, When};
+use crate::testing::{Scenario, event, oid, task};
+use dam_domain::When;
 use jiff::civil::date;
-
-pub(super) fn seed(store: &MemoryStore, byte: u8) -> Oid {
-    store
-        .put(&Object::Task(Task::new(oid(byte), format!("t{byte}"))))
-        .unwrap();
-    oid(byte)
-}
 
 #[test]
 fn subject_priority_and_due_are_set() {
-    let store = MemoryStore::new();
-    let id = seed(&store, 1);
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
+    let s = Scenario::default();
+    s.working(task(1));
+    let id = oid(1);
+    let dam = s.dam();
     let out = dam
         .edit(
             &id,
@@ -36,15 +29,15 @@ fn subject_priority_and_due_are_set() {
     assert_eq!(t.base.subject, "new");
     assert_eq!(t.priority, Priority::HIGHEST);
     assert_eq!(t.due, Some(When::Day(date(2026, 9, 25))));
-    assert_eq!(store.get(&id).unwrap(), Some(out));
+    assert_eq!(s.store.get(&id).unwrap(), Some(out));
 }
 
 #[test]
 fn some_none_clears_a_date() {
-    let store = MemoryStore::new();
-    let id = seed(&store, 1);
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
+    let s = Scenario::default();
+    s.working(task(1));
+    let id = oid(1);
+    let dam = s.dam();
     dam.edit(
         &id,
         EditFields {
@@ -67,11 +60,10 @@ fn some_none_clears_a_date() {
 
 #[test]
 fn a_dependency_cycle_is_refused() {
-    let store = MemoryStore::new();
-    let a = seed(&store, 1);
-    let b = seed(&store, 2);
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
+    let s = Scenario::default();
+    s.working(task(1)).working(task(2));
+    let (a, b) = (oid(1), oid(2));
+    let dam = s.dam();
     dam.edit(
         &b,
         EditFields {
@@ -100,10 +92,10 @@ fn a_dependency_cycle_is_refused() {
 
 #[test]
 fn a_bad_recurrence_is_a_parse_error_and_a_good_one_is_kept() {
-    let store = MemoryStore::new();
-    let id = seed(&store, 1);
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
+    let s = Scenario::default();
+    s.working(task(1));
+    let id = oid(1);
+    let dam = s.dam();
     let err = dam
         .edit(
             &id,
@@ -131,10 +123,10 @@ fn a_bad_recurrence_is_a_parse_error_and_a_good_one_is_kept() {
 
 #[test]
 fn attach_needs_an_existing_event() {
-    let store = MemoryStore::new();
-    let id = seed(&store, 1);
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
+    let s = Scenario::default();
+    s.working(task(1));
+    let id = oid(1);
+    let dam = s.dam();
     let err = dam
         .edit(
             &id,
@@ -148,14 +140,7 @@ fn attach_needs_an_existing_event() {
         err,
         UseCaseError::Refused(Refusal::NoSuchObject(_))
     ));
-    store
-        .put(&Object::Event(Event::new(
-            oid(9),
-            "e",
-            When::Day(date(2026, 1, 1)),
-            When::Day(date(2026, 1, 2)),
-        )))
-        .unwrap();
+    s.working(event(9));
     let out = dam
         .edit(
             &id,
@@ -170,17 +155,9 @@ fn attach_needs_an_existing_event() {
 
 #[test]
 fn task_fields_on_an_event_are_refused() {
-    let store = MemoryStore::new();
-    store
-        .put(&Object::Event(Event::new(
-            oid(9),
-            "e",
-            When::Day(date(2026, 1, 1)),
-            When::Day(date(2026, 1, 2)),
-        )))
-        .unwrap();
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
+    let s = Scenario::default();
+    s.working(event(9));
+    let dam = s.dam();
     let err = dam
         .edit(
             &oid(9),

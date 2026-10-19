@@ -21,3 +21,6 @@ jiff.workspace = true
 toon-format.workspace = true
 tempfile.workspace = true
 terminal_size.workspace = true
+
+[dev-dependencies]
+dam-application = { path = "../dam-application", features = ["testing"] }

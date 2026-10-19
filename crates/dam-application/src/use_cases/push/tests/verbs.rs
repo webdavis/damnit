@@ -1,71 +1,26 @@
-use jiff::civil::date;
-
-use super::super::*;
-use super::{clock, committed_task, config, launcher};
-use crate::remote::{MutationOp, MutationOutcome, MutationVerdict};
+use crate::remote::MutationOp;
 use crate::testing::prelude::*;
-use crate::testing::{FixedClock, FixedRandom, Fixture, MemoryStore, oid, remotes_launched_by};
+use crate::testing::{Scenario, accepting_all, oid, pushing, remotes_launched_by, task, todoist};
 use dam_domain::{Object, Task};
 
 #[test]
 fn a_create_the_remote_already_holds_is_sent_as_an_update() {
-    let store = MemoryStore::new();
-    committed_task(&store, 1);
-    store
-        .map_remote_id(&RemoteName("todoist".into()), &oid(1), "r1")
-        .unwrap();
-    let (l, pushed) = launcher(|_| vec![]);
-    Dam {
-        store: &store,
-        clock: &clock(),
-        random: &FixedRandom::new(0),
-        config: &config(),
-    }
-    .push(remotes_launched_by(&l), None)
-    .unwrap();
+    let s = Scenario::default();
+    s.committed(task(1));
+    s.store.map_remote_id(&todoist(), &oid(1), "r1").unwrap();
+    let (l, pushed) = pushing(|_| vec![]);
+    s.dam().push(remotes_launched_by(&l), None).unwrap();
     assert_eq!(pushed.borrow()[0].op, MutationOp::Update);
 }
 
 #[test]
 fn an_update_of_an_object_the_remote_never_took_is_sent_as_a_create() {
-    let store = MemoryStore::new();
-    committed_task(&store, 1);
-    let (l, pushed) = launcher(|ms| {
-        ms.iter()
-            .map(|m| MutationOutcome {
-                oid: m.oid.clone(),
-                verdict: MutationVerdict::Accepted { remote_id: None },
-            })
-            .collect()
-    });
-    Dam {
-        store: &store,
-        clock: &clock(),
-        random: &FixedRandom::new(0),
-        config: &config(),
-    }
-    .push(remotes_launched_by(&l), None)
-    .unwrap();
-    store
-        .put(&Object::Task(Task::new(oid(1), "edited")))
-        .unwrap();
-    let fixture = Fixture {
-        clock: FixedClock(date(2026, 9, 19)),
-        random: FixedRandom::new(9),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(&store);
-    dam.add_all().unwrap();
-    dam.commit("an update the remote has never seen the object for")
-        .unwrap();
-    Dam {
-        store: &store,
-        clock: &clock(),
-        random: &FixedRandom::new(0),
-        config: &config(),
-    }
-    .push(remotes_launched_by(&l), None)
-    .unwrap();
+    let s = Scenario::default();
+    s.committed(task(1));
+    let (l, pushed) = pushing(accepting_all(None));
+    s.dam().push(remotes_launched_by(&l), None).unwrap();
+    s.committed(Object::Task(Task::new(oid(1), "edited")));
+    s.dam().push(remotes_launched_by(&l), None).unwrap();
     let sent = pushed.borrow();
     assert_eq!(sent.len(), 2);
     assert_eq!(sent[1].op, MutationOp::Create);
@@ -73,45 +28,13 @@ fn an_update_of_an_object_the_remote_never_took_is_sent_as_a_create() {
 
 #[test]
 fn an_edit_and_its_undo_pushed_together_send_nothing() {
-    let store = MemoryStore::new();
-    committed_task(&store, 1);
-    let (l, pushed) = launcher(|ms| {
-        ms.iter()
-            .map(|m| MutationOutcome {
-                oid: m.oid.clone(),
-                verdict: MutationVerdict::Accepted { remote_id: None },
-            })
-            .collect()
-    });
-    Dam {
-        store: &store,
-        clock: &clock(),
-        random: &FixedRandom::new(0),
-        config: &config(),
-    }
-    .push(remotes_launched_by(&l), None)
-    .unwrap();
-    for (subject, byte) in [("edited", 8), ("t1", 9)] {
-        store
-            .put(&Object::Task(Task::new(oid(1), subject)))
-            .unwrap();
-        let fixture = Fixture {
-            clock: FixedClock(date(2026, 9, 19)),
-            random: FixedRandom::new(byte),
-            ..Fixture::default()
-        };
-        let dam = fixture.dam(&store);
-        dam.add_all().unwrap();
-        dam.commit(subject).unwrap();
-    }
-    Dam {
-        store: &store,
-        clock: &clock(),
-        random: &FixedRandom::new(0),
-        config: &config(),
-    }
-    .push(remotes_launched_by(&l), None)
-    .unwrap();
+    let s = Scenario::default();
+    s.committed(task(1));
+    let (l, pushed) = pushing(accepting_all(None));
+    s.dam().push(remotes_launched_by(&l), None).unwrap();
+    s.committed(Object::Task(Task::new(oid(1), "edited")))
+        .committed(task(1));
+    s.dam().push(remotes_launched_by(&l), None).unwrap();
     assert_eq!(
         pushed.borrow().len(),
         1,

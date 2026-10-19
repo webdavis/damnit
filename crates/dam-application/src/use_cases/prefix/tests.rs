@@ -2,7 +2,7 @@ use dam_domain::{CommitId, CommitRecord, Object, Task, Timestamp};
 
 use super::*;
 use crate::testing::prelude::*;
-use crate::testing::{Fixture, MemoryStore, oid};
+use crate::testing::{Scenario, oid};
 
 fn twin(last: u8) -> Oid {
     Oid::generate(&mut |x: &mut [u8]| {
@@ -11,38 +11,33 @@ fn twin(last: u8) -> Oid {
     })
 }
 
-fn store_holding(oids: &[Oid]) -> MemoryStore {
-    let store = MemoryStore::new();
+fn holding(oids: &[Oid]) -> Scenario {
+    let s = Scenario::default();
     for (i, o) in oids.iter().enumerate() {
-        store
-            .put(&Object::Task(Task::new(o.clone(), format!("t{i}"))))
-            .unwrap();
+        s.working(Object::Task(Task::new(o.clone(), format!("t{i}"))));
     }
-    store
+    s
 }
 
 #[test]
 fn a_full_oid_and_a_unique_prefix_resolve() {
-    let store = store_holding(&[oid(0xab), oid(0xac)]);
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
+    let s = holding(&[oid(0xab), oid(0xac)]);
+    let dam = s.dam();
     assert_eq!(dam.resolve_object(oid(0xab).as_str()), Ok(oid(0xab)));
     assert_eq!(dam.resolve_object("abab"), Ok(oid(0xab)));
 }
 
 #[test]
 fn a_full_oid_resolves_without_a_scan_so_one_only_history_holds_is_reached() {
-    let store = MemoryStore::new();
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
+    let s = Scenario::default();
+    let dam = s.dam();
     assert_eq!(dam.resolve_object(oid(0xcd).as_str()), Ok(oid(0xcd)));
 }
 
 #[test]
 fn a_short_or_non_hex_prefix_is_not_an_oid() {
-    let store = store_holding(&[twin(1)]);
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
+    let s = holding(&[twin(1)]);
+    let dam = s.dam();
     for text in ["ab", "zzzz", "f5"] {
         assert_eq!(
             dam.resolve_object(text),
@@ -53,9 +48,8 @@ fn a_short_or_non_hex_prefix_is_not_an_oid() {
 
 #[test]
 fn a_prefix_naming_no_working_object_is_refused_by_the_layer_it_read() {
-    let store = store_holding(&[twin(1)]);
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
+    let s = holding(&[twin(1)]);
+    let dam = s.dam();
     assert_eq!(
         dam.resolve_object("cdcd"),
         Err(Refusal::NoWorkingObject("cdcd".into()).into())
@@ -64,9 +58,8 @@ fn a_prefix_naming_no_working_object_is_refused_by_the_layer_it_read() {
 
 #[test]
 fn a_prefix_naming_two_objects_lists_both() {
-    let store = store_holding(&[twin(1), twin(2)]);
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
+    let s = holding(&[twin(1), twin(2)]);
+    let dam = s.dam();
     assert_eq!(
         dam.resolve_object("abab"),
         Err(Refusal::AmbiguousPrefix {
@@ -89,27 +82,25 @@ fn commit_numbered(last: u8) -> CommitRecord {
     }
 }
 
-fn history_of(commits: &[CommitRecord]) -> MemoryStore {
-    let store = MemoryStore::new();
+fn history_of(commits: &[CommitRecord]) -> Scenario {
+    let s = Scenario::default();
     for c in commits {
-        store.commit(c).unwrap();
+        s.store.commit(c).unwrap();
     }
-    store
+    s
 }
 
 #[test]
 fn a_commit_prefix_naming_one_commit_resolves_to_it() {
-    let store = history_of(&[commit_numbered(1)]);
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
+    let s = history_of(&[commit_numbered(1)]);
+    let dam = s.dam();
     assert_eq!(dam.resolve_commit("abab"), Ok(commit_numbered(1)));
 }
 
 #[test]
 fn a_commit_prefix_naming_two_commits_lists_both_newest_first() {
-    let store = history_of(&[commit_numbered(1), commit_numbered(2)]);
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
+    let s = history_of(&[commit_numbered(1), commit_numbered(2)]);
+    let dam = s.dam();
     assert_eq!(
         dam.resolve_commit("abab"),
         Err(Refusal::AmbiguousPrefix {
@@ -125,9 +116,8 @@ fn a_commit_prefix_naming_two_commits_lists_both_newest_first() {
 
 #[test]
 fn a_commit_prefix_naming_nothing_or_too_short_is_refused() {
-    let store = history_of(&[commit_numbered(1)]);
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
+    let s = history_of(&[commit_numbered(1)]);
+    let dam = s.dam();
     assert_eq!(
         dam.resolve_commit("cdcd"),
         Err(Refusal::NoSuchObject("cdcd".into()).into())

@@ -25,109 +25,91 @@ impl Dam<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testing::prelude::*;
-    use crate::testing::{FaultyStore, Fixture, MemoryStore, oid};
-    use dam_domain::{Object, Task};
+    use crate::testing::{FaultyStore, Scenario, oid, task_in};
 
-    fn put(store: &MemoryStore, byte: u8, subject: &str, path: &str) -> Oid {
-        let mut t = Task::new(oid(byte), subject);
-        t.base.path = Path::parse(path).unwrap();
-        store.put(&Object::Task(t)).unwrap();
-        oid(byte)
-    }
-
-    fn path_of(store: &MemoryStore, id: &Oid) -> String {
-        store
-            .get(id)
-            .unwrap()
-            .unwrap()
-            .base()
-            .path
-            .as_str()
-            .to_string()
-    }
-
-    fn mv(store: &MemoryStore, id: &Oid, to: &str) -> Result<(), UseCaseError> {
-        let fixture = Fixture::default();
-        let dam = fixture.dam(store);
-        dam.relocate(id, &Path::parse(to).unwrap())
+    fn mv(s: &Scenario, byte: u8, to: &str) -> Result<(), UseCaseError> {
+        s.dam().relocate(&oid(byte), &Path::parse(to).unwrap())
     }
 
     #[test]
     fn moving_a_parent_carries_its_descendants() {
-        let store = MemoryStore::new();
-        let plan = put(&store, 1, "plan", "a");
-        let step = put(&store, 2, "step", "a/plan");
-        let detail = put(&store, 3, "detail", "a/plan/step");
-        mv(&store, &plan, "b").unwrap();
-        assert_eq!(path_of(&store, &plan), "b/");
-        assert_eq!(path_of(&store, &step), "b/plan/");
-        assert_eq!(path_of(&store, &detail), "b/plan/step/");
+        let s = Scenario::default();
+        s.filed(task_in(1, "plan", "a"))
+            .filed(task_in(2, "step", "a/plan"))
+            .filed(task_in(3, "detail", "a/plan/step"));
+        mv(&s, 1, "b").unwrap();
+        assert_eq!(s.path_of(&oid(1)), "b/");
+        assert_eq!(s.path_of(&oid(2)), "b/plan/");
+        assert_eq!(s.path_of(&oid(3)), "b/plan/step/");
     }
 
     #[test]
     fn moving_into_yourself_is_refused() {
-        let store = MemoryStore::new();
-        let plan = put(&store, 1, "plan", "a");
-        let err = mv(&store, &plan, "a/plan/c").unwrap_err();
-        assert_eq!(err, UseCaseError::Refused(Refusal::MoveInsideItself(plan)));
+        let s = Scenario::default();
+        s.filed(task_in(1, "plan", "a"));
+        let err = mv(&s, 1, "a/plan/c").unwrap_err();
+        assert_eq!(
+            err,
+            UseCaseError::Refused(Refusal::MoveInsideItself(oid(1)))
+        );
     }
 
     #[test]
     fn a_top_level_object_lands_exactly_at_the_destination() {
-        let store = MemoryStore::new();
-        let x = put(&store, 1, "x", "");
-        mv(&store, &x, "work").unwrap();
-        assert_eq!(path_of(&store, &x), "work/");
+        let s = Scenario::default();
+        s.filed(task_in(1, "x", ""));
+        mv(&s, 1, "work").unwrap();
+        assert_eq!(s.path_of(&oid(1)), "work/");
     }
 
     #[test]
     fn moving_a_top_level_object_leaves_the_rest_of_the_store_where_it_was() {
-        let store = MemoryStore::new();
-        let a = put(&store, 1, "a", "");
-        let b = put(&store, 2, "b", "");
-        let home = put(&store, 3, "note", "home");
-        let work = put(&store, 4, "plan", "work");
-        mv(&store, &a, "work").unwrap();
-        assert_eq!(path_of(&store, &a), "work/");
-        assert_eq!(path_of(&store, &b), "");
-        assert_eq!(path_of(&store, &home), "home/");
-        assert_eq!(path_of(&store, &work), "work/");
+        let s = Scenario::default();
+        s.filed(task_in(1, "a", ""))
+            .filed(task_in(2, "b", ""))
+            .filed(task_in(3, "note", "home"))
+            .filed(task_in(4, "plan", "work"));
+        mv(&s, 1, "work").unwrap();
+        assert_eq!(s.path_of(&oid(1)), "work/");
+        assert_eq!(s.path_of(&oid(2)), "");
+        assert_eq!(s.path_of(&oid(3)), "home/");
+        assert_eq!(s.path_of(&oid(4)), "work/");
     }
 
     #[test]
     fn moving_a_top_level_object_takes_its_children_and_nothing_else() {
-        let store = MemoryStore::new();
-        let a = put(&store, 1, "a", "");
-        let child = put(&store, 2, "child", "a");
-        let b = put(&store, 3, "b", "");
-        let other = put(&store, 4, "other", "x");
-        mv(&store, &a, "work").unwrap();
-        assert_eq!(path_of(&store, &a), "work/");
-        assert_eq!(path_of(&store, &child), "work/a/");
-        assert_eq!(path_of(&store, &b), "");
-        assert_eq!(path_of(&store, &other), "x/");
+        let s = Scenario::default();
+        s.filed(task_in(1, "a", ""))
+            .filed(task_in(2, "child", "a"))
+            .filed(task_in(3, "b", ""))
+            .filed(task_in(4, "other", "x"));
+        mv(&s, 1, "work").unwrap();
+        assert_eq!(s.path_of(&oid(1)), "work/");
+        assert_eq!(s.path_of(&oid(2)), "work/a/");
+        assert_eq!(s.path_of(&oid(3)), "");
+        assert_eq!(s.path_of(&oid(4)), "x/");
     }
 
     #[test]
     fn moving_to_the_root_puts_the_object_and_its_children_at_the_top_level() {
-        let store = MemoryStore::new();
-        let plan = put(&store, 1, "plan", "work");
-        let step = put(&store, 2, "step", "work/plan");
-        mv(&store, &plan, "").unwrap();
-        assert_eq!(path_of(&store, &plan), "");
-        assert_eq!(path_of(&store, &step), "plan/");
+        let s = Scenario::default();
+        s.filed(task_in(1, "plan", "work"))
+            .filed(task_in(2, "step", "work/plan"));
+        mv(&s, 1, "").unwrap();
+        assert_eq!(s.path_of(&oid(1)), "");
+        assert_eq!(s.path_of(&oid(2)), "plan/");
     }
 
     #[test]
     fn mv_that_fails_between_parent_and_child_moves_neither() {
-        let store = FaultyStore::new(MemoryStore::new());
-        let p = put(&store.inner, 1, "p", "a");
-        put(&store.inner, 2, "c", "a/p");
-        put(&store.inner, 3, "d", "a/p");
-        let fixture = Fixture::default();
-        let dam = fixture.dam(&store);
-        store
-            .assert_unchanged_when_any_write_fails(|| dam.relocate(&p, &Path::parse("b").unwrap()));
+        let s = Scenario::default();
+        s.filed(task_in(1, "p", "a"))
+            .filed(task_in(2, "c", "a/p"))
+            .filed(task_in(3, "d", "a/p"));
+        let store = FaultyStore::new(s.store);
+        let dam = s.fixture.dam(&store);
+        store.assert_unchanged_when_any_write_fails(|| {
+            dam.relocate(&oid(1), &Path::parse("b").unwrap())
+        });
     }
 }

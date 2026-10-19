@@ -1,14 +1,8 @@
 use std::collections::BTreeSet;
 
-use dam_domain::{Object, Task};
-
 use super::super::reconcile::{Settlement, reconcile};
 use crate::remote::{MutationOp, MutationOutcome, MutationVerdict, RemoteMutation};
-use crate::testing::oid;
-
-fn task(byte: u8) -> Object {
-    Object::Task(Task::new(oid(byte), format!("t{byte}")))
-}
+use crate::testing::{oid, task};
 
 fn create(byte: u8) -> RemoteMutation {
     RemoteMutation {

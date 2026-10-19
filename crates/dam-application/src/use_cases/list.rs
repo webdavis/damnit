@@ -66,13 +66,12 @@ fn order(a: &Object, b: &Object) -> Ordering {
 mod tests {
     use super::*;
     use crate::config::{Config, FilterConfig};
-    use crate::service::Dam;
-    use crate::testing::prelude::*;
-    use crate::testing::{Fixture, MemoryStore, oid};
+    use crate::testing::{Scenario, oid};
     use dam_domain::{Categories, Category, Object, Path, Priority, Task, When};
     use jiff::civil::date;
 
-    fn seed(store: &MemoryStore) {
+    fn tasks_a_b_and_c_later(config: Config) -> Scenario {
+        let s = Scenario::default().configured(config);
         let mut a = Task::new(oid(1), "a");
         a.due = Some(When::Day(date(2026, 9, 18)));
         a.base.labels.insert("deep".into());
@@ -82,11 +81,12 @@ mod tests {
         let mut c = Task::new(oid(3), "c");
         c.base.path = Path::parse("later").unwrap();
         for t in [a, b, c] {
-            store.put(&Object::Task(t)).unwrap();
+            s.working(Object::Task(t));
         }
+        s
     }
 
-    fn config() -> Config {
+    fn effort_categories_and_a_today_filter() -> Config {
         Config {
             categories: Categories::new(vec![Category {
                 name: "effort".into(),
@@ -104,41 +104,23 @@ mod tests {
 
     #[test]
     fn no_query_lists_everything_by_path_then_earlier_due_first() {
-        let store = MemoryStore::new();
-        seed(&store);
-        let fixture = Fixture {
-            config: config(),
-            ..Fixture::default()
-        };
-        let dam = fixture.dam(&store);
-        let out = dam.list(None).unwrap();
+        let s = tasks_a_b_and_c_later(effort_categories_and_a_today_filter());
+        let out = s.dam().list(None).unwrap();
         let subjects: Vec<&str> = out.iter().map(|o| o.base().subject.as_str()).collect();
         assert_eq!(subjects, vec!["b", "a", "c"]);
     }
 
     #[test]
     fn a_saved_filter_runs_by_name() {
-        let store = MemoryStore::new();
-        seed(&store);
-        let fixture = Fixture {
-            config: config(),
-            ..Fixture::default()
-        };
-        let dam = fixture.dam(&store);
-        let out = dam.list(Some("today")).unwrap();
+        let s = tasks_a_b_and_c_later(effort_categories_and_a_today_filter());
+        let out = s.dam().list(Some("today")).unwrap();
         assert_eq!(out.len(), 2);
     }
 
     #[test]
     fn a_category_term_refuses_a_value_of_another_category() {
-        let store = MemoryStore::new();
-        seed(&store);
-        let fixture = Fixture {
-            config: config(),
-            ..Fixture::default()
-        };
-        let dam = fixture.dam(&store);
-        let err = dam.list(Some("effort:home")).unwrap_err();
+        let s = tasks_a_b_and_c_later(effort_categories_and_a_today_filter());
+        let err = s.dam().list(Some("effort:home")).unwrap_err();
         assert_eq!(
             err,
             UseCaseError::Refused(Refusal::NotACategoryValue {
@@ -150,26 +132,9 @@ mod tests {
 
     #[test]
     fn a_category_term_checks_the_category_exists() {
-        let store = MemoryStore::new();
-        seed(&store);
-        let fixture = Fixture::default();
-        let dam = fixture.dam(&store);
-        assert_eq!(
-            Dam {
-                config: &config(),
-                ..dam
-            }
-            .list(Some("effort:deep"))
-            .unwrap()
-            .len(),
-            1
-        );
-        let err = Dam {
-            config: &config(),
-            ..dam
-        }
-        .list(Some("mood:happy"))
-        .unwrap_err();
+        let s = tasks_a_b_and_c_later(effort_categories_and_a_today_filter());
+        assert_eq!(s.dam().list(Some("effort:deep")).unwrap().len(), 1);
+        let err = s.dam().list(Some("mood:happy")).unwrap_err();
         assert_eq!(
             err,
             UseCaseError::Refused(Refusal::UnknownCategory("mood".into()))
@@ -178,12 +143,8 @@ mod tests {
 
     #[test]
     fn a_bad_query_is_a_query_error_naming_what_was_typed() {
-        let store = MemoryStore::new();
-        let fixture = Fixture {
-            config: config(),
-            ..Fixture::default()
-        };
-        let err = fixture.dam(&store).list(Some("(due:today")).unwrap_err();
+        let s = Scenario::default().configured(effort_categories_and_a_today_filter());
+        let err = s.dam().list(Some("(due:today")).unwrap_err();
         assert_eq!(err, UseCaseError::Query(QueryError::Unclosed));
     }
 }

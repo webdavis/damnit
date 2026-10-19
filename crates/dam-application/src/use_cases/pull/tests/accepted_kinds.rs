@@ -1,24 +1,17 @@
 use dam_domain::Kind;
 
-use super::{config, launcher, remote};
 use crate::remote::PullOutcome;
-use crate::service::Dam;
 use crate::testing::prelude::*;
-use crate::testing::{FixedClock, FixedRandom, MemoryStore, remotes_launched_by};
+use crate::testing::{Scenario, pulling, remotes_launched_by, todoist};
 
 #[test]
 fn a_pull_records_the_kinds_the_remote_accepts() {
-    let store = MemoryStore::new();
-    Dam {
-        store: &store,
-        clock: &FixedClock(jiff::civil::date(2026, 9, 18)),
-        random: &FixedRandom::new(1),
-        config: &config(),
-    }
-    .pull(remotes_launched_by(&launcher(PullOutcome::default())), None)
-    .unwrap();
+    let s = Scenario::default();
+    s.dam()
+        .pull(remotes_launched_by(&pulling(PullOutcome::default())), None)
+        .unwrap();
     assert_eq!(
-        store.accepted_kinds(&remote()).unwrap(),
+        s.store.accepted_kinds(&todoist()).unwrap(),
         Some(vec![Kind::Task])
     );
 }

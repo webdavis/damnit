@@ -1,50 +1,28 @@
 use std::time::Duration;
 
 use jiff::SignedDuration;
-use jiff::civil::date;
 
 use super::*;
-use crate::config::{Config, RemoteConfig};
 use crate::errors::Refusal;
 use crate::ports::RemoteName;
-use crate::testing::prelude::*;
-use crate::testing::{FixedClock, Fixture, MemoryStore};
+use crate::testing::{Scenario, config};
 
 const HOUR: Duration = Duration::from_secs(3600);
 
-fn clock() -> FixedClock {
-    FixedClock(date(2026, 9, 18))
+fn gcal() -> Scenario {
+    let mut config = config();
+    config.remotes[0].name = RemoteName("gcal".into());
+    Scenario::default().configured(config)
 }
 
-fn config() -> Config {
-    Config {
-        remotes: vec![RemoteConfig {
-            name: RemoteName("gcal".into()),
-            helper: "gcal".into(),
-            url: "gcal::".into(),
-            credentials: vec![],
-            stale: None,
-            deadline: None,
-            path: None,
-        }],
-        ..Config::default()
-    }
+fn pulled_ago(ago: SignedDuration) -> Scenario {
+    let s = gcal();
+    s.pulled_ago(ago);
+    s
 }
 
-fn pulled_ago(ago: SignedDuration) -> MemoryStore {
-    let store = MemoryStore::new();
-    let at = clock().now().checked_sub(ago).unwrap();
-    store.set_last_pull(&RemoteName("gcal".into()), at).unwrap();
-    store
-}
-
-fn check(store: &MemoryStore, remote: &str) -> Result<(), UseCaseError> {
-    let fixture = Fixture {
-        config: config(),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(store);
-    dam.require_fresh(&[(remote.into(), HOUR)])
+fn check(s: &Scenario, remote: &str) -> Result<(), UseCaseError> {
+    s.dam().require_fresh(&[(remote.into(), HOUR)])
 }
 
 #[test]
@@ -86,14 +64,9 @@ fn a_pull_from_the_future_reads_as_age_zero() {
 
 #[test]
 fn every_bound_is_held_not_only_the_first() {
-    let store = pulled_ago(SignedDuration::from_hours(2));
+    let s = pulled_ago(SignedDuration::from_hours(2));
     let bounds = [("gcal".to_string(), 3 * HOUR), ("gcal".to_string(), HOUR)];
-    let fixture = Fixture {
-        config: config(),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(&store);
-    let refused = dam.require_fresh(&bounds).unwrap_err();
+    let refused = s.dam().require_fresh(&bounds).unwrap_err();
     assert_eq!(
         refused,
         UseCaseError::Refused(Refusal::StaleRemote {
@@ -106,7 +79,7 @@ fn every_bound_is_held_not_only_the_first() {
 
 #[test]
 fn a_remote_never_pulled_is_refused() {
-    let refused = check(&MemoryStore::new(), "gcal").unwrap_err();
+    let refused = check(&gcal(), "gcal").unwrap_err();
     assert_eq!(
         refused,
         UseCaseError::Refused(Refusal::StaleRemote {
@@ -119,7 +92,7 @@ fn a_remote_never_pulled_is_refused() {
 
 #[test]
 fn a_bound_on_a_remote_the_config_does_not_name_is_no_such_remote() {
-    let refused = check(&MemoryStore::new(), "nope").unwrap_err();
+    let refused = check(&gcal(), "nope").unwrap_err();
     assert_eq!(
         refused,
         UseCaseError::Refused(Refusal::NoSuchRemote("nope".into()))

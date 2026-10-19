@@ -34,7 +34,7 @@ pub fn key(origin: Origin<'_>, oid: &Oid) -> String {
 mod tests {
     use super::*;
 
-    fn oid(text: &str) -> Oid {
+    fn parsed_oid(text: &str) -> Oid {
         Oid::parse(text).unwrap()
     }
 
@@ -47,7 +47,7 @@ mod tests {
 
     #[test]
     fn a_key_is_uuid_shaped_with_the_last_character_reserved() {
-        let k = key(Origin::Commit(&commit(COMMIT)), &oid(OBJECT));
+        let k = key(Origin::Commit(&commit(COMMIT)), &parsed_oid(OBJECT));
         assert_eq!(k.len(), 36);
         let groups: Vec<&str> = k.split('-').collect();
         assert_eq!(
@@ -60,23 +60,23 @@ mod tests {
 
     #[test]
     fn the_same_change_yields_the_same_key_every_time() {
-        let a = key(Origin::Commit(&commit(COMMIT)), &oid(OBJECT));
-        let b = key(Origin::Commit(&commit(COMMIT)), &oid(OBJECT));
+        let a = key(Origin::Commit(&commit(COMMIT)), &parsed_oid(OBJECT));
+        let b = key(Origin::Commit(&commit(COMMIT)), &parsed_oid(OBJECT));
         assert_eq!(a, b);
     }
 
     #[test]
     fn a_different_commit_object_or_origin_yields_a_different_key() {
-        let base = key(Origin::Commit(&commit(COMMIT)), &oid(OBJECT));
+        let base = key(Origin::Commit(&commit(COMMIT)), &parsed_oid(OBJECT));
         let other_commit = key(
             Origin::Commit(&commit("0000000000000000000000000000000000000000")),
-            &oid(OBJECT),
+            &parsed_oid(OBJECT),
         );
         let other_object = key(
             Origin::Commit(&commit(COMMIT)),
-            &oid("1111111111111111111111111111111111111111"),
+            &parsed_oid("1111111111111111111111111111111111111111"),
         );
-        let retry = key(Origin::Retry, &oid(OBJECT));
+        let retry = key(Origin::Retry, &parsed_oid(OBJECT));
         assert_ne!(base, other_commit);
         assert_ne!(base, other_object);
         assert_ne!(base, retry);
@@ -84,9 +84,9 @@ mod tests {
             retry,
             key(
                 Origin::Retry,
-                &oid("1111111111111111111111111111111111111111")
+                &parsed_oid("1111111111111111111111111111111111111111")
             )
         );
-        assert_eq!(retry, key(Origin::Retry, &oid(OBJECT)));
+        assert_eq!(retry, key(Origin::Retry, &parsed_oid(OBJECT)));
     }
 }

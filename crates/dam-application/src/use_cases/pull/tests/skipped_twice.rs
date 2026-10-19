@@ -1,11 +1,8 @@
-use jiff::civil::date;
-
-use super::super::*;
-use super::{config, incoming, launcher, remote};
+use super::incoming;
 use crate::ports::Notice;
 use crate::remote::{PullOutcome, RejectedObject};
 use crate::testing::prelude::*;
-use crate::testing::{FixedClock, FixedRandom, MemoryStore, remotes_launched_by};
+use crate::testing::{Scenario, pulling, remotes_launched_by, todoist};
 
 fn rejecting(remote_id: &str, why: &str) -> PullOutcome {
     PullOutcome {
@@ -17,20 +14,15 @@ fn rejecting(remote_id: &str, why: &str) -> PullOutcome {
     }
 }
 
-fn pull_from(store: &MemoryStore, answer: PullOutcome) {
-    Dam {
-        store,
-        clock: &FixedClock(date(2026, 9, 18)),
-        random: &FixedRandom::new(1),
-        config: &config(),
-    }
-    .pull(remotes_launched_by(&launcher(answer)), None)
-    .unwrap();
+fn pull_from(s: &Scenario, answer: PullOutcome) {
+    s.dam()
+        .pull(remotes_launched_by(&pulling(answer)), None)
+        .unwrap();
 }
 
 fn skipped(remote_id: &str, why: &str) -> Notice {
     Notice::PullSkipped {
-        remote: remote(),
+        remote: todoist(),
         object: RejectedObject {
             remote_id: remote_id.into(),
             why: why.into(),
@@ -40,22 +32,22 @@ fn skipped(remote_id: &str, why: &str) -> Notice {
 
 #[test]
 fn the_same_object_skipped_for_the_same_reason_twice_is_noticed_once() {
-    let store = MemoryStore::new();
-    pull_from(&store, rejecting("up-7", "its parent chain loops"));
-    pull_from(&store, rejecting("up-7", "its parent chain loops"));
+    let s = Scenario::default();
+    pull_from(&s, rejecting("up-7", "its parent chain loops"));
+    pull_from(&s, rejecting("up-7", "its parent chain loops"));
     assert_eq!(
-        store.notices().unwrap(),
+        s.store.notices().unwrap(),
         vec![skipped("up-7", "its parent chain loops")]
     );
 }
 
 #[test]
 fn the_same_object_skipped_for_a_new_reason_is_noticed_again() {
-    let store = MemoryStore::new();
-    pull_from(&store, rejecting("up-7", "its parent chain loops"));
-    pull_from(&store, rejecting("up-7", "due: not a date"));
+    let s = Scenario::default();
+    pull_from(&s, rejecting("up-7", "its parent chain loops"));
+    pull_from(&s, rejecting("up-7", "due: not a date"));
     assert_eq!(
-        store.notices().unwrap(),
+        s.store.notices().unwrap(),
         vec![
             skipped("up-7", "its parent chain loops"),
             skipped("up-7", "due: not a date"),
@@ -65,19 +57,19 @@ fn the_same_object_skipped_for_a_new_reason_is_noticed_again() {
 
 #[test]
 fn an_object_that_read_cleanly_drops_its_skip_and_is_noticed_again_when_skipped_later() {
-    let store = MemoryStore::new();
-    pull_from(&store, rejecting("up-7", "its parent chain loops"));
+    let s = Scenario::default();
+    pull_from(&s, rejecting("up-7", "its parent chain loops"));
     pull_from(
-        &store,
+        &s,
         PullOutcome {
             objects: vec![incoming("from upstream", "up-7")],
             ..PullOutcome::default()
         },
     );
-    assert_eq!(store.notices().unwrap(), vec![]);
-    pull_from(&store, rejecting("up-7", "its parent chain loops"));
+    assert_eq!(s.store.notices().unwrap(), vec![]);
+    pull_from(&s, rejecting("up-7", "its parent chain loops"));
     assert_eq!(
-        store.notices().unwrap(),
+        s.store.notices().unwrap(),
         vec![skipped("up-7", "its parent chain loops")]
     );
 }
