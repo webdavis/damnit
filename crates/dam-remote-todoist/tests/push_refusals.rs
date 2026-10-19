@@ -36,16 +36,16 @@ fn a_project_path_change_and_a_section_done_change_are_refused_and_send_nothing(
     ];
     let response = push(&api, mutations).unwrap();
     assert_eq!(response.results.len(), 2);
-    assert!(!response.results[0].ok);
+    assert!(!response.results[0].ok());
     assert_eq!(
-        response.results[0].why.as_deref(),
+        response.results[0].why(),
         Some(
             "a Todoist project carries only its name and whether it is archived; path did not change"
         )
     );
-    assert!(!response.results[1].ok);
+    assert!(!response.results[1].ok());
     assert_eq!(
-        response.results[1].why.as_deref(),
+        response.results[1].why(),
         Some("a Todoist section carries only its name; done did not change")
     );
     assert!(recorded.lock().unwrap().executed.is_empty());
@@ -68,9 +68,9 @@ fn a_rename_with_a_path_change_sends_the_rename_and_is_refused_for_the_path_only
         &["subject", "path"],
     )];
     let response = push(&api, mutations).unwrap();
-    assert!(!response.results[0].ok);
+    assert!(!response.results[0].ok());
     assert_eq!(
-        response.results[0].why.as_deref(),
+        response.results[0].why(),
         Some(
             "a Todoist project carries only its name and whether it is archived; path did not change"
         )

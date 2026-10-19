@@ -95,17 +95,10 @@ pub struct Mutation {
     pub fields: Vec<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct MutationResult {
-    pub oid: String,
-    pub ok: bool,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub remote_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub why: Option<String>,
-}
-
+mod mutation_result;
 mod unreadable;
+
+pub use mutation_result::{MutationResult, Verdict};
 
 #[cfg(test)]
 mod tests;

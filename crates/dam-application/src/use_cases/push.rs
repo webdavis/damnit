@@ -7,7 +7,7 @@ use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{
     Clock, CredentialSource, HelperLauncher, Notice, RemoteHelper, RemoteName, Repositories,
 };
-use crate::remote::{MutationOp, MutationOutcome, RemoteCapabilities};
+use crate::remote::{MutationOp, MutationOutcome, MutationVerdict, RemoteCapabilities};
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::connect::connect;
 
@@ -112,32 +112,32 @@ fn push_one(
             if !first_answer_about_a_sent_oid {
                 continue;
             }
-            if outcome.ok {
-                if let Some(id) = &outcome.remote_id {
-                    repos
-                        .remote_tracking
-                        .map_remote_id(&remote.name, &oid, id)?;
+            match outcome.verdict {
+                MutationVerdict::Accepted { remote_id } => {
+                    if let Some(id) = &remote_id {
+                        repos
+                            .remote_tracking
+                            .map_remote_id(&remote.name, &oid, id)?;
+                    }
+                    if deletes.contains(&oid) {
+                        repos
+                            .remote_tracking
+                            .clear_remote_mapping(&remote.name, &oid)?;
+                    } else if let Some(after) = after_by_oid.get(&oid) {
+                        repos
+                            .remote_tracking
+                            .set_remote_snapshot(&remote.name, after)?;
+                    }
                 }
-                if deletes.contains(&oid) {
-                    repos
-                        .remote_tracking
-                        .clear_remote_mapping(&remote.name, &oid)?;
-                } else if let Some(after) = after_by_oid.get(&oid) {
-                    repos
-                        .remote_tracking
-                        .set_remote_snapshot(&remote.name, after)?;
+                MutationVerdict::Refused { why } => {
+                    repos.notices.add_notice(&Notice::PushFailed {
+                        remote: remote.name.clone(),
+                        oid: oid.clone(),
+                        why: why.clone(),
+                    })?;
+                    retries.push(oid.clone());
+                    failed.push((oid, why));
                 }
-            } else {
-                let why = outcome
-                    .why
-                    .unwrap_or_else(|| "the remote gave no reason".into());
-                repos.notices.add_notice(&Notice::PushFailed {
-                    remote: remote.name.clone(),
-                    oid: oid.clone(),
-                    why: why.clone(),
-                })?;
-                retries.push(oid.clone());
-                failed.push((oid, why));
             }
         }
 

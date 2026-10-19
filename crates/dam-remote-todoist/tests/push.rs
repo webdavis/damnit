@@ -59,14 +59,14 @@ fn creates_updates_and_deletes_become_the_right_commands() {
     ];
     let response = push(&api, mutations).unwrap();
     assert_eq!(response.results.len(), 6);
-    assert!(response.results[0].ok);
-    assert_eq!(response.results[0].remote_id.as_deref(), Some("i:new1"));
-    assert!(response.results[1].ok, "{:?}", response.results[1].why);
-    assert!(response.results[2].ok);
-    assert!(!response.results[3].ok);
-    assert!(response.results[3].why.as_deref().unwrap().contains("Nope"));
-    assert!(response.results[4].ok);
-    assert!(response.results[5].ok);
+    assert!(response.results[0].ok());
+    assert_eq!(response.results[0].remote_id(), Some("i:new1"));
+    assert!(response.results[1].ok(), "{:?}", response.results[1].why());
+    assert!(response.results[2].ok());
+    assert!(!response.results[3].ok());
+    assert!(response.results[3].why().unwrap().contains("Nope"));
+    assert!(response.results[4].ok());
+    assert!(response.results[5].ok());
 
     let recorded = recorded.lock().unwrap();
     let add = recorded.command("item_add");
@@ -129,11 +129,11 @@ fn a_depth_one_create_becomes_a_section_when_its_child_arrives_later_in_the_same
     ];
     let response = push(&api, mutations).unwrap();
     assert!(
-        response.results.iter().all(|r| r.ok),
+        response.results.iter().all(|r| r.ok()),
         "{:?}",
         response.results
     );
-    assert_eq!(response.results[0].remote_id.as_deref(), Some("s:new1"));
+    assert_eq!(response.results[0].remote_id(), Some("s:new1"));
     let recorded = recorded.lock().unwrap();
     assert_eq!(recorded.types(), vec!["section_add", "item_add"]);
     assert_eq!(recorded.command("item_add")["args"]["section_id"], "new1");
@@ -157,7 +157,7 @@ fn clearing_done_becomes_the_uncomplete_command() {
         )],
     )
     .unwrap();
-    assert!(response.results[0].ok, "{:?}", response.results[0].why);
+    assert!(response.results[0].ok(), "{:?}", response.results[0].why());
     let recorded = recorded.lock().unwrap();
     assert_eq!(recorded.command("item_uncomplete")["args"]["id"], "i1");
     assert!(!recorded.types().contains(&"item_close"));
@@ -178,7 +178,7 @@ fn a_path_change_moves_the_task_through_the_move_command() {
         &["path"],
     )];
     let response = push(&api, mutations).unwrap();
-    assert!(response.results[0].ok, "{:?}", response.results[0].why);
+    assert!(response.results[0].ok(), "{:?}", response.results[0].why());
     let recorded = recorded.lock().unwrap();
     assert_eq!(recorded.types(), vec!["item_move"]);
     assert_eq!(
@@ -202,7 +202,7 @@ fn a_path_and_subject_change_moves_first_then_updates_the_content() {
         &["path", "subject"],
     )];
     let response = push(&api, mutations).unwrap();
-    assert!(response.results[0].ok, "{:?}", response.results[0].why);
+    assert!(response.results[0].ok(), "{:?}", response.results[0].why());
     let recorded = recorded.lock().unwrap();
     assert_eq!(
         recorded.types(),
@@ -235,13 +235,9 @@ fn a_hostile_remote_id_is_refused_and_never_reaches_a_command() {
     ];
     let response = push(&api, mutations).unwrap();
     for result in &response.results {
-        assert!(!result.ok, "{result:?}");
+        assert!(!result.ok(), "{result:?}");
         assert!(
-            result
-                .why
-                .as_deref()
-                .unwrap()
-                .contains("unusable Todoist id"),
+            result.why().unwrap().contains("unusable Todoist id"),
             "{result:?}"
         );
     }

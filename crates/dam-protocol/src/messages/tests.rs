@@ -122,9 +122,9 @@ fn push_round_trips_the_fixtures() {
     let res = PushResponse {
         results: vec![MutationResult {
             oid: oid(),
-            ok: true,
-            remote_id: Some("r1".into()),
-            why: None,
+            verdict: Verdict::Accepted {
+                remote_id: Some("r1".into()),
+            },
         }],
     };
     let answer = Reply::Answered(res);

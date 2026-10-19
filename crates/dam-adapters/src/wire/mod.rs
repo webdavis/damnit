@@ -2,11 +2,11 @@ mod decode;
 mod encode;
 
 use dam_application::{
-    IncomingObject, MutationOp, MutationOutcome, PullOutcome, RejectedObject, RemoteCapabilities,
-    RemoteMutation,
+    IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, RejectedObject,
+    RemoteCapabilities, RemoteMutation,
 };
 use dam_domain::{Field, Kind, Oid};
-use dam_protocol::{Capabilities, Mutation, MutationResult, PullResponse};
+use dam_protocol::{Capabilities, Mutation, MutationResult, PullResponse, Verdict};
 
 pub use decode::from_wire;
 pub use encode::to_wire;
@@ -94,9 +94,10 @@ pub fn outcomes_from_wire(results: Vec<MutationResult>) -> Vec<MutationOutcome> 
         .filter_map(|r| {
             Some(MutationOutcome {
                 oid: Oid::parse(&r.oid).ok()?,
-                ok: r.ok,
-                remote_id: r.remote_id,
-                why: r.why,
+                verdict: match r.verdict {
+                    Verdict::Accepted { remote_id } => MutationVerdict::Accepted { remote_id },
+                    Verdict::Refused { why } => MutationVerdict::Refused { why },
+                },
             })
         })
         .collect()

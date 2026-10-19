@@ -3,7 +3,7 @@ mod commands;
 mod plan;
 mod shape;
 
-use dam_protocol::{Mutation, MutationResult, PushResponse, WireObject};
+use dam_protocol::{Mutation, MutationResult, PushResponse, Verdict, WireObject};
 
 use crate::api::{ApiError, Item, Project, Section, SyncWrite, TodoistApi};
 use crate::map::{Tree, api_priority, remote_id};
@@ -39,15 +39,11 @@ pub fn push(api: &TodoistApi, mutations: Vec<Mutation>) -> Result<PushResponse, 
         match apply(api, &mut tree, m, &containers_filled) {
             Ok(remote_id) => results.push(MutationResult {
                 oid: m.oid.clone(),
-                ok: true,
-                remote_id,
-                why: None,
+                verdict: Verdict::Accepted { remote_id },
             }),
             Err(Failure::OnlyThisMutation(why)) => results.push(MutationResult {
                 oid: m.oid.clone(),
-                ok: false,
-                remote_id: m.remote_id.clone(),
-                why: Some(why),
+                verdict: Verdict::Refused { why },
             }),
             Err(Failure::StopsThePush(e)) => return Err(e),
         }

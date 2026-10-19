@@ -163,14 +163,8 @@ fn a_push_is_refused_per_mutation_without_a_credential_or_a_request() {
     let Answer::Answered(answer) = read::<PushResponse>(&responses[0]) else {
         panic!("{:?}", responses[0])
     };
-    assert!(!answer.results[0].ok);
-    assert!(
-        answer.results[0]
-            .why
-            .as_deref()
-            .unwrap()
-            .contains("read-only")
-    );
+    assert!(!answer.results[0].ok());
+    assert!(answer.results[0].why().unwrap().contains("read-only"));
     assert!(google.seen().is_empty(), "a push sent a request");
 }
 

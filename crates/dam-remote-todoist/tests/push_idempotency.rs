@@ -24,7 +24,7 @@ fn a_resent_mutation_repeats_its_uuids_and_creates_nothing_twice() {
     let again = first.clone();
 
     let one = push(&api, first).unwrap();
-    assert!(one.results[0].ok);
+    assert!(one.results[0].ok());
     let two = push(&api, again).unwrap();
 
     let recorded = recorded.lock().unwrap();
@@ -44,7 +44,7 @@ fn a_resent_mutation_repeats_its_uuids_and_creates_nothing_twice() {
         "the resend repeated the uuid rather than minting one"
     );
     assert!(
-        !two.results[0].ok,
+        !two.results[0].ok(),
         "a resend dam cannot learn an id from is not reported as pushed"
     );
 }
@@ -60,7 +60,7 @@ fn the_commands_of_one_mutation_have_distinct_uuids() {
         None,
         Some(task(&"1".repeat(40), "Work/", "eggs", true)),
     )];
-    assert!(push(&api, mutations).unwrap().results[0].ok);
+    assert!(push(&api, mutations).unwrap().results[0].ok());
     let recorded = recorded.lock().unwrap();
     assert_eq!(recorded.types(), vec!["item_add", "item_close"]);
     assert_eq!(recorded.uuids_seen.len(), 2);
@@ -90,13 +90,10 @@ fn a_refused_command_fails_only_its_own_mutation() {
         mutation("delete", 3, Some("p:p1"), None),
     ];
     let response = push(&api, mutations).unwrap();
-    assert!(response.results[0].ok);
-    assert!(!response.results[1].ok);
-    assert_eq!(
-        response.results[1].why.as_deref(),
-        Some("refused by the test")
-    );
-    assert!(response.results[2].ok);
+    assert!(response.results[0].ok());
+    assert!(!response.results[1].ok());
+    assert_eq!(response.results[1].why(), Some("refused by the test"));
+    assert!(response.results[2].ok());
     let recorded = recorded.lock().unwrap();
     assert_eq!(recorded.types(), vec!["item_add", "project_delete"]);
 }
@@ -114,11 +111,8 @@ fn a_mutation_is_pushed_only_when_every_one_of_its_commands_is_accepted() {
         Some(task(&"1".repeat(40), "Work/", "eggs", true)),
     )];
     let response = push(&api, mutations).unwrap();
-    assert!(!response.results[0].ok);
-    assert_eq!(
-        response.results[0].why.as_deref(),
-        Some("refused by the test")
-    );
+    assert!(!response.results[0].ok());
+    assert_eq!(response.results[0].why(), Some("refused by the test"));
     assert_eq!(recorded.lock().unwrap().types(), vec!["item_add"]);
 }
 
@@ -207,11 +201,11 @@ fn a_failure_part_way_through_belongs_to_its_own_mutation() {
         ),
     ];
     let response = push(&api, mutations).unwrap();
-    assert!(response.results[0].ok);
-    assert!(!response.results[1].ok);
-    assert!(response.results[1].why.as_deref().unwrap().contains("500"));
+    assert!(response.results[0].ok());
+    assert!(!response.results[1].ok());
+    assert!(response.results[1].why().unwrap().contains("500"));
     assert!(
-        response.results[2].ok,
+        response.results[2].ok(),
         "the batch goes on after one mutation's failure"
     );
 }

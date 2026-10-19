@@ -1,4 +1,4 @@
-use dam_protocol::{Mutation, MutationResult, PushResponse};
+use dam_protocol::{Mutation, MutationResult, PushResponse, Verdict};
 
 pub const READ_ONLY: &str = "Google Calendar is read-only through dam-remote-gcal: it pulls events \
 and never creates, changes or deletes one, so this change stays in dam";
@@ -9,9 +9,9 @@ pub fn refuse(mutations: &[Mutation]) -> PushResponse {
             .iter()
             .map(|m| MutationResult {
                 oid: m.oid.clone(),
-                ok: false,
-                remote_id: None,
-                why: Some(READ_ONLY.into()),
+                verdict: Verdict::Refused {
+                    why: READ_ONLY.into(),
+                },
             })
             .collect(),
     }

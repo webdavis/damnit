@@ -3,7 +3,7 @@ use jiff::civil::date;
 use super::super::*;
 use super::{clock, committed_task, config, launcher};
 use crate::ports::Repositories;
-use crate::remote::{MutationOp, MutationOutcome};
+use crate::remote::{MutationOp, MutationOutcome, MutationVerdict};
 use crate::testing::prelude::*;
 use crate::testing::{EchoCredentials, FixedClock, FixedRandom, MemoryStore, oid};
 use crate::use_cases::commit::commit;
@@ -32,9 +32,7 @@ fn an_update_of_an_object_the_remote_never_took_is_sent_as_a_create() {
         ms.iter()
             .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
-                ok: true,
-                remote_id: None,
-                why: None,
+                verdict: MutationVerdict::Accepted { remote_id: None },
             })
             .collect()
     });
@@ -66,9 +64,7 @@ fn an_edit_and_its_undo_pushed_together_send_nothing() {
         ms.iter()
             .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
-                ok: true,
-                remote_id: None,
-                why: None,
+                verdict: MutationVerdict::Accepted { remote_id: None },
             })
             .collect()
     });
