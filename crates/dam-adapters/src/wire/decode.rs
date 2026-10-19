@@ -2,87 +2,15 @@ use std::collections::BTreeSet;
 
 use dam_domain::{
     Attachment, Attendee, Base, Completion, Conference, Date, Event, EventStatus, EventType, Kind,
-    Object, Oid, OidError, Path, PathError, Person, Priority, PriorityError, Recurrence, Reminder,
-    ResponseStatus, Task, Timestamp, Transparency, Visibility, When,
+    Object, Oid, Path, Person, Priority, Recurrence, Reminder, ResponseStatus, Task, Timestamp,
+    Transparency, Visibility, When,
 };
 use dam_protocol::{WireObject, WireTask};
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum WireError {
-    Oid {
-        field: &'static str,
-        value: String,
-        why: OidError,
-    },
-    Path {
-        value: String,
-        why: PathError,
-    },
-    Priority {
-        value: String,
-        why: PriorityError,
-    },
-    Date {
-        field: &'static str,
-        value: String,
-    },
-    UnknownKind(String),
-    UnknownEnum {
-        field: &'static str,
-        value: String,
-    },
-}
+mod error;
 
-impl WireError {
-    pub fn field(&self) -> &'static str {
-        match self {
-            WireError::Oid { field, .. } => field,
-            WireError::Path { .. } => "path",
-            WireError::Priority { .. } => "priority",
-            WireError::Date { field, .. } => field,
-            WireError::UnknownKind(_) => "kind",
-            WireError::UnknownEnum { field, .. } => field,
-        }
-    }
-
-    fn value(&self) -> &str {
-        match self {
-            WireError::Oid { value, .. }
-            | WireError::Path { value, .. }
-            | WireError::Priority { value, .. }
-            | WireError::Date { value, .. }
-            | WireError::UnknownKind(value)
-            | WireError::UnknownEnum { value, .. } => value,
-        }
-    }
-}
-
-impl std::fmt::Display for WireError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}: cannot read {:?}", self.field(), self.value())
-    }
-}
-
-impl std::error::Error for WireError {}
-
-fn oid<'a>(field: &'static str, text: &'a str) -> impl Fn(OidError) -> WireError + 'a {
-    move |why| WireError::Oid {
-        field,
-        value: text.to_string(),
-        why,
-    }
-}
-
-fn date(field: &'static str) -> impl Fn(String) -> WireError {
-    move |value| WireError::Date { field, value }
-}
-
-fn word<T>(parse: fn(&str) -> Option<T>, field: &'static str, text: &str) -> Result<T, WireError> {
-    parse(text).ok_or_else(|| WireError::UnknownEnum {
-        field,
-        value: text.to_string(),
-    })
-}
+pub use error::WireError;
+use error::{date, oid, word};
 
 pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
     let base = Base {
