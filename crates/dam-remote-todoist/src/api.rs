@@ -1,13 +1,13 @@
-mod error;
 mod resources;
 
-pub use error::{ApiError, MAX_ERROR_BODY_CHARS};
+pub use dam_helper::{MAX_ERROR_BODY_CHARS, ServiceError as ApiError};
 pub use resources::{Deadline, Due, Item, Project, Section, SyncResponse, SyncWrite};
 
-use dam_helper::{Secret, base_url, credential};
-use error::read_json;
+use dam_helper::{Secret, agent, base_url, credential, read_answer};
 
 pub const PRODUCTION_BASE: &str = "https://api.todoist.com/api/v1";
+
+const SERVICE: &str = "Todoist";
 
 #[derive(Debug)]
 pub struct TodoistApi {
@@ -18,14 +18,8 @@ pub struct TodoistApi {
 
 impl TodoistApi {
     pub fn new(base: &str, token: &str) -> TodoistApi {
-        let config = ureq::Agent::config_builder()
-            .timeout_global(Some(std::time::Duration::from_secs(30)))
-            .timeout_await_100(Some(std::time::Duration::ZERO))
-            .max_redirects(0)
-            .http_status_as_error(false)
-            .build();
         TodoistApi {
-            agent: config.into(),
+            agent: agent(),
             base: base.trim_end_matches('/').to_string(),
             token: token.into(),
         }
@@ -40,7 +34,7 @@ impl TodoistApi {
     pub fn sync_all(&self) -> Result<SyncResponse, ApiError> {
         let body = serde_json::json!({ "sync_token": "*", "resource_types": ["projects", "sections", "items"] });
         let value = self.post("/sync", &body)?;
-        serde_json::from_value(value).map_err(|e| ApiError::Decode(e.to_string()))
+        serde_json::from_value(value).map_err(|e| ApiError::decode(SERVICE, e))
     }
 
     pub fn sync_commands(&self, commands: &[serde_json::Value]) -> Result<SyncWrite, ApiError> {
@@ -50,9 +44,9 @@ impl TodoistApi {
             .post(format!("{}/sync", self.base))
             .header("Authorization", &self.authorization())
             .send_form([("commands", encoded.as_str())])
-            .map_err(|e| ApiError::Transport(e.to_string()))?;
-        let value = read_json(response)?;
-        serde_json::from_value(value).map_err(|e| ApiError::Decode(e.to_string()))
+            .map_err(|e| ApiError::transport(SERVICE, e))?;
+        let value = json(response)?;
+        serde_json::from_value(value).map_err(|e| ApiError::decode(SERVICE, e))
     }
 
     fn authorization(&self) -> String {
@@ -69,9 +63,17 @@ impl TodoistApi {
             .post(format!("{}{path}", self.base))
             .header("Authorization", &self.authorization())
             .send_json(body)
-            .map_err(|e| ApiError::Transport(e.to_string()))?;
-        read_json(response)
+            .map_err(|e| ApiError::transport(SERVICE, e))?;
+        json(response)
     }
+}
+
+fn json(response: ureq::http::Response<ureq::Body>) -> Result<serde_json::Value, ApiError> {
+    let text = read_answer(SERVICE, response)?;
+    if text.trim().is_empty() {
+        return Ok(serde_json::Value::Null);
+    }
+    serde_json::from_str(&text).map_err(|e| ApiError::decode(SERVICE, e))
 }
 
 #[cfg(test)]

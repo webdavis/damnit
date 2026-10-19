@@ -1,6 +1,5 @@
-use crate::api_error::ApiError;
+use crate::api_error::{ApiError, SERVICE};
 use crate::encoding::form;
-use crate::http::{LONGEST_ANSWER_ONE_PROTOCOL_LINE_CAN_DELIVER, read};
 use crate::oauth_error::oauth_error_code;
 use crate::{Credentials, Endpoints, Secret};
 
@@ -21,8 +20,7 @@ pub fn access_token(
         .header("content-type", "application/x-www-form-urlencoded")
         .send(body.as_str())
         .map_err(|_| refused(None))?;
-    let answer =
-        read(response, LONGEST_ANSWER_ONE_PROTOCOL_LINE_CAN_DELIVER).map_err(|_| refused(None))?;
+    let answer = dam_helper::read(SERVICE, response).map_err(|_| refused(None))?;
     if !(200..300).contains(&answer.status) {
         return Err(ApiError::TokenRefused {
             status: Some(answer.status),

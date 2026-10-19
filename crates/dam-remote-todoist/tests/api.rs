@@ -85,7 +85,7 @@ fn an_http_failure_and_a_transport_failure_never_show_the_token() {
         .post("/tasks", &serde_json::json!({"content": "x"}))
         .unwrap_err();
     match &http_err {
-        ApiError::Http { status, body } => {
+        ApiError::Http { status, body, .. } => {
             assert_eq!(*status, 403);
             assert!(body.contains("forbidden"));
         }
@@ -96,7 +96,7 @@ fn an_http_failure_and_a_transport_failure_never_show_the_token() {
     let transport_err = TodoistApi::new("http://127.0.0.1:1", sentinel)
         .post("/tasks", &serde_json::json!({}))
         .unwrap_err();
-    assert!(matches!(transport_err, ApiError::Transport(_)));
+    assert!(matches!(transport_err, ApiError::Transport { .. }));
     assert!(!transport_err.to_string().contains(sentinel));
 }
 

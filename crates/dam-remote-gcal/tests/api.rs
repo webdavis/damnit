@@ -3,6 +3,7 @@ mod support;
 
 use std::collections::HashMap;
 
+use dam_helper::ServiceError;
 use dam_remote_gcal::access::access_token;
 use dam_remote_gcal::{ApiError, Client, Credentials, Endpoints};
 use loopback::Reply;
@@ -338,7 +339,10 @@ fn a_huge_error_body_is_bounded_to_one_short_line() {
     routes.insert("GET /calendar/v3/calendars/primary/events", vec![huge]);
     let google = loopback::serve(routes);
     let err = api(&google.base).events("primary", &window()).unwrap_err();
-    let ApiError::Http { status: 500, body } = &err else {
+    let ApiError::Service(ServiceError::Http {
+        status: 500, body, ..
+    }) = &err
+    else {
         panic!("{err:?}")
     };
     assert_eq!(body.chars().count(), 500);

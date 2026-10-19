@@ -5,15 +5,13 @@ pub use resources::{
     GoogleEvent, GooglePerson, GoogleTime,
 };
 
-use crate::api_error::{ApiError, bounded};
+use crate::api_error::{ApiError, SERVICE};
 use crate::encoding::{form, percent_encoded};
-use crate::http::{LONGEST_ANSWER_ONE_PROTOCOL_LINE_CAN_DELIVER, ReadError, read};
 use crate::{Endpoints, Secret};
+use dam_helper::{ServiceError, read_answer};
 
 pub const PAGE_SIZE: u32 = 2500;
 pub const MAX_PAGES: usize = 64;
-
-const TOO_MANY_REQUESTS: u16 = 429;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Window {
@@ -88,24 +86,8 @@ impl CalendarApi {
             .get(url)
             .header("authorization", &format!("Bearer {}", self.access.expose()))
             .call()
-            .map_err(|e| ApiError::Transport(e.to_string()))?;
-        let answer =
-            read(response, LONGEST_ANSWER_ONE_PROTOCOL_LINE_CAN_DELIVER).map_err(|e| match e {
-                ReadError::TooLarge { limit } => ApiError::TooLarge { limit },
-                ReadError::Transport(s) => ApiError::Transport(s),
-            })?;
-        if answer.status == TOO_MANY_REQUESTS {
-            return Err(ApiError::RateLimited {
-                retry_after: answer.retry_after,
-                body: bounded(&answer.body),
-            });
-        }
-        if !(200..300).contains(&answer.status) {
-            return Err(ApiError::Http {
-                status: answer.status,
-                body: bounded(&answer.body),
-            });
-        }
-        serde_json::from_str(&answer.body).map_err(|e| ApiError::Decode(e.to_string()))
+            .map_err(|e| ServiceError::transport(SERVICE, e))?;
+        let body = read_answer(SERVICE, response)?;
+        serde_json::from_str(&body).map_err(|e| ServiceError::decode(SERVICE, e).into())
     }
 }

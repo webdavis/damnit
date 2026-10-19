@@ -4,8 +4,8 @@ use dam_protocol::{Capabilities, Mutation, PullResponse, PushResponse};
 use crate::access::access_token;
 use crate::address::calendars;
 use crate::calendar_api::CalendarApi;
-use crate::http::agent;
 use crate::{Credentials, Endpoints, capabilities, pull, push};
+use dam_helper::agent;
 
 pub struct Gcal<'a> {
     pub remote: &'a str,

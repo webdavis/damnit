@@ -1,35 +1,31 @@
 use std::fmt;
-use std::time::Duration;
 
-const MAX_ERROR_BODY: usize = 500;
+use dam_helper::ServiceError;
+
+pub(crate) const SERVICE: &str = "Google Calendar";
 
 #[derive(Debug)]
 pub enum ApiError {
+    Service(ServiceError),
     TokenRefused {
         status: Option<u16>,
         code: Option<&'static str>,
-    },
-    Http {
-        status: u16,
-        body: String,
-    },
-    RateLimited {
-        retry_after: Option<Duration>,
-        body: String,
-    },
-    Transport(String),
-    Decode(String),
-    TooLarge {
-        limit: u64,
     },
     TooManyPages {
         limit: usize,
     },
 }
 
+impl From<ServiceError> for ApiError {
+    fn from(e: ServiceError) -> ApiError {
+        ApiError::Service(e)
+    }
+}
+
 impl fmt::Display for ApiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            ApiError::Service(e) => e.fmt(f),
             ApiError::TokenRefused {
                 code: Some("invalid_grant"),
                 status,
@@ -49,30 +45,6 @@ impl fmt::Display for ApiError {
             ApiError::TokenRefused { status: None, .. } => f.write_str(
                 "the token exchange did not reach Google or its answer could not be read",
             ),
-            ApiError::Http { status, body } => {
-                write!(f, "Google Calendar answered {status}: {body}")
-            }
-            ApiError::RateLimited {
-                retry_after: Some(d),
-                ..
-            } => write!(
-                f,
-                "Google Calendar is rate limiting this account; retry after {}s",
-                d.as_secs()
-            ),
-            ApiError::RateLimited {
-                retry_after: None,
-                body,
-            } => write!(
-                f,
-                "Google Calendar is rate limiting this account and named no retry time: {body}"
-            ),
-            ApiError::Transport(s) => write!(f, "reaching Google Calendar: {s}"),
-            ApiError::Decode(s) => write!(f, "reading Google Calendar's answer: {s}"),
-            ApiError::TooLarge { limit } => write!(
-                f,
-                "Google Calendar's answer is past the {limit} byte ceiling one pull can carry"
-            ),
             ApiError::TooManyPages { limit } => write!(
                 f,
                 "Google Calendar kept paging past {limit} pages, so the pull stopped"
@@ -81,14 +53,4 @@ impl fmt::Display for ApiError {
     }
 }
 
-pub(crate) fn bounded(text: &str) -> String {
-    let flat = text
-        .chars()
-        .map(|c| if c.is_control() { ' ' } else { c })
-        .collect::<String>();
-    let trimmed = flat.trim();
-    match trimmed.char_indices().nth(MAX_ERROR_BODY - 1) {
-        None => trimmed.to_string(),
-        Some((cut, _)) => format!("{}\u{2026}", &trimmed[..cut]),
-    }
-}
+impl std::error::Error for ApiError {}

@@ -82,7 +82,7 @@ pub struct SignIn {
 impl SignIn {
     pub fn new(endpoints: Endpoints) -> SignIn {
         SignIn {
-            agent: crate::http::agent(),
+            agent: dam_helper::agent(),
             endpoints,
         }
     }

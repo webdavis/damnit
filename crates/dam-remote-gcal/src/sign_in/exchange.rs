@@ -1,7 +1,7 @@
 use super::{Client, SignInError};
 use crate::Secret;
+use crate::api_error::SERVICE;
 use crate::encoding::form;
-use crate::http::{LONGEST_ANSWER_ONE_PROTOCOL_LINE_CAN_DELIVER, read};
 use crate::oauth_error::oauth_error_code;
 
 pub(super) fn exchange(
@@ -29,8 +29,7 @@ pub(super) fn exchange(
         .header("content-type", "application/x-www-form-urlencoded")
         .send(body.as_str())
         .map_err(|_| unreadable())?;
-    let answer =
-        read(response, LONGEST_ANSWER_ONE_PROTOCOL_LINE_CAN_DELIVER).map_err(|_| unreadable())?;
+    let answer = dam_helper::read(SERVICE, response).map_err(|_| unreadable())?;
     if !(200..300).contains(&answer.status) {
         return Err(SignInError::Exchange {
             status: Some(answer.status),
