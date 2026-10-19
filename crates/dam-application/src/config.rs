@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use dam_domain::{Categories, Path};
 
+use crate::errors::Refusal;
 use crate::ports::RemoteName;
 use crate::secret::Secret;
 
@@ -62,6 +63,19 @@ impl RemoteConfig {
 impl Config {
     pub fn remote(&self, name: &str) -> Option<&RemoteConfig> {
         self.remotes.iter().find(|r| r.name.0 == name)
+    }
+
+    pub(crate) fn select_remotes(
+        &self,
+        remote: Option<&str>,
+    ) -> Result<Vec<&RemoteConfig>, Refusal> {
+        match remote {
+            None => Ok(self.remotes.iter().collect()),
+            Some(name) => self
+                .remote(name)
+                .map(|r| vec![r])
+                .ok_or_else(|| Refusal::NoSuchRemote(name.to_string())),
+        }
     }
 
     pub fn filter(&self, name: &str) -> Option<&FilterConfig> {

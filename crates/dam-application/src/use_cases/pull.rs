@@ -5,7 +5,6 @@ use crate::ports::{
 };
 use crate::remote::{PullOutcome, RemoteCapabilities};
 use crate::use_cases::connect::connect;
-use crate::use_cases::push::select_remotes;
 
 mod cancelled;
 mod classify;
@@ -36,7 +35,7 @@ pub fn pull(
     remote: Option<&str>,
 ) -> Result<Vec<PullReport>, UseCaseError> {
     let mut reports = Vec::new();
-    for target in select_remotes(config, remote)? {
+    for target in config.select_remotes(remote)? {
         let (mut helper, caps) = connect(launcher, credentials, repos.accepted_kinds, target)?;
         let since = repos.remote_tracking.sync_token(&target.name)?;
         let response = helper.pull(since.as_deref())?;

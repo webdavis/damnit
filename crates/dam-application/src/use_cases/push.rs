@@ -30,26 +30,13 @@ pub fn push(
     if conflicts > 0 {
         return Err(Refusal::UnresolvedConflicts(conflicts).into());
     }
-    let targets = select_remotes(config, remote)?;
+    let targets = config.select_remotes(remote)?;
     let mut reports = Vec::with_capacity(targets.len());
     for target in targets {
         let (mut helper, caps) = connect(launcher, credentials, repos.accepted_kinds, target)?;
         reports.push(push_one(repos, helper.as_mut(), &caps, clock, target)?);
     }
     Ok(reports)
-}
-
-pub(crate) fn select_remotes<'a>(
-    config: &'a Config,
-    remote: Option<&str>,
-) -> Result<Vec<&'a RemoteConfig>, UseCaseError> {
-    match remote {
-        None => Ok(config.remotes.iter().collect()),
-        Some(name) => config
-            .remote(name)
-            .map(|r| vec![r])
-            .ok_or_else(|| Refusal::NoSuchRemote(name.to_string()).into()),
-    }
 }
 
 fn push_one(
