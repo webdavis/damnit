@@ -72,7 +72,31 @@ fn declare_each_retry_since_the_remote_snapshot(
     Ok(())
 }
 
-pub(super) fn mutation_for(
+pub(super) struct Plan {
+    pub(super) mutations: Vec<RemoteMutation>,
+    pub(super) skipped: usize,
+}
+
+pub(super) fn plan(
+    remote_tracking: &dyn RemoteTrackingRepository,
+    caps: &RemoteCapabilities,
+    remote: &RemoteConfig,
+    changes: OwedChanges,
+) -> Result<Plan, UseCaseError> {
+    let mut plan = Plan {
+        mutations: Vec::new(),
+        skipped: 0,
+    };
+    for (change, origin) in changes.into_values() {
+        match mutation_for(remote_tracking, caps, remote, &change, origin.as_ref())? {
+            Some(mutation) => plan.mutations.push(mutation),
+            None => plan.skipped += 1,
+        }
+    }
+    Ok(plan)
+}
+
+fn mutation_for(
     remote_tracking: &dyn RemoteTrackingRepository,
     caps: &RemoteCapabilities,
     remote: &RemoteConfig,
