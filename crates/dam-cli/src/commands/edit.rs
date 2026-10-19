@@ -98,35 +98,39 @@ fn through_editor(ctx: &Context, oid: &Oid) -> Result<EditFields, CliError> {
     if saved == original {
         return Err(CliError::Cancelled);
     }
-    let why = match parse(&saved) {
-        Ok(fields) => return Ok(fields),
-        Err(why) => why,
-    };
-    let reopened = reopened_with_the_parse_error_as_its_first_line(&saved, &why);
+    if let Ok(fields) = parse(&saved) {
+        return Ok(fields);
+    }
+    let reopened = reopened_with_the_parse_error_as_its_first_line(&saved, parse);
     let saved = save(&reopened)?;
     if saved == original {
         return Err(CliError::Cancelled);
     }
-    let refused = |why: String| match editor.keep(&saved) {
+    parse(&saved).map_err(|why| match editor.keep(&saved) {
         Ok(path) => CliError::Usage(format!("{why}; your edit is kept at {}", path.display())),
         Err(e) => CliError::Usage(format!("{why}; your edit could not be kept: {}", e.0)),
-    };
-    if saved == reopened {
-        return Err(refused(why));
-    }
-    parse(&saved).map_err(refused)
+    })
 }
 
-fn reopened_with_the_parse_error_as_its_first_line(saved: &str, why: &str) -> String {
+fn reopened_with_the_parse_error_as_its_first_line<T>(
+    saved: &str,
+    parse: impl Fn(&str) -> Result<T, String>,
+) -> String {
     let body = saved
         .lines()
         .filter(|l| !l.starts_with("# error:"))
         .collect::<Vec<_>>()
         .join("\n");
-    format!("# error: {why}\n{body}\n")
+    let headed = |why: &str| format!("# error: {why}\n{body}\n");
+    match parse(&headed("")) {
+        Ok(_) => headed(""),
+        Err(why) => headed(&why),
+    }
 }
 
 #[cfg(test)]
 mod editor_tests;
+#[cfg(test)]
+mod line_number_tests;
 #[cfg(test)]
 mod tests;
