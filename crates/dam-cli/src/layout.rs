@@ -1,6 +1,5 @@
 const GAP: &str = "  ";
 const EMPTY_CELL: &str = "-";
-const DEFAULT_WIDTH: usize = 80;
 
 pub(crate) fn table(rows: &[Vec<String>]) -> Vec<String> {
     let cell = |c: &String| -> String {
@@ -53,11 +52,11 @@ pub(crate) fn fit(text: &str, width: usize) -> String {
         .join("\n")
 }
 
-pub(crate) fn terminal_width(columns: Option<&str>) -> usize {
+pub(crate) fn terminal_width(columns: Option<&str>, terminal: Option<usize>) -> Option<usize> {
     columns
         .and_then(|c| c.trim().parse().ok())
         .filter(|&w: &usize| w > 0)
-        .unwrap_or(DEFAULT_WIDTH)
+        .or(terminal)
 }
 
 pub(crate) fn counted(n: usize, one: &str, many: &str) -> String {
@@ -94,11 +93,22 @@ mod tests {
     }
 
     #[test]
-    fn the_width_is_columns_or_eighty() {
-        assert_eq!(terminal_width(Some("40")), 40);
-        assert_eq!(terminal_width(None), 80);
-        assert_eq!(terminal_width(Some("0")), 80);
-        assert_eq!(terminal_width(Some("wide")), 80);
+    fn the_width_is_columns_when_set() {
+        assert_eq!(terminal_width(Some("40"), Some(120)), Some(40));
+        assert_eq!(terminal_width(Some("200"), None), Some(200));
+    }
+
+    #[test]
+    fn the_width_is_the_terminal_when_columns_is_unset_or_unusable() {
+        assert_eq!(terminal_width(None, Some(120)), Some(120));
+        assert_eq!(terminal_width(Some("0"), Some(120)), Some(120));
+        assert_eq!(terminal_width(Some("wide"), Some(120)), Some(120));
+    }
+
+    #[test]
+    fn nothing_is_cut_without_columns_or_a_terminal() {
+        assert_eq!(terminal_width(None, None), None);
+        assert_eq!(terminal_width(Some("wide"), None), None);
     }
 
     #[test]

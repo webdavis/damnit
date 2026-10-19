@@ -74,3 +74,12 @@ fn no_line_of_a_list_passes_a_forty_column_terminal() {
         }
     }
 }
+
+#[test]
+fn a_piped_list_without_columns_prints_whole_lines() {
+    let sb = support::sandbox::Sandbox::new();
+    let subject = "a subject far longer than any terminal would ever show in one row of a list";
+    sb.new_object(&[subject]);
+    let out = sb.command(&["ls"]).env_remove("COLUMNS").output().unwrap();
+    assert!(String::from_utf8(out.stdout).unwrap().contains(subject));
+}

@@ -48,11 +48,11 @@ pub(crate) fn print_error(format: Format, error: &CliError) {
 
 pub(crate) fn print(format: Format, report: &Report) -> Result<(), CliError> {
     let mut text = render(format, report)?;
-    if format == Format::Human && report.fits_the_terminal {
-        text = fit(
-            &text,
-            terminal_width(std::env::var("COLUMNS").ok().as_deref()),
-        );
+    let terminal =
+        terminal_size::terminal_size_of(std::io::stdout()).map(|(w, _)| usize::from(w.0));
+    let width = terminal_width(std::env::var("COLUMNS").ok().as_deref(), terminal);
+    if let (Format::Human, true, Some(width)) = (format, report.fits_the_terminal, width) {
+        text = fit(&text, width);
     }
     let mut out = std::io::stdout().lock();
     out.write_all(text.as_bytes())?;
