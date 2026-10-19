@@ -12,7 +12,19 @@ pub fn add(
     stage: &dyn StageRepository,
     oids: &[Oid],
 ) -> Result<Vec<Change>, UseCaseError> {
-    atomically(objects, || stage_each(objects, stage, oids))
+    atomically(objects, || {
+        for oid in oids {
+            refuse_unknown(objects, oid)?;
+        }
+        stage_each(objects, stage, oids)
+    })
+}
+
+fn refuse_unknown(objects: &dyn ObjectRepository, oid: &Oid) -> Result<(), UseCaseError> {
+    if objects.get(oid)?.is_none() && objects.committed(oid)?.is_none() {
+        return Err(no_such_object(oid).into());
+    }
+    Ok(())
 }
 
 fn stage_each(
@@ -22,12 +34,7 @@ fn stage_each(
 ) -> Result<Vec<Change>, UseCaseError> {
     let mut staged = Vec::new();
     for oid in oids {
-        let working = objects.get(oid)?;
-        let committed = objects.committed(oid)?;
-        if working.is_none() && committed.is_none() {
-            return Err(no_such_object(oid).into());
-        }
-        match Change::between(committed, working) {
+        match Change::between(objects.committed(oid)?, objects.get(oid)?) {
             Some(change) => {
                 stage.put_staged(change.clone())?;
                 staged.push(change);
@@ -157,6 +164,27 @@ mod tests {
         store.delete(&id).unwrap();
         let staged = add_all(&store, &store, &store).unwrap();
         assert_eq!(staged[0].op(), Op::Delete);
+    }
+
+    #[test]
+    fn add_all_after_a_committed_removal_stages_nothing() {
+        let store = MemoryStore::new();
+        let id = seed(&store, 1);
+        commit_all(&store);
+        store.delete(&id).unwrap();
+        commit_all(&store);
+        assert!(add_all(&store, &store, &store).unwrap().is_empty());
+        assert!(store.staged().unwrap().is_empty());
+    }
+
+    fn commit_all(store: &MemoryStore) {
+        let record = dam_domain::CommitRecord {
+            id: dam_domain::CommitId::generate(&mut |b| b.fill(9)),
+            message: "m".into(),
+            at: jiff::Timestamp::UNIX_EPOCH,
+            changes: add_all(store, store, store).unwrap(),
+        };
+        store.commit(&record).unwrap();
     }
 
     #[test]
