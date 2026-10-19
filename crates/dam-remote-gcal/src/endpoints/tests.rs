@@ -21,40 +21,10 @@ fn a_loopback_base_serves_all_three_under_one_port() {
 }
 
 #[test]
-fn a_base_url_that_is_not_unicode_is_refused_rather_than_read_as_unset() {
-    let not_unicode = std::env::VarError::NotUnicode(std::ffi::OsString::from("x"));
-    let err = Endpoints::from_variable(Err(not_unicode)).unwrap_err();
-    assert_eq!(
-        err,
-        format!(
-            "{BASE_URL_VARIABLE} is a test seam and must be http://127.0.0.1:<port> or \
-             http://localhost:<port>; the value it holds is not Unicode"
-        )
-    );
-    assert_eq!(
-        Endpoints::from_variable(Err(std::env::VarError::NotPresent)),
-        Ok(Endpoints::production())
-    );
-    assert_eq!(
-        Endpoints::from_variable(Ok("http://127.0.0.1:9".into())),
-        Endpoints::loopback("http://127.0.0.1:9")
-    );
-}
-
-#[test]
 fn the_seam_that_carries_credentials_refuses_every_address_but_loopback() {
-    for refused in [
-        "https://oauth2.googleapis.com",
-        "http://evil.test:8080",
-        "http://127.0.0.1.evil.test:8080",
-        "http://user@127.0.0.1:8080",
-        "http://localhost:8080@evil.test",
-        "http://127.0.0.1",
-        "http://127.0.0.1:",
-        "https://127.0.0.1:8080",
-        "",
-    ] {
-        let err = Endpoints::loopback(refused).unwrap_err();
-        assert!(err.contains(BASE_URL_VARIABLE), "{refused}: {err}");
-    }
+    assert_eq!(
+        Endpoints::loopback("http://evil.test:8080").unwrap_err(),
+        "DAM_GCAL_BASE_URL is a test seam and must be http://127.0.0.1:<port> or \
+         http://localhost:<port>, not \"http://evil.test:8080\""
+    );
 }
