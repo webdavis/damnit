@@ -8,7 +8,7 @@ later protocol version added.
 
 ## Decision
 
-An object `dam` cannot convert is recorded as a `PullFailed` notice naming its remote id and the
+An object `dam` cannot convert is recorded as a `PullSkipped` notice naming its remote id and the
 reason, and the rest of the pull lands.
 
 ## Consequence
