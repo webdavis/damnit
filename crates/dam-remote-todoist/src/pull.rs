@@ -1,10 +1,10 @@
 use dam_protocol::PullResponse;
 
-use crate::api::{ApiError, TodoistApi};
+use crate::api::{ApiError, TodoistSync};
 use crate::map::{Tree, item_to_wire, project_to_wire, remote_id, section_to_wire};
 
-pub fn pull(api: &TodoistApi) -> Result<PullResponse, ApiError> {
-    let sync = api.sync_all()?;
+pub fn pull(api: &impl TodoistSync) -> Result<PullResponse, ApiError> {
+    let sync = api.read_all()?;
     let tree = Tree::from_sync(&sync);
     let mut objects = Vec::new();
     let mut removed = Vec::new();
@@ -35,3 +35,6 @@ pub fn pull(api: &TodoistApi) -> Result<PullResponse, ApiError> {
         ..PullResponse::default()
     })
 }
+
+#[cfg(test)]
+mod tests;

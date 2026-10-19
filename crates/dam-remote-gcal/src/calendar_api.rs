@@ -27,6 +27,10 @@ pub struct Listing {
     pub items: Vec<GoogleEvent>,
 }
 
+pub trait Calendar {
+    fn events(&self, calendar: &str, window: &Window) -> Result<Listing, ApiError>;
+}
+
 pub struct CalendarApi {
     agent: ureq::Agent,
     base: String,
@@ -42,7 +46,20 @@ impl CalendarApi {
         }
     }
 
-    pub fn events(&self, calendar: &str, window: &Window) -> Result<Listing, ApiError> {
+    fn page(&self, url: &str) -> Result<EventsPage, ApiError> {
+        let response = self
+            .agent
+            .get(url)
+            .header("authorization", &format!("Bearer {}", self.access.expose()))
+            .call()
+            .map_err(|e| ServiceError::transport(SERVICE, e))?;
+        let body = read_answer(SERVICE, response)?;
+        serde_json::from_str(&body).map_err(|e| ServiceError::decode(SERVICE, e).into())
+    }
+}
+
+impl Calendar for CalendarApi {
+    fn events(&self, calendar: &str, window: &Window) -> Result<Listing, ApiError> {
         let url = format!(
             "{}/calendars/{}/events",
             self.base,
@@ -79,15 +96,7 @@ impl CalendarApi {
         }
         Err(ApiError::TooManyPages { limit: MAX_PAGES })
     }
-
-    fn page(&self, url: &str) -> Result<EventsPage, ApiError> {
-        let response = self
-            .agent
-            .get(url)
-            .header("authorization", &format!("Bearer {}", self.access.expose()))
-            .call()
-            .map_err(|e| ServiceError::transport(SERVICE, e))?;
-        let body = read_answer(SERVICE, response)?;
-        serde_json::from_str(&body).map_err(|e| ServiceError::decode(SERVICE, e).into())
-    }
 }
+
+#[cfg(test)]
+pub(crate) mod fake;

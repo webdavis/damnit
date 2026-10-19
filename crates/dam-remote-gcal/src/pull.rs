@@ -5,7 +5,7 @@ use dam_protocol::PullResponse;
 use jiff::{SignedDuration, Timestamp};
 
 use crate::ApiError;
-use crate::calendar_api::{CalendarApi, Window};
+use crate::calendar_api::{Calendar, Window};
 use crate::map::{MapError, Mapped, map_event};
 use crate::memory::Memory;
 
@@ -38,7 +38,7 @@ impl fmt::Display for PullError {
 impl std::error::Error for PullError {}
 
 pub fn pull(
-    api: &CalendarApi,
+    api: &impl Calendar,
     calendars: &[String],
     since: Option<&str>,
     now: Timestamp,
@@ -72,3 +72,6 @@ pub fn pull(
     response.sync = Some(next.token());
     Ok(response)
 }
+
+#[cfg(test)]
+mod tests;

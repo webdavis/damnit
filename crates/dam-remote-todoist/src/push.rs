@@ -5,7 +5,7 @@ mod shape;
 
 use dam_protocol::{Mutation, MutationResult, PushResponse, Verdict, WireObject};
 
-use crate::api::{ApiError, Item, Project, Section, SyncWrite, TodoistApi};
+use crate::api::{ApiError, Item, Project, Section, SyncWrite, TodoistSync};
 use crate::map::{Tree, api_priority, remote_id};
 use plan::{missing_object, plan_for, resend_stable_temp_id};
 use shape::Shape;
@@ -30,8 +30,8 @@ impl From<String> for Failure {
     }
 }
 
-pub fn push(api: &TodoistApi, mutations: Vec<Mutation>) -> Result<PushResponse, ApiError> {
-    let sync = api.sync_all()?;
+pub fn push(api: &impl TodoistSync, mutations: Vec<Mutation>) -> Result<PushResponse, ApiError> {
+    let sync = api.read_all()?;
     let mut tree = Tree::from_sync(&sync);
     let containers_filled = containers_this_push_fills(&mutations);
     let mut results = Vec::with_capacity(mutations.len());
@@ -60,7 +60,7 @@ fn containers_this_push_fills(mutations: &[Mutation]) -> Vec<String> {
 }
 
 fn apply(
-    api: &TodoistApi,
+    api: &impl TodoistSync,
     tree: &mut Tree,
     m: &Mutation,
     containers_filled: &[String],
@@ -88,10 +88,10 @@ fn apply(
 }
 
 fn send_every_command(
-    api: &TodoistApi,
+    api: &impl TodoistSync,
     commands: &[serde_json::Value],
 ) -> Result<SyncWrite, Failure> {
-    let written = api.sync_commands(commands)?;
+    let written = api.write(commands)?;
     for sent in commands {
         let uuid = sent["uuid"].as_str().unwrap_or_default();
         written.accepted(uuid).map_err(Failure::OnlyThisMutation)?;
@@ -145,3 +145,6 @@ fn add_created_to_tree(tree: &mut Tree, object: &WireObject, shape: Shape, id: S
         }
     }
 }
+
+#[cfg(test)]
+mod tests;
