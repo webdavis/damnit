@@ -1,7 +1,8 @@
 use dam_domain::{Base, Object, Oid, Path};
 
-use crate::errors::{Refusal, UseCaseError};
+use crate::errors::UseCaseError;
 use crate::ports::ObjectRepository;
+use crate::use_cases::load::load;
 
 pub(crate) fn children(
     objects: &dyn ObjectRepository,
@@ -22,9 +23,7 @@ pub(crate) fn move_into(
     oid: &Oid,
     folder: &Path,
 ) -> Result<(), UseCaseError> {
-    let mut object = objects
-        .get(oid)?
-        .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
+    let mut object = load(objects, oid)?;
     let owned_before = object.base().owned_folder();
     object.base_mut().path = folder.clone();
     if let (Some(from), Some(to)) = (owned_before, object.base().owned_folder()) {

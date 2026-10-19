@@ -5,6 +5,7 @@ use dam_domain::{Object, Oid};
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{ObjectRepository, StageRepository};
 use crate::use_cases::atomically::atomically;
+use crate::use_cases::load::no_such_object;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Restored {
@@ -70,7 +71,7 @@ fn never_committed_or_already_gone(
     Ok(if still_in_working_so_dam_rm_drops_it {
         Refusal::NotCommitted(oid.clone())
     } else {
-        Refusal::NoSuchObject(oid.short().to_string())
+        no_such_object(oid)
     })
 }
 

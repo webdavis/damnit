@@ -2,9 +2,10 @@ use std::collections::BTreeSet;
 
 use dam_domain::{Change, Oid};
 
-use crate::errors::{Refusal, UseCaseError};
+use crate::errors::UseCaseError;
 use crate::ports::{CommitRepository, ObjectRepository, StageRepository};
 use crate::use_cases::atomically::atomically;
+use crate::use_cases::load::no_such_object;
 
 pub fn add(
     objects: &dyn ObjectRepository,
@@ -24,7 +25,7 @@ fn stage_each(
         let working = objects.get(oid)?;
         let committed = objects.committed(oid)?;
         if working.is_none() && committed.is_none() {
-            return Err(Refusal::NoSuchObject(oid.short().to_string()).into());
+            return Err(no_such_object(oid).into());
         }
         match Change::between(committed, working) {
             Some(change) => {
@@ -80,6 +81,7 @@ pub fn reset(stage: &dyn StageRepository, oids: &[Oid]) -> Result<(), UseCaseErr
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::errors::Refusal;
     use crate::testing::prelude::*;
     use crate::testing::{FaultyStore, MemoryStore, oid};
     use dam_domain::{Object, Op, Task};
