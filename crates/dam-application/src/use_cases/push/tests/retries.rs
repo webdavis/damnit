@@ -1,7 +1,7 @@
 use super::super::*;
 use super::{clock, committed_task, config, launcher};
 use crate::ports::Repositories;
-use crate::remote::{MutationOp, MutationOutcome, RemoteMutation};
+use crate::remote::{MutationOp, MutationOutcome, MutationVerdict, RemoteMutation};
 use crate::testing::prelude::*;
 use crate::testing::{EchoCredentials, FixedClock, FixedRandom, MemoryStore, oid};
 use crate::use_cases::commit::commit;
@@ -14,9 +14,14 @@ fn answering(ok: bool) -> impl Fn(&[RemoteMutation]) -> Vec<MutationOutcome> + C
         ms.iter()
             .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
-                ok,
-                remote_id: Some("r1".into()),
-                why: (!ok).then(|| "temporary failure".to_string()),
+                verdict: match ok {
+                    true => MutationVerdict::Accepted {
+                        remote_id: Some("r1".into()),
+                    },
+                    false => MutationVerdict::Refused {
+                        why: "temporary failure".into(),
+                    },
+                },
             })
             .collect()
     }

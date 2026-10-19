@@ -25,12 +25,13 @@ The version only grows, and these three rules are what "grows" means:
 
 1. **Unknown fields are ignored.** A helper may add a field to any response and an older `dam`
    reads the rest of it. Add fields, never repurpose one.
-2. **Unknown message kinds are refused.** A response matching no known shape is a protocol error,
+2. **Unknown message kinds are refused.** A response lacking its answer's keys is a protocol error,
    not an empty answer. A request naming a command the helper does not know is answered with an
    error object.
 3. **A helper above `PROTOCOL_VERSION` is refused by name.** `dam` drives every version up to its
    own and refuses anything above it, naming both numbers, rather than driving a newer helper with
    older semantics. A helper written against version 1 keeps working against every later `dam`.
+   Version 0 never existed, and a helper declaring it is refused.
 
 A line longer than `MAX_LINE` bytes, its newline included, is refused. The budget is per line, so
 the length of a conversation is not bounded.
@@ -56,9 +57,10 @@ One mutation:
 
 ## Responses
 
-A response is recognized by the keys it carries, not by the order the variants are declared.
+`dam` reads each response as the answer to the request it sent. Any response carrying `error` is
+a failure; otherwise it must carry the answer's required keys.
 
-| Response | Recognized by | Fields |
+| Response | Requires | Fields |
 |---|---|---|
 | capabilities | `protocol` | `protocol`, `kinds`, `fields`, `credentials`, `incremental` |
 | pull | `objects`, `removed`, `cancelled` or `sync` | `objects`, `removed`, `cancelled`, `sync` |
@@ -71,9 +73,6 @@ under each id to `cancelled` and keeps tracking it; an id it does not track, or 
 task, changes nothing. It lands under the same declared-fields rule as any pulled change, so a
 helper that sends `cancelled` declares `status` in `fields`; otherwise the id changes nothing.
 `removed` stays what it was: the remote no longer has the object, and `dam` stops tracking it.
-
-`error` is looked for first, so a response carrying both `error` and a shape's own keys is read as a
-failure.
 
 One push result:
 

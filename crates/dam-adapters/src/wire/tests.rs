@@ -251,9 +251,9 @@ fn a_pulled_object_with_no_remote_id_is_rejected_under_an_empty_name() {
 fn a_push_result_naming_no_valid_oid_is_dropped_since_no_change_can_own_it() {
     let result = |oid: String, remote_id: &str| dam_protocol::MutationResult {
         oid,
-        ok: true,
-        remote_id: Some(remote_id.into()),
-        why: None,
+        verdict: Verdict::Accepted {
+            remote_id: Some(remote_id.into()),
+        },
     };
     let outcomes = outcomes_from_wire(vec![
         result("nothex".into(), "r0"),
@@ -261,5 +261,10 @@ fn a_push_result_naming_no_valid_oid_is_dropped_since_no_change_can_own_it() {
     ]);
     assert_eq!(outcomes.len(), 1);
     assert_eq!(outcomes[0].oid, oid(2));
-    assert_eq!(outcomes[0].remote_id.as_deref(), Some("r2"));
+    assert_eq!(
+        outcomes[0].verdict,
+        dam_application::MutationVerdict::Accepted {
+            remote_id: Some("r2".into())
+        }
+    );
 }

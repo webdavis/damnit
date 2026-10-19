@@ -22,8 +22,8 @@ pub use ports::{
     Transactional,
 };
 pub use remote::{
-    IncomingObject, MutationOp, MutationOutcome, PullOutcome, RejectedObject, RemoteCapabilities,
-    RemoteMutation,
+    IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, RejectedObject,
+    RemoteCapabilities, RemoteMutation,
 };
 pub use secret::Secret;
 pub use use_cases::agenda::{Scheduled, Window, agenda};

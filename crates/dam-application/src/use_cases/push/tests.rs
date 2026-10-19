@@ -10,7 +10,7 @@ mod verbs;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::remote::{MutationOp, MutationOutcome, PullOutcome, RemoteMutation};
+use crate::remote::{MutationOp, MutationOutcome, MutationVerdict, PullOutcome, RemoteMutation};
 use dam_domain::{Event, Object, Task, When};
 use jiff::civil::date;
 
@@ -93,9 +93,9 @@ fn a_committed_create_is_sent_and_its_remote_id_is_mapped() {
         ms.iter()
             .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
-                ok: true,
-                remote_id: Some("r1".into()),
-                why: None,
+                verdict: MutationVerdict::Accepted {
+                    remote_id: Some("r1".into()),
+                },
             })
             .collect()
     });
@@ -137,9 +137,7 @@ fn a_retry_is_sent_as_an_update_of_the_committed_state() {
         ms.iter()
             .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
-                ok: true,
-                remote_id: None,
-                why: None,
+                verdict: MutationVerdict::Accepted { remote_id: None },
             })
             .collect()
     });
@@ -193,9 +191,7 @@ fn a_successful_delete_clears_the_remote_mapping() {
         ms.iter()
             .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
-                ok: true,
-                remote_id: None,
-                why: None,
+                verdict: MutationVerdict::Accepted { remote_id: None },
             })
             .collect()
     });

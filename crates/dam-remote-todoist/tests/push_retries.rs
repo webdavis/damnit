@@ -59,7 +59,7 @@ fn a_retry_declaring_every_field_with_only_the_name_differing_is_ok() {
         &EVERY_FIELD,
     )];
     let response = push(&api, mutations).unwrap();
-    assert!(response.results[0].ok, "{:?}", response.results[0].why);
+    assert!(response.results[0].ok(), "{:?}", response.results[0].why());
     assert_eq!(
         recorded.lock().unwrap().command("project_update")["args"],
         serde_json::json!({"id": "p1", "name": "Chores"})
@@ -83,9 +83,9 @@ fn a_path_change_among_every_declared_field_is_refused_for_the_path_only_until_r
         &EVERY_FIELD,
     );
     let response = push(&api, vec![moved]).unwrap();
-    assert!(!response.results[0].ok);
+    assert!(!response.results[0].ok());
     assert_eq!(
-        response.results[0].why.as_deref(),
+        response.results[0].why(),
         Some(
             "a Todoist project carries only its name and whether it is archived; path did not change"
         )
@@ -100,7 +100,7 @@ fn a_path_change_among_every_declared_field_is_refused_for_the_path_only_until_r
         &EVERY_FIELD,
     );
     let response = push(&api, vec![reverted]).unwrap();
-    assert!(response.results[0].ok, "{:?}", response.results[0].why);
+    assert!(response.results[0].ok(), "{:?}", response.results[0].why());
 }
 
 #[test]
@@ -128,10 +128,10 @@ fn an_uncarried_field_counts_as_changed_only_when_it_differs_from_the_pulled_val
         ),
     ];
     let response = push(&api, mutations).unwrap();
-    assert!(response.results[0].ok, "{:?}", response.results[0].why);
-    assert!(!response.results[1].ok);
+    assert!(response.results[0].ok(), "{:?}", response.results[0].why());
+    assert!(!response.results[1].ok());
     assert_eq!(
-        response.results[1].why.as_deref(),
+        response.results[1].why(),
         Some(
             "a Todoist project carries only its name and whether it is archived; due did not change"
         )

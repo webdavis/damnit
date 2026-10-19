@@ -28,9 +28,13 @@ pub struct RemoteMutation {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MutationOutcome {
     pub oid: Oid,
-    pub ok: bool,
-    pub remote_id: Option<String>,
-    pub why: Option<String>,
+    pub verdict: MutationVerdict,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum MutationVerdict {
+    Accepted { remote_id: Option<String> },
+    Refused { why: String },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -17,7 +17,7 @@ pub struct Capabilities {
 
 impl Capabilities {
     pub fn supported(&self) -> bool {
-        self.protocol <= PROTOCOL_VERSION
+        (1..=PROTOCOL_VERSION).contains(&self.protocol)
     }
 }
 
@@ -27,9 +27,14 @@ mod tests {
 
     #[test]
     fn the_current_version_and_every_older_one_is_supported() {
-        for protocol in 0..=PROTOCOL_VERSION {
+        for protocol in 1..=PROTOCOL_VERSION {
             assert!(caps(protocol).supported(), "{protocol}");
         }
+    }
+
+    #[test]
+    fn protocol_zero_never_existed_and_is_not_supported() {
+        assert!(!caps(0).supported());
     }
 
     #[test]

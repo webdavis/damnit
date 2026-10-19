@@ -1,7 +1,7 @@
 use super::super::*;
 use super::{clock, committed_task, config, launcher};
 use crate::ports::Repositories;
-use crate::remote::MutationOutcome;
+use crate::remote::{MutationOutcome, MutationVerdict};
 use crate::testing::prelude::*;
 use crate::testing::{EchoCredentials, MemoryStore, oid};
 
@@ -14,9 +14,9 @@ fn a_failed_mutation_becomes_a_notice_and_a_retry() {
         ms.iter()
             .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
-                ok: false,
-                remote_id: None,
-                why: Some("rate limited".into()),
+                verdict: MutationVerdict::Refused {
+                    why: "rate limited".into(),
+                },
             })
             .collect()
     });
@@ -53,9 +53,9 @@ fn a_mutation_the_helper_never_answered_is_a_failure() {
             .filter(|m| m.oid == oid(1))
             .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
-                ok: true,
-                remote_id: Some("r1".into()),
-                why: None,
+                verdict: MutationVerdict::Accepted {
+                    remote_id: Some("r1".into()),
+                },
             })
             .collect()
     });
@@ -87,21 +87,21 @@ fn duplicate_and_unsent_results_are_ignored() {
         vec![
             MutationOutcome {
                 oid: oid(1),
-                ok: false,
-                remote_id: None,
-                why: Some("first".into()),
+                verdict: MutationVerdict::Refused {
+                    why: "first".into(),
+                },
             },
             MutationOutcome {
                 oid: oid(1),
-                ok: false,
-                remote_id: None,
-                why: Some("second".into()),
+                verdict: MutationVerdict::Refused {
+                    why: "second".into(),
+                },
             },
             MutationOutcome {
                 oid: oid(9),
-                ok: false,
-                remote_id: None,
-                why: Some("unsent".into()),
+                verdict: MutationVerdict::Refused {
+                    why: "unsent".into(),
+                },
             },
         ]
     });

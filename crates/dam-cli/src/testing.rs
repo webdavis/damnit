@@ -3,8 +3,8 @@ use std::cell::{Cell, RefCell};
 use dam_adapters::SqliteStore;
 use dam_application::{
     Clock, Config, CredentialError, CredentialSource, CredentialSpec, EditorError, EditorSession,
-    HelperError, HelperLauncher, MutationOutcome, PullOutcome, RemoteCapabilities, RemoteConfig,
-    RemoteHelper, RemoteMutation, Secret,
+    HelperError, HelperLauncher, MutationOutcome, MutationVerdict, PullOutcome, RemoteCapabilities,
+    RemoteConfig, RemoteHelper, RemoteMutation, Secret,
 };
 use dam_domain::{Categories, Date, Field, Kind, Timestamp};
 use jiff::civil::date;
@@ -120,9 +120,9 @@ impl RemoteHelper for EchoHelper {
             .iter()
             .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
-                ok: true,
-                remote_id: Some(format!("r-{}", &m.oid.as_str()[..4])),
-                why: None,
+                verdict: MutationVerdict::Accepted {
+                    remote_id: Some(format!("r-{}", &m.oid.as_str()[..4])),
+                },
             })
             .collect())
     }

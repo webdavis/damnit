@@ -175,7 +175,12 @@ mod tests {
         );
         assert!(helper.pull(None).unwrap().objects.is_empty());
         let pushed = helper.push(vec![]).unwrap();
-        assert_eq!(pushed[0].remote_id.as_deref(), Some("r1"));
+        assert_eq!(
+            pushed[0].verdict,
+            dam_application::MutationVerdict::Accepted {
+                remote_id: Some("r1".into())
+            }
+        );
     }
 
     #[test]

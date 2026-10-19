@@ -1,7 +1,7 @@
 use super::super::*;
 use super::{clock, committed_task, config, launcher};
 use crate::ports::Repositories;
-use crate::remote::MutationOutcome;
+use crate::remote::{MutationOutcome, MutationVerdict};
 use crate::testing::prelude::*;
 use crate::testing::{EchoCredentials, FaultyStore, MemoryStore, task_caps};
 
@@ -16,9 +16,9 @@ fn a_push_that_reached_the_remote_records_when_it_did() {
         ms.iter()
             .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
-                ok: true,
-                remote_id: Some("r1".into()),
-                why: None,
+                verdict: MutationVerdict::Accepted {
+                    remote_id: Some("r1".into()),
+                },
             })
             .collect()
     });
@@ -48,9 +48,9 @@ fn a_push_whose_mutations_the_remote_refused_still_records_when_it_did() {
         ms.iter()
             .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
-                ok: false,
-                remote_id: None,
-                why: Some("rate limited".into()),
+                verdict: MutationVerdict::Refused {
+                    why: "rate limited".into(),
+                },
             })
             .collect()
     });
@@ -74,9 +74,9 @@ fn push_bookkeeping_that_fails_midway_records_nothing() {
         ms.iter()
             .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
-                ok: true,
-                remote_id: Some("r1".into()),
-                why: None,
+                verdict: MutationVerdict::Accepted {
+                    remote_id: Some("r1".into()),
+                },
             })
             .collect()
     });

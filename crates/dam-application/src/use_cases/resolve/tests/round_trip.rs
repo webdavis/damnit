@@ -5,7 +5,9 @@ use super::super::*;
 use super::remote;
 use crate::config::{Config, CredentialSpec, RemoteConfig};
 use crate::ports::Repositories;
-use crate::remote::{IncomingObject, MutationOutcome, PullOutcome, RemoteMutation};
+use crate::remote::{
+    IncomingObject, MutationOutcome, MutationVerdict, PullOutcome, RemoteMutation,
+};
 use crate::testing::prelude::*;
 use crate::testing::{
     EchoCredentials, FixedClock, FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
@@ -64,9 +66,9 @@ fn recording_launcher_that_accepts_every_push(
                     .iter()
                     .map(|m| MutationOutcome {
                         oid: m.oid.clone(),
-                        ok: true,
-                        remote_id: Some("r1".into()),
-                        why: None,
+                        verdict: MutationVerdict::Accepted {
+                            remote_id: Some("r1".into()),
+                        },
                     })
                     .collect())
             }),

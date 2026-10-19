@@ -3,7 +3,7 @@ use jiff::civil::date;
 use super::super::*;
 use super::{clock, committed_task, config, launcher};
 use crate::ports::Repositories;
-use crate::remote::MutationOutcome;
+use crate::remote::{MutationOutcome, MutationVerdict};
 use crate::testing::prelude::*;
 use crate::testing::{EchoCredentials, FixedClock, FixedRandom, MemoryStore, oid};
 use crate::use_cases::commit::commit;
@@ -40,9 +40,9 @@ fn two_successive_changes_to_one_object_carry_different_keys() {
         ms.iter()
             .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
-                ok: true,
-                remote_id: Some("r1".into()),
-                why: None,
+                verdict: MutationVerdict::Accepted {
+                    remote_id: Some("r1".into()),
+                },
             })
             .collect()
     });
