@@ -1,10 +1,10 @@
 use dam_application::EditFields;
 use dam_domain::{Date, Object, Oid, Priority};
+use dam_toml::{StrictTable, parse_toml};
 
 use super::reader::{template_reader, when};
-use crate::toml_config::{StrictTable, parse_toml};
 
-pub fn parse_template(
+pub(crate) fn parse_template(
     text: &str,
     current: &Object,
     today: Date,

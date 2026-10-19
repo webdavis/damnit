@@ -214,6 +214,7 @@ dependencies = [
  "dam-application",
  "dam-domain",
  "dam-protocol",
+ "dam-toml",
  "getrandom 0.3.4",
  "jiff",
  "libc",
@@ -284,6 +285,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "dam-toml"
+version = "0.1.0"
+dependencies = [
+ "toml",
+]
+
+[[package]]
 name = "damnit"
 version = "0.2.0"
 dependencies = [
@@ -291,11 +299,13 @@ dependencies = [
  "dam-adapters",
  "dam-application",
  "dam-domain",
+ "dam-toml",
  "jiff",
  "serde",
  "serde_json",
  "tempfile",
  "terminal_size",
+ "toml",
  "toon-format",
 ]
 

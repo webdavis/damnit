@@ -1,17 +1,15 @@
 use std::path::{Path as FsPath, PathBuf};
-use std::time::Duration;
 
 use dam_application::{Config, ConfigError, FilterConfig};
 use dam_domain::{Categories, Category};
+use dam_toml::{Place, StrictTable, parse_toml};
 
 mod append;
 mod file;
 mod remote;
-mod strict_table;
 use append::append_remote;
 pub use file::TomlConfigFile;
 use remote::parse_remote;
-pub(crate) use strict_table::{Place, StrictTable, parse_toml};
 
 fn home_dir() -> PathBuf {
     std::env::var_os("HOME")
@@ -97,21 +95,6 @@ fn parse_category(name: &str, t: &StrictTable) -> Result<Category, ConfigError> 
         values,
         exclusive,
     })
-}
-
-pub fn parse_duration(field: &str, text: &str) -> Result<Duration, ConfigError> {
-    let bad = || ConfigError::Invalid(format!("{field} {text:?}: expected <number><s|m|h>"));
-    let mut chars = text.chars();
-    let unit = chars.next_back().ok_or_else(bad)?;
-    let n: u64 = chars.as_str().parse().map_err(|_| bad())?;
-    let secs = match unit {
-        's' => Some(n),
-        'm' => n.checked_mul(60),
-        'h' => n.checked_mul(3600),
-        _ => return Err(bad()),
-    }
-    .ok_or_else(bad)?;
-    Ok(Duration::from_secs(secs))
 }
 
 #[cfg(test)]

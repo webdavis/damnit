@@ -1,7 +1,6 @@
 use dam_domain::{Date, Object, When};
+use dam_toml::{Place, StrictTable};
 use toml::Table;
-
-use crate::toml_config::{Place, StrictTable};
 
 const KEYS_A_TASK_TEMPLATE_MAY_CARRY: [&str; 9] = [
     "subject",

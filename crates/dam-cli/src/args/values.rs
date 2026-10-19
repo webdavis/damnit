@@ -1,7 +1,6 @@
 use std::time::Duration;
 
-use dam_adapters::parse_duration;
-use dam_application::RemoteName;
+use dam_application::{ConfiguredDuration, RemoteName};
 use dam_domain::{Path, PathError, Priority};
 
 pub(super) fn path_arg(text: &str) -> Result<Path, String> {
@@ -23,8 +22,9 @@ pub(super) fn max_age_arg(text: &str) -> Result<(RemoteName, Duration), String> 
         .split_once('=')
         .ok_or("expected <remote>=<number><s|m|h>")?;
     let remote = RemoteName::parse(remote).map_err(|e| e.to_string())?;
-    let age = parse_duration("--max-age", age)
-        .map_err(|_| format!("{age:?} is not a duration such as 90s, 15m or 2h"))?;
+    let age = ConfiguredDuration::parse(age)
+        .map(|d| d.value)
+        .ok_or_else(|| format!("{age:?} is not a duration such as 90s, 15m or 2h"))?;
     Ok((remote, age))
 }
 

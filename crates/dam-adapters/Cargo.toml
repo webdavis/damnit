@@ -10,6 +10,7 @@ libc.workspace = true
 dam-domain = { path = "../dam-domain" }
 dam-application = { path = "../dam-application" }
 dam-protocol = { path = "../dam-protocol" }
+dam-toml = { path = "../dam-toml" }
 jiff.workspace = true
 rusqlite.workspace = true
 serde.workspace = true
