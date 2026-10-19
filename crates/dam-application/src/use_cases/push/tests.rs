@@ -3,6 +3,7 @@ mod answers;
 mod keys;
 mod last_push;
 mod read_only;
+mod reconcile;
 mod refusals;
 mod retries;
 mod verbs;
