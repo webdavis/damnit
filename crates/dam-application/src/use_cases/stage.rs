@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use dam_domain::{Change, Oid};
 
 use crate::errors::UseCaseError;
-use crate::ports::{CommitRepository, ObjectRepository};
+use crate::ports::{ObjectRepository, Store};
 use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::load::no_such_object;
@@ -20,7 +20,7 @@ impl Dam<'_> {
 
     pub fn add_all(&self) -> Result<Vec<Change>, UseCaseError> {
         atomically(self.store, || {
-            let list: Vec<Oid> = working_and_ever_committed_oids(self.store, self.store)?
+            let list: Vec<Oid> = working_and_ever_committed_oids(self.store)?
                 .into_iter()
                 .collect();
             self.stage_each(&list)
@@ -60,15 +60,10 @@ fn refuse_unknown(objects: &dyn ObjectRepository, oid: &Oid) -> Result<(), UseCa
 }
 
 pub(crate) fn working_and_ever_committed_oids(
-    objects: &dyn ObjectRepository,
-    commits: &dyn CommitRepository,
+    store: &dyn Store,
 ) -> Result<BTreeSet<Oid>, UseCaseError> {
-    let mut oids: BTreeSet<Oid> = objects
-        .all()?
-        .into_iter()
-        .map(|o| o.oid().clone())
-        .collect();
-    for record in commits.log()? {
+    let mut oids: BTreeSet<Oid> = store.all()?.into_iter().map(|o| o.oid().clone()).collect();
+    for record in store.log()? {
         for change in record.changes {
             oids.insert(change.oid().clone());
         }

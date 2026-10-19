@@ -5,10 +5,10 @@ use jiff::civil::date;
 
 use super::super::*;
 use super::{config, remote};
-use crate::ports::{HelperError, Repositories};
+use crate::ports::HelperError;
 use crate::testing::prelude::*;
 use crate::testing::{
-    EchoCredentials, FixedClock, FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher,
+    FixedClock, FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher, remotes_launched_by,
     task_caps,
 };
 
@@ -35,15 +35,13 @@ fn a_helper_that_times_out_leaves_the_store_as_it_was() {
         }),
         launched_with: Rc::new(RefCell::new(vec![])),
     };
-    let err = pull(
-        Repositories::of(&store),
-        &l,
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(1),
-        &config(),
-        None,
-    )
+    let err = Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(1),
+        config: &config(),
+    }
+    .pull(remotes_launched_by(&l), None)
     .unwrap_err();
     assert_eq!(err, UseCaseError::Helper(timeout));
     assert_eq!(store, before);

@@ -4,25 +4,17 @@ use dam_domain::{Change, CommitId, Field, Oid, changed_fields};
 
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
-use crate::ports::{CommitRepository, ObjectRepository, RemoteTrackingRepository};
+use crate::ports::{RemoteTrackingRepository, Store};
 use crate::remote::{MutationOp, RemoteCapabilities, RemoteMutation};
 use crate::use_cases::push::idempotency::{Origin, key};
 
 pub(super) fn changes_to_send(
-    objects: &dyn ObjectRepository,
-    commits: &dyn CommitRepository,
-    remote_tracking: &dyn RemoteTrackingRepository,
+    store: &dyn Store,
     remote: &RemoteConfig,
     unpushed: &[dam_domain::CommitRecord],
 ) -> Result<OwedChanges, UseCaseError> {
     let mut changes = net_changes_with_the_commit_of_their_last_change(unpushed);
-    declare_each_retry_since_the_remote_snapshot(
-        objects,
-        commits,
-        remote_tracking,
-        remote,
-        &mut changes,
-    )?;
+    declare_each_retry_since_the_remote_snapshot(store, remote, &mut changes)?;
     Ok(changes)
 }
 
@@ -49,19 +41,15 @@ fn net_changes_with_the_commit_of_their_last_change(
 }
 
 fn declare_each_retry_since_the_remote_snapshot(
-    objects: &dyn ObjectRepository,
-    commits: &dyn CommitRepository,
-    remote_tracking: &dyn RemoteTrackingRepository,
+    store: &dyn Store,
     remote: &RemoteConfig,
     changes: &mut OwedChanges,
 ) -> Result<(), UseCaseError> {
-    for oid in commits.push_retries(&remote.name)? {
-        let snapshot = remote_tracking.remote_snapshot(&remote.name, &oid)?;
+    for oid in store.push_retries(&remote.name)? {
+        let snapshot = store.remote_snapshot(&remote.name, &oid)?;
         let owed = match changes.remove(&oid) {
             Some((owed, origin)) => Some((owed.after().cloned(), origin)),
-            None => objects
-                .committed(&oid)?
-                .map(|current| (Some(current), None)),
+            None => store.committed(&oid)?.map(|current| (Some(current), None)),
         };
         if let Some((after, origin)) = owed
             && let Some(declared) = Change::between(snapshot, after)

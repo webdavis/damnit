@@ -8,7 +8,7 @@ pub use doubles::{
     EchoCredentials, FixedClock, FixedRandom, ScriptedHelper, ScriptedLauncher, oid, task_caps,
 };
 pub use faulty_store::FaultyStore;
-pub use fixture::Fixture;
+pub use fixture::{Fixture, remotes_launched_by};
 pub use memory_store::MemoryStore;
 
 pub mod prelude {

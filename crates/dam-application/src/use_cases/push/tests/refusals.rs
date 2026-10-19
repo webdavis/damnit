@@ -4,18 +4,17 @@ use std::rc::Rc;
 use super::super::*;
 use super::{clock, committed_task, config, launcher};
 use crate::errors::Refusal;
-use crate::ports::{Conflict, HelperError, Repositories};
+use crate::ports::{Conflict, HelperError};
 use crate::remote::PullOutcome;
 use crate::testing::prelude::*;
 use crate::testing::{
-    EchoCredentials, MemoryStore, ScriptedHelper, ScriptedLauncher, oid, task_caps,
+    FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher, oid, remotes_launched_by, task_caps,
 };
 use dam_domain::{Object, Task};
 
 #[test]
 fn unresolved_conflicts_block_push() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     committed_task(&store, 1);
     store
         .mark_conflict(&Conflict {
@@ -26,23 +25,28 @@ fn unresolved_conflicts_block_push() {
         })
         .unwrap();
     let (l, _) = launcher(|_| vec![]);
-    let err = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap_err();
+    let err = Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), None)
+    .unwrap_err();
     assert_eq!(err, UseCaseError::Refused(Refusal::UnresolvedConflicts(1)));
 }
 
 #[test]
 fn an_unknown_remote_is_refused() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     let (l, _) = launcher(|_| vec![]);
-    let err = push(
-        repos,
-        &l,
-        &EchoCredentials,
-        &clock(),
-        &config(),
-        Some("nope"),
-    )
+    let err = Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), Some("nope"))
     .unwrap_err();
     assert_eq!(
         err,
@@ -53,11 +57,17 @@ fn an_unknown_remote_is_refused() {
 #[test]
 fn a_credential_the_config_does_not_supply_is_refused_by_name() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     let mut config = config();
     config.remotes[0].credentials.clear();
     let (l, _) = launcher(|_| vec![]);
-    let err = push(repos, &l, &EchoCredentials, &clock(), &config, None).unwrap_err();
+    let err = Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config,
+    }
+    .push(remotes_launched_by(&l), None)
+    .unwrap_err();
     assert_eq!(
         err,
         UseCaseError::Refused(Refusal::MissingCredential {
@@ -99,14 +109,13 @@ fn a_helper_that_times_out_leaves_the_store_as_it_was() {
         }),
         launched_with: Rc::new(RefCell::new(vec![])),
     };
-    let err = push(
-        Repositories::of(&store),
-        &l,
-        &EchoCredentials,
-        &clock(),
-        &config(),
-        None,
-    )
+    let err = Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), None)
     .unwrap_err();
     assert_eq!(err, UseCaseError::Helper(timeout));
     assert_eq!(store, before);

@@ -1,17 +1,15 @@
 use dam_domain::{Object, Task};
 
-use super::super::*;
 use super::{clock, config, launcher};
-use crate::ports::{RemoteName, Repositories};
+use crate::ports::RemoteName;
 use crate::remote::{MutationOutcome, MutationVerdict};
 use crate::service::Dam;
 use crate::testing::prelude::*;
-use crate::testing::{EchoCredentials, FixedRandom, Fixture, MemoryStore, oid};
+use crate::testing::{FixedRandom, Fixture, MemoryStore, oid, remotes_launched_by};
 
 #[test]
 fn a_successful_delete_clears_the_remote_mapping() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     let remote = RemoteName("todoist".into());
     store.put(&Object::Task(Task::new(oid(1), "t1"))).unwrap();
     let fixture = Fixture::default();
@@ -46,7 +44,14 @@ fn a_successful_delete_clears_the_remote_mapping() {
             })
             .collect()
     });
-    push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), None)
+    .unwrap();
     assert!(store.remote_id(&remote, &oid(1)).unwrap().is_none());
     assert!(store.remote_snapshot(&remote, &oid(1)).unwrap().is_none());
 }
@@ -54,7 +59,6 @@ fn a_successful_delete_clears_the_remote_mapping() {
 #[test]
 fn a_delete_with_no_remote_mapping_is_skipped() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "t1"))).unwrap();
     let fixture = Fixture::default();
     let dam = fixture.dam(&store);
@@ -79,7 +83,14 @@ fn a_delete_with_no_remote_mapping_is_skipped() {
     .unwrap();
 
     let (l, pushed) = launcher(|_| vec![]);
-    let reports = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    let reports = Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), None)
+    .unwrap();
     assert_eq!(reports[0].skipped, 1);
     assert_eq!(reports[0].sent, 0);
     assert!(pushed.borrow().is_empty());

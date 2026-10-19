@@ -2,7 +2,7 @@ use dam_domain::{Object, Oid, kind_change, merge_fields};
 
 use crate::config::RemoteConfig;
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{Conflict, Notice, Randomness, Repositories};
+use crate::ports::{Conflict, Notice, Randomness, Store};
 use crate::remote::{IncomingObject, RemoteCapabilities};
 
 pub(super) enum Incoming {
@@ -15,19 +15,18 @@ pub(super) enum Incoming {
 pub(super) type Classified = (Vec<(Oid, Incoming)>, Vec<(Oid, String)>);
 
 pub(super) fn classify(
-    repos: Repositories<'_>,
+    store: &dyn Store,
     remote: &RemoteConfig,
     caps: &RemoteCapabilities,
     objects: Vec<IncomingObject>,
     random: &dyn Randomness,
 ) -> Result<Classified, UseCaseError> {
-    let staged: Vec<Oid> = repos
-        .stage
+    let staged: Vec<Oid> = store
         .staged()?
         .into_iter()
         .map(|c| c.oid().clone())
         .collect();
-    let mut notices = repos.notices.notices()?;
+    let mut notices = store.notices()?;
     let mut planned = Vec::new();
     let mut new_remote_id_mappings = Vec::new();
 
@@ -36,9 +35,7 @@ pub(super) fn classify(
             remote_id,
             mut object,
         } = incoming;
-        let existing = repos
-            .remote_tracking
-            .oid_for_remote_id(&remote.name, &remote_id)?;
+        let existing = store.oid_for_remote_id(&remote.name, &remote_id)?;
         let oid = existing
             .clone()
             .unwrap_or_else(|| Oid::generate(&mut |b| random.fill(b)));
@@ -47,7 +44,7 @@ pub(super) fn classify(
         if existing.is_none() {
             new_remote_id_mappings.push((oid.clone(), remote_id));
         }
-        let local = repos.objects.get(&oid)?;
+        let local = store.get(&oid)?;
         if let Some((ours, theirs)) = local.as_ref().and_then(|l| kind_change(l, &theirs_raw)) {
             let notice = Notice::KindChanged {
                 oid: oid.clone(),
@@ -55,7 +52,7 @@ pub(super) fn classify(
                 theirs,
             };
             if !notices.contains(&notice) {
-                repos.notices.add_notice(&notice)?;
+                store.add_notice(&notice)?;
                 notices.push(notice);
             }
         }
@@ -68,8 +65,7 @@ pub(super) fn classify(
             None => Incoming::Create(theirs),
             Some(ref l) if *l == theirs => Incoming::Unchanged,
             Some(ref l) => {
-                let last_seen_on_the_remote =
-                    repos.remote_tracking.remote_snapshot(&remote.name, &oid)?;
+                let last_seen_on_the_remote = store.remote_snapshot(&remote.name, &oid)?;
                 let ours_unmoved_since = last_seen_on_the_remote.as_ref() == Some(l);
                 let theirs_unmoved_since = last_seen_on_the_remote.as_ref() == Some(&theirs);
                 if ours_unmoved_since {
@@ -77,7 +73,7 @@ pub(super) fn classify(
                 } else if theirs_unmoved_since {
                     Incoming::Unchanged
                 } else {
-                    let committed = repos.objects.committed(&oid)?;
+                    let committed = store.committed(&oid)?;
                     if committed.as_ref() != Some(l) || staged.contains(&oid) {
                         return Err(Refusal::DirtyOnPull { oid }.into());
                     }

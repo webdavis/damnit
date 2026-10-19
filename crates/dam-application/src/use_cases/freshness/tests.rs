@@ -4,7 +4,7 @@ use jiff::SignedDuration;
 use jiff::civil::date;
 
 use super::*;
-use crate::config::RemoteConfig;
+use crate::config::{Config, RemoteConfig};
 use crate::errors::Refusal;
 use crate::ports::RemoteName;
 use crate::testing::prelude::*;

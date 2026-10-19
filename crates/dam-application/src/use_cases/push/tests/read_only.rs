@@ -1,11 +1,13 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::ports::{RemoteName, Repositories};
+use crate::ports::RemoteName;
 use crate::remote::{PullOutcome, RemoteCapabilities, RemoteMutation};
+use crate::service::Dam;
 use crate::testing::prelude::*;
-use crate::testing::{EchoCredentials, MemoryStore, ScriptedHelper, ScriptedLauncher, task_caps};
-use crate::use_cases::push::push;
+use crate::testing::{
+    FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher, remotes_launched_by, task_caps,
+};
 
 use super::{clock, committed_task, config};
 
@@ -30,14 +32,13 @@ fn a_remote_that_declares_no_kinds_is_sent_nothing_and_owed_nothing() {
         }),
         launched_with: Rc::new(RefCell::new(vec![])),
     };
-    let reports = push(
-        Repositories::of(&store),
-        &l,
-        &EchoCredentials,
-        &clock(),
-        &config(),
-        None,
-    )
+    let reports = Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), None)
     .unwrap();
     assert_eq!((reports[0].sent, reports[0].skipped), (0, 1));
     assert!(pushed.borrow().is_empty());

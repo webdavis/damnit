@@ -3,9 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use dam_domain::{Change, CommitId, Kind, Object, Oid};
 
 use crate::errors::UseCaseError;
-use crate::ports::{
-    CommitRepository, Conflict, Notice, ObjectRepository, RemoteName, Repositories, StageRepository,
-};
+use crate::ports::{CommitRepository, Conflict, Notice, RemoteName, Store};
 use crate::service::Dam;
 use crate::use_cases::stage::working_and_ever_committed_oids;
 
@@ -23,19 +21,25 @@ pub struct Unpushed {
     pub oids: Vec<Oid>,
 }
 
-pub fn status(repos: Repositories<'_>, remotes: &[RemoteName]) -> Result<Status, UseCaseError> {
-    let mut unpushed = Vec::new();
-    for remote in remotes {
-        let accepted = repos.accepted_kinds.accepted_kinds(remote)?;
-        unpushed.push(unpushed_for(repos.commits, remote, accepted.as_deref())?);
+impl Dam<'_> {
+    pub fn status(&self, remotes: &[RemoteName]) -> Result<Status, UseCaseError> {
+        let mut unpushed = Vec::new();
+        for remote in remotes {
+            let accepted = self.store.accepted_kinds(remote)?;
+            unpushed.push(unpushed_for(self.store, remote, accepted.as_deref())?);
+        }
+        Ok(Status {
+            staged: self.store.staged()?,
+            unstaged: working_changes(self.store)?,
+            conflicts: self.store.conflicts()?,
+            notices: self.store.notices()?,
+            unpushed,
+        })
     }
-    Ok(Status {
-        staged: repos.stage.staged()?,
-        unstaged: working_changes(repos.objects, repos.stage, repos.commits)?,
-        conflicts: repos.conflicts.conflicts()?,
-        notices: repos.notices.notices()?,
-        unpushed,
-    })
+
+    pub fn diff_working(&self) -> Result<Vec<Change>, UseCaseError> {
+        working_changes(self.store)
+    }
 }
 
 fn unpushed_for(
@@ -77,29 +81,19 @@ fn taken_by(accepted: Option<&[Kind]>, change: &Change) -> bool {
     kinds.contains(&change.object().kind())
 }
 
-impl Dam<'_> {
-    pub fn diff_working(&self) -> Result<Vec<Change>, UseCaseError> {
-        working_changes(self.store, self.store, self.store)
-    }
-}
-
-fn working_changes(
-    objects: &dyn ObjectRepository,
-    stage: &dyn StageRepository,
-    commits: &dyn CommitRepository,
-) -> Result<Vec<Change>, UseCaseError> {
-    let staged: BTreeMap<Oid, Change> = stage
+fn working_changes(store: &dyn Store) -> Result<Vec<Change>, UseCaseError> {
+    let staged: BTreeMap<Oid, Change> = store
         .staged()?
         .into_iter()
         .map(|c| (c.oid().clone(), c))
         .collect();
     let mut out = Vec::new();
-    for oid in working_and_ever_committed_oids(objects, commits)? {
+    for oid in working_and_ever_committed_oids(store)? {
         let committed_with_the_stage_applied: Option<Object> = match staged.get(&oid) {
             Some(change) => change.after().cloned(),
-            None => objects.committed(&oid)?,
+            None => store.committed(&oid)?,
         };
-        let working = objects.get(&oid)?;
+        let working = store.get(&oid)?;
         if let Some(change) = Change::between(committed_with_the_stage_applied, working) {
             out.push(change);
         }

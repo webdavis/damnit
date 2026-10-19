@@ -1,14 +1,12 @@
 use super::super::*;
 use super::{clock, committed_task, config, launcher};
-use crate::ports::Repositories;
 use crate::remote::{MutationOutcome, MutationVerdict};
 use crate::testing::prelude::*;
-use crate::testing::{EchoCredentials, MemoryStore, oid};
+use crate::testing::{FixedRandom, MemoryStore, oid, remotes_launched_by};
 
 #[test]
 fn a_failed_mutation_becomes_a_notice_and_a_retry() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     committed_task(&store, 1);
     let (l, _) = launcher(|ms| {
         ms.iter()
@@ -20,7 +18,14 @@ fn a_failed_mutation_becomes_a_notice_and_a_retry() {
             })
             .collect()
     });
-    let reports = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    let reports = Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), None)
+    .unwrap();
     assert_eq!(
         reports[0].failed,
         vec![(oid(1), "rate limited".to_string())]
@@ -45,7 +50,6 @@ fn a_failed_mutation_becomes_a_notice_and_a_retry() {
 #[test]
 fn a_mutation_the_helper_never_answered_is_a_failure() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     committed_task(&store, 1);
     committed_task(&store, 2);
     let (l, _) = launcher(|ms| {
@@ -59,7 +63,14 @@ fn a_mutation_the_helper_never_answered_is_a_failure() {
             })
             .collect()
     });
-    let reports = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    let reports = Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), None)
+    .unwrap();
     assert_eq!(reports[0].succeeded, 1);
     assert_eq!(
         reports[0].failed,
@@ -81,7 +92,6 @@ fn a_mutation_the_helper_never_answered_is_a_failure() {
 #[test]
 fn duplicate_and_unsent_results_are_ignored() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     committed_task(&store, 1);
     let (l, _) = launcher(|_| {
         vec![
@@ -105,7 +115,14 @@ fn duplicate_and_unsent_results_are_ignored() {
             },
         ]
     });
-    let reports = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    let reports = Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), None)
+    .unwrap();
     assert_eq!(reports[0].succeeded, 0);
     assert_eq!(reports[0].failed.len(), 1);
     let retries = store.push_retries(&RemoteName("todoist".into())).unwrap();

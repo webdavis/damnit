@@ -4,7 +4,7 @@ use dam_adapters::{
     Interrupt, OsRandom, ProcessCredentialSource, ProcessLauncher, SqliteStore, SystemClock,
 };
 use dam_application::{
-    Clock, Config, ConfigFile, CredentialSource, Dam, HelperLauncher, Randomness, Store,
+    Clock, Config, ConfigFile, CredentialSource, Dam, HelperLauncher, Randomness, Remotes, Store,
 };
 
 use crate::editor::{EditorSession, EnvEditor};
@@ -59,6 +59,13 @@ impl Context {
             clock: self.clock.as_ref(),
             random: self.random.as_ref(),
             config: &self.config,
+        }
+    }
+
+    pub(crate) fn remotes(&self) -> Remotes<'_> {
+        Remotes {
+            launcher: self.launcher.as_ref(),
+            credentials: self.credentials.as_ref(),
         }
     }
 }

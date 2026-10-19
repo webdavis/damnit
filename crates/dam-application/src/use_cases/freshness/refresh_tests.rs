@@ -4,13 +4,13 @@ use std::rc::Rc;
 use jiff::civil::date;
 
 use super::*;
-use crate::config::{CredentialSpec, RemoteConfig};
+use crate::config::{Config, CredentialSpec, RemoteConfig};
 use crate::ports::{HelperError, Notice, StoreError};
 use crate::remote::{IncomingObject, PullOutcome};
 use crate::testing::prelude::*;
 use crate::testing::{
-    EchoCredentials, FaultyStore, FixedClock, FixedRandom, MemoryStore, ScriptedHelper,
-    ScriptedLauncher, oid, task_caps,
+    FaultyStore, FixedClock, FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
+    remotes_launched_by, task_caps,
 };
 use dam_domain::{Object, Task};
 
@@ -70,14 +70,13 @@ fn refresh(
     launcher: &ScriptedLauncher,
     config: &Config,
 ) -> Result<(), UseCaseError> {
-    refresh_stale(
-        Repositories::of(store),
-        launcher,
-        &EchoCredentials,
-        &clock(),
-        &FixedRandom::new(7),
+    Dam {
+        store,
+        clock: &clock(),
+        random: &FixedRandom::new(7),
         config,
-    )
+    }
+    .refresh_stale(remotes_launched_by(launcher))
 }
 
 fn launches(launcher: &ScriptedLauncher) -> usize {
@@ -148,14 +147,13 @@ fn a_store_error_reading_the_last_pull_fails_the_read_and_pulls_nothing() {
     let store = FaultyStore::new(MemoryStore::new());
     store.fail_reading_the_last_pull();
     let launcher = answering(one_object());
-    let refused = refresh_stale(
-        Repositories::of(&store),
-        &launcher,
-        &EchoCredentials,
-        &clock(),
-        &FixedRandom::new(7),
-        &config(Some(MINUTE)),
-    );
+    let refused = Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(7),
+        config: &config(Some(MINUTE)),
+    }
+    .refresh_stale(remotes_launched_by(&launcher));
     assert_eq!(
         refused,
         Err(UseCaseError::Store(StoreError::Failed(

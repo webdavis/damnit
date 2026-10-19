@@ -1,6 +1,6 @@
 mod listing;
 
-use dam_application::{Refusal, RemoteName, Repositories, refresh_stale};
+use dam_application::{Refusal, RemoteName};
 
 use crate::args::{RemoteArgs, RemoteCommand};
 use crate::context::Context;
@@ -50,14 +50,7 @@ pub(crate) fn refresh_stale_unless_no_pull(ctx: &Context) -> Result<(), CliError
     if ctx.no_pull {
         return Ok(());
     }
-    Ok(refresh_stale(
-        Repositories::of(&*ctx.store),
-        ctx.launcher.as_ref(),
-        ctx.credentials.as_ref(),
-        ctx.clock.as_ref(),
-        ctx.random.as_ref(),
-        &ctx.config,
-    )?)
+    Ok(ctx.dam().refresh_stale(ctx.remotes())?)
 }
 
 #[cfg(test)]

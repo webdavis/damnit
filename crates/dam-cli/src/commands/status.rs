@@ -1,4 +1,4 @@
-use dam_application::{CredentialSpec, Repositories, status};
+use dam_application::CredentialSpec;
 use dam_domain::Change;
 
 use crate::args::{DiffArgs, StatusArgs};
@@ -18,7 +18,7 @@ use view::{DiffView, StatusView, UnpushedRow};
 
 pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliError> {
     let remotes: Vec<_> = ctx.config.remotes.iter().map(|r| r.name.clone()).collect();
-    let s = status(Repositories::of(&*ctx.store), &remotes)?;
+    let s = ctx.dam().status(&remotes)?;
     report(&StatusView {
         staged: change_rows(&s.staged, args.full),
         unstaged: change_rows(&s.unstaged, args.full),

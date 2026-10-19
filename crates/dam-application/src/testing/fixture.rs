@@ -1,9 +1,9 @@
 use jiff::civil::date;
 
 use crate::config::Config;
-use crate::ports::Store;
-use crate::service::Dam;
-use crate::testing::{FixedClock, FixedRandom};
+use crate::ports::{HelperLauncher, Store};
+use crate::service::{Dam, Remotes};
+use crate::testing::{EchoCredentials, FixedClock, FixedRandom};
 
 pub struct Fixture {
     pub clock: FixedClock,
@@ -29,5 +29,12 @@ impl Fixture {
             random: &self.random,
             config: &self.config,
         }
+    }
+}
+
+pub fn remotes_launched_by(launcher: &dyn HelperLauncher) -> Remotes<'_> {
+    Remotes {
+        launcher,
+        credentials: &EchoCredentials,
     }
 }

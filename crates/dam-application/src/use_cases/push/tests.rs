@@ -19,11 +19,10 @@ use jiff::civil::date;
 use super::*;
 use crate::config::{Config, CredentialSpec, RemoteConfig};
 use crate::ports::RemoteName;
-use crate::ports::Repositories;
 use crate::testing::prelude::*;
 use crate::testing::{
-    EchoCredentials, FixedClock, FixedRandom, Fixture, MemoryStore, ScriptedHelper,
-    ScriptedLauncher, oid, task_caps,
+    FixedClock, FixedRandom, Fixture, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
+    remotes_launched_by, task_caps,
 };
 
 pub(super) fn config() -> Config {
@@ -85,7 +84,6 @@ pub(super) fn committed_task(store: &MemoryStore, byte: u8) {
 #[test]
 fn a_committed_create_is_sent_and_its_remote_id_is_mapped() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     committed_task(&store, 1);
     let (l, pushed) = launcher(|ms| {
         ms.iter()
@@ -97,7 +95,14 @@ fn a_committed_create_is_sent_and_its_remote_id_is_mapped() {
             })
             .collect()
     });
-    let reports = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    let reports = Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), None)
+    .unwrap();
     assert_eq!(reports[0].succeeded, 1);
     assert_eq!(pushed.borrow()[0].op, MutationOp::Create);
     assert_eq!(
@@ -123,7 +128,6 @@ fn a_committed_create_is_sent_and_its_remote_id_is_mapped() {
 #[test]
 fn a_retry_is_sent_as_an_update_of_the_committed_state() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     committed_task(&store, 1);
     store
         .map_remote_id(&RemoteName("todoist".into()), &oid(1), "r1")
@@ -139,7 +143,14 @@ fn a_retry_is_sent_as_an_update_of_the_committed_state() {
             })
             .collect()
     });
-    push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), None)
+    .unwrap();
     let sent = pushed.borrow();
     assert!(
         sent.iter()
@@ -156,7 +167,6 @@ fn a_retry_is_sent_as_an_update_of_the_committed_state() {
 #[test]
 fn an_event_is_skipped_by_a_task_only_helper() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     let e = Event::new(
         oid(2),
         "e",
@@ -172,7 +182,14 @@ fn an_event_is_skipped_by_a_task_only_helper() {
     dam.add_all().unwrap();
     dam.commit("m").unwrap();
     let (l, pushed) = launcher(|_| vec![]);
-    let reports = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    let reports = Dam {
+        store: &store,
+        clock: &clock(),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), None)
+    .unwrap();
     assert_eq!(reports[0].skipped, 1);
     assert!(pushed.borrow().is_empty());
 }

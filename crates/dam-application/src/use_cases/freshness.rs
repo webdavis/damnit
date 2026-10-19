@@ -1,13 +1,8 @@
 use std::time::Duration;
 
-use crate::config::Config;
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{
-    Clock, CredentialSource, HelperLauncher, Notice, Randomness, RemoteName,
-    RemoteTrackingRepository, Repositories, StoreError,
-};
-use crate::service::Dam;
-use crate::use_cases::pull::pull;
+use crate::ports::{Clock, Notice, RemoteName, RemoteTrackingRepository, StoreError};
+use crate::service::{Dam, Remotes};
 
 impl Dam<'_> {
     pub fn require_fresh(&self, bounds: &[(String, Duration)]) -> Result<(), UseCaseError> {
@@ -28,40 +23,24 @@ impl Dam<'_> {
         }
         Ok(())
     }
-}
 
-pub fn refresh_stale(
-    repos: Repositories<'_>,
-    launcher: &dyn HelperLauncher,
-    credentials: &dyn CredentialSource,
-    clock: &dyn Clock,
-    random: &dyn Randomness,
-    config: &Config,
-) -> Result<(), UseCaseError> {
-    for remote in &config.remotes {
-        let Some(window) = remote.stale else {
-            continue;
-        };
-        let age = age_of_last_pull(repos.remote_tracking, clock, &remote.name)?;
-        if is_stale(age, window) {
-            let pulled = pull(
-                repos,
-                launcher,
-                credentials,
-                clock,
-                random,
-                config,
-                Some(&remote.name.0),
-            );
-            if let Err(e) = pulled {
-                repos.notices.add_notice(&Notice::PullFailed {
+    pub fn refresh_stale(&self, remotes: Remotes<'_>) -> Result<(), UseCaseError> {
+        for remote in &self.config.remotes {
+            let Some(window) = remote.stale else {
+                continue;
+            };
+            let age = age_of_last_pull(self.store, self.clock, &remote.name)?;
+            if is_stale(age, window)
+                && let Err(e) = self.pull(remotes, Some(&remote.name.0))
+            {
+                self.store.add_notice(&Notice::PullFailed {
                     remote: remote.name.clone(),
                     why: e.to_string(),
                 })?;
             }
         }
+        Ok(())
     }
-    Ok(())
 }
 
 fn is_stale(age: Option<Duration>, window: Duration) -> bool {

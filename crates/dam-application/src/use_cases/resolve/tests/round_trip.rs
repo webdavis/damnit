@@ -2,12 +2,9 @@ mod doubles;
 
 use super::super::*;
 use super::remote;
-use crate::ports::Repositories;
 use crate::service::Dam;
 use crate::testing::prelude::*;
-use crate::testing::{EchoCredentials, FixedClock, FixedRandom, Fixture, MemoryStore, oid};
-use crate::use_cases::pull::pull;
-use crate::use_cases::push::push;
+use crate::testing::{FixedClock, FixedRandom, Fixture, MemoryStore, oid, remotes_launched_by};
 use dam_domain::{Object, Task};
 use doubles::{
     config, launcher_that_accepts_every_push, recording_launcher_that_accepts_every_push, upstream,
@@ -16,7 +13,6 @@ use jiff::civil::date;
 
 fn both_sides_moved_off_one_base() -> MemoryStore {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "base"))).unwrap();
     let fixture = Fixture::default();
     let dam = fixture.dam(&store);
@@ -41,13 +37,14 @@ fn both_sides_moved_off_one_base() -> MemoryStore {
     }
     .commit("mine")
     .unwrap();
-    let reports = pull(
-        repos,
-        &launcher_that_accepts_every_push(vec![upstream("theirs")]),
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(42),
-        &config(),
+    let reports = Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(42),
+        config: &config(),
+    }
+    .pull(
+        remotes_launched_by(&launcher_that_accepts_every_push(vec![upstream("theirs")])),
         None,
     )
     .unwrap();
@@ -58,7 +55,6 @@ fn both_sides_moved_off_one_base() -> MemoryStore {
 #[test]
 fn ours_is_committed_and_the_conflict_is_not_raised_again() {
     let store = both_sides_moved_off_one_base();
-    let repos = Repositories::of(&store);
     let fixture = Fixture {
         clock: FixedClock(date(2026, 9, 19)),
         random: FixedRandom::new(3),
@@ -77,13 +73,14 @@ fn ours_is_committed_and_the_conflict_is_not_raised_again() {
         "mine"
     );
 
-    let pulled_again_before_the_resolution_reached_the_remote = pull(
-        repos,
-        &launcher_that_accepts_every_push(vec![upstream("theirs")]),
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 20)),
-        &FixedRandom::new(43),
-        &config(),
+    let pulled_again_before_the_resolution_reached_the_remote = Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 20)),
+        random: &FixedRandom::new(43),
+        config: &config(),
+    }
+    .pull(
+        remotes_launched_by(&launcher_that_accepts_every_push(vec![upstream("theirs")])),
         None,
     )
     .unwrap();
@@ -93,12 +90,14 @@ fn ours_is_committed_and_the_conflict_is_not_raised_again() {
     );
     assert_eq!(store.get(&oid(1)).unwrap().unwrap().base().subject, "mine");
 
-    let reports = push(
-        repos,
-        &launcher_that_accepts_every_push(vec![]),
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &config(),
+    let reports = Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(
+        remotes_launched_by(&launcher_that_accepts_every_push(vec![])),
         None,
     )
     .unwrap();
@@ -118,7 +117,6 @@ fn ours_is_committed_and_the_conflict_is_not_raised_again() {
 #[test]
 fn theirs_leaves_only_theirs_owed_and_settles_the_conflict() {
     let store = both_sides_moved_off_one_base();
-    let repos = Repositories::of(&store);
     let fixture = Fixture {
         clock: FixedClock(date(2026, 9, 19)),
         random: FixedRandom::new(3),
@@ -127,14 +125,13 @@ fn theirs_leaves_only_theirs_owed_and_settles_the_conflict() {
     let dam = fixture.dam(&store);
     dam.resolve(&oid(1), Side::Theirs).unwrap();
     let (l, sent) = recording_launcher_that_accepts_every_push(vec![]);
-    push(
-        repos,
-        &l,
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &config(),
-        None,
-    )
+    Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(0),
+        config: &config(),
+    }
+    .push(remotes_launched_by(&l), None)
     .unwrap();
     for m in sent.borrow().iter() {
         assert_eq!(
@@ -143,13 +140,14 @@ fn theirs_leaves_only_theirs_owed_and_settles_the_conflict() {
             "a push after resolving with theirs must not carry ours"
         );
     }
-    let pulled_again_before_the_resolution_reached_the_remote = pull(
-        repos,
-        &launcher_that_accepts_every_push(vec![upstream("theirs")]),
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 20)),
-        &FixedRandom::new(43),
-        &config(),
+    let pulled_again_before_the_resolution_reached_the_remote = Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 20)),
+        random: &FixedRandom::new(43),
+        config: &config(),
+    }
+    .pull(
+        remotes_launched_by(&launcher_that_accepts_every_push(vec![upstream("theirs")])),
         None,
     )
     .unwrap();

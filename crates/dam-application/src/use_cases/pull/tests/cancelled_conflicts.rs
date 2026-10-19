@@ -3,23 +3,21 @@ use std::rc::Rc;
 
 use jiff::civil::date;
 
-use super::super::*;
 use super::cancellations::{meeting, run};
 use super::{config, remote};
-use crate::ports::{Notice, Repositories};
+use crate::ports::Notice;
 use crate::remote::{IncomingObject, PullOutcome};
 use crate::service::Dam;
 use crate::testing::prelude::*;
 use crate::testing::{
-    EchoCredentials, FixedClock, FixedRandom, Fixture, MemoryStore, ScriptedHelper,
-    ScriptedLauncher, oid, task_caps,
+    FixedClock, FixedRandom, Fixture, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
+    remotes_launched_by, task_caps,
 };
 use dam_domain::{Field, Kind, Object, Task};
 
 #[test]
 fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
     let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
     let event = dam_domain::Event::new(
         oid(5),
         "meeting",
@@ -78,15 +76,13 @@ fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
         }),
         launched_with: Rc::new(RefCell::new(vec![])),
     };
-    let reports = pull(
-        repos,
-        &l,
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(42),
-        &config(),
-        None,
-    )
+    let reports = Dam {
+        store: &store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(42),
+        config: &config(),
+    }
+    .pull(remotes_launched_by(&l), None)
     .unwrap();
     assert_eq!(reports[0].conflicts, 1);
     assert_eq!(store.conflicts().unwrap().len(), 1);

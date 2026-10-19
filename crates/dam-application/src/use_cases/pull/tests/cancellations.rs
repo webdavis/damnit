@@ -6,6 +6,7 @@ use jiff::civil::date;
 
 use super::*;
 use crate::ports::Notice;
+use crate::testing::remotes_launched_by;
 
 pub(super) fn meeting() -> dam_domain::Event {
     dam_domain::Event::new(
@@ -68,15 +69,13 @@ fn run_with(
     store: &MemoryStore,
     launcher: &ScriptedLauncher,
 ) -> Result<Vec<PullReport>, UseCaseError> {
-    pull(
-        Repositories::of(store),
-        launcher,
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(42),
-        &config(),
-        None,
-    )
+    Dam {
+        store,
+        clock: &FixedClock(date(2026, 9, 18)),
+        random: &FixedRandom::new(42),
+        config: &config(),
+    }
+    .pull(remotes_launched_by(launcher), None)
 }
 
 #[test]
