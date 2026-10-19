@@ -87,7 +87,10 @@ fn a_machine_format_refuses_to_open_an_editor() {
         },
     )
     .unwrap_err();
-    assert_eq!(err.to_string(), Refusal::NeedsAnEditor.to_string());
+    assert_eq!(
+        err.to_string(),
+        CliError::from(Refusal::NeedsAnEditor).to_string()
+    );
     assert_eq!(err.exit_code(), 4);
 }
 

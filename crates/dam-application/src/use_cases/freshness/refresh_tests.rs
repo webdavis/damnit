@@ -76,7 +76,7 @@ fn refresh(
         random: &FixedRandom::new(7),
         config,
     }
-    .refresh_stale(remotes_launched_by(launcher))
+    .refresh_stale(remotes_launched_by(launcher), |e| format!("{e:?}"))
 }
 
 fn launches(launcher: &ScriptedLauncher) -> usize {
@@ -153,7 +153,7 @@ fn a_store_error_reading_the_last_pull_fails_the_read_and_pulls_nothing() {
         random: &FixedRandom::new(7),
         config: &config(Some(MINUTE)),
     }
-    .refresh_stale(remotes_launched_by(&launcher));
+    .refresh_stale(remotes_launched_by(&launcher), |e| format!("{e:?}"));
     assert_eq!(
         refused,
         Err(UseCaseError::Store(StoreError::Failed(

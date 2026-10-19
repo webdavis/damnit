@@ -76,7 +76,6 @@ fn an_object_with_no_commit_behind_it_is_refused_naming_it() {
         err,
         UseCaseError::Refused(Refusal::NotCommitted(id.clone()))
     );
-    assert!(err.to_string().contains(id.short()), "{err}");
 }
 
 #[test]

@@ -31,6 +31,7 @@ pub use use_cases::agenda::{Scheduled, Window};
 pub use use_cases::complete::{CompletePlan, Completed};
 pub use use_cases::edit::{EditFields, apply};
 pub use use_cases::new_object::{NewEvent, NewTask};
+pub use use_cases::prefix::SHORTEST_OID_PREFIX;
 pub use use_cases::pull::PullReport;
 pub use use_cases::push::PushReport;
 pub use use_cases::remove::RemovePlan;

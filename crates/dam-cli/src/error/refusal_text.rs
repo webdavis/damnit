@@ -2,11 +2,13 @@ use std::fmt;
 
 use dam_domain::{Blockers, Oid, Tracked};
 
-use super::Refusal;
+use dam_application::Refusal;
 
-impl fmt::Display for Refusal {
+pub(crate) struct RefusalText<'a>(pub(crate) &'a Refusal);
+
+impl fmt::Display for RefusalText<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
+        match self.0 {
             Refusal::Blocked { oid, blockers } => write!(
                 f,
                 "{} has {}; pass --force to complete it anyway",
@@ -137,3 +139,6 @@ fn short(id: &str) -> &str {
 }
 
 const SHORT_ID_LENGTH: usize = 7;
+
+#[cfg(test)]
+mod tests;

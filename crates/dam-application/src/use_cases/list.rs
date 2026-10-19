@@ -146,7 +146,6 @@ mod tests {
                 value: "home".into()
             })
         );
-        assert_eq!(err.to_string(), "home is not a value of category effort");
     }
 
     #[test]
@@ -186,6 +185,5 @@ mod tests {
         };
         let err = fixture.dam(&store).list(Some("(due:today")).unwrap_err();
         assert_eq!(err, UseCaseError::Query(QueryError::Unclosed));
-        assert_eq!(err.to_string(), "a ( has no matching )");
     }
 }

@@ -1,13 +1,17 @@
 use std::fmt;
 
-use super::UseCaseError;
-use crate::ports::{CredentialError, HelperError, StoreError};
-use crate::use_cases::prefix::SHORTEST_OID_PREFIX;
+use dam_application::{
+    CredentialError, HelperError, SHORTEST_OID_PREFIX, StoreError, UseCaseError,
+};
 
-impl fmt::Display for UseCaseError {
+use super::refusal_text::RefusalText;
+
+pub(crate) struct UseCaseText<'a>(pub(crate) &'a UseCaseError);
+
+impl fmt::Display for UseCaseText<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            UseCaseError::Refused(r) => write!(f, "{r}"),
+        match self.0 {
+            UseCaseError::Refused(r) => write!(f, "{}", RefusalText(r)),
             UseCaseError::Store(StoreError::Busy(why)) => {
                 write!(f, "the store is busy, another dam is writing it: {why}")
             }
@@ -72,3 +76,6 @@ impl fmt::Display for UseCaseError {
         }
     }
 }
+
+#[cfg(test)]
+mod tests;

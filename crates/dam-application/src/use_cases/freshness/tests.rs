@@ -66,10 +66,6 @@ fn a_pull_older_than_the_bound_is_refused_with_its_age() {
             limit: 3600
         })
     );
-    assert_eq!(
-        refused.to_string(),
-        "remote \"gcal\" last pulled 7200s ago, longer than --max-age allows (3600s); run dam pull gcal"
-    );
 }
 
 #[test]
@@ -112,8 +108,12 @@ fn every_bound_is_held_not_only_the_first() {
 fn a_remote_never_pulled_is_refused() {
     let refused = check(&MemoryStore::new(), "gcal").unwrap_err();
     assert_eq!(
-        refused.to_string(),
-        "remote \"gcal\" has never been pulled; run dam pull gcal"
+        refused,
+        UseCaseError::Refused(Refusal::StaleRemote {
+            remote: "gcal".into(),
+            age: None,
+            limit: 3600
+        })
     );
 }
 
