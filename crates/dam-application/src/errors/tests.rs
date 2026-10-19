@@ -1,4 +1,5 @@
 use super::*;
+use crate::ports::HelperError;
 use dam_domain::{Blockers, LabelViolation, Oid, Tracked};
 
 fn oid() -> Oid {
@@ -175,5 +176,25 @@ fn a_blocked_task_names_its_open_children_and_dependencies_in_one_line() {
     assert_eq!(
         blocked(vec![oid_of(3), oid_of(4)], vec![oid_of(2)]).to_string(),
         "0101010 has 1 open child: 0202020 and 2 open dependencies: 0303030, 0404040; pass --force to complete it anyway"
+    );
+}
+
+#[test]
+fn a_helper_on_protocol_zero_is_told_dam_never_supported_it_and_a_newer_one_to_upgrade_dam() {
+    let unsupported = |found| {
+        UseCaseError::Helper(HelperError::UnsupportedProtocol {
+            helper: "dam-remote-todoist".into(),
+            found,
+            supported: 1,
+        })
+        .to_string()
+    };
+    assert_eq!(
+        unsupported(0),
+        "helper dam-remote-todoist speaks protocol 0, which dam never supported"
+    );
+    assert_eq!(
+        unsupported(2),
+        "helper dam-remote-todoist speaks protocol version 2; dam speaks 1, so upgrade dam or use an older helper"
     );
 }

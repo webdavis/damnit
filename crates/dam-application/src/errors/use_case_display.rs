@@ -19,6 +19,12 @@ impl fmt::Display for UseCaseError {
                 write!(f, "the helper answered something dam cannot read: {s}")
             }
             UseCaseError::Helper(HelperError::UnsupportedProtocol {
+                helper, found: 0, ..
+            }) => write!(
+                f,
+                "helper {helper} speaks protocol 0, which dam never supported"
+            ),
+            UseCaseError::Helper(HelperError::UnsupportedProtocol {
                 helper,
                 found,
                 supported,
