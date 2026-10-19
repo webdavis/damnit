@@ -1,5 +1,23 @@
-use super::answer_each_request_line;
 use std::io;
+
+use dam_protocol::{Capabilities, Mutation, PullResponse, PushResponse};
+
+use super::serve;
+use crate::Remote;
+
+struct NeverAsked;
+
+impl Remote for NeverAsked {
+    fn capabilities(&self) -> Capabilities {
+        unreachable!("no request was read")
+    }
+    fn pull(&self, _since: Option<&str>) -> Result<PullResponse, String> {
+        unreachable!("no request was read")
+    }
+    fn push(&self, _mutations: Vec<Mutation>) -> Result<PushResponse, String> {
+        unreachable!("no request was read")
+    }
+}
 
 struct ForeverBrokenPipe;
 
@@ -22,7 +40,7 @@ fn a_non_decode_read_error_ends_the_loop_without_spinning_forever() {
     std::thread::spawn(move || {
         let mut input = ForeverBrokenPipe;
         let mut out = Vec::new();
-        answer_each_request_line(&mut input, &mut out, "todoist");
+        serve(&mut input, &mut out, &NeverAsked);
         let _ = tx.send(out);
     });
     let out = rx

@@ -12,7 +12,7 @@ mod memory;
 pub(crate) mod oauth_error;
 pub mod pull;
 pub mod push;
-pub mod serve;
+pub mod remote;
 pub mod sign_in;
 
 pub use api_error::ApiError;
