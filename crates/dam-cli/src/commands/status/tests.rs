@@ -2,7 +2,7 @@ use crate::args::{AddArgs, CommitArgs, DiffArgs, StatusArgs};
 use crate::commands::commit::run_commit;
 use crate::commands::stage::run_add;
 use crate::testing::context;
-use dam_application::{RemoteConfig, RemoteName};
+use dam_application::{Conflict, RemoteConfig, RemoteName};
 use dam_domain::{Kind, Object, Oid, Task};
 
 fn oid(b: u8) -> Oid {
@@ -149,11 +149,12 @@ fn status_reports_conflicts_and_unpushed_commits() {
         .put(&Object::Task(Task::new(oid(1), "mine")))
         .unwrap();
     ctx.store
-        .mark_conflict(
-            &RemoteName("todoist".into()),
-            &oid(1),
-            &Object::Task(Task::new(oid(1), "theirs")),
-        )
+        .mark_conflict(&Conflict {
+            remote: RemoteName("todoist".into()),
+            oid: oid(1),
+            ours: Object::Task(Task::new(oid(1), "mine")),
+            theirs: Object::Task(Task::new(oid(1), "theirs")),
+        })
         .unwrap();
     ctx.store
         .put(&Object::Task(Task::new(oid(2), "b")))

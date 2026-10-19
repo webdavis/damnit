@@ -4,7 +4,7 @@ use std::rc::Rc;
 use super::super::*;
 use super::{clock, committed_task, config, launcher};
 use crate::errors::Refusal;
-use crate::ports::{HelperError, Repositories};
+use crate::ports::{Conflict, HelperError, Repositories};
 use crate::remote::PullOutcome;
 use crate::testing::prelude::*;
 use crate::testing::{
@@ -18,11 +18,12 @@ fn unresolved_conflicts_block_push() {
     let repos = Repositories::of(&store);
     committed_task(&store, 1);
     store
-        .mark_conflict(
-            &RemoteName("todoist".into()),
-            &oid(1),
-            &Object::Task(Task::new(oid(1), "theirs")),
-        )
+        .mark_conflict(&Conflict {
+            remote: RemoteName("todoist".into()),
+            oid: oid(1),
+            ours: Object::Task(Task::new(oid(1), "t1")),
+            theirs: Object::Task(Task::new(oid(1), "theirs")),
+        })
         .unwrap();
     let (l, _) = launcher(|_| vec![]);
     let err = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap_err();

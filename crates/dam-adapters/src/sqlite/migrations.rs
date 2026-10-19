@@ -1,6 +1,6 @@
 use rusqlite::Connection;
 
-pub(super) const VERSION: u32 = 4;
+pub(super) const VERSION: u32 = 5;
 
 const V1: &str = r#"
 CREATE TABLE objects (oid TEXT PRIMARY KEY, kind TEXT NOT NULL, path TEXT NOT NULL, json TEXT NOT NULL);
@@ -32,6 +32,18 @@ UPDATE commit_changes SET op = 'create' WHERE op = 'update' AND before_json IS N
 UPDATE stage SET op = 'create' WHERE op = 'update' AND before_json IS NULL;
 "#;
 
+const V5: &str = r#"
+UPDATE commit_changes SET before_json = (
+    SELECT prior.after_json FROM commit_changes AS prior
+    JOIN commits AS prior_commit ON prior_commit.id = prior.commit_id
+    WHERE prior.oid = commit_changes.oid
+      AND prior_commit.seq < (SELECT seq FROM commits WHERE id = commit_changes.commit_id)
+    ORDER BY prior_commit.seq DESC LIMIT 1
+) WHERE op = 'create' AND before_json IS NULL;
+UPDATE commit_changes SET op = 'update' WHERE op = 'create' AND before_json IS NOT NULL;
+ALTER TABLE objects DROP COLUMN kind;
+"#;
+
 pub(super) fn migrate_above_user_version_in_one_transaction(
     conn: &mut Connection,
 ) -> Result<(), rusqlite::Error> {
@@ -51,6 +63,9 @@ pub(super) fn migrate_above_user_version_in_one_transaction(
     }
     if current < 4 {
         tx.execute_batch(V4)?;
+    }
+    if current < 5 {
+        tx.execute_batch(V5)?;
     }
     tx.pragma_update(None, "user_version", VERSION)?;
     tx.commit()

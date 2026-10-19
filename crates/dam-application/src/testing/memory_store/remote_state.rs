@@ -1,8 +1,8 @@
 use dam_domain::{Object, Oid, Timestamp};
 
 use crate::ports::{
-    Conflict, ConflictRepository, Notice, NoticeRepository, ObjectRepository, RemoteName,
-    RemoteTrackingRepository, StoreError,
+    Conflict, ConflictRepository, Notice, NoticeRepository, RemoteName, RemoteTrackingRepository,
+    StoreError,
 };
 
 use super::MemoryStore;
@@ -94,24 +94,11 @@ impl RemoteTrackingRepository for MemoryStore {
 }
 
 impl ConflictRepository for MemoryStore {
-    fn mark_conflict(
-        &self,
-        remote: &RemoteName,
-        oid: &Oid,
-        theirs: &Object,
-    ) -> Result<(), StoreError> {
-        let ours = self
-            .get(oid)?
-            .ok_or_else(|| StoreError::Failed("conflict on a missing object".into()))?;
-        self.0.borrow_mut().conflicts.insert(
-            oid.clone(),
-            Conflict {
-                remote: remote.clone(),
-                oid: oid.clone(),
-                ours,
-                theirs: theirs.clone(),
-            },
-        );
+    fn mark_conflict(&self, conflict: &Conflict) -> Result<(), StoreError> {
+        self.0
+            .borrow_mut()
+            .conflicts
+            .insert(conflict.oid.clone(), conflict.clone());
         Ok(())
     }
     fn conflicts(&self) -> Result<Vec<Conflict>, StoreError> {

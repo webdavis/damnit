@@ -1,7 +1,7 @@
 mod round_trip;
 
 use super::*;
-use crate::ports::RemoteName;
+use crate::ports::{Conflict, RemoteName};
 use crate::testing::prelude::*;
 use crate::testing::{FaultyStore, FixedClock, FixedRandom, MemoryStore, oid};
 use crate::use_cases::commit::commit;
@@ -16,11 +16,12 @@ fn conflicted() -> MemoryStore {
     let store = MemoryStore::new();
     store.put(&Object::Task(Task::new(oid(1), "mine"))).unwrap();
     store
-        .mark_conflict(
-            &remote(),
-            &oid(1),
-            &Object::Task(Task::new(oid(1), "theirs")),
-        )
+        .mark_conflict(&Conflict {
+            remote: remote(),
+            oid: oid(1),
+            ours: Object::Task(Task::new(oid(1), "mine")),
+            theirs: Object::Task(Task::new(oid(1), "theirs")),
+        })
         .unwrap();
     store
 }
@@ -69,11 +70,12 @@ fn resolving_with_ours_leaves_an_existing_unpushed_commit_untouched() {
     )
     .unwrap();
     store
-        .mark_conflict(
-            &remote(),
-            &oid(1),
-            &Object::Task(Task::new(oid(1), "theirs")),
-        )
+        .mark_conflict(&Conflict {
+            remote: remote(),
+            oid: oid(1),
+            ours: Object::Task(Task::new(oid(1), "mine")),
+            theirs: Object::Task(Task::new(oid(1), "theirs")),
+        })
         .unwrap();
     resolve(
         &store,

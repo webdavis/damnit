@@ -66,14 +66,9 @@ impl RemoteTrackingRepository for FaultyStore {
 }
 
 impl ConflictRepository for FaultyStore {
-    fn mark_conflict(
-        &self,
-        remote: &RemoteName,
-        oid: &Oid,
-        theirs: &Object,
-    ) -> Result<(), StoreError> {
+    fn mark_conflict(&self, conflict: &Conflict) -> Result<(), StoreError> {
         self.write()?;
-        self.inner.mark_conflict(remote, oid, theirs)
+        self.inner.mark_conflict(conflict)
     }
     fn conflicts(&self) -> Result<Vec<Conflict>, StoreError> {
         self.inner.conflicts()
