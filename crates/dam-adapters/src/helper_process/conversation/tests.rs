@@ -21,6 +21,15 @@ fn until_the_helper_has_complained(helper: &ProcessHelper) {
 }
 
 #[test]
+fn a_remote_that_names_no_deadline_gets_sixty_seconds() {
+    let dir = tempfile::tempdir().unwrap();
+    let launcher = install(dir.path(), "#!/bin/sh\nexit 0\n");
+    let helper = launcher.spawn(&remote(), &[]).unwrap();
+    assert_eq!(helper.deadline.value, Duration::from_secs(60));
+    assert_eq!(helper.deadline.text, "60s");
+}
+
+#[test]
 fn a_helper_that_dies_without_answering_quotes_what_it_complained_about() {
     let dir = tempfile::tempdir().unwrap();
     let launcher = install(
