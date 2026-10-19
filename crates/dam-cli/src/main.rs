@@ -5,6 +5,7 @@ mod editor;
 mod error;
 mod output;
 mod prompt;
+mod view;
 
 use clap::Parser;
 use dam_adapters::Interrupt;

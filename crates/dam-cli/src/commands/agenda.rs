@@ -1,13 +1,18 @@
+use std::collections::BTreeSet;
+
 use dam_application::{Scheduled, Window, agenda, require_fresh};
-use dam_domain::{Object, Timestamp};
+use dam_domain::{Oid, Timestamp};
 use jiff::SignedDuration;
+use jiff::tz::TimeZone;
+use serde::Serialize;
 
 use crate::args::AgendaArgs;
 use crate::commands::parsing::when_flag;
 use crate::commands::remote::refresh_stale_unless_no_pull;
 use crate::context::Context;
 use crate::error::CliError;
-use crate::output::{Report, object_json};
+use crate::output::Report;
+use crate::view::{Human, View, display, report};
 
 const DEFAULT_SPAN: SignedDuration = SignedDuration::from_hours(24);
 
@@ -28,14 +33,9 @@ pub(crate) fn run_agenda(ctx: &mut Context, args: AgendaArgs) -> Result<Report, 
         window,
         &ctx.tz,
     )?;
-    let rows = found.iter().map(row).collect::<Result<Vec<_>, _>>()?;
-    Ok(Report {
-        human: found
-            .iter()
-            .map(|s| line(s, &ctx.tz))
-            .collect::<Vec<_>>()
-            .join("\n"),
-        data: serde_json::json!({ "events": rows }),
+    report(&Agenda {
+        events: found.iter().map(AgendaEvent::new).collect(),
+        zone: &ctx.tz,
     })
 }
 
@@ -62,42 +62,76 @@ fn window(ctx: &Context, args: &AgendaArgs) -> Result<Window, CliError> {
     Ok(Window { from, to })
 }
 
-fn row(s: &Scheduled) -> Result<serde_json::Value, CliError> {
-    let wire = object_json(&Object::Event(s.event.clone()))?;
-    Ok(serde_json::json!({
-        "oid": wire["oid"],
-        "subject": wire["subject"],
-        "path": wire["path"],
-        "labels": wire["labels"],
-        "status": wire["event"]["status"],
-        "transparency": wire["event"]["transparency"],
-        "all_day": s.event.start.is_all_day(),
-        "start": s.start.as_second(),
-        "end": s.end.as_second(),
-        "busy": s.busy,
-    }))
+#[derive(Serialize)]
+struct Agenda<'a> {
+    events: Vec<AgendaEvent<'a>>,
+    #[serde(skip)]
+    zone: &'a TimeZone,
 }
 
-fn line(s: &Scheduled, zone: &jiff::tz::TimeZone) -> String {
-    let local = |t: Timestamp| {
-        let z = t.to_zoned(zone.clone());
-        if s.event.start.is_all_day() {
-            z.strftime("%Y-%m-%d").to_string()
-        } else {
-            z.strftime("%Y-%m-%d %H:%M").to_string()
+#[derive(Serialize)]
+struct AgendaEvent<'a> {
+    #[serde(skip)]
+    scheduled: &'a Scheduled,
+    #[serde(serialize_with = "display")]
+    oid: &'a Oid,
+    subject: &'a str,
+    path: &'a str,
+    labels: &'a BTreeSet<String>,
+    status: &'static str,
+    transparency: &'static str,
+    all_day: bool,
+    start: i64,
+    end: i64,
+    busy: bool,
+}
+
+impl<'a> AgendaEvent<'a> {
+    fn new(s: &'a Scheduled) -> AgendaEvent<'a> {
+        let base = &s.event.base;
+        AgendaEvent {
+            scheduled: s,
+            oid: &base.oid,
+            subject: &base.subject,
+            path: base.path.as_str(),
+            labels: &base.labels,
+            status: s.event.status.as_str(),
+            transparency: s.event.transparency.as_str(),
+            all_day: s.event.start.is_all_day(),
+            start: s.start.as_second(),
+            end: s.end.as_second(),
+            busy: s.busy,
         }
-    };
-    let mut cols = vec![
-        s.event.base.oid.short().to_string(),
-        if s.busy { "busy" } else { "free" }.to_string(),
-        local(s.start),
-        local(s.end),
-        s.event.base.subject.clone(),
-    ];
-    if !s.event.base.path.as_str().is_empty() {
-        cols.push(s.event.base.path.as_str().to_string());
     }
-    cols.join("  ")
+
+    fn cells(&self, zone: &TimeZone) -> Vec<String> {
+        let s = self.scheduled;
+        let local = |t: Timestamp| {
+            let z = t.to_zoned(zone.clone());
+            if self.all_day {
+                z.strftime("%Y-%m-%d").to_string()
+            } else {
+                z.strftime("%Y-%m-%d %H:%M").to_string()
+            }
+        };
+        let mut cells = vec![
+            self.oid.short().to_string(),
+            if self.busy { "busy" } else { "free" }.to_string(),
+            local(s.start),
+            local(s.end),
+            self.subject.to_string(),
+        ];
+        if !self.path.is_empty() {
+            cells.push(self.path.to_string());
+        }
+        cells
+    }
+}
+
+impl View for Agenda<'_> {
+    fn human(&self) -> Human {
+        Human::Table(self.events.iter().map(|e| e.cells(self.zone)).collect())
+    }
 }
 
 #[cfg(test)]

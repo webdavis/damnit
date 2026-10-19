@@ -292,6 +292,7 @@ dependencies = [
  "dam-application",
  "dam-domain",
  "jiff",
+ "serde",
  "serde_json",
  "tempfile",
  "toon-format",

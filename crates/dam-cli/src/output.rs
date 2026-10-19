@@ -4,6 +4,7 @@ use dam_adapters::to_wire;
 use dam_domain::Object;
 
 use crate::error::CliError;
+use crate::view::row;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Format {
@@ -58,6 +59,10 @@ pub(crate) fn object_json(object: &Object) -> Result<serde_json::Value, CliError
 }
 
 pub(crate) fn object_line(object: &Object) -> String {
+    row(&object_cells(object))
+}
+
+pub(crate) fn object_cells(object: &Object) -> Vec<String> {
     let b = object.base();
     let mut cols = vec![b.oid.short().to_string()];
     match object {
@@ -89,19 +94,7 @@ pub(crate) fn object_line(object: &Object) -> String {
     if !b.path.as_str().is_empty() {
         cols.push(b.path.as_str().to_string());
     }
-    cols.join("  ")
-}
-
-pub(crate) fn objects_report(objects: &[Object]) -> Result<Report, CliError> {
-    let data: Vec<serde_json::Value> = objects.iter().map(object_json).collect::<Result<_, _>>()?;
-    Ok(Report {
-        human: objects
-            .iter()
-            .map(object_line)
-            .collect::<Vec<_>>()
-            .join("\n"),
-        data: serde_json::json!({ "objects": data }),
-    })
+    cols
 }
 
 #[cfg(test)]

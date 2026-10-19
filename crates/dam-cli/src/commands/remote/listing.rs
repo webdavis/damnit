@@ -1,56 +1,73 @@
-use dam_application::RemoteConfig;
 use dam_domain::Timestamp;
+use serde::Serialize;
 
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
+use crate::view::{Human, View, optional_display, report};
 
 pub(super) fn run(ctx: &Context) -> Result<Report, CliError> {
-    let now = ctx.clock.now();
-    let mut lines = Vec::with_capacity(ctx.config.remotes.len());
-    let mut rows = Vec::with_capacity(ctx.config.remotes.len());
-    for r in &ctx.config.remotes {
-        let synced = Synced {
-            pulled: ctx.store.last_pull(&r.name)?,
-            pushed: ctx.store.last_push(&r.name)?,
-        };
-        lines.push(remote_line(r, &synced, now));
-        rows.push(remote_json(r, &synced));
-    }
-    Ok(Report {
-        human: lines.join("\n"),
-        data: serde_json::json!({ "remotes": rows }),
+    let remotes = ctx
+        .config
+        .remotes
+        .iter()
+        .map(|r| -> Result<RemoteRow<'_>, CliError> {
+            Ok(RemoteRow {
+                name: &r.name.0,
+                helper: &r.helper,
+                url: &r.url,
+                path: r.path.as_ref().map(|p| p.as_str()),
+                stale_seconds: r.stale.map(|s| s.as_secs()),
+                last_pull: ctx.store.last_pull(&r.name)?,
+                last_push: ctx.store.last_push(&r.name)?,
+            })
+        })
+        .collect::<Result<_, _>>()?;
+    report(&RemoteList {
+        remotes,
+        now: ctx.clock.now(),
     })
 }
 
-struct Synced {
-    pulled: Option<Timestamp>,
-    pushed: Option<Timestamp>,
+#[derive(Serialize)]
+struct RemoteList<'a> {
+    remotes: Vec<RemoteRow<'a>>,
+    #[serde(skip)]
+    now: Timestamp,
 }
 
-fn remote_line(r: &RemoteConfig, synced: &Synced, now: Timestamp) -> String {
-    let mut line = format!("{}  {}", r.name.0, r.url);
-    if let Some(p) = &r.path {
-        line.push_str(&format!("  path {}", p.as_str()));
-    }
-    if let Some(s) = r.stale {
-        line.push_str(&format!("  stale {}s", s.as_secs()));
-    }
-    line.push_str(&format!("  {}", when_phrase("pulled", synced.pulled, now)));
-    line.push_str(&format!("  {}", when_phrase("pushed", synced.pushed, now)));
-    line
+#[derive(Serialize)]
+struct RemoteRow<'a> {
+    name: &'a str,
+    helper: &'a str,
+    url: &'a str,
+    path: Option<&'a str>,
+    stale_seconds: Option<u64>,
+    #[serde(serialize_with = "optional_display")]
+    last_pull: Option<Timestamp>,
+    #[serde(serialize_with = "optional_display")]
+    last_push: Option<Timestamp>,
 }
 
-fn remote_json(r: &RemoteConfig, synced: &Synced) -> serde_json::Value {
-    serde_json::json!({
-        "name": r.name.0,
-        "helper": r.helper,
-        "url": r.url,
-        "path": r.path.as_ref().map(|p| p.as_str()),
-        "stale_seconds": r.stale.map(|s| s.as_secs()),
-        "last_pull": synced.pulled.map(|t| t.to_string()),
-        "last_push": synced.pushed.map(|t| t.to_string()),
-    })
+impl View for RemoteList<'_> {
+    fn human(&self) -> Human {
+        Human::Table(self.remotes.iter().map(|r| r.cells(self.now)).collect())
+    }
+}
+
+impl RemoteRow<'_> {
+    fn cells(&self, now: Timestamp) -> Vec<String> {
+        let mut cells = vec![self.name.to_string(), self.url.to_string()];
+        if let Some(p) = self.path {
+            cells.push(format!("path {p}"));
+        }
+        if let Some(s) = self.stale_seconds {
+            cells.push(format!("stale {s}s"));
+        }
+        cells.push(when_phrase("pulled", self.last_pull, now));
+        cells.push(when_phrase("pushed", self.last_push, now));
+        cells
+    }
 }
 
 fn when_phrase(verb: &str, at: Option<Timestamp>, now: Timestamp) -> String {
@@ -85,6 +102,7 @@ mod tests {
     use crate::args::{RemoteArgs, RemoteCommand};
     use crate::commands::remote::run_remote;
     use crate::testing::context;
+    use dam_application::RemoteConfig;
     use dam_application::RemoteName;
 
     #[test]

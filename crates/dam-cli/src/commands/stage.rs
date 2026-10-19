@@ -2,7 +2,7 @@ use dam_application::{add, add_all, reset, resolve_object};
 use dam_domain::Oid;
 
 use crate::args::{AddArgs, ResetArgs};
-use crate::commands::status::{change_json, change_line};
+use crate::commands::status::{ChangeRow, change_line};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
@@ -18,10 +18,7 @@ pub(crate) fn run_add(ctx: &mut Context, args: AddArgs) -> Result<Report, CliErr
             .collect::<Result<Vec<Oid>, _>>()?;
         add(ctx.store.as_ref(), ctx.store.as_ref(), &oids)?
     };
-    let staged: Vec<serde_json::Value> = changes
-        .iter()
-        .map(|c| change_json(c, false))
-        .collect::<Result<_, _>>()?;
+    let staged: Vec<ChangeRow> = changes.iter().map(|c| ChangeRow::new(c, false)).collect();
     Ok(Report {
         human: changes
             .iter()

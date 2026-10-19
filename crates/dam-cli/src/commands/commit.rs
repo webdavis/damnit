@@ -1,11 +1,13 @@
 use dam_application::{commit, log};
-use dam_domain::CommitRecord;
+use dam_domain::{CommitId, CommitRecord, Timestamp};
+use serde::Serialize;
 
 use crate::args::CommitArgs;
-use crate::commands::status::change_json;
+use crate::commands::status::ChangeRow;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
+use crate::view::{Human, View, display, report};
 
 pub(crate) fn run_commit(ctx: &mut Context, args: CommitArgs) -> Result<Report, CliError> {
     let record = commit(
@@ -15,48 +17,65 @@ pub(crate) fn run_commit(ctx: &mut Context, args: CommitArgs) -> Result<Report, 
         ctx.random.as_ref(),
         &args.message,
     )?;
-    Ok(Report {
-        human: commit_line(&record),
-        data: commit_json(&record)?,
-    })
+    report(&CommitDoc::new(&record))
 }
 
 pub(crate) fn run_log(ctx: &mut Context) -> Result<Report, CliError> {
     let records = log(ctx.store.as_ref())?;
-    let commits: Vec<serde_json::Value> =
-        records.iter().map(commit_json).collect::<Result<_, _>>()?;
-    Ok(Report {
-        human: records
-            .iter()
-            .map(commit_line)
-            .collect::<Vec<_>>()
-            .join("\n"),
-        data: serde_json::json!({ "commits": commits }),
+    report(&Log {
+        commits: records.iter().map(CommitDoc::new).collect(),
     })
 }
 
-pub(crate) fn commit_line(record: &CommitRecord) -> String {
-    format!(
-        "{}  {}  {} change(s)  {}",
-        record.id.short(),
-        record.at.strftime("%Y-%m-%d %H:%M"),
-        record.changes.len(),
-        record.message
-    )
+#[derive(Serialize)]
+struct Log<'a> {
+    commits: Vec<CommitDoc<'a>>,
 }
 
-pub(crate) fn commit_json(record: &CommitRecord) -> Result<serde_json::Value, CliError> {
-    let changes: Vec<serde_json::Value> = record
-        .changes
-        .iter()
-        .map(|c| change_json(c, false))
-        .collect::<Result<_, _>>()?;
-    Ok(serde_json::json!({
-        "id": record.id.to_string(),
-        "at": record.at.to_string(),
-        "message": record.message,
-        "changes": changes,
-    }))
+impl View for Log<'_> {
+    fn human(&self) -> Human {
+        Human::Table(self.commits.iter().map(CommitDoc::cells).collect())
+    }
+}
+
+#[derive(Serialize)]
+pub(crate) struct CommitDoc<'a> {
+    #[serde(serialize_with = "display")]
+    id: &'a CommitId,
+    #[serde(serialize_with = "display")]
+    at: &'a Timestamp,
+    message: &'a str,
+    pub(crate) changes: Vec<ChangeRow<'a>>,
+}
+
+impl<'a> CommitDoc<'a> {
+    pub(crate) fn new(record: &'a CommitRecord) -> CommitDoc<'a> {
+        CommitDoc {
+            id: &record.id,
+            at: &record.at,
+            message: &record.message,
+            changes: record
+                .changes
+                .iter()
+                .map(|c| ChangeRow::new(c, false))
+                .collect(),
+        }
+    }
+
+    pub(crate) fn cells(&self) -> Vec<String> {
+        vec![
+            self.id.short().to_string(),
+            self.at.strftime("%Y-%m-%d %H:%M").to_string(),
+            format!("{} change(s)", self.changes.len()),
+            self.message.to_string(),
+        ]
+    }
+}
+
+impl View for CommitDoc<'_> {
+    fn human(&self) -> Human {
+        Human::Table(vec![self.cells()])
+    }
 }
 
 #[cfg(test)]
