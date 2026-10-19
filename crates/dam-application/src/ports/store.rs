@@ -147,12 +147,7 @@ pub trait RemoteTrackingRepository {
 }
 
 pub trait ConflictRepository {
-    fn mark_conflict(
-        &self,
-        remote: &RemoteName,
-        oid: &Oid,
-        theirs: &Object,
-    ) -> Result<(), StoreError>;
+    fn mark_conflict(&self, conflict: &Conflict) -> Result<(), StoreError>;
     fn conflicts(&self) -> Result<Vec<Conflict>, StoreError>;
     fn clear_conflict(&self, oid: &Oid) -> Result<(), StoreError>;
 }

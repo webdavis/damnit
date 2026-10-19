@@ -1,4 +1,4 @@
-use crate::ports::{ConflictRepository, Notice, NoticeRepository, ObjectRepository};
+use crate::ports::{Conflict, ConflictRepository, Notice, NoticeRepository, ObjectRepository};
 
 use super::{oid, remote, task};
 
@@ -12,7 +12,14 @@ pub fn conflict_repository_contract(
     let ours = task(1, "ours", "");
     objects.put(&ours).unwrap();
     let theirs = task(1, "theirs", "");
-    conflicts.mark_conflict(&here, &oid(1), &theirs).unwrap();
+    conflicts
+        .mark_conflict(&Conflict {
+            remote: here.clone(),
+            oid: oid(1),
+            ours: ours.clone(),
+            theirs: theirs.clone(),
+        })
+        .unwrap();
 
     let held = conflicts.conflicts().unwrap();
     assert_eq!(held.len(), 1);
@@ -22,7 +29,14 @@ pub fn conflict_repository_contract(
     assert_eq!(held[0].theirs, theirs);
 
     let later = task(1, "theirs again", "");
-    conflicts.mark_conflict(&here, &oid(1), &later).unwrap();
+    conflicts
+        .mark_conflict(&Conflict {
+            remote: here.clone(),
+            oid: oid(1),
+            ours: ours.clone(),
+            theirs: later.clone(),
+        })
+        .unwrap();
     let held = conflicts.conflicts().unwrap();
     assert_eq!(held.len(), 1, "one oid conflicts once");
     assert_eq!(held[0].theirs, later);

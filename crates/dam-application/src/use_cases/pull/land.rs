@@ -34,13 +34,13 @@ pub(super) fn land(
                 }
                 note_cancelled(repos.objects, repos.notices, &o)?;
             }
-            Incoming::Conflict(o) => {
-                repos.conflicts.mark_conflict(&remote.name, &oid, &o)?;
+            Incoming::Conflict(conflict) => {
+                repos.conflicts.mark_conflict(&conflict)?;
                 repos
                     .remote_tracking
-                    .set_remote_snapshot(&remote.name, &o)?;
+                    .set_remote_snapshot(&remote.name, &conflict.theirs)?;
                 report.conflicts += 1;
-                note_cancelled(repos.objects, repos.notices, &o)?;
+                note_cancelled(repos.objects, repos.notices, &conflict.theirs)?;
             }
         }
     }

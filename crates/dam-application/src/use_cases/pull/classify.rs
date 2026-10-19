@@ -2,13 +2,13 @@ use dam_domain::{Object, Oid, kind_change, merge_fields};
 
 use crate::config::RemoteConfig;
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{Notice, Randomness, Repositories};
+use crate::ports::{Conflict, Notice, Randomness, Repositories};
 use crate::remote::{IncomingObject, RemoteCapabilities};
 
 pub(super) enum Incoming {
     Create(Object),
     FastForward(Object),
-    Conflict(Object),
+    Conflict(Box<Conflict>),
     Unchanged,
 }
 
@@ -81,7 +81,12 @@ pub(super) fn classify(
                     if committed.as_ref() != Some(l) || staged.contains(&oid) {
                         return Err(Refusal::DirtyOnPull { oid }.into());
                     }
-                    Incoming::Conflict(theirs)
+                    Incoming::Conflict(Box::new(Conflict {
+                        remote: remote.name.clone(),
+                        oid: oid.clone(),
+                        ours: l.clone(),
+                        theirs,
+                    }))
                 }
             }
         };

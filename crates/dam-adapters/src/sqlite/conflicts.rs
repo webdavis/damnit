@@ -1,7 +1,7 @@
 use dam_application::{
     Conflict, ConflictRepository, Notice, NoticeRepository, RemoteName, StoreError,
 };
-use dam_domain::{Object, Oid};
+use dam_domain::Oid;
 use rusqlite::params;
 
 use super::SqliteStore;
@@ -11,20 +11,18 @@ use super::objects::sql;
 const NOTICES_KEPT_FOR_AN_OPERATOR_WHO_NEVER_CLEARS_THEM: i64 = 1000;
 
 impl SqliteStore {
-    pub(super) fn record_conflict(
-        &self,
-        remote: &RemoteName,
-        oid: &Oid,
-        theirs: &Object,
-    ) -> Result<(), StoreError> {
-        let ours = self
-            .get_object(oid)?
-            .ok_or_else(|| StoreError::Failed("conflict on a missing object".into()))?;
+    pub(super) fn record_conflict(&self, conflict: &Conflict) -> Result<(), StoreError> {
+        let Conflict {
+            remote,
+            oid,
+            ours,
+            theirs,
+        } = conflict;
         self.conn
             .execute(
                 "INSERT INTO conflicts (oid, remote, ours_json, theirs_json) VALUES (?1, ?2, ?3, ?4)
                  ON CONFLICT(oid) DO UPDATE SET remote = excluded.remote, ours_json = excluded.ours_json, theirs_json = excluded.theirs_json",
-                params![oid.as_str(), remote.0, object_to_json(&ours)?, object_to_json(theirs)?],
+                params![oid.as_str(), remote.0, object_to_json(ours)?, object_to_json(theirs)?],
             )
             .map(|_| ())
             .map_err(sql)
@@ -143,13 +141,8 @@ impl SqliteStore {
 }
 
 impl ConflictRepository for SqliteStore {
-    fn mark_conflict(
-        &self,
-        remote: &RemoteName,
-        oid: &Oid,
-        theirs: &Object,
-    ) -> Result<(), StoreError> {
-        self.record_conflict(remote, oid, theirs)
+    fn mark_conflict(&self, conflict: &Conflict) -> Result<(), StoreError> {
+        self.record_conflict(conflict)
     }
     fn conflicts(&self) -> Result<Vec<Conflict>, StoreError> {
         self.all_conflicts()
