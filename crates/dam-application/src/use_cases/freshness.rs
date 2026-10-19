@@ -43,7 +43,7 @@ pub fn refresh_stale(
         let Some(window) = remote.stale else {
             continue;
         };
-        let age = age_of_last_pull(repos.remote_tracking, clock, &remote.name).unwrap_or(None);
+        let age = age_of_last_pull(repos.remote_tracking, clock, &remote.name)?;
         if is_stale(age, window) {
             let pulled = pull(
                 repos,

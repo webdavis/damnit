@@ -5,12 +5,12 @@ use jiff::civil::date;
 
 use super::*;
 use crate::config::{CredentialSpec, RemoteConfig};
-use crate::ports::{HelperError, Notice};
+use crate::ports::{HelperError, Notice, StoreError};
 use crate::remote::{IncomingObject, PullOutcome};
 use crate::testing::prelude::*;
 use crate::testing::{
-    EchoCredentials, FixedClock, FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
-    task_caps,
+    EchoCredentials, FaultyStore, FixedClock, FixedRandom, MemoryStore, ScriptedHelper,
+    ScriptedLauncher, oid, task_caps,
 };
 use dam_domain::{Object, Task};
 
@@ -141,4 +141,26 @@ fn a_remote_pulled_exactly_one_window_ago_is_fresh_and_one_second_later_stale() 
         1,
         "a pull older than the window is stale"
     );
+}
+
+#[test]
+fn a_store_error_reading_the_last_pull_fails_the_read_and_pulls_nothing() {
+    let store = FaultyStore::new(MemoryStore::new());
+    store.fail_reading_the_last_pull();
+    let launcher = answering(one_object());
+    let refused = refresh_stale(
+        Repositories::of(&store),
+        &launcher,
+        &EchoCredentials,
+        &clock(),
+        &FixedRandom::new(7),
+        &config(Some(MINUTE)),
+    );
+    assert_eq!(
+        refused,
+        Err(UseCaseError::Store(StoreError::Failed(
+            "the last pull could not be read".into()
+        )))
+    );
+    assert_eq!(launches(&launcher), 0);
 }
