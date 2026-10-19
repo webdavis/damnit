@@ -1,4 +1,3 @@
-use crate::testing::Fixture;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -8,7 +7,7 @@ use jiff::civil::date;
 use super::*;
 use crate::ports::Notice;
 
-fn meeting() -> dam_domain::Event {
+pub(super) fn meeting() -> dam_domain::Event {
     dam_domain::Event::new(
         oid(5),
         "meeting",
@@ -61,7 +60,7 @@ fn declaring(ids: &[&str], fields: Vec<Field>) -> ScriptedLauncher {
     }
 }
 
-fn run(store: &MemoryStore, ids: &[&str]) -> Result<Vec<PullReport>, UseCaseError> {
+pub(super) fn run(store: &MemoryStore, ids: &[&str]) -> Result<Vec<PullReport>, UseCaseError> {
     run_with(store, &cancelling(ids))
 }
 
@@ -187,19 +186,4 @@ fn a_committed_local_edit_and_a_cancellation_conflict_over_what_the_remote_held(
         (theirs.base.subject.as_str(), theirs.status),
         ("meeting", EventStatus::Cancelled)
     );
-}
-
-#[test]
-fn a_cancellation_for_an_event_with_no_snapshot_is_raised_against_the_working_copy() {
-    let store = MemoryStore::new();
-    store.put(&Object::Event(meeting())).unwrap();
-    let fixture = Fixture {
-        random: FixedRandom::new(9),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(&store);
-    dam.add_all().unwrap();
-    dam.commit("pulled").unwrap();
-    store.map_remote_id(&remote(), &oid(5), "e1").unwrap();
-    assert_eq!(run(&store, &["e1"]).unwrap()[0].conflicts, 1);
 }

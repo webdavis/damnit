@@ -1,5 +1,6 @@
 mod accepted_kinds;
 mod cancellations;
+mod cancelled_conflicts;
 mod conflicts_and_refusals;
 mod helper_failures;
 mod history;
