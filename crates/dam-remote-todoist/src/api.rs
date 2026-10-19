@@ -9,6 +9,11 @@ pub const PRODUCTION_BASE: &str = "https://api.todoist.com/api/v1";
 
 const SERVICE: &str = "Todoist";
 
+pub trait TodoistSync {
+    fn read_all(&self) -> Result<SyncResponse, ApiError>;
+    fn write(&self, commands: &[serde_json::Value]) -> Result<SyncWrite, ApiError>;
+}
+
 #[derive(Debug)]
 pub struct TodoistApi {
     agent: ureq::Agent,
@@ -31,13 +36,29 @@ impl TodoistApi {
         Ok(TodoistApi::new(&base, token.expose()))
     }
 
-    pub fn sync_all(&self) -> Result<SyncResponse, ApiError> {
+    fn authorization(&self) -> String {
+        format!("Bearer {}", self.token.expose())
+    }
+
+    fn post(&self, path: &str, body: &serde_json::Value) -> Result<serde_json::Value, ApiError> {
+        let response = self
+            .agent
+            .post(format!("{}{path}", self.base))
+            .header("Authorization", &self.authorization())
+            .send_json(body)
+            .map_err(|e| ApiError::transport(SERVICE, e))?;
+        json(response)
+    }
+}
+
+impl TodoistSync for TodoistApi {
+    fn read_all(&self) -> Result<SyncResponse, ApiError> {
         let body = serde_json::json!({ "sync_token": "*", "resource_types": ["projects", "sections", "items"] });
         let value = self.post("/sync", &body)?;
         serde_json::from_value(value).map_err(|e| ApiError::decode(SERVICE, e))
     }
 
-    pub fn sync_commands(&self, commands: &[serde_json::Value]) -> Result<SyncWrite, ApiError> {
+    fn write(&self, commands: &[serde_json::Value]) -> Result<SyncWrite, ApiError> {
         let encoded = serde_json::Value::Array(commands.to_vec()).to_string();
         let response = self
             .agent
@@ -47,24 +68,6 @@ impl TodoistApi {
             .map_err(|e| ApiError::transport(SERVICE, e))?;
         let value = json(response)?;
         serde_json::from_value(value).map_err(|e| ApiError::decode(SERVICE, e))
-    }
-
-    fn authorization(&self) -> String {
-        format!("Bearer {}", self.token.expose())
-    }
-
-    pub fn post(
-        &self,
-        path: &str,
-        body: &serde_json::Value,
-    ) -> Result<serde_json::Value, ApiError> {
-        let response = self
-            .agent
-            .post(format!("{}{path}", self.base))
-            .header("Authorization", &self.authorization())
-            .send_json(body)
-            .map_err(|e| ApiError::transport(SERVICE, e))?;
-        json(response)
     }
 }
 
@@ -76,5 +79,7 @@ fn json(response: ureq::http::Response<ureq::Body>) -> Result<serde_json::Value,
     serde_json::from_str(&text).map_err(|e| ApiError::decode(SERVICE, e))
 }
 
+#[cfg(test)]
+pub(crate) mod fake;
 #[cfg(test)]
 mod tests;

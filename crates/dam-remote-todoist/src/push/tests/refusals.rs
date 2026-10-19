@@ -1,17 +1,10 @@
-mod fixtures;
-
-use dam_helper::testing;
-use dam_remote_todoist::api::TodoistApi;
-use dam_remote_todoist::push::push;
-use fixtures::{mutation, sync_body, task, todoist, with_fields};
+use super::fixtures::{mutation, sync_body, task, with_fields};
+use crate::api::fake::FakeTodoist;
+use crate::push::push;
 
 #[test]
 fn a_project_path_change_and_a_section_done_change_are_refused_and_send_nothing() {
-    let _guard = testing::guard(
-        "a_project_path_change_and_a_section_done_change_are_refused_and_send_nothing",
-    );
-    let (server, recorded) = todoist(sync_body(), None);
-    let api = TodoistApi::new(&server.base, "tok");
+    let api = FakeTodoist::new(sync_body());
     let mutations = vec![
         with_fields(
             mutation(
@@ -46,16 +39,12 @@ fn a_project_path_change_and_a_section_done_change_are_refused_and_send_nothing(
         response.results[1].why(),
         Some("a Todoist section carries only its name; done did not change")
     );
-    assert!(recorded.lock().unwrap().executed.is_empty());
+    assert!(api.recorded.borrow().executed.is_empty());
 }
 
 #[test]
 fn a_rename_with_a_path_change_sends_the_rename_and_is_refused_for_the_path_only() {
-    let _guard = testing::guard(
-        "a_rename_with_a_path_change_sends_the_rename_and_is_refused_for_the_path_only",
-    );
-    let (server, recorded) = todoist(sync_body(), None);
-    let api = TodoistApi::new(&server.base, "tok");
+    let api = FakeTodoist::new(sync_body());
     let mutations = vec![with_fields(
         mutation(
             "update",
@@ -73,10 +62,36 @@ fn a_rename_with_a_path_change_sends_the_rename_and_is_refused_for_the_path_only
             "a Todoist project carries only its name and whether it is archived; path did not change"
         )
     );
-    let recorded = recorded.lock().unwrap();
+    let recorded = api.recorded.borrow();
     assert_eq!(recorded.types(), vec!["project_update"]);
     assert_eq!(
         recorded.command("project_update")["args"],
         serde_json::json!({"id": "p1", "name": "Chores"})
     );
+}
+
+#[test]
+fn a_hostile_remote_id_is_refused_and_never_reaches_a_command() {
+    let api = FakeTodoist::new(sync_body());
+    let mutations = vec![
+        mutation("delete", 1, Some("i:../../projects/p1"), None),
+        with_fields(
+            mutation(
+                "update",
+                2,
+                Some("i:i1?force=true"),
+                Some(task(&"2".repeat(40), "Work/", "milk", false)),
+            ),
+            &["subject"],
+        ),
+    ];
+    let response = push(&api, mutations).unwrap();
+    for result in &response.results {
+        assert!(!result.ok(), "{result:?}");
+        assert!(
+            result.why().unwrap().contains("unusable Todoist id"),
+            "{result:?}"
+        );
+    }
+    assert!(api.recorded.borrow().executed.is_empty());
 }

@@ -1,10 +1,8 @@
-mod fixtures;
-
-use dam_helper::testing;
 use dam_protocol::{WireObject, WireTask};
-use dam_remote_todoist::api::TodoistApi;
-use dam_remote_todoist::push::push;
-use fixtures::{mutation, sync_body, todoist, with_fields};
+
+use super::fixtures::{mutation, sync_body, with_fields};
+use crate::api::fake::FakeTodoist;
+use crate::push::push;
 
 const EVERY_FIELD: [&str; 9] = [
     "subject",
@@ -44,9 +42,7 @@ fn as_pulled(oid: &str, path: &str, subject: &str) -> WireObject {
 
 #[test]
 fn a_retry_declaring_every_field_with_only_the_name_differing_is_ok() {
-    let _guard = testing::guard("a_retry_declaring_every_field_with_only_the_name_differing_is_ok");
-    let (server, recorded) = todoist(sync_body(), None);
-    let api = TodoistApi::new(&server.base, "tok");
+    let api = FakeTodoist::new(sync_body());
     let mutations = vec![with_fields(
         mutation(
             "update",
@@ -59,18 +55,14 @@ fn a_retry_declaring_every_field_with_only_the_name_differing_is_ok() {
     let response = push(&api, mutations).unwrap();
     assert!(response.results[0].ok(), "{:?}", response.results[0].why());
     assert_eq!(
-        recorded.lock().unwrap().command("project_update")["args"],
+        api.recorded.borrow().command("project_update")["args"],
         serde_json::json!({"id": "p1", "name": "Chores"})
     );
 }
 
 #[test]
 fn a_path_change_among_every_declared_field_is_refused_for_the_path_only_until_reverted() {
-    let _guard = testing::guard(
-        "a_path_change_among_every_declared_field_is_refused_for_the_path_only_until_reverted",
-    );
-    let (server, _recorded) = todoist(sync_body(), None);
-    let api = TodoistApi::new(&server.base, "tok");
+    let api = FakeTodoist::new(sync_body());
     let moved = with_fields(
         mutation(
             "update",
@@ -103,11 +95,7 @@ fn a_path_change_among_every_declared_field_is_refused_for_the_path_only_until_r
 
 #[test]
 fn an_uncarried_field_counts_as_changed_only_when_it_differs_from_the_pulled_value() {
-    let _guard = testing::guard(
-        "an_uncarried_field_counts_as_changed_only_when_it_differs_from_the_pulled_value",
-    );
-    let (server, _recorded) = todoist(sync_body(), None);
-    let api = TodoistApi::new(&server.base, "tok");
+    let api = FakeTodoist::new(sync_body());
     let mut dated = as_pulled(&"7".repeat(40), "", "Work");
     dated.task.as_mut().unwrap().due = Some("2026-09-25".into());
     let mutations = vec![

@@ -1,11 +1,11 @@
 use dam_helper::testing;
 use std::collections::HashMap;
 
-use dam_remote_todoist::api::{ApiError, TodoistApi};
+use dam_remote_todoist::api::{ApiError, TodoistApi, TodoistSync};
 
 #[test]
-fn sync_all_sends_the_token_and_decodes_the_three_resources() {
-    let _guard = testing::guard("sync_all_sends_the_token_and_decodes_the_three_resources");
+fn read_all_sends_the_token_and_decodes_the_three_resources() {
+    let _guard = testing::guard("read_all_sends_the_token_and_decodes_the_three_resources");
     let mut routes = HashMap::new();
     routes.insert(
         "POST /sync",
@@ -21,7 +21,7 @@ fn sync_all_sends_the_token_and_decodes_the_three_resources() {
     );
     let server = testing::serve(routes);
     let api = TodoistApi::new(&server.base, "tok");
-    let sync = api.sync_all().unwrap();
+    let sync = api.read_all().unwrap();
     assert_eq!(sync.projects[0].name, "Work");
     assert_eq!(sync.sections[0].project_id, "p1");
     assert_eq!(sync.items[0].due.as_ref().unwrap().date, "2026-09-25");
@@ -52,7 +52,7 @@ fn a_write_sends_its_commands_as_a_form_field_and_reads_each_verdict() {
     );
     let server = testing::serve(routes);
     let written = TodoistApi::new(&server.base, "tok")
-        .sync_commands(&[
+        .write(&[
             serde_json::json!({"type": "item_add", "uuid": "u-0", "temp_id": "t-1", "args": {}}),
             serde_json::json!({"type": "item_close", "uuid": "u-1", "args": {}}),
         ])
@@ -74,7 +74,7 @@ fn an_http_failure_and_a_transport_failure_never_show_the_token() {
     let sentinel = "sentinel-token";
     let mut routes = HashMap::new();
     routes.insert(
-        "POST /tasks",
+        "POST /sync",
         vec![testing::Reply::json(
             403,
             serde_json::json!({"error": "forbidden"}),
@@ -82,7 +82,7 @@ fn an_http_failure_and_a_transport_failure_never_show_the_token() {
     );
     let server = testing::serve(routes);
     let http_err = TodoistApi::new(&server.base, sentinel)
-        .post("/tasks", &serde_json::json!({"content": "x"}))
+        .read_all()
         .unwrap_err();
     match &http_err {
         ApiError::Http { status, body, .. } => {
@@ -94,7 +94,7 @@ fn an_http_failure_and_a_transport_failure_never_show_the_token() {
     assert!(!http_err.to_string().contains(sentinel));
 
     let transport_err = TodoistApi::new("http://127.0.0.1:1", sentinel)
-        .post("/tasks", &serde_json::json!({}))
+        .read_all()
         .unwrap_err();
     assert!(matches!(transport_err, ApiError::Transport { .. }));
     assert!(!transport_err.to_string().contains(sentinel));
@@ -107,16 +107,14 @@ fn a_huge_error_body_is_bounded_to_one_short_line_before_it_becomes_a_notice() {
     let mut routes = HashMap::new();
     let huge = format!("{}\n{}", "x".repeat(100 * 1024), "tail");
     routes.insert(
-        "POST /tasks",
+        "POST /sync",
         vec![testing::Reply::json(
             500,
             serde_json::json!({ "error": huge }),
         )],
     );
     let server = testing::serve(routes);
-    let err = TodoistApi::new(&server.base, "tok")
-        .post("/tasks", &serde_json::json!({}))
-        .unwrap_err();
+    let err = TodoistApi::new(&server.base, "tok").read_all().unwrap_err();
     let ApiError::Http { body, .. } = &err else {
         panic!("{err:?}")
     };
@@ -132,12 +130,16 @@ fn a_huge_error_body_is_bounded_to_one_short_line_before_it_becomes_a_notice() {
 #[test]
 fn a_rate_limit_is_its_own_outcome_and_carries_the_retry_time() {
     let _guard = testing::guard("a_rate_limit_is_its_own_outcome_and_carries_the_retry_time");
-    let server = testing::serve_with(|seen| {
+    let calls = std::sync::Arc::new(std::sync::Mutex::new(0u32));
+    let counted = std::sync::Arc::clone(&calls);
+    let server = testing::serve_with(move |_| {
+        let mut n = counted.lock().unwrap();
+        *n += 1;
         let reply = testing::Reply::json(
             429,
             serde_json::json!({"error": "Rate limit exceeded", "error_extra": {"retry_after": 30}}),
         );
-        if seen.path == "/with-header" {
+        if *n == 1 {
             reply.with_header("Retry-After", "30")
         } else {
             reply
@@ -145,9 +147,7 @@ fn a_rate_limit_is_its_own_outcome_and_carries_the_retry_time() {
     });
     let api = TodoistApi::new(&server.base, "tok");
 
-    let with = api
-        .post("/with-header", &serde_json::json!({}))
-        .unwrap_err();
+    let with = api.read_all().unwrap_err();
     assert_eq!(
         with.retry_after(),
         Some(std::time::Duration::from_secs(30)),
@@ -156,7 +156,7 @@ fn a_rate_limit_is_its_own_outcome_and_carries_the_retry_time() {
     assert!(matches!(with, ApiError::RateLimited { .. }), "{with:?}");
     assert!(with.to_string().contains("30s"), "{with}");
 
-    let without = api.post("/no-header", &serde_json::json!({})).unwrap_err();
+    let without = api.read_all().unwrap_err();
     assert!(
         matches!(without, ApiError::RateLimited { .. }),
         "{without:?}"
@@ -179,7 +179,7 @@ fn a_redirected_write_is_not_followed_and_the_other_host_sees_nothing() {
     });
     let api = TodoistApi::new(&todoist.base, "tok");
     let err = api
-        .sync_commands(&[serde_json::json!({"type": "item_add", "uuid": "u-0", "args": {}})])
+        .write(&[serde_json::json!({"type": "item_add", "uuid": "u-0", "args": {}})])
         .unwrap_err();
     assert!(matches!(err, ApiError::Http { status: 307, .. }), "{err:?}");
     assert_eq!(todoist.seen.lock().unwrap().len(), 1);
