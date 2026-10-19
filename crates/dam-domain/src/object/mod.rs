@@ -4,6 +4,7 @@ mod task;
 
 use std::collections::BTreeSet;
 
+use crate::vocabulary::vocabulary;
 use crate::{Oid, Path, Recurrence};
 
 pub use event::{
@@ -18,22 +19,10 @@ pub enum Kind {
     Event,
 }
 
-impl Kind {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Kind::Task => "task",
-            Kind::Event => "event",
-        }
-    }
-
-    pub fn parse(name: &str) -> Option<Kind> {
-        match name {
-            "task" => Some(Kind::Task),
-            "event" => Some(Kind::Event),
-            _ => None,
-        }
-    }
-}
+vocabulary!(Kind {
+    Task => "task",
+    Event => "event",
+});
 
 impl std::fmt::Display for Kind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

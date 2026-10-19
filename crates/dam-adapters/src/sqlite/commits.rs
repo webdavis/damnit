@@ -3,7 +3,7 @@ use dam_domain::{Change, CommitId, CommitRecord, Oid};
 use rusqlite::{Connection, params};
 
 use super::SqliteStore;
-use super::codec::{object_to_json, op_to_text, read_changes};
+use super::codec::{object_to_json, read_changes};
 use super::objects::sql;
 
 impl CommitRepository for SqliteStore {
@@ -108,7 +108,7 @@ fn write_change(
     let after = change.after().map(object_to_json).transpose()?;
     conn.execute(
         "INSERT INTO commit_changes (commit_id, ord, oid, op, before_json, after_json) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        params![record.id.as_str(), ord as i64, oid, op_to_text(change.op()), before, after],
+        params![record.id.as_str(), ord as i64, oid, change.op().as_str(), before, after],
     )
     .map_err(sql)?;
     match after {

@@ -8,6 +8,7 @@ mod path;
 mod priority;
 mod query;
 mod recurrence;
+mod vocabulary;
 mod weekday;
 mod when;
 

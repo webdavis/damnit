@@ -3,10 +3,11 @@ mod parse;
 
 use std::num::NonZeroU32;
 
+use jiff::Span;
 use jiff::civil::Weekday;
-use jiff::{Span, ToSpan};
 
 use crate::Date;
+use crate::weekday::week_start;
 
 pub use error::RuleError;
 
@@ -155,11 +156,6 @@ impl Rule {
         }
         None
     }
-}
-
-fn week_start(date: Date) -> Date {
-    let back = date.weekday().since(Weekday::Monday) as i32;
-    date.checked_sub(back.days()).unwrap_or(date)
 }
 
 pub fn roll_forward(rule: &Rule, due: Date, completed_on: Date) -> Option<Date> {

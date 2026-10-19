@@ -14,8 +14,8 @@ fn an_object_round_trips_through_json() {
 
 #[test]
 fn ops_round_trip_and_bad_text_is_an_error() {
-    for op in [Op::Create, Op::Update, Op::Delete] {
-        assert_eq!(op_from_text(op_to_text(op)).unwrap(), op);
+    for op in Op::ALL {
+        assert_eq!(op_from_text(op.as_str()).unwrap(), op);
     }
     assert!(op_from_text("bogus").is_err());
 }

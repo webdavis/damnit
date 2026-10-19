@@ -108,3 +108,6 @@ mod tests;
 
 #[cfg(test)]
 mod pull_tests;
+
+#[cfg(test)]
+mod vocabulary_tests;
