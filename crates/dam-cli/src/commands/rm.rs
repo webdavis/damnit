@@ -40,7 +40,7 @@ pub(crate) fn run(ctx: &Context, args: RmArgs) -> Result<Report, CliError> {
     let plan = ctx.dam().remove(&oid)?;
     report(&Removed {
         oid: &oid,
-        descendants: &plan.descendants,
+        descendants: &plan.moved_up,
         dependents: &plan.dependents,
         attached: &plan.attached,
     })
