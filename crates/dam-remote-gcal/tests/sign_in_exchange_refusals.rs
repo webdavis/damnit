@@ -3,7 +3,7 @@ mod walk;
 use dam_helper::testing;
 use std::collections::HashMap;
 
-use dam_remote_gcal::SignInError;
+use dam_remote_gcal::{Refusal, SignInError};
 use testing::Reply;
 use walk::{CLIENT_SECRET, REFRESH, mint_with_the_browser_granting_code_c};
 
@@ -25,10 +25,10 @@ fn a_refused_exchange_names_the_status_and_googles_word_and_quotes_nothing() {
     let err = mint_with_the_browser_granting_code_c(&google).unwrap_err();
     assert_eq!(
         err,
-        SignInError::Exchange {
+        SignInError::Exchange(Refusal {
             status: Some(401),
             code: Some("invalid_client")
-        }
+        })
     );
     let said = err.to_string();
     assert!(
@@ -67,10 +67,10 @@ fn an_exchange_answer_that_is_not_json_is_reported_unreadable() {
     let err = mint_with_the_browser_granting_code_c(&google).unwrap_err();
     assert_eq!(
         err,
-        SignInError::Exchange {
+        SignInError::Exchange(Refusal {
             status: None,
             code: None
-        }
+        })
     );
     assert!(err.to_string().contains("could not be read"), "{err}");
 }
@@ -101,10 +101,10 @@ fn a_redirect_from_the_token_endpoint_is_its_answer_so_no_credential_follows_it(
     let err = mint_with_the_browser_granting_code_c(&google).unwrap_err();
     assert_eq!(
         err,
-        SignInError::Exchange {
+        SignInError::Exchange(Refusal {
             status: Some(307),
             code: None
-        }
+        })
     );
     assert!(
         elsewhere.seen().is_empty(),

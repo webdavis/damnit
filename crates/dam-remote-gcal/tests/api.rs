@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use dam_helper::ServiceError;
 use dam_remote_gcal::access::access_token;
-use dam_remote_gcal::{ApiError, Client, Credentials, Endpoints};
+use dam_remote_gcal::{ApiError, Client, Credentials, Endpoints, Refusal};
 use testing::Reply;
 
 const CLIENT_SECRET: &str = "GOCSPX-SUPERSECRETCLIENT";
@@ -97,14 +97,44 @@ fn an_answer_without_an_access_token_is_refused_without_quoting_it() {
     assert!(
         matches!(
             err,
-            ApiError::TokenRefused {
+            ApiError::TokenRefused(Refusal {
                 status: Some(200),
                 code: None
-            }
+            })
         ),
         "{err:?}"
     );
     assert!(!err.to_string().contains(REFRESH));
+}
+
+#[test]
+fn an_unreadable_refresh_answer_says_it_could_not_be_read() {
+    let _guard = testing::guard("an_unreadable_refresh_answer_says_it_could_not_be_read");
+    let google = token_route(Reply {
+        status: 200,
+        body: "<html>not json</html>".into(),
+        headers: vec![],
+    });
+    let err = access_token(
+        &dam_helper::agent(),
+        &Endpoints::loopback(&google.base).unwrap(),
+        &credentials(),
+    )
+    .unwrap_err();
+    assert!(
+        matches!(
+            err,
+            ApiError::TokenRefused(Refusal {
+                status: None,
+                code: None
+            })
+        ),
+        "{err:?}"
+    );
+    assert_eq!(
+        err.to_string(),
+        "the token exchange did not reach Google or its answer could not be read"
+    );
 }
 
 #[test]
@@ -123,10 +153,10 @@ fn an_empty_access_token_is_refused() {
     assert!(
         matches!(
             err,
-            ApiError::TokenRefused {
+            ApiError::TokenRefused(Refusal {
                 status: Some(200),
                 code: None
-            }
+            })
         ),
         "{err:?}"
     );
@@ -148,10 +178,10 @@ fn a_token_endpoint_nobody_answers_is_an_exchange_that_did_not_reach_google() {
     assert!(
         matches!(
             err,
-            ApiError::TokenRefused {
+            ApiError::TokenRefused(Refusal {
                 status: None,
                 code: None
-            }
+            })
         ),
         "{err:?}"
     );
