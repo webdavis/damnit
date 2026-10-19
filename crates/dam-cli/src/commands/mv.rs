@@ -1,13 +1,12 @@
-use dam_application::relocate;
+use dam_application::{relocate, resolve_object};
 
 use crate::args::MvArgs;
 use crate::context::Context;
 use crate::error::CliError;
-use crate::oids::resolve_oid;
 use crate::output::{Report, object_json, object_line};
 
 pub(crate) fn run(ctx: &mut Context, args: MvArgs) -> Result<Report, CliError> {
-    let oid = resolve_oid(ctx.store.as_ref(), &args.oid)?;
+    let oid = resolve_object(ctx.store.as_ref(), &args.oid)?;
     relocate(ctx.store.as_ref(), &oid, &args.path)?;
     let object = ctx
         .store

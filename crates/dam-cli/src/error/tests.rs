@@ -1,6 +1,6 @@
 use super::*;
 use crate::editor::EditorError;
-use dam_domain::{Blockers, QueryError};
+use dam_domain::{Blockers, Oid, QueryError};
 
 fn oid(byte: u8) -> Oid {
     Oid::generate(&mut |x: &mut [u8]| x.fill(byte))
@@ -43,15 +43,23 @@ fn the_message_is_the_sentence_the_human_form_prints() {
 
 #[test]
 fn an_ambiguous_prefix_is_a_usage_failure_listing_what_it_matched() {
-    let error = CliError::Ambiguous {
+    let error = CliError::from(Refusal::AmbiguousPrefix {
         text: "abab".into(),
-        matches: vec![oid(5), oid(6)],
-    };
+        matches: vec![oid(5).to_string(), oid(6).to_string()],
+    });
+    assert_eq!(error.exit_code(), 2);
     assert_eq!(error.document()["error"]["kind"], "usage");
     assert_eq!(
         error.document()["error"]["oids"],
         serde_json::json!([oid(5).to_string(), oid(6).to_string()])
     );
+}
+
+#[test]
+fn a_prefix_that_is_not_an_oid_is_a_usage_failure() {
+    let error = CliError::UseCase(UseCaseError::NotAnOid("f5".into()));
+    assert_eq!(error.exit_code(), 2);
+    assert_eq!(error.kind(), "usage");
 }
 
 #[test]

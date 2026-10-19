@@ -2,6 +2,7 @@ use std::fmt;
 
 use super::UseCaseError;
 use crate::ports::{CredentialError, HelperError, StoreError};
+use crate::use_cases::prefix::SHORTEST_OID_PREFIX;
 
 impl fmt::Display for UseCaseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -58,6 +59,10 @@ impl fmt::Display for UseCaseError {
             }
             UseCaseError::Parse(s) => write!(f, "{s}"),
             UseCaseError::Query(e) => write!(f, "{e}"),
+            UseCaseError::NotAnOid(text) => write!(
+                f,
+                "{text:?} is not an oid; give at least {SHORTEST_OID_PREFIX} hex characters"
+            ),
         }
     }
 }

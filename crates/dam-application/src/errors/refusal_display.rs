@@ -32,6 +32,14 @@ impl fmt::Display for Refusal {
                 f,
                 "no object in the working layer matches {s:?}; one removed from it is named by its full oid"
             ),
+            Refusal::AmbiguousPrefix { text, matches } => {
+                let shorts: Vec<&str> = matches.iter().map(|m| short(m)).collect();
+                write!(
+                    f,
+                    "{text} matches more than one object: {}",
+                    shorts.join(", ")
+                )
+            }
             Refusal::NoSuchRemote(s) => write!(f, "no remote named {s:?}"),
             Refusal::RemoteExists(name) => write!(f, "remote {name} already exists"),
             Refusal::NotATask(o) => {
@@ -123,3 +131,9 @@ fn open_blockers(blockers: &Blockers) -> String {
     }
     groups.join(" and ")
 }
+
+fn short(id: &str) -> &str {
+    id.get(..SHORT_ID_LENGTH).unwrap_or(id)
+}
+
+const SHORT_ID_LENGTH: usize = 7;

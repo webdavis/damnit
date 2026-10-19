@@ -3,7 +3,6 @@ mod commands;
 mod context;
 mod editor;
 mod error;
-mod oids;
 mod output;
 mod prompt;
 

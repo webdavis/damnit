@@ -1,16 +1,15 @@
 use dam_adapters::{parse_template, render_template};
-use dam_application::{EditFields, Refusal, edit};
+use dam_application::{EditFields, Refusal, edit, resolve_object};
 use dam_domain::Oid;
 
 use crate::args::EditArgs;
 use crate::commands::parsing::{deadline_flag, when_flag};
 use crate::context::Context;
 use crate::error::CliError;
-use crate::oids::resolve_oid;
 use crate::output::{Report, object_json, object_line};
 
 pub(crate) fn run(ctx: &mut Context, args: EditArgs) -> Result<Report, CliError> {
-    let oid = resolve_oid(ctx.store.as_ref(), &args.oid)?;
+    let oid = resolve_object(ctx.store.as_ref(), &args.oid)?;
     let fields = if args.editor {
         through_editor(ctx, &oid)?
     } else {
@@ -25,7 +24,8 @@ pub(crate) fn run(ctx: &mut Context, args: EditArgs) -> Result<Report, CliError>
 
 fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
     let oid_of = |flag: &str, text: &str| {
-        resolve_oid(ctx.store.as_ref(), text).map_err(|e| CliError::Usage(format!("--{flag}: {e}")))
+        resolve_object(ctx.store.as_ref(), text)
+            .map_err(|e| CliError::Usage(format!("--{flag}: {e}")))
     };
     let mut f = EditFields {
         subject: args.subject,

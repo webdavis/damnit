@@ -23,6 +23,10 @@ pub enum Refusal {
     },
     NoSuchObject(String),
     NoWorkingObject(String),
+    AmbiguousPrefix {
+        text: String,
+        matches: Vec<String>,
+    },
     NoSuchRemote(String),
     RemoteExists(String),
     NotATask(Oid),
@@ -61,6 +65,7 @@ pub enum UseCaseError {
     Credential(CredentialError),
     Parse(String),
     Query(QueryError),
+    NotAnOid(String),
 }
 
 impl Refusal {
@@ -73,6 +78,7 @@ impl Refusal {
             Refusal::NotACategoryValue { .. } => "not_a_category_value",
             Refusal::NoSuchObject(_) => "no_such_object",
             Refusal::NoWorkingObject(_) => "no_working_object",
+            Refusal::AmbiguousPrefix { .. } => "ambiguous_prefix",
             Refusal::NoSuchRemote(_) => "no_such_remote",
             Refusal::RemoteExists(_) => "remote_exists",
             Refusal::NotATask(_) => "not_a_task",

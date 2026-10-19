@@ -2,7 +2,6 @@ use std::fmt;
 
 use dam_adapters::{ConfigError, OpenError};
 use dam_application::{Refusal, StoreError, UseCaseError};
-use dam_domain::Oid;
 
 use crate::editor::EditorError;
 
@@ -17,7 +16,6 @@ pub(crate) enum CliError {
     Config(ConfigError),
     Open(OpenError),
     Usage(String),
-    Ambiguous { text: String, matches: Vec<Oid> },
     Cancelled,
     Io(String),
     Internal(String),
@@ -34,7 +32,8 @@ impl CliError {
     pub(crate) fn exit_code(&self) -> i32 {
         match self {
             CliError::Usage(_)
-            | CliError::Ambiguous { .. }
+            | CliError::UseCase(UseCaseError::Refused(Refusal::AmbiguousPrefix { .. }))
+            | CliError::UseCase(UseCaseError::NotAnOid(_))
             | CliError::UseCase(UseCaseError::Query(_)) => EXIT_USAGE_AS_CLAP_EXITS,
             CliError::Cancelled => EXIT_CANCELLED,
             CliError::UseCase(UseCaseError::Refused(_)) => EXIT_REFUSED_BY_A_RULE,
@@ -44,6 +43,8 @@ impl CliError {
 
     pub(crate) fn kind(&self) -> &'static str {
         match self {
+            CliError::UseCase(UseCaseError::Refused(Refusal::AmbiguousPrefix { .. }))
+            | CliError::UseCase(UseCaseError::NotAnOid(_)) => "usage",
             CliError::UseCase(UseCaseError::Refused(_)) => "refused",
             CliError::UseCase(UseCaseError::Store(_))
             | CliError::Open(_)
@@ -55,7 +56,7 @@ impl CliError {
             CliError::UseCase(UseCaseError::Parse(_))
             | CliError::UseCase(UseCaseError::Query(_))
             | CliError::Config(_) => "parse",
-            CliError::Usage(_) | CliError::Ambiguous { .. } => "usage",
+            CliError::Usage(_) => "usage",
             CliError::Cancelled => "cancelled",
             CliError::Internal(_) => "internal",
         }
@@ -64,13 +65,13 @@ impl CliError {
     pub(crate) fn oids_in_the_order_the_message_names_them(&self) -> Vec<String> {
         match self {
             CliError::UseCase(UseCaseError::Refused(refusal)) => refusal_oids(refusal),
-            CliError::Ambiguous { matches, .. } => matches.iter().map(Oid::to_string).collect(),
             _ => Vec::new(),
         }
     }
 
     pub(crate) fn rule(&self) -> Option<&'static str> {
         match self {
+            CliError::UseCase(UseCaseError::Refused(Refusal::AmbiguousPrefix { .. })) => None,
             CliError::UseCase(UseCaseError::Refused(refusal)) => Some(refusal.name()),
             _ => None,
         }
@@ -96,14 +97,6 @@ impl fmt::Display for CliError {
             CliError::Config(e) => write!(f, "{e}"),
             CliError::Open(e) => write!(f, "{e}"),
             CliError::Usage(s) | CliError::Io(s) | CliError::Internal(s) => f.write_str(s),
-            CliError::Ambiguous { text, matches } => {
-                let shorts: Vec<&str> = matches.iter().map(Oid::short).collect();
-                write!(
-                    f,
-                    "{text} matches more than one object: {}",
-                    shorts.join(", ")
-                )
-            }
             CliError::Cancelled => f.write_str("cancelled"),
         }
     }
