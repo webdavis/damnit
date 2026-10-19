@@ -2,6 +2,7 @@ mod accepted_kinds;
 mod cancellations;
 mod conflicts_and_refusals;
 mod helper_failures;
+mod history;
 mod kind_change;
 mod nameless_rejections;
 mod removals_and_notices;

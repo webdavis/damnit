@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 
-use dam_domain::{Change, CommitId, CommitRecord, Kind, Object, Oid, Path, Timestamp, coalesce};
+use dam_domain::{Change, CommitId, CommitRecord, Kind, Object, Oid, Path, Timestamp};
 
 use crate::errors::UseCaseError;
 use crate::ports::{
@@ -96,16 +96,11 @@ impl ObjectRepository for MemoryStore {
 }
 
 impl StageRepository for MemoryStore {
-    fn stage(&self, change: Change) -> Result<(), StoreError> {
-        let mut inner = self.0.borrow_mut();
-        let oid = change.oid.clone();
-        let merged = match inner.staged.remove(&oid) {
-            Some(existing) => coalesce(existing, change),
-            None => Some(change),
-        };
-        if let Some(c) = merged {
-            inner.staged.insert(oid, c);
-        }
+    fn put_staged(&self, change: Change) -> Result<(), StoreError> {
+        self.0
+            .borrow_mut()
+            .staged
+            .insert(change.oid().clone(), change);
         Ok(())
     }
     fn unstage(&self, oid: &Oid) -> Result<(), StoreError> {
@@ -125,11 +120,11 @@ impl CommitRepository for MemoryStore {
     fn commit(&self, record: &CommitRecord) -> Result<(), StoreError> {
         let mut inner = self.0.borrow_mut();
         for change in &record.changes {
-            match &change.after {
-                Some(after) => inner.committed.insert(change.oid.clone(), after.clone()),
-                None => inner.committed.remove(&change.oid),
+            match change.after() {
+                Some(after) => inner.committed.insert(change.oid().clone(), after.clone()),
+                None => inner.committed.remove(change.oid()),
             };
-            inner.staged.remove(&change.oid);
+            inner.staged.remove(change.oid());
         }
         inner.commits.push(record.clone());
         Ok(())

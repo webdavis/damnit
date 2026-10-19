@@ -1,4 +1,4 @@
-use dam_domain::{Completion, Event, Object, Oid, Path, Priority, Task, When, diff};
+use dam_domain::{Change, Completion, Event, Object, Oid, Path, Priority, Task, When};
 use jiff::civil::date;
 
 use super::change_json;
@@ -22,7 +22,7 @@ fn furnished_task() -> Object {
 
 #[test]
 fn an_edit_names_the_field_it_moved() {
-    let change = diff(&oid(1), Some(&task("a")), Some(&task("b"))).unwrap();
+    let change = Change::between(Some(task("a")), Some(task("b"))).unwrap();
     let document = change_json(&change, false).unwrap();
     assert_eq!(document["fields"], serde_json::json!(["subject"]));
 }
@@ -31,7 +31,7 @@ fn an_edit_names_the_field_it_moved() {
 fn a_reopened_task_names_done() {
     let mut completed = Task::new(oid(1), "a");
     completed.completion = Completion::Done { at: None };
-    let change = diff(&oid(1), Some(&Object::Task(completed)), Some(&task("a"))).unwrap();
+    let change = Change::between(Some(Object::Task(completed)), Some(task("a"))).unwrap();
     assert_eq!(
         change_json(&change, false).unwrap()["fields"],
         serde_json::json!(["done"])
@@ -40,7 +40,7 @@ fn a_reopened_task_names_done() {
 
 #[test]
 fn a_create_names_every_field_it_sets() {
-    let change = diff(&oid(1), None, Some(&furnished_task())).unwrap();
+    let change = Change::between(None, Some(furnished_task())).unwrap();
     assert_eq!(
         change_json(&change, false).unwrap()["fields"],
         serde_json::json!(["subject", "path", "labels", "priority", "due"])
@@ -49,7 +49,7 @@ fn a_create_names_every_field_it_sets() {
 
 #[test]
 fn a_delete_names_no_field() {
-    let change = diff(&oid(1), Some(&task("a")), None).unwrap();
+    let change = Change::between(Some(task("a")), None).unwrap();
     assert_eq!(
         change_json(&change, false).unwrap()["fields"],
         serde_json::json!([])
@@ -58,7 +58,7 @@ fn a_delete_names_no_field() {
 
 #[test]
 fn the_default_row_is_the_after_state_without_the_object() {
-    let change = diff(&oid(1), None, Some(&furnished_task())).unwrap();
+    let change = Change::between(None, Some(furnished_task())).unwrap();
     assert_eq!(
         change_json(&change, false).unwrap(),
         serde_json::json!({
@@ -80,7 +80,7 @@ fn the_default_row_is_the_after_state_without_the_object() {
 #[test]
 fn the_full_row_is_the_same_row_plus_the_objects() {
     let after = furnished_task();
-    let change = diff(&oid(1), None, Some(&after)).unwrap();
+    let change = Change::between(None, Some(after.clone())).unwrap();
     let full = change_json(&change, true).unwrap();
     let mut expected = change_json(&change, false).unwrap();
     expected["before"] = serde_json::Value::Null;
@@ -97,7 +97,7 @@ fn an_event_row_carries_its_start_and_end_in_place_of_the_task_fields() {
         When::Day(date(2026, 9, 25)),
         When::Day(date(2026, 9, 26)),
     ));
-    let change = diff(&oid(2), None, Some(&event)).unwrap();
+    let change = Change::between(None, Some(event.clone())).unwrap();
     assert_eq!(
         change_json(&change, false).unwrap(),
         serde_json::json!({
@@ -116,7 +116,7 @@ fn an_event_row_carries_its_start_and_end_in_place_of_the_task_fields() {
 
 #[test]
 fn a_delete_describes_the_object_it_removed() {
-    let change = diff(&oid(1), Some(&furnished_task()), None).unwrap();
+    let change = Change::between(Some(furnished_task()), None).unwrap();
     let document = change_json(&change, false).unwrap();
     assert_eq!(document["op"], "delete");
     assert_eq!(document["subject"], "buy oat milk");
@@ -129,7 +129,7 @@ fn a_completed_task_row_carries_when_it_was_completed_so_a_done_list_needs_no_lo
     completed.completion = Completion::Done {
         at: Some("2026-09-18T15:04:05Z".parse().unwrap()),
     };
-    let change = diff(&oid(1), Some(&task("a")), Some(&Object::Task(completed))).unwrap();
+    let change = Change::between(Some(task("a")), Some(Object::Task(completed))).unwrap();
     let document = change_json(&change, false).unwrap();
     assert_eq!(document["done"], true);
     assert_eq!(document["completed_at"], "2026-09-18T15:04:05Z");
@@ -137,7 +137,7 @@ fn a_completed_task_row_carries_when_it_was_completed_so_a_done_list_needs_no_lo
 
 #[test]
 fn an_open_task_row_carries_a_null_completion_time() {
-    let change = diff(&oid(1), None, Some(&task("a"))).unwrap();
+    let change = Change::between(None, Some(task("a"))).unwrap();
     let document = change_json(&change, false).unwrap();
     assert_eq!(document["completed_at"], serde_json::Value::Null);
 }

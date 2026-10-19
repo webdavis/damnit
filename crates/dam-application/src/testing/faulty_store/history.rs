@@ -7,9 +7,9 @@ use crate::ports::{
 use super::FaultyStore;
 
 impl StageRepository for FaultyStore {
-    fn stage(&self, change: Change) -> Result<(), StoreError> {
+    fn put_staged(&self, change: Change) -> Result<(), StoreError> {
         self.write()?;
-        self.inner.stage(change)
+        self.inner.put_staged(change)
     }
     fn unstage(&self, oid: &Oid) -> Result<(), StoreError> {
         self.write()?;

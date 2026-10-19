@@ -1,5 +1,5 @@
-use crate::ports::{CommitRepository, RemoteTrackingRepository};
-use dam_domain::{Change, CommitRecord, Op, Timestamp};
+use crate::ports::{CommitRepository, RemoteTrackingRepository, StageRepository};
+use dam_domain::{Change, CommitRecord, Timestamp};
 
 use super::{commit_id, oid, remote, task};
 
@@ -59,16 +59,29 @@ pub fn commit_repository_contract(commits: &dyn CommitRepository) {
     assert!(commits.push_retries(&here).unwrap().is_empty());
 }
 
+pub fn commit_clears_the_stage_contract(
+    stage: &dyn StageRepository,
+    commits: &dyn CommitRepository,
+) {
+    let committed = record(1, "committed", 1);
+    let left = record(2, "left staged", 2).changes.remove(0);
+    stage.put_staged(committed.changes[0].clone()).unwrap();
+    stage.put_staged(left.clone()).unwrap();
+    commits.commit(&committed).unwrap();
+    assert_eq!(
+        stage.staged().unwrap(),
+        vec![left],
+        "a commit unstages exactly the oids it committed"
+    );
+}
+
 pub(super) fn record(byte: u8, message: &str, object: u8) -> CommitRecord {
     CommitRecord {
         id: commit_id(byte),
         message: message.to_string(),
         at: Timestamp::UNIX_EPOCH,
-        changes: vec![Change {
-            oid: oid(object),
-            op: Op::Create,
-            before: None,
-            after: Some(task(object, message, "")),
+        changes: vec![Change::Create {
+            after: task(object, message, ""),
         }],
     }
 }

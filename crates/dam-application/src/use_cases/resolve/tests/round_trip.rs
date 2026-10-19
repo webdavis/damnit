@@ -142,7 +142,7 @@ fn ours_is_committed_and_the_conflict_is_not_raised_again() {
         .find(|c| c.message.contains("with ours"))
         .expect("the resolution is a commit of its own");
     assert_eq!(
-        resolution.changes[0].after.as_ref().unwrap().base().subject,
+        resolution.changes[0].after().unwrap().base().subject,
         "mine"
     );
 

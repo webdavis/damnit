@@ -1,6 +1,6 @@
 use crate::errors::UseCaseError;
 use crate::ports::{ObjectRepository, StageRepository, StoreError, Transactional};
-use dam_domain::{Change, Op};
+use dam_domain::Change;
 
 use super::{oid, task};
 
@@ -12,11 +12,8 @@ pub fn transactional_contract(
     transaction
         .in_transaction(&mut || {
             objects.put(&task(1, "kept", ""))?;
-            stage.stage(Change {
-                oid: oid(1),
-                op: Op::Create,
-                before: None,
-                after: Some(task(1, "kept", "")),
+            stage.put_staged(Change::Create {
+                after: task(1, "kept", ""),
             })?;
             Ok(())
         })

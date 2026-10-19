@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use dam_domain::{Change, CommitId, Kind, Object, Oid, diff};
+use dam_domain::{Change, CommitId, Kind, Object, Oid};
 
 use crate::errors::UseCaseError;
 use crate::ports::{
@@ -56,8 +56,8 @@ fn unpushed_for(
             continue;
         }
         for change in owed {
-            if named.insert(change.oid.clone()) {
-                oids.push(change.oid.clone());
+            if named.insert(change.oid().clone()) {
+                oids.push(change.oid().clone());
             }
         }
         commit_ids.push(record.id);
@@ -73,11 +73,7 @@ fn taken_by(accepted: Option<&[Kind]>, change: &Change) -> bool {
     let Some(kinds) = accepted else {
         return true;
     };
-    change
-        .after
-        .as_ref()
-        .or(change.before.as_ref())
-        .is_some_and(|object| kinds.contains(&object.kind()))
+    kinds.contains(&change.object().kind())
 }
 
 pub fn diff_staged(stage: &dyn StageRepository) -> Result<Vec<Change>, UseCaseError> {
@@ -92,20 +88,16 @@ pub fn diff_working(
     let staged: BTreeMap<Oid, Change> = stage
         .staged()?
         .into_iter()
-        .map(|c| (c.oid.clone(), c))
+        .map(|c| (c.oid().clone(), c))
         .collect();
     let mut out = Vec::new();
     for oid in working_and_ever_committed_oids(objects, commits)? {
         let committed_with_the_stage_applied: Option<Object> = match staged.get(&oid) {
-            Some(change) => change.after.clone(),
+            Some(change) => change.after().cloned(),
             None => objects.committed(&oid)?,
         };
         let working = objects.get(&oid)?;
-        if let Some(change) = diff(
-            &oid,
-            committed_with_the_stage_applied.as_ref(),
-            working.as_ref(),
-        ) {
+        if let Some(change) = Change::between(committed_with_the_stage_applied, working) {
             out.push(change);
         }
     }

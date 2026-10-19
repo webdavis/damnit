@@ -22,7 +22,12 @@ pub(super) fn classify(
     objects: Vec<IncomingObject>,
     random: &dyn Randomness,
 ) -> Result<Classified, UseCaseError> {
-    let staged: Vec<Oid> = repos.stage.staged()?.into_iter().map(|c| c.oid).collect();
+    let staged: Vec<Oid> = repos
+        .stage
+        .staged()?
+        .into_iter()
+        .map(|c| c.oid().clone())
+        .collect();
     let mut notices = repos.notices.notices()?;
     let mut planned = Vec::new();
     let mut new_remote_id_mappings = Vec::new();

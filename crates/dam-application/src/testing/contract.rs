@@ -5,7 +5,10 @@ mod unit_of_work;
 mod working;
 
 pub use accepted_kinds::accepted_kinds_repository_contract;
-pub use history::{commit_repository_contract, remote_tracking_repository_contract};
+pub use history::{
+    commit_clears_the_stage_contract, commit_repository_contract,
+    remote_tracking_repository_contract,
+};
 pub use reports::{conflict_repository_contract, notice_repository_contract};
 pub use unit_of_work::transactional_contract;
 pub use working::{object_repository_contract, stage_repository_contract};

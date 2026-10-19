@@ -56,3 +56,41 @@ fn an_update_of_an_object_the_remote_never_took_is_sent_as_a_create() {
     assert_eq!(sent.len(), 2);
     assert_eq!(sent[1].op, MutationOp::Create);
 }
+
+#[test]
+fn an_edit_and_its_undo_pushed_together_send_nothing() {
+    let store = MemoryStore::new();
+    let repos = Repositories::of(&store);
+    committed_task(&store, 1);
+    let (l, pushed) = launcher(|ms| {
+        ms.iter()
+            .map(|m| MutationOutcome {
+                oid: m.oid.clone(),
+                ok: true,
+                remote_id: None,
+                why: None,
+            })
+            .collect()
+    });
+    push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    for (subject, byte) in [("edited", 8), ("t1", 9)] {
+        store
+            .put(&Object::Task(Task::new(oid(1), subject)))
+            .unwrap();
+        add_all(&store, &store, &store).unwrap();
+        commit(
+            &store,
+            &store,
+            &FixedClock(date(2026, 9, 19)),
+            &FixedRandom::new(byte),
+            subject,
+        )
+        .unwrap();
+    }
+    push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
+    assert_eq!(
+        pushed.borrow().len(),
+        1,
+        "only the first push sent anything"
+    );
+}

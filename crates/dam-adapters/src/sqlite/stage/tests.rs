@@ -1,6 +1,6 @@
 use crate::SqliteStore;
 use dam_application::{CommitRepository, ObjectRepository, RemoteName, StageRepository};
-use dam_domain::{CommitId, CommitRecord, Object, Oid, Op, Path, Task, diff};
+use dam_domain::{Change, CommitId, CommitRecord, Object, Oid, Path, Task};
 
 fn oid(b: u8) -> Oid {
     Oid::generate(&mut |x: &mut [u8]| x.fill(b))
@@ -12,7 +12,7 @@ fn task(b: u8, path: &str) -> Object {
     Object::Task(t)
 }
 
-fn record(b: u8, changes: Vec<dam_domain::Change>) -> CommitRecord {
+fn record(b: u8, changes: Vec<Change>) -> CommitRecord {
     CommitRecord {
         id: CommitId::generate(&mut |x| x.fill(b)),
         message: "m".into(),
@@ -40,38 +40,15 @@ fn children_of_does_not_panic_on_a_non_matching_multibyte_path() {
 }
 
 #[test]
-fn stage_coalesces_and_commit_moves_the_stage_into_history() {
+fn commit_moves_the_stage_into_history() {
     let s = SqliteStore::in_memory().unwrap();
     let a = task(1, "");
     s.put(&a).unwrap();
-    s.stage(diff(&oid(1), None, Some(&a)).unwrap()).unwrap();
-    let mut b = a.clone();
-    b.base_mut().subject = "b".into();
-    s.stage(diff(&oid(1), Some(&a), Some(&b)).unwrap()).unwrap();
-    let staged = s.staged().unwrap();
-    assert_eq!(staged.len(), 1);
-    assert_eq!(staged[0].op, Op::Create);
-    assert_eq!(staged[0].after, Some(b.clone()));
-    s.commit(&record(9, staged)).unwrap();
+    s.put_staged(Change::Create { after: a.clone() }).unwrap();
+    s.commit(&record(9, s.staged().unwrap())).unwrap();
     assert!(s.staged().unwrap().is_empty());
-    assert_eq!(s.committed(&oid(1)).unwrap(), Some(b));
+    assert_eq!(s.committed(&oid(1)).unwrap(), Some(a));
     assert_eq!(s.log().unwrap().len(), 1);
-}
-
-#[test]
-fn commit_clears_only_the_oids_it_touched() {
-    let s = SqliteStore::in_memory().unwrap();
-    let a = task(1, "");
-    let b = task(2, "");
-    s.put(&a).unwrap();
-    s.put(&b).unwrap();
-    s.stage(diff(&oid(1), None, Some(&a)).unwrap()).unwrap();
-    s.stage(diff(&oid(2), None, Some(&b)).unwrap()).unwrap();
-    s.commit(&record(9, vec![diff(&oid(1), None, Some(&a)).unwrap()]))
-        .unwrap();
-    let left = s.staged().unwrap();
-    assert_eq!(left.len(), 1);
-    assert_eq!(left[0].oid, oid(2));
 }
 
 #[test]

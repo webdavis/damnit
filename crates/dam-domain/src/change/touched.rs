@@ -14,7 +14,7 @@ fn task(subject: &str) -> Object {
 fn an_edited_field_is_the_only_one_named() {
     let before = task("a");
     let after = task("b");
-    let change = diff(&oid(1), Some(&before), Some(&after)).unwrap();
+    let change = Change::between(Some(before), Some(after)).unwrap();
     assert_eq!(touched_fields(&change), vec![Field::Subject]);
 }
 
@@ -24,7 +24,7 @@ fn reopening_a_task_names_done_alone() {
     done.completion = Completion::Done { at: None };
     let before = Object::Task(done);
     let after = task("a");
-    let change = diff(&oid(1), Some(&before), Some(&after)).unwrap();
+    let change = Change::between(Some(before), Some(after)).unwrap();
     assert_eq!(touched_fields(&change), vec![Field::Done]);
 }
 
@@ -34,7 +34,7 @@ fn a_create_names_every_field_it_sets_and_no_default() {
     t.priority = Priority::new(1).unwrap();
     t.due = Some(When::Day(date(2026, 9, 25)));
     t.base.path = Path::parse("work").unwrap();
-    let change = diff(&oid(1), None, Some(&Object::Task(t))).unwrap();
+    let change = Change::between(None, Some(Object::Task(t))).unwrap();
     assert_eq!(
         touched_fields(&change),
         vec![Field::Subject, Field::Path, Field::Priority, Field::Due]
@@ -43,12 +43,12 @@ fn a_create_names_every_field_it_sets_and_no_default() {
 
 #[test]
 fn a_bare_create_names_its_subject_alone() {
-    let change = diff(&oid(1), None, Some(&task("a"))).unwrap();
+    let change = Change::between(None, Some(task("a"))).unwrap();
     assert_eq!(touched_fields(&change), vec![Field::Subject]);
 }
 
 #[test]
 fn a_delete_names_nothing() {
-    let change = diff(&oid(1), Some(&task("a")), None).unwrap();
+    let change = Change::between(Some(task("a")), None).unwrap();
     assert!(touched_fields(&change).is_empty());
 }

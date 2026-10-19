@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use dam_domain::{Change, Oid, diff};
+use dam_domain::{Change, Oid};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{CommitRepository, ObjectRepository, StageRepository};
@@ -26,9 +26,9 @@ fn stage_each(
         if working.is_none() && committed.is_none() {
             return Err(Refusal::NoSuchObject(oid.short().to_string()).into());
         }
-        match diff(oid, committed.as_ref(), working.as_ref()) {
+        match Change::between(committed, working) {
             Some(change) => {
-                stage.stage(change.clone())?;
+                stage.put_staged(change.clone())?;
                 staged.push(change);
             }
             None => stage.unstage(oid)?,
@@ -48,7 +48,7 @@ pub(crate) fn working_and_ever_committed_oids(
         .collect();
     for record in commits.log()? {
         for change in record.changes {
-            oids.insert(change.oid);
+            oids.insert(change.oid().clone());
         }
     }
     Ok(oids)
@@ -97,7 +97,7 @@ mod tests {
         let id = seed(&store, 1);
         let staged = add(&store, &store, &[id]).unwrap();
         assert_eq!(staged.len(), 1);
-        assert_eq!(staged[0].op, Op::Create);
+        assert_eq!(staged[0].op(), Op::Create);
         assert_eq!(store.staged().unwrap().len(), 1);
     }
 
@@ -154,7 +154,7 @@ mod tests {
         store.commit(&record).unwrap();
         store.delete(&id).unwrap();
         let staged = add_all(&store, &store, &store).unwrap();
-        assert_eq!(staged[0].op, Op::Delete);
+        assert_eq!(staged[0].op(), Op::Delete);
     }
 
     #[test]

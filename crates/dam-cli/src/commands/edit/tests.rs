@@ -184,12 +184,9 @@ fn undone_reopens_a_completed_task_as_one_update_naming_done() {
         dam_application::diff_working(ctx.store.as_ref(), ctx.store.as_ref(), ctx.store.as_ref())
             .unwrap();
     assert_eq!(changes.len(), 1);
-    assert_eq!(changes[0].op, dam_domain::Op::Update);
+    assert_eq!(changes[0].op(), dam_domain::Op::Update);
     assert_eq!(
-        dam_domain::changed_fields(
-            changes[0].before.as_ref().unwrap(),
-            changes[0].after.as_ref().unwrap()
-        ),
+        dam_domain::changed_fields(changes[0].before().unwrap(), changes[0].after().unwrap()),
         vec![dam_domain::Field::Done]
     );
 }

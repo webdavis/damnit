@@ -49,7 +49,7 @@ fn theirs_takes_the_upstream_version() {
     assert!(store.conflicts().unwrap().is_empty());
     let owed = store.unpushed(&remote()).unwrap();
     assert_eq!(
-        owed[0].changes[0].after.as_ref().unwrap().base().subject,
+        owed[0].changes[0].after().unwrap().base().subject,
         "theirs",
         "what is owed upstream ends at theirs, so a push cannot send ours back"
     );

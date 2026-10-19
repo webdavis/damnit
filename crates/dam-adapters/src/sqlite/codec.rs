@@ -33,18 +33,22 @@ pub(super) fn op_from_text(s: &str) -> Result<Op, StoreError> {
     }
 }
 
-pub(super) fn change_from_row(
-    oid: &str,
+fn change_from_row(
     op: &str,
     before: Option<String>,
     after: Option<String>,
 ) -> Result<Change, StoreError> {
-    Ok(Change {
-        oid: Oid::parse(oid).map_err(|e| StoreError::Failed(e.to_string()))?,
-        op: op_from_text(op)?,
-        before: before.map(|j| object_from_json(&j)).transpose()?,
-        after: after.map(|j| object_from_json(&j)).transpose()?,
-    })
+    let op = op_from_text(op)?;
+    let before = before.map(|j| object_from_json(&j)).transpose()?;
+    let after = after.map(|j| object_from_json(&j)).transpose()?;
+    Change::between(before, after)
+        .filter(|change| change.op() == op)
+        .ok_or_else(|| {
+            StoreError::Failed(format!(
+                "stored {} change disagrees with its before and after",
+                op_to_text(op)
+            ))
+        })
 }
 
 pub(super) fn read_changes(
@@ -54,15 +58,14 @@ pub(super) fn read_changes(
     stmt.query_map(params, |r| {
         Ok((
             r.get::<_, String>(0)?,
-            r.get::<_, String>(1)?,
+            r.get::<_, Option<String>>(1)?,
             r.get::<_, Option<String>>(2)?,
-            r.get::<_, Option<String>>(3)?,
         ))
     })
     .map_err(sql)?
     .map(|r| {
         r.map_err(sql)
-            .and_then(|(o, op, b, a)| change_from_row(&o, &op, b, a))
+            .and_then(|(op, b, a)| change_from_row(&op, b, a))
     })
     .collect()
 }
@@ -188,59 +191,4 @@ pub(super) fn notice_from_json(s: &str) -> Result<Notice, StoreError> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use dam_application::{Notice, RemoteName};
-    use dam_domain::{Object, Oid, Task};
-
-    fn oid(b: u8) -> Oid {
-        Oid::generate(&mut |x: &mut [u8]| x.fill(b))
-    }
-
-    #[test]
-    fn an_object_round_trips_through_json() {
-        let o = Object::Task(Task::new(oid(1), "milk"));
-        assert_eq!(object_from_json(&object_to_json(&o).unwrap()).unwrap(), o);
-    }
-
-    #[test]
-    fn ops_round_trip_and_bad_text_is_an_error() {
-        for op in [Op::Create, Op::Update, Op::Delete] {
-            assert_eq!(op_from_text(op_to_text(op)).unwrap(), op);
-        }
-        assert!(op_from_text("bogus").is_err());
-    }
-
-    #[test]
-    fn every_notice_variant_round_trips() {
-        let notices = vec![
-            Notice::RemovedUpstream {
-                remote: RemoteName("t".into()),
-                oid: oid(1),
-                subject: "s".into(),
-            },
-            Notice::EventCancelled {
-                oid: oid(2),
-                subject: "e".into(),
-                attached: 3,
-            },
-            Notice::PushFailed {
-                remote: RemoteName("t".into()),
-                oid: oid(3),
-                why: "w".into(),
-            },
-            Notice::PullFailed {
-                remote: RemoteName("t".into()),
-                why: "w".into(),
-            },
-            Notice::KindChanged {
-                oid: oid(4),
-                ours: Kind::Task,
-                theirs: Kind::Event,
-            },
-        ];
-        for n in notices {
-            assert_eq!(notice_from_json(&notice_to_json(&n).unwrap()).unwrap(), n);
-        }
-    }
-}
+mod tests;

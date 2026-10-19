@@ -5,25 +5,18 @@ use crate::error::CliError;
 use crate::output::object_json;
 
 pub(crate) fn change_line(change: &Change) -> String {
-    let subject = change
-        .after
-        .as_ref()
-        .or(change.before.as_ref())
-        .map(|o| o.base().subject.as_str())
-        .unwrap_or("");
-    match change.op {
-        Op::Create => format!("new      {}  {subject}", change.oid.short()),
-        Op::Delete => format!("removed  {}  {subject}", change.oid.short()),
-        Op::Update => {
-            let fields = match (&change.before, &change.after) {
-                (Some(b), Some(a)) => changed_fields(b, a)
-                    .iter()
-                    .map(|f| f.as_str())
-                    .collect::<Vec<_>>()
-                    .join(", "),
-                _ => String::new(),
-            };
-            format!("changed  {}  {subject}  ({fields})", change.oid.short())
+    let subject = &change.object().base().subject;
+    let oid = change.oid().short();
+    match change {
+        Change::Create { .. } => format!("new      {oid}  {subject}"),
+        Change::Delete { .. } => format!("removed  {oid}  {subject}"),
+        Change::Update { before, after } => {
+            let fields = changed_fields(before, after)
+                .iter()
+                .map(|f| f.as_str())
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!("changed  {oid}  {subject}  ({fields})")
         }
     }
 }
@@ -31,13 +24,13 @@ pub(crate) fn change_line(change: &Change) -> String {
 pub(crate) fn change_json(change: &Change, full: bool) -> Result<serde_json::Value, CliError> {
     let fields: Vec<&str> = touched_fields(change).iter().map(Field::as_str).collect();
     let mut row = serde_json::Map::new();
-    row.insert("oid".into(), change.oid.to_string().into());
-    row.insert("op".into(), op_name(change.op).into());
+    row.insert("oid".into(), change.oid().to_string().into());
+    row.insert("op".into(), op_name(change.op()).into());
     row.insert("fields".into(), fields.into());
     row.extend(state_left_behind_or_the_removed_objects_json(change));
     if full {
-        let before = change.before.as_ref().map(object_json).transpose()?;
-        let after = change.after.as_ref().map(object_json).transpose()?;
+        let before = change.before().map(object_json).transpose()?;
+        let after = change.after().map(object_json).transpose()?;
         row.insert("before".into(), before.into());
         row.insert("after".into(), after.into());
     }
@@ -56,9 +49,7 @@ fn state_left_behind_or_the_removed_objects_json(
     change: &Change,
 ) -> serde_json::Map<String, serde_json::Value> {
     let mut state = serde_json::Map::new();
-    let Some(object) = change.after.as_ref().or(change.before.as_ref()) else {
-        return state;
-    };
+    let object = change.object();
     let base = object.base();
     state.insert("kind".into(), object.kind().as_str().into());
     state.insert("subject".into(), base.subject.clone().into());
