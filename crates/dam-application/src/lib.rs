@@ -1,7 +1,6 @@
 mod config;
 mod credentials;
 mod errors;
-mod merge;
 mod ports;
 mod remote;
 mod secret;
@@ -15,7 +14,6 @@ pub use dam_domain::{
     Blocker, ChildDisposition, DependencyDisposition, Dispositions, Force, Tracked,
 };
 pub use errors::{Refusal, UseCaseError};
-pub use merge::{kind_change, merge_fields};
 pub use ports::{
     AcceptedKindsRepository, Clock, CommitRepository, Conflict, ConflictRepository,
     CredentialError, CredentialSource, EditorError, EditorSession, HelperError, HelperLauncher,
