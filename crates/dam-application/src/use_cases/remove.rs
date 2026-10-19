@@ -9,7 +9,7 @@ use crate::use_cases::subtree::{children, move_into};
 
 pub struct RemovePlan {
     pub oid: Oid,
-    pub descendants: Vec<Oid>,
+    pub moved_up: Vec<Oid>,
     pub dependents: Vec<Oid>,
     pub attached: Vec<Oid>,
 }
@@ -23,7 +23,7 @@ impl Dam<'_> {
         atomically(self.store, || {
             let object = load(self.store, oid)?;
             let plan = plan_for(self.store, &object)?;
-            for child in &plan.descendants {
+            for child in &plan.moved_up {
                 move_into(self.store, child, &object.base().path)?;
             }
             for dependent in &plan.dependents {
@@ -40,7 +40,7 @@ impl Dam<'_> {
 
 fn plan_for(objects: &dyn ObjectRepository, object: &Object) -> Result<RemovePlan, UseCaseError> {
     let oid = object.oid();
-    let descendants = children(objects, object.base())?
+    let moved_up = children(objects, object.base())?
         .iter()
         .map(|o| o.oid().clone())
         .collect();
@@ -53,7 +53,7 @@ fn plan_for(objects: &dyn ObjectRepository, object: &Object) -> Result<RemovePla
         .collect();
     Ok(RemovePlan {
         oid: oid.clone(),
-        descendants,
+        moved_up,
         dependents,
         attached,
     })
@@ -98,7 +98,7 @@ mod tests {
         let fixture = Fixture::default();
         let dam = fixture.dam(&store);
         let found = dam.plan_remove(&plan).unwrap();
-        assert_eq!(found.descendants, vec![step]);
+        assert_eq!(found.moved_up, vec![step]);
         assert_eq!(found.dependents, vec![d]);
     }
 
@@ -112,7 +112,7 @@ mod tests {
         let fixture = Fixture::default();
         let dam = fixture.dam(&store);
         let removed = dam.remove(&plan).unwrap();
-        assert_eq!(removed.descendants, vec![step.clone(), note.clone()]);
+        assert_eq!(removed.moved_up, vec![step.clone(), note.clone()]);
         assert_eq!(path_of(&store, &step), "work/");
         assert_eq!(path_of(&store, &note), "work/");
         assert_eq!(path_of(&store, &detail), "work/step/");
@@ -144,7 +144,7 @@ mod tests {
         let fixture = Fixture::default();
         let dam = fixture.dam(&store);
         let plan = dam.remove(&offsite).unwrap();
-        assert!(plan.descendants.is_empty());
+        assert!(plan.moved_up.is_empty());
         assert_eq!(path_of(&store, &note), "work/clients/");
         assert_eq!(path_of(&store, &another), "work/clients/acme/");
     }
