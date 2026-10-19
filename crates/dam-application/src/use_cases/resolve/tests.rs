@@ -1,49 +1,41 @@
 mod round_trip;
 
 use super::*;
-use crate::ports::{Conflict, RemoteName};
-use crate::service::Dam;
+use crate::ports::Conflict;
 use crate::testing::prelude::*;
-use crate::testing::{FaultyStore, FixedRandom, Fixture, MemoryStore, oid};
+use crate::testing::{FaultyStore, Scenario, oid, todoist};
 use dam_domain::{Object, Task};
 
-pub(super) fn remote() -> RemoteName {
-    RemoteName("todoist".into())
+fn conflict_over_mine() -> Conflict {
+    Conflict {
+        remote: todoist(),
+        oid: oid(1),
+        ours: Object::Task(Task::new(oid(1), "mine")),
+        theirs: Object::Task(Task::new(oid(1), "theirs")),
+    }
 }
 
-fn conflicted() -> MemoryStore {
-    let store = MemoryStore::new();
-    store.put(&Object::Task(Task::new(oid(1), "mine"))).unwrap();
-    store
-        .mark_conflict(&Conflict {
-            remote: remote(),
-            oid: oid(1),
-            ours: Object::Task(Task::new(oid(1), "mine")),
-            theirs: Object::Task(Task::new(oid(1), "theirs")),
-        })
-        .unwrap();
-    store
+fn conflicted() -> Scenario {
+    let s = Scenario::default();
+    s.working(Object::Task(Task::new(oid(1), "mine")));
+    s.store.mark_conflict(&conflict_over_mine()).unwrap();
+    s
 }
 
 #[test]
 fn theirs_takes_the_upstream_version() {
-    let store = conflicted();
-    let fixture = Fixture {
-        random: FixedRandom::new(3),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(&store);
-    dam.resolve(&oid(1), Side::Theirs).unwrap();
+    let s = conflicted();
+    s.dam().resolve(&oid(1), Side::Theirs).unwrap();
     assert_eq!(
-        store.get(&oid(1)).unwrap().unwrap().base().subject,
+        s.store.get(&oid(1)).unwrap().unwrap().base().subject,
         "theirs"
     );
     assert_eq!(
-        store.committed(&oid(1)).unwrap().unwrap().base().subject,
+        s.store.committed(&oid(1)).unwrap().unwrap().base().subject,
         "theirs"
     );
-    assert!(store.conflicts().unwrap().is_empty());
-    let owed = store.unpushed(&remote()).unwrap();
+    assert!(s.store.conflicts().unwrap().is_empty());
+    let owed = s.store.unpushed(&todoist()).unwrap();
     assert_eq!(
         owed[0].changes[0].after().unwrap().base().subject,
         "theirs",
@@ -53,75 +45,46 @@ fn theirs_takes_the_upstream_version() {
 
 #[test]
 fn resolving_with_ours_leaves_an_existing_unpushed_commit_untouched() {
-    let store = MemoryStore::new();
-    store.put(&Object::Task(Task::new(oid(1), "mine"))).unwrap();
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
-    dam.add_all().unwrap();
-    let created = Dam {
-        random: &FixedRandom::new(1),
-        ..dam
-    }
-    .commit("m")
-    .unwrap();
-    store
-        .mark_conflict(&Conflict {
-            remote: remote(),
-            oid: oid(1),
-            ours: Object::Task(Task::new(oid(1), "mine")),
-            theirs: Object::Task(Task::new(oid(1), "theirs")),
-        })
-        .unwrap();
-    Dam {
-        random: &FixedRandom::new(3),
-        ..dam
-    }
-    .resolve(&oid(1), Side::Ours)
-    .unwrap();
-    let unpushed: Vec<_> = store
-        .unpushed(&remote())
+    let s = Scenario::default();
+    s.committed(Object::Task(Task::new(oid(1), "mine")));
+    let created = s.store.log().unwrap()[0].id.clone();
+    s.store.mark_conflict(&conflict_over_mine()).unwrap();
+    s.dam().resolve(&oid(1), Side::Ours).unwrap();
+    let unpushed: Vec<_> = s
+        .store
+        .unpushed(&todoist())
         .unwrap()
         .into_iter()
         .map(|c| c.id)
         .collect();
     assert!(
-        unpushed.contains(&created.id),
+        unpushed.contains(&created),
         "the commit that already carried ours is still owed to the remote"
     );
 }
 
 #[test]
 fn ours_keeps_the_local_version() {
-    let store = conflicted();
-    let fixture = Fixture {
-        random: FixedRandom::new(3),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(&store);
-    dam.resolve(&oid(1), Side::Ours).unwrap();
-    assert_eq!(store.get(&oid(1)).unwrap().unwrap().base().subject, "mine");
-    assert!(store.conflicts().unwrap().is_empty());
+    let s = conflicted();
+    s.dam().resolve(&oid(1), Side::Ours).unwrap();
+    assert_eq!(
+        s.store.get(&oid(1)).unwrap().unwrap().base().subject,
+        "mine"
+    );
+    assert!(s.store.conflicts().unwrap().is_empty());
 }
 
 #[test]
 fn resolving_a_non_conflict_is_refused() {
-    let store = MemoryStore::new();
-    let fixture = Fixture {
-        random: FixedRandom::new(3),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(&store);
-    let err = dam.resolve(&oid(1), Side::Ours).unwrap_err();
+    let s = Scenario::default();
+    let err = s.dam().resolve(&oid(1), Side::Ours).unwrap_err();
     assert_eq!(err, UseCaseError::Refused(Refusal::NoConflict(oid(1))));
 }
 
 #[test]
 fn resolve_that_fails_between_its_writes_changes_nothing() {
-    let store = FaultyStore::new(conflicted());
-    let fixture = Fixture {
-        random: FixedRandom::new(3),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(&store);
+    let s = conflicted();
+    let store = FaultyStore::new(s.store.clone());
+    let dam = s.fixture.dam(&store);
     store.assert_unchanged_when_any_write_fails(|| dam.resolve(&oid(1), Side::Theirs));
 }

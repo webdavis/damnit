@@ -1,69 +1,48 @@
-mod doubles;
-
 use super::super::*;
-use super::remote;
-use crate::service::Dam;
+use crate::remote::{IncomingObject, PullOutcome};
 use crate::testing::prelude::*;
-use crate::testing::{FixedClock, FixedRandom, Fixture, MemoryStore, oid, remotes_launched_by};
-use dam_domain::{Object, Task};
-use doubles::{
-    config, launcher_that_accepts_every_push, recording_launcher_that_accepts_every_push, upstream,
+use crate::testing::{
+    Scenario, ScriptedLauncher, accepting_all, oid, pulling, pushing, remotes_launched_by, todoist,
 };
-use jiff::civil::date;
+use dam_domain::{Object, Task};
 
-fn both_sides_moved_off_one_base() -> MemoryStore {
-    let store = MemoryStore::new();
-    store.put(&Object::Task(Task::new(oid(1), "base"))).unwrap();
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
-    dam.add_all().unwrap();
-    Dam {
-        random: &FixedRandom::new(9),
-        ..dam
-    }
-    .commit("base")
-    .unwrap();
-    store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
-    store
-        .set_remote_snapshot(&remote(), &Object::Task(Task::new(oid(1), "base")))
+fn sending_r1_as_theirs() -> ScriptedLauncher {
+    pulling(PullOutcome {
+        objects: vec![IncomingObject {
+            remote_id: "r1".into(),
+            object: Object::Task(Task::new(oid(0), "theirs")),
+        }],
+        ..PullOutcome::default()
+    })
+}
+
+fn both_sides_moved_off_one_base() -> Scenario {
+    let s = Scenario::default().drawing_from(42);
+    s.committed(Object::Task(Task::new(oid(1), "base")))
+        .tracked_as(&oid(1), "r1")
+        .committed(Object::Task(Task::new(oid(1), "mine")));
+    let reports = s
+        .dam()
+        .pull(remotes_launched_by(&sending_r1_as_theirs()), None)
         .unwrap();
-    let mut mine = store.get(&oid(1)).unwrap().unwrap();
-    mine.base_mut().subject = "mine".into();
-    store.put(&mine).unwrap();
-    dam.add_all().unwrap();
-    Dam {
-        random: &FixedRandom::new(10),
-        ..dam
-    }
-    .commit("mine")
-    .unwrap();
-    let reports = Dam {
-        store: &store,
-        clock: &FixedClock(date(2026, 9, 18)),
-        random: &FixedRandom::new(42),
-        config: &config(),
-    }
-    .pull(
-        remotes_launched_by(&launcher_that_accepts_every_push(vec![upstream("theirs")])),
-        None,
-    )
-    .unwrap();
     assert_eq!(reports[0].conflicts, 1);
-    store
+    s
+}
+
+fn pulled_again_before_the_resolution_reached_the_remote(s: &Scenario) -> usize {
+    let reports = s
+        .dam()
+        .pull(remotes_launched_by(&sending_r1_as_theirs()), None)
+        .unwrap();
+    reports[0].conflicts
 }
 
 #[test]
 fn ours_is_committed_and_the_conflict_is_not_raised_again() {
-    let store = both_sides_moved_off_one_base();
-    let fixture = Fixture {
-        clock: FixedClock(date(2026, 9, 19)),
-        random: FixedRandom::new(3),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(&store);
-    dam.resolve(&oid(1), Side::Ours).unwrap();
+    let s = both_sides_moved_off_one_base();
+    s.dam().resolve(&oid(1), Side::Ours).unwrap();
 
-    let owed = store.unpushed(&remote()).unwrap();
+    let owed = s.store.unpushed(&todoist()).unwrap();
     let resolution = owed
         .iter()
         .find(|c| c.message.contains("with ours"))
@@ -73,38 +52,22 @@ fn ours_is_committed_and_the_conflict_is_not_raised_again() {
         "mine"
     );
 
-    let pulled_again_before_the_resolution_reached_the_remote = Dam {
-        store: &store,
-        clock: &FixedClock(date(2026, 9, 20)),
-        random: &FixedRandom::new(43),
-        config: &config(),
-    }
-    .pull(
-        remotes_launched_by(&launcher_that_accepts_every_push(vec![upstream("theirs")])),
-        None,
-    )
-    .unwrap();
     assert_eq!(
-        pulled_again_before_the_resolution_reached_the_remote[0].conflicts, 0,
+        pulled_again_before_the_resolution_reached_the_remote(&s),
+        0,
         "the conflict was raised again"
     );
-    assert_eq!(store.get(&oid(1)).unwrap().unwrap().base().subject, "mine");
+    assert_eq!(
+        s.store.get(&oid(1)).unwrap().unwrap().base().subject,
+        "mine"
+    );
 
-    let reports = Dam {
-        store: &store,
-        clock: &FixedClock(date(2026, 9, 18)),
-        random: &FixedRandom::new(0),
-        config: &config(),
-    }
-    .push(
-        remotes_launched_by(&launcher_that_accepts_every_push(vec![])),
-        None,
-    )
-    .unwrap();
+    let (l, _) = pushing(accepting_all(Some("r1")));
+    let reports = s.dam().push(remotes_launched_by(&l), None).unwrap();
     assert_eq!(reports[0].sent, 1, "ours was sent upstream");
     assert_eq!(
-        store
-            .remote_snapshot(&remote(), &oid(1))
+        s.store
+            .remote_snapshot(&todoist(), &oid(1))
             .unwrap()
             .unwrap()
             .base()
@@ -116,23 +79,10 @@ fn ours_is_committed_and_the_conflict_is_not_raised_again() {
 
 #[test]
 fn theirs_leaves_only_theirs_owed_and_settles_the_conflict() {
-    let store = both_sides_moved_off_one_base();
-    let fixture = Fixture {
-        clock: FixedClock(date(2026, 9, 19)),
-        random: FixedRandom::new(3),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(&store);
-    dam.resolve(&oid(1), Side::Theirs).unwrap();
-    let (l, sent) = recording_launcher_that_accepts_every_push(vec![]);
-    Dam {
-        store: &store,
-        clock: &FixedClock(date(2026, 9, 18)),
-        random: &FixedRandom::new(0),
-        config: &config(),
-    }
-    .push(remotes_launched_by(&l), None)
-    .unwrap();
+    let s = both_sides_moved_off_one_base();
+    s.dam().resolve(&oid(1), Side::Theirs).unwrap();
+    let (l, sent) = pushing(accepting_all(Some("r1")));
+    s.dam().push(remotes_launched_by(&l), None).unwrap();
     for m in sent.borrow().iter() {
         assert_eq!(
             m.object.as_ref().unwrap().base().subject,
@@ -140,23 +90,9 @@ fn theirs_leaves_only_theirs_owed_and_settles_the_conflict() {
             "a push after resolving with theirs must not carry ours"
         );
     }
-    let pulled_again_before_the_resolution_reached_the_remote = Dam {
-        store: &store,
-        clock: &FixedClock(date(2026, 9, 20)),
-        random: &FixedRandom::new(43),
-        config: &config(),
-    }
-    .pull(
-        remotes_launched_by(&launcher_that_accepts_every_push(vec![upstream("theirs")])),
-        None,
-    )
-    .unwrap();
+    assert_eq!(pulled_again_before_the_resolution_reached_the_remote(&s), 0);
     assert_eq!(
-        pulled_again_before_the_resolution_reached_the_remote[0].conflicts,
-        0
-    );
-    assert_eq!(
-        store.get(&oid(1)).unwrap().unwrap().base().subject,
+        s.store.get(&oid(1)).unwrap().unwrap().base().subject,
         "theirs"
     );
 }

@@ -1,7 +1,10 @@
 use dam_domain::{Object, Oid, Task};
+use jiff::SignedDuration;
 
 use crate::config::{Config, CredentialSpec, RemoteConfig};
-use crate::ports::{CommitRepository, ObjectRepository, RemoteName, RemoteTrackingRepository};
+use crate::ports::{
+    Clock, CommitRepository, ObjectRepository, RemoteName, RemoteTrackingRepository,
+};
 use crate::service::Dam;
 use crate::testing::{FixedRandom, Fixture, MemoryStore, oid};
 
@@ -97,6 +100,20 @@ impl Scenario {
         let snapshot = self.store.committed(oid).unwrap().unwrap();
         self.store
             .set_remote_snapshot(&todoist(), &snapshot)
+            .unwrap();
+        self
+    }
+
+    pub fn pulled_ago(&self, ago: SignedDuration) -> &Scenario {
+        let at = self.fixture.clock.now().checked_sub(ago).unwrap();
+        let remote = &self.fixture.config.remotes[0].name;
+        self.store.set_last_pull(remote, at).unwrap();
+        self
+    }
+
+    pub fn mapped_as(&self, oid: &Oid, remote_id: &str) -> &Scenario {
+        self.store
+            .map_remote_id(&todoist(), oid, remote_id)
             .unwrap();
         self
     }

@@ -11,7 +11,9 @@ pub use doubles::{
 };
 pub use faulty_store::FaultyStore;
 pub use fixture::{Fixture, remotes_launched_by};
-pub use launchers::{Pushed, accepting_all, answering, pulling, pushing, refusing_all};
+pub use launchers::{
+    Pushed, accepting_all, answering, pulling, pulling_events, pushing, refusing_all,
+};
 pub use memory_store::MemoryStore;
 pub use scenario::{Scenario, config, task, todoist};
 

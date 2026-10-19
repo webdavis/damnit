@@ -1,6 +1,8 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use dam_domain::{Field, Kind};
+
 use crate::ports::HelperError;
 use crate::remote::{MutationOutcome, MutationVerdict, PullOutcome, RemoteMutation};
 use crate::testing::{ScriptedHelper, ScriptedLauncher, task_caps};
@@ -80,4 +82,13 @@ fn answering_each(ms: &[RemoteMutation], verdict: MutationVerdict) -> Vec<Mutati
             verdict: verdict.clone(),
         })
         .collect()
+}
+
+pub fn pulling_events(fields: Vec<Field>, outcome: PullOutcome) -> ScriptedLauncher {
+    ScriptedLauncher::launching(move || {
+        let mut helper = ScriptedHelper::answering(Ok(outcome.clone()));
+        helper.caps.kinds = vec![Kind::Event];
+        helper.caps.fields = fields.clone();
+        helper
+    })
 }

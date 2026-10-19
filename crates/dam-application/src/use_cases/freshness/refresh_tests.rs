@@ -1,54 +1,19 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
-use jiff::civil::date;
-
 use super::*;
-use crate::config::{Config, CredentialSpec, RemoteConfig};
 use crate::ports::{HelperError, Notice, StoreError};
 use crate::remote::{IncomingObject, PullOutcome};
 use crate::testing::prelude::*;
 use crate::testing::{
-    FaultyStore, FixedClock, FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
-    remotes_launched_by, task_caps,
+    FaultyStore, MemoryStore, Scenario, ScriptedLauncher, answering, config, oid,
+    remotes_launched_by, todoist,
 };
 use dam_domain::{Object, Task};
 
 const MINUTE: Duration = Duration::from_secs(60);
 
-fn remote() -> RemoteName {
-    RemoteName("t".into())
-}
-
-fn config(stale: Option<Duration>) -> Config {
-    Config {
-        remotes: vec![RemoteConfig {
-            name: remote(),
-            helper: "t".into(),
-            url: "t::".into(),
-            credentials: vec![CredentialSpec::Literal {
-                name: "api_token".into(),
-                value: "t".into(),
-            }],
-            stale,
-            deadline: None,
-            path: None,
-        }],
-        ..Config::default()
-    }
-}
-
-fn answering(answer: Result<PullOutcome, HelperError>) -> ScriptedLauncher {
-    ScriptedLauncher {
-        make: Box::new(move || ScriptedHelper {
-            caps: task_caps(),
-            pull_answer: answer.clone(),
-            push_answer: Box::new(|_| Ok(vec![])),
-            pushed: Rc::new(RefCell::new(vec![])),
-            pulled_since: Rc::new(RefCell::new(vec![])),
-        }),
-        launched_with: Rc::new(RefCell::new(vec![])),
-    }
+fn stale_after(window: Option<Duration>) -> Scenario {
+    let mut config = config();
+    config.remotes[0].stale = window;
+    Scenario::default().configured(config)
 }
 
 fn one_object() -> Result<PullOutcome, HelperError> {
@@ -61,22 +26,9 @@ fn one_object() -> Result<PullOutcome, HelperError> {
     })
 }
 
-fn clock() -> FixedClock {
-    FixedClock(date(2026, 9, 18))
-}
-
-fn refresh(
-    store: &MemoryStore,
-    launcher: &ScriptedLauncher,
-    config: &Config,
-) -> Result<(), UseCaseError> {
-    Dam {
-        store,
-        clock: &clock(),
-        random: &FixedRandom::new(7),
-        config,
-    }
-    .refresh_stale(remotes_launched_by(launcher), |e| format!("{e:?}"))
+fn refresh(s: &Scenario, launcher: &ScriptedLauncher) -> Result<(), UseCaseError> {
+    s.dam()
+        .refresh_stale(remotes_launched_by(launcher), |e| format!("{e:?}"))
 }
 
 fn launches(launcher: &ScriptedLauncher) -> usize {
@@ -85,56 +37,50 @@ fn launches(launcher: &ScriptedLauncher) -> usize {
 
 #[test]
 fn a_stale_remote_is_pulled_and_a_fresh_one_is_not() {
-    let store = MemoryStore::new();
+    let s = stale_after(Some(MINUTE));
     let launcher = answering(one_object());
-    refresh(&store, &launcher, &config(Some(MINUTE))).unwrap();
-    assert_eq!(store.all().unwrap().len(), 1);
-    refresh(&store, &launcher, &config(Some(MINUTE))).unwrap();
+    refresh(&s, &launcher).unwrap();
+    assert_eq!(s.store.all().unwrap().len(), 1);
+    refresh(&s, &launcher).unwrap();
     assert_eq!(launches(&launcher), 1, "a fresh remote is not pulled again");
 }
 
 #[test]
 fn a_remote_without_a_stale_window_is_never_pulled() {
-    let store = MemoryStore::new();
+    let s = stale_after(None);
     let launcher = answering(one_object());
-    refresh(&store, &launcher, &config(None)).unwrap();
+    refresh(&s, &launcher).unwrap();
     assert_eq!(launches(&launcher), 0);
 }
 
 #[test]
 fn an_unreachable_stale_remote_leaves_a_notice_and_no_last_pull() {
-    let store = MemoryStore::new();
+    let s = stale_after(Some(MINUTE));
     let launcher = answering(Err(HelperError::Io("down".into())));
-    refresh(&store, &launcher, &config(Some(MINUTE))).unwrap();
-    assert_eq!(store.last_pull(&remote()).unwrap(), None);
+    refresh(&s, &launcher).unwrap();
+    assert_eq!(s.store.last_pull(&todoist()).unwrap(), None);
     assert!(matches!(
-        store.notices().unwrap().last(),
-        Some(Notice::PullFailed { remote: r, .. }) if *r == remote()
+        s.store.notices().unwrap().last(),
+        Some(Notice::PullFailed { remote: r, .. }) if *r == todoist()
     ));
 }
 
-fn pulled_ago(ago: Duration) -> MemoryStore {
-    let store = MemoryStore::new();
-    let at = clock()
-        .now()
-        .checked_sub(jiff::SignedDuration::try_from(ago).unwrap())
-        .unwrap();
-    store.set_last_pull(&remote(), at).unwrap();
-    store
+fn pulled_ago(ago: Duration) -> Scenario {
+    let s = stale_after(Some(MINUTE));
+    s.pulled_ago(jiff::SignedDuration::try_from(ago).unwrap());
+    s
 }
 
 #[test]
 fn a_remote_pulled_exactly_one_window_ago_is_fresh_and_one_second_later_stale() {
-    let at_the_window = pulled_ago(MINUTE);
     let launcher = answering(one_object());
-    refresh(&at_the_window, &launcher, &config(Some(MINUTE))).unwrap();
+    refresh(&pulled_ago(MINUTE), &launcher).unwrap();
     assert_eq!(
         launches(&launcher),
         0,
         "a pull exactly one window old is fresh"
     );
-    let past_it = pulled_ago(MINUTE + Duration::from_secs(1));
-    refresh(&past_it, &launcher, &config(Some(MINUTE))).unwrap();
+    refresh(&pulled_ago(MINUTE + Duration::from_secs(1)), &launcher).unwrap();
     assert_eq!(
         launches(&launcher),
         1,
@@ -144,16 +90,14 @@ fn a_remote_pulled_exactly_one_window_ago_is_fresh_and_one_second_later_stale() 
 
 #[test]
 fn a_store_error_reading_the_last_pull_fails_the_read_and_pulls_nothing() {
+    let s = stale_after(Some(MINUTE));
     let store = FaultyStore::new(MemoryStore::new());
     store.fail_reading_the_last_pull();
     let launcher = answering(one_object());
-    let refused = Dam {
-        store: &store,
-        clock: &clock(),
-        random: &FixedRandom::new(7),
-        config: &config(Some(MINUTE)),
-    }
-    .refresh_stale(remotes_launched_by(&launcher), |e| format!("{e:?}"));
+    let refused = s
+        .fixture
+        .dam(&store)
+        .refresh_stale(remotes_launched_by(&launcher), |e| format!("{e:?}"));
     assert_eq!(
         refused,
         Err(UseCaseError::Store(StoreError::Failed(

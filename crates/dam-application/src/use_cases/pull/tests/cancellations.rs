@@ -1,15 +1,17 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
-use dam_domain::{EventStatus, Field, Kind, Object, Task, When};
+use dam_domain::{Event, EventStatus, Field, Object, Task, When};
 use jiff::civil::date;
 
-use super::*;
+use super::super::*;
+use crate::errors::Refusal;
 use crate::ports::Notice;
-use crate::testing::remotes_launched_by;
+use crate::remote::{IncomingObject, PullOutcome};
+use crate::testing::prelude::*;
+use crate::testing::{
+    Scenario, ScriptedLauncher, oid, pulling_events, remotes_launched_by, todoist,
+};
 
-pub(super) fn meeting() -> dam_domain::Event {
-    dam_domain::Event::new(
+pub(super) fn meeting() -> Event {
+    Event::new(
         oid(5),
         "meeting",
         When::Day(date(2026, 9, 25)),
@@ -17,80 +19,58 @@ pub(super) fn meeting() -> dam_domain::Event {
     )
 }
 
-fn pulled_and_committed_as_e1(store: &MemoryStore, event: &dam_domain::Event) {
-    store.put(&Object::Event(event.clone())).unwrap();
-    let fixture = Fixture {
-        random: FixedRandom::new(9),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(store);
-    dam.add_all().unwrap();
-    dam.commit("pulled").unwrap();
-    store
-        .map_remote_id(&remote(), &event.base.oid, "e1")
-        .unwrap();
-    store
-        .set_remote_snapshot(&remote(), &Object::Event(event.clone()))
-        .unwrap();
+pub(super) fn tracked(event: Event) -> Scenario {
+    let s = Scenario::default();
+    s.committed(Object::Event(event)).tracked_as(&oid(5), "e1");
+    s
 }
 
-fn cancelling(ids: &[&str]) -> ScriptedLauncher {
-    declaring(
-        ids,
-        vec![Field::Subject, Field::Start, Field::End, Field::Status],
+pub(super) fn every_event_field() -> Vec<Field> {
+    vec![Field::Subject, Field::Start, Field::End, Field::Status]
+}
+
+pub(super) fn sending_the_meeting_cancelled() -> ScriptedLauncher {
+    let mut cancelled = meeting();
+    cancelled.status = EventStatus::Cancelled;
+    pulling_events(
+        every_event_field(),
+        PullOutcome {
+            objects: vec![IncomingObject {
+                remote_id: "e1".into(),
+                object: Object::Event(cancelled),
+            }],
+            ..PullOutcome::default()
+        },
     )
 }
 
 fn declaring(ids: &[&str], fields: Vec<Field>) -> ScriptedLauncher {
-    let mut caps = task_caps();
-    caps.kinds = vec![Kind::Event];
-    caps.fields = fields;
-    let answer = PullOutcome {
-        cancelled: ids.iter().map(|s| s.to_string()).collect(),
-        ..PullOutcome::default()
-    };
-    ScriptedLauncher {
-        make: Box::new(move || ScriptedHelper {
-            caps: caps.clone(),
-            pull_answer: Ok(answer.clone()),
-            push_answer: Box::new(|_| Ok(vec![])),
-            pushed: Rc::new(RefCell::new(vec![])),
-            pulled_since: Rc::new(RefCell::new(vec![])),
-        }),
-        launched_with: Rc::new(RefCell::new(vec![])),
-    }
+    pulling_events(
+        fields,
+        PullOutcome {
+            cancelled: ids.iter().map(|s| s.to_string()).collect(),
+            ..PullOutcome::default()
+        },
+    )
 }
 
-pub(super) fn run(store: &MemoryStore, ids: &[&str]) -> Result<Vec<PullReport>, UseCaseError> {
-    run_with(store, &cancelling(ids))
-}
-
-fn run_with(
-    store: &MemoryStore,
-    launcher: &ScriptedLauncher,
-) -> Result<Vec<PullReport>, UseCaseError> {
-    Dam {
-        store,
-        clock: &FixedClock(date(2026, 9, 18)),
-        random: &FixedRandom::new(42),
-        config: &config(),
-    }
-    .pull(remotes_launched_by(launcher), None)
+pub(super) fn run(s: &Scenario, ids: &[&str]) -> Result<Vec<PullReport>, UseCaseError> {
+    let l = declaring(ids, every_event_field());
+    s.dam().pull(remotes_launched_by(&l), None)
 }
 
 #[test]
 fn a_cancelled_id_moves_the_event_it_maps_to_cancelled() {
-    let store = MemoryStore::new();
-    pulled_and_committed_as_e1(&store, &meeting());
-    let reports = run(&store, &["e1"]).unwrap();
+    let s = tracked(meeting());
+    let reports = run(&s, &["e1"]).unwrap();
     assert_eq!(reports[0].updated, 1);
-    let Some(Object::Event(now)) = store.get(&oid(5)).unwrap() else {
+    let Some(Object::Event(now)) = s.store.get(&oid(5)).unwrap() else {
         panic!("the event is gone")
     };
     assert_eq!(now.status, EventStatus::Cancelled);
     assert_eq!(now.base.subject, "meeting", "only the status moved");
     assert_eq!(
-        store.oid_for_remote_id(&remote(), "e1").unwrap(),
+        s.store.oid_for_remote_id(&todoist(), "e1").unwrap(),
         Some(oid(5)),
         "still tracked"
     );
@@ -98,12 +78,11 @@ fn a_cancelled_id_moves_the_event_it_maps_to_cancelled() {
 
 #[test]
 fn a_helper_that_does_not_declare_status_cancels_nothing() {
-    let store = MemoryStore::new();
-    pulled_and_committed_as_e1(&store, &meeting());
+    let s = tracked(meeting());
     let silent = declaring(&["e1"], vec![Field::Subject, Field::Start, Field::End]);
-    let reports = run_with(&store, &silent).unwrap();
+    let reports = s.dam().pull(remotes_launched_by(&silent), None).unwrap();
     assert_eq!((reports[0].updated, reports[0].unchanged), (0, 1));
-    let Some(Object::Event(now)) = store.get(&oid(5)).unwrap() else {
+    let Some(Object::Event(now)) = s.store.get(&oid(5)).unwrap() else {
         panic!("the event is gone")
     };
     assert_eq!(now.status, EventStatus::Confirmed);
@@ -111,74 +90,64 @@ fn a_helper_that_does_not_declare_status_cancels_nothing() {
 
 #[test]
 fn a_cancelled_event_with_an_attached_task_is_reported_and_the_task_kept() {
-    let store = MemoryStore::new();
-    pulled_and_committed_as_e1(&store, &meeting());
+    let s = tracked(meeting());
     let mut prep = Task::new(oid(6), "prep");
     prep.event = Some(oid(5));
-    store.put(&Object::Task(prep)).unwrap();
-    run(&store, &["e1"]).unwrap();
+    s.working(Object::Task(prep));
+    run(&s, &["e1"]).unwrap();
     assert!(matches!(
-        store.notices().unwrap().last(),
+        s.store.notices().unwrap().last(),
         Some(Notice::EventCancelled { attached: 1, .. })
     ));
-    assert!(store.get(&oid(6)).unwrap().is_some());
+    assert!(s.store.get(&oid(6)).unwrap().is_some());
 }
 
 #[test]
 fn an_id_dam_never_mapped_and_one_mapped_to_a_task_change_nothing() {
-    let store = MemoryStore::new();
-    store
-        .put(&Object::Task(Task::new(oid(7), "a task")))
-        .unwrap();
-    store.map_remote_id(&remote(), &oid(7), "t1").unwrap();
-    let reports = run(&store, &["never-seen", "t1"]).unwrap();
+    let s = Scenario::default();
+    s.working(Object::Task(Task::new(oid(7), "a task")))
+        .mapped_as(&oid(7), "t1");
+    let reports = run(&s, &["never-seen", "t1"]).unwrap();
     let r = &reports[0];
     assert_eq!(
         (r.created, r.updated, r.unchanged, r.conflicts),
         (0, 0, 0, 0),
         "{r:?}"
     );
-    assert!(matches!(store.get(&oid(7)).unwrap(), Some(Object::Task(_))));
+    assert!(matches!(
+        s.store.get(&oid(7)).unwrap(),
+        Some(Object::Task(_))
+    ));
 }
 
 #[test]
 fn an_event_already_cancelled_is_unchanged() {
-    let store = MemoryStore::new();
     let mut gone = meeting();
     gone.status = EventStatus::Cancelled;
-    pulled_and_committed_as_e1(&store, &gone);
-    assert_eq!(run(&store, &["e1"]).unwrap()[0].unchanged, 1);
+    let s = tracked(gone);
+    assert_eq!(run(&s, &["e1"]).unwrap()[0].unchanged, 1);
 }
 
 #[test]
 fn an_uncommitted_local_edit_stops_the_pull_as_any_upstream_change_would() {
-    let store = MemoryStore::new();
-    pulled_and_committed_as_e1(&store, &meeting());
+    let s = tracked(meeting());
     let mut edited = meeting();
     edited.base.subject = "renamed here".into();
-    store.put(&Object::Event(edited)).unwrap();
+    s.working(Object::Event(edited));
     assert!(matches!(
-        run(&store, &["e1"]).unwrap_err(),
+        run(&s, &["e1"]).unwrap_err(),
         UseCaseError::Refused(Refusal::DirtyOnPull { .. })
     ));
 }
 
 #[test]
 fn a_committed_local_edit_and_a_cancellation_conflict_over_what_the_remote_held() {
-    let store = MemoryStore::new();
-    pulled_and_committed_as_e1(&store, &meeting());
+    let s = tracked(meeting());
     let mut edited = meeting();
     edited.base.subject = "renamed here".into();
-    store.put(&Object::Event(edited)).unwrap();
-    let fixture = Fixture {
-        random: FixedRandom::new(10),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(&store);
-    dam.add_all().unwrap();
-    dam.commit("renamed").unwrap();
-    assert_eq!(run(&store, &["e1"]).unwrap()[0].conflicts, 1);
-    let Object::Event(theirs) = &store.conflicts().unwrap()[0].theirs else {
+    s.committed(Object::Event(edited));
+    assert_eq!(run(&s, &["e1"]).unwrap()[0].conflicts, 1);
+    let Object::Event(theirs) = &s.store.conflicts().unwrap()[0].theirs else {
         panic!("not an event")
     };
     assert_eq!(
