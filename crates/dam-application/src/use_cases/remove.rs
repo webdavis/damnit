@@ -23,8 +23,8 @@ impl Dam<'_> {
         atomically(self.store, || {
             let object = load(self.store, oid)?;
             let plan = plan_for(self.store, &object)?;
-            for child in children(self.store, object.base())? {
-                move_into(self.store, child.oid(), &object.base().path)?;
+            for child in &plan.descendants {
+                move_into(self.store, child, &object.base().path)?;
             }
             for dependent in &plan.dependents {
                 if let Some(mut d) = self.store.get(dependent)? {
@@ -40,13 +40,11 @@ impl Dam<'_> {
 
 fn plan_for(objects: &dyn ObjectRepository, object: &Object) -> Result<RemovePlan, UseCaseError> {
     let oid = object.oid();
-    let owned = object.base().owned_folder();
-    let all = objects.all()?;
-    let descendants = all
+    let descendants = children(objects, object.base())?
         .iter()
-        .filter(|o| owned.as_ref().is_some_and(|f| o.base().path.is_within(f)))
         .map(|o| o.oid().clone())
         .collect();
+    let all = objects.all()?;
     let dependents = objects.dependents_of(oid)?;
     let attached = all
         .iter()
@@ -88,11 +86,11 @@ mod tests {
     }
 
     #[test]
-    fn plan_lists_descendants_dependents_and_attached() {
+    fn plan_lists_children_dependents_and_attached() {
         let store = MemoryStore::new();
         let plan = put(&store, 1, "plan", "");
         let step = put(&store, 2, "step", "plan");
-        let detail = put(&store, 3, "detail", "plan/step");
+        put(&store, 3, "detail", "plan/step");
         let d = put(&store, 4, "dependent", "");
         let mut dep = store.get(&d).unwrap().unwrap();
         dep.base_mut().depends.push(plan.clone());
@@ -100,8 +98,24 @@ mod tests {
         let fixture = Fixture::default();
         let dam = fixture.dam(&store);
         let found = dam.plan_remove(&plan).unwrap();
-        assert_eq!(found.descendants, vec![step, detail]);
+        assert_eq!(found.descendants, vec![step]);
         assert_eq!(found.dependents, vec![d]);
+    }
+
+    #[test]
+    fn remove_lists_only_the_children_it_moved_up_and_keeps_a_grandchild_under_its_parent() {
+        let store = MemoryStore::new();
+        let plan = put(&store, 1, "plan", "work");
+        let step = put(&store, 2, "step", "work/plan");
+        let note = put(&store, 3, "note", "work/plan");
+        let detail = put(&store, 4, "detail", "work/plan/step");
+        let fixture = Fixture::default();
+        let dam = fixture.dam(&store);
+        let removed = dam.remove(&plan).unwrap();
+        assert_eq!(removed.descendants, vec![step.clone(), note.clone()]);
+        assert_eq!(path_of(&store, &step), "work/");
+        assert_eq!(path_of(&store, &note), "work/");
+        assert_eq!(path_of(&store, &detail), "work/step/");
     }
 
     #[test]
