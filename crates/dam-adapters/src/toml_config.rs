@@ -10,7 +10,7 @@ mod strict_table;
 use append::append_remote;
 pub use file::TomlConfigFile;
 use remote::parse_remote;
-pub(crate) use strict_table::{Place, StrictTable, parse_toml};
+pub use strict_table::{Place, StrictTable, parse_toml};
 
 fn home_dir() -> PathBuf {
     std::env::var_os("HOME")

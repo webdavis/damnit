@@ -10,7 +10,7 @@ fn the_editor_round_trip_applies_the_saved_text() {
     ctx.store
         .put(&Object::Task(Task::new(oid(1), "milk")))
         .unwrap();
-    let saved = dam_adapters::render_template(&ctx.store.get(&oid(1)).unwrap().unwrap())
+    let saved = render_template(&ctx.store.get(&oid(1)).unwrap().unwrap())
         .replace("subject = \"milk\"", "subject = \"eggs\"");
     ctx.editor = Some(Box::new(ScriptedEditor::saving(vec![Box::new(
         move |_| saved.clone(),

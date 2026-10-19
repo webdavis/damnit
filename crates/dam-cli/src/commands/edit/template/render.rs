@@ -1,7 +1,7 @@
 use dam_domain::{Object, When};
 use toml::Value;
 
-pub fn render_template(object: &Object) -> String {
+pub(crate) fn render_template(object: &Object) -> String {
     let b = object.base();
     let kind = object.kind();
     let mut out = format!(

@@ -1,4 +1,3 @@
-use dam_adapters::{parse_template, render_template};
 use dam_application::{EditFields, Refusal};
 use dam_domain::Oid;
 
@@ -8,6 +7,9 @@ use crate::context::Context;
 use crate::error::{CliError, UseCaseText};
 use crate::output::Report;
 use crate::view::{ObjectRow, report};
+use template::{parse_template, render_template};
+
+mod template;
 
 pub(crate) fn run(ctx: &Context, args: EditArgs) -> Result<Report, CliError> {
     let oid = ctx.dam().resolve_object(&args.oid)?;
