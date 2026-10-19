@@ -7,7 +7,11 @@ use dam_application::{
     HelperError, MutationOutcome, PullOutcome, RemoteCapabilities, RemoteConfig, RemoteHelper,
     RemoteMutation,
 };
-use dam_protocol::{Request, Response, read_line, write_line};
+use dam_protocol::{
+    Capabilities, PullResponse, PushResponse, Reply, Request, read_line, write_line,
+};
+use serde::de::DeserializeOwned;
+use serde_json::Value;
 
 use super::stderr_tail::{StderrTail, keep_the_tail_until_end_of_input};
 use crate::wire::{capabilities_from_wire, mutation_to_wire, outcomes_from_wire, pull_from_wire};
@@ -19,12 +23,12 @@ const RECHECK_INTERVAL: Duration = Duration::from_millis(25);
 
 const EXIT_GRACE_BEFORE_THE_KILL: Duration = Duration::from_millis(200);
 
-fn forward_responses_until_one_is_not_a_response(
+fn forward_answers_until_one_is_not_json(
     mut out: impl std::io::BufRead,
-    tx: &Sender<std::io::Result<Option<Response>>>,
+    tx: &Sender<std::io::Result<Option<Value>>>,
 ) {
     loop {
-        let line = read_line::<Response>(&mut out);
+        let line = read_line::<Value>(&mut out);
         let more = matches!(line, Ok(Some(_)));
         if tx.send(line).is_err() || !more {
             return;
@@ -36,7 +40,7 @@ fn forward_responses_until_one_is_not_a_response(
 pub(super) struct ProcessHelper {
     child: Child,
     stdin: Option<ChildStdin>,
-    responses: Receiver<std::io::Result<Option<Response>>>,
+    answers: Receiver<std::io::Result<Option<Value>>>,
     helper: String,
     stderr_tail: StderrTail,
     deadline: Duration,
@@ -52,9 +56,9 @@ impl ProcessHelper {
         stderr: ChildStderr,
         remote: &RemoteConfig,
     ) -> ProcessHelper {
-        let (tx, responses) = channel();
+        let (tx, answers) = channel();
         std::thread::spawn(move || {
-            forward_responses_until_one_is_not_a_response(BufReader::new(stdout), &tx)
+            forward_answers_until_one_is_not_json(BufReader::new(stdout), &tx)
         });
         let stderr_tail = StderrTail::default();
         let filling = stderr_tail.clone();
@@ -64,7 +68,7 @@ impl ProcessHelper {
         ProcessHelper {
             child,
             stdin: Some(stdin),
-            responses,
+            answers,
             helper: remote.helper.clone(),
             stderr_tail,
             deadline: remote
@@ -102,7 +106,7 @@ impl ProcessHelper {
         }
     }
 
-    fn call(&mut self, request: &Request) -> Result<Response, HelperError> {
+    fn call<T: DeserializeOwned>(&mut self, request: &Request) -> Result<T, HelperError> {
         let stdin = self
             .stdin
             .as_mut()
@@ -111,15 +115,18 @@ impl ProcessHelper {
         if let Err(e) = written {
             return Err(self.io_with_the_helpers_complaint(&e.to_string()));
         }
-        self.receive_within_the_deadline()
+        match serde_json::from_value(self.receive_within_the_deadline()?) {
+            Ok(Reply::Answered(answer)) => Ok(answer),
+            Ok(Reply::Failed { error }) => Err(HelperError::Remote(error)),
+            Err(e) => Err(HelperError::Protocol(e.to_string())),
+        }
     }
 
-    fn receive_within_the_deadline(&mut self) -> Result<Response, HelperError> {
+    fn receive_within_the_deadline(&mut self) -> Result<Value, HelperError> {
         let started = Instant::now();
         loop {
-            match self.responses.recv_timeout(RECHECK_INTERVAL) {
-                Ok(Ok(Some(Response::Error { error }))) => return Err(HelperError::Remote(error)),
-                Ok(Ok(Some(other))) => return Ok(other),
+            match self.answers.recv_timeout(RECHECK_INTERVAL) {
+                Ok(Ok(Some(answer))) => return Ok(answer),
                 Ok(Ok(None)) | Err(RecvTimeoutError::Disconnected) => {
                     return Err(self.io_with_the_helpers_complaint("the helper closed its output"));
                 }
@@ -171,32 +178,22 @@ impl ProcessHelper {
 
 impl RemoteHelper for ProcessHelper {
     fn capabilities(&mut self) -> Result<RemoteCapabilities, HelperError> {
-        match self.call(&Request::Capabilities)? {
-            Response::Capabilities(caps) if !caps.supported() => {
-                Err(HelperError::UnsupportedProtocol {
-                    helper: self.helper.clone(),
-                    found: caps.protocol,
-                    supported: dam_protocol::PROTOCOL_VERSION,
-                })
-            }
-            Response::Capabilities(caps) => Ok(capabilities_from_wire(&caps)),
-            other => Err(HelperError::Protocol(format!(
-                "expected a capabilities response, got a {} response",
-                other.shape()
-            ))),
+        let caps: Capabilities = self.call(&Request::Capabilities)?;
+        if !caps.supported() {
+            return Err(HelperError::UnsupportedProtocol {
+                helper: self.helper.clone(),
+                found: caps.protocol,
+                supported: dam_protocol::PROTOCOL_VERSION,
+            });
         }
+        Ok(capabilities_from_wire(&caps))
     }
 
     fn pull(&mut self, since: Option<&str>) -> Result<PullOutcome, HelperError> {
-        match self.call(&Request::Pull {
+        let pulled: PullResponse = self.call(&Request::Pull {
             since: since.map(str::to_string),
-        })? {
-            Response::Pull(pull) => Ok(pull_from_wire(pull)),
-            other => Err(HelperError::Protocol(format!(
-                "expected a pull response, got a {} response",
-                other.shape()
-            ))),
-        }
+        })?;
+        Ok(pull_from_wire(pulled))
     }
 
     fn push(
@@ -204,13 +201,8 @@ impl RemoteHelper for ProcessHelper {
         mutations: Vec<RemoteMutation>,
     ) -> Result<Vec<MutationOutcome>, HelperError> {
         let mutations = mutations.into_iter().map(mutation_to_wire).collect();
-        match self.call(&Request::Push { mutations })? {
-            Response::Push(push) => Ok(outcomes_from_wire(push.results)),
-            other => Err(HelperError::Protocol(format!(
-                "expected a push response, got a {} response",
-                other.shape()
-            ))),
-        }
+        let pushed: PushResponse = self.call(&Request::Push { mutations })?;
+        Ok(outcomes_from_wire(pushed.results))
     }
 }
 

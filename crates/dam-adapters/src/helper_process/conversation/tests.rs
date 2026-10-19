@@ -68,7 +68,7 @@ fn only_the_last_lines_of_a_talkative_helper_are_kept() {
 }
 
 #[test]
-fn a_response_of_the_wrong_shape_names_the_shape_and_never_the_task_it_carried() {
+fn an_answer_of_the_wrong_shape_names_what_it_lacks_and_never_the_task_it_carried() {
     let dir = tempfile::tempdir().unwrap();
     let launcher = install(
         dir.path(),
@@ -77,7 +77,7 @@ fn a_response_of_the_wrong_shape_names_the_shape_and_never_the_task_it_carried()
     let mut helper = launcher.spawn(&remote(), &[]).unwrap();
     let err = helper.capabilities().unwrap_err();
     let text = format!("{err:?}");
-    assert!(text.contains("pull"), "{text}");
+    assert!(text.contains("missing field `protocol`"), "{text}");
     assert!(!text.contains("call the clinic"), "{text}");
     assert!(!text.contains("referral"), "{text}");
 }

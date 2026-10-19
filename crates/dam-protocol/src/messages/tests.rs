@@ -1,6 +1,6 @@
 use super::*;
-use crate::Capabilities;
 use crate::wire::{WireObject, WireTask};
+use crate::{Capabilities, Reply};
 
 fn oid() -> String {
     "01".repeat(20)
@@ -27,40 +27,6 @@ fn milk(subject: &str, done: bool) -> WireObject {
             event: None,
         }),
         event: None,
-    }
-}
-
-#[test]
-fn a_response_naming_no_known_shape_is_refused_rather_than_read_as_an_empty_pull() {
-    for text in ["{}", r#"{"foo":1}"#, r#"{"objectss":[]}"#] {
-        let err = serde_json::from_str::<Response>(text).unwrap_err();
-        assert!(
-            err.to_string()
-                .contains("objects, removed, cancelled or sync"),
-            "{text}: {err}"
-        );
-    }
-}
-
-#[test]
-fn a_refusal_of_an_unknown_shape_counts_its_keys_without_quoting_them() {
-    let err = serde_json::from_str::<Response>(r#"{"body":"buy oat milk","x":1}"#).unwrap_err();
-    let text = err.to_string();
-    assert!(text.contains('2'), "{text}");
-    assert!(!text.contains("oat milk"), "{text}");
-    assert!(!text.contains("body"), "{text}");
-}
-
-#[test]
-fn any_one_pull_key_on_its_own_is_enough_to_read_a_pull_response() {
-    for text in [r#"{"objects":[]}"#, r#"{"removed":[]}"#, r#"{"sync":"s1"}"#] {
-        assert!(
-            matches!(
-                serde_json::from_str::<Response>(text).unwrap(),
-                Response::Pull(_)
-            ),
-            "{text}"
-        );
     }
 }
 
@@ -107,13 +73,14 @@ fn capabilities_response_matches_the_fixture() {
         credentials: vec!["api_token".into()],
         incremental: true,
     };
+    let answer = Reply::Answered(caps);
     assert_eq!(
-        serde_json::to_string(&caps).unwrap(),
+        serde_json::to_string(&answer).unwrap(),
         golden("capabilities.response")
     );
     assert_eq!(
-        serde_json::from_str::<Response>(&golden("capabilities.response")).unwrap(),
-        Response::Capabilities(caps)
+        serde_json::from_str::<Reply<Capabilities>>(&golden("capabilities.response")).unwrap(),
+        answer
     );
 }
 
@@ -129,13 +96,14 @@ fn pull_round_trips_the_fixtures() {
         sync: Some("tok-2".into()),
         ..PullResponse::default()
     };
+    let answer = Reply::Answered(res);
     assert_eq!(
-        serde_json::to_string(&res).unwrap(),
+        serde_json::to_string(&answer).unwrap(),
         golden("pull.response")
     );
     assert_eq!(
-        serde_json::from_str::<Response>(&golden("pull.response")).unwrap(),
-        Response::Pull(res)
+        serde_json::from_str::<Reply<PullResponse>>(&golden("pull.response")).unwrap(),
+        answer
     );
 }
 
@@ -159,70 +127,27 @@ fn push_round_trips_the_fixtures() {
             why: None,
         }],
     };
+    let answer = Reply::Answered(res);
     assert_eq!(
-        serde_json::to_string(&res).unwrap(),
+        serde_json::to_string(&answer).unwrap(),
         golden("push.response")
     );
     assert_eq!(
-        serde_json::from_str::<Response>(&golden("push.response")).unwrap(),
-        Response::Push(res)
+        serde_json::from_str::<Reply<PushResponse>>(&golden("push.response")).unwrap(),
+        answer
     );
 }
 
 #[test]
-fn an_error_response_deserializes() {
-    let r: Response = serde_json::from_str(r#"{"error":"no such account"}"#).unwrap();
-    assert_eq!(
-        r,
-        Response::Error {
-            error: "no such account".into()
-        }
-    );
-}
-
-#[test]
-fn a_response_carrying_error_and_a_shapes_own_keys_reads_as_the_error() {
-    let read: Response = serde_json::from_str(r#"{"error":"quota","results":[]}"#).unwrap();
-    assert_eq!(
-        read,
-        Response::Error {
-            error: "quota".into()
-        }
-    );
-}
-
-#[test]
-fn a_shape_is_named_without_the_text_the_response_carries() {
-    let failure = Response::Error {
-        error: "buy oat milk".into(),
-    };
-    assert_eq!(failure.shape(), "error");
-}
-
-#[test]
-fn a_pull_response_with_an_unknown_field_still_deserializes_as_pull() {
-    let r: Response =
-        serde_json::from_str(r#"{"objects":[],"removed":[],"cursor":"abc"}"#).unwrap();
-    assert_eq!(r, Response::Pull(PullResponse::default()));
+fn a_push_answer_without_results_is_refused_rather_than_read_as_no_answers() {
+    let err = serde_json::from_str::<Reply<PushResponse>>(r#"{"objects":[]}"#).unwrap_err();
+    assert!(err.to_string().contains("results"), "{err}");
 }
 
 #[test]
 fn a_push_response_with_an_unknown_field_still_deserializes_as_push() {
-    let r: Response = serde_json::from_str(r#"{"results":[],"cursor":"abc"}"#).unwrap();
-    assert_eq!(r, Response::Push(PushResponse { results: vec![] }));
-}
-
-#[test]
-fn a_pull_carrying_only_cancellations_is_a_pull() {
-    let read = serde_json::from_str::<Response>(r#"{"cancelled":["primary/e1"]}"#).unwrap();
-    assert!(matches!(read, Response::Pull(p) if p.cancelled == vec!["primary/e1".to_string()]));
-}
-
-#[test]
-fn pull_with_cancellations_round_trips_the_fixture() {
-    let text = include_str!("../../fixtures/pull-cancelled.response.json").trim_end();
-    let read: Response = serde_json::from_str(text).unwrap();
-    assert_eq!(serde_json::to_string(&read).unwrap(), text);
+    let r: Reply<PushResponse> = serde_json::from_str(r#"{"results":[],"cursor":"abc"}"#).unwrap();
+    assert_eq!(r, Reply::Answered(PushResponse { results: vec![] }));
 }
 
 #[test]

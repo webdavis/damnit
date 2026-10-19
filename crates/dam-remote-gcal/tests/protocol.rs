@@ -5,8 +5,9 @@ use std::collections::HashMap;
 use std::io::Write;
 use std::process::{Command, Stdio};
 
-use dam_protocol::Response;
+use dam_protocol::{Capabilities, PullResponse, PushResponse, Reply as Answer};
 use loopback::Reply;
+use serde::de::DeserializeOwned;
 
 const CLIENT_SECRET: &str = "GOCSPX-SUPERSECRETCLIENT";
 const REFRESH: &str = "1//0gSUPERSECRETREFRESH";
@@ -36,7 +37,7 @@ fn with_credentials(mut command: Command, remote: &str) -> Command {
     command
 }
 
-fn converse(mut command: Command, requests: &str) -> (Vec<Response>, String) {
+fn converse(mut command: Command, requests: &str) -> (Vec<String>, String) {
     let mut child = command.spawn().unwrap();
     child
         .stdin
@@ -48,9 +49,13 @@ fn converse(mut command: Command, requests: &str) -> (Vec<Response>, String) {
     let responses = String::from_utf8(out.stdout)
         .unwrap()
         .lines()
-        .map(|l| serde_json::from_str(l).unwrap())
+        .map(str::to_string)
         .collect();
     (responses, String::from_utf8_lossy(&out.stderr).into_owned())
+}
+
+fn read<T: DeserializeOwned>(line: &str) -> Answer<T> {
+    serde_json::from_str(line).unwrap()
 }
 
 fn google() -> loopback::Loopback {
@@ -87,9 +92,9 @@ fn capabilities_need_no_credentials_and_a_pull_names_the_missing_variable_only()
         "{\"cmd\":\"capabilities\"}\n{\"cmd\":\"pull\",\"since\":null}\n",
     );
     assert!(
-        matches!(&responses[0], Response::Capabilities(c) if c.kinds.is_empty() && c.incremental)
+        matches!(read::<Capabilities>(&responses[0]), Answer::Answered(c) if c.kinds.is_empty() && c.incremental)
     );
-    let Response::Error { error } = &responses[1] else {
+    let Answer::Failed { error } = read::<PullResponse>(&responses[1]) else {
         panic!("{:?}", responses[1])
     };
     assert!(error.contains("DAM_GCAL_CLIENT_ID"), "{error}");
@@ -107,7 +112,7 @@ fn a_pull_reaches_the_token_endpoint_then_the_calendar_and_answers_dams_document
         with_credentials(helper(home.path(), &["gcal", ""], &google.base), "GCAL"),
         "{\"cmd\":\"pull\",\"since\":null}\n",
     );
-    let Response::Pull(pull) = &responses[0] else {
+    let Answer::Answered(pull) = read::<PullResponse>(&responses[0]) else {
         panic!("{:?}", responses[0])
     };
     assert_eq!(pull.objects[0].remote_id.as_deref(), Some("primary/a"));
@@ -139,7 +144,7 @@ fn a_remote_under_another_name_reads_its_own_credentials_and_its_address() {
         "{\"cmd\":\"pull\",\"since\":null}\n",
     );
     assert!(
-        matches!(&responses[0], Response::Pull(p) if p.objects.len() == 1),
+        matches!(read::<PullResponse>(&responses[0]), Answer::Answered(p) if p.objects.len() == 1),
         "{:?}",
         responses[0]
     );
@@ -155,7 +160,7 @@ fn a_push_is_refused_per_mutation_without_a_credential_or_a_request() {
         helper(home.path(), &["gcal", ""], &google.base),
         &format!("{push}\n"),
     );
-    let Response::Push(answer) = &responses[0] else {
+    let Answer::Answered(answer) = read::<PushResponse>(&responses[0]) else {
         panic!("{:?}", responses[0])
     };
     assert!(!answer.results[0].ok);
@@ -177,8 +182,13 @@ fn a_request_that_does_not_decode_is_answered_and_the_loop_goes_on() {
         helper(home.path(), &["gcal", ""], "http://127.0.0.1:1"),
         "not json\n{\"cmd\":\"capabilities\"}\n",
     );
-    assert!(matches!(&responses[0], Response::Error { error } if error.contains("cannot read")));
-    assert!(matches!(&responses[1], Response::Capabilities(_)));
+    assert!(
+        matches!(read::<Capabilities>(&responses[0]), Answer::Failed { error } if error.contains("cannot read"))
+    );
+    assert!(matches!(
+        read::<Capabilities>(&responses[1]),
+        Answer::Answered(_)
+    ));
 }
 
 #[test]
