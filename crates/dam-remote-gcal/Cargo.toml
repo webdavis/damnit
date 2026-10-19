@@ -18,6 +18,7 @@ name = "dam-remote-gcal"
 path = "src/main.rs"
 
 [dependencies]
+dam-helper = { path = "../dam-helper" }
 dam-protocol = { path = "../dam-protocol" }
 getrandom.workspace = true
 jiff.workspace = true

@@ -1,4 +1,4 @@
-use dam_protocol::credential_variable;
+use dam_helper::credential;
 
 use crate::{Client, Secret};
 
@@ -17,18 +17,13 @@ impl Credentials {
         remote: &str,
         lookup: impl Fn(&str) -> Option<String>,
     ) -> Result<Credentials, String> {
-        let read = |name: &str| {
-            let variable = credential_variable(remote, name);
-            lookup(&variable).filter(|v| !v.is_empty()).ok_or_else(|| {
-                format!("{variable} is not set; declare {name} under [remote.{remote}]")
-            })
-        };
+        let read = |name: &str| credential(remote, name, &lookup);
         Ok(Credentials {
             client: Client {
-                id: read("client_id")?,
-                secret: Secret::from(read("client_secret")?),
+                id: read("client_id")?.expose().to_string(),
+                secret: read("client_secret")?,
             },
-            refresh_token: Secret::from(read("refresh_token")?),
+            refresh_token: read("refresh_token")?,
         })
     }
 }

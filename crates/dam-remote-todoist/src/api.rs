@@ -1,12 +1,10 @@
 mod error;
 mod resources;
-mod token;
 
 pub use error::{ApiError, MAX_ERROR_BODY_CHARS};
 pub use resources::{Deadline, Due, Item, Project, Section, SyncResponse, SyncWrite};
-pub use token::ApiToken;
 
-use dam_protocol::credential_variable;
+use dam_helper::{Secret, base_url, credential};
 use error::read_json;
 
 pub const PRODUCTION_BASE: &str = "https://api.todoist.com/api/v1";
@@ -15,7 +13,7 @@ pub const PRODUCTION_BASE: &str = "https://api.todoist.com/api/v1";
 pub struct TodoistApi {
     agent: ureq::Agent,
     base: String,
-    token: ApiToken,
+    token: Secret,
 }
 
 impl TodoistApi {
@@ -34,20 +32,9 @@ impl TodoistApi {
     }
 
     pub fn from_env(remote: &str) -> Result<TodoistApi, String> {
-        let api = TodoistApi::from_lookup(remote, |variable| std::env::var(variable).ok())?;
-        let base = production_base_unless_set(std::env::var("DAM_TODOIST_BASE_URL"))?;
-        Ok(TodoistApi { base, ..api })
-    }
-
-    pub fn from_lookup(
-        remote: &str,
-        lookup: impl Fn(&str) -> Option<String>,
-    ) -> Result<TodoistApi, String> {
-        let variable = credential_variable(remote, "api_token");
-        let token = lookup(&variable).filter(|t| !t.is_empty()).ok_or_else(|| {
-            format!("{variable} is not set; declare api_token under [remote.{remote}]")
-        })?;
-        Ok(TodoistApi::new(PRODUCTION_BASE, &token))
+        let token = credential(remote, "api_token", |variable| std::env::var(variable).ok())?;
+        let base = base_url("DAM_TODOIST_BASE_URL")?.unwrap_or_else(|| PRODUCTION_BASE.into());
+        Ok(TodoistApi::new(&base, token.expose()))
     }
 
     pub fn sync_all(&self) -> Result<SyncResponse, ApiError> {
@@ -61,11 +48,15 @@ impl TodoistApi {
         let response = self
             .agent
             .post(format!("{}/sync", self.base))
-            .header("Authorization", &self.token.bearer_authorization())
+            .header("Authorization", &self.authorization())
             .send_form([("commands", encoded.as_str())])
             .map_err(|e| ApiError::Transport(e.to_string()))?;
         let value = read_json(response)?;
         serde_json::from_value(value).map_err(|e| ApiError::Decode(e.to_string()))
+    }
+
+    fn authorization(&self) -> String {
+        format!("Bearer {}", self.token.expose())
     }
 
     pub fn post(
@@ -76,44 +67,11 @@ impl TodoistApi {
         let response = self
             .agent
             .post(format!("{}{path}", self.base))
-            .header("Authorization", &self.token.bearer_authorization())
+            .header("Authorization", &self.authorization())
             .send_json(body)
             .map_err(|e| ApiError::Transport(e.to_string()))?;
         read_json(response)
     }
-}
-
-fn production_base_unless_set(value: Result<String, std::env::VarError>) -> Result<String, String> {
-    match value {
-        Ok(value) => loopback_test_base(&value),
-        Err(std::env::VarError::NotPresent) => Ok(PRODUCTION_BASE.to_string()),
-        Err(std::env::VarError::NotUnicode(_)) => Err(
-            "DAM_TODOIST_BASE_URL is set to bytes that are not Unicode; the test seam takes \
-             http://127.0.0.1:<port> or http://localhost:<port>"
-                .to_string(),
-        ),
-    }
-}
-
-fn loopback_test_base(value: &str) -> Result<String, String> {
-    let refused = || {
-        format!(
-            "DAM_TODOIST_BASE_URL is a test seam and must be http://127.0.0.1:<port> or \
-             http://localhost:<port>, not {value:?}"
-        )
-    };
-    let base = value.strip_suffix('/').unwrap_or(value);
-    let (host, port) = base
-        .strip_prefix("http://")
-        .and_then(|rest| rest.rsplit_once(':'))
-        .ok_or_else(refused)?;
-    if !matches!(host, "127.0.0.1" | "localhost")
-        || port.is_empty()
-        || !port.chars().all(|c| c.is_ascii_digit())
-    {
-        return Err(refused());
-    }
-    Ok(base.to_string())
 }
 
 #[cfg(test)]

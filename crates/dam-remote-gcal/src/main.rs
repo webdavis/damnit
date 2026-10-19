@@ -1,6 +1,7 @@
 use std::io;
 
-use dam_remote_gcal::serve::answer_each_request_line;
+use dam_helper::serve;
+use dam_remote_gcal::remote::Gcal;
 
 const USAGE: &str =
     "usage: dam-remote-gcal <remote> <address>\n  dam runs this; to sign in, run dam-gcal-sign-in";
@@ -11,10 +12,9 @@ fn main() {
         eprintln!("{USAGE}");
         std::process::exit(2);
     };
-    answer_each_request_line(
+    serve(
         &mut io::stdin().lock(),
         &mut io::stdout().lock(),
-        remote,
-        address,
+        &Gcal { remote, address },
     );
 }
