@@ -1,4 +1,4 @@
-use dam_domain::{CommitId, CommitRecord};
+use dam_domain::{Change, CommitId, CommitRecord};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{Clock, CommitRepository, Randomness, StageRepository};
@@ -14,14 +14,23 @@ pub fn commit(
     if changes.is_empty() {
         return Err(Refusal::NothingToCommit.into());
     }
-    let record = CommitRecord {
-        id: CommitId::generate(&mut |b| random.fill(b)),
-        message: message.to_string(),
-        at: clock.now(),
-        changes,
-    };
+    let record = record(clock, random, message.to_string(), changes);
     commits.commit(&record)?;
     Ok(record)
+}
+
+pub(crate) fn record(
+    clock: &dyn Clock,
+    random: &dyn Randomness,
+    message: String,
+    changes: Vec<Change>,
+) -> CommitRecord {
+    CommitRecord {
+        id: CommitId::generate(&mut |b| random.fill(b)),
+        message,
+        at: clock.now(),
+        changes,
+    }
 }
 
 pub fn log(commits: &dyn CommitRepository) -> Result<Vec<CommitRecord>, UseCaseError> {

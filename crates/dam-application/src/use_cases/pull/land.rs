@@ -1,4 +1,4 @@
-use dam_domain::{Change, CommitId, CommitRecord, Oid};
+use dam_domain::{Change, Oid};
 
 use super::PullReport;
 use super::classify::Incoming;
@@ -6,6 +6,7 @@ use super::notices::note_cancelled;
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
 use crate::ports::{Clock, Randomness, Repositories};
+use crate::use_cases::commit::record;
 
 pub(super) fn land(
     repos: Repositories<'_>,
@@ -57,13 +58,13 @@ fn commit_as_already_pushed(
     remote: &RemoteConfig,
     landed: Vec<Change>,
 ) -> Result<(), UseCaseError> {
-    let record = CommitRecord {
-        id: CommitId::generate(&mut |b| random.fill(b)),
-        message: format!("pull from {}", remote.name.0),
-        at: clock.now(),
-        changes: landed,
-    };
-    repos.commits.commit(&record)?;
-    repos.commits.mark_pushed(&remote.name, &record.id)?;
+    let pulled = record(
+        clock,
+        random,
+        format!("pull from {}", remote.name.0),
+        landed,
+    );
+    repos.commits.commit(&pulled)?;
+    repos.commits.mark_pushed(&remote.name, &pulled.id)?;
     Ok(())
 }

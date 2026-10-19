@@ -1,8 +1,9 @@
-use dam_domain::{Change, CommitId, CommitRecord, Oid};
+use dam_domain::{Change, Oid};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{Clock, CommitRepository, ConflictRepository, ObjectRepository, Randomness};
 use crate::use_cases::atomically::atomically;
+use crate::use_cases::commit::record;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Side {
@@ -34,26 +35,10 @@ pub fn resolve(
         };
         let resolution = Change::Update { before, after };
         let message = format!("resolve {} with {word}", oid.short());
-        commit_as_the_last_unpushed_word(commits, clock, random, message, resolution)?;
+        commits.commit(&record(clock, random, message, vec![resolution]))?;
         conflicts.clear_conflict(oid)?;
         Ok(())
     })
-}
-
-fn commit_as_the_last_unpushed_word(
-    commits: &dyn CommitRepository,
-    clock: &dyn Clock,
-    random: &dyn Randomness,
-    message: String,
-    change: Change,
-) -> Result<(), UseCaseError> {
-    commits.commit(&CommitRecord {
-        id: CommitId::generate(&mut |b| random.fill(b)),
-        message,
-        at: clock.now(),
-        changes: vec![change],
-    })?;
-    Ok(())
 }
 
 #[cfg(test)]
