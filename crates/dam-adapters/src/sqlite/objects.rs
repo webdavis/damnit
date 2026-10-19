@@ -111,7 +111,7 @@ impl SqliteStore {
     pub(super) fn put_object(&self, object: &Object) -> Result<(), StoreError> {
         self.conn
             .execute(
-                "INSERT INTO objects (oid, kind, path, json) VALUES (?1, '', ?2, ?3)
+                "INSERT INTO objects (oid, path, json) VALUES (?1, ?2, ?3)
                  ON CONFLICT(oid) DO UPDATE SET path = excluded.path, json = excluded.json",
                 params![
                     object.oid().as_str(),
