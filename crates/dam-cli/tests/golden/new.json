@@ -1,0 +1,18 @@
+{
+  "oid": "<id-1>",
+  "kind": "task",
+  "subject": "water plants",
+  "body": "the fern first",
+  "path": "home/",
+  "labels": [
+    "home"
+  ],
+  "depends": [],
+  "reminders": [],
+  "task": {
+    "done": false,
+    "priority": 3,
+    "due": "2026-09-26",
+    "deadline": "2026-09-28"
+  }
+}

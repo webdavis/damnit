@@ -1,0 +1,20 @@
+{
+  "oid": "1111111111111111111111111111111111111111",
+  "kind": "task",
+  "subject": "buy soy milk",
+  "body": "",
+  "path": "home/",
+  "labels": [
+    "home"
+  ],
+  "depends": [
+    "2222222222222222222222222222222222222222"
+  ],
+  "reminders": [],
+  "task": {
+    "done": false,
+    "priority": 2,
+    "due": "2026-09-25",
+    "deadline": "2026-09-30"
+  }
+}

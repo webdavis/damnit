@@ -1,0 +1,11 @@
+{
+  "remotes": [
+    {
+      "remote": "fake",
+      "sent": 2,
+      "succeeded": 2,
+      "skipped": 2,
+      "failed": []
+    }
+  ]
+}

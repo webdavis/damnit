@@ -1,0 +1,20 @@
+{
+  "oid": "3333333333333333333333333333333333333333",
+  "kind": "event",
+  "subject": "standup",
+  "body": "",
+  "path": "home/",
+  "labels": [],
+  "depends": [],
+  "reminders": [],
+  "event": {
+    "start": "2026-09-25T09:00:00+00:00[UTC]",
+    "end": "2026-09-25T09:15:00+00:00[UTC]",
+    "attendees": [],
+    "status": "confirmed",
+    "transparency": "busy",
+    "visibility": "default",
+    "event_type": "default",
+    "attachments": []
+  }
+}

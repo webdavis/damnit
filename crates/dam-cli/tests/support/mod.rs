@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+pub mod fixture;
+pub mod golden;
 pub mod sandbox;
 
 use std::time::{Duration, Instant};

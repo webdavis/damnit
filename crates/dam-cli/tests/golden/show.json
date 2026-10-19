@@ -1,0 +1,17 @@
+{
+  "oid": "1111111111111111111111111111111111111111",
+  "kind": "task",
+  "subject": "buy oat milk",
+  "body": "",
+  "path": "home/",
+  "labels": [
+    "errand"
+  ],
+  "depends": [],
+  "reminders": [],
+  "task": {
+    "done": false,
+    "priority": 2,
+    "due": "2026-09-25"
+  }
+}
