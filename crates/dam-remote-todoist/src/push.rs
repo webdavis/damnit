@@ -6,7 +6,8 @@ mod shape;
 use dam_protocol::{Mutation, MutationResult, PushResponse, Verdict, WireObject};
 
 use crate::api::{ApiError, Item, Project, Section, SyncWrite, TodoistSync};
-use crate::map::{Tree, api_priority, remote_id};
+use crate::map::{RemoteId, Tree, api_priority};
+use commands::Command;
 use plan::{missing_object, plan_for, resend_stable_temp_id};
 use shape::Shape;
 
@@ -87,14 +88,17 @@ fn apply(
     Ok(Some(add_created_to_tree(tree, object, shape, id)))
 }
 
-fn send_every_command(
-    api: &impl TodoistSync,
-    commands: &[serde_json::Value],
-) -> Result<SyncWrite, Failure> {
-    let written = api.write(commands)?;
+fn send_every_command(api: &impl TodoistSync, commands: &[Command]) -> Result<SyncWrite, Failure> {
+    let encoded = commands
+        .iter()
+        .map(serde_json::to_value)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| Failure::OnlyThisMutation(e.to_string()))?;
+    let written = api.write(&encoded)?;
     for sent in commands {
-        let uuid = sent["uuid"].as_str().unwrap_or_default();
-        written.accepted(uuid).map_err(Failure::OnlyThisMutation)?;
+        written
+            .accepted(&sent.uuid)
+            .map_err(Failure::OnlyThisMutation)?;
     }
     Ok(written)
 }
@@ -110,7 +114,7 @@ fn add_created_to_tree(tree: &mut Tree, object: &WireObject, shape: Shape, id: S
                 is_archived: false,
                 inbox_project: false,
             });
-            remote_id('p', &id)
+            RemoteId::Project(id).to_string()
         }
         Shape::Section { project_id } => {
             tree.add_section(Section {
@@ -119,7 +123,7 @@ fn add_created_to_tree(tree: &mut Tree, object: &WireObject, shape: Shape, id: S
                 project_id,
                 is_deleted: false,
             });
-            remote_id('s', &id)
+            RemoteId::Section(id).to_string()
         }
         Shape::Item {
             project_id,
@@ -141,7 +145,7 @@ fn add_created_to_tree(tree: &mut Tree, object: &WireObject, shape: Shape, id: S
                 checked: task.is_some_and(|t| t.done),
                 is_deleted: false,
             });
-            remote_id('i', &id)
+            RemoteId::Item(id).to_string()
         }
     }
 }

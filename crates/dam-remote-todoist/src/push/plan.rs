@@ -1,13 +1,16 @@
+mod update;
+
 use dam_protocol::{Mutation, WireObject};
 
 use super::Failure;
-use super::carried::fields_the_container_cannot_carry;
-use super::commands::{ItemWrite, command, creating_command, item_args, repeatable_command_uuid};
+use super::commands::{
+    Command, ItemWrite, args, command, creating_command, item_args, repeatable_command_uuid,
+};
 use super::shape::{Shape, shape_for};
-use crate::map::{Tree, split_remote_id};
+use crate::map::{RemoteId, Tree};
 
 pub struct Plan {
-    pub commands: Vec<serde_json::Value>,
+    pub commands: Vec<Command>,
     pub creates: Option<Shape>,
     pub refused: Option<String>,
 }
@@ -23,13 +26,9 @@ pub fn plan_for(
 ) -> Result<Plan, Failure> {
     match m.op.as_str() {
         "delete" => {
-            let (kind, id) = addressed(m, "delete")?;
+            let (verb, id) = delete_verb(addressed(m, "delete")?);
             Ok(Plan {
-                commands: vec![command(
-                    delete_verb(kind),
-                    numbered(m, 0)?,
-                    serde_json::json!({ "id": id }),
-                )],
+                commands: vec![command(verb, numbered(m, 0)?, args([("id", id.into())]))],
                 creates: None,
                 refused: None,
             })
@@ -40,8 +39,8 @@ pub fn plan_for(
         }
         "update" => {
             let object = m.object.as_ref().ok_or(missing_object("update"))?;
-            let (kind, id) = addressed(m, "update")?;
-            update_plan(tree, m, object, kind, id)
+            let remote = addressed(m, "update")?;
+            update::update_plan(tree, m, object, remote)
         }
         other => Err(Failure::OnlyThisMutation(format!("unknown op {other:?}"))),
     }
@@ -59,15 +58,15 @@ fn create_plan(
     let mut commands = Vec::new();
     match &shape {
         Shape::Project { parent_id } => {
-            let mut args = serde_json::json!({ "name": object.subject });
+            let mut project = args([("name", object.subject.clone().into())]);
             if let Some(p) = parent_id {
-                args["parent_id"] = p.clone().into();
+                project.insert("parent_id".into(), p.clone().into());
             }
             commands.push(creating_command(
                 "project_add",
                 numbered(m, 0)?,
                 temp_id,
-                args,
+                project,
             ));
         }
         Shape::Section { project_id } => {
@@ -75,7 +74,10 @@ fn create_plan(
                 "section_add",
                 numbered(m, 0)?,
                 temp_id,
-                serde_json::json!({ "name": object.subject, "project_id": project_id }),
+                args([
+                    ("name", object.subject.clone().into()),
+                    ("project_id", project_id.clone().into()),
+                ]),
             ));
         }
         Shape::Item {
@@ -83,20 +85,20 @@ fn create_plan(
             section_id,
             parent_id,
         } => {
-            let mut args = item_args(object, ItemWrite::Create);
-            args["project_id"] = project_id.clone().into();
+            let mut item = item_args(object, ItemWrite::Create);
+            item.insert("project_id".into(), project_id.clone().into());
             if let Some(s) = section_id {
-                args["section_id"] = s.clone().into();
+                item.insert("section_id".into(), s.clone().into());
             }
             if let Some(p) = parent_id {
-                args["parent_id"] = p.clone().into();
+                item.insert("parent_id".into(), p.clone().into());
             }
-            commands.push(creating_command("item_add", numbered(m, 0)?, temp_id, args));
+            commands.push(creating_command("item_add", numbered(m, 0)?, temp_id, item));
             if object.task.as_ref().is_some_and(|t| t.done) {
                 commands.push(command(
                     "item_close",
                     numbered(m, 1)?,
-                    serde_json::json!({ "id": temp_id }),
+                    args([("id", temp_id.into())]),
                 ));
             }
         }
@@ -108,106 +110,6 @@ fn create_plan(
     })
 }
 
-fn update_plan(
-    tree: &Tree,
-    m: &Mutation,
-    object: &WireObject,
-    kind: char,
-    id: &str,
-) -> Result<Plan, Failure> {
-    let changed = |f: &str| m.fields.iter().any(|x| x == f);
-    let done = object.task.as_ref().is_some_and(|t| t.done);
-    let mut commands = Vec::new();
-    let mut refused = None;
-    match kind {
-        'p' | 's' => {
-            let held = tree.held_wire(kind, id);
-            refused = fields_the_container_cannot_carry(kind, &m.fields, object, held.as_ref());
-            if changed("subject") {
-                let verb = if kind == 'p' {
-                    "project_update"
-                } else {
-                    "section_update"
-                };
-                let n = commands.len();
-                commands.push(command(
-                    verb,
-                    numbered(m, n)?,
-                    serde_json::json!({ "id": id, "name": object.subject }),
-                ));
-            }
-            if kind == 'p' && changed("done") {
-                let verb = if done {
-                    "project_archive"
-                } else {
-                    "project_unarchive"
-                };
-                let n = commands.len();
-                commands.push(command(
-                    verb,
-                    numbered(m, n)?,
-                    serde_json::json!({ "id": id }),
-                ));
-            }
-        }
-        _ => {
-            if changed("path") {
-                let n = commands.len();
-                commands.push(command(
-                    "item_move",
-                    numbered(m, n)?,
-                    most_specific_container_move_args(tree, id, object)?,
-                ));
-            }
-            let mut args = item_args(object, ItemWrite::Update { changed: &m.fields });
-            if args.as_object().is_some_and(|o| !o.is_empty()) {
-                args["id"] = id.into();
-                let n = commands.len();
-                commands.push(command("item_update", numbered(m, n)?, args));
-            }
-            if changed("done") {
-                let verb = if done {
-                    "item_close"
-                } else {
-                    "item_uncomplete"
-                };
-                let n = commands.len();
-                commands.push(command(
-                    verb,
-                    numbered(m, n)?,
-                    serde_json::json!({ "id": id }),
-                ));
-            }
-        }
-    }
-    Ok(Plan {
-        commands,
-        creates: None,
-        refused,
-    })
-}
-
-fn most_specific_container_move_args(
-    tree: &Tree,
-    id: &str,
-    object: &WireObject,
-) -> Result<serde_json::Value, Failure> {
-    match shape_for(tree, object, &[]).map_err(Failure::OnlyThisMutation)? {
-        Shape::Item {
-            project_id,
-            section_id,
-            parent_id,
-        } => Ok(match (parent_id, section_id) {
-            (Some(p), _) => serde_json::json!({ "id": id, "parent_id": p }),
-            (None, Some(s)) => serde_json::json!({ "id": id, "section_id": s }),
-            (None, None) => serde_json::json!({ "id": id, "project_id": project_id }),
-        }),
-        _ => Err(Failure::OnlyThisMutation(
-            "a path change would move the task out of task position".into(),
-        )),
-    }
-}
-
 fn numbered(m: &Mutation, ordinal: usize) -> Result<String, Failure> {
     repeatable_command_uuid(&m.idempotency_key, ordinal).map_err(Failure::OnlyThisMutation)
 }
@@ -216,19 +118,19 @@ pub fn missing_object(op: &str) -> Failure {
     Failure::OnlyThisMutation(format!("{op} without an object"))
 }
 
-fn addressed<'m>(m: &'m Mutation, op: &str) -> Result<(char, &'m str), Failure> {
+fn addressed(m: &Mutation, op: &str) -> Result<RemoteId, Failure> {
     let text = m
         .remote_id
         .as_deref()
         .ok_or_else(|| Failure::OnlyThisMutation(format!("{op} without a Todoist id")))?;
-    split_remote_id(text)
+    text.parse()
         .map_err(|e| Failure::OnlyThisMutation(format!("{op} with an unusable Todoist id: {e}")))
 }
 
-fn delete_verb(kind: char) -> &'static str {
-    match kind {
-        'p' => "project_delete",
-        's' => "section_delete",
-        _ => "item_delete",
+fn delete_verb(remote: RemoteId) -> (&'static str, String) {
+    match remote {
+        RemoteId::Project(id) => ("project_delete", id),
+        RemoteId::Section(id) => ("section_delete", id),
+        RemoteId::Item(id) => ("item_delete", id),
     }
 }

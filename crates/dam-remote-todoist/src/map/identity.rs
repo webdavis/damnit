@@ -1,7 +1,21 @@
 use std::fmt;
+use std::str::FromStr;
 
-pub fn remote_id(kind: char, id: &str) -> String {
-    format!("{kind}:{id}")
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RemoteId {
+    Project(String),
+    Section(String),
+    Item(String),
+}
+
+impl fmt::Display for RemoteId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            RemoteId::Project(id) => write!(f, "p:{id}"),
+            RemoteId::Section(id) => write!(f, "s:{id}"),
+            RemoteId::Item(id) => write!(f, "i:{id}"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -21,13 +35,21 @@ impl fmt::Display for RemoteIdError {
     }
 }
 
-pub fn split_remote_id(text: &str) -> Result<(char, &str), RemoteIdError> {
-    let (kind, id) = text.split_once(':').ok_or(RemoteIdError::NoKind)?;
-    let mut chars = kind.chars();
-    match (chars.next(), chars.next()) {
-        (Some(k @ ('p' | 's' | 'i')), None) if could_be_issued_by_todoist(id) => Ok((k, id)),
-        (Some('p' | 's' | 'i'), None) => Err(RemoteIdError::BadId),
-        _ => Err(RemoteIdError::NoKind),
+impl FromStr for RemoteId {
+    type Err = RemoteIdError;
+
+    fn from_str(text: &str) -> Result<RemoteId, RemoteIdError> {
+        let (kind, id) = text.split_once(':').ok_or(RemoteIdError::NoKind)?;
+        let variant = match kind {
+            "p" => RemoteId::Project,
+            "s" => RemoteId::Section,
+            "i" => RemoteId::Item,
+            _ => return Err(RemoteIdError::NoKind),
+        };
+        match could_be_issued_by_todoist(id) {
+            true => Ok(variant(id.to_string())),
+            false => Err(RemoteIdError::BadId),
+        }
     }
 }
 

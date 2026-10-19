@@ -32,19 +32,21 @@ fn priorities_map_both_ways() {
     assert_eq!(dam_priority(4), 1);
     assert_eq!(dam_priority(0), 4);
     assert_eq!(dam_priority(9), 1);
-    assert_eq!(split_remote_id("i:abc"), Ok(('i', "abc")));
-    assert_eq!(split_remote_id("abc"), Err(RemoteIdError::NoKind));
+    assert_eq!("i:abc".parse(), Ok(RemoteId::Item("abc".into())));
+    assert_eq!("abc".parse::<RemoteId>(), Err(RemoteIdError::NoKind));
 }
 
 #[test]
 fn a_remote_id_whose_tail_is_not_a_todoist_id_is_refused() {
     assert_eq!(
-        split_remote_id("i:6X7rM8997g3RQmvh"),
-        Ok(('i', "6X7rM8997g3RQmvh"))
+        "i:6X7rM8997g3RQmvh".parse(),
+        Ok(RemoteId::Item("6X7rM8997g3RQmvh".into()))
     );
     assert_eq!(
-        split_remote_id("p:c7beb07f-b226-4eb1-bf63-30d782b07b1a"),
-        Ok(('p', "c7beb07f-b226-4eb1-bf63-30d782b07b1a"))
+        "p:c7beb07f-b226-4eb1-bf63-30d782b07b1a".parse(),
+        Ok(RemoteId::Project(
+            "c7beb07f-b226-4eb1-bf63-30d782b07b1a".into()
+        ))
     );
     for hostile in [
         "i:../../projects/p1",
@@ -55,7 +57,7 @@ fn a_remote_id_whose_tail_is_not_a_todoist_id_is_refused() {
         "i:",
     ] {
         assert_eq!(
-            split_remote_id(hostile),
+            hostile.parse::<RemoteId>(),
             Err(RemoteIdError::BadId),
             "{hostile}"
         );

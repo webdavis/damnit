@@ -1,27 +1,26 @@
 use dam_protocol::WireObject;
 
-struct Carries {
+pub struct Carries {
     fields: &'static [&'static str],
     sentence: &'static str,
 }
 
-const PROJECT: Carries = Carries {
+pub const PROJECT: Carries = Carries {
     fields: &["subject", "done"],
     sentence: "a Todoist project carries only its name and whether it is archived",
 };
 
-const SECTION: Carries = Carries {
+pub const SECTION: Carries = Carries {
     fields: &["subject"],
     sentence: "a Todoist section carries only its name",
 };
 
 pub fn fields_the_container_cannot_carry(
-    kind: char,
+    carries: &Carries,
     declared: &[String],
     object: &WireObject,
     held: Option<&WireObject>,
 ) -> Option<String> {
-    let carries = if kind == 'p' { PROJECT } else { SECTION };
     let stuck: Vec<&str> = declared
         .iter()
         .map(String::as_str)
@@ -89,11 +88,11 @@ mod tests {
         let declared = ["subject".to_string(), "done".into(), "body".into()];
         let (object, held) = (object("Work/", true), object("Work/", false));
         assert_eq!(
-            fields_the_container_cannot_carry('p', &declared[..2], &object, Some(&held)),
+            fields_the_container_cannot_carry(&PROJECT, &declared[..2], &object, Some(&held)),
             None
         );
         assert_eq!(
-            fields_the_container_cannot_carry('s', &declared, &object, Some(&held)).as_deref(),
+            fields_the_container_cannot_carry(&SECTION, &declared, &object, Some(&held)).as_deref(),
             Some("a Todoist section carries only its name; done did not change")
         );
     }
@@ -103,7 +102,7 @@ mod tests {
         let declared = ["path".to_string(), "done".into()];
         let object = object("Work/", false);
         assert_eq!(
-            fields_the_container_cannot_carry('s', &declared, &object, None).as_deref(),
+            fields_the_container_cannot_carry(&SECTION, &declared, &object, None).as_deref(),
             Some("a Todoist section carries only its name; path, done did not change")
         );
     }

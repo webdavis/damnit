@@ -1,6 +1,6 @@
 use dam_protocol::{WireObject, WireTask};
 
-use super::{Tree, dam_priority, remote_id};
+use super::{RemoteId, Tree, dam_priority};
 use crate::api::{Item, Project, Section};
 
 fn wire(remote_id: String, subject: &str, body: &str, path: String, task: WireTask) -> WireObject {
@@ -38,7 +38,7 @@ pub fn project_to_wire(t: &Tree, p: &Project) -> WireObject {
         .and_then(|pid| t.project_path(pid))
         .unwrap_or_default();
     wire(
-        remote_id('p', &p.id),
+        RemoteId::Project(p.id.clone()).to_string(),
         &p.name,
         "",
         path,
@@ -48,7 +48,13 @@ pub fn project_to_wire(t: &Tree, p: &Project) -> WireObject {
 
 pub fn section_to_wire(t: &Tree, s: &Section) -> WireObject {
     let path = t.project_path(&s.project_id).unwrap_or_default();
-    wire(remote_id('s', &s.id), &s.name, "", path, plain(false))
+    wire(
+        RemoteId::Section(s.id.clone()).to_string(),
+        &s.name,
+        "",
+        path,
+        plain(false),
+    )
 }
 
 pub fn item_to_wire(t: &Tree, i: &Item) -> Option<WireObject> {
@@ -62,7 +68,7 @@ pub fn item_to_wire(t: &Tree, i: &Item) -> Option<WireObject> {
         event: None,
     };
     let mut w = wire(
-        remote_id('i', &i.id),
+        RemoteId::Item(i.id.clone()).to_string(),
         &i.content,
         &i.description,
         path,
