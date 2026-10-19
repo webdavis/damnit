@@ -6,8 +6,11 @@ use dam_application::{ConfigError, Refusal, StoreError, UseCaseError};
 use crate::editor::EditorError;
 
 mod refusal_oids;
+mod refusal_text;
+mod use_case_text;
 
 use refusal_oids::refusal_oids;
+pub(crate) use use_case_text::UseCaseText;
 
 #[derive(Debug)]
 pub(crate) enum CliError {
@@ -91,7 +94,7 @@ impl CliError {
 impl fmt::Display for CliError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            CliError::UseCase(e) => write!(f, "{e}"),
+            CliError::UseCase(e) => write!(f, "{}", UseCaseText(e)),
             CliError::Editor(e) => write!(f, "editor: {}", e.0),
             CliError::Config(e) => write!(f, "{e}"),
             CliError::Open(e) => write!(f, "{e}"),

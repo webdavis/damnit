@@ -146,34 +146,3 @@ fn every_name_is_lower_snake_case_and_says_something() {
         );
     }
 }
-
-#[test]
-fn no_refusal_spans_more_than_one_line() {
-    for refusal in one_sample_of_every_refusal() {
-        let text = refusal.to_string();
-        assert!(!text.contains('\n'), "{text:?}");
-    }
-}
-
-#[test]
-fn a_blocked_task_names_its_open_children_and_dependencies_in_one_line() {
-    let blocked = |dependencies, children| Refusal::Blocked {
-        oid: oid_of(1),
-        blockers: Blockers {
-            dependencies,
-            children,
-        },
-    };
-    assert_eq!(
-        blocked(vec![], vec![oid_of(2), oid_of(3), oid_of(4)]).to_string(),
-        "0101010 has 3 open children: 0202020, 0303030, 0404040; pass --force to complete it anyway"
-    );
-    assert_eq!(
-        blocked(vec![oid_of(2)], vec![]).to_string(),
-        "0101010 has 1 open dependency: 0202020; pass --force to complete it anyway"
-    );
-    assert_eq!(
-        blocked(vec![oid_of(3), oid_of(4)], vec![oid_of(2)]).to_string(),
-        "0101010 has 1 open child: 0202020 and 2 open dependencies: 0303030, 0404040; pass --force to complete it anyway"
-    );
-}

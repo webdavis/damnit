@@ -48,7 +48,6 @@ fn undone_on_a_task_that_is_not_completed_is_refused_naming_it() {
         err,
         UseCaseError::Refused(Refusal::NotCompleted(id.clone()))
     );
-    assert!(err.to_string().contains(id.short()), "{err}");
 }
 
 #[test]

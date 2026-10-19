@@ -24,7 +24,11 @@ impl Dam<'_> {
         Ok(())
     }
 
-    pub fn refresh_stale(&self, remotes: Remotes<'_>) -> Result<(), UseCaseError> {
+    pub fn refresh_stale(
+        &self,
+        remotes: Remotes<'_>,
+        say: fn(&UseCaseError) -> String,
+    ) -> Result<(), UseCaseError> {
         for remote in &self.config.remotes {
             let Some(window) = remote.stale else {
                 continue;
@@ -35,7 +39,7 @@ impl Dam<'_> {
             {
                 self.store.add_notice(&Notice::PullFailed {
                     remote: remote.name.clone(),
-                    why: e.to_string(),
+                    why: say(&e),
                 })?;
             }
         }

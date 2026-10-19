@@ -5,7 +5,7 @@ use dam_domain::Oid;
 use crate::args::EditArgs;
 use crate::commands::parsing::{deadline_flag, when_flag};
 use crate::context::Context;
-use crate::error::CliError;
+use crate::error::{CliError, UseCaseText};
 use crate::output::Report;
 use crate::view::{ObjectRow, report};
 
@@ -24,7 +24,7 @@ fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
     let oid_of = |flag: &str, text: &str| {
         ctx.dam()
             .resolve_object(text)
-            .map_err(|e| CliError::Usage(format!("--{flag}: {e}")))
+            .map_err(|e| CliError::Usage(format!("--{flag}: {}", UseCaseText(&e))))
     };
     let mut f = EditFields {
         subject: args.subject,

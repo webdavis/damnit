@@ -113,7 +113,6 @@ fn resolving_a_non_conflict_is_refused() {
     let dam = fixture.dam(&store);
     let err = dam.resolve(&oid(1), Side::Ours).unwrap_err();
     assert_eq!(err, UseCaseError::Refused(Refusal::NoConflict(oid(1))));
-    assert_eq!(err.to_string(), "0101010 has no conflict to resolve");
 }
 
 #[test]

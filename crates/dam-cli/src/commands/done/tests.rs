@@ -126,7 +126,10 @@ fn a_machine_format_refuses_to_ask_instead_of_blocking() {
     let ctx = machine_context();
     parent_and_child(&ctx);
     let err = run(&ctx, args(&oid(1), true, true)).unwrap_err();
-    assert_eq!(err.to_string(), Refusal::NeedsAnAnswer.to_string());
+    assert_eq!(
+        err.to_string(),
+        CliError::from(Refusal::NeedsAnAnswer).to_string()
+    );
     assert_eq!(err.exit_code(), 4);
     assert!(!is_done(&ctx, 1));
 }

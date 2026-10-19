@@ -3,7 +3,7 @@ use dam_domain::{CommitRecord, Oid};
 use crate::errors::{Refusal, UseCaseError};
 use crate::service::Dam;
 
-pub(crate) const SHORTEST_OID_PREFIX: usize = 4;
+pub const SHORTEST_OID_PREFIX: usize = 4;
 
 impl Dam<'_> {
     pub fn resolve_object(&self, text: &str) -> Result<Oid, UseCaseError> {

@@ -2,9 +2,6 @@ use dam_domain::{Blockers, LabelViolation, Oid, QueryError, Tracked};
 
 use crate::ports::{CredentialError, HelperError, StoreError};
 
-mod refusal_display;
-mod use_case_display;
-
 #[derive(Debug, PartialEq, Eq)]
 pub enum Refusal {
     Blocked {
@@ -119,8 +116,6 @@ impl From<CredentialError> for UseCaseError {
         UseCaseError::Credential(e)
     }
 }
-
-impl std::error::Error for UseCaseError {}
 
 #[cfg(test)]
 mod tests;

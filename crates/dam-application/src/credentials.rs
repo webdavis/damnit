@@ -90,7 +90,6 @@ mod tests {
             }),
         ];
         for e in errors {
-            assert!(!format!("{e}").contains(TOKEN));
             assert!(!format!("{e:?}").contains(TOKEN));
         }
     }

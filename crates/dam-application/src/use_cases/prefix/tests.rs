@@ -49,10 +49,6 @@ fn a_short_or_non_hex_prefix_is_not_an_oid() {
             Err(UseCaseError::NotAnOid(text.into()))
         );
     }
-    assert_eq!(
-        UseCaseError::NotAnOid("f5".into()).to_string(),
-        "\"f5\" is not an oid; give at least 4 hex characters"
-    );
 }
 
 #[test]
@@ -139,24 +135,5 @@ fn a_commit_prefix_naming_nothing_or_too_short_is_refused() {
     assert_eq!(
         dam.resolve_commit("ab"),
         Err(UseCaseError::NotAnOid("ab".into()))
-    );
-}
-
-#[test]
-fn an_ambiguous_prefix_names_each_match_by_its_short_id() {
-    let refused = Refusal::AmbiguousPrefix {
-        text: "abab".into(),
-        matches: vec![
-            oid(0xab).to_string(),
-            Oid::generate(&mut |x: &mut [u8]| {
-                x.fill(0);
-                x[..2].fill(0xab);
-            })
-            .to_string(),
-        ],
-    };
-    assert_eq!(
-        refused.to_string(),
-        "abab matches more than one id: abababa, abab000; give more characters"
     );
 }

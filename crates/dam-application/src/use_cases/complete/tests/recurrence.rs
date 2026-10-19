@@ -53,12 +53,11 @@ fn a_rule_dam_cannot_read_is_refused_and_the_task_stays_open() {
         })
     );
     assert_eq!(
-        refused(Tracked::No).to_string(),
-        "cannot roll \"every other week\" forward; set --recurrence"
-    );
-    assert_eq!(
-        refused(Tracked::ByRemote).to_string(),
-        "cannot roll \"every other week\" forward; complete it in Todoist or set --recurrence"
+        refused(Tracked::ByRemote),
+        UseCaseError::Refused(Refusal::UnreadableRecurrence {
+            rule: "every other week".into(),
+            tracked: Tracked::ByRemote,
+        })
     );
     assert!(!task_of(&store, &id).completion.is_done());
 }
