@@ -36,12 +36,10 @@ pub(crate) fn move_into(
 
 fn move_folder(objects: &dyn ObjectRepository, from: &Path, to: &Path) -> Result<(), UseCaseError> {
     for mut object in objects.all()? {
-        if !object.base().path.is_within(from) {
+        let Some(rebased) = object.base().path.rebase(from, to) else {
             continue;
-        }
-        let suffix = &object.base().path.as_str()[from.as_str().len()..];
-        object.base_mut().path = Path::parse(&format!("{}{suffix}", to.as_str()))
-            .map_err(|e| UseCaseError::Parse(e.to_string()))?;
+        };
+        object.base_mut().path = rebased;
         objects.put(&object)?;
     }
     Ok(())

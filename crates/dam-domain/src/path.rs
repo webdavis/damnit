@@ -62,6 +62,11 @@ impl Path {
         Ok(Path(format!("{}{}/", self.0, segment)))
     }
 
+    pub fn rebase(&self, from: &Path, to: &Path) -> Option<Path> {
+        let rest = self.0.strip_prefix(&from.0)?;
+        Some(Path(format!("{}{rest}", to.0)))
+    }
+
     pub fn depth(&self) -> usize {
         self.0.matches('/').count()
     }
@@ -90,74 +95,4 @@ impl fmt::Display for PathError {
 impl std::error::Error for PathError {}
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn root_is_empty_and_has_no_parent() {
-        assert_eq!(Path::root().as_str(), "");
-        assert_eq!(Path::root().parent(), None);
-        assert_eq!(Path::root().depth(), 0);
-    }
-
-    #[test]
-    fn default_is_the_root() {
-        assert_eq!(Path::default(), Path::root());
-    }
-
-    #[test]
-    fn parse_normalizes_a_trailing_slash() {
-        assert_eq!(Path::parse("a/b").unwrap().as_str(), "a/b/");
-        assert_eq!(Path::parse("a/b/").unwrap().as_str(), "a/b/");
-    }
-
-    #[test]
-    fn parse_refuses_an_empty_segment() {
-        assert_eq!(Path::parse("a//b"), Err(PathError::EmptySegment));
-    }
-
-    #[test]
-    fn parse_refuses_a_relative_segment_so_a_dot_dot_b_cannot_pass_as_inside_a() {
-        for text in ["a/../b", "a/./b", "..", ".", "../a", "./a", "a/..", "a/."] {
-            assert_eq!(
-                Path::parse(text),
-                Err(PathError::RelativeSegment),
-                "{text:?} parsed"
-            );
-        }
-    }
-
-    #[test]
-    fn join_refuses_a_relative_segment() {
-        let a = Path::parse("a").unwrap();
-        assert_eq!(a.join(".."), Err(PathError::RelativeSegment));
-        assert_eq!(a.join("."), Err(PathError::RelativeSegment));
-    }
-
-    #[test]
-    fn parent_drops_the_last_segment() {
-        let p = Path::parse("a/b/c").unwrap();
-        assert_eq!(p.parent().unwrap().as_str(), "a/b/");
-        assert_eq!(Path::parse("a").unwrap().parent(), Some(Path::root()));
-    }
-
-    #[test]
-    fn is_within_is_true_for_a_strict_descendant_and_for_self() {
-        let a = Path::parse("a").unwrap();
-        let ab = Path::parse("a/b").unwrap();
-        assert!(ab.is_within(&a));
-        assert!(a.is_within(&a));
-        assert!(!a.is_within(&ab));
-        assert!(ab.is_within(&Path::root()));
-    }
-
-    #[test]
-    fn join_appends_one_segment() {
-        assert_eq!(Path::root().join("x").unwrap().as_str(), "x/");
-        assert_eq!(
-            Path::parse("a").unwrap().join("b").unwrap().as_str(),
-            "a/b/"
-        );
-        assert_eq!(Path::root().join("a/b"), Err(PathError::BadCharacter('/')));
-    }
-}
+mod tests;
