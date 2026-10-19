@@ -1,6 +1,6 @@
 use std::fmt;
 
-use dam_domain::{Change, CommitId, CommitRecord, Kind, Object, Oid, Path, Timestamp};
+use dam_domain::{Change, CommitId, CommitRecord, Kind, Object, Oid, Timestamp};
 
 use crate::errors::UseCaseError;
 
@@ -98,7 +98,6 @@ pub enum Notice {
 pub trait ObjectRepository: Transactional {
     fn get(&self, oid: &Oid) -> Result<Option<Object>, StoreError>;
     fn all(&self) -> Result<Vec<Object>, StoreError>;
-    fn children_of(&self, path: &Path) -> Result<Vec<Object>, StoreError>;
     fn dependents_of(&self, oid: &Oid) -> Result<Vec<Oid>, StoreError>;
     fn put(&self, object: &Object) -> Result<(), StoreError>;
     fn delete(&self, oid: &Oid) -> Result<(), StoreError>;

@@ -1,4 +1,4 @@
-use dam_application::{commit, log};
+use dam_application::commit;
 use dam_domain::{CommitId, CommitRecord, Timestamp};
 use serde::Serialize;
 
@@ -21,7 +21,7 @@ pub(crate) fn run_commit(ctx: &Context, args: CommitArgs) -> Result<Report, CliE
 }
 
 pub(crate) fn run_log(ctx: &Context) -> Result<Report, CliError> {
-    let records = log(ctx.store.as_ref())?;
+    let records = ctx.store.log()?;
     report(&Log {
         commits: records.iter().map(CommitDoc::new).collect(),
     })

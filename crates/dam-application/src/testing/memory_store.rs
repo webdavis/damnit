@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 
-use dam_domain::{Change, CommitId, CommitRecord, Kind, Object, Oid, Path, Timestamp};
+use dam_domain::{Change, CommitId, CommitRecord, Kind, Object, Oid, Timestamp};
 
 use crate::errors::UseCaseError;
 use crate::ports::{
@@ -58,16 +58,6 @@ impl ObjectRepository for MemoryStore {
     }
     fn all(&self) -> Result<Vec<Object>, StoreError> {
         Ok(self.0.borrow().working.values().cloned().collect())
-    }
-    fn children_of(&self, path: &Path) -> Result<Vec<Object>, StoreError> {
-        Ok(self
-            .0
-            .borrow()
-            .working
-            .values()
-            .filter(|o| o.base().path.parent().as_ref() == Some(path))
-            .cloned()
-            .collect())
     }
     fn dependents_of(&self, oid: &Oid) -> Result<Vec<Oid>, StoreError> {
         Ok(self

@@ -1,8 +1,11 @@
+use std::collections::BTreeMap;
+
 use dam_domain::{Categories, Completion, Date, Object, Oid, Priority, Recurrence, When, cycle_in};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
 use crate::use_cases::atomically::atomically;
+use crate::use_cases::load::{load, no_such_object};
 
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct EditFields {
@@ -30,23 +33,15 @@ pub fn edit(
     fields: EditFields,
 ) -> Result<Object, UseCaseError> {
     atomically(objects, || {
-        let current = objects
-            .get(oid)?
-            .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
+        let current = load(objects, oid)?;
         let next = apply(&current, &fields)?;
         categories
             .check(&next.base().labels)
             .map_err(Refusal::Labels)?;
         if !fields.add_depends.is_empty() {
-            let edges = |o: &Oid| {
-                objects
-                    .get(o)
-                    .ok()
-                    .flatten()
-                    .map(|x| x.base().depends.clone())
-                    .unwrap_or_default()
-            };
-            if let Some(path) = cycle_in(&fields.add_depends, oid, &edges) {
+            let edges = depends_reachable_from(objects, &fields.add_depends)?;
+            let edges_of = |o: &Oid| edges.get(o).cloned().unwrap_or_default();
+            if let Some(path) = cycle_in(&fields.add_depends, oid, &edges_of) {
                 return Err(Refusal::Cycle {
                     oid: oid.clone(),
                     path,
@@ -54,15 +49,34 @@ pub fn edit(
                 .into());
             }
         }
-        if let Some(Some(event)) = &fields.attach {
-            match objects.get(event)? {
-                Some(Object::Event(_)) => {}
-                _ => return Err(Refusal::NoSuchObject(event.short().to_string()).into()),
-            }
+        if let Some(Some(event)) = &fields.attach
+            && !matches!(objects.get(event)?, Some(Object::Event(_)))
+        {
+            return Err(no_such_object(event).into());
         }
         objects.put(&next)?;
         Ok(next)
     })
+}
+
+fn depends_reachable_from(
+    objects: &dyn ObjectRepository,
+    starts: &[Oid],
+) -> Result<BTreeMap<Oid, Vec<Oid>>, UseCaseError> {
+    let mut edges = BTreeMap::new();
+    let mut unvisited = starts.to_vec();
+    while let Some(at) = unvisited.pop() {
+        if edges.contains_key(&at) {
+            continue;
+        }
+        let depends = objects
+            .get(&at)?
+            .map(|o| o.base().depends.clone())
+            .unwrap_or_default();
+        unvisited.extend(depends.iter().cloned());
+        edges.insert(at, depends);
+    }
+    Ok(edges)
 }
 
 pub fn apply(object: &Object, fields: &EditFields) -> Result<Object, UseCaseError> {

@@ -1,4 +1,4 @@
-use dam_application::{CredentialSpec, Repositories, diff_staged, diff_working, status};
+use dam_application::{CredentialSpec, Repositories, diff_working, status};
 use dam_domain::Change;
 
 use crate::args::{DiffArgs, StatusArgs};
@@ -31,7 +31,7 @@ pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliE
 
 pub(crate) fn run_diff(ctx: &Context, args: DiffArgs) -> Result<Report, CliError> {
     let changes = if args.staged {
-        diff_staged(ctx.store.as_ref())?
+        ctx.store.staged()?
     } else {
         diff_working(ctx.store.as_ref(), ctx.store.as_ref(), ctx.store.as_ref())?
     };

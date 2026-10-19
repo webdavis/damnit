@@ -29,7 +29,7 @@ pub fn status(repos: Repositories<'_>, remotes: &[RemoteName]) -> Result<Status,
         unpushed.push(unpushed_for(repos.commits, remote, accepted.as_deref())?);
     }
     Ok(Status {
-        staged: diff_staged(repos.stage)?,
+        staged: repos.stage.staged()?,
         unstaged: diff_working(repos.objects, repos.stage, repos.commits)?,
         conflicts: repos.conflicts.conflicts()?,
         notices: repos.notices.notices()?,
@@ -74,10 +74,6 @@ fn taken_by(accepted: Option<&[Kind]>, change: &Change) -> bool {
         return true;
     };
     kinds.contains(&change.object().kind())
-}
-
-pub fn diff_staged(stage: &dyn StageRepository) -> Result<Vec<Change>, UseCaseError> {
-    Ok(stage.staged()?)
 }
 
 pub fn diff_working(

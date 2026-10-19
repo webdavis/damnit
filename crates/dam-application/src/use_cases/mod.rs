@@ -6,6 +6,7 @@ pub(crate) mod connect;
 pub(crate) mod edit;
 pub(crate) mod freshness;
 pub(crate) mod list;
+pub(crate) mod load;
 pub(crate) mod new_object;
 pub(crate) mod prefix;
 pub(crate) mod pull;

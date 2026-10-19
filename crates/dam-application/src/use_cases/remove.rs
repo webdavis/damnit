@@ -1,8 +1,9 @@
-use dam_domain::Oid;
+use dam_domain::{Object, Oid};
 
-use crate::errors::{Refusal, UseCaseError};
+use crate::errors::UseCaseError;
 use crate::ports::ObjectRepository;
 use crate::use_cases::atomically::atomically;
+use crate::use_cases::load::load;
 use crate::use_cases::subtree::{children, move_into};
 
 pub struct RemovePlan {
@@ -13,9 +14,11 @@ pub struct RemovePlan {
 }
 
 pub fn plan_remove(objects: &dyn ObjectRepository, oid: &Oid) -> Result<RemovePlan, UseCaseError> {
-    let object = objects
-        .get(oid)?
-        .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
+    plan_for(objects, &load(objects, oid)?)
+}
+
+fn plan_for(objects: &dyn ObjectRepository, object: &Object) -> Result<RemovePlan, UseCaseError> {
+    let oid = object.oid();
     let owned = object.base().owned_folder();
     let all = objects.all()?;
     let descendants = all
@@ -39,10 +42,8 @@ pub fn plan_remove(objects: &dyn ObjectRepository, oid: &Oid) -> Result<RemovePl
 
 pub fn remove(objects: &dyn ObjectRepository, oid: &Oid) -> Result<RemovePlan, UseCaseError> {
     atomically(objects, || {
-        let plan = plan_remove(objects, oid)?;
-        let object = objects
-            .get(oid)?
-            .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
+        let object = load(objects, oid)?;
+        let plan = plan_for(objects, &object)?;
         for child in children(objects, object.base())? {
             move_into(objects, child.oid(), &object.base().path)?;
         }

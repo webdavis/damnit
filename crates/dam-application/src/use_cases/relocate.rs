@@ -3,13 +3,12 @@ use dam_domain::{Oid, Path};
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
 use crate::use_cases::atomically::atomically;
+use crate::use_cases::load::load;
 use crate::use_cases::subtree::move_into;
 
 pub fn relocate(objects: &dyn ObjectRepository, oid: &Oid, to: &Path) -> Result<(), UseCaseError> {
     atomically(objects, || {
-        let object = objects
-            .get(oid)?
-            .ok_or_else(|| Refusal::NoSuchObject(oid.short().to_string()))?;
+        let object = load(objects, oid)?;
         if object
             .base()
             .owned_folder()
