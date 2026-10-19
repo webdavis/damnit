@@ -4,8 +4,9 @@ mod commits;
 mod conflicts;
 mod file;
 mod migrations;
+mod notices;
 mod objects;
-mod remote;
+mod remote_tracking;
 mod savepoint;
 mod stage;
 
