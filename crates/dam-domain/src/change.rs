@@ -1,5 +1,6 @@
 use std::fmt;
 
+use crate::vocabulary::vocabulary;
 use crate::{Object, Oid, Timestamp};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -8,6 +9,12 @@ pub enum Op {
     Update,
     Delete,
 }
+
+vocabulary!(Op {
+    Create => "create",
+    Update => "update",
+    Delete => "delete",
+});
 
 #[allow(
     clippy::large_enum_variant,
