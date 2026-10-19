@@ -43,6 +43,16 @@ impl View for ObjectList<'_> {
     }
 }
 
+#[derive(Serialize)]
+#[serde(transparent)]
+pub(crate) struct ObjectRow<'a>(#[serde(serialize_with = "wire")] pub(crate) &'a Object);
+
+impl View for ObjectRow<'_> {
+    fn human(&self) -> Human {
+        Human::Table(vec![object_cells(self.0)])
+    }
+}
+
 pub(crate) fn display<T: Display, S: Serializer>(value: &T, s: S) -> Result<S::Ok, S::Error> {
     s.collect_str(value)
 }
@@ -52,6 +62,10 @@ pub(crate) fn optional_display<T: Display, S: Serializer>(
     s: S,
 ) -> Result<S::Ok, S::Error> {
     value.as_ref().map(ToString::to_string).serialize(s)
+}
+
+pub(crate) fn displays<T: Display, S: Serializer>(values: &&[T], s: S) -> Result<S::Ok, S::Error> {
+    s.collect_seq(values.iter().map(ToString::to_string))
 }
 
 pub(crate) fn wire<S: Serializer>(object: &&Object, s: S) -> Result<S::Ok, S::Error> {

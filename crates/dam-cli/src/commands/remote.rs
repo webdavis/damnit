@@ -6,6 +6,27 @@ use crate::args::{RemoteArgs, RemoteCommand};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
+use crate::view::{Human, View, report};
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct RemoteAdded<'a> {
+    name: &'a str,
+    url: &'a str,
+    warnings: Vec<String>,
+}
+
+impl View for RemoteAdded<'_> {
+    fn human(&self) -> Human {
+        let mut lines: Vec<String> = self
+            .warnings
+            .iter()
+            .map(|w| format!("warning: {w}"))
+            .collect();
+        lines.push(format!("added {} ({})", self.name, self.url));
+        Human::Lines(lines)
+    }
+}
 
 pub(crate) fn run_remote(ctx: &Context, args: RemoteArgs) -> Result<Report, CliError> {
     match args.command {
@@ -15,17 +36,10 @@ pub(crate) fn run_remote(ctx: &Context, args: RemoteArgs) -> Result<Report, CliE
                 return Err(Refusal::RemoteExists(name.0).into());
             }
             let warning = ctx.config_file.add_remote(&name, &url)?;
-            let mut human = format!("added {} ({url})", name.0);
-            if let Some(why) = &warning {
-                human.insert_str(0, &format!("warning: {why}\n"));
-            }
-            Ok(Report {
-                human,
-                data: serde_json::json!({
-                    "name": name.0,
-                    "url": url,
-                    "warnings": Vec::from_iter(warning),
-                }),
+            report(&RemoteAdded {
+                name: &name.0,
+                url: &url,
+                warnings: Vec::from_iter(warning),
             })
         }
         RemoteCommand::List => listing::run(ctx),

@@ -1,10 +1,26 @@
 use dam_application::{Restored, resolve_object, restore};
 use dam_domain::Oid;
+use serde::Serialize;
 
 use crate::args::RestoreArgs;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
+use crate::view::{Human, View, report};
+
+#[derive(Serialize)]
+struct RestoreView<'a> {
+    #[serde(skip)]
+    results: &'a [Restored],
+    restored: Vec<String>,
+    unchanged: Vec<String>,
+}
+
+impl View for RestoreView<'_> {
+    fn human(&self) -> Human {
+        Human::Lines(self.results.iter().map(line).collect())
+    }
+}
 
 pub(crate) fn run(ctx: &Context, args: RestoreArgs) -> Result<Report, CliError> {
     let oids = args
@@ -20,12 +36,10 @@ pub(crate) fn run(ctx: &Context, args: RestoreArgs) -> Result<Report, CliError> 
             .map(|r| r.oid.to_string())
             .collect::<Vec<String>>()
     };
-    Ok(Report {
-        human: restored.iter().map(line).collect::<Vec<_>>().join("\n"),
-        data: serde_json::json!({
-            "restored": ids(true),
-            "unchanged": ids(false),
-        }),
+    report(&RestoreView {
+        results: &restored,
+        restored: ids(true),
+        unchanged: ids(false),
     })
 }
 

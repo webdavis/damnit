@@ -4,8 +4,25 @@ use crate::args::NewArgs;
 use crate::commands::parsing::{deadline_flag, when_flag};
 use crate::context::Context;
 use crate::error::CliError;
-use crate::output::{Report, object_json};
+use crate::output::Report;
+use crate::view::{Human, View, report, wire};
 use dam_application::{NewEvent, NewTask, new_event, new_task};
+use dam_domain::Object;
+use serde::Serialize;
+
+#[derive(Serialize)]
+#[serde(transparent)]
+struct Created<'a>(#[serde(serialize_with = "wire")] &'a Object);
+
+impl View for Created<'_> {
+    fn human(&self) -> Human {
+        let base = self.0.base();
+        Human::Table(vec![vec![
+            base.oid.short().to_string(),
+            base.subject.clone(),
+        ]])
+    }
+}
 
 pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
     let labels: BTreeSet<String> = args.labels.into_iter().collect();
@@ -68,10 +85,7 @@ pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
         .store
         .get(&oid)?
         .ok_or_else(|| CliError::Internal("the new object did not persist".into()))?;
-    Ok(Report {
-        human: format!("{}  {}", oid.short(), object.base().subject),
-        data: object_json(&object)?,
-    })
+    report(&Created(&object))
 }
 
 #[cfg(test)]
@@ -79,7 +93,7 @@ mod tests {
     use super::*;
     use crate::args::NewArgs;
     use crate::testing::context;
-    use dam_domain::{Object, Path, Priority};
+    use dam_domain::{Path, Priority};
 
     fn args(subject: &str) -> NewArgs {
         NewArgs {

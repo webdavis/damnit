@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use super::notices::NoticeRow;
 use super::rows::{ChangeRow, ConflictRow};
-use crate::view::{Human, View};
+use crate::view::{Human, View, displays};
 
 #[derive(Serialize)]
 pub(super) struct StatusView<'a> {
@@ -35,13 +35,6 @@ impl<'a> UnpushedRow<'a> {
             oids: &u.oids,
         }
     }
-}
-
-fn displays<T: std::fmt::Display, S: serde::Serializer>(
-    values: &&[T],
-    s: S,
-) -> Result<S::Ok, S::Error> {
-    s.collect_seq(values.iter().map(ToString::to_string))
 }
 
 impl View for StatusView<'_> {

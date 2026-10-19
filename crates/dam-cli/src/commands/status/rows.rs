@@ -6,7 +6,7 @@ use serde::Serialize;
 
 use crate::view::{display, optional_display, optional_wire, wire};
 
-pub(crate) fn change_line(change: &Change) -> String {
+fn change_line(change: &Change) -> String {
     let subject = &change.object().base().subject;
     let oid = change.oid().short();
     match change {
