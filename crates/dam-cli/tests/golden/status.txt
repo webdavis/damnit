@@ -4,4 +4,4 @@ Staged:
 Not staged:
   changed  1111111  buy soy milk  (subject)
 Unpushed:
-  fake: 1 commit(s)
+  fake: 1 commit

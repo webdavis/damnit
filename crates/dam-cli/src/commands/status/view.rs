@@ -4,7 +4,8 @@ use serde::Serialize;
 
 use super::notices::NoticeRow;
 use super::rows::{ChangeRow, ConflictRow};
-use crate::view::{Human, View, displays};
+use crate::layout::counted;
+use crate::view::{Human, Line, View, displays};
 
 #[derive(Serialize)]
 pub(super) struct StatusView<'a> {
@@ -39,38 +40,46 @@ impl<'a> UnpushedRow<'a> {
 
 impl View for StatusView<'_> {
     fn human(&self) -> Human {
-        let mut human = self.warnings.clone();
-        let mut section = |title: &str, lines: Vec<String>| {
+        let mut human: Vec<Line> = self.warnings.iter().cloned().map(Line::Whole).collect();
+        let mut section = |title: &str, lines: Vec<String>, line: fn(String) -> Line| {
             if !lines.is_empty() {
-                human.push(title.to_string());
-                human.extend(lines.into_iter().map(|l| format!("  {l}")));
+                human.push(Line::Row(title.to_string()));
+                human.extend(lines.into_iter().map(|l| line(format!("  {l}"))));
             }
         };
-        section("Staged:", self.staged.iter().map(ChangeRow::line).collect());
+        section(
+            "Staged:",
+            self.staged.iter().map(ChangeRow::line).collect(),
+            Line::Row,
+        );
         section(
             "Not staged:",
             self.unstaged.iter().map(ChangeRow::line).collect(),
+            Line::Row,
         );
         section(
             "Conflicts:",
             self.conflicts.iter().map(ConflictRow::line).collect(),
+            Line::Row,
         );
         section(
             "Notices:",
             self.notices.iter().map(NoticeRow::line).collect(),
+            Line::Whole,
         );
         section(
             "Unpushed:",
             self.unpushed
                 .iter()
                 .filter(|u| u.commits > 0)
-                .map(|u| format!("{}: {} commit(s)", u.remote, u.commits))
+                .map(|u| format!("{}: {}", u.remote, counted(u.commits, "commit", "commits")))
                 .collect(),
+            Line::Row,
         );
         if human.len() == self.warnings.len() {
-            human.push("nothing staged, nothing changed".to_string());
+            human.push(Line::Row("nothing staged, nothing changed".to_string()));
         }
-        Human::Lines(human)
+        Human::Mixed(human)
     }
 }
 
@@ -81,6 +90,9 @@ pub(super) struct DiffView<'a> {
 
 impl View for DiffView<'_> {
     fn human(&self) -> Human {
-        Human::Lines(self.changes.iter().map(ChangeRow::line).collect())
+        Human::list(
+            self.changes.iter().map(|c| vec![c.line()]).collect(),
+            "no changes",
+        )
     }
 }

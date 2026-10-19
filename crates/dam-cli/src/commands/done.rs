@@ -5,6 +5,7 @@ use dam_application::{
 use crate::args::DoneArgs;
 use crate::context::Context;
 use crate::error::CliError;
+use crate::layout::counted;
 use crate::output::Report;
 use crate::view::{Human, View, display, report};
 use dam_domain::Oid;
@@ -82,7 +83,10 @@ fn ask(ctx: &Context, blockers: &Blockers) -> Result<Dispositions, CliError> {
         ChildDisposition::Keep
     } else {
         match ctx.prompt.choose(
-            &format!("{children} open child task(s). What happens to them?"),
+            &format!(
+                "{}. What happens to them?",
+                counted(children, "open child task", "open child tasks")
+            ),
             &[
                 "move them up one level",
                 "move them into a new group",
@@ -98,7 +102,10 @@ fn ask(ctx: &Context, blockers: &Blockers) -> Result<Dispositions, CliError> {
         DependencyDisposition::Keep
     } else {
         match ctx.prompt.choose(
-            &format!("{deps} open dependenc(ies). What happens to the links?"),
+            &format!(
+                "{}. What happens to the links?",
+                counted(deps, "open dependency", "open dependencies")
+            ),
             &["drop them", "keep them"],
         )? {
             0 => DependencyDisposition::Drop,

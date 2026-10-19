@@ -17,7 +17,7 @@ pub(crate) fn run(ctx: &Context, args: EditArgs) -> Result<Report, CliError> {
         from_flags(ctx, args)?
     };
     let object = ctx.dam().edit(&oid, fields)?;
-    report(&ObjectRow(&object))
+    report(&ObjectRow(&object, &ctx.tz))
 }
 
 fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {

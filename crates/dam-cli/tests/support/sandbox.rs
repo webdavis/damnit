@@ -45,7 +45,8 @@ impl Sandbox {
             .env("XDG_CONFIG_HOME", self.dir.path().join("config"))
             .env("XDG_DATA_HOME", self.dir.path().join("data"))
             .env("XDG_STATE_HOME", self.dir.path().join("state"))
-            .env("TZ", "UTC");
+            .env("TZ", "UTC")
+            .env("COLUMNS", "80");
         command
     }
 

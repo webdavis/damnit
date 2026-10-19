@@ -5,6 +5,7 @@ use crate::args::CommitArgs;
 use crate::commands::status::ChangeRow;
 use crate::context::Context;
 use crate::error::CliError;
+use crate::layout::counted;
 use crate::output::Report;
 use crate::view::{Human, View, display, report};
 
@@ -27,7 +28,10 @@ struct Log<'a> {
 
 impl View for Log<'_> {
     fn human(&self) -> Human {
-        Human::Table(self.commits.iter().map(CommitDoc::cells).collect())
+        Human::list(
+            self.commits.iter().map(CommitDoc::cells).collect(),
+            "no commits yet",
+        )
     }
 }
 
@@ -59,7 +63,7 @@ impl<'a> CommitDoc<'a> {
         vec![
             self.id.short().to_string(),
             self.at.strftime("%Y-%m-%d %H:%M").to_string(),
-            format!("{} change(s)", self.changes.len()),
+            counted(self.changes.len(), "change", "changes"),
             self.message.to_string(),
         ]
     }

@@ -11,7 +11,7 @@ pub(crate) fn run(ctx: &Context, args: MvArgs) -> Result<Report, CliError> {
         .store
         .get(&oid)?
         .ok_or_else(|| CliError::Internal("the moved object did not persist".into()))?;
-    report(&ObjectRow(&object))
+    report(&ObjectRow(&object, &ctx.tz))
 }
 
 #[cfg(test)]

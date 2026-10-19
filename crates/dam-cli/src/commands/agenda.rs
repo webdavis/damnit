@@ -107,23 +107,23 @@ impl<'a> AgendaEvent<'a> {
                 z.strftime("%Y-%m-%d %H:%M").to_string()
             }
         };
-        let mut cells = vec![
+        vec![
             self.oid.short().to_string(),
             if self.busy { "busy" } else { "free" }.to_string(),
             local(s.start),
             local(s.end),
+            self.path.to_string(),
             self.subject.to_string(),
-        ];
-        if !self.path.is_empty() {
-            cells.push(self.path.to_string());
-        }
-        cells
+        ]
     }
 }
 
 impl View for Agenda<'_> {
     fn human(&self) -> Human {
-        Human::Table(self.events.iter().map(|e| e.cells(self.zone)).collect())
+        Human::list(
+            self.events.iter().map(|e| e.cells(self.zone)).collect(),
+            "no events in the window",
+        )
     }
 }
 

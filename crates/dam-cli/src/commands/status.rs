@@ -71,3 +71,5 @@ mod skipped_tests;
 mod tests;
 #[cfg(test)]
 mod warning_tests;
+#[cfg(test)]
+mod width_tests;

@@ -8,7 +8,10 @@ use crate::view::{ObjectList, report};
 pub(crate) fn run_ls(ctx: &Context, args: LsArgs) -> Result<Report, CliError> {
     refresh_stale_unless_no_pull(ctx)?;
     let objects = ctx.dam().list(args.query.as_deref())?;
-    report(&ObjectList { objects: &objects })
+    report(&ObjectList {
+        objects: &objects,
+        zone: &ctx.tz,
+    })
 }
 
 #[cfg(test)]

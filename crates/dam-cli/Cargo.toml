@@ -20,3 +20,4 @@ serde_json.workspace = true
 jiff.workspace = true
 toon-format.workspace = true
 tempfile.workspace = true
+terminal_size.workspace = true
