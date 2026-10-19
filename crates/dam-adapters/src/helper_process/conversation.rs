@@ -1,3 +1,5 @@
+mod ending;
+
 use std::io::BufReader;
 use std::process::{Child, ChildStderr, ChildStdin, ChildStdout};
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, channel};
@@ -157,27 +159,6 @@ impl ProcessHelper {
             }
         }
     }
-
-    fn kill_and_reap(&mut self) {
-        let _ = self.child.kill();
-        let _ = self.child.wait();
-        self.killed = true;
-    }
-
-    fn close_input_so_a_well_behaved_helper_exits(&mut self) {
-        drop(self.stdin.take());
-    }
-
-    fn ended_or_unwaitable_within_the_exit_grace(&mut self) -> bool {
-        let give_up_at = Instant::now() + EXIT_GRACE_BEFORE_THE_KILL;
-        while Instant::now() < give_up_at {
-            match self.child.try_wait() {
-                Ok(None) => std::thread::sleep(RECHECK_INTERVAL),
-                Ok(Some(_)) | Err(_) => return true,
-            }
-        }
-        false
-    }
 }
 
 impl RemoteHelper for ProcessHelper {
@@ -207,16 +188,6 @@ impl RemoteHelper for ProcessHelper {
         let mutations = mutations.into_iter().map(mutation_to_wire).collect();
         let pushed: PushResponse = self.call(&Request::Push { mutations })?;
         Ok(outcomes_from_wire(pushed.results))
-    }
-}
-
-impl Drop for ProcessHelper {
-    fn drop(&mut self) {
-        self.close_input_so_a_well_behaved_helper_exits();
-        if self.killed || self.ended_or_unwaitable_within_the_exit_grace() {
-            return;
-        }
-        self.kill_and_reap();
     }
 }
 
