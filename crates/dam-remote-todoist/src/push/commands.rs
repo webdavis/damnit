@@ -1,4 +1,5 @@
 use dam_protocol::WireObject;
+use serde::Serialize;
 
 use crate::map::api_priority;
 
@@ -34,17 +35,39 @@ fn is_hyphenated_uuid(key: &str) -> bool {
         })
 }
 
-pub fn command(kind: &str, uuid: String, args: serde_json::Value) -> serde_json::Value {
-    serde_json::json!({ "type": kind, "uuid": uuid, "args": args })
+pub type Args = serde_json::Map<String, serde_json::Value>;
+
+#[derive(Debug, Serialize)]
+pub struct Command {
+    #[serde(rename = "type")]
+    pub kind: &'static str,
+    pub uuid: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub temp_id: Option<String>,
+    pub args: Args,
 }
 
-pub fn creating_command(
-    kind: &str,
-    uuid: String,
-    temp_id: &str,
-    args: serde_json::Value,
-) -> serde_json::Value {
-    serde_json::json!({ "type": kind, "uuid": uuid, "temp_id": temp_id, "args": args })
+pub fn command(kind: &'static str, uuid: String, args: Args) -> Command {
+    Command {
+        kind,
+        uuid,
+        temp_id: None,
+        args,
+    }
+}
+
+pub fn creating_command(kind: &'static str, uuid: String, temp_id: &str, args: Args) -> Command {
+    Command {
+        temp_id: Some(temp_id.to_string()),
+        ..command(kind, uuid, args)
+    }
+}
+
+pub fn args<const N: usize>(pairs: [(&str, serde_json::Value); N]) -> Args {
+    pairs
+        .into_iter()
+        .map(|(key, value)| (key.to_string(), value))
+        .collect()
 }
 
 pub enum ItemWrite<'f> {
@@ -61,9 +84,9 @@ impl ItemWrite<'_> {
     }
 }
 
-pub fn item_args(object: &WireObject, write: ItemWrite) -> serde_json::Value {
+pub fn item_args(object: &WireObject, write: ItemWrite) -> Args {
     let want = |f: &str| write.touches(f);
-    let mut args = serde_json::Map::new();
+    let mut args = Args::new();
     if want("subject") {
         args.insert("content".into(), object.subject.clone().into());
     }
@@ -74,7 +97,7 @@ pub fn item_args(object: &WireObject, write: ItemWrite) -> serde_json::Value {
         args.insert("labels".into(), object.labels.clone().into());
     }
     let Some(task) = &object.task else {
-        return serde_json::Value::Object(args);
+        return args;
     };
     if want("priority") {
         args.insert("priority".into(), api_priority(task.priority).into());
@@ -100,7 +123,7 @@ pub fn item_args(object: &WireObject, write: ItemWrite) -> serde_json::Value {
             (None, ItemWrite::Create) => {}
         }
     }
-    serde_json::Value::Object(args)
+    args
 }
 
 #[cfg(test)]

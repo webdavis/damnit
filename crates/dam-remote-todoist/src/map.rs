@@ -117,11 +117,11 @@ impl Tree {
             .map(|i| i.id.as_str())
     }
 
-    pub fn held_wire(&self, kind: char, id: &str) -> Option<WireObject> {
-        match kind {
-            'p' => self.projects.get(id).map(|p| project_to_wire(self, p)),
-            's' => self.sections.get(id).map(|s| section_to_wire(self, s)),
-            _ => None,
+    pub fn held_wire(&self, remote: &RemoteId) -> Option<WireObject> {
+        match remote {
+            RemoteId::Project(id) => self.projects.get(id).map(|p| project_to_wire(self, p)),
+            RemoteId::Section(id) => self.sections.get(id).map(|s| section_to_wire(self, s)),
+            RemoteId::Item(id) => self.items.get(id).and_then(|i| item_to_wire(self, i)),
         }
     }
 
@@ -159,7 +159,7 @@ impl Tree {
 mod identity;
 mod wire;
 
-pub use identity::{api_priority, dam_priority, remote_id, split_remote_id};
+pub use identity::{RemoteId, api_priority, dam_priority};
 pub use wire::{item_to_wire, project_to_wire, section_to_wire};
 
 #[cfg(test)]
