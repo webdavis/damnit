@@ -24,14 +24,16 @@ wrote:
     api_token_command = ["security", "find-generic-password", "-w", "-s", "Todoist API Token"]
     stale = "15m"
 
-`api_token` (the value, with `credentials = ["api_token"]` in the same table), `api_token_command`
-(a command that prints it) and `api_token_env` (a variable name) are the three forms; the command inherits your terminal, so a vault CLI that
-prompts works when you run `dam` yourself. When more than one form of the same credential is set,
-the value wins over the command and the command over the variable. `stale` makes reads pull first when the last pull is
-older than that; a pull a read starts that fails leaves a notice in `dam status` rather than
-failing the read. `deadline` (default `"60s"`) bounds how long one helper answer may take; past it
-the helper is killed and the command fails. Ctrl-C at any point ends `dam` the same way, killing
-the helper and leaving the store as it was.
+A credential takes one of three forms. `api_token` is the value, with `credentials = ["api_token"]`
+in the same table. `api_token_command` is a command that prints it, run with your terminal so a
+vault CLI can prompt. `api_token_env` names a variable. When more than one form is set, the value
+wins over the command and the command over the variable. Any other key in the table fails with
+exit 1.
+
+`stale` makes reads pull first when the last pull is older than that. A failed pull that a read
+started leaves a notice in `dam status`, and the read still answers. `deadline` (default `"60s"`)
+bounds one helper answer; past it `dam` kills the helper and exits 1. Ctrl-C kills the helper,
+leaves the store as it was and exits 3.
 
     dam pull
 
@@ -48,19 +50,18 @@ project. Keep its client id and client secret in your vault, then sign in:
 
 The command prints a URL; open it, grant read-only access to your calendar events, and the refresh
 token is printed once on standard output. Store it in your vault. dam asks Google for read-only
-access, so nothing it does can change your calendar.
+access.
 
 Publish the OAuth consent screen ("In production") before you sign in. While its publishing status
 is "Testing", Google issues refresh tokens that expire after 7 days, and every pull fails with
 `invalid_grant` from then on until you sign in again. An app Google has not verified still works in
 production; the consent page shows a warning you click through once.
 
-`dam-gcal-sign-in` refuses a client secret on its command line, where every process on the machine
-can read it, and refuses a terminal on standard input, where a typed secret would echo: pipe it in.
-It listens for the browser on 127.0.0.1 only and waits as long as you take to open the URL; once the
-browser connects, the redirect has 30 seconds to arrive. The token is written to standard output
-and nowhere else, so if that write fails the token is lost and the command exits 1 and says to sign
-in again. A command line it refuses exits 2 before anything is asked of Google; a refused consent or
+`dam-gcal-sign-in` takes the client secret only on a piped standard input, never as an argument or
+from a terminal. It listens for the browser on 127.0.0.1 only and waits as long as you take to open
+the URL; once the browser connects, the redirect has 30 seconds to arrive. The token is written to
+standard output and nowhere else; if that write fails, the command exits 1 and says to sign in
+again. A command line it refuses exits 2 before anything is asked of Google; a refused consent or
 exchange exits 1.
 
 Then the remote. The address after `gcal::` names the calendars to read, comma-separated; empty
@@ -121,16 +122,15 @@ its full oid.
 `dam edit <oid> -e` opens the object as a TOML template in `$VISUAL`, else `$EDITOR`, else `vi`: a
 comment header naming the oid and kind, then one `key = value` line per field, where an empty
 string means none. Emptying an optional field clears it, a key the object's kind does not have is
-refused, a save that does not parse reopens the template with the error on its first line, and
-saving the template untouched cancels. Under `--json` or `--toon` it refuses instead of opening an
-editor.
+refused, and saving the template untouched cancels. A save that does not parse reopens the template
+once with the error on its first line; a second one exits 2 and names the file that keeps your
+edit. Under `--json` or `--toon` it refuses instead of opening an editor.
 
 `dam edit <oid> --undone` reopens a task you completed by mistake, and
 `dam restore <oid>...` throws a working change away, back to the last commit and out of the stage.
 
-`dam done` records when it ran, as `completed_at` on the task: RFC 3339 in UTC, null on an open task,
-and cleared again by `--undone`. It is dam's own record, so a task Todoist completed comes in done
-with no time on it.
+`dam done` records when it ran, as `completed_at` on the task: RFC 3339 in UTC, null on an open
+task, and cleared again by `--undone`. A task Todoist completed comes in done with no time on it.
 
 `dam status`, `dam diff`, `dam log` and `dam show` read the way their git namesakes do. `--json`
 and `--toon` on any read give a program the same answer.
@@ -140,10 +140,8 @@ in the line, `last_pull` and `last_push` as RFC 3339 under `--json`, null until 
 reached the remote once.
 
 `--no-pull` answers from the local store: `dam ls`, `dam show` and `dam agenda` otherwise pull a
-remote whose `stale` window has passed, and with the flag they spawn no helper at all. Use it
-wherever a read has to be quick and local, such as a statusline that runs `dam` every few seconds.
-Those three verbs are the only ones that pull, so every other verb refuses the flag with exit 2
-rather than ignoring it.
+remote whose `stale` window has passed, and with the flag they spawn no helper at all. Every other
+verb refuses the flag with exit 2.
 
 ## The rules it keeps
 
@@ -167,8 +165,8 @@ category and the value must be one of its values. Saved filters live under `[fil
 run by name.
 
 `dam filter list` prints the saved filters and `dam category list` prints the label categories with
-their values and whether each is exclusive, so a program reads the catalogue from `dam` instead of
-parsing the config file: `{"filters": [{"name": "today", "query": "due:today | overdue"}]}` and
+their values and whether each is exclusive:
+`{"filters": [{"name": "today", "query": "due:today | overdue"}]}` and
 `{"categories": [{"name": "effort", "values": ["light", "admin", "deep"], "exclusive": true}]}`
 under `--json`, an empty array when nothing is declared.
 
@@ -184,8 +182,7 @@ under `--json`, an empty array when nothing is declared.
 new object carries beyond its defaults; a delete names nothing and its row describes the object it
 removed. The rest of the row is the state the change left behind, which is what a list renders.
 
-Add `--full` to either command for `before` and `after`, the whole object on each side. The default
-leaves them out because a client polling `status` per render pays for them on every poll.
+Add `--full` to either command for `before` and `after`, the whole object on each side.
 
 `dam agenda` lists events as intervals, for a program that schedules around busy time:
 
@@ -200,16 +197,13 @@ listed at its stored occurrence only. With no flags the window runs from now to 
 `--from` and `--to` take the same words `--due` does, and a query narrows it the way `dam ls` reads
 one. Keys are only ever added, never renamed or retyped.
 
-Like `ls`, `agenda` pulls a stale remote first unless given `--no-pull`. A program that reads on a
-deadline always passes `--no-pull`, so its answer never waits on the network or a credential
-command, and keeps the store fresh with a separately scheduled `dam pull <remote>`.
+Like `ls`, `agenda` pulls a stale remote first unless given `--no-pull`.
 
 `--max-age <remote>=<duration>` makes the answer depend on that remote being fresh. When its last
 successful pull is older than the duration, or it has never pulled, `agenda` prints nothing on
-standard output and exits 4, rule `stale_remote`, with one sentence on standard error. A failed pull
-never counts as fresh, so a scheduled pull that keeps failing (an expired sign-in, a vault that will
-not open) reaches the reader as a refusal rather than as yesterday's calendar. A program that polls
-every couple of minutes, with `dam pull gcal` scheduled every five, runs:
+standard output and exits 4, rule `stale_remote`, with one sentence on standard error. A failed
+pull never counts as fresh. A program that polls with `dam pull gcal` scheduled every five minutes
+runs:
 
     dam agenda --json --no-pull --max-age gcal=15m
 
@@ -243,10 +237,9 @@ flag says. Without those flags you get the plain `dam: <message>` line instead.
 |---|---|
 | 0 | The command did what it was asked. |
 | 1 | `dam` failed: a store, config, helper, editor or io failure, or a bug in `dam` itself. |
-| 2 | The command line was wrong: an unknown argument or subcommand, a value `dam` refuses to read, a query `dam` cannot read, or an oid prefix that names more than one object. |
+| 2 | The command line was wrong: an unknown argument, an unreadable value or query, or a bad oid. |
 | 3 | Cancelled: you interrupted, or a prompt could not be answered. |
 | 4 | `dam` refused by one of its own rules, and the message names the rule. |
 
-Every rule `dam` keeps reports code 4, and nothing else does, so one mapping covers every verb. A
-`--recurrence` rule `dam` cannot read is the one flag value outside code 2: it exits 1, and its
-error document's kind is `parse`.
+Every rule `dam` keeps reports code 4, and nothing else does. A `--recurrence` rule `dam` cannot
+read is the one flag value outside code 2: it exits 1, and its error document's kind is `parse`.
