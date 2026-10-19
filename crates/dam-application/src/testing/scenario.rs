@@ -35,6 +35,21 @@ pub fn task(byte: u8) -> Object {
     Object::Task(Task::new(oid(byte), format!("t{byte}")))
 }
 
+pub fn event(byte: u8) -> Object {
+    Object::Event(Event::new(
+        oid(byte),
+        format!("e{byte}"),
+        When::Day(date(2026, 1, 1)),
+        When::Day(date(2026, 1, 2)),
+    ))
+}
+
+pub fn task_in(byte: u8, subject: &str, path: &str) -> Task {
+    let mut t = Task::new(oid(byte), subject);
+    t.base.path = Path::parse(path).unwrap();
+    t
+}
+
 pub struct Scenario {
     pub store: MemoryStore,
     pub fixture: Fixture,
@@ -95,9 +110,7 @@ impl Scenario {
     }
 
     pub fn tracked_as(&self, oid: &Oid, remote_id: &str) -> &Scenario {
-        self.store
-            .map_remote_id(&todoist(), oid, remote_id)
-            .unwrap();
+        self.mapped_as(oid, remote_id);
         let snapshot = self.store.committed(oid).unwrap().unwrap();
         self.store
             .set_remote_snapshot(&todoist(), &snapshot)
@@ -119,30 +132,6 @@ impl Scenario {
         self
     }
 
-    fn commit_everything(&self) -> &Scenario {
-        let dam = self.arranging.dam(&self.store);
-        dam.add_all().unwrap();
-        dam.commit("m").unwrap();
-        self
-    }
-}
-
-pub fn event(byte: u8) -> Object {
-    Object::Event(Event::new(
-        oid(byte),
-        format!("e{byte}"),
-        When::Day(date(2026, 1, 1)),
-        When::Day(date(2026, 1, 2)),
-    ))
-}
-
-pub fn task_in(byte: u8, subject: &str, path: &str) -> Task {
-    let mut t = Task::new(oid(byte), subject);
-    t.base.path = Path::parse(path).unwrap();
-    t
-}
-
-impl Scenario {
     pub fn filed(&self, task: Task) -> &Scenario {
         self.working(Object::Task(task))
     }
@@ -150,5 +139,12 @@ impl Scenario {
     pub fn path_of(&self, oid: &Oid) -> String {
         let object = self.store.get(oid).unwrap().unwrap();
         object.base().path.as_str().to_string()
+    }
+
+    fn commit_everything(&self) -> &Scenario {
+        let dam = self.arranging.dam(&self.store);
+        dam.add_all().unwrap();
+        dam.commit("m").unwrap();
+        self
     }
 }
