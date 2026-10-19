@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use dam_domain::{Categories, Completion, Date, Object, Oid, Priority, Recurrence, When, cycle_in};
 
 use crate::errors::{Refusal, UseCaseError};
@@ -38,15 +40,9 @@ pub fn edit(
             .check(&next.base().labels)
             .map_err(Refusal::Labels)?;
         if !fields.add_depends.is_empty() {
-            let edges = |o: &Oid| {
-                objects
-                    .get(o)
-                    .ok()
-                    .flatten()
-                    .map(|x| x.base().depends.clone())
-                    .unwrap_or_default()
-            };
-            if let Some(path) = cycle_in(&fields.add_depends, oid, &edges) {
+            let edges = depends_reachable_from(objects, &fields.add_depends)?;
+            let edges_of = |o: &Oid| edges.get(o).cloned().unwrap_or_default();
+            if let Some(path) = cycle_in(&fields.add_depends, oid, &edges_of) {
                 return Err(Refusal::Cycle {
                     oid: oid.clone(),
                     path,
@@ -63,6 +59,26 @@ pub fn edit(
         objects.put(&next)?;
         Ok(next)
     })
+}
+
+fn depends_reachable_from(
+    objects: &dyn ObjectRepository,
+    starts: &[Oid],
+) -> Result<BTreeMap<Oid, Vec<Oid>>, UseCaseError> {
+    let mut edges = BTreeMap::new();
+    let mut unvisited = starts.to_vec();
+    while let Some(at) = unvisited.pop() {
+        if edges.contains_key(&at) {
+            continue;
+        }
+        let depends = objects
+            .get(&at)?
+            .map(|o| o.base().depends.clone())
+            .unwrap_or_default();
+        unvisited.extend(depends.iter().cloned());
+        edges.insert(at, depends);
+    }
+    Ok(edges)
 }
 
 pub fn apply(object: &Object, fields: &EditFields) -> Result<Object, UseCaseError> {
