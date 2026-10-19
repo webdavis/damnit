@@ -2,14 +2,14 @@ use dam_application::{Refusal, UseCaseError, log, resolve_object};
 
 use crate::args::ShowArgs;
 use crate::commands::commit::{commit_json, commit_line};
-use crate::commands::remote::maybe_pull_stale;
+use crate::commands::remote::refresh_stale_unless_no_pull;
 use crate::commands::status::change_line;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::{Report, object_json, object_line};
 
 pub(crate) fn run_show(ctx: &mut Context, args: ShowArgs) -> Result<Report, CliError> {
-    maybe_pull_stale(ctx)?;
+    refresh_stale_unless_no_pull(ctx)?;
     if let Ok(oid) = resolve_object(ctx.store.as_ref(), &args.id)
         && let Some(object) = ctx.store.get(&oid)?
     {
