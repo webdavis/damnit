@@ -66,6 +66,8 @@ fn literal_credential_warning(ctx: &Context) -> Option<String> {
 }
 
 #[cfg(test)]
+mod skipped_tests;
+#[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod warning_tests;

@@ -1,6 +1,7 @@
+use super::notices::NoticeRepository;
 use super::store::{
-    AcceptedKindsRepository, CommitRepository, ConflictRepository, NoticeRepository,
-    ObjectRepository, RemoteTrackingRepository, StageRepository, Transactional,
+    AcceptedKindsRepository, CommitRepository, ConflictRepository, ObjectRepository,
+    RemoteTrackingRepository, StageRepository, Transactional,
 };
 
 pub trait Store:
