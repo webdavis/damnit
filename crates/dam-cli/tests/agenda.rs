@@ -1,5 +1,6 @@
 mod support;
 
+use support::errors::error_document;
 use support::sandbox::Sandbox;
 
 fn busy_intervals(document: &str) -> Vec<(u64, u64, bool)> {
@@ -108,11 +109,6 @@ fn agenda_no_pull_runs_no_credential_command_and_no_helper() {
         launched.exists(),
         "without the flag the stale remote is pulled"
     );
-}
-
-fn error_document(out: &std::process::Output) -> serde_json::Value {
-    serde_json::from_slice(&out.stderr)
-        .unwrap_or_else(|e| panic!("stderr is not one JSON document: {e}"))
 }
 
 #[test]
