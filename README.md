@@ -9,8 +9,7 @@ files: a working layer you edit, a stage you `add` to, commits you `push` to a r
     cargo install --git https://github.com/webdavis/damnit damnit
     cargo install --git https://github.com/webdavis/damnit dam-remote-todoist
 
-Both land in `~/.cargo/bin`. `dam` finds a remote helper the way git does: a `dam-remote-<name>`
-binary on `PATH`.
+`dam` finds a remote helper the way git does: a `dam-remote-<name>` binary on `PATH`.
 
 ## First run
 
@@ -80,9 +79,9 @@ files each event under a folder named after its calendar's title. The remote is 
 declares no kinds, so `dam push` sends it nothing, and an event you make or change in dam stays in
 dam. `path` narrows what a push sends, so it does nothing for this remote.
 
-Pull it on a schedule: run `dam pull gcal` every few minutes from cron, launchd or a systemd timer,
-somewhere the three credential commands work without a terminal. Setting `stale` also keeps it
-fresh, but then whichever read finds it stale waits on Google first.
+Pull it on a schedule: run `dam pull gcal` every few minutes from cron, launchd or a systemd timer.
+Its credential commands must run without a terminal. Setting `stale` also keeps it fresh, but then
+whichever read finds it stale waits on Google first.
 
 ## How Todoist maps
 
@@ -94,9 +93,8 @@ project comes in done, and dam's `p1` is Todoist's highest priority.
 A push goes the other way. An object at the top level becomes a project. One level down it becomes
 a task in that project, or a section when something lives under it or arrives under it in the same
 push. Deeper levels name existing parent tasks by their text, and a path naming no Todoist project
-fails that one object. A change counts as pushed only when Todoist accepts every command it became,
-and a retried push resends the first attempt's command ids, so Todoist never applies one twice. A
-rate limit stops the whole push and says how long Todoist asked to wait; any other failure stays
+fails that one object. A change counts as pushed only when Todoist accepts every command it became.
+A rate limit stops the whole push and says how long Todoist asked to wait; any other failure stays
 with the object it happened on. An error Todoist sends back is cut to one line of at most 500
 characters before `dam status` shows it.
 
@@ -238,7 +236,7 @@ flag says. Without those flags you get the plain `dam: <message>` line instead.
 | 0 | The command did what it was asked. |
 | 1 | `dam` failed: a store, config, helper, editor or io failure, or a bug in `dam` itself. |
 | 2 | The command line was wrong: an unknown argument, an unreadable value or query, or a bad oid. |
-| 3 | Cancelled: you interrupted, or a prompt could not be answered. |
+| 3 | Cancelled: you interrupted, a prompt could not be answered, or you saved an edit untouched. |
 | 4 | `dam` refused by one of its own rules, and the message names the rule. |
 
 Every rule `dam` keeps reports code 4, and nothing else does. A `--recurrence` rule `dam` cannot

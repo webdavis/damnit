@@ -88,9 +88,14 @@ pull. A helper that declares no kinds is read-only. `dam` sends it no mutation, 
 its commits pushed with nothing refused or retried. A helper never receives a field it did not
 declare, and a pulled object never overwrites a field the helper did not declare.
 
+A field name in `fields`, here and in a mutation, is one of `subject`, `body`, `path`, `labels`,
+`depends`, `reminders`, `recurrence`, `priority`, `done`, `due`, `deadline`, `event`, `start`,
+`end`, `timezone`, `location`, `attendees`, `status`, `transparency`, `visibility`, `event_type`,
+`color`, `organizer`, `conference`, `attachments`, `kind`.
+
 `credentials` names what the helper needs. `dam` resolves each one and passes it in the helper's
 environment as `DAM_<REMOTE>_<NAME>`, uppercased, with every non-alphanumeric character turned into
-an underscore. No value reaches an argument, a log line or a status message.
+an underscore.
 
 `incremental` says whether the helper honors `since`. A helper that does returns a token in `sync`.
 One that does not returns null, and `dam` diffs the full set itself.
@@ -118,7 +123,6 @@ written only when true, and its absence reads as false.
 ## Delivery
 
 Delivery is at least once. `dam` sends an unanswered mutation again with the same
-`idempotency_key`, a value derived from the commit and the object. A helper passes the key to a
-remote that deduplicates by key, so the work happens once. A helper that turns one mutation into
-several remote commands numbers them in the key's last character, which `dam` leaves free. Against
-a remote with no such key, a resend can duplicate.
+`idempotency_key`, a value derived from the commit and the object. A helper that turns one mutation
+into several remote commands numbers them in the key's last character, which `dam` leaves free.
+Against a remote with no such key, a resend can duplicate.
