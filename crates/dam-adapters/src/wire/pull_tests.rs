@@ -72,3 +72,38 @@ fn an_object_the_helper_rejected_is_rejected_under_its_remote_id_and_reason() {
         }]
     );
 }
+
+#[test]
+fn a_pull_hands_its_cancellations_on() {
+    let response = dam_protocol::PullResponse {
+        cancelled: vec!["primary/e1".into()],
+        ..Default::default()
+    };
+    assert_eq!(
+        pull_from_wire(response).cancelled,
+        vec!["primary/e1".to_string()]
+    );
+}
+
+#[test]
+fn a_pulled_object_with_no_remote_id_is_rejected_under_an_empty_name() {
+    let response = dam_protocol::PullResponse {
+        objects: vec![to_wire(
+            &Object::Task(Task::new(
+                Oid::generate(&mut |b: &mut [u8]| b.fill(1)),
+                "milk",
+            )),
+            None,
+        )],
+        ..Default::default()
+    };
+    let outcome = pull_from_wire(response);
+    assert!(outcome.objects.is_empty());
+    assert_eq!(
+        outcome.rejected,
+        vec![dam_application::RejectedObject {
+            remote_id: String::new(),
+            why: "an object with no remote id was skipped".into(),
+        }]
+    );
+}
