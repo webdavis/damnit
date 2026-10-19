@@ -23,6 +23,6 @@ size:
     fail=0
     while IFS= read -r f; do
       total=$(wc -l < "$f")
-      if [ "$total" -gt 500 ]; then echo "OVER 500: $f ($total)"; fail=1; fi
-    done < <(git ls-files 'crates/*/src/*.rs' 'crates/*/src/**/*.rs' 'crates/*/tests/*.rs')
+      if [ "$total" -gt 200 ]; then echo "OVER 200: $f ($total)"; fail=1; fi
+    done < <(git ls-files 'crates/*/src/*.rs' 'crates/*/src/**/*.rs' 'crates/*/tests/*.rs' 'crates/*/tests/**/*.rs')
     exit "$fail"
