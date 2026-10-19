@@ -1,3 +1,5 @@
+mod ending;
+
 use std::io::BufReader;
 use std::process::{Child, ChildStderr, ChildStdin, ChildStdout};
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, channel};
@@ -14,6 +16,7 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 
 use super::stderr_tail::{StderrTail, keep_the_tail_until_end_of_input};
+use crate::Interrupt;
 use crate::wire::{capabilities_from_wire, mutation_to_wire, outcomes_from_wire, pull_from_wire};
 
 const ANSWER_DEADLINE_WHEN_THE_REMOTE_NAMES_NONE: Duration = Duration::from_secs(60);
@@ -46,6 +49,7 @@ pub(super) struct ProcessHelper {
     deadline: Duration,
     deadline_as_written: String,
     killed: bool,
+    interrupt: Interrupt,
 }
 
 impl ProcessHelper {
@@ -55,6 +59,7 @@ impl ProcessHelper {
         stdout: ChildStdout,
         stderr: ChildStderr,
         remote: &RemoteConfig,
+        interrupt: Interrupt,
     ) -> ProcessHelper {
         let (tx, answers) = channel();
         std::thread::spawn(move || {
@@ -84,6 +89,7 @@ impl ProcessHelper {
                     ANSWER_DEADLINE_WHEN_THE_REMOTE_NAMES_NONE_AS_WRITTEN.to_string()
                 }),
             killed: false,
+            interrupt,
         }
     }
 
@@ -137,7 +143,7 @@ impl ProcessHelper {
                     });
                 }
                 Err(RecvTimeoutError::Timeout) => {
-                    if crate::cancel::cancellation_requested() {
+                    if self.interrupt.requested() {
                         self.kill_and_reap();
                         return Err(HelperError::Cancelled);
                     }
@@ -152,27 +158,6 @@ impl ProcessHelper {
                 }
             }
         }
-    }
-
-    fn kill_and_reap(&mut self) {
-        let _ = self.child.kill();
-        let _ = self.child.wait();
-        self.killed = true;
-    }
-
-    fn close_input_so_a_well_behaved_helper_exits(&mut self) {
-        drop(self.stdin.take());
-    }
-
-    fn ended_or_unwaitable_within_the_exit_grace(&mut self) -> bool {
-        let give_up_at = Instant::now() + EXIT_GRACE_BEFORE_THE_KILL;
-        while Instant::now() < give_up_at {
-            match self.child.try_wait() {
-                Ok(None) => std::thread::sleep(RECHECK_INTERVAL),
-                Ok(Some(_)) | Err(_) => return true,
-            }
-        }
-        false
     }
 }
 
@@ -203,16 +188,6 @@ impl RemoteHelper for ProcessHelper {
         let mutations = mutations.into_iter().map(mutation_to_wire).collect();
         let pushed: PushResponse = self.call(&Request::Push { mutations })?;
         Ok(outcomes_from_wire(pushed.results))
-    }
-}
-
-impl Drop for ProcessHelper {
-    fn drop(&mut self) {
-        self.close_input_so_a_well_behaved_helper_exits();
-        if self.killed || self.ended_or_unwaitable_within_the_exit_grace() {
-            return;
-        }
-        self.kill_and_reap();
     }
 }
 

@@ -7,6 +7,7 @@ mod output;
 mod prompt;
 
 use clap::Parser;
+use dam_adapters::Interrupt;
 
 use crate::args::{Cli, Command};
 use crate::context::Context;
@@ -14,7 +15,8 @@ use crate::error::CliError;
 use crate::output::Format;
 
 fn main() {
-    let interrupts_installed = dam_adapters::catch_interrupts();
+    let interrupt = Interrupt::default();
+    let interrupts_installed = dam_adapters::catch_interrupts(&interrupt);
     let cli = Cli::parse();
     let format = if cli.json {
         Format::Json
@@ -26,10 +28,10 @@ fn main() {
     if !interrupts_installed {
         warn_a_human_that_ctrl_c_will_not_cancel_cleanly(format);
     }
-    match run(cli, format) {
+    match run(cli, format, &interrupt) {
         Ok(()) => {}
         Err(e) => {
-            let e = cancelled_when_interrupted_whatever_the_work_reported(e);
+            let e = cancelled_when_interrupted_whatever_the_work_reported(e, &interrupt);
             output::print_error(format, &e);
             std::process::exit(e.exit_code());
         }
@@ -42,15 +44,18 @@ fn warn_a_human_that_ctrl_c_will_not_cancel_cleanly(format: Format) {
     }
 }
 
-fn cancelled_when_interrupted_whatever_the_work_reported(e: CliError) -> CliError {
-    if dam_adapters::cancellation_requested() {
+fn cancelled_when_interrupted_whatever_the_work_reported(
+    e: CliError,
+    interrupt: &Interrupt,
+) -> CliError {
+    if interrupt.requested() {
         CliError::Cancelled
     } else {
         e
     }
 }
 
-fn run(cli: Cli, format: Format) -> Result<(), CliError> {
+fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> {
     if cli.no_pull && !commands::pulls_a_stale_remote(&cli.command) {
         return Err(CliError::Usage(
             "--no-pull applies to ls, show and agenda, the reads that pull a stale remote".into(),
@@ -70,7 +75,7 @@ fn run(cli: Cli, format: Format) -> Result<(), CliError> {
         }
         command => {
             let store_path = cli.store.unwrap_or_else(dam_adapters::default_store_path);
-            let mut ctx = Context::open(config_path, &store_path, format, cli.no_pull)?;
+            let mut ctx = Context::open(config_path, &store_path, format, cli.no_pull, interrupt)?;
             let report = commands::dispatch_a_verb_that_opens_the_store(&mut ctx, command)?;
             output::print(format, &report)
         }

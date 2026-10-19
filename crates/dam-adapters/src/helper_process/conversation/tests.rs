@@ -1,3 +1,5 @@
+mod cancellation;
+
 use std::time::{Duration, Instant};
 
 use dam_application::{ConfiguredDuration, HelperError, RemoteHelper};
