@@ -2,8 +2,8 @@ mod parse;
 mod term;
 
 use jiff::ToSpan;
-use jiff::civil::Weekday;
 
+use crate::weekday::week_start;
 use crate::{Date, Kind, Object, Oid, Path, Priority, Transparency};
 
 pub use parse::{QueryError, parse};
@@ -107,11 +107,6 @@ fn in_week(d: Date, monday: Date) -> bool {
         .checked_add(6.days())
         .ok()
         .is_some_and(|sunday| d >= monday && d <= sunday)
-}
-
-fn week_start(date: Date) -> Date {
-    let back = date.weekday().since(Weekday::Monday) as i32;
-    date.checked_sub(back.days()).unwrap_or(date)
 }
 
 #[cfg(test)]

@@ -2,7 +2,7 @@ use super::*;
 use crate::{
     Categories, Category, Completion, Event, Object, Oid, Path, Priority, Task, Transparency, When,
 };
-use jiff::civil::date;
+use jiff::civil::{Weekday, date};
 
 fn oid(b: u8) -> Oid {
     Oid::generate(&mut |x: &mut [u8]| x.fill(b))

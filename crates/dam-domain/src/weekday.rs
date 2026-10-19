@@ -1,4 +1,5 @@
-use jiff::civil::Weekday;
+use jiff::ToSpan;
+use jiff::civil::{Date, Weekday};
 
 pub fn parse_weekday(text: &str) -> Option<Weekday> {
     match text.to_ascii_lowercase().as_str() {
@@ -23,6 +24,11 @@ pub fn weekday_text(day: Weekday) -> &'static str {
         Weekday::Saturday => "sat",
         Weekday::Sunday => "sun",
     }
+}
+
+pub(crate) fn week_start(date: Date) -> Date {
+    let back = date.weekday().since(Weekday::Monday) as i32;
+    date.checked_sub(back.days()).unwrap_or(date)
 }
 
 #[cfg(test)]
