@@ -160,6 +160,7 @@ pub trait ConflictRepository {
 pub trait NoticeRepository {
     fn add_notice(&self, notice: &Notice) -> Result<(), StoreError>;
     fn notices(&self) -> Result<Vec<Notice>, StoreError>;
+    fn remove_notice(&self, notice: &Notice) -> Result<(), StoreError>;
     fn clear_notices(&self) -> Result<(), StoreError>;
 }
 

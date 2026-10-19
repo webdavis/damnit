@@ -2,7 +2,7 @@ use jiff::civil::date;
 
 use super::super::*;
 use super::{config, launcher, remote};
-use crate::ports::Repositories;
+use crate::ports::{Notice, Repositories};
 use crate::remote::{PullOutcome, RejectedObject};
 use crate::testing::prelude::*;
 use crate::testing::{EchoCredentials, FixedClock, FixedRandom, MemoryStore};

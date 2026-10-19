@@ -6,6 +6,7 @@ mod history;
 mod kind_change;
 mod nameless_rejections;
 mod removals_and_notices;
+mod skipped_twice;
 
 use std::cell::RefCell;
 use std::rc::Rc;

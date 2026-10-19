@@ -37,6 +37,16 @@ impl NoticeRepository for SqliteStore {
             .collect()
     }
 
+    fn remove_notice(&self, notice: &Notice) -> Result<(), StoreError> {
+        self.conn
+            .execute(
+                "DELETE FROM notices WHERE json = ?1",
+                params![notice_to_json(notice)?],
+            )
+            .map(|_| ())
+            .map_err(sql)
+    }
+
     fn clear_notices(&self) -> Result<(), StoreError> {
         self.conn
             .execute("DELETE FROM notices", [])
