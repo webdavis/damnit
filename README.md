@@ -80,7 +80,8 @@ declares no kinds, so `dam push` sends it nothing, and an event you make or chan
 dam. `path` narrows what a push sends, so it does nothing for this remote.
 
 Pull it on a schedule: run `dam pull gcal` every few minutes from cron, launchd or a systemd timer.
-Setting `stale` also keeps it fresh, but then whichever read finds it stale waits on Google first.
+Its credential commands must run without a terminal. Setting `stale` also keeps it fresh, but then
+whichever read finds it stale waits on Google first.
 
 ## How Todoist maps
 
