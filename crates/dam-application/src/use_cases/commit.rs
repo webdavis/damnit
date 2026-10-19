@@ -33,10 +33,6 @@ pub(crate) fn record(
     }
 }
 
-pub fn log(commits: &dyn CommitRepository) -> Result<Vec<CommitRecord>, UseCaseError> {
-    Ok(commits.log()?)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -66,7 +62,7 @@ mod tests {
             store.committed(&oid(1)).unwrap().unwrap().base().subject,
             "a"
         );
-        assert_eq!(log(&store).unwrap()[0].id, rec.id);
+        assert_eq!(store.log().unwrap()[0].id, rec.id);
     }
 
     #[test]

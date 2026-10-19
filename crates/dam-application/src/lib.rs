@@ -26,7 +26,7 @@ pub use remote::{
 };
 pub use secret::Secret;
 pub use use_cases::agenda::{Scheduled, Window, agenda};
-pub use use_cases::commit::{commit, log};
+pub use use_cases::commit::commit;
 pub use use_cases::complete::{CompletePlan, Completed, complete, plan_complete};
 pub use use_cases::edit::{EditFields, apply, edit};
 pub use use_cases::freshness::{refresh_stale, require_fresh};
@@ -40,4 +40,4 @@ pub use use_cases::remove::{RemovePlan, plan_remove, remove};
 pub use use_cases::resolve::{Side, resolve};
 pub use use_cases::restore::{Restored, restore};
 pub use use_cases::stage::{add, add_all, reset};
-pub use use_cases::status::{Status, Unpushed, diff_staged, diff_working, status};
+pub use use_cases::status::{Status, Unpushed, diff_working, status};
