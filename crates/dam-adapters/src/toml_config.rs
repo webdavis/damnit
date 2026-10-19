@@ -2,15 +2,14 @@ use std::path::{Path as FsPath, PathBuf};
 
 use dam_application::{Config, ConfigError, FilterConfig};
 use dam_domain::{Categories, Category};
+use dam_toml::{Place, StrictTable, parse_toml};
 
 mod append;
 mod file;
 mod remote;
-mod strict_table;
 use append::append_remote;
 pub use file::TomlConfigFile;
 use remote::parse_remote;
-pub use strict_table::{Place, StrictTable, parse_toml};
 
 fn home_dir() -> PathBuf {
     std::env::var_os("HOME")

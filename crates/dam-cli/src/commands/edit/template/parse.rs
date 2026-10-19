@@ -1,8 +1,8 @@
 use dam_application::EditFields;
 use dam_domain::{Date, Object, Oid, Priority};
+use dam_toml::{StrictTable, parse_toml};
 
 use super::reader::{template_reader, when};
-use dam_adapters::{StrictTable, parse_toml};
 
 pub(crate) fn parse_template(
     text: &str,

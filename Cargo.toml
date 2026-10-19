@@ -4,6 +4,7 @@ members = [
   "crates/dam-domain",
   "crates/dam-application",
   "crates/dam-protocol",
+  "crates/dam-toml",
   "crates/dam-adapters",
   "crates/dam-cli",
   "crates/dam-remote-todoist",
