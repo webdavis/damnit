@@ -1,0 +1,105 @@
+{
+  "staged": [
+    {
+      "oid": "2222222222222222222222222222222222222222",
+      "op": "delete",
+      "fields": [],
+      "kind": "task",
+      "subject": "call mom",
+      "path": "",
+      "labels": [],
+      "done": false,
+      "completed_at": null,
+      "priority": 4,
+      "due": null,
+      "before": {
+        "oid": "2222222222222222222222222222222222222222",
+        "kind": "task",
+        "subject": "call mom",
+        "body": "",
+        "path": "",
+        "labels": [],
+        "depends": [],
+        "reminders": [],
+        "task": {
+          "done": false,
+          "priority": 4
+        }
+      },
+      "after": null
+    }
+  ],
+  "unstaged": [
+    {
+      "oid": "1111111111111111111111111111111111111111",
+      "op": "update",
+      "fields": [
+        "subject"
+      ],
+      "kind": "task",
+      "subject": "buy soy milk",
+      "path": "home/",
+      "labels": [
+        "errand"
+      ],
+      "done": false,
+      "completed_at": null,
+      "priority": 2,
+      "due": "2026-09-25",
+      "before": {
+        "oid": "1111111111111111111111111111111111111111",
+        "kind": "task",
+        "subject": "buy oat milk",
+        "body": "",
+        "path": "home/",
+        "labels": [
+          "errand"
+        ],
+        "depends": [],
+        "reminders": [],
+        "task": {
+          "done": false,
+          "priority": 2,
+          "due": "2026-09-25"
+        }
+      },
+      "after": {
+        "oid": "1111111111111111111111111111111111111111",
+        "kind": "task",
+        "subject": "buy soy milk",
+        "body": "",
+        "path": "home/",
+        "labels": [
+          "errand"
+        ],
+        "depends": [],
+        "reminders": [],
+        "task": {
+          "done": false,
+          "priority": 2,
+          "due": "2026-09-25"
+        }
+      }
+    }
+  ],
+  "conflicts": [],
+  "notices": [],
+  "unpushed": [
+    {
+      "remote": "fake",
+      "commits": 1,
+      "commit_ids": [
+        "<id-1>"
+      ],
+      "oids": [
+        "1111111111111111111111111111111111111111",
+        "2222222222222222222222222222222222222222",
+        "3333333333333333333333333333333333333333",
+        "4444444444444444444444444444444444444444"
+      ]
+    }
+  ],
+  "warnings": [
+    "warning: a credential is a value in the config file: fake.api_token; prefer <name>_command or <name>_env"
+  ]
+}

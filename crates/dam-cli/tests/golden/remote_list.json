@@ -1,0 +1,13 @@
+{
+  "remotes": [
+    {
+      "name": "fake",
+      "helper": "fake",
+      "url": "fake::",
+      "path": null,
+      "stale_seconds": null,
+      "last_pull": "<now>",
+      "last_push": "<now>"
+    }
+  ]
+}

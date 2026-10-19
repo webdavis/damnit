@@ -1,0 +1,8 @@
+{
+  "filters": [
+    {
+      "name": "today",
+      "query": "due:today | overdue"
+    }
+  ]
+}

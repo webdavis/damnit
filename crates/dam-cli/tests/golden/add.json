@@ -1,0 +1,25 @@
+{
+  "staged": [
+    {
+      "oid": "1111111111111111111111111111111111111111",
+      "op": "create",
+      "fields": [
+        "subject",
+        "path",
+        "labels",
+        "priority",
+        "due"
+      ],
+      "kind": "task",
+      "subject": "buy oat milk",
+      "path": "home/",
+      "labels": [
+        "errand"
+      ],
+      "done": false,
+      "completed_at": null,
+      "priority": 2,
+      "due": "2026-09-25"
+    }
+  ]
+}

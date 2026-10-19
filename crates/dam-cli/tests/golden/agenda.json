@@ -1,0 +1,30 @@
+{
+  "events": [
+    {
+      "oid": "4444444444444444444444444444444444444444",
+      "subject": "offsite",
+      "path": "work/",
+      "labels": [
+        "deep"
+      ],
+      "status": "confirmed",
+      "transparency": "busy",
+      "all_day": true,
+      "start": 1790294400,
+      "end": 1790467200,
+      "busy": true
+    },
+    {
+      "oid": "3333333333333333333333333333333333333333",
+      "subject": "standup",
+      "path": "work/",
+      "labels": [],
+      "status": "confirmed",
+      "transparency": "busy",
+      "all_day": false,
+      "start": 1790326800,
+      "end": 1790327700,
+      "busy": true
+    }
+  ]
+}

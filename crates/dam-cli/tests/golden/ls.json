@@ -1,0 +1,77 @@
+{
+  "objects": [
+    {
+      "oid": "2222222222222222222222222222222222222222",
+      "kind": "task",
+      "subject": "call mom",
+      "body": "",
+      "path": "",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4
+      }
+    },
+    {
+      "oid": "1111111111111111111111111111111111111111",
+      "kind": "task",
+      "subject": "buy oat milk",
+      "body": "",
+      "path": "home/",
+      "labels": [
+        "errand"
+      ],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 2,
+        "due": "2026-09-25"
+      }
+    },
+    {
+      "oid": "4444444444444444444444444444444444444444",
+      "kind": "event",
+      "subject": "offsite",
+      "body": "",
+      "path": "work/",
+      "labels": [
+        "deep"
+      ],
+      "depends": [],
+      "reminders": [],
+      "event": {
+        "start": "2026-09-25",
+        "end": "2026-09-27",
+        "attendees": [],
+        "status": "confirmed",
+        "transparency": "busy",
+        "visibility": "default",
+        "event_type": "default",
+        "attachments": []
+      }
+    },
+    {
+      "oid": "3333333333333333333333333333333333333333",
+      "kind": "event",
+      "subject": "standup",
+      "body": "",
+      "path": "work/",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "event": {
+        "start": "2026-09-25T09:00:00+00:00[UTC]",
+        "end": "2026-09-25T09:15:00+00:00[UTC]",
+        "attendees": [],
+        "status": "confirmed",
+        "transparency": "busy",
+        "visibility": "default",
+        "event_type": "default",
+        "attachments": []
+      }
+    }
+  ]
+}

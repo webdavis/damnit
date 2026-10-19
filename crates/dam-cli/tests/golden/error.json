@@ -1,0 +1,8 @@
+{
+  "error": {
+    "kind": "refused",
+    "rule": "no_such_object",
+    "message": "no object matches \"9999\"",
+    "oids": []
+  }
+}

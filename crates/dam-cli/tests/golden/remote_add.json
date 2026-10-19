@@ -1,0 +1,7 @@
+{
+  "name": "calendar",
+  "url": "gcal::primary",
+  "warnings": [
+    "the config was mode 644; writing it 600, it can hold a credential"
+  ]
+}

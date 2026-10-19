@@ -1,0 +1,106 @@
+{
+  "commits": [
+    {
+      "id": "<id-1>",
+      "at": "<now>",
+      "message": "close the errand",
+      "changes": [
+        {
+          "oid": "1111111111111111111111111111111111111111",
+          "op": "update",
+          "fields": [
+            "done"
+          ],
+          "kind": "task",
+          "subject": "buy oat milk",
+          "path": "home/",
+          "labels": [
+            "errand"
+          ],
+          "done": true,
+          "completed_at": "<now>",
+          "priority": 2,
+          "due": "2026-09-25"
+        }
+      ]
+    },
+    {
+      "id": "<id-2>",
+      "at": "<now>",
+      "message": "seed the week",
+      "changes": [
+        {
+          "oid": "1111111111111111111111111111111111111111",
+          "op": "create",
+          "fields": [
+            "subject",
+            "path",
+            "labels",
+            "priority",
+            "due"
+          ],
+          "kind": "task",
+          "subject": "buy oat milk",
+          "path": "home/",
+          "labels": [
+            "errand"
+          ],
+          "done": false,
+          "completed_at": null,
+          "priority": 2,
+          "due": "2026-09-25"
+        },
+        {
+          "oid": "2222222222222222222222222222222222222222",
+          "op": "create",
+          "fields": [
+            "subject"
+          ],
+          "kind": "task",
+          "subject": "call mom",
+          "path": "",
+          "labels": [],
+          "done": false,
+          "completed_at": null,
+          "priority": 4,
+          "due": null
+        },
+        {
+          "oid": "3333333333333333333333333333333333333333",
+          "op": "create",
+          "fields": [
+            "subject",
+            "start",
+            "end",
+            "path"
+          ],
+          "kind": "event",
+          "subject": "standup",
+          "path": "work/",
+          "labels": [],
+          "start": "2026-09-25T09:00:00+00:00[UTC]",
+          "end": "2026-09-25T09:15:00+00:00[UTC]"
+        },
+        {
+          "oid": "4444444444444444444444444444444444444444",
+          "op": "create",
+          "fields": [
+            "subject",
+            "start",
+            "end",
+            "path",
+            "labels"
+          ],
+          "kind": "event",
+          "subject": "offsite",
+          "path": "work/",
+          "labels": [
+            "deep"
+          ],
+          "start": "2026-09-25",
+          "end": "2026-09-27"
+        }
+      ]
+    }
+  ]
+}

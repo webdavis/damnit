@@ -1,0 +1,20 @@
+{
+  "categories": [
+    {
+      "name": "context",
+      "values": [
+        "home",
+        "errand"
+      ],
+      "exclusive": false
+    },
+    {
+      "name": "effort",
+      "values": [
+        "light",
+        "deep"
+      ],
+      "exclusive": true
+    }
+  ]
+}
