@@ -33,16 +33,14 @@ fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
         priority: args.priority,
         ..EditFields::default()
     };
-    f.due = match (args.due, args.no_due) {
-        (Some(d), _) => Some(Some(when_flag(ctx, "due", &d)?)),
-        (None, true) => Some(None),
-        (None, false) => None,
-    };
-    f.deadline = match (args.deadline, args.no_deadline) {
-        (Some(d), _) => Some(Some(deadline_flag(ctx, &d)?)),
-        (None, true) => Some(None),
-        (None, false) => None,
-    };
+    f.due = set_or_clear(
+        args.due.map(|d| when_flag(ctx, "due", &d)).transpose()?,
+        args.no_due,
+    );
+    f.deadline = set_or_clear(
+        args.deadline.map(|d| deadline_flag(ctx, &d)).transpose()?,
+        args.no_deadline,
+    );
     f.undone = args.undone;
     f.add_labels = args.labels;
     f.remove_labels = args.unlabels;
@@ -56,16 +54,11 @@ fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
         .iter()
         .map(|d| oid_of("undepends", d))
         .collect::<Result<Vec<Oid>, _>>()?;
-    f.recurrence = match (args.recurrence, args.no_recurrence) {
-        (Some(r), _) => Some(Some(r)),
-        (None, true) => Some(None),
-        (None, false) => None,
-    };
-    f.attach = match (args.attach, args.detach) {
-        (Some(e), _) => Some(Some(oid_of("attach", &e)?)),
-        (None, true) => Some(None),
-        (None, false) => None,
-    };
+    f.recurrence = set_or_clear(args.recurrence, args.no_recurrence);
+    f.attach = set_or_clear(
+        args.attach.map(|e| oid_of("attach", &e)).transpose()?,
+        args.detach,
+    );
     f.start = args
         .start
         .as_deref()
@@ -76,12 +69,16 @@ fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
         .as_deref()
         .map(|s| when_flag(ctx, "end", s))
         .transpose()?;
-    f.location = match (args.location, args.no_location) {
-        (Some(l), _) => Some(Some(l)),
+    f.location = set_or_clear(args.location, args.no_location);
+    Ok(f)
+}
+
+fn set_or_clear<T>(value: Option<T>, clear: bool) -> Option<Option<T>> {
+    match (value, clear) {
+        (Some(v), _) => Some(Some(v)),
         (None, true) => Some(None),
         (None, false) => None,
-    };
-    Ok(f)
+    }
 }
 
 fn through_editor(ctx: &Context, oid: &Oid) -> Result<EditFields, CliError> {
@@ -91,35 +88,49 @@ fn through_editor(ctx: &Context, oid: &Oid) -> Result<EditFields, CliError> {
         .ok_or_else(|| Refusal::NoWorkingObject(oid.short().to_string()))?;
     let editor = ctx.editor.as_ref().ok_or(Refusal::NeedsAnEditor)?;
     let original = render_template(&current);
-    let mut opened = original.clone();
-    loop {
-        let saved = editor
-            .edit(&opened)
-            .map_err(|e| CliError::UseCase(UseCaseError::Editor(e)))?;
-        if saved == opened || saved == original {
-            return Err(CliError::Cancelled);
-        }
-        match parse_template(&saved, &current, ctx.clock.today(), &ctx.tz) {
-            Ok(fields) => return Ok(fields),
-            Err(why) => {
-                let reopened = reopened_with_the_parse_error_as_its_first_line(&saved, &why);
-                if reopened == opened {
-                    return Err(CliError::Usage(why));
-                }
-                opened = reopened;
-            }
-        }
+    let parse = |saved: &str| parse_template(saved, &current, ctx.clock.today(), &ctx.tz);
+    let save = |opened: &str| {
+        editor
+            .edit(opened)
+            .map_err(|e| CliError::UseCase(UseCaseError::Editor(e)))
+    };
+    let saved = save(&original)?;
+    if saved == original {
+        return Err(CliError::Cancelled);
     }
+    if let Ok(fields) = parse(&saved) {
+        return Ok(fields);
+    }
+    let reopened = reopened_with_the_parse_error_as_its_first_line(&saved, parse);
+    let saved = save(&reopened)?;
+    if saved == original {
+        return Err(CliError::Cancelled);
+    }
+    parse(&saved).map_err(|why| match editor.keep(&saved) {
+        Ok(path) => CliError::Usage(format!("{why}; your edit is kept at {}", path.display())),
+        Err(e) => CliError::Usage(format!("{why}; your edit could not be kept: {}", e.0)),
+    })
 }
 
-fn reopened_with_the_parse_error_as_its_first_line(saved: &str, why: &str) -> String {
+fn reopened_with_the_parse_error_as_its_first_line<T>(
+    saved: &str,
+    parse: impl Fn(&str) -> Result<T, String>,
+) -> String {
     let body = saved
         .lines()
         .filter(|l| !l.starts_with("# error:"))
         .collect::<Vec<_>>()
         .join("\n");
-    format!("# error: {why}\n{body}\n")
+    let headed = |why: &str| format!("# error: {why}\n{body}\n");
+    match parse(&headed("")) {
+        Ok(_) => headed(""),
+        Err(why) => headed(&why),
+    }
 }
 
+#[cfg(test)]
+mod editor_tests;
+#[cfg(test)]
+mod line_number_tests;
 #[cfg(test)]
 mod tests;

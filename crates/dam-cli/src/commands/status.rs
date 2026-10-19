@@ -40,8 +40,9 @@ pub(crate) fn run_status(ctx: &mut Context, args: StatusArgs) -> Result<Report, 
     if human.is_empty() {
         human.push("nothing staged, nothing changed".to_string());
     }
-    if let Some(warning) = literal_credential_warning(ctx) {
-        human.insert(0, warning);
+    let warning = literal_credential_warning(ctx);
+    if let Some(warning) = &warning {
+        human.insert(0, warning.clone());
     }
     let staged = change_documents(&s.staged, args.full)?;
     let unstaged = change_documents(&s.unstaged, args.full)?;
@@ -58,6 +59,7 @@ pub(crate) fn run_status(ctx: &mut Context, args: StatusArgs) -> Result<Report, 
             "conflicts": conflicts,
             "notices": s.notices.iter().map(notice_json).collect::<Vec<_>>(),
             "unpushed": s.unpushed.iter().map(unpushed_json).collect::<Vec<_>>(),
+            "warnings": Vec::from_iter(warning),
         }),
     })
 }
@@ -134,3 +136,5 @@ fn titled_section_unless_empty(
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod warning_tests;

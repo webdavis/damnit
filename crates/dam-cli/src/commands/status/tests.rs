@@ -2,7 +2,7 @@ use crate::args::{AddArgs, CommitArgs, DiffArgs, StatusArgs};
 use crate::commands::commit::run_commit;
 use crate::commands::stage::run_add;
 use crate::testing::context;
-use dam_application::{CredentialSpec, RemoteConfig, RemoteName};
+use dam_application::{RemoteConfig, RemoteName};
 use dam_domain::{Kind, Object, Oid, Task};
 
 fn oid(b: u8) -> Oid {
@@ -41,47 +41,6 @@ fn status_separates_staged_unstaged_and_notices() {
     assert_eq!(report.data["staged"].as_array().unwrap().len(), 1);
     assert_eq!(report.data["unstaged"].as_array().unwrap().len(), 1);
     assert_eq!(report.data["notices"].as_array().unwrap().len(), 1);
-}
-
-fn remote_with(credentials: Vec<CredentialSpec>) -> RemoteConfig {
-    RemoteConfig {
-        name: RemoteName("todoist".into()),
-        helper: "todoist".into(),
-        url: "todoist::".into(),
-        credentials,
-        stale: None,
-        deadline: None,
-        path: None,
-    }
-}
-
-#[test]
-fn status_warns_once_when_a_credential_is_a_value_in_the_config_file() {
-    let mut ctx = context();
-    ctx.config.remotes = vec![remote_with(vec![CredentialSpec::Literal {
-        name: "api_token".into(),
-        value: "SUPERSECRETTOKEN".into(),
-    }])];
-    let report = super::run_status(&mut ctx, StatusArgs { full: false }).unwrap();
-    let warnings: Vec<&str> = report
-        .human
-        .lines()
-        .filter(|l| l.starts_with("warning:"))
-        .collect();
-    assert_eq!(warnings.len(), 1, "{}", report.human);
-    assert!(warnings[0].contains("todoist.api_token"), "{}", warnings[0]);
-    assert!(!report.human.contains("SUPERSECRETTOKEN"));
-}
-
-#[test]
-fn status_does_not_warn_when_no_credential_is_a_value_in_the_config_file() {
-    let mut ctx = context();
-    ctx.config.remotes = vec![remote_with(vec![CredentialSpec::Env {
-        name: "api_token".into(),
-        var: "DAM_TODOIST_API_TOKEN".into(),
-    }])];
-    let report = super::run_status(&mut ctx, StatusArgs { full: false }).unwrap();
-    assert!(!report.human.contains("warning:"), "{}", report.human);
 }
 
 #[test]
