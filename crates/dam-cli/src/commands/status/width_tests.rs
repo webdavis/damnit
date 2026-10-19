@@ -1,7 +1,7 @@
 use crate::args::StatusArgs;
 use crate::output::fitted;
 use crate::testing::context;
-use dam_application::{CredentialSpec, Notice, RemoteConfig, RemoteName};
+use dam_application::{Conflict, CredentialSpec, Notice, RemoteConfig, RemoteName};
 use dam_domain::{Object, Oid, Task};
 
 const WIDTH: usize = 20;
@@ -52,4 +52,33 @@ fn status_cuts_its_rows_and_prints_warnings_and_notices_whole() {
     let rows: Vec<&str> = text.lines().filter(|l| !whole.contains(l)).collect();
     assert!(rows.iter().all(|l| l.chars().count() <= WIDTH), "{text}");
     assert!(rows.iter().any(|l| l.ends_with('…')), "{text}");
+}
+
+#[test]
+fn a_conflict_keeps_its_whole_resolve_hint_at_forty_and_eighty_columns() {
+    let ctx = context();
+    let ours = Object::Task(Task::new(
+        oid(1),
+        "buy soy milk from the shop on the corner",
+    ));
+    let theirs = Object::Task(Task::new(oid(1), "buy rice milk from the market downtown"));
+    ctx.store.put(&ours).unwrap();
+    ctx.store
+        .mark_conflict(&Conflict {
+            remote: RemoteName("fake".into()),
+            oid: oid(1),
+            ours,
+            theirs,
+        })
+        .unwrap();
+    let report = super::run_status(&ctx, StatusArgs { full: false }).unwrap();
+    let hint = format!("    dam resolve {} --ours|--theirs", oid(1).short());
+    for width in [40, 80] {
+        let text = fitted(&report, width);
+        assert!(text.lines().any(|l| l == hint), "{width}:\n{text}");
+        assert!(
+            text.lines().all(|l| l.chars().count() <= width),
+            "{width}:\n{text}"
+        );
+    }
 }

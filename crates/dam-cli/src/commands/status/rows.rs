@@ -4,7 +4,7 @@ use dam_application::Conflict;
 use dam_domain::{Change, Field, Object, Oid, Timestamp, When, changed_fields, touched_fields};
 use serde::Serialize;
 
-use crate::view::{display, optional_display, optional_wire, wire};
+use crate::view::{Line, display, optional_display, optional_wire, wire};
 
 fn change_line(change: &Change) -> String {
     let subject = &change.object().base().subject;
@@ -123,15 +123,17 @@ impl<'a> ConflictRow<'a> {
         }
     }
 
-    pub(super) fn line(&self) -> String {
-        format!(
-            "{}  {}  ours: {:?}  theirs: {:?}  (dam resolve {} --ours|--theirs)",
-            self.oid.short(),
-            self.remote,
-            self.ours.base().subject,
-            self.theirs.base().subject,
-            self.oid.short()
-        )
+    pub(super) fn lines(&self) -> [Line; 2] {
+        let oid = self.oid.short();
+        [
+            Line::Row(format!(
+                "  {oid}  {}  ours: {:?}  theirs: {:?}",
+                self.remote,
+                self.ours.base().subject,
+                self.theirs.base().subject,
+            )),
+            Line::Whole(format!("    dam resolve {oid} --ours|--theirs")),
+        ]
     }
 }
 
