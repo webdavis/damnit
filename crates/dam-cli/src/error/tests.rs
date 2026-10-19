@@ -93,8 +93,7 @@ fn a_broken_invariant_is_internal_and_a_failed_read_or_write_is_store() {
 
 #[test]
 fn every_kind_the_readme_lists_is_one_dam_reports() {
-    let readme =
-        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../../README.md")).unwrap();
+    let readme = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../README.md"));
     let kinds = [
         CliError::UseCase(UseCaseError::Refused(Refusal::NothingToCommit)),
         CliError::Io("x".into()),
