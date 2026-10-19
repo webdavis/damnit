@@ -1,13 +1,11 @@
-use std::collections::{BTreeMap, BTreeSet};
-
-use dam_domain::{Object, Oid};
+use dam_domain::{CommitRecord, Oid};
 
 use crate::config::{Config, RemoteConfig};
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{
     Clock, CredentialSource, HelperLauncher, Notice, RemoteHelper, RemoteName, Repositories,
 };
-use crate::remote::{MutationOp, MutationOutcome, MutationVerdict, RemoteCapabilities};
+use crate::remote::RemoteCapabilities;
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::connect::connect;
 
@@ -69,115 +67,66 @@ fn push_one(
         remote,
         &unpushed,
     )?;
-
-    let mut mutations = Vec::new();
-    let mut after_by_oid: BTreeMap<Oid, Object> = BTreeMap::new();
-    let mut deletes: BTreeSet<Oid> = BTreeSet::new();
-    let mut skipped = 0;
-    for (change, origin) in changes.into_values() {
-        match mutation_for(
-            repos.remote_tracking,
-            caps,
-            remote,
-            &change,
-            origin.as_ref(),
-        )? {
-            Some(mutation) => {
-                if mutation.op == MutationOp::Delete {
-                    deletes.insert(mutation.oid.clone());
-                } else if let Some(after) = change.after() {
-                    after_by_oid.insert(change.oid().clone(), after.clone());
-                }
-                mutations.push(mutation);
-            }
-            None => skipped += 1,
-        }
-    }
-    let sent = mutations.len();
-    let sent_oids: BTreeSet<Oid> = mutations.iter().map(|m| m.oid.clone()).collect();
-    let outcomes: Vec<MutationOutcome> = if mutations.is_empty() {
+    let Plan { mutations, skipped } = plan(repos.remote_tracking, caps, remote, changes)?;
+    let outcomes = if mutations.is_empty() {
         vec![]
     } else {
-        helper.push(mutations)?
+        helper.push(mutations.clone())?
     };
-
-    let failed = atomically(repos.transaction, || {
-        let mut failed = Vec::new();
-        let mut retries = Vec::new();
-        let mut answered: BTreeSet<Oid> = BTreeSet::new();
-        for outcome in outcomes {
-            let oid = outcome.oid;
-            let first_answer_about_a_sent_oid =
-                sent_oids.contains(&oid) && answered.insert(oid.clone());
-            if !first_answer_about_a_sent_oid {
-                continue;
-            }
-            match outcome.verdict {
-                MutationVerdict::Accepted { remote_id } => {
-                    if let Some(id) = &remote_id {
-                        repos
-                            .remote_tracking
-                            .map_remote_id(&remote.name, &oid, id)?;
-                    }
-                    if deletes.contains(&oid) {
-                        repos
-                            .remote_tracking
-                            .clear_remote_mapping(&remote.name, &oid)?;
-                    } else if let Some(after) = after_by_oid.get(&oid) {
-                        repos
-                            .remote_tracking
-                            .set_remote_snapshot(&remote.name, after)?;
-                    }
-                }
-                MutationVerdict::Refused { why } => {
-                    repos.notices.add_notice(&Notice::PushFailed {
-                        remote: remote.name.clone(),
-                        oid: oid.clone(),
-                        why: why.clone(),
-                    })?;
-                    retries.push(oid.clone());
-                    failed.push((oid, why));
-                }
-            }
-        }
-
-        let mut unanswered = BTreeSet::new();
-        for oid in sent_oids.difference(&answered).cloned() {
-            let why = "no answer from helper".to_string();
-            repos.notices.add_notice(&Notice::PushFailed {
-                remote: remote.name.clone(),
-                oid: oid.clone(),
-                why: why.clone(),
-            })?;
-            retries.push(oid.clone());
-            unanswered.insert(oid.clone());
-            failed.push((oid, why));
-        }
-        repos.commits.set_push_retries(&remote.name, &retries)?;
-        for record in &unpushed {
-            if record.changes.iter().any(|c| unanswered.contains(c.oid())) {
-                continue;
-            }
-            repos.commits.mark_pushed(&remote.name, &record.id)?;
-        }
-        repos
-            .remote_tracking
-            .set_last_push(&remote.name, clock.now())?;
-        Ok(failed)
+    let settlement = reconcile(&mutations, outcomes);
+    atomically(repos.transaction, || {
+        apply(repos, clock, remote, &unpushed, &settlement)
     })?;
+    let sent = mutations.len();
     Ok(PushReport {
         remote: remote.name.clone(),
         sent,
-        succeeded: sent.saturating_sub(failed.len()),
-        failed,
+        succeeded: sent.saturating_sub(settlement.failed.len()),
+        failed: settlement.failed,
         skipped,
     })
 }
 
+fn apply(
+    repos: Repositories<'_>,
+    clock: &dyn Clock,
+    remote: &RemoteConfig,
+    unpushed: &[CommitRecord],
+    settlement: &Settlement,
+) -> Result<(), UseCaseError> {
+    let tracking = repos.remote_tracking;
+    for (oid, id) in &settlement.map {
+        tracking.map_remote_id(&remote.name, oid, id)?;
+    }
+    for oid in &settlement.clear {
+        tracking.clear_remote_mapping(&remote.name, oid)?;
+    }
+    for after in &settlement.snapshot {
+        tracking.set_remote_snapshot(&remote.name, after)?;
+    }
+    for (oid, why) in &settlement.failed {
+        repos.notices.add_notice(&Notice::PushFailed {
+            remote: remote.name.clone(),
+            oid: oid.clone(),
+            why: why.clone(),
+        })?;
+    }
+    repos
+        .commits
+        .set_push_retries(&remote.name, &settlement.retries())?;
+    for id in settlement.pushed(unpushed) {
+        repos.commits.mark_pushed(&remote.name, id)?;
+    }
+    tracking.set_last_push(&remote.name, clock.now())?;
+    Ok(())
+}
+
 mod idempotency;
 mod mutations;
+mod reconcile;
 
-use mutations::{changes_to_send, mutation_for};
+use mutations::{Plan, changes_to_send, plan};
+use reconcile::{Settlement, reconcile};
 
 #[cfg(test)]
 mod tests;
