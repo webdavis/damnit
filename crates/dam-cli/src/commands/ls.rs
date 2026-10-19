@@ -7,7 +7,7 @@ use crate::error::CliError;
 use crate::output::Report;
 use crate::view::{ObjectList, report};
 
-pub(crate) fn run_ls(ctx: &mut Context, args: LsArgs) -> Result<Report, CliError> {
+pub(crate) fn run_ls(ctx: &Context, args: LsArgs) -> Result<Report, CliError> {
     refresh_stale_unless_no_pull(ctx)?;
     let objects = list(
         ctx.store.as_ref(),
@@ -43,9 +43,7 @@ mod tests {
             query: "due:today".into(),
         });
         assert_eq!(
-            super::run_ls(&mut ctx, LsArgs { query: None })
-                .unwrap()
-                .data["objects"]
+            super::run_ls(&ctx, LsArgs { query: None }).unwrap().data["objects"]
                 .as_array()
                 .unwrap()
                 .len(),
@@ -53,7 +51,7 @@ mod tests {
         );
         assert_eq!(
             super::run_ls(
-                &mut ctx,
+                &ctx,
                 LsArgs {
                     query: Some("due:today".into())
                 }
@@ -66,7 +64,7 @@ mod tests {
             1
         );
         let saved = super::run_ls(
-            &mut ctx,
+            &ctx,
             LsArgs {
                 query: Some("now".into()),
             },
@@ -86,7 +84,7 @@ mod tests {
         }])
         .unwrap();
         let err = super::run_ls(
-            &mut ctx,
+            &ctx,
             LsArgs {
                 query: Some("effort:home".into()),
             },
@@ -98,9 +96,9 @@ mod tests {
 
     #[test]
     fn an_undeclared_category_key_is_refused_and_names_the_key() {
-        let mut ctx = context();
+        let ctx = context();
         let err = super::run_ls(
-            &mut ctx,
+            &ctx,
             LsArgs {
                 query: Some("mood:happy".into()),
             },

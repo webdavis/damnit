@@ -76,8 +76,8 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         }
         command => {
             let store_path = cli.store.unwrap_or_else(dam_adapters::default_store_path);
-            let mut ctx = Context::open(config_path, &store_path, format, cli.no_pull, interrupt)?;
-            let report = commands::dispatch_a_verb_that_opens_the_store(&mut ctx, command)?;
+            let ctx = Context::open(config_path, &store_path, format, cli.no_pull, interrupt)?;
+            let report = commands::dispatch_a_verb_that_opens_the_store(&ctx, command)?;
             output::print(format, &report)
         }
     }

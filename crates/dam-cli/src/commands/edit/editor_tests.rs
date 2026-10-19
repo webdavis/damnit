@@ -16,7 +16,7 @@ fn the_editor_round_trip_applies_the_saved_text() {
         move |_| saved.clone(),
     )])));
     run(
-        &mut ctx,
+        &ctx,
         EditArgs {
             editor: true,
             ..args(&oid(1))
@@ -38,7 +38,7 @@ fn an_unchanged_editor_save_is_a_cancel() {
     ctx.editor = Some(Box::new(ScriptedEditor::saving_unchanged()));
     assert!(matches!(
         run(
-            &mut ctx,
+            &ctx,
             EditArgs {
                 editor: true,
                 ..args(&oid(1))
@@ -59,7 +59,7 @@ fn a_save_that_never_parses_stops_after_it_comes_back_unchanged() {
         Box::new(|_| "priority = \"high\"\n".into()),
     ])));
     let err = run(
-        &mut ctx,
+        &ctx,
         EditArgs {
             editor: true,
             ..args(&oid(1))
@@ -75,12 +75,12 @@ fn a_save_that_never_parses_stops_after_it_comes_back_unchanged() {
 
 #[test]
 fn a_machine_format_refuses_to_open_an_editor() {
-    let mut ctx = machine_context();
+    let ctx = machine_context();
     ctx.store
         .put(&Object::Task(Task::new(oid(1), "milk")))
         .unwrap();
     let err = run(
-        &mut ctx,
+        &ctx,
         EditArgs {
             editor: true,
             ..args(&oid(1))
@@ -101,7 +101,7 @@ fn a_bad_save_kept_as_it_was_reopened_reports_the_parse_error_not_a_cancel() {
         "priority = \"high\"\n".into()
     })])));
     let err = run(
-        &mut ctx,
+        &ctx,
         EditArgs {
             editor: true,
             ..args(&oid(1))
@@ -131,7 +131,7 @@ fn a_second_save_that_still_does_not_parse_is_refused_instead_of_reopened_foreve
         .collect();
     ctx.editor = Some(Box::new(ScriptedEditor::saving(saves)));
     let err = run(
-        &mut ctx,
+        &ctx,
         EditArgs {
             editor: true,
             ..args(&oid(1))
@@ -157,7 +157,7 @@ fn a_refused_second_save_keeps_the_typed_text_in_a_file_the_refusal_names() {
         Box::new(|text| format!("{text}priority = \"high\"\n")),
     ])));
     let err = run(
-        &mut ctx,
+        &ctx,
         EditArgs {
             editor: true,
             ..args(&oid(1))

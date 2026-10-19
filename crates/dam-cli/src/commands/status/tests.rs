@@ -11,12 +11,12 @@ fn oid(b: u8) -> Oid {
 
 #[test]
 fn status_separates_staged_unstaged_and_notices() {
-    let mut ctx = context();
+    let ctx = context();
     ctx.store
         .put(&Object::Task(Task::new(oid(1), "staged")))
         .unwrap();
     run_add(
-        &mut ctx,
+        &ctx,
         AddArgs {
             oids: vec![],
             all: true,
@@ -33,7 +33,7 @@ fn status_separates_staged_unstaged_and_notices() {
             why: "nope".into(),
         })
         .unwrap();
-    let report = super::run_status(&mut ctx, StatusArgs { full: false }).unwrap();
+    let report = super::run_status(&ctx, StatusArgs { full: false }).unwrap();
     assert!(report.human.contains("Staged:"));
     assert!(report.human.contains("Not staged:"));
     assert!(report.human.contains("Notices:"));
@@ -45,7 +45,7 @@ fn status_separates_staged_unstaged_and_notices() {
 
 #[test]
 fn a_kind_change_notice_names_both_kinds() {
-    let mut ctx = context();
+    let ctx = context();
     ctx.store
         .add_notice(&dam_application::Notice::KindChanged {
             oid: oid(1),
@@ -53,7 +53,7 @@ fn a_kind_change_notice_names_both_kinds() {
             theirs: Kind::Event,
         })
         .unwrap();
-    let report = super::run_status(&mut ctx, StatusArgs { full: false }).unwrap();
+    let report = super::run_status(&ctx, StatusArgs { full: false }).unwrap();
     assert!(
         report.human.contains(&format!(
             "{} is a task here and an event upstream",
@@ -69,7 +69,7 @@ fn a_kind_change_notice_names_both_kinds() {
 
 #[test]
 fn a_kind_change_notice_reads_the_other_way_round_too() {
-    let mut ctx = context();
+    let ctx = context();
     ctx.store
         .add_notice(&dam_application::Notice::KindChanged {
             oid: oid(1),
@@ -77,7 +77,7 @@ fn a_kind_change_notice_reads_the_other_way_round_too() {
             theirs: Kind::Task,
         })
         .unwrap();
-    let report = super::run_status(&mut ctx, StatusArgs { full: false }).unwrap();
+    let report = super::run_status(&ctx, StatusArgs { full: false }).unwrap();
     assert!(
         report.human.contains(&format!(
             "{} is an event here and a task upstream",
@@ -90,12 +90,12 @@ fn a_kind_change_notice_reads_the_other_way_round_too() {
 
 #[test]
 fn diff_shows_working_or_staged() {
-    let mut ctx = context();
+    let ctx = context();
     ctx.store
         .put(&Object::Task(Task::new(oid(1), "a")))
         .unwrap();
     run_add(
-        &mut ctx,
+        &ctx,
         AddArgs {
             oids: vec![],
             all: true,
@@ -103,7 +103,7 @@ fn diff_shows_working_or_staged() {
     )
     .unwrap();
     run_commit(
-        &mut ctx,
+        &ctx,
         CommitArgs {
             message: "m".into(),
         },
@@ -113,7 +113,7 @@ fn diff_shows_working_or_staged() {
     t.base.subject = "b".into();
     ctx.store.put(&Object::Task(t)).unwrap();
     let working = super::run_diff(
-        &mut ctx,
+        &ctx,
         DiffArgs {
             staged: false,
             full: false,
@@ -123,7 +123,7 @@ fn diff_shows_working_or_staged() {
     assert!(working.human.contains("changed"));
     assert!(working.human.contains("subject"));
     let staged = super::run_diff(
-        &mut ctx,
+        &ctx,
         DiffArgs {
             staged: true,
             full: false,
@@ -160,7 +160,7 @@ fn status_reports_conflicts_and_unpushed_commits() {
         .put(&Object::Task(Task::new(oid(2), "b")))
         .unwrap();
     run_add(
-        &mut ctx,
+        &ctx,
         AddArgs {
             oids: vec![],
             all: true,
@@ -168,13 +168,13 @@ fn status_reports_conflicts_and_unpushed_commits() {
     )
     .unwrap();
     let recorded = run_commit(
-        &mut ctx,
+        &ctx,
         CommitArgs {
             message: "m".into(),
         },
     )
     .unwrap();
-    let report = super::run_status(&mut ctx, StatusArgs { full: false }).unwrap();
+    let report = super::run_status(&ctx, StatusArgs { full: false }).unwrap();
     assert!(report.human.contains("Conflicts:"));
     assert!(report.human.contains(oid(1).short()));
     assert!(report.human.contains("\"mine\""));

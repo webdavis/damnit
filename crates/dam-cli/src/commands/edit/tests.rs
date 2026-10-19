@@ -36,12 +36,12 @@ pub(super) fn args(oid: &Oid) -> EditArgs {
 
 #[test]
 fn flags_change_fields() {
-    let mut ctx = context();
+    let ctx = context();
     ctx.store
         .put(&Object::Task(Task::new(oid(1), "milk")))
         .unwrap();
     run(
-        &mut ctx,
+        &ctx,
         EditArgs {
             subject: Some("oat milk".into()),
             due: Some("2026-09-25".into()),
@@ -66,7 +66,7 @@ fn flags_change_fields() {
 
 #[test]
 fn undone_reopens_a_completed_task_as_one_update_naming_done() {
-    let mut ctx = context();
+    let ctx = context();
     let mut task = Task::new(oid(1), "milk");
     task.completion = Completion::Done { at: None };
     ctx.store.put(&Object::Task(task)).unwrap();
@@ -80,7 +80,7 @@ fn undone_reopens_a_completed_task_as_one_update_naming_done() {
     )
     .unwrap();
     run(
-        &mut ctx,
+        &ctx,
         EditArgs {
             undone: true,
             ..args(&oid(1))
@@ -110,12 +110,12 @@ fn undone_reopens_a_completed_task_as_one_update_naming_done() {
 
 #[test]
 fn undone_on_an_open_task_is_refused_by_dams_own_rule() {
-    let mut ctx = context();
+    let ctx = context();
     ctx.store
         .put(&Object::Task(Task::new(oid(1), "milk")))
         .unwrap();
     let err = run(
-        &mut ctx,
+        &ctx,
         EditArgs {
             undone: true,
             ..args(&oid(1))

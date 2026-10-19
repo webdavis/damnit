@@ -8,7 +8,7 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 
-pub(crate) fn run_remote(ctx: &mut Context, args: RemoteArgs) -> Result<Report, CliError> {
+pub(crate) fn run_remote(ctx: &Context, args: RemoteArgs) -> Result<Report, CliError> {
     match args.command {
         RemoteCommand::Add { name, url } => {
             let name = RemoteName::parse(&name).map_err(|e| CliError::Usage(e.to_string()))?;

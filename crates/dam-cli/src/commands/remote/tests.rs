@@ -19,10 +19,10 @@ fn remote_add_refuses_a_name_outside_the_bare_key_set_and_leaves_the_config_as_i
     let dir = tempfile::tempdir().unwrap();
     let mut ctx = context();
     ctx.config_path = dir.path().join("config.toml");
-    run_remote(&mut ctx, add("fake", "fake::")).unwrap();
+    run_remote(&ctx, add("fake", "fake::")).unwrap();
     let before = std::fs::read(&ctx.config_path).unwrap();
     for name in ["a.b", "bad name", "x]"] {
-        let err = run_remote(&mut ctx, add(name, "t::")).unwrap_err();
+        let err = run_remote(&ctx, add(name, "t::")).unwrap_err();
         assert_eq!(err.exit_code(), 2, "{name}");
         assert_eq!(
             err.to_string(),
@@ -37,9 +37,9 @@ fn remote_add_refuses_a_duplicate_as_a_rule() {
     let dir = tempfile::tempdir().unwrap();
     let mut ctx = context();
     ctx.config_path = dir.path().join("config.toml");
-    run_remote(&mut ctx, add("fake", "fake::")).unwrap();
+    run_remote(&ctx, add("fake", "fake::")).unwrap();
     ctx.config = load_config(&ctx.config_path).unwrap();
-    let err = run_remote(&mut ctx, add("fake", "fake::")).unwrap_err();
+    let err = run_remote(&ctx, add("fake", "fake::")).unwrap_err();
     assert_eq!(err.exit_code(), 4);
     assert_eq!(err.to_string(), "remote fake already exists");
     assert_eq!(err.document()["error"]["rule"], "remote_exists");
@@ -50,10 +50,10 @@ fn remote_add_writes_the_config_and_the_next_run_lists_it() {
     let dir = tempfile::tempdir().unwrap();
     let mut ctx = context();
     ctx.config_path = dir.path().join("config.toml");
-    run_remote(&mut ctx, add("todoist", "todoist::default")).unwrap();
+    run_remote(&ctx, add("todoist", "todoist::default")).unwrap();
     ctx.config = load_config(&ctx.config_path).unwrap();
     let report = run_remote(
-        &mut ctx,
+        &ctx,
         RemoteArgs {
             command: RemoteCommand::List,
         },

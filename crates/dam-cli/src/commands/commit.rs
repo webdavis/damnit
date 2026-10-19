@@ -9,7 +9,7 @@ use crate::error::CliError;
 use crate::output::Report;
 use crate::view::{Human, View, display, report};
 
-pub(crate) fn run_commit(ctx: &mut Context, args: CommitArgs) -> Result<Report, CliError> {
+pub(crate) fn run_commit(ctx: &Context, args: CommitArgs) -> Result<Report, CliError> {
     let record = commit(
         ctx.store.as_ref(),
         ctx.store.as_ref(),
@@ -20,7 +20,7 @@ pub(crate) fn run_commit(ctx: &mut Context, args: CommitArgs) -> Result<Report, 
     report(&CommitDoc::new(&record))
 }
 
-pub(crate) fn run_log(ctx: &mut Context) -> Result<Report, CliError> {
+pub(crate) fn run_log(ctx: &Context) -> Result<Report, CliError> {
     let records = log(ctx.store.as_ref())?;
     report(&Log {
         commits: records.iter().map(CommitDoc::new).collect(),
@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn commit_records_the_stage_and_log_lists_it_newest_first() {
-        let mut ctx = context();
+        let ctx = context();
         ctx.store
             .put(&Object::Task(Task::new(
                 Oid::generate(&mut |x: &mut [u8]| x.fill(1)),
@@ -96,7 +96,7 @@ mod tests {
             )))
             .unwrap();
         run_add(
-            &mut ctx,
+            &ctx,
             AddArgs {
                 oids: vec![],
                 all: true,
@@ -104,7 +104,7 @@ mod tests {
         )
         .unwrap();
         let first = super::run_commit(
-            &mut ctx,
+            &ctx,
             CommitArgs {
                 message: "first".into(),
             },
@@ -113,14 +113,14 @@ mod tests {
         assert!(first.human.contains("first"));
         assert!(matches!(
             super::run_commit(
-                &mut ctx,
+                &ctx,
                 CommitArgs {
                     message: "empty".into()
                 }
             ),
             Err(CliError::UseCase(_))
         ));
-        let log = super::run_log(&mut ctx).unwrap();
+        let log = super::run_log(&ctx).unwrap();
         assert!(log.human.lines().next().unwrap().contains("first"));
         assert_eq!(log.data["commits"][0]["message"], "first");
         assert_eq!(

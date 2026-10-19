@@ -5,7 +5,7 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::{Report, object_json, object_line};
 
-pub(crate) fn run(ctx: &mut Context, args: MvArgs) -> Result<Report, CliError> {
+pub(crate) fn run(ctx: &Context, args: MvArgs) -> Result<Report, CliError> {
     let oid = resolve_object(ctx.store.as_ref(), &args.oid)?;
     relocate(ctx.store.as_ref(), &oid, &args.path)?;
     let object = ctx
@@ -27,13 +27,13 @@ mod tests {
 
     #[test]
     fn mv_relocates() {
-        let mut ctx = context();
+        let ctx = context();
         let oid = Oid::generate(&mut |x: &mut [u8]| x.fill(1));
         ctx.store
             .put(&Object::Task(Task::new(oid.clone(), "x")))
             .unwrap();
         run(
-            &mut ctx,
+            &ctx,
             MvArgs {
                 oid: oid.as_str().into(),
                 path: Path::parse("work/").unwrap(),

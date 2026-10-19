@@ -7,7 +7,7 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 
-pub(crate) fn run_push(ctx: &mut Context, args: PushArgs) -> Result<Report, CliError> {
+pub(crate) fn run_push(ctx: &Context, args: PushArgs) -> Result<Report, CliError> {
     let reports = push(
         Repositories::of(ctx.store.as_ref()),
         ctx.launcher.as_ref(),
@@ -22,7 +22,7 @@ pub(crate) fn run_push(ctx: &mut Context, args: PushArgs) -> Result<Report, CliE
     })
 }
 
-pub(crate) fn run_pull(ctx: &mut Context, args: PullArgs) -> Result<Report, CliError> {
+pub(crate) fn run_pull(ctx: &Context, args: PullArgs) -> Result<Report, CliError> {
     let reports = pull(
         Repositories::of(ctx.store.as_ref()),
         ctx.launcher.as_ref(),
@@ -38,7 +38,7 @@ pub(crate) fn run_pull(ctx: &mut Context, args: PullArgs) -> Result<Report, CliE
     })
 }
 
-pub(crate) fn run_resolve(ctx: &mut Context, args: ResolveArgs) -> Result<Report, CliError> {
+pub(crate) fn run_resolve(ctx: &Context, args: ResolveArgs) -> Result<Report, CliError> {
     let oid = resolve_object(ctx.store.as_ref(), &args.oid)?;
     let side = if args.side.theirs {
         Side::Theirs

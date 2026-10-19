@@ -28,7 +28,7 @@ pub(crate) fn pulls_a_stale_remote(command: &Command) -> bool {
 }
 
 pub(crate) fn dispatch_a_verb_that_opens_the_store(
-    ctx: &mut Context,
+    ctx: &Context,
     command: Command,
 ) -> Result<Report, CliError> {
     match command {

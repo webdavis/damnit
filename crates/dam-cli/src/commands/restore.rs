@@ -6,7 +6,7 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 
-pub(crate) fn run(ctx: &mut Context, args: RestoreArgs) -> Result<Report, CliError> {
+pub(crate) fn run(ctx: &Context, args: RestoreArgs) -> Result<Report, CliError> {
     let oids = args
         .oids
         .iter()
@@ -77,12 +77,12 @@ mod tests {
 
     #[test]
     fn the_json_document_lists_the_restored_oids() {
-        let mut ctx = context();
+        let ctx = context();
         let id = committed_task(&ctx, 1);
         let mut edited = ctx.store.get(&id).unwrap().unwrap();
         edited.base_mut().subject = "oat milk".into();
         ctx.store.put(&edited).unwrap();
-        let report = run(&mut ctx, args(&[&id])).unwrap();
+        let report = run(&ctx, args(&[&id])).unwrap();
         assert_eq!(report.data["restored"], serde_json::json!([id.to_string()]));
         assert_eq!(report.data["unchanged"], serde_json::json!([]));
         assert_eq!(ctx.store.get(&id).unwrap().unwrap().base().subject, "milk");
@@ -90,9 +90,9 @@ mod tests {
 
     #[test]
     fn an_unchanged_object_is_reported_as_one_and_not_as_restored() {
-        let mut ctx = context();
+        let ctx = context();
         let id = committed_task(&ctx, 1);
-        let report = run(&mut ctx, args(&[&id])).unwrap();
+        let report = run(&ctx, args(&[&id])).unwrap();
         assert_eq!(report.data["restored"], serde_json::json!([]));
         assert_eq!(
             report.data["unchanged"],
@@ -103,23 +103,23 @@ mod tests {
 
     #[test]
     fn a_repeated_oid_lands_in_one_bucket_only() {
-        let mut ctx = context();
+        let ctx = context();
         let id = committed_task(&ctx, 1);
         let mut edited = ctx.store.get(&id).unwrap().unwrap();
         edited.base_mut().subject = "oat milk".into();
         ctx.store.put(&edited).unwrap();
-        let report = run(&mut ctx, args(&[&id, &id])).unwrap();
+        let report = run(&ctx, args(&[&id, &id])).unwrap();
         assert_eq!(report.data["restored"], serde_json::json!([id.to_string()]));
         assert_eq!(report.data["unchanged"], serde_json::json!([]));
     }
 
     #[test]
     fn a_removed_object_takes_its_full_oid_and_the_prefix_refusal_says_so() {
-        let mut ctx = context();
+        let ctx = context();
         let id = committed_task(&ctx, 1);
         ctx.store.delete(&id).unwrap();
         let err = run(
-            &mut ctx,
+            &ctx,
             RestoreArgs {
                 oids: vec![id.short().to_string()],
             },
@@ -127,18 +127,18 @@ mod tests {
         .unwrap_err();
         assert!(err.to_string().contains("working layer"), "{err}");
         assert!(err.to_string().contains("full oid"), "{err}");
-        run(&mut ctx, args(&[&id])).unwrap();
+        run(&ctx, args(&[&id])).unwrap();
         assert!(ctx.store.get(&id).unwrap().is_some());
     }
 
     #[test]
     fn an_object_with_no_commit_behind_it_is_refused_by_dams_own_rule() {
-        let mut ctx = context();
+        let ctx = context();
         let id = oid(7);
         ctx.store
             .put(&Object::Task(Task::new(id.clone(), "fresh")))
             .unwrap();
-        let err = run(&mut ctx, args(&[&id])).unwrap_err();
+        let err = run(&ctx, args(&[&id])).unwrap_err();
         assert_eq!(err.exit_code(), 4);
         assert!(err.to_string().contains(id.short()), "{err}");
     }

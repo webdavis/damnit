@@ -16,7 +16,7 @@ use rows::ConflictRow;
 pub(crate) use rows::{ChangeRow, change_line};
 use view::{DiffView, StatusView, UnpushedRow};
 
-pub(crate) fn run_status(ctx: &mut Context, args: StatusArgs) -> Result<Report, CliError> {
+pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliError> {
     let remotes: Vec<_> = ctx.config.remotes.iter().map(|r| r.name.clone()).collect();
     let s = status(Repositories::of(ctx.store.as_ref()), &remotes)?;
     report(&StatusView {
@@ -29,7 +29,7 @@ pub(crate) fn run_status(ctx: &mut Context, args: StatusArgs) -> Result<Report, 
     })
 }
 
-pub(crate) fn run_diff(ctx: &mut Context, args: DiffArgs) -> Result<Report, CliError> {
+pub(crate) fn run_diff(ctx: &Context, args: DiffArgs) -> Result<Report, CliError> {
     let changes = if args.staged {
         diff_staged(ctx.store.as_ref())?
     } else {

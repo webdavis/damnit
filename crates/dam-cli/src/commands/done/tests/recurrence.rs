@@ -12,9 +12,9 @@ fn a_task_with_a_rule_dam_cannot_read(ctx: &Context) {
 
 #[test]
 fn a_local_task_with_an_unreadable_rule_is_told_to_set_recurrence() {
-    let mut ctx = context();
+    let ctx = context();
     a_task_with_a_rule_dam_cannot_read(&ctx);
-    let err = run(&mut ctx, args(&oid(7), false, false)).unwrap_err();
+    let err = run(&ctx, args(&oid(7), false, false)).unwrap_err();
     assert_eq!(
         err.to_string(),
         "cannot roll \"every other week\" forward; set --recurrence"
@@ -36,7 +36,7 @@ fn a_pulled_task_with_an_unreadable_rule_is_told_to_complete_it_upstream() {
         path: None,
     });
     ctx.store.map_remote_id(&todoist, &oid(7), "4242").unwrap();
-    let err = run(&mut ctx, args(&oid(7), false, false)).unwrap_err();
+    let err = run(&ctx, args(&oid(7), false, false)).unwrap_err();
     assert_eq!(
         err.to_string(),
         "cannot roll \"every other week\" forward; complete it in Todoist or set --recurrence"

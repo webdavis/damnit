@@ -7,7 +7,7 @@ use crate::error::CliError;
 use crate::output::{Report, object_json};
 use dam_application::{NewEvent, NewTask, new_event, new_task};
 
-pub(crate) fn run(ctx: &mut Context, args: NewArgs) -> Result<Report, CliError> {
+pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
     let labels: BTreeSet<String> = args.labels.into_iter().collect();
     let oid = if args.event {
         let start = when_flag(
@@ -98,9 +98,9 @@ mod tests {
 
     #[test]
     fn a_task_lands_in_the_working_layer_with_its_flags() {
-        let mut ctx = context();
+        let ctx = context();
         let report = run(
-            &mut ctx,
+            &ctx,
             NewArgs {
                 path: Path::parse("inbox").unwrap(),
                 due: Some("tomorrow".into()),
@@ -129,10 +129,10 @@ mod tests {
 
     #[test]
     fn an_event_needs_start_and_end() {
-        let mut ctx = context();
+        let ctx = context();
         assert!(matches!(
             run(
-                &mut ctx,
+                &ctx,
                 NewArgs {
                     event: true,
                     ..args("dentist")
@@ -141,7 +141,7 @@ mod tests {
             Err(CliError::Usage(_))
         ));
         let report = run(
-            &mut ctx,
+            &ctx,
             NewArgs {
                 event: true,
                 start: Some("2026-09-25T14:00".into()),
@@ -155,10 +155,10 @@ mod tests {
 
     #[test]
     fn a_bad_date_is_a_usage_error() {
-        let mut ctx = context();
+        let ctx = context();
         assert!(matches!(
             run(
-                &mut ctx,
+                &ctx,
                 NewArgs {
                     due: Some("someday".into()),
                     ..args("x")

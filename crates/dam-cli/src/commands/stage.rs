@@ -7,7 +7,7 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 
-pub(crate) fn run_add(ctx: &mut Context, args: AddArgs) -> Result<Report, CliError> {
+pub(crate) fn run_add(ctx: &Context, args: AddArgs) -> Result<Report, CliError> {
     let changes = if args.all {
         add_all(ctx.store.as_ref(), ctx.store.as_ref(), ctx.store.as_ref())?
     } else {
@@ -29,7 +29,7 @@ pub(crate) fn run_add(ctx: &mut Context, args: AddArgs) -> Result<Report, CliErr
     })
 }
 
-pub(crate) fn run_reset(ctx: &mut Context, args: ResetArgs) -> Result<Report, CliError> {
+pub(crate) fn run_reset(ctx: &Context, args: ResetArgs) -> Result<Report, CliError> {
     let oids = args
         .oids
         .iter()
@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     fn add_stages_named_objects_and_all_stages_everything() {
-        let mut ctx = context();
+        let ctx = context();
         ctx.store
             .put(&Object::Task(Task::new(oid(1), "a")))
             .unwrap();
@@ -70,7 +70,7 @@ mod tests {
             .put(&Object::Task(Task::new(oid(2), "b")))
             .unwrap();
         let report = super::run_add(
-            &mut ctx,
+            &ctx,
             AddArgs {
                 oids: vec![oid(1).as_str().into()],
                 all: false,
@@ -80,7 +80,7 @@ mod tests {
         assert_eq!(ctx.store.staged().unwrap().len(), 1);
         assert!(report.human.contains("a"));
         super::run_add(
-            &mut ctx,
+            &ctx,
             AddArgs {
                 oids: vec![],
                 all: true,
@@ -92,7 +92,7 @@ mod tests {
 
     #[test]
     fn reset_unstages_one_or_all() {
-        let mut ctx = context();
+        let ctx = context();
         ctx.store
             .put(&Object::Task(Task::new(oid(1), "a")))
             .unwrap();
@@ -100,7 +100,7 @@ mod tests {
             .put(&Object::Task(Task::new(oid(2), "b")))
             .unwrap();
         super::run_add(
-            &mut ctx,
+            &ctx,
             AddArgs {
                 oids: vec![],
                 all: true,
@@ -108,14 +108,14 @@ mod tests {
         )
         .unwrap();
         super::run_reset(
-            &mut ctx,
+            &ctx,
             ResetArgs {
                 oids: vec![oid(1).as_str().into()],
             },
         )
         .unwrap();
         assert_eq!(ctx.store.staged().unwrap().len(), 1);
-        super::run_reset(&mut ctx, ResetArgs { oids: vec![] }).unwrap();
+        super::run_reset(&ctx, ResetArgs { oids: vec![] }).unwrap();
         assert!(ctx.store.staged().unwrap().is_empty());
     }
 }

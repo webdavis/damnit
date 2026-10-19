@@ -118,7 +118,7 @@ mod tests {
             deadline: None,
             path: None,
         });
-        let never = listed(&mut ctx);
+        let never = listed(&ctx);
         assert_eq!(
             never.data["remotes"][0]["last_pull"],
             serde_json::Value::Null
@@ -137,7 +137,7 @@ mod tests {
         ctx.store
             .set_last_push(&t, now - std::time::Duration::from_secs(7200))
             .unwrap();
-        let report = listed(&mut ctx);
+        let report = listed(&ctx);
         assert_eq!(
             report.data["remotes"][0]["last_pull"],
             (now - std::time::Duration::from_secs(240)).to_string()
@@ -150,7 +150,7 @@ mod tests {
         assert!(report.human.contains("pushed 2h ago"), "{}", report.human);
     }
 
-    fn listed(ctx: &mut Context) -> Report {
+    fn listed(ctx: &Context) -> Report {
         run_remote(
             ctx,
             RemoteArgs {
