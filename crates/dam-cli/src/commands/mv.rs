@@ -1,5 +1,3 @@
-use dam_application::{relocate, resolve_object};
-
 use crate::args::MvArgs;
 use crate::context::Context;
 use crate::error::CliError;
@@ -7,8 +5,8 @@ use crate::output::Report;
 use crate::view::{ObjectRow, report};
 
 pub(crate) fn run(ctx: &Context, args: MvArgs) -> Result<Report, CliError> {
-    let oid = resolve_object(ctx.store.as_ref(), &args.oid)?;
-    relocate(ctx.store.as_ref(), &oid, &args.path)?;
+    let oid = ctx.dam().resolve_object(&args.oid)?;
+    ctx.dam().relocate(&oid, &args.path)?;
     let object = ctx
         .store
         .get(&oid)?

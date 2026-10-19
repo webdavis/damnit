@@ -2,10 +2,9 @@ mod round_trip;
 
 use super::*;
 use crate::ports::{Conflict, RemoteName};
+use crate::service::Dam;
 use crate::testing::prelude::*;
-use crate::testing::{FaultyStore, FixedClock, FixedRandom, MemoryStore, oid};
-use crate::use_cases::commit::commit;
-use crate::use_cases::stage::add_all;
+use crate::testing::{FaultyStore, FixedRandom, Fixture, MemoryStore, oid};
 use dam_domain::{Object, Task};
 
 pub(super) fn remote() -> RemoteName {
@@ -29,16 +28,12 @@ fn conflicted() -> MemoryStore {
 #[test]
 fn theirs_takes_the_upstream_version() {
     let store = conflicted();
-    resolve(
-        &store,
-        &store,
-        &store,
-        &FixedClock(jiff::civil::date(2026, 9, 18)),
-        &FixedRandom::new(3),
-        &oid(1),
-        Side::Theirs,
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(3),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.resolve(&oid(1), Side::Theirs).unwrap();
     assert_eq!(
         store.get(&oid(1)).unwrap().unwrap().base().subject,
         "theirs"
@@ -60,14 +55,14 @@ fn theirs_takes_the_upstream_version() {
 fn resolving_with_ours_leaves_an_existing_unpushed_commit_untouched() {
     let store = MemoryStore::new();
     store.put(&Object::Task(Task::new(oid(1), "mine"))).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    let created = commit(
-        &store,
-        &store,
-        &FixedClock(jiff::civil::date(2026, 9, 18)),
-        &FixedRandom::new(1),
-        "m",
-    )
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    dam.add_all().unwrap();
+    let created = Dam {
+        random: &FixedRandom::new(1),
+        ..dam
+    }
+    .commit("m")
     .unwrap();
     store
         .mark_conflict(&Conflict {
@@ -77,15 +72,11 @@ fn resolving_with_ours_leaves_an_existing_unpushed_commit_untouched() {
             theirs: Object::Task(Task::new(oid(1), "theirs")),
         })
         .unwrap();
-    resolve(
-        &store,
-        &store,
-        &store,
-        &FixedClock(jiff::civil::date(2026, 9, 18)),
-        &FixedRandom::new(3),
-        &oid(1),
-        Side::Ours,
-    )
+    Dam {
+        random: &FixedRandom::new(3),
+        ..dam
+    }
+    .resolve(&oid(1), Side::Ours)
     .unwrap();
     let unpushed: Vec<_> = store
         .unpushed(&remote())
@@ -102,16 +93,12 @@ fn resolving_with_ours_leaves_an_existing_unpushed_commit_untouched() {
 #[test]
 fn ours_keeps_the_local_version() {
     let store = conflicted();
-    resolve(
-        &store,
-        &store,
-        &store,
-        &FixedClock(jiff::civil::date(2026, 9, 18)),
-        &FixedRandom::new(3),
-        &oid(1),
-        Side::Ours,
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(3),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.resolve(&oid(1), Side::Ours).unwrap();
     assert_eq!(store.get(&oid(1)).unwrap().unwrap().base().subject, "mine");
     assert!(store.conflicts().unwrap().is_empty());
 }
@@ -119,16 +106,12 @@ fn ours_keeps_the_local_version() {
 #[test]
 fn resolving_a_non_conflict_is_refused() {
     let store = MemoryStore::new();
-    let err = resolve(
-        &store,
-        &store,
-        &store,
-        &FixedClock(jiff::civil::date(2026, 9, 18)),
-        &FixedRandom::new(3),
-        &oid(1),
-        Side::Ours,
-    )
-    .unwrap_err();
+    let fixture = Fixture {
+        random: FixedRandom::new(3),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    let err = dam.resolve(&oid(1), Side::Ours).unwrap_err();
     assert_eq!(err, UseCaseError::Refused(Refusal::NoConflict(oid(1))));
     assert_eq!(err.to_string(), "0101010 has no conflict to resolve");
 }
@@ -136,15 +119,10 @@ fn resolving_a_non_conflict_is_refused() {
 #[test]
 fn resolve_that_fails_between_its_writes_changes_nothing() {
     let store = FaultyStore::new(conflicted());
-    store.assert_unchanged_when_any_write_fails(|| {
-        resolve(
-            &store,
-            &store,
-            &store,
-            &FixedClock(jiff::civil::date(2026, 9, 18)),
-            &FixedRandom::new(3),
-            &oid(1),
-            Side::Theirs,
-        )
-    });
+    let fixture = Fixture {
+        random: FixedRandom::new(3),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    store.assert_unchanged_when_any_write_fails(|| dam.resolve(&oid(1), Side::Theirs));
 }

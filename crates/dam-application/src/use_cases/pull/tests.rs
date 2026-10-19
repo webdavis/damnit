@@ -19,11 +19,9 @@ use crate::ports::Repositories;
 use crate::remote::{IncomingObject, PullOutcome};
 use crate::testing::prelude::*;
 use crate::testing::{
-    EchoCredentials, FixedClock, FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
-    task_caps,
+    EchoCredentials, FixedClock, FixedRandom, Fixture, MemoryStore, ScriptedHelper,
+    ScriptedLauncher, oid, task_caps,
 };
-use crate::use_cases::commit::commit;
-use crate::use_cases::stage::add_all;
 use dam_domain::{Object, Task};
 
 pub(super) fn remote() -> RemoteName {
@@ -105,15 +103,13 @@ fn a_fast_forward_updates_a_clean_local_object() {
     let store = MemoryStore::new();
     let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "old"))).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(9),
-        "m",
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(9),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.add_all().unwrap();
+    dam.commit("m").unwrap();
     store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
     store
         .set_remote_snapshot(&remote(), &Object::Task(Task::new(oid(1), "old")))
@@ -148,15 +144,13 @@ fn dam_only_fields_survive_a_pull() {
     let mut t = Task::new(oid(1), "old");
     t.base.depends.push(oid(7));
     store.put(&Object::Task(t.clone())).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(9),
-        "m",
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(9),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.add_all().unwrap();
+    dam.commit("m").unwrap();
     store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
     store
         .set_remote_snapshot(&remote(), &Object::Task(t))

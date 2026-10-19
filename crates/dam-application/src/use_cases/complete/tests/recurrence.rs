@@ -1,7 +1,7 @@
 use super::super::*;
-use super::{put_task, task_of, today};
+use super::{put_task, task_of};
 use crate::testing::prelude::*;
-use crate::testing::{FixedClock, FixedRandom, MemoryStore, oid};
+use crate::testing::{FixedRandom, Fixture, MemoryStore, oid};
 use dam_domain::{Completion, Object, Recurrence, Task, When};
 use jiff::civil::date;
 
@@ -15,15 +15,12 @@ fn a_recurring_task_rolls_forward_instead_of_closing() {
         task.due = Some(When::Day(date(2026, 9, 18)));
     }
     store.put(&t).unwrap();
-    let out = complete(
-        &store,
-        &today(),
-        &FixedRandom::new(9),
-        &id,
-        Force::No,
-        Tracked::No,
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(9),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    let out = dam.complete(&id, Force::No, Tracked::No).unwrap();
     assert_eq!(
         out,
         Completed::RolledForward {
@@ -42,17 +39,12 @@ fn a_rule_dam_cannot_read_is_refused_and_the_task_stays_open() {
     let mut t = store.get(&id).unwrap().unwrap();
     t.base_mut().recurrence = Some(Recurrence::parse("every other week"));
     store.put(&t).unwrap();
-    let refused = |tracked| {
-        complete(
-            &store,
-            &today(),
-            &FixedRandom::new(9),
-            &id,
-            Force::No,
-            tracked,
-        )
-        .unwrap_err()
+    let fixture = Fixture {
+        random: FixedRandom::new(9),
+        ..Fixture::default()
     };
+    let dam = fixture.dam(&store);
+    let refused = |tracked| dam.complete(&id, Force::No, tracked).unwrap_err();
     assert_eq!(
         refused(Tracked::No),
         UseCaseError::Refused(Refusal::UnreadableRecurrence {
@@ -78,15 +70,12 @@ fn a_task_that_rolls_forward_records_no_completion_time() {
     t.base.recurrence = Some(Recurrence::parse("every day"));
     t.due = Some(When::Day(date(2026, 9, 18)));
     store.put(&Object::Task(t)).unwrap();
-    complete(
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(1),
-        &oid(1),
-        Force::No,
-        Tracked::No,
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(1),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.complete(&oid(1), Force::No, Tracked::No).unwrap();
     let task = task_of(&store, &oid(1));
     assert_eq!(task.completion, Completion::Open);
 }

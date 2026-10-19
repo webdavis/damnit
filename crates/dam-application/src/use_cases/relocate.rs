@@ -1,30 +1,32 @@
 use dam_domain::{Oid, Path};
 
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::ObjectRepository;
+use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::load::load;
 use crate::use_cases::subtree::move_into;
 
-pub fn relocate(objects: &dyn ObjectRepository, oid: &Oid, to: &Path) -> Result<(), UseCaseError> {
-    atomically(objects, || {
-        let object = load(objects, oid)?;
-        if object
-            .base()
-            .owned_folder()
-            .is_some_and(|folder| to.is_within(&folder))
-        {
-            return Err(Refusal::MoveInsideItself(oid.clone()).into());
-        }
-        move_into(objects, oid, to)
-    })
+impl Dam<'_> {
+    pub fn relocate(&self, oid: &Oid, to: &Path) -> Result<(), UseCaseError> {
+        atomically(self.store, || {
+            let object = load(self.store, oid)?;
+            if object
+                .base()
+                .owned_folder()
+                .is_some_and(|folder| to.is_within(&folder))
+            {
+                return Err(Refusal::MoveInsideItself(oid.clone()).into());
+            }
+            move_into(self.store, oid, to)
+        })
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::testing::prelude::*;
-    use crate::testing::{FaultyStore, MemoryStore, oid};
+    use crate::testing::{FaultyStore, Fixture, MemoryStore, oid};
     use dam_domain::{Object, Task};
 
     fn put(store: &MemoryStore, byte: u8, subject: &str, path: &str) -> Oid {
@@ -46,7 +48,9 @@ mod tests {
     }
 
     fn mv(store: &MemoryStore, id: &Oid, to: &str) -> Result<(), UseCaseError> {
-        relocate(store, id, &Path::parse(to).unwrap())
+        let fixture = Fixture::default();
+        let dam = fixture.dam(store);
+        dam.relocate(id, &Path::parse(to).unwrap())
     }
 
     #[test]
@@ -121,8 +125,9 @@ mod tests {
         let p = put(&store.inner, 1, "p", "a");
         put(&store.inner, 2, "c", "a/p");
         put(&store.inner, 3, "d", "a/p");
-        store.assert_unchanged_when_any_write_fails(|| {
-            relocate(&store, &p, &Path::parse("b").unwrap())
-        });
+        let fixture = Fixture::default();
+        let dam = fixture.dam(&store);
+        store
+            .assert_unchanged_when_any_write_fails(|| dam.relocate(&p, &Path::parse("b").unwrap()));
     }
 }

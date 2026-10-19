@@ -5,10 +5,9 @@ use super::{config, incoming, launcher, remote};
 use crate::errors::Refusal;
 use crate::ports::Repositories;
 use crate::remote::{PullOutcome, RejectedObject};
+use crate::service::Dam;
 use crate::testing::prelude::*;
-use crate::testing::{EchoCredentials, FixedClock, FixedRandom, MemoryStore, oid};
-use crate::use_cases::commit::commit;
-use crate::use_cases::stage::add_all;
+use crate::testing::{EchoCredentials, FixedClock, FixedRandom, Fixture, MemoryStore, oid};
 use dam_domain::{Object, Task};
 
 #[test]
@@ -16,14 +15,14 @@ fn both_sides_changed_is_a_conflict_and_nothing_is_overwritten() {
     let store = MemoryStore::new();
     let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "base"))).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(9),
-        "m",
-    )
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    dam.add_all().unwrap();
+    Dam {
+        random: &FixedRandom::new(9),
+        ..dam
+    }
+    .commit("m")
     .unwrap();
     store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
     store
@@ -32,14 +31,12 @@ fn both_sides_changed_is_a_conflict_and_nothing_is_overwritten() {
     let mut mine = store.get(&oid(1)).unwrap().unwrap();
     mine.base_mut().subject = "mine".into();
     store.put(&mine).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(10),
-        "local moves and is committed",
-    )
+    dam.add_all().unwrap();
+    Dam {
+        random: &FixedRandom::new(10),
+        ..dam
+    }
+    .commit("local moves and is committed")
     .unwrap();
     let l = launcher(PullOutcome {
         objects: vec![incoming("theirs", "r1")],
@@ -67,15 +64,13 @@ fn uncommitted_local_work_stops_the_pull_before_anything_is_written() {
     let store = MemoryStore::new();
     let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "base"))).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(9),
-        "m",
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(9),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.add_all().unwrap();
+    dam.commit("m").unwrap();
     store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
     store
         .set_remote_snapshot(&remote(), &Object::Task(Task::new(oid(1), "base")))
@@ -113,15 +108,13 @@ fn a_refused_pull_leaves_none_of_its_own_notices_behind() {
     let store = MemoryStore::new();
     let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "base"))).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(9),
-        "m",
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(9),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.add_all().unwrap();
+    dam.commit("m").unwrap();
     store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
     store
         .set_remote_snapshot(&remote(), &Object::Task(Task::new(oid(1), "base")))

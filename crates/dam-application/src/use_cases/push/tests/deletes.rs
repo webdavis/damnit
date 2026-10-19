@@ -1,14 +1,12 @@
 use dam_domain::{Object, Task};
-use jiff::civil::date;
 
 use super::super::*;
 use super::{clock, config, launcher};
 use crate::ports::{RemoteName, Repositories};
 use crate::remote::{MutationOutcome, MutationVerdict};
+use crate::service::Dam;
 use crate::testing::prelude::*;
-use crate::testing::{EchoCredentials, FixedClock, FixedRandom, MemoryStore, oid};
-use crate::use_cases::commit::commit;
-use crate::use_cases::stage::add_all;
+use crate::testing::{EchoCredentials, FixedRandom, Fixture, MemoryStore, oid};
 
 #[test]
 fn a_successful_delete_clears_the_remote_mapping() {
@@ -16,14 +14,14 @@ fn a_successful_delete_clears_the_remote_mapping() {
     let repos = Repositories::of(&store);
     let remote = RemoteName("todoist".into());
     store.put(&Object::Task(Task::new(oid(1), "t1"))).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    let created = commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(1),
-        "m",
-    )
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    dam.add_all().unwrap();
+    let created = Dam {
+        random: &FixedRandom::new(1),
+        ..dam
+    }
+    .commit("m")
     .unwrap();
     store.map_remote_id(&remote, &oid(1), "r1").unwrap();
     store
@@ -32,14 +30,12 @@ fn a_successful_delete_clears_the_remote_mapping() {
     store.mark_pushed(&remote, &created.id).unwrap();
 
     store.delete(&oid(1)).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(2),
-        "rm",
-    )
+    dam.add_all().unwrap();
+    Dam {
+        random: &FixedRandom::new(2),
+        ..dam
+    }
+    .commit("rm")
     .unwrap();
 
     let (l, _) = launcher(|ms| {
@@ -60,28 +56,26 @@ fn a_delete_with_no_remote_mapping_is_skipped() {
     let store = MemoryStore::new();
     let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "t1"))).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    let created = commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(1),
-        "m",
-    )
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    dam.add_all().unwrap();
+    let created = Dam {
+        random: &FixedRandom::new(1),
+        ..dam
+    }
+    .commit("m")
     .unwrap();
     store
         .mark_pushed(&RemoteName("todoist".into()), &created.id)
         .unwrap();
 
     store.delete(&oid(1)).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(2),
-        "rm",
-    )
+    dam.add_all().unwrap();
+    Dam {
+        random: &FixedRandom::new(2),
+        ..dam
+    }
+    .commit("rm")
     .unwrap();
 
     let (l, pushed) = launcher(|_| vec![]);

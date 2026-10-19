@@ -2,6 +2,7 @@ use dam_domain::{Object, Oid};
 
 use crate::errors::UseCaseError;
 use crate::ports::ObjectRepository;
+use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::load::load;
 use crate::use_cases::subtree::{children, move_into};
@@ -13,8 +14,28 @@ pub struct RemovePlan {
     pub attached: Vec<Oid>,
 }
 
-pub fn plan_remove(objects: &dyn ObjectRepository, oid: &Oid) -> Result<RemovePlan, UseCaseError> {
-    plan_for(objects, &load(objects, oid)?)
+impl Dam<'_> {
+    pub fn plan_remove(&self, oid: &Oid) -> Result<RemovePlan, UseCaseError> {
+        plan_for(self.store, &load(self.store, oid)?)
+    }
+
+    pub fn remove(&self, oid: &Oid) -> Result<RemovePlan, UseCaseError> {
+        atomically(self.store, || {
+            let object = load(self.store, oid)?;
+            let plan = plan_for(self.store, &object)?;
+            for child in children(self.store, object.base())? {
+                move_into(self.store, child.oid(), &object.base().path)?;
+            }
+            for dependent in &plan.dependents {
+                if let Some(mut d) = self.store.get(dependent)? {
+                    d.base_mut().depends.retain(|x| x != oid);
+                    self.store.put(&d)?;
+                }
+            }
+            self.store.delete(oid)?;
+            Ok(plan)
+        })
+    }
 }
 
 fn plan_for(objects: &dyn ObjectRepository, object: &Object) -> Result<RemovePlan, UseCaseError> {
@@ -40,29 +61,11 @@ fn plan_for(objects: &dyn ObjectRepository, object: &Object) -> Result<RemovePla
     })
 }
 
-pub fn remove(objects: &dyn ObjectRepository, oid: &Oid) -> Result<RemovePlan, UseCaseError> {
-    atomically(objects, || {
-        let object = load(objects, oid)?;
-        let plan = plan_for(objects, &object)?;
-        for child in children(objects, object.base())? {
-            move_into(objects, child.oid(), &object.base().path)?;
-        }
-        for dependent in &plan.dependents {
-            if let Some(mut d) = objects.get(dependent)? {
-                d.base_mut().depends.retain(|x| x != oid);
-                objects.put(&d)?;
-            }
-        }
-        objects.delete(oid)?;
-        Ok(plan)
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::testing::prelude::*;
-    use crate::testing::{FaultyStore, MemoryStore, oid};
+    use crate::testing::{FaultyStore, Fixture, MemoryStore, oid};
     use dam_domain::{Event, Object, Path, Task, When};
     use jiff::civil::date;
 
@@ -94,7 +97,9 @@ mod tests {
         let mut dep = store.get(&d).unwrap().unwrap();
         dep.base_mut().depends.push(plan.clone());
         store.put(&dep).unwrap();
-        let found = plan_remove(&store, &plan).unwrap();
+        let fixture = Fixture::default();
+        let dam = fixture.dam(&store);
+        let found = dam.plan_remove(&plan).unwrap();
         assert_eq!(found.descendants, vec![step, detail]);
         assert_eq!(found.dependents, vec![d]);
     }
@@ -108,7 +113,9 @@ mod tests {
         let mut dep = store.get(&d).unwrap().unwrap();
         dep.base_mut().depends.push(plan.clone());
         store.put(&dep).unwrap();
-        remove(&store, &plan).unwrap();
+        let fixture = Fixture::default();
+        let dam = fixture.dam(&store);
+        dam.remove(&plan).unwrap();
         assert!(store.get(&plan).unwrap().is_none());
         assert_eq!(path_of(&store, &step), "work/");
         assert!(store.get(&d).unwrap().unwrap().base().depends.is_empty());
@@ -120,7 +127,9 @@ mod tests {
         let offsite = put(&store, 1, "plan the offsite", "work");
         let note = put(&store, 2, "unrelated project note", "work/clients");
         let another = put(&store, 3, "another", "work/clients/acme");
-        let plan = remove(&store, &offsite).unwrap();
+        let fixture = Fixture::default();
+        let dam = fixture.dam(&store);
+        let plan = dam.remove(&offsite).unwrap();
         assert!(plan.descendants.is_empty());
         assert_eq!(path_of(&store, &note), "work/clients/");
         assert_eq!(path_of(&store, &another), "work/clients/acme/");
@@ -141,7 +150,9 @@ mod tests {
         let mut prep = Task::new(oid(6), "prep");
         prep.event = Some(oid(5));
         store.put(&Object::Task(prep)).unwrap();
-        let plan = remove(&store, &oid(5)).unwrap();
+        let fixture = Fixture::default();
+        let dam = fixture.dam(&store);
+        let plan = dam.remove(&oid(5)).unwrap();
         assert_eq!(plan.attached, vec![oid(6)]);
         let kept = store.get(&oid(6)).unwrap().unwrap();
         assert_eq!(kept.as_task().unwrap().event, Some(oid(5)));
@@ -153,6 +164,8 @@ mod tests {
         let plan = put(&store.inner, 1, "p", "top");
         put(&store.inner, 2, "a", "top/p");
         put(&store.inner, 3, "b", "top/p");
-        store.assert_unchanged_when_any_write_fails(|| remove(&store, &plan).map(drop));
+        let fixture = Fixture::default();
+        let dam = fixture.dam(&store);
+        store.assert_unchanged_when_any_write_fails(|| dam.remove(&plan).map(drop));
     }
 }

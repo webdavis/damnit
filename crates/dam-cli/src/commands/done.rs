@@ -1,6 +1,5 @@
 use dam_application::{
     Blockers, ChildDisposition, Completed, DependencyDisposition, Dispositions, Force, Tracked,
-    complete, plan_complete, resolve_object,
 };
 
 use crate::args::DoneArgs;
@@ -25,17 +24,12 @@ impl View for Finished<'_> {
 }
 
 pub(crate) fn run(ctx: &Context, args: DoneArgs) -> Result<Report, CliError> {
-    let oid = resolve_object(ctx.store.as_ref(), &args.oid)?;
-    let plan = plan_complete(ctx.store.as_ref(), &oid)?;
+    let oid = ctx.dam().resolve_object(&args.oid)?;
+    let plan = ctx.dam().plan_complete(&oid)?;
     let force = how_far_this_run_forces(ctx, &args, &plan.blockers)?;
-    let outcome = complete(
-        ctx.store.as_ref(),
-        ctx.clock.as_ref(),
-        ctx.random.as_ref(),
-        &oid,
-        force,
-        tracked_by_a_remote(ctx, &oid)?,
-    )?;
+    let outcome = ctx
+        .dam()
+        .complete(&oid, force, tracked_by_a_remote(ctx, &oid)?)?;
     let result = match outcome {
         Completed::Done => "done".to_string(),
         Completed::RolledForward { next_due } => format!("rolled forward to {next_due}"),

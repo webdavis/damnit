@@ -8,7 +8,7 @@ use crate::config::RemoteConfig;
 use crate::errors::Refusal;
 use crate::ports::RemoteName;
 use crate::testing::prelude::*;
-use crate::testing::{FixedClock, MemoryStore};
+use crate::testing::{FixedClock, Fixture, MemoryStore};
 
 const HOUR: Duration = Duration::from_secs(3600);
 
@@ -39,7 +39,12 @@ fn pulled_ago(ago: SignedDuration) -> MemoryStore {
 }
 
 fn check(store: &MemoryStore, remote: &str) -> Result<(), UseCaseError> {
-    require_fresh(store, &clock(), &config(), &[(remote.into(), HOUR)])
+    let fixture = Fixture {
+        config: config(),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(store);
+    dam.require_fresh(&[(remote.into(), HOUR)])
 }
 
 #[test]
@@ -87,7 +92,12 @@ fn a_pull_from_the_future_reads_as_age_zero() {
 fn every_bound_is_held_not_only_the_first() {
     let store = pulled_ago(SignedDuration::from_hours(2));
     let bounds = [("gcal".to_string(), 3 * HOUR), ("gcal".to_string(), HOUR)];
-    let refused = require_fresh(&store, &clock(), &config(), &bounds).unwrap_err();
+    let fixture = Fixture {
+        config: config(),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    let refused = dam.require_fresh(&bounds).unwrap_err();
     assert_eq!(
         refused,
         UseCaseError::Refused(Refusal::StaleRemote {

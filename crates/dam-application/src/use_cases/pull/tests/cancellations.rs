@@ -1,3 +1,4 @@
+use crate::testing::Fixture;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -17,15 +18,13 @@ fn meeting() -> dam_domain::Event {
 
 fn pulled_and_committed_as_e1(store: &MemoryStore, event: &dam_domain::Event) {
     store.put(&Object::Event(event.clone())).unwrap();
-    add_all(store, store, store).unwrap();
-    commit(
-        store,
-        store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(9),
-        "pulled",
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(9),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(store);
+    dam.add_all().unwrap();
+    dam.commit("pulled").unwrap();
     store
         .map_remote_id(&remote(), &event.base.oid, "e1")
         .unwrap();
@@ -172,15 +171,13 @@ fn a_committed_local_edit_and_a_cancellation_conflict_over_what_the_remote_held(
     let mut edited = meeting();
     edited.base.subject = "renamed here".into();
     store.put(&Object::Event(edited)).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(10),
-        "renamed",
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(10),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.add_all().unwrap();
+    dam.commit("renamed").unwrap();
     assert_eq!(run(&store, &["e1"]).unwrap()[0].conflicts, 1);
     let Object::Event(theirs) = &store.conflicts().unwrap()[0].theirs else {
         panic!("not an event")
@@ -195,15 +192,13 @@ fn a_committed_local_edit_and_a_cancellation_conflict_over_what_the_remote_held(
 fn a_cancellation_for_an_event_with_no_snapshot_is_raised_against_the_working_copy() {
     let store = MemoryStore::new();
     store.put(&Object::Event(meeting())).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(9),
-        "pulled",
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(9),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.add_all().unwrap();
+    dam.commit("pulled").unwrap();
     store.map_remote_id(&remote(), &oid(5), "e1").unwrap();
     assert_eq!(run(&store, &["e1"]).unwrap()[0].conflicts, 1);
 }

@@ -2,8 +2,9 @@ mod faults;
 mod undone;
 
 use super::*;
+use crate::config::Config;
 use crate::testing::prelude::*;
-use crate::testing::{MemoryStore, oid};
+use crate::testing::{Fixture, MemoryStore, oid};
 use dam_domain::{Categories, Category, Event, Object, Task, When};
 use jiff::civil::date;
 
@@ -18,18 +19,19 @@ pub(super) fn seed(store: &MemoryStore, byte: u8) -> Oid {
 fn subject_priority_and_due_are_set() {
     let store = MemoryStore::new();
     let id = seed(&store, 1);
-    let out = edit(
-        &store,
-        &Categories::default(),
-        &id,
-        EditFields {
-            subject: Some("new".into()),
-            priority: Some(Priority::HIGHEST),
-            due: Some(Some(When::Day(date(2026, 9, 25)))),
-            ..EditFields::default()
-        },
-    )
-    .unwrap();
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    let out = dam
+        .edit(
+            &id,
+            EditFields {
+                subject: Some("new".into()),
+                priority: Some(Priority::HIGHEST),
+                due: Some(Some(When::Day(date(2026, 9, 25)))),
+                ..EditFields::default()
+            },
+        )
+        .unwrap();
     let t = out.as_task().unwrap();
     assert_eq!(t.base.subject, "new");
     assert_eq!(t.priority, Priority::HIGHEST);
@@ -41,9 +43,9 @@ fn subject_priority_and_due_are_set() {
 fn some_none_clears_a_date() {
     let store = MemoryStore::new();
     let id = seed(&store, 1);
-    edit(
-        &store,
-        &Categories::default(),
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    dam.edit(
         &id,
         EditFields {
             due: Some(Some(When::Day(date(2026, 9, 25)))),
@@ -51,16 +53,15 @@ fn some_none_clears_a_date() {
         },
     )
     .unwrap();
-    let out = edit(
-        &store,
-        &Categories::default(),
-        &id,
-        EditFields {
-            due: Some(None),
-            ..Default::default()
-        },
-    )
-    .unwrap();
+    let out = dam
+        .edit(
+            &id,
+            EditFields {
+                due: Some(None),
+                ..Default::default()
+            },
+        )
+        .unwrap();
     assert_eq!(out.as_task().unwrap().due, None);
 }
 
@@ -74,9 +75,15 @@ fn labels_are_added_removed_and_checked() {
     .unwrap();
     let store = MemoryStore::new();
     let id = seed(&store, 1);
-    edit(
-        &store,
-        &cats,
+    let fixture = Fixture {
+        config: Config {
+            categories: cats,
+            ..Config::default()
+        },
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.edit(
         &id,
         EditFields {
             add_labels: vec!["deep".into(), "errand".into()],
@@ -84,28 +91,26 @@ fn labels_are_added_removed_and_checked() {
         },
     )
     .unwrap();
-    let err = edit(
-        &store,
-        &cats,
-        &id,
-        EditFields {
-            add_labels: vec!["light".into()],
-            ..Default::default()
-        },
-    )
-    .unwrap_err();
+    let err = dam
+        .edit(
+            &id,
+            EditFields {
+                add_labels: vec!["light".into()],
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
     assert!(matches!(err, UseCaseError::Refused(Refusal::Labels(_))));
-    let out = edit(
-        &store,
-        &cats,
-        &id,
-        EditFields {
-            remove_labels: vec!["deep".into()],
-            add_labels: vec!["light".into()],
-            ..Default::default()
-        },
-    )
-    .unwrap();
+    let out = dam
+        .edit(
+            &id,
+            EditFields {
+                remove_labels: vec!["deep".into()],
+                add_labels: vec!["light".into()],
+                ..Default::default()
+            },
+        )
+        .unwrap();
     assert!(out.base().labels.contains("light") && !out.base().labels.contains("deep"));
 }
 
@@ -114,9 +119,9 @@ fn a_dependency_cycle_is_refused() {
     let store = MemoryStore::new();
     let a = seed(&store, 1);
     let b = seed(&store, 2);
-    edit(
-        &store,
-        &Categories::default(),
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    dam.edit(
         &b,
         EditFields {
             add_depends: vec![a.clone()],
@@ -124,16 +129,15 @@ fn a_dependency_cycle_is_refused() {
         },
     )
     .unwrap();
-    let err = edit(
-        &store,
-        &Categories::default(),
-        &a,
-        EditFields {
-            add_depends: vec![b.clone()],
-            ..Default::default()
-        },
-    )
-    .unwrap_err();
+    let err = dam
+        .edit(
+            &a,
+            EditFields {
+                add_depends: vec![b.clone()],
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
     assert_eq!(
         err,
         UseCaseError::Refused(Refusal::Cycle {
@@ -147,27 +151,27 @@ fn a_dependency_cycle_is_refused() {
 fn a_bad_recurrence_is_a_parse_error_and_a_good_one_is_kept() {
     let store = MemoryStore::new();
     let id = seed(&store, 1);
-    let err = edit(
-        &store,
-        &Categories::default(),
-        &id,
-        EditFields {
-            recurrence: Some(Some("weekly".into())),
-            ..Default::default()
-        },
-    )
-    .unwrap_err();
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    let err = dam
+        .edit(
+            &id,
+            EditFields {
+                recurrence: Some(Some("weekly".into())),
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
     assert!(matches!(err, UseCaseError::Parse(_)));
-    let out = edit(
-        &store,
-        &Categories::default(),
-        &id,
-        EditFields {
-            recurrence: Some(Some("every! week".into())),
-            ..Default::default()
-        },
-    )
-    .unwrap();
+    let out = dam
+        .edit(
+            &id,
+            EditFields {
+                recurrence: Some(Some("every! week".into())),
+                ..Default::default()
+            },
+        )
+        .unwrap();
     assert_eq!(
         out.base().recurrence.as_ref().map(ToString::to_string),
         Some("every! week".into())
@@ -178,16 +182,17 @@ fn a_bad_recurrence_is_a_parse_error_and_a_good_one_is_kept() {
 fn attach_needs_an_existing_event() {
     let store = MemoryStore::new();
     let id = seed(&store, 1);
-    let err = edit(
-        &store,
-        &Categories::default(),
-        &id,
-        EditFields {
-            attach: Some(Some(oid(9))),
-            ..Default::default()
-        },
-    )
-    .unwrap_err();
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    let err = dam
+        .edit(
+            &id,
+            EditFields {
+                attach: Some(Some(oid(9))),
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
     assert!(matches!(
         err,
         UseCaseError::Refused(Refusal::NoSuchObject(_))
@@ -200,16 +205,15 @@ fn attach_needs_an_existing_event() {
             When::Day(date(2026, 1, 2)),
         )))
         .unwrap();
-    let out = edit(
-        &store,
-        &Categories::default(),
-        &id,
-        EditFields {
-            attach: Some(Some(oid(9))),
-            ..Default::default()
-        },
-    )
-    .unwrap();
+    let out = dam
+        .edit(
+            &id,
+            EditFields {
+                attach: Some(Some(oid(9))),
+                ..Default::default()
+            },
+        )
+        .unwrap();
     assert_eq!(out.as_task().unwrap().event, Some(oid(9)));
 }
 
@@ -224,15 +228,16 @@ fn task_fields_on_an_event_are_refused() {
             When::Day(date(2026, 1, 2)),
         )))
         .unwrap();
-    let err = edit(
-        &store,
-        &Categories::default(),
-        &oid(9),
-        EditFields {
-            priority: Some(Priority::HIGHEST),
-            ..Default::default()
-        },
-    )
-    .unwrap_err();
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    let err = dam
+        .edit(
+            &oid(9),
+            EditFields {
+                priority: Some(Priority::HIGHEST),
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
     assert_eq!(err, UseCaseError::Refused(Refusal::NotATask(oid(9))));
 }

@@ -1,9 +1,10 @@
 use std::collections::BTreeMap;
 
-use dam_domain::{Categories, Completion, Date, Object, Oid, Priority, Recurrence, When, cycle_in};
+use dam_domain::{Completion, Date, Object, Oid, Priority, Recurrence, When, cycle_in};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
+use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::load::{load, no_such_object};
 
@@ -26,37 +27,35 @@ pub struct EditFields {
     pub location: Option<Option<String>>,
 }
 
-pub fn edit(
-    objects: &dyn ObjectRepository,
-    categories: &Categories,
-    oid: &Oid,
-    fields: EditFields,
-) -> Result<Object, UseCaseError> {
-    atomically(objects, || {
-        let current = load(objects, oid)?;
-        let next = apply(&current, &fields)?;
-        categories
-            .check(&next.base().labels)
-            .map_err(Refusal::Labels)?;
-        if !fields.add_depends.is_empty() {
-            let edges = depends_reachable_from(objects, &fields.add_depends)?;
-            let edges_of = |o: &Oid| edges.get(o).cloned().unwrap_or_default();
-            if let Some(path) = cycle_in(&fields.add_depends, oid, &edges_of) {
-                return Err(Refusal::Cycle {
-                    oid: oid.clone(),
-                    path,
+impl Dam<'_> {
+    pub fn edit(&self, oid: &Oid, fields: EditFields) -> Result<Object, UseCaseError> {
+        atomically(self.store, || {
+            let current = load(self.store, oid)?;
+            let next = apply(&current, &fields)?;
+            self.config
+                .categories
+                .check(&next.base().labels)
+                .map_err(Refusal::Labels)?;
+            if !fields.add_depends.is_empty() {
+                let edges = depends_reachable_from(self.store, &fields.add_depends)?;
+                let edges_of = |o: &Oid| edges.get(o).cloned().unwrap_or_default();
+                if let Some(path) = cycle_in(&fields.add_depends, oid, &edges_of) {
+                    return Err(Refusal::Cycle {
+                        oid: oid.clone(),
+                        path,
+                    }
+                    .into());
                 }
-                .into());
             }
-        }
-        if let Some(Some(event)) = &fields.attach
-            && !matches!(objects.get(event)?, Some(Object::Event(_)))
-        {
-            return Err(no_such_object(event).into());
-        }
-        objects.put(&next)?;
-        Ok(next)
-    })
+            if let Some(Some(event)) = &fields.attach
+                && !matches!(self.store.get(event)?, Some(Object::Event(_)))
+            {
+                return Err(no_such_object(event).into());
+            }
+            self.store.put(&next)?;
+            Ok(next)
+        })
+    }
 }
 
 fn depends_reachable_from(

@@ -147,7 +147,7 @@ mod tests {
     #[test]
     fn it_keeps_the_commit_clears_the_stage_contract() {
         let store = MemoryStore::new();
-        contract::commit_clears_the_stage_contract(&store, &store);
+        contract::commit_clears_the_stage_contract(&store);
     }
 
     #[test]
@@ -163,7 +163,7 @@ mod tests {
     #[test]
     fn it_keeps_the_conflict_repository_contract() {
         let store = MemoryStore::new();
-        contract::conflict_repository_contract(&store, &store);
+        contract::conflict_repository_contract(&store);
     }
 
     #[test]
@@ -174,6 +174,6 @@ mod tests {
     #[test]
     fn it_keeps_the_transactional_contract() {
         let store = MemoryStore::new();
-        contract::transactional_contract(&store, &store, &store);
+        contract::transactional_contract(&store);
     }
 }

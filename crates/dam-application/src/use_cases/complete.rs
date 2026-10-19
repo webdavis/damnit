@@ -4,7 +4,8 @@ use dam_domain::{
 };
 
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{Clock, ObjectRepository, Randomness};
+use crate::ports::{ObjectRepository, Randomness};
+use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::load::load;
 use crate::use_cases::subtree::{children, move_into};
@@ -20,71 +21,70 @@ pub enum Completed {
     RolledForward { next_due: Date },
 }
 
-pub fn plan_complete(
-    objects: &dyn ObjectRepository,
-    oid: &Oid,
-) -> Result<CompletePlan, UseCaseError> {
-    let task = load_task(objects, oid)?;
-    let mut dependencies = Vec::new();
-    for dep in &task.base.depends {
-        if is_an_open_task(objects, dep)? {
-            dependencies.push(dep.clone());
+impl Dam<'_> {
+    pub fn plan_complete(&self, oid: &Oid) -> Result<CompletePlan, UseCaseError> {
+        let task = load_task(self.store, oid)?;
+        let mut dependencies = Vec::new();
+        for dep in &task.base.depends {
+            if is_an_open_task(self.store, dep)? {
+                dependencies.push(dep.clone());
+            }
         }
+        let children: Vec<Oid> = children(self.store, &task.base)?
+            .iter()
+            .filter(|c| c.as_task().is_some_and(|t| !t.completion.is_done()))
+            .map(|c| c.oid().clone())
+            .collect();
+        Ok(CompletePlan {
+            oid: oid.clone(),
+            blockers: Blockers {
+                dependencies,
+                children,
+            },
+        })
     }
-    let children: Vec<Oid> = children(objects, &task.base)?
-        .iter()
-        .filter(|c| c.as_task().is_some_and(|t| !t.completion.is_done()))
-        .map(|c| c.oid().clone())
-        .collect();
-    Ok(CompletePlan {
-        oid: oid.clone(),
-        blockers: Blockers {
-            dependencies,
-            children,
-        },
-    })
-}
 
-pub fn complete(
-    objects: &dyn ObjectRepository,
-    clock: &dyn Clock,
-    random: &dyn Randomness,
-    oid: &Oid,
-    force: Force,
-    tracked: Tracked,
-) -> Result<Completed, UseCaseError> {
-    atomically(objects, || {
-        let plan = plan_complete(objects, oid)?;
-        if !plan.blockers.is_empty() {
-            match force {
-                Force::No => {
-                    return Err(Refusal::Blocked {
-                        oid: oid.clone(),
-                        blockers: plan.blockers,
+    pub fn complete(
+        &self,
+        oid: &Oid,
+        force: Force,
+        tracked: Tracked,
+    ) -> Result<Completed, UseCaseError> {
+        atomically(self.store, || {
+            let plan = self.plan_complete(oid)?;
+            if !plan.blockers.is_empty() {
+                match force {
+                    Force::No => {
+                        return Err(Refusal::Blocked {
+                            oid: oid.clone(),
+                            blockers: plan.blockers,
+                        }
+                        .into());
                     }
-                    .into());
+                    Force::With(d) => {
+                        apply_dispositions(self.store, self.random, oid, &plan.blockers, d)?
+                    }
                 }
-                Force::With(d) => apply_dispositions(objects, random, oid, &plan.blockers, d)?,
             }
-        }
-        let mut task = load_task(objects, oid)?;
-        let outcome = match next_due_if_recurring(&task, clock.today(), tracked)? {
-            Some(next) => {
-                task.due = Some(When::Day(next));
-                Completed::RolledForward { next_due: next }
-            }
-            None => {
-                if !task.completion.is_done() {
-                    task.completion = Completion::Done {
-                        at: Some(clock.now()),
-                    };
+            let mut task = load_task(self.store, oid)?;
+            let outcome = match next_due_if_recurring(&task, self.clock.today(), tracked)? {
+                Some(next) => {
+                    task.due = Some(When::Day(next));
+                    Completed::RolledForward { next_due: next }
                 }
-                Completed::Done
-            }
-        };
-        objects.put(&Object::Task(task))?;
-        Ok(outcome)
-    })
+                None => {
+                    if !task.completion.is_done() {
+                        task.completion = Completion::Done {
+                            at: Some(self.clock.now()),
+                        };
+                    }
+                    Completed::Done
+                }
+            };
+            self.store.put(&Object::Task(task))?;
+            Ok(outcome)
+        })
+    }
 }
 
 fn next_due_if_recurring(

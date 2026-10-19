@@ -1,7 +1,8 @@
 use super::super::*;
 use super::{path_of, put_task, today};
+use crate::service::Dam;
 use crate::testing::prelude::*;
-use crate::testing::{FaultyStore, FixedRandom, MemoryStore, oid};
+use crate::testing::{FaultyStore, FixedRandom, Fixture, MemoryStore, oid};
 
 fn with(children: ChildDisposition) -> Force {
     Force::With(Dispositions {
@@ -15,15 +16,13 @@ fn interactive_up_moves_children_beside_the_parent() {
     let store = MemoryStore::new();
     let plan = put_task(&store, 1, "plan", "work", false);
     let step = put_task(&store, 2, "step", "work/plan", false);
-    complete(
-        &store,
-        &today(),
-        &FixedRandom::new(9),
-        &plan,
-        with(ChildDisposition::Up),
-        Tracked::No,
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(9),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.complete(&plan, with(ChildDisposition::Up), Tracked::No)
+        .unwrap();
     assert_eq!(path_of(&store, &step), "work/");
 }
 
@@ -32,10 +31,12 @@ fn interactive_into_groups_children_under_a_new_task_beside_the_parent() {
     let store = MemoryStore::new();
     let plan = put_task(&store, 1, "plan", "work", false);
     let step = put_task(&store, 2, "step", "work/plan", false);
-    complete(
-        &store,
-        &today(),
-        &FixedRandom::new(9),
+    let fixture = Fixture {
+        random: FixedRandom::new(9),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.complete(
         &plan,
         with(ChildDisposition::Into("leftovers".into())),
         Tracked::No,
@@ -53,15 +54,13 @@ fn interactive_up_carries_a_grandchild_along() {
     let plan = put_task(&store, 1, "plan", "work", false);
     let step = put_task(&store, 2, "step", "work/plan", false);
     let detail = put_task(&store, 4, "detail", "work/plan/step", false);
-    complete(
-        &store,
-        &today(),
-        &FixedRandom::new(9),
-        &plan,
-        with(ChildDisposition::Up),
-        Tracked::No,
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(9),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.complete(&plan, with(ChildDisposition::Up), Tracked::No)
+        .unwrap();
     assert_eq!(path_of(&store, &step), "work/");
     assert_eq!(path_of(&store, &detail), "work/step/");
 }
@@ -72,10 +71,12 @@ fn interactive_into_carries_a_grandchild_along() {
     let plan = put_task(&store, 1, "plan", "work", false);
     let step = put_task(&store, 2, "step", "work/plan", false);
     let detail = put_task(&store, 4, "detail", "work/plan/step", false);
-    complete(
-        &store,
-        &today(),
-        &FixedRandom::new(9),
+    let fixture = Fixture {
+        random: FixedRandom::new(9),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.complete(
         &plan,
         with(ChildDisposition::Into("later".into())),
         Tracked::No,
@@ -93,10 +94,12 @@ fn interactive_into_with_no_open_children_creates_no_group() {
     let mut t = store.get(&id).unwrap().unwrap();
     t.base_mut().depends.push(dep);
     store.put(&t).unwrap();
-    complete(
-        &store,
-        &today(),
-        &FixedRandom::new(9),
+    let fixture = Fixture {
+        random: FixedRandom::new(9),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.complete(
         &id,
         with(ChildDisposition::Into("later".into())),
         Tracked::No,
@@ -117,15 +120,12 @@ fn interactive_drop_removes_open_dependencies() {
         children: ChildDisposition::Keep,
         dependencies: DependencyDisposition::Drop,
     };
-    complete(
-        &store,
-        &today(),
-        &FixedRandom::new(9),
-        &id,
-        Force::With(d),
-        Tracked::No,
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(9),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.complete(&id, Force::With(d), Tracked::No).unwrap();
     let t = store.get(&id).unwrap().unwrap();
     assert!(t.base().depends.is_empty() && t.as_task().unwrap().completion.is_done());
 }
@@ -137,15 +137,17 @@ fn done_up_that_fails_between_two_children_moves_neither() {
     put_task(&store.inner, 2, "step", "work/plan", false);
     put_task(&store.inner, 3, "other step", "work/plan", false);
     let random = FixedRandom::new(9);
+    let fixture = Fixture::default();
+    let dam = Dam {
+        random: &random,
+        ..fixture.dam(&store)
+    };
     store.assert_unchanged_when_any_write_fails(|| {
-        complete(
-            &store,
-            &today(),
-            &random,
-            &plan,
-            with(ChildDisposition::Up),
-            Tracked::No,
-        )
+        Dam {
+            clock: &today(),
+            ..dam
+        }
+        .complete(&plan, with(ChildDisposition::Up), Tracked::No)
         .map(drop)
     });
 }
@@ -164,15 +166,17 @@ fn done_into_that_fails_after_creating_the_group_leaves_no_group_behind() {
         dependencies: DependencyDisposition::Drop,
     };
     let random = FixedRandom::new(9);
+    let fixture = Fixture::default();
+    let dam = Dam {
+        random: &random,
+        ..fixture.dam(&store)
+    };
     store.assert_unchanged_when_any_write_fails(|| {
-        complete(
-            &store,
-            &today(),
-            &random,
-            &plan,
-            Force::With(d.clone()),
-            Tracked::No,
-        )
+        Dam {
+            clock: &today(),
+            ..dam
+        }
+        .complete(&plan, Force::With(d.clone()), Tracked::No)
         .map(drop)
     });
 }

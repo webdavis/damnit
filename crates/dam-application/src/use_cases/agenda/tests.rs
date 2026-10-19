@@ -3,7 +3,7 @@ use jiff::tz::TimeZone;
 
 use super::*;
 use crate::testing::prelude::*;
-use crate::testing::{FixedClock, MemoryStore, oid};
+use crate::testing::{FixedClock, Fixture, MemoryStore, oid};
 use dam_domain::{EventStatus, Object, Path, Task, When};
 
 fn at(text: &str) -> Timestamp {
@@ -16,10 +16,12 @@ fn event(n: u8, subject: &str, start: &str, end: &str) -> Event {
 }
 
 fn run(store: &MemoryStore, query: Option<&str>, from: &str, to: &str) -> Vec<Scheduled> {
-    agenda(
-        store,
-        &FixedClock(date(2026, 9, 25)),
-        &Config::default(),
+    let fixture = Fixture {
+        clock: FixedClock(date(2026, 9, 25)),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(store);
+    dam.agenda(
         query,
         Window {
             from: at(from),
@@ -149,15 +151,12 @@ fn an_all_day_event_runs_midnight_to_midnight_in_the_zone_given() {
         to: at("2026-09-27T00:00:00Z"),
     };
     let zone = TimeZone::fixed(jiff::tz::offset(-4));
-    let found = agenda(
-        &store,
-        &FixedClock(date(2026, 9, 25)),
-        &Config::default(),
-        None,
-        window,
-        &zone,
-    )
-    .unwrap();
+    let fixture = Fixture {
+        clock: FixedClock(date(2026, 9, 25)),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    let found = dam.agenda(None, window, &zone).unwrap();
     assert_eq!(
         (found[0].start, found[0].end),
         (at("2026-09-25T04:00:00Z"), at("2026-09-26T04:00:00Z"))

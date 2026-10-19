@@ -1,4 +1,4 @@
-use dam_application::{CredentialSpec, Repositories, diff_working, status};
+use dam_application::{CredentialSpec, Repositories, status};
 use dam_domain::Change;
 
 use crate::args::{DiffArgs, StatusArgs};
@@ -18,7 +18,7 @@ use view::{DiffView, StatusView, UnpushedRow};
 
 pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliError> {
     let remotes: Vec<_> = ctx.config.remotes.iter().map(|r| r.name.clone()).collect();
-    let s = status(Repositories::of(ctx.store.as_ref()), &remotes)?;
+    let s = status(Repositories::of(&*ctx.store), &remotes)?;
     report(&StatusView {
         staged: change_rows(&s.staged, args.full),
         unstaged: change_rows(&s.unstaged, args.full),
@@ -33,7 +33,7 @@ pub(crate) fn run_diff(ctx: &Context, args: DiffArgs) -> Result<Report, CliError
     let changes = if args.staged {
         ctx.store.staged()?
     } else {
-        diff_working(ctx.store.as_ref(), ctx.store.as_ref(), ctx.store.as_ref())?
+        ctx.dam().diff_working()?
     };
     report(&DiffView {
         changes: change_rows(&changes, args.full),

@@ -5,9 +5,7 @@ use super::{clock, committed_task, config, launcher};
 use crate::ports::Repositories;
 use crate::remote::{MutationOutcome, MutationVerdict};
 use crate::testing::prelude::*;
-use crate::testing::{EchoCredentials, FixedClock, FixedRandom, MemoryStore, oid};
-use crate::use_cases::commit::commit;
-use crate::use_cases::stage::add_all;
+use crate::testing::{EchoCredentials, FixedClock, FixedRandom, Fixture, MemoryStore, oid};
 use dam_domain::{Object, Task};
 
 #[test]
@@ -50,15 +48,14 @@ fn two_successive_changes_to_one_object_carry_different_keys() {
     store
         .put(&Object::Task(Task::new(oid(1), "second")))
         .unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 19)),
-        &FixedRandom::new(9),
-        "m2",
-    )
-    .unwrap();
+    let fixture = Fixture {
+        clock: FixedClock(date(2026, 9, 19)),
+        random: FixedRandom::new(9),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.add_all().unwrap();
+    dam.commit("m2").unwrap();
     push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
     let sent = pushed.borrow();
     assert_eq!(sent.len(), 2);

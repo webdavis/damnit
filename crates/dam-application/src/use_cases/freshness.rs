@@ -6,29 +6,28 @@ use crate::ports::{
     Clock, CredentialSource, HelperLauncher, Notice, Randomness, RemoteName,
     RemoteTrackingRepository, Repositories, StoreError,
 };
+use crate::service::Dam;
 use crate::use_cases::pull::pull;
 
-pub fn require_fresh(
-    remote_tracking: &dyn RemoteTrackingRepository,
-    clock: &dyn Clock,
-    config: &Config,
-    bounds: &[(String, Duration)],
-) -> Result<(), UseCaseError> {
-    for (name, bound) in bounds {
-        let remote = config
-            .remote(name)
-            .ok_or_else(|| Refusal::NoSuchRemote(name.clone()))?;
-        let age = age_of_last_pull(remote_tracking, clock, &remote.name)?;
-        if is_stale(age, *bound) {
-            return Err(Refusal::StaleRemote {
-                remote: name.clone(),
-                age: age.map(|a| a.as_secs()),
-                limit: bound.as_secs(),
+impl Dam<'_> {
+    pub fn require_fresh(&self, bounds: &[(String, Duration)]) -> Result<(), UseCaseError> {
+        for (name, bound) in bounds {
+            let remote = self
+                .config
+                .remote(name)
+                .ok_or_else(|| Refusal::NoSuchRemote(name.clone()))?;
+            let age = age_of_last_pull(self.store, self.clock, &remote.name)?;
+            if is_stale(age, *bound) {
+                return Err(Refusal::StaleRemote {
+                    remote: name.clone(),
+                    age: age.map(|a| a.as_secs()),
+                    limit: bound.as_secs(),
+                }
+                .into());
             }
-            .into());
         }
+        Ok(())
     }
-    Ok(())
 }
 
 pub fn refresh_stale(

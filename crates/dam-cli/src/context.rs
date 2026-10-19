@@ -4,7 +4,7 @@ use dam_adapters::{
     Interrupt, OsRandom, ProcessCredentialSource, ProcessLauncher, SqliteStore, SystemClock,
 };
 use dam_application::{
-    Clock, Config, ConfigFile, CredentialSource, HelperLauncher, Randomness, Store,
+    Clock, Config, ConfigFile, CredentialSource, Dam, HelperLauncher, Randomness, Store,
 };
 
 use crate::editor::{EditorSession, EnvEditor};
@@ -51,6 +51,15 @@ impl Context {
             tz: jiff::tz::TimeZone::system(),
             no_pull,
         })
+    }
+
+    pub(crate) fn dam(&self) -> Dam<'_> {
+        Dam {
+            store: self.store.as_ref(),
+            clock: self.clock.as_ref(),
+            random: self.random.as_ref(),
+            config: &self.config,
+        }
     }
 }
 

@@ -8,15 +8,14 @@ use crate::ports::Repositories;
 use crate::remote::{
     IncomingObject, MutationOutcome, MutationVerdict, PullOutcome, RemoteMutation,
 };
+use crate::service::Dam;
 use crate::testing::prelude::*;
 use crate::testing::{
-    EchoCredentials, FixedClock, FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
-    task_caps,
+    EchoCredentials, FixedClock, FixedRandom, Fixture, MemoryStore, ScriptedHelper,
+    ScriptedLauncher, oid, task_caps,
 };
-use crate::use_cases::commit::commit;
 use crate::use_cases::pull::pull;
 use crate::use_cases::push::push;
-use crate::use_cases::stage::add_all;
 use dam_domain::{Object, Task};
 use jiff::civil::date;
 
@@ -84,14 +83,14 @@ fn both_sides_moved_off_one_base() -> MemoryStore {
     let store = MemoryStore::new();
     let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "base"))).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(9),
-        "base",
-    )
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    dam.add_all().unwrap();
+    Dam {
+        random: &FixedRandom::new(9),
+        ..dam
+    }
+    .commit("base")
     .unwrap();
     store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
     store
@@ -100,14 +99,12 @@ fn both_sides_moved_off_one_base() -> MemoryStore {
     let mut mine = store.get(&oid(1)).unwrap().unwrap();
     mine.base_mut().subject = "mine".into();
     store.put(&mine).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(10),
-        "mine",
-    )
+    dam.add_all().unwrap();
+    Dam {
+        random: &FixedRandom::new(10),
+        ..dam
+    }
+    .commit("mine")
     .unwrap();
     let reports = pull(
         repos,
@@ -127,16 +124,13 @@ fn both_sides_moved_off_one_base() -> MemoryStore {
 fn ours_is_committed_and_the_conflict_is_not_raised_again() {
     let store = both_sides_moved_off_one_base();
     let repos = Repositories::of(&store);
-    resolve(
-        &store,
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 19)),
-        &FixedRandom::new(3),
-        &oid(1),
-        Side::Ours,
-    )
-    .unwrap();
+    let fixture = Fixture {
+        clock: FixedClock(date(2026, 9, 19)),
+        random: FixedRandom::new(3),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.resolve(&oid(1), Side::Ours).unwrap();
 
     let owed = store.unpushed(&remote()).unwrap();
     let resolution = owed
@@ -190,16 +184,13 @@ fn ours_is_committed_and_the_conflict_is_not_raised_again() {
 fn theirs_leaves_only_theirs_owed_and_settles_the_conflict() {
     let store = both_sides_moved_off_one_base();
     let repos = Repositories::of(&store);
-    resolve(
-        &store,
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 19)),
-        &FixedRandom::new(3),
-        &oid(1),
-        Side::Theirs,
-    )
-    .unwrap();
+    let fixture = Fixture {
+        clock: FixedClock(date(2026, 9, 19)),
+        random: FixedRandom::new(3),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.resolve(&oid(1), Side::Theirs).unwrap();
     let (l, sent) = recording_launcher_that_accepts_every_push(vec![]);
     push(
         repos,

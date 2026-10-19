@@ -1,5 +1,5 @@
 use dam_adapters::{parse_template, render_template};
-use dam_application::{EditFields, Refusal, edit, resolve_object};
+use dam_application::{EditFields, Refusal};
 use dam_domain::Oid;
 
 use crate::args::EditArgs;
@@ -10,19 +10,20 @@ use crate::output::Report;
 use crate::view::{ObjectRow, report};
 
 pub(crate) fn run(ctx: &Context, args: EditArgs) -> Result<Report, CliError> {
-    let oid = resolve_object(ctx.store.as_ref(), &args.oid)?;
+    let oid = ctx.dam().resolve_object(&args.oid)?;
     let fields = if args.editor {
         through_editor(ctx, &oid)?
     } else {
         from_flags(ctx, args)?
     };
-    let object = edit(ctx.store.as_ref(), &ctx.config.categories, &oid, fields)?;
+    let object = ctx.dam().edit(&oid, fields)?;
     report(&ObjectRow(&object))
 }
 
 fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
     let oid_of = |flag: &str, text: &str| {
-        resolve_object(ctx.store.as_ref(), text)
+        ctx.dam()
+            .resolve_object(text)
             .map_err(|e| CliError::Usage(format!("--{flag}: {e}")))
     };
     let mut f = EditFields {

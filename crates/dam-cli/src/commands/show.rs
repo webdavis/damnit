@@ -1,4 +1,4 @@
-use dam_application::{Refusal, UseCaseError, resolve_commit, resolve_object};
+use dam_application::{Refusal, UseCaseError};
 use dam_domain::Object;
 use serde::Serialize;
 
@@ -15,12 +15,12 @@ pub(crate) fn run_show(ctx: &Context, args: ShowArgs) -> Result<Report, CliError
     if let Some(object) = working_object_named(ctx, &args.id)? {
         return report(&ShownObject(&object));
     }
-    let record = resolve_commit(ctx.store.as_ref(), &args.id)?;
+    let record = ctx.dam().resolve_commit(&args.id)?;
     report(&ShownCommit(CommitDoc::new(&record)))
 }
 
 fn working_object_named(ctx: &Context, text: &str) -> Result<Option<Object>, CliError> {
-    match resolve_object(ctx.store.as_ref(), text) {
+    match ctx.dam().resolve_object(text) {
         Ok(oid) => Ok(ctx.store.get(&oid)?),
         Err(UseCaseError::Refused(Refusal::NoWorkingObject(_))) => Ok(None),
         Err(e) => Err(e.into()),

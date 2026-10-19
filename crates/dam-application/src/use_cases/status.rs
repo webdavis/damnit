@@ -6,6 +6,7 @@ use crate::errors::UseCaseError;
 use crate::ports::{
     CommitRepository, Conflict, Notice, ObjectRepository, RemoteName, Repositories, StageRepository,
 };
+use crate::service::Dam;
 use crate::use_cases::stage::working_and_ever_committed_oids;
 
 pub struct Status {
@@ -30,7 +31,7 @@ pub fn status(repos: Repositories<'_>, remotes: &[RemoteName]) -> Result<Status,
     }
     Ok(Status {
         staged: repos.stage.staged()?,
-        unstaged: diff_working(repos.objects, repos.stage, repos.commits)?,
+        unstaged: working_changes(repos.objects, repos.stage, repos.commits)?,
         conflicts: repos.conflicts.conflicts()?,
         notices: repos.notices.notices()?,
         unpushed,
@@ -76,7 +77,13 @@ fn taken_by(accepted: Option<&[Kind]>, change: &Change) -> bool {
     kinds.contains(&change.object().kind())
 }
 
-pub fn diff_working(
+impl Dam<'_> {
+    pub fn diff_working(&self) -> Result<Vec<Change>, UseCaseError> {
+        working_changes(self.store, self.store, self.store)
+    }
+}
+
+fn working_changes(
     objects: &dyn ObjectRepository,
     stage: &dyn StageRepository,
     commits: &dyn CommitRepository,
