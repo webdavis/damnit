@@ -15,9 +15,9 @@ pub use dam_domain::{
 };
 pub use errors::{Refusal, UseCaseError};
 pub use ports::{
-    AcceptedKindsRepository, Clock, CommitRepository, Conflict, ConflictRepository,
-    CredentialError, CredentialSource, HelperError, HelperLauncher, Notice, NoticeRepository,
-    ObjectRepository, Randomness, RemoteHelper, RemoteName, RemoteNameError,
+    AcceptedKindsRepository, Clock, CommitRepository, ConfigError, ConfigFile, Conflict,
+    ConflictRepository, CredentialError, CredentialSource, HelperError, HelperLauncher, Notice,
+    NoticeRepository, ObjectRepository, Randomness, RemoteHelper, RemoteName, RemoteNameError,
     RemoteTrackingRepository, Repositories, StageRepository, Store, StoreError, Transactional,
 };
 pub use remote::{

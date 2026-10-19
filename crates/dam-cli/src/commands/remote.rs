@@ -1,6 +1,5 @@
 mod listing;
 
-use dam_adapters::append_remote;
 use dam_application::{Refusal, RemoteName, Repositories, refresh_stale};
 
 use crate::args::{RemoteArgs, RemoteCommand};
@@ -15,7 +14,7 @@ pub(crate) fn run_remote(ctx: &Context, args: RemoteArgs) -> Result<Report, CliE
             if ctx.config.remote(&name.0).is_some() {
                 return Err(Refusal::RemoteExists(name.0).into());
             }
-            let warning = append_remote(&ctx.config_path, &name.0, &url)?;
+            let warning = ctx.config_file.add_remote(&name, &url)?;
             let mut human = format!("added {} ({url})", name.0);
             if let Some(why) = &warning {
                 human.insert_str(0, &format!("warning: {why}\n"));

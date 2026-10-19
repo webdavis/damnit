@@ -8,7 +8,8 @@ mod prompt;
 mod view;
 
 use clap::Parser;
-use dam_adapters::Interrupt;
+use dam_adapters::{Interrupt, TomlConfigFile};
+use dam_application::ConfigFile;
 
 use crate::args::{Cli, Command};
 use crate::context::Context;
@@ -62,31 +63,32 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
             "--no-pull applies to ls, show and agenda, the reads that pull a stale remote".into(),
         ));
     }
-    let config_path = cli.config.unwrap_or_else(dam_adapters::default_config_path);
+    let config_file =
+        TomlConfigFile::new(cli.config.unwrap_or_else(dam_adapters::default_config_path));
     match cli.command {
         Command::Category(a) => {
-            let config = catalogue_config_read_before_any_store_opens(&config_path)?;
+            let config = config_file.load()?;
             let report = commands::catalogue::run_category(&config, a.command)?;
             output::print(format, &report)
         }
         Command::Filter(a) => {
-            let config = catalogue_config_read_before_any_store_opens(&config_path)?;
+            let config = config_file.load()?;
             let report = commands::catalogue::run_filter(&config, a.command)?;
             output::print(format, &report)
         }
         command => {
             let store_path = cli.store.unwrap_or_else(dam_adapters::default_store_path);
-            let ctx = Context::open(config_path, &store_path, format, cli.no_pull, interrupt)?;
+            let ctx = Context::open(
+                Box::new(config_file),
+                &store_path,
+                format,
+                cli.no_pull,
+                interrupt,
+            )?;
             let report = commands::dispatch_a_verb_that_opens_the_store(&ctx, command)?;
             output::print(format, &report)
         }
     }
-}
-
-fn catalogue_config_read_before_any_store_opens(
-    config_path: &std::path::Path,
-) -> Result<dam_application::Config, CliError> {
-    Ok(dam_adapters::load_config(config_path)?)
 }
 
 #[cfg(test)]
