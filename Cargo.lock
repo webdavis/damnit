@@ -280,6 +280,7 @@ dependencies = [
  "dam-protocol",
  "serde",
  "serde_json",
+ "tempfile",
  "ureq",
 ]
 
