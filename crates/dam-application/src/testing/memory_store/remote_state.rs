@@ -118,6 +118,10 @@ impl NoticeRepository for MemoryStore {
     fn notices(&self) -> Result<Vec<Notice>, StoreError> {
         Ok(self.0.borrow().notices.clone())
     }
+    fn remove_notice(&self, notice: &Notice) -> Result<(), StoreError> {
+        self.0.borrow_mut().notices.retain(|n| n != notice);
+        Ok(())
+    }
     fn clear_notices(&self) -> Result<(), StoreError> {
         self.0.borrow_mut().notices.clear();
         Ok(())

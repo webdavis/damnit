@@ -1,8 +1,6 @@
 use crate::config::{Config, RemoteConfig};
 use crate::errors::UseCaseError;
-use crate::ports::{
-    Clock, CredentialSource, HelperLauncher, Notice, Randomness, RemoteName, Repositories,
-};
+use crate::ports::{Clock, CredentialSource, HelperLauncher, Randomness, RemoteName, Repositories};
 use crate::remote::{PullOutcome, RemoteCapabilities};
 use crate::use_cases::connect::connect;
 
@@ -10,10 +8,12 @@ mod cancelled;
 mod classify;
 mod land;
 mod notices;
+mod skipped;
 
 use classify::classify;
 use land::land;
 use notices::record_removals;
+use skipped::record_skipped;
 
 #[derive(Debug)]
 pub struct PullReport {
@@ -61,15 +61,12 @@ fn apply(
         unchanged: 0,
     };
     let mut land_everything_as_one_unit = || {
-        for rejected in &response.rejected {
-            repos.notices.add_notice(&Notice::PullFailed {
-                remote: remote.name.clone(),
-                why: match rejected.remote_id.as_str() {
-                    "" => rejected.why.clone(),
-                    remote_id => format!("{remote_id}: {}", rejected.why),
-                },
-            })?;
-        }
+        record_skipped(
+            repos.notices,
+            &remote.name,
+            &response.objects,
+            &response.rejected,
+        )?;
         let mut objects = std::mem::take(&mut response.objects);
         objects.extend(cancelled::cancelled_events(
             repos,

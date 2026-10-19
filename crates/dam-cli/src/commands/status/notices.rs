@@ -29,6 +29,11 @@ pub(super) enum NoticeRow<'a> {
         remote: &'a str,
         why: &'a str,
     },
+    PullSkipped {
+        remote: &'a str,
+        remote_id: &'a str,
+        why: &'a str,
+    },
     KindChanged {
         #[serde(serialize_with = "display")]
         oid: &'a Oid,
@@ -67,6 +72,11 @@ impl<'a> NoticeRow<'a> {
                 remote: &remote.0,
                 why,
             },
+            Notice::PullSkipped { remote, object } => NoticeRow::PullSkipped {
+                remote: &remote.0,
+                remote_id: &object.remote_id,
+                why: &object.why,
+            },
             Notice::KindChanged { oid, ours, theirs } => NoticeRow::KindChanged {
                 oid,
                 ours: ours.as_str(),
@@ -100,6 +110,16 @@ impl<'a> NoticeRow<'a> {
             NoticeRow::PullFailed { remote, why } => {
                 format!("pull from {remote} failed: {why}")
             }
+            NoticeRow::PullSkipped {
+                remote,
+                remote_id: "",
+                why,
+            } => format!("pull from {remote} skipped an object: {why}"),
+            NoticeRow::PullSkipped {
+                remote,
+                remote_id,
+                why,
+            } => format!("pull from {remote} skipped {remote_id}: {why}"),
             NoticeRow::KindChanged { oid, ours, theirs } => format!(
                 "{} is {} {ours} here and {} {theirs} upstream",
                 oid.short(),

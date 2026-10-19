@@ -60,8 +60,15 @@ pub fn notice_repository_contract(notices: &dyn NoticeRepository) {
     notices.add_notice(&first).unwrap();
     assert_eq!(
         notices.notices().unwrap(),
-        vec![first.clone(), second, first],
+        vec![first.clone(), second.clone(), first.clone()],
         "notices keep the order they were recorded in, repeats included"
+    );
+
+    notices.remove_notice(&first).unwrap();
+    assert_eq!(
+        notices.notices().unwrap(),
+        vec![second],
+        "removing a notice removes every repeat of it and nothing else"
     );
 
     notices.clear_notices().unwrap();

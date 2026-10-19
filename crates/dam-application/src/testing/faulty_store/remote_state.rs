@@ -90,6 +90,10 @@ impl NoticeRepository for FaultyStore {
     fn notices(&self) -> Result<Vec<Notice>, StoreError> {
         self.inner.notices()
     }
+    fn remove_notice(&self, notice: &Notice) -> Result<(), StoreError> {
+        self.write()?;
+        self.inner.remove_notice(notice)
+    }
     fn clear_notices(&self) -> Result<(), StoreError> {
         self.write()?;
         self.inner.clear_notices()

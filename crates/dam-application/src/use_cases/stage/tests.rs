@@ -82,6 +82,31 @@ fn add_all_includes_deletes_of_committed_objects_gone_from_working() {
 }
 
 #[test]
+fn add_all_after_a_committed_removal_stages_nothing() {
+    let store = MemoryStore::new();
+    let id = seed(&store, 1);
+    commit_all(&store);
+    store.delete(&id).unwrap();
+    commit_all(&store);
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    assert!(dam.add_all().unwrap().is_empty());
+    assert!(store.staged().unwrap().is_empty());
+}
+
+fn commit_all(store: &MemoryStore) {
+    let fixture = Fixture::default();
+    let dam = fixture.dam(store);
+    let record = dam_domain::CommitRecord {
+        id: dam_domain::CommitId::generate(&mut |b| b.fill(9)),
+        message: "m".into(),
+        at: jiff::Timestamp::UNIX_EPOCH,
+        changes: dam.add_all().unwrap(),
+    };
+    store.commit(&record).unwrap();
+}
+
+#[test]
 fn reset_unstages_one_or_all() {
     let store = MemoryStore::new();
     let a = seed(&store, 1);

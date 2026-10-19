@@ -6,6 +6,7 @@ use dam_domain::{EventStatus, Field, Kind, Object, Task, When};
 use jiff::civil::date;
 
 use super::*;
+use crate::ports::Notice;
 
 fn meeting() -> dam_domain::Event {
     dam_domain::Event::new(

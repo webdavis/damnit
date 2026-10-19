@@ -67,34 +67,6 @@ pub struct Conflict {
     pub theirs: Object,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Notice {
-    RemovedUpstream {
-        remote: RemoteName,
-        oid: Oid,
-        subject: String,
-    },
-    EventCancelled {
-        oid: Oid,
-        subject: String,
-        attached: usize,
-    },
-    PushFailed {
-        remote: RemoteName,
-        oid: Oid,
-        why: String,
-    },
-    PullFailed {
-        remote: RemoteName,
-        why: String,
-    },
-    KindChanged {
-        oid: Oid,
-        ours: Kind,
-        theirs: Kind,
-    },
-}
-
 pub trait ObjectRepository: Transactional {
     fn get(&self, oid: &Oid) -> Result<Option<Object>, StoreError>;
     fn all(&self) -> Result<Vec<Object>, StoreError>;
@@ -149,12 +121,6 @@ pub trait ConflictRepository {
     fn mark_conflict(&self, conflict: &Conflict) -> Result<(), StoreError>;
     fn conflicts(&self) -> Result<Vec<Conflict>, StoreError>;
     fn clear_conflict(&self, oid: &Oid) -> Result<(), StoreError>;
-}
-
-pub trait NoticeRepository {
-    fn add_notice(&self, notice: &Notice) -> Result<(), StoreError>;
-    fn notices(&self) -> Result<Vec<Notice>, StoreError>;
-    fn clear_notices(&self) -> Result<(), StoreError>;
 }
 
 pub trait Transactional {

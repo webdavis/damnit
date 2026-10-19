@@ -107,13 +107,19 @@ impl Sandbox {
     }
 
     pub fn install_helper_pulling(&self, task_json: &str) {
+        self.install_helper_answering_pull(&format!(
+            r#"{{"objects":[{task_json}],"removed":[],"sync":null}}"#
+        ));
+    }
+
+    pub fn install_helper_answering_pull(&self, answer: &str) {
         let script = format!(
             r#"#!/bin/sh
 set -eu
 while IFS= read -r line; do
   case "$line" in
     *'"capabilities"'*) printf '{{"protocol":1,"kinds":["task"],"fields":["subject","due"],"credentials":["api_token"],"incremental":false}}\n' ;;
-    *'"pull"'*) printf '{{"objects":[{task_json}],"removed":[],"sync":null}}\n' ;;
+    *'"pull"'*) printf '%s\n' '{answer}' ;;
     *'"push"'*)
       printf '%s\n' "$line" >> "$PUSH_LOG"
       oid="$(printf '%s' "$line" | grep -o '"oid":"[0-9a-f]*"' | head -1 | cut -d'"' -f4)"
