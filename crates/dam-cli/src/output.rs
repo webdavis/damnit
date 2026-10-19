@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use dam_domain::{Object, When};
+use dam_domain::{Object, Timestamp, When};
 use jiff::tz::TimeZone;
 
 use crate::error::CliError;
@@ -90,11 +90,14 @@ pub(crate) fn object_cells(object: &Object, zone: &TimeZone) -> Vec<String> {
 pub(crate) fn local_text(when: &When, zone: &TimeZone) -> String {
     match when {
         When::Day(d) => d.to_string(),
-        When::At(z) => z
-            .with_time_zone(zone.clone())
-            .strftime("%Y-%m-%d %H:%M")
-            .to_string(),
+        When::At(z) => local_time(z.timestamp(), zone),
     }
+}
+
+pub(crate) fn local_time(at: Timestamp, zone: &TimeZone) -> String {
+    at.to_zoned(zone.clone())
+        .strftime("%Y-%m-%d %H:%M")
+        .to_string()
 }
 
 #[cfg(test)]

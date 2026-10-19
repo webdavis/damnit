@@ -41,40 +41,46 @@ impl<'a> UnpushedRow<'a> {
 impl View for StatusView<'_> {
     fn human(&self) -> Human {
         let mut human: Vec<Line> = self.warnings.iter().cloned().map(Line::Whole).collect();
-        let mut section = |title: &str, lines: Vec<String>, line: fn(String) -> Line| {
+        let mut section = |title: &str, lines: Vec<Line>| {
             if !lines.is_empty() {
                 human.push(Line::Row(title.to_string()));
-                human.extend(lines.into_iter().map(|l| line(format!("  {l}"))));
+                human.extend(lines);
             }
+        };
+        let rows = |lines: Vec<String>| -> Vec<Line> {
+            lines
+                .into_iter()
+                .map(|l| Line::Row(format!("  {l}")))
+                .collect()
         };
         section(
             "Staged:",
-            self.staged.iter().map(ChangeRow::line).collect(),
-            Line::Row,
+            rows(self.staged.iter().map(ChangeRow::line).collect()),
         );
         section(
             "Not staged:",
-            self.unstaged.iter().map(ChangeRow::line).collect(),
-            Line::Row,
+            rows(self.unstaged.iter().map(ChangeRow::line).collect()),
         );
         section(
             "Conflicts:",
-            self.conflicts.iter().map(ConflictRow::line).collect(),
-            Line::Row,
+            self.conflicts.iter().flat_map(ConflictRow::lines).collect(),
         );
         section(
             "Notices:",
-            self.notices.iter().map(NoticeRow::line).collect(),
-            Line::Whole,
+            self.notices
+                .iter()
+                .map(|n| Line::Whole(format!("  {}", n.line())))
+                .collect(),
         );
         section(
             "Unpushed:",
-            self.unpushed
-                .iter()
-                .filter(|u| u.commits > 0)
-                .map(|u| format!("{}: {}", u.remote, counted(u.commits, "commit", "commits")))
-                .collect(),
-            Line::Row,
+            rows(
+                self.unpushed
+                    .iter()
+                    .filter(|u| u.commits > 0)
+                    .map(|u| format!("{}: {}", u.remote, counted(u.commits, "commit", "commits")))
+                    .collect(),
+            ),
         );
         if human.len() == self.warnings.len() {
             human.push(Line::Row("nothing staged, nothing changed".to_string()));
