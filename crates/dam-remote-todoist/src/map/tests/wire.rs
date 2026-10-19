@@ -1,7 +1,8 @@
 use super::super::identity::RemoteIdError;
 use super::super::*;
+use super::build::{item, project, section};
 use super::sync;
-use crate::api::{Item, Project, Section, SyncResponse};
+use crate::api::SyncResponse;
 
 #[test]
 fn wire_objects_carry_kind_fields_and_remote_ids() {
@@ -67,34 +68,9 @@ fn a_remote_id_whose_tail_is_not_a_todoist_id_is_refused() {
 #[test]
 fn a_blank_name_becomes_untitled_with_the_remote_id() {
     let s = SyncResponse {
-        projects: vec![Project {
-            id: "p1".into(),
-            name: "".into(),
-            parent_id: None,
-            is_deleted: false,
-            is_archived: false,
-            inbox_project: false,
-        }],
-        sections: vec![Section {
-            id: "s1".into(),
-            name: "".into(),
-            project_id: "p1".into(),
-            is_deleted: false,
-        }],
-        items: vec![Item {
-            id: "i1".into(),
-            content: "/".into(),
-            description: String::new(),
-            project_id: "p1".into(),
-            section_id: Some("s1".into()),
-            parent_id: None,
-            priority: 1,
-            due: None,
-            deadline: None,
-            labels: vec![],
-            checked: false,
-            is_deleted: false,
-        }],
+        projects: vec![project("p1", "")],
+        sections: vec![section("s1", "").under("p1")],
+        items: vec![item("i1", "/").under("p1").in_section("s1")],
     };
     let t = Tree::from_sync(&s);
     assert_eq!(t.project_path("p1").as_deref(), Some("untitled-p1/"));
