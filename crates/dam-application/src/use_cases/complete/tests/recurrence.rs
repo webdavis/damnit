@@ -1,49 +1,35 @@
 use super::super::*;
-use super::{put_task, task_of};
-use crate::testing::prelude::*;
-use crate::testing::{FixedRandom, Fixture, MemoryStore, oid};
-use dam_domain::{Completion, Object, Recurrence, Task, When};
+use super::{at, filed, task_of};
+use crate::testing::{Scenario, oid};
+use dam_domain::{Completion, Recurrence, When};
 use jiff::civil::date;
 
 #[test]
 fn a_recurring_task_rolls_forward_instead_of_closing() {
-    let store = MemoryStore::new();
-    let id = put_task(&store, 1, "water the plants", "", false);
-    let mut t = store.get(&id).unwrap().unwrap();
-    t.base_mut().recurrence = Some(Recurrence::parse("every week"));
-    if let Object::Task(task) = &mut t {
-        task.due = Some(When::Day(date(2026, 9, 18)));
-    }
-    store.put(&t).unwrap();
-    let fixture = Fixture {
-        random: FixedRandom::new(9),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(&store);
-    let out = dam.complete(&id, Force::No, Tracked::No).unwrap();
+    let s = Scenario::default().drawing_from(9);
+    let mut plants = at(1, "water the plants", "");
+    plants.base.recurrence = Some(Recurrence::parse("every week"));
+    plants.due = Some(When::Day(date(2026, 9, 18)));
+    let id = filed(&s, plants);
+    let out = s.dam().complete(&id, Force::No, Tracked::No).unwrap();
     assert_eq!(
         out,
         Completed::RolledForward {
             next_due: date(2026, 9, 25)
         }
     );
-    let t = task_of(&store, &id);
+    let t = task_of(&s, &id);
     assert!(!t.completion.is_done());
     assert_eq!(t.due, Some(When::Day(date(2026, 9, 25))));
 }
 
 #[test]
 fn a_rule_dam_cannot_read_is_refused_and_the_task_stays_open() {
-    let store = MemoryStore::new();
-    let id = put_task(&store, 1, "water the plants", "", false);
-    let mut t = store.get(&id).unwrap().unwrap();
-    t.base_mut().recurrence = Some(Recurrence::parse("every other week"));
-    store.put(&t).unwrap();
-    let fixture = Fixture {
-        random: FixedRandom::new(9),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(&store);
+    let s = Scenario::default().drawing_from(9);
+    let mut plants = at(1, "water the plants", "");
+    plants.base.recurrence = Some(Recurrence::parse("every other week"));
+    let id = filed(&s, plants);
+    let dam = s.dam();
     let refused = |tracked| dam.complete(&id, Force::No, tracked).unwrap_err();
     assert_eq!(
         refused(Tracked::No),
@@ -59,22 +45,16 @@ fn a_rule_dam_cannot_read_is_refused_and_the_task_stays_open() {
             tracked: Tracked::ByRemote,
         })
     );
-    assert!(!task_of(&store, &id).completion.is_done());
+    assert!(!task_of(&s, &id).completion.is_done());
 }
 
 #[test]
 fn a_task_that_rolls_forward_records_no_completion_time() {
-    let store = MemoryStore::new();
-    let mut t = Task::new(oid(1), "water the plants");
-    t.base.recurrence = Some(Recurrence::parse("every day"));
-    t.due = Some(When::Day(date(2026, 9, 18)));
-    store.put(&Object::Task(t)).unwrap();
-    let fixture = Fixture {
-        random: FixedRandom::new(1),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(&store);
-    dam.complete(&oid(1), Force::No, Tracked::No).unwrap();
-    let task = task_of(&store, &oid(1));
-    assert_eq!(task.completion, Completion::Open);
+    let s = Scenario::default().drawing_from(1);
+    let mut plants = at(1, "water the plants", "");
+    plants.base.recurrence = Some(Recurrence::parse("every day"));
+    plants.due = Some(When::Day(date(2026, 9, 18)));
+    filed(&s, plants);
+    s.dam().complete(&oid(1), Force::No, Tracked::No).unwrap();
+    assert_eq!(task_of(&s, &oid(1)).completion, Completion::Open);
 }

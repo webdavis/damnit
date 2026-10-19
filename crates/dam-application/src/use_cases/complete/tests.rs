@@ -4,32 +4,25 @@ mod recurrence;
 
 use super::*;
 use crate::ports::Clock;
-use crate::service::Dam;
 use crate::testing::prelude::*;
-use crate::testing::{FixedClock, FixedRandom, Fixture, MemoryStore, oid};
-use dam_domain::{Completion, Event, Object, Path, Task, Tracked, When};
+use crate::testing::{FixedClock, FixedRandom, Fixture, Scenario, event, oid};
+use dam_domain::{Completion, Object, Path, Task, Tracked};
 use jiff::civil::date;
 
-pub(super) fn put_task(
-    store: &MemoryStore,
-    byte: u8,
-    subject: &str,
-    path: &str,
-    done: bool,
-) -> Oid {
+pub(super) fn at(byte: u8, subject: &str, path: &str) -> Task {
     let mut t = Task::new(oid(byte), subject);
     t.base.path = Path::parse(path).unwrap();
-    t.completion = if done {
-        Completion::Done { at: None }
-    } else {
-        Completion::Open
-    };
-    store.put(&Object::Task(t)).unwrap();
-    oid(byte)
+    t
 }
 
-pub(super) fn path_of(store: &MemoryStore, id: &Oid) -> String {
-    store
+pub(super) fn filed(s: &Scenario, task: Task) -> Oid {
+    let id = task.base.oid.clone();
+    s.working(Object::Task(task));
+    id
+}
+
+pub(super) fn path_of(s: &Scenario, id: &Oid) -> String {
+    s.store
         .get(id)
         .unwrap()
         .unwrap()
@@ -39,100 +32,66 @@ pub(super) fn path_of(store: &MemoryStore, id: &Oid) -> String {
         .to_string()
 }
 
-pub(super) fn task_of(store: &MemoryStore, id: &Oid) -> Task {
-    store.get(id).unwrap().unwrap().as_task().unwrap().clone()
-}
-
-pub(super) fn today() -> FixedClock {
-    FixedClock(date(2026, 9, 18))
+pub(super) fn task_of(s: &Scenario, id: &Oid) -> Task {
+    s.store.get(id).unwrap().unwrap().as_task().unwrap().clone()
 }
 
 #[test]
 fn an_unblocked_task_is_done() {
-    let store = MemoryStore::new();
-    let id = put_task(&store, 1, "milk", "", false);
-    let fixture = Fixture {
-        random: FixedRandom::new(9),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(&store);
+    let s = Scenario::default().drawing_from(9);
+    let id = filed(&s, at(1, "milk", ""));
+    let dam = s.dam();
     assert!(dam.plan_complete(&id).unwrap().blockers.is_empty());
     assert_eq!(
         dam.complete(&id, Force::No, Tracked::No).unwrap(),
         Completed::Done
     );
-    assert!(task_of(&store, &id).completion.is_done());
+    assert!(task_of(&s, &id).completion.is_done());
 }
 
 #[test]
 fn an_event_is_not_a_task() {
-    let store = MemoryStore::new();
-    let e = Event::new(
-        oid(5),
-        "e",
-        When::Day(date(2026, 1, 1)),
-        When::Day(date(2026, 1, 2)),
-    );
-    store.put(&Object::Event(e)).unwrap();
-    let fixture = Fixture {
-        random: FixedRandom::new(9),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(&store);
-    let err = dam.complete(&oid(5), Force::No, Tracked::No).unwrap_err();
+    let s = Scenario::default().drawing_from(9);
+    s.working(event(5));
+    let err = s
+        .dam()
+        .complete(&oid(5), Force::No, Tracked::No)
+        .unwrap_err();
     assert_eq!(err, UseCaseError::Refused(Refusal::NotATask(oid(5))));
 }
 
 #[test]
 fn completing_a_task_records_when_it_happened() {
-    let store = MemoryStore::new();
-    let id = put_task(&store, 1, "milk", "", false);
-    let clock = FixedClock(date(2026, 9, 18));
-    assert_eq!(task_of(&store, &id).completion, Completion::Open);
-    let fixture = Fixture {
-        random: FixedRandom::new(1),
-        ..Fixture::default()
-    };
-    let dam = Dam {
-        clock: &clock,
-        ..fixture.dam(&store)
-    };
-    dam.complete(&id, Force::No, Tracked::No).unwrap();
-    let task = task_of(&store, &id);
+    let s = Scenario::default().drawing_from(1);
+    let id = filed(&s, at(1, "milk", ""));
+    assert_eq!(task_of(&s, &id).completion, Completion::Open);
+    s.dam().complete(&id, Force::No, Tracked::No).unwrap();
     assert_eq!(
-        task.completion,
+        task_of(&s, &id).completion,
         Completion::Done {
-            at: Some(clock.now())
+            at: Some(s.fixture.clock.now())
         }
     );
 }
 
 #[test]
 fn completing_an_already_completed_task_changes_nothing() {
-    let store = MemoryStore::new();
-    let id = put_task(&store, 1, "milk", "", false);
-    let first = FixedClock(date(2026, 9, 18));
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
-    Dam {
-        clock: &first,
-        random: &FixedRandom::new(1),
-        ..dam
-    }
-    .complete(&id, Force::No, Tracked::No)
-    .unwrap();
-    let after_first = store.get(&id).unwrap().unwrap();
+    let s = Scenario::default().drawing_from(1);
+    let id = filed(&s, at(1, "milk", ""));
+    s.dam().complete(&id, Force::No, Tracked::No).unwrap();
+    let after_first = s.store.get(&id).unwrap().unwrap();
 
-    let later = FixedClock(date(2026, 9, 19));
-    Dam {
-        clock: &later,
-        random: &FixedRandom::new(1),
-        ..dam
-    }
-    .complete(&id, Force::No, Tracked::No)
-    .unwrap();
+    let next_day = Fixture {
+        clock: FixedClock(date(2026, 9, 19)),
+        random: FixedRandom::new(1),
+        ..Fixture::default()
+    };
+    next_day
+        .dam(&s.store)
+        .complete(&id, Force::No, Tracked::No)
+        .unwrap();
     assert_eq!(
-        store.get(&id).unwrap().unwrap(),
+        s.store.get(&id).unwrap().unwrap(),
         after_first,
         "a second done restamped the completion time"
     );
@@ -140,12 +99,9 @@ fn completing_an_already_completed_task_changes_nothing() {
 
 #[test]
 fn a_dependency_that_no_longer_exists_counts_as_closed() {
-    let store = MemoryStore::new();
-    let id = put_task(&store, 1, "milk", "", false);
-    let mut t = store.get(&id).unwrap().unwrap();
-    t.base_mut().depends.push(oid(3));
-    store.put(&t).unwrap();
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
-    assert!(dam.plan_complete(&id).unwrap().blockers.is_empty());
+    let s = Scenario::default();
+    let mut milk = at(1, "milk", "");
+    milk.base.depends.push(oid(3));
+    let id = filed(&s, milk);
+    assert!(s.dam().plan_complete(&id).unwrap().blockers.is_empty());
 }
