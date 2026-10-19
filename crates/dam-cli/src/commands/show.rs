@@ -1,19 +1,40 @@
 use dam_application::{Refusal, UseCaseError, resolve_commit, resolve_object};
 use dam_domain::Object;
+use serde::Serialize;
 
 use crate::args::ShowArgs;
-use crate::commands::commit::{commit_json, commit_line};
+use crate::commands::commit::CommitDoc;
 use crate::commands::remote::refresh_stale_unless_no_pull;
-use crate::commands::status::change_line;
 use crate::context::Context;
 use crate::error::CliError;
-use crate::output::{Report, object_json, object_line};
+use crate::output::{Report, object_cells};
+use crate::view::{Human, View, report, row, wire};
 
 pub(crate) fn run_show(ctx: &mut Context, args: ShowArgs) -> Result<Report, CliError> {
     refresh_stale_unless_no_pull(ctx)?;
     if let Some(object) = working_object_named(ctx, &args.id)? {
-        let b = object.base();
-        let mut human = vec![object_line(&object), format!("oid: {}", b.oid)];
+        return report(&ShownObject(&object));
+    }
+    let record = resolve_commit(ctx.store.as_ref(), &args.id)?;
+    report(&ShownCommit(CommitDoc::new(&record)))
+}
+
+fn working_object_named(ctx: &Context, text: &str) -> Result<Option<Object>, CliError> {
+    match resolve_object(ctx.store.as_ref(), text) {
+        Ok(oid) => Ok(ctx.store.get(&oid)?),
+        Err(UseCaseError::Refused(Refusal::NoWorkingObject(_))) => Ok(None),
+        Err(e) => Err(e.into()),
+    }
+}
+
+#[derive(Serialize)]
+#[serde(transparent)]
+struct ShownObject<'a>(#[serde(serialize_with = "wire")] &'a Object);
+
+impl View for ShownObject<'_> {
+    fn human(&self) -> Human {
+        let b = self.0.base();
+        let mut human = vec![row(&object_cells(self.0)), format!("oid: {}", b.oid)];
         if !b.body.is_empty() {
             human.push(String::new());
             human.push(b.body.clone());
@@ -28,30 +49,19 @@ pub(crate) fn run_show(ctx: &mut Context, args: ShowArgs) -> Result<Report, CliE
                     .join(", ")
             ));
         }
-        return Ok(Report {
-            human: human.join("\n"),
-            data: object_json(&object)?,
-        });
+        Human::Lines(human)
     }
-    let record = resolve_commit(ctx.store.as_ref(), &args.id)?;
-    let mut human = vec![commit_line(&record)];
-    human.extend(
-        record
-            .changes
-            .iter()
-            .map(|c| format!("  {}", change_line(c))),
-    );
-    Ok(Report {
-        human: human.join("\n"),
-        data: commit_json(&record)?,
-    })
 }
 
-fn working_object_named(ctx: &Context, text: &str) -> Result<Option<Object>, CliError> {
-    match resolve_object(ctx.store.as_ref(), text) {
-        Ok(oid) => Ok(ctx.store.get(&oid)?),
-        Err(UseCaseError::Refused(Refusal::NoWorkingObject(_))) => Ok(None),
-        Err(e) => Err(e.into()),
+#[derive(Serialize)]
+#[serde(transparent)]
+struct ShownCommit<'a>(CommitDoc<'a>);
+
+impl View for ShownCommit<'_> {
+    fn human(&self) -> Human {
+        let mut human = vec![row(&self.0.cells())];
+        human.extend(self.0.changes.iter().map(|c| format!("  {}", c.line())));
+        Human::Lines(human)
     }
 }
 

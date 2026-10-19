@@ -1,8 +1,10 @@
-use dam_application::Conflict;
-use dam_domain::{Change, Field, Object, When, changed_fields, touched_fields};
+use std::collections::BTreeSet;
 
-use crate::error::CliError;
-use crate::output::object_json;
+use dam_application::Conflict;
+use dam_domain::{Change, Field, Object, Oid, Timestamp, When, changed_fields, touched_fields};
+use serde::Serialize;
+
+use crate::view::{display, optional_display, optional_wire, wire};
 
 pub(crate) fn change_line(change: &Change) -> String {
     let subject = &change.object().base().subject;
@@ -21,68 +23,116 @@ pub(crate) fn change_line(change: &Change) -> String {
     }
 }
 
-pub(crate) fn change_json(change: &Change, full: bool) -> Result<serde_json::Value, CliError> {
-    let fields: Vec<&str> = touched_fields(change).iter().map(Field::as_str).collect();
-    let mut row = serde_json::Map::new();
-    row.insert("oid".into(), change.oid().to_string().into());
-    row.insert("op".into(), change.op().as_str().into());
-    row.insert("fields".into(), fields.into());
-    row.extend(state_left_behind_or_the_removed_objects_json(change));
-    if full {
-        let before = change.before().map(object_json).transpose()?;
-        let after = change.after().map(object_json).transpose()?;
-        row.insert("before".into(), before.into());
-        row.insert("after".into(), after.into());
-    }
-    Ok(serde_json::Value::Object(row))
+#[derive(Serialize)]
+pub(crate) struct ChangeRow<'a> {
+    #[serde(skip)]
+    change: &'a Change,
+    #[serde(serialize_with = "display")]
+    oid: &'a Oid,
+    op: &'static str,
+    fields: Vec<&'static str>,
+    kind: &'static str,
+    subject: &'a str,
+    path: &'a str,
+    labels: &'a BTreeSet<String>,
+    #[serde(flatten)]
+    state: KindState,
+    #[serde(flatten)]
+    sides: Option<Sides<'a>>,
 }
 
-fn state_left_behind_or_the_removed_objects_json(
-    change: &Change,
-) -> serde_json::Map<String, serde_json::Value> {
-    let mut state = serde_json::Map::new();
-    let object = change.object();
-    let base = object.base();
-    state.insert("kind".into(), object.kind().as_str().into());
-    state.insert("subject".into(), base.subject.clone().into());
-    state.insert("path".into(), base.path.as_str().into());
-    state.insert("labels".into(), base.labels.iter().cloned().collect());
-    match object {
-        Object::Task(t) => {
-            state.insert("done".into(), t.completion.is_done().into());
-            state.insert(
-                "completed_at".into(),
-                t.completion.at().map(|at| at.to_string()).into(),
-            );
-            state.insert("priority".into(), t.priority.get().into());
-            state.insert("due".into(), t.due.as_ref().map(When::to_text).into());
+#[derive(Serialize)]
+#[serde(untagged)]
+enum KindState {
+    Task {
+        done: bool,
+        #[serde(serialize_with = "optional_display")]
+        completed_at: Option<Timestamp>,
+        priority: u8,
+        due: Option<String>,
+    },
+    Event {
+        start: String,
+        end: String,
+    },
+}
+
+#[derive(Serialize)]
+struct Sides<'a> {
+    #[serde(serialize_with = "optional_wire")]
+    before: Option<&'a Object>,
+    #[serde(serialize_with = "optional_wire")]
+    after: Option<&'a Object>,
+}
+
+impl<'a> ChangeRow<'a> {
+    pub(crate) fn new(change: &'a Change, full: bool) -> ChangeRow<'a> {
+        let object = change.object();
+        let base = object.base();
+        ChangeRow {
+            change,
+            oid: change.oid(),
+            op: change.op().as_str(),
+            fields: touched_fields(change).iter().map(Field::as_str).collect(),
+            kind: object.kind().as_str(),
+            subject: &base.subject,
+            path: base.path.as_str(),
+            labels: &base.labels,
+            state: match object {
+                Object::Task(t) => KindState::Task {
+                    done: t.completion.is_done(),
+                    completed_at: t.completion.at(),
+                    priority: t.priority.get(),
+                    due: t.due.as_ref().map(When::to_text),
+                },
+                Object::Event(e) => KindState::Event {
+                    start: e.start.to_text(),
+                    end: e.end.to_text(),
+                },
+            },
+            sides: full.then(|| Sides {
+                before: change.before(),
+                after: change.after(),
+            }),
         }
-        Object::Event(e) => {
-            state.insert("start".into(), e.start.to_text().into());
-            state.insert("end".into(), e.end.to_text().into());
+    }
+
+    pub(crate) fn line(&self) -> String {
+        change_line(self.change)
+    }
+}
+
+#[derive(Serialize)]
+pub(super) struct ConflictRow<'a> {
+    #[serde(serialize_with = "display")]
+    oid: &'a Oid,
+    remote: &'a str,
+    #[serde(serialize_with = "wire")]
+    ours: &'a Object,
+    #[serde(serialize_with = "wire")]
+    theirs: &'a Object,
+}
+
+impl<'a> ConflictRow<'a> {
+    pub(super) fn new(c: &'a Conflict) -> ConflictRow<'a> {
+        ConflictRow {
+            oid: &c.oid,
+            remote: &c.remote.0,
+            ours: &c.ours,
+            theirs: &c.theirs,
         }
     }
-    state
-}
 
-pub(super) fn conflict_line(c: &Conflict) -> String {
-    format!(
-        "{}  {}  ours: {:?}  theirs: {:?}  (dam resolve {} --ours|--theirs)",
-        c.oid.short(),
-        c.remote.0,
-        c.ours.base().subject,
-        c.theirs.base().subject,
-        c.oid.short()
-    )
-}
-
-pub(super) fn conflict_json(c: &Conflict) -> Result<serde_json::Value, CliError> {
-    Ok(serde_json::json!({
-        "oid": c.oid.to_string(),
-        "remote": c.remote.0,
-        "ours": object_json(&c.ours)?,
-        "theirs": object_json(&c.theirs)?,
-    }))
+    pub(super) fn line(&self) -> String {
+        format!(
+            "{}  {}  ours: {:?}  theirs: {:?}  (dam resolve {} --ours|--theirs)",
+            self.oid.short(),
+            self.remote,
+            self.ours.base().subject,
+            self.theirs.base().subject,
+            self.oid.short()
+        )
+    }
 }
 
 #[cfg(test)]

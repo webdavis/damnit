@@ -1,7 +1,11 @@
 use dam_domain::{Change, Completion, Event, Object, Oid, Path, Priority, Task, When};
 use jiff::civil::date;
 
-use super::change_json;
+use super::ChangeRow;
+
+fn change_json(change: &Change, full: bool) -> serde_json::Result<serde_json::Value> {
+    serde_json::to_value(ChangeRow::new(change, full))
+}
 
 fn oid(byte: u8) -> Oid {
     Oid::generate(&mut |x: &mut [u8]| x.fill(byte))

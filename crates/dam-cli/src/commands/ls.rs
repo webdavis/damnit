@@ -4,7 +4,8 @@ use crate::args::LsArgs;
 use crate::commands::remote::refresh_stale_unless_no_pull;
 use crate::context::Context;
 use crate::error::CliError;
-use crate::output::{Report, objects_report};
+use crate::output::Report;
+use crate::view::{ObjectList, report};
 
 pub(crate) fn run_ls(ctx: &mut Context, args: LsArgs) -> Result<Report, CliError> {
     refresh_stale_unless_no_pull(ctx)?;
@@ -14,7 +15,7 @@ pub(crate) fn run_ls(ctx: &mut Context, args: LsArgs) -> Result<Report, CliError
         &ctx.config,
         args.query.as_deref(),
     )?;
-    objects_report(&objects)
+    report(&ObjectList { objects: &objects })
 }
 
 #[cfg(test)]
