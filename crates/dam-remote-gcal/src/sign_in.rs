@@ -6,6 +6,7 @@ mod redirect;
 use std::fmt;
 use std::net::TcpListener;
 
+use crate::token_grant::Refusal;
 use crate::{Endpoints, Secret};
 
 pub use command_line::{client_id, client_secret};
@@ -26,10 +27,7 @@ pub enum SignInError {
     State,
     Denied(&'static str),
     NoCode,
-    Exchange {
-        status: Option<u16>,
-        code: Option<&'static str>,
-    },
+    Exchange(Refusal),
     NoRefreshToken,
 }
 
@@ -54,17 +52,17 @@ impl fmt::Display for SignInError {
             SignInError::NoCode => {
                 f.write_str("the redirect carried no authorization code, so nothing was exchanged")
             }
-            SignInError::Exchange { status: None, .. } => f.write_str(
+            SignInError::Exchange(Refusal { status: None, .. }) => f.write_str(
                 "the code exchange did not reach Google or its answer could not be read",
             ),
-            SignInError::Exchange {
+            SignInError::Exchange(Refusal {
                 status: Some(s),
                 code: None,
-            } => write!(f, "Google refused the code exchange (HTTP {s})"),
-            SignInError::Exchange {
+            }) => write!(f, "Google refused the code exchange (HTTP {s})"),
+            SignInError::Exchange(Refusal {
                 status: Some(s),
                 code: Some(c),
-            } => write!(f, "Google refused the code exchange (HTTP {s}, {c})"),
+            }) => write!(f, "Google refused the code exchange (HTTP {s}, {c})"),
             SignInError::NoRefreshToken => {
                 f.write_str("Google answered the exchange with no refresh token")
             }
