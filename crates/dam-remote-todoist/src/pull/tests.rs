@@ -31,6 +31,34 @@ fn pull_returns_every_live_object_and_names_the_removed_ones() {
 }
 
 #[test]
+fn an_item_whose_parent_chain_loops_is_reported_and_the_rest_land() {
+    let todoist = FakeTodoist::new(serde_json::json!({
+        "sync_token": "t1", "full_sync": true,
+        "projects": [{"id": "p1", "name": "Work", "parent_id": null, "is_deleted": false, "is_archived": false, "inbox_project": false}],
+        "sections": [],
+        "items": [
+            {"id": "i1", "content": "a", "project_id": "p1", "parent_id": "i2", "priority": 1, "checked": false, "is_deleted": false},
+            {"id": "i2", "content": "b", "project_id": "p1", "parent_id": "i1", "priority": 1, "checked": false, "is_deleted": false},
+            {"id": "i3", "content": "milk", "project_id": "p1", "priority": 1, "checked": false, "is_deleted": false}
+        ]
+    }));
+    let response = pull(&todoist).unwrap();
+    let ids: Vec<&str> = response
+        .objects
+        .iter()
+        .filter_map(|o| o.remote_id.as_deref())
+        .collect();
+    assert_eq!(ids, vec!["p:p1", "i:i3"]);
+    let rejected: Vec<(&str, &str)> = response
+        .rejected
+        .iter()
+        .map(|r| (r.remote_id.as_str(), r.why.as_str()))
+        .collect();
+    let why = "its parent chain loops or its project or section is missing";
+    assert_eq!(rejected, vec![("i:i1", why), ("i:i2", why)]);
+}
+
+#[test]
 fn a_rate_limit_on_the_opening_sync_keeps_its_class_and_retry_time() {
     let todoist = FakeTodoist::default().failing_read(rate_limited(42));
     let err = pull(&todoist).unwrap_err();

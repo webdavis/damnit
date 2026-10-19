@@ -1,12 +1,15 @@
-use dam_protocol::PullResponse;
+use dam_protocol::{PullResponse, RejectedObject};
 
 use crate::api::{ApiError, TodoistSync};
 use crate::map::{RemoteId, Tree, item_to_wire, project_to_wire, section_to_wire};
+
+const UNPLACEABLE: &str = "its parent chain loops or its project or section is missing";
 
 pub fn pull(api: &impl TodoistSync) -> Result<PullResponse, ApiError> {
     let sync = api.read_all()?;
     let tree = Tree::from_sync(&sync);
     let mut objects = Vec::new();
+    let mut rejected = Vec::new();
     let mut removed = Vec::new();
     for p in &sync.projects {
         if p.is_deleted {
@@ -27,10 +30,16 @@ pub fn pull(api: &impl TodoistSync) -> Result<PullResponse, ApiError> {
             removed.push(RemoteId::Item(i.id.clone()).to_string());
         } else if let Some(w) = item_to_wire(&tree, i) {
             objects.push(w);
+        } else {
+            rejected.push(RejectedObject {
+                remote_id: RemoteId::Item(i.id.clone()).to_string(),
+                why: UNPLACEABLE.into(),
+            });
         }
     }
     Ok(PullResponse {
         objects,
+        rejected,
         removed,
         ..PullResponse::default()
     })

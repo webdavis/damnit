@@ -7,7 +7,7 @@ fn a_response_naming_no_known_shape_is_refused_rather_than_read_as_an_empty_pull
         let err = serde_json::from_str::<Reply<PullResponse>>(text).unwrap_err();
         assert!(
             err.to_string()
-                .contains("objects, removed, cancelled or sync"),
+                .contains("objects, rejected, removed, cancelled or sync"),
             "{text}: {err}"
         );
     }
@@ -27,6 +27,7 @@ fn a_refusal_of_an_unknown_shape_counts_its_keys_without_quoting_them() {
 fn any_one_pull_key_on_its_own_is_enough_to_read_a_pull_response() {
     for text in [
         r#"{"objects":[]}"#,
+        r#"{"rejected":[]}"#,
         r#"{"removed":[]}"#,
         r#"{"sync":"s1"}"#,
         r#"{"sync":null}"#,
@@ -59,4 +60,28 @@ fn pull_with_cancellations_round_trips_the_fixture() {
     let text = include_str!("../../fixtures/pull-cancelled.response.json").trim_end();
     let read: Reply<PullResponse> = serde_json::from_str(text).unwrap();
     assert_eq!(serde_json::to_string(&read).unwrap(), text);
+}
+
+#[test]
+fn pull_with_rejected_objects_round_trips_the_fixture() {
+    let text = include_str!("../../fixtures/pull-rejected.response.json").trim_end();
+    let read: PullResponse = serde_json::from_str(text).unwrap();
+    assert_eq!(
+        read.rejected,
+        vec![RejectedObject {
+            remote_id: "primary/broken".into(),
+            why: "start is missing".into(),
+        }]
+    );
+    assert_eq!(serde_json::to_string(&read).unwrap(), text);
+}
+
+#[test]
+fn a_helper_rejection_and_an_object_dam_cannot_read_are_both_rejected() {
+    let read: PullResponse = serde_json::from_str(
+        r#"{"objects":[{"remote_id":"r2"}],"rejected":[{"remote_id":"r1","why":"loops"}]}"#,
+    )
+    .unwrap();
+    let ids: Vec<&str> = read.rejected.iter().map(|r| r.remote_id.as_str()).collect();
+    assert_eq!(ids, vec!["r1", "r2"]);
 }
