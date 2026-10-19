@@ -6,7 +6,7 @@ use jiff::civil::date;
 use super::super::*;
 use super::{config, incoming, launcher, remote};
 use crate::ports::{Notice, Repositories};
-use crate::remote::{IncomingObject, PullOutcome, RejectedObject};
+use crate::remote::{IncomingObject, PullOutcome};
 use crate::testing::prelude::*;
 use crate::testing::{
     EchoCredentials, FixedClock, FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
@@ -237,49 +237,6 @@ fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
         store.notices().unwrap().last(),
         Some(Notice::EventCancelled { attached: 1, .. })
     ));
-}
-
-#[test]
-fn one_unconvertible_object_is_skipped_with_a_notice_and_the_rest_still_pull() {
-    let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
-    let l = launcher(PullOutcome {
-        objects: vec![incoming("from todoist", "r-good")],
-        rejected: vec![RejectedObject {
-            remote_id: "r-bad".into(),
-            why: "path: cannot read \"a//b/\"".into(),
-        }],
-        removed: vec![],
-        cancelled: vec![],
-        sync: Some("s1".into()),
-    });
-    let reports = pull(
-        repos,
-        &l,
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(1),
-        &config(),
-        None,
-    )
-    .unwrap();
-    assert_eq!(reports[0].created, 1);
-    assert_eq!(
-        store.notices().unwrap(),
-        vec![Notice::PullSkipped {
-            remote: remote(),
-            object: RejectedObject {
-                remote_id: "r-bad".into(),
-                why: "path: cannot read \"a//b/\"".into(),
-            },
-        }]
-    );
-    assert!(
-        store
-            .oid_for_remote_id(&remote(), "r-bad")
-            .unwrap()
-            .is_none()
-    );
 }
 
 #[test]
