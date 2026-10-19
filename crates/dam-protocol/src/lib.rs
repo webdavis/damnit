@@ -2,6 +2,7 @@ mod capabilities;
 mod codec;
 mod invocation;
 mod messages;
+mod object;
 mod reply;
 mod wire;
 

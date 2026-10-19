@@ -1,6 +1,8 @@
 use serde::de::{DeserializeOwned, Error as _};
 use serde::{Deserialize, Deserializer, Serialize};
 
+use crate::object::read_object;
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(untagged)]
 pub enum Reply<T> {
@@ -19,15 +21,13 @@ impl<'de, T: DeserializeOwned> Deserialize<'de> for Reply<T> {
         D: Deserializer<'de>,
     {
         let value = serde_json::Value::deserialize(deserializer)?;
-        if value.get("error").is_some() {
-            let failure: Failure = serde_json::from_value(value).map_err(D::Error::custom)?;
-            return Ok(Reply::Failed {
+        let reply = match value.get("error") {
+            Some(_) => read_object::<Failure>(value).map(|failure| Reply::Failed {
                 error: failure.error,
-            });
-        }
-        serde_json::from_value(value)
-            .map(Reply::Answered)
-            .map_err(D::Error::custom)
+            }),
+            None => read_object(value).map(Reply::Answered),
+        };
+        reply.map_err(D::Error::custom)
     }
 }
 

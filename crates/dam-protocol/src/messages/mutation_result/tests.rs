@@ -37,3 +37,14 @@ fn a_refusal_is_written_as_ok_false_with_its_reason() {
         r#"{"oid":"o1","ok":false,"why":"read-only"}"#
     );
 }
+
+#[test]
+fn a_result_that_is_not_a_json_object_is_refused() {
+    for text in [r#"{"results":[["o1",true]]}"#, r#"{"results":["o1"]}"#] {
+        let refused = serde_json::from_str::<crate::PushResponse>(text).unwrap_err();
+        assert!(
+            refused.to_string().starts_with("expected a JSON object"),
+            "{text}: {refused}"
+        );
+    }
+}

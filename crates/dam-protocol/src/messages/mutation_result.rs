@@ -1,9 +1,12 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+use crate::object::read_object;
 
 const NO_REASON_GIVEN: &str = "the remote gave no reason";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(from = "MutationResultDoc", into = "MutationResultDoc")]
+#[serde(try_from = "Value", into = "MutationResultDoc")]
 pub struct MutationResult {
     pub oid: String,
     pub verdict: Verdict,
@@ -59,6 +62,14 @@ impl From<MutationResultDoc> for MutationResult {
             oid: doc.oid,
             verdict,
         }
+    }
+}
+
+impl TryFrom<Value> for MutationResult {
+    type Error = serde_json::Error;
+
+    fn try_from(value: Value) -> Result<MutationResult, serde_json::Error> {
+        read_object::<MutationResultDoc>(value).map(MutationResult::from)
     }
 }
 
