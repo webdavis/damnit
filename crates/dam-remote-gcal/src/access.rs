@@ -27,13 +27,11 @@ pub fn access_token(
             code: oauth_error_code(&answer.body),
         });
     }
-    serde_json::from_str::<serde_json::Value>(&answer.body)
-        .ok()
-        .and_then(|v| {
-            v.get("access_token")?
-                .as_str()
-                .filter(|t| !t.is_empty())
-                .map(Secret::from)
-        })
+    let value: serde_json::Value = serde_json::from_str(&answer.body).map_err(|_| refused(None))?;
+    value
+        .get("access_token")
+        .and_then(serde_json::Value::as_str)
+        .filter(|t| !t.is_empty())
+        .map(Secret::from)
         .ok_or(refused(Some(answer.status)))
 }
