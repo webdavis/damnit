@@ -1,6 +1,6 @@
 pub mod api;
-pub mod capabilities;
+mod capabilities;
 pub(crate) mod map;
-pub mod pull;
-pub mod push;
+mod pull;
+mod push;
 pub mod remote;
