@@ -1,4 +1,3 @@
-use dam_application::{add, add_all, reset, resolve_object};
 use dam_domain::Oid;
 
 use crate::args::{AddArgs, ResetArgs};
@@ -43,14 +42,14 @@ impl View for Unstaged<'_> {
 
 pub(crate) fn run_add(ctx: &Context, args: AddArgs) -> Result<Report, CliError> {
     let changes = if args.all {
-        add_all(ctx.store.as_ref(), ctx.store.as_ref(), ctx.store.as_ref())?
+        ctx.dam().add_all()?
     } else {
         let oids = args
             .oids
             .iter()
-            .map(|t| resolve_object(ctx.store.as_ref(), t))
+            .map(|t| ctx.dam().resolve_object(t))
             .collect::<Result<Vec<Oid>, _>>()?;
-        add(ctx.store.as_ref(), ctx.store.as_ref(), &oids)?
+        ctx.dam().add(&oids)?
     };
     report(&Staged {
         staged: changes.iter().map(|c| ChangeRow::new(c, false)).collect(),
@@ -61,9 +60,9 @@ pub(crate) fn run_reset(ctx: &Context, args: ResetArgs) -> Result<Report, CliErr
     let oids = args
         .oids
         .iter()
-        .map(|t| resolve_object(ctx.store.as_ref(), t))
+        .map(|t| ctx.dam().resolve_object(t))
         .collect::<Result<Vec<Oid>, _>>()?;
-    reset(ctx.store.as_ref(), &oids)?;
+    ctx.dam().reset(&oids)?;
     report(&Unstaged { unstaged: &oids })
 }
 

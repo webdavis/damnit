@@ -70,15 +70,8 @@ fn undone_reopens_a_completed_task_as_one_update_naming_done() {
     let mut task = Task::new(oid(1), "milk");
     task.completion = Completion::Done { at: None };
     ctx.store.put(&Object::Task(task)).unwrap();
-    dam_application::add(ctx.store.as_ref(), ctx.store.as_ref(), &[oid(1)]).unwrap();
-    dam_application::commit(
-        ctx.store.as_ref(),
-        ctx.store.as_ref(),
-        ctx.clock.as_ref(),
-        ctx.random.as_ref(),
-        "done",
-    )
-    .unwrap();
+    ctx.dam().add(&[oid(1)]).unwrap();
+    ctx.dam().commit("done").unwrap();
     run(
         &ctx,
         EditArgs {
@@ -97,9 +90,7 @@ fn undone_reopens_a_completed_task_as_one_update_naming_done() {
             .completion
             .is_done()
     );
-    let changes =
-        dam_application::diff_working(ctx.store.as_ref(), ctx.store.as_ref(), ctx.store.as_ref())
-            .unwrap();
+    let changes = ctx.dam().diff_working().unwrap();
     assert_eq!(changes.len(), 1);
     assert_eq!(changes[0].op(), dam_domain::Op::Update);
     assert_eq!(

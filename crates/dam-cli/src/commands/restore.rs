@@ -1,4 +1,4 @@
-use dam_application::{Restored, resolve_object, restore};
+use dam_application::Restored;
 use dam_domain::Oid;
 use serde::Serialize;
 
@@ -26,9 +26,9 @@ pub(crate) fn run(ctx: &Context, args: RestoreArgs) -> Result<Report, CliError> 
     let oids = args
         .oids
         .iter()
-        .map(|text| resolve_object(ctx.store.as_ref(), text))
+        .map(|text| ctx.dam().resolve_object(text))
         .collect::<Result<Vec<Oid>, _>>()?;
-    let restored = restore(ctx.store.as_ref(), ctx.store.as_ref(), &oids)?;
+    let restored = ctx.dam().restore(&oids)?;
     let ids = |changed: bool| {
         restored
             .iter()
@@ -54,7 +54,6 @@ fn line(r: &Restored) -> String {
 mod tests {
     use super::*;
     use crate::testing::context;
-    use dam_application::{add, commit};
     use dam_domain::{Object, Task};
 
     fn oid(b: u8) -> Oid {
@@ -66,20 +65,8 @@ mod tests {
         ctx.store
             .put(&Object::Task(Task::new(id.clone(), "milk")))
             .unwrap();
-        add(
-            ctx.store.as_ref(),
-            ctx.store.as_ref(),
-            std::slice::from_ref(&id),
-        )
-        .unwrap();
-        commit(
-            ctx.store.as_ref(),
-            ctx.store.as_ref(),
-            ctx.clock.as_ref(),
-            ctx.random.as_ref(),
-            "m",
-        )
-        .unwrap();
+        ctx.dam().add(std::slice::from_ref(&id)).unwrap();
+        ctx.dam().commit("m").unwrap();
         id
     }
 

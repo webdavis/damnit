@@ -23,7 +23,7 @@ fn it_keeps_the_commit_repository_contract() {
 #[test]
 fn it_keeps_the_commit_clears_the_stage_contract() {
     let store = store();
-    contract::commit_clears_the_stage_contract(&store, &store);
+    contract::commit_clears_the_stage_contract(&store);
 }
 
 #[test]
@@ -34,7 +34,7 @@ fn it_keeps_the_remote_tracking_repository_contract() {
 #[test]
 fn it_keeps_the_conflict_repository_contract() {
     let store = store();
-    contract::conflict_repository_contract(&store, &store);
+    contract::conflict_repository_contract(&store);
 }
 
 #[test]
@@ -45,7 +45,7 @@ fn it_keeps_the_notice_repository_contract() {
 #[test]
 fn it_keeps_the_transactional_contract() {
     let store = store();
-    contract::transactional_contract(&store, &store, &store);
+    contract::transactional_contract(&store);
 }
 
 #[test]

@@ -1,4 +1,3 @@
-use dam_application::commit;
 use dam_domain::{CommitId, CommitRecord, Timestamp};
 use serde::Serialize;
 
@@ -11,13 +10,7 @@ use crate::output::Report;
 use crate::view::{Human, View, display, report};
 
 pub(crate) fn run_commit(ctx: &Context, args: CommitArgs) -> Result<Report, CliError> {
-    let record = commit(
-        ctx.store.as_ref(),
-        ctx.store.as_ref(),
-        ctx.clock.as_ref(),
-        ctx.random.as_ref(),
-        &args.message,
-    )?;
+    let record = ctx.dam().commit(&args.message)?;
     report(&CommitDoc::new(&record))
 }
 

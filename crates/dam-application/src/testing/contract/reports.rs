@@ -1,18 +1,15 @@
-use crate::ports::{Conflict, ConflictRepository, Notice, NoticeRepository, ObjectRepository};
+use crate::ports::{Conflict, Notice, NoticeRepository, Store};
 
 use super::{oid, remote, task};
 
-pub fn conflict_repository_contract(
-    objects: &dyn ObjectRepository,
-    conflicts: &dyn ConflictRepository,
-) {
+pub fn conflict_repository_contract(store: &dyn Store) {
     let here = remote("here");
-    assert!(conflicts.conflicts().unwrap().is_empty());
+    assert!(store.conflicts().unwrap().is_empty());
 
     let ours = task(1, "ours", "");
-    objects.put(&ours).unwrap();
+    store.put(&ours).unwrap();
     let theirs = task(1, "theirs", "");
-    conflicts
+    store
         .mark_conflict(&Conflict {
             remote: here.clone(),
             oid: oid(1),
@@ -21,7 +18,7 @@ pub fn conflict_repository_contract(
         })
         .unwrap();
 
-    let held = conflicts.conflicts().unwrap();
+    let held = store.conflicts().unwrap();
     assert_eq!(held.len(), 1);
     assert_eq!(held[0].oid, oid(1));
     assert_eq!(held[0].remote, here);
@@ -29,7 +26,7 @@ pub fn conflict_repository_contract(
     assert_eq!(held[0].theirs, theirs);
 
     let later = task(1, "theirs again", "");
-    conflicts
+    store
         .mark_conflict(&Conflict {
             remote: here.clone(),
             oid: oid(1),
@@ -37,13 +34,13 @@ pub fn conflict_repository_contract(
             theirs: later.clone(),
         })
         .unwrap();
-    let held = conflicts.conflicts().unwrap();
+    let held = store.conflicts().unwrap();
     assert_eq!(held.len(), 1, "one oid conflicts once");
     assert_eq!(held[0].theirs, later);
 
-    conflicts.clear_conflict(&oid(1)).unwrap();
-    assert!(conflicts.conflicts().unwrap().is_empty());
-    conflicts.clear_conflict(&oid(1)).unwrap();
+    store.clear_conflict(&oid(1)).unwrap();
+    assert!(store.conflicts().unwrap().is_empty());
+    store.clear_conflict(&oid(1)).unwrap();
 }
 
 pub fn notice_repository_contract(notices: &dyn NoticeRepository) {

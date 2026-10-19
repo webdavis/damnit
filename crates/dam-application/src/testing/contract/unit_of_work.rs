@@ -1,29 +1,25 @@
 use crate::errors::UseCaseError;
-use crate::ports::{ObjectRepository, StageRepository, StoreError, Transactional};
+use crate::ports::{Store, StoreError};
 use dam_domain::Change;
 
 use super::{oid, task};
 
-pub fn transactional_contract(
-    objects: &dyn ObjectRepository,
-    stage: &dyn StageRepository,
-    transaction: &dyn Transactional,
-) {
-    transaction
+pub fn transactional_contract(store: &dyn Store) {
+    store
         .in_transaction(&mut || {
-            objects.put(&task(1, "kept", ""))?;
-            stage.put_staged(Change::Create {
+            store.put(&task(1, "kept", ""))?;
+            store.put_staged(Change::Create {
                 after: task(1, "kept", ""),
             })?;
             Ok(())
         })
         .expect("work that succeeds commits");
-    assert!(objects.get(&oid(1)).unwrap().is_some());
-    assert_eq!(stage.staged().unwrap().len(), 1);
+    assert!(store.get(&oid(1)).unwrap().is_some());
+    assert_eq!(store.staged().unwrap().len(), 1);
 
-    let failed = transaction.in_transaction(&mut || {
-        objects.put(&task(2, "discarded", ""))?;
-        stage.unstage_all()?;
+    let failed = store.in_transaction(&mut || {
+        store.put(&task(2, "discarded", ""))?;
+        store.unstage_all()?;
         Err(UseCaseError::Store(StoreError::Failed("stopped".into())))
     });
     assert_eq!(
@@ -32,12 +28,12 @@ pub fn transactional_contract(
         "the reason the work stopped reaches the caller unchanged"
     );
     assert_eq!(
-        objects.get(&oid(2)).unwrap(),
+        store.get(&oid(2)).unwrap(),
         None,
         "a write made before the failure is rolled back"
     );
     assert_eq!(
-        stage.staged().unwrap().len(),
+        store.staged().unwrap().len(),
         1,
         "and so is a write to another record family in the same unit"
     );

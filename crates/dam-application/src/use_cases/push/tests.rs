@@ -22,11 +22,9 @@ use crate::ports::RemoteName;
 use crate::ports::Repositories;
 use crate::testing::prelude::*;
 use crate::testing::{
-    EchoCredentials, FixedClock, FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
-    task_caps,
+    EchoCredentials, FixedClock, FixedRandom, Fixture, MemoryStore, ScriptedHelper,
+    ScriptedLauncher, oid, task_caps,
 };
-use crate::use_cases::commit::commit;
-use crate::use_cases::stage::add_all;
 
 pub(super) fn config() -> Config {
     Config {
@@ -75,15 +73,13 @@ pub(super) fn committed_task(store: &MemoryStore, byte: u8) {
     store
         .put(&Object::Task(Task::new(oid(byte), format!("t{byte}"))))
         .unwrap();
-    add_all(store, store, store).unwrap();
-    commit(
-        store,
-        store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(byte),
-        "m",
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(byte),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(store);
+    dam.add_all().unwrap();
+    dam.commit("m").unwrap();
 }
 
 #[test]
@@ -168,15 +164,13 @@ fn an_event_is_skipped_by_a_task_only_helper() {
         When::Day(date(2026, 1, 2)),
     );
     store.put(&Object::Event(e)).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(3),
-        "m",
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(3),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.add_all().unwrap();
+    dam.commit("m").unwrap();
     let (l, pushed) = launcher(|_| vec![]);
     let reports = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
     assert_eq!(reports[0].skipped, 1);

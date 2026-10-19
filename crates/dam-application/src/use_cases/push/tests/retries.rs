@@ -2,10 +2,9 @@ use super::super::*;
 use super::{clock, committed_task, config, launcher};
 use crate::ports::Repositories;
 use crate::remote::{MutationOp, MutationOutcome, MutationVerdict, RemoteMutation};
+use crate::service::Dam;
 use crate::testing::prelude::*;
-use crate::testing::{EchoCredentials, FixedClock, FixedRandom, MemoryStore, oid};
-use crate::use_cases::commit::commit;
-use crate::use_cases::stage::add_all;
+use crate::testing::{EchoCredentials, FixedClock, FixedRandom, Fixture, MemoryStore, oid};
 use dam_domain::{Completion, Field, Object, Task};
 use jiff::civil::date;
 
@@ -38,15 +37,14 @@ fn a_retry_declares_only_the_fields_of_the_change_that_failed() {
     store
         .put(&Object::Task(Task::new(oid(1), "renamed")))
         .unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 19)),
-        &FixedRandom::new(2),
-        "rename",
-    )
-    .unwrap();
+    let fixture = Fixture {
+        clock: FixedClock(date(2026, 9, 19)),
+        random: FixedRandom::new(2),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.add_all().unwrap();
+    dam.commit("rename").unwrap();
     let (l, _) = launcher(answering(false));
     let reports = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
     assert_eq!(reports[0].failed.len(), 1);
@@ -71,14 +69,15 @@ fn a_retry_keeps_the_failed_field_when_a_later_commit_changes_another() {
     store
         .put(&Object::Task(Task::new(oid(1), "renamed")))
         .unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 19)),
-        &FixedRandom::new(2),
-        "rename",
-    )
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    dam.add_all().unwrap();
+    Dam {
+        clock: &FixedClock(date(2026, 9, 19)),
+        random: &FixedRandom::new(2),
+        ..dam
+    }
+    .commit("rename")
     .unwrap();
     let (l, _) = launcher(answering(false));
     push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();
@@ -86,14 +85,13 @@ fn a_retry_keeps_the_failed_field_when_a_later_commit_changes_another() {
     let mut done = Task::new(oid(1), "renamed");
     done.completion = Completion::Done { at: None };
     store.put(&Object::Task(done)).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 20)),
-        &FixedRandom::new(3),
-        "done",
-    )
+    dam.add_all().unwrap();
+    Dam {
+        clock: &FixedClock(date(2026, 9, 20)),
+        random: &FixedRandom::new(3),
+        ..dam
+    }
+    .commit("done")
     .unwrap();
     let (l, pushed) = launcher(answering(true));
     let reports = push(repos, &l, &EchoCredentials, &clock(), &config(), None).unwrap();

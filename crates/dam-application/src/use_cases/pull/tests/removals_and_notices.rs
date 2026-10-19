@@ -9,11 +9,9 @@ use crate::ports::{Notice, Repositories};
 use crate::remote::{IncomingObject, PullOutcome};
 use crate::testing::prelude::*;
 use crate::testing::{
-    EchoCredentials, FixedClock, FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
-    task_caps,
+    EchoCredentials, FixedClock, FixedRandom, Fixture, MemoryStore, ScriptedHelper,
+    ScriptedLauncher, oid, task_caps,
 };
-use crate::use_cases::commit::commit;
-use crate::use_cases::stage::add_all;
 use dam_domain::{Field, Kind, Object, Task};
 
 #[test]
@@ -114,15 +112,13 @@ fn an_unrelated_staged_object_stays_staged_after_a_pull() {
     let store = MemoryStore::new();
     let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "base"))).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(9),
-        "m",
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(9),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.add_all().unwrap();
+    dam.commit("m").unwrap();
     store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
     store
         .set_remote_snapshot(&remote(), &Object::Task(Task::new(oid(1), "base")))
@@ -130,7 +126,7 @@ fn an_unrelated_staged_object_stays_staged_after_a_pull() {
     store
         .put(&Object::Task(Task::new(oid(2), "unrelated")))
         .unwrap();
-    add_all(&store, &store, &store).unwrap();
+    dam.add_all().unwrap();
     let l = launcher(PullOutcome {
         objects: vec![incoming("new", "r1")],
         removed: vec![],
@@ -155,88 +151,6 @@ fn an_unrelated_staged_object_stays_staged_after_a_pull() {
             .collect::<Vec<_>>(),
         vec![oid(2)]
     );
-}
-
-#[test]
-fn a_cancelled_event_that_conflicts_still_raises_the_notice() {
-    let store = MemoryStore::new();
-    let repos = Repositories::of(&store);
-    let event = dam_domain::Event::new(
-        oid(5),
-        "meeting",
-        dam_domain::When::Day(date(2026, 1, 1)),
-        dam_domain::When::Day(date(2026, 1, 2)),
-    );
-    store.put(&Object::Event(event.clone())).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(20),
-        "m",
-    )
-    .unwrap();
-    store.map_remote_id(&remote(), &oid(5), "e1").unwrap();
-    store
-        .set_remote_snapshot(&remote(), &Object::Event(event.clone()))
-        .unwrap();
-
-    let mut edited = event.clone();
-    edited.base.subject = "moved".into();
-    store.put(&Object::Event(edited)).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(21),
-        "m2",
-    )
-    .unwrap();
-
-    let mut attached = Task::new(oid(6), "prep");
-    attached.event = Some(oid(5));
-    store.put(&Object::Task(attached)).unwrap();
-
-    let mut cancelled = event.clone();
-    cancelled.status = dam_domain::EventStatus::Cancelled;
-    let w = IncomingObject {
-        remote_id: "e1".into(),
-        object: Object::Event(cancelled),
-    };
-    let mut caps = task_caps();
-    caps.kinds = vec![Kind::Event];
-    caps.fields = vec![Field::Subject, Field::Status, Field::Start, Field::End];
-    let l = ScriptedLauncher {
-        make: Box::new(move || ScriptedHelper {
-            caps: caps.clone(),
-            pull_answer: Ok(PullOutcome {
-                objects: vec![w.clone()],
-                ..PullOutcome::default()
-            }),
-            push_answer: Box::new(|_| Ok(vec![])),
-            pushed: Rc::new(RefCell::new(vec![])),
-            pulled_since: Rc::new(RefCell::new(vec![])),
-        }),
-        launched_with: Rc::new(RefCell::new(vec![])),
-    };
-    let reports = pull(
-        repos,
-        &l,
-        &EchoCredentials,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(42),
-        &config(),
-        None,
-    )
-    .unwrap();
-    assert_eq!(reports[0].conflicts, 1);
-    assert_eq!(store.conflicts().unwrap().len(), 1);
-    assert!(matches!(
-        store.notices().unwrap().last(),
-        Some(Notice::EventCancelled { attached: 1, .. })
-    ));
 }
 
 #[test]

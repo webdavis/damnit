@@ -1,25 +1,20 @@
 use super::*;
 use crate::testing::prelude::*;
-use crate::testing::{FaultyStore, FixedClock, FixedRandom, MemoryStore, oid};
-use crate::use_cases::commit::commit;
-use crate::use_cases::stage::add;
+use crate::testing::{FaultyStore, FixedRandom, Fixture, MemoryStore, oid};
 use dam_domain::{Object, Task};
-use jiff::civil::date;
 
 fn committed_task(store: &MemoryStore, byte: u8) -> Oid {
     let id = oid(byte);
     store
         .put(&Object::Task(Task::new(id.clone(), format!("t{byte}"))))
         .unwrap();
-    add(store, store, std::slice::from_ref(&id)).unwrap();
-    commit(
-        store,
-        store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(byte),
-        "m",
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(byte),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(store);
+    dam.add(std::slice::from_ref(&id)).unwrap();
+    dam.commit("m").unwrap();
     id
 }
 
@@ -34,7 +29,9 @@ fn a_working_edit_goes_back_to_the_last_commit() {
     let store = MemoryStore::new();
     let id = committed_task(&store, 1);
     retitle(&store, &id, "edited");
-    let out = restore(&store, &store, std::slice::from_ref(&id)).unwrap();
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    let out = dam.restore(std::slice::from_ref(&id)).unwrap();
     assert_eq!(out.len(), 1);
     assert!(out[0].changed);
     assert_eq!(store.get(&id).unwrap().unwrap().base().subject, "t1");
@@ -45,7 +42,9 @@ fn a_working_delete_comes_back() {
     let store = MemoryStore::new();
     let id = committed_task(&store, 1);
     store.delete(&id).unwrap();
-    restore(&store, &store, std::slice::from_ref(&id)).unwrap();
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    dam.restore(std::slice::from_ref(&id)).unwrap();
     assert_eq!(store.get(&id).unwrap().unwrap().base().subject, "t1");
 }
 
@@ -54,9 +53,11 @@ fn a_staged_change_is_unstaged_and_discarded_together() {
     let store = MemoryStore::new();
     let id = committed_task(&store, 1);
     retitle(&store, &id, "edited");
-    add(&store, &store, std::slice::from_ref(&id)).unwrap();
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    dam.add(std::slice::from_ref(&id)).unwrap();
     assert_eq!(store.staged().unwrap().len(), 1);
-    restore(&store, &store, std::slice::from_ref(&id)).unwrap();
+    dam.restore(std::slice::from_ref(&id)).unwrap();
     assert!(store.staged().unwrap().is_empty());
     assert_eq!(store.get(&id).unwrap().unwrap().base().subject, "t1");
 }
@@ -68,7 +69,9 @@ fn an_object_with_no_commit_behind_it_is_refused_naming_it() {
     store
         .put(&Object::Task(Task::new(id.clone(), "fresh")))
         .unwrap();
-    let err = restore(&store, &store, std::slice::from_ref(&id)).unwrap_err();
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    let err = dam.restore(std::slice::from_ref(&id)).unwrap_err();
     assert_eq!(
         err,
         UseCaseError::Refused(Refusal::NotCommitted(id.clone()))
@@ -80,7 +83,9 @@ fn an_object_with_no_commit_behind_it_is_refused_naming_it() {
 fn an_unchanged_object_is_a_no_op_that_says_so() {
     let store = MemoryStore::new();
     let id = committed_task(&store, 1);
-    let out = restore(&store, &store, std::slice::from_ref(&id)).unwrap();
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    let out = dam.restore(std::slice::from_ref(&id)).unwrap();
     assert!(!out[0].changed);
     assert_eq!(store.get(&id).unwrap().unwrap().base().subject, "t1");
 }
@@ -94,7 +99,9 @@ fn a_refusal_leaves_every_other_named_object_alone() {
         .put(&Object::Task(Task::new(fresh.clone(), "fresh")))
         .unwrap();
     retitle(&store, &good, "edited");
-    restore(&store, &store, &[good.clone(), fresh]).unwrap_err();
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    dam.restore(&[good.clone(), fresh]).unwrap_err();
     assert_eq!(
         store.get(&good).unwrap().unwrap().base().subject,
         "edited",
@@ -107,9 +114,11 @@ fn a_stale_stage_is_cleared_even_when_the_working_copy_already_matches() {
     let store = MemoryStore::new();
     let id = committed_task(&store, 1);
     retitle(&store, &id, "edited");
-    add(&store, &store, std::slice::from_ref(&id)).unwrap();
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    dam.add(std::slice::from_ref(&id)).unwrap();
     retitle(&store, &id, "t1");
-    let out = restore(&store, &store, std::slice::from_ref(&id)).unwrap();
+    let out = dam.restore(std::slice::from_ref(&id)).unwrap();
     assert!(out[0].changed);
     assert!(store.staged().unwrap().is_empty());
 }
@@ -119,7 +128,9 @@ fn a_repeated_oid_is_restored_once() {
     let store = MemoryStore::new();
     let id = committed_task(&store, 1);
     retitle(&store, &id, "edited");
-    let out = restore(&store, &store, &[id.clone(), id.clone()]).unwrap();
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    let out = dam.restore(&[id.clone(), id.clone()]).unwrap();
     assert_eq!(out.len(), 1);
     assert!(out[0].changed);
 }
@@ -127,7 +138,9 @@ fn a_repeated_oid_is_restored_once() {
 #[test]
 fn an_oid_neither_layer_knows_is_no_such_object() {
     let store = MemoryStore::new();
-    let err = restore(&store, &store, &[oid(9)]).unwrap_err();
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    let err = dam.restore(&[oid(9)]).unwrap_err();
     assert_eq!(
         err,
         UseCaseError::Refused(Refusal::NoSuchObject(oid(9).short().to_string()))
@@ -141,7 +154,7 @@ fn restore_that_fails_between_two_objects_restores_neither() {
     let b = committed_task(&store.inner, 2);
     retitle(&store.inner, &a, "edited a");
     retitle(&store.inner, &b, "edited b");
-    store.assert_unchanged_when_any_write_fails(|| {
-        restore(&store, &store, &[a.clone(), b.clone()]).map(drop)
-    });
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    store.assert_unchanged_when_any_write_fails(|| dam.restore(&[a.clone(), b.clone()]).map(drop));
 }

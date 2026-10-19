@@ -1,4 +1,4 @@
-use crate::ports::{CommitRepository, RemoteTrackingRepository, StageRepository};
+use crate::ports::{CommitRepository, RemoteTrackingRepository, Store};
 use dam_domain::{Change, CommitRecord, Timestamp};
 
 use super::{commit_id, oid, remote, task};
@@ -59,17 +59,14 @@ pub fn commit_repository_contract(commits: &dyn CommitRepository) {
     assert!(commits.push_retries(&here).unwrap().is_empty());
 }
 
-pub fn commit_clears_the_stage_contract(
-    stage: &dyn StageRepository,
-    commits: &dyn CommitRepository,
-) {
+pub fn commit_clears_the_stage_contract(store: &dyn Store) {
     let committed = record(1, "committed", 1);
     let left = record(2, "left staged", 2).changes.remove(0);
-    stage.put_staged(committed.changes[0].clone()).unwrap();
-    stage.put_staged(left.clone()).unwrap();
-    commits.commit(&committed).unwrap();
+    store.put_staged(committed.changes[0].clone()).unwrap();
+    store.put_staged(left.clone()).unwrap();
+    store.commit(&committed).unwrap();
     assert_eq!(
-        stage.staged().unwrap(),
+        store.staged().unwrap(),
         vec![left],
         "a commit unstages exactly the oids it committed"
     );

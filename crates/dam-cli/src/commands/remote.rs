@@ -51,7 +51,7 @@ pub(crate) fn refresh_stale_unless_no_pull(ctx: &Context) -> Result<(), CliError
         return Ok(());
     }
     Ok(refresh_stale(
-        Repositories::of(ctx.store.as_ref()),
+        Repositories::of(&*ctx.store),
         ctx.launcher.as_ref(),
         ctx.credentials.as_ref(),
         ctx.clock.as_ref(),

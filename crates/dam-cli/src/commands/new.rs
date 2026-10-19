@@ -6,7 +6,7 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 use crate::view::{Human, View, report, wire};
-use dam_application::{NewEvent, NewTask, new_event, new_task};
+use dam_application::{NewEvent, NewTask};
 use dam_domain::Object;
 use serde::Serialize;
 
@@ -41,19 +41,14 @@ pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
                 .as_deref()
                 .ok_or_else(|| CliError::Usage("--event needs --start and --end".into()))?,
         )?;
-        new_event(
-            ctx.store.as_ref(),
-            ctx.random.as_ref(),
-            &ctx.config.categories,
-            NewEvent {
-                subject: args.subject,
-                path: args.path,
-                start,
-                end,
-                labels,
-                body: args.body,
-            },
-        )?
+        ctx.dam().new_event(NewEvent {
+            subject: args.subject,
+            path: args.path,
+            start,
+            end,
+            labels,
+            body: args.body,
+        })?
     } else {
         let priority = args.priority.unwrap_or_default();
         let due = args
@@ -66,20 +61,15 @@ pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
             .as_deref()
             .map(|d| deadline_flag(ctx, d))
             .transpose()?;
-        new_task(
-            ctx.store.as_ref(),
-            ctx.random.as_ref(),
-            &ctx.config.categories,
-            NewTask {
-                subject: args.subject,
-                path: args.path,
-                priority,
-                due,
-                deadline,
-                labels,
-                body: args.body,
-            },
-        )?
+        ctx.dam().new_task(NewTask {
+            subject: args.subject,
+            path: args.path,
+            priority,
+            due,
+            deadline,
+            labels,
+            body: args.body,
+        })?
     };
     let object = ctx
         .store

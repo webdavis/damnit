@@ -1,97 +1,31 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+mod doubles;
 
 use super::super::*;
 use super::remote;
-use crate::config::{Config, CredentialSpec, RemoteConfig};
 use crate::ports::Repositories;
-use crate::remote::{
-    IncomingObject, MutationOutcome, MutationVerdict, PullOutcome, RemoteMutation,
-};
+use crate::service::Dam;
 use crate::testing::prelude::*;
-use crate::testing::{
-    EchoCredentials, FixedClock, FixedRandom, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
-    task_caps,
-};
-use crate::use_cases::commit::commit;
+use crate::testing::{EchoCredentials, FixedClock, FixedRandom, Fixture, MemoryStore, oid};
 use crate::use_cases::pull::pull;
 use crate::use_cases::push::push;
-use crate::use_cases::stage::add_all;
 use dam_domain::{Object, Task};
+use doubles::{
+    config, launcher_that_accepts_every_push, recording_launcher_that_accepts_every_push, upstream,
+};
 use jiff::civil::date;
-
-fn config() -> Config {
-    Config {
-        remotes: vec![RemoteConfig {
-            name: remote(),
-            helper: "todoist".into(),
-            url: "todoist::".into(),
-            credentials: vec![CredentialSpec::Literal {
-                name: "api_token".into(),
-                value: "t".into(),
-            }],
-            stale: None,
-            deadline: None,
-            path: None,
-        }],
-        ..Config::default()
-    }
-}
-
-fn upstream(subject: &str) -> IncomingObject {
-    IncomingObject {
-        remote_id: "r1".into(),
-        object: Object::Task(Task::new(oid(0), subject)),
-    }
-}
-
-fn launcher_that_accepts_every_push(objects: Vec<IncomingObject>) -> ScriptedLauncher {
-    recording_launcher_that_accepts_every_push(objects).0
-}
-
-fn recording_launcher_that_accepts_every_push(
-    objects: Vec<IncomingObject>,
-) -> (ScriptedLauncher, Rc<RefCell<Vec<RemoteMutation>>>) {
-    let pushed = Rc::new(RefCell::new(Vec::new()));
-    let seen = pushed.clone();
-    let l = ScriptedLauncher {
-        make: Box::new(move || ScriptedHelper {
-            caps: task_caps(),
-            pull_answer: Ok(PullOutcome {
-                objects: objects.clone(),
-                ..PullOutcome::default()
-            }),
-            push_answer: Box::new(|ms| {
-                Ok(ms
-                    .iter()
-                    .map(|m| MutationOutcome {
-                        oid: m.oid.clone(),
-                        verdict: MutationVerdict::Accepted {
-                            remote_id: Some("r1".into()),
-                        },
-                    })
-                    .collect())
-            }),
-            pushed: seen.clone(),
-            pulled_since: Rc::new(RefCell::new(vec![])),
-        }),
-        launched_with: Rc::new(RefCell::new(vec![])),
-    };
-    (l, pushed)
-}
 
 fn both_sides_moved_off_one_base() -> MemoryStore {
     let store = MemoryStore::new();
     let repos = Repositories::of(&store);
     store.put(&Object::Task(Task::new(oid(1), "base"))).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(9),
-        "base",
-    )
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    dam.add_all().unwrap();
+    Dam {
+        random: &FixedRandom::new(9),
+        ..dam
+    }
+    .commit("base")
     .unwrap();
     store.map_remote_id(&remote(), &oid(1), "r1").unwrap();
     store
@@ -100,14 +34,12 @@ fn both_sides_moved_off_one_base() -> MemoryStore {
     let mut mine = store.get(&oid(1)).unwrap().unwrap();
     mine.base_mut().subject = "mine".into();
     store.put(&mine).unwrap();
-    add_all(&store, &store, &store).unwrap();
-    commit(
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 18)),
-        &FixedRandom::new(10),
-        "mine",
-    )
+    dam.add_all().unwrap();
+    Dam {
+        random: &FixedRandom::new(10),
+        ..dam
+    }
+    .commit("mine")
     .unwrap();
     let reports = pull(
         repos,
@@ -127,16 +59,13 @@ fn both_sides_moved_off_one_base() -> MemoryStore {
 fn ours_is_committed_and_the_conflict_is_not_raised_again() {
     let store = both_sides_moved_off_one_base();
     let repos = Repositories::of(&store);
-    resolve(
-        &store,
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 19)),
-        &FixedRandom::new(3),
-        &oid(1),
-        Side::Ours,
-    )
-    .unwrap();
+    let fixture = Fixture {
+        clock: FixedClock(date(2026, 9, 19)),
+        random: FixedRandom::new(3),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.resolve(&oid(1), Side::Ours).unwrap();
 
     let owed = store.unpushed(&remote()).unwrap();
     let resolution = owed
@@ -190,16 +119,13 @@ fn ours_is_committed_and_the_conflict_is_not_raised_again() {
 fn theirs_leaves_only_theirs_owed_and_settles_the_conflict() {
     let store = both_sides_moved_off_one_base();
     let repos = Repositories::of(&store);
-    resolve(
-        &store,
-        &store,
-        &store,
-        &FixedClock(date(2026, 9, 19)),
-        &FixedRandom::new(3),
-        &oid(1),
-        Side::Theirs,
-    )
-    .unwrap();
+    let fixture = Fixture {
+        clock: FixedClock(date(2026, 9, 19)),
+        random: FixedRandom::new(3),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    dam.resolve(&oid(1), Side::Theirs).unwrap();
     let (l, sent) = recording_launcher_that_accepts_every_push(vec![]);
     push(
         repos,

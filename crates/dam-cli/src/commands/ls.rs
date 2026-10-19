@@ -1,5 +1,3 @@
-use dam_application::list;
-
 use crate::args::LsArgs;
 use crate::commands::remote::refresh_stale_unless_no_pull;
 use crate::context::Context;
@@ -9,12 +7,7 @@ use crate::view::{ObjectList, report};
 
 pub(crate) fn run_ls(ctx: &Context, args: LsArgs) -> Result<Report, CliError> {
     refresh_stale_unless_no_pull(ctx)?;
-    let objects = list(
-        ctx.store.as_ref(),
-        ctx.clock.as_ref(),
-        &ctx.config,
-        args.query.as_deref(),
-    )?;
+    let objects = ctx.dam().list(args.query.as_deref())?;
     report(&ObjectList {
         objects: &objects,
         zone: &ctx.tz,

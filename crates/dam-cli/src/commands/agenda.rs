@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use dam_application::{Scheduled, Window, agenda, require_fresh};
+use dam_application::{Scheduled, Window};
 use dam_domain::{Oid, Timestamp};
 use jiff::SignedDuration;
 use jiff::tz::TimeZone;
@@ -24,15 +24,8 @@ pub(crate) fn run_agenda(ctx: &Context, args: AgendaArgs) -> Result<Report, CliE
         .map(|(remote, age)| (remote.0.clone(), *age))
         .collect();
     refresh_stale_unless_no_pull(ctx)?;
-    require_fresh(ctx.store.as_ref(), ctx.clock.as_ref(), &ctx.config, &bounds)?;
-    let found = agenda(
-        ctx.store.as_ref(),
-        ctx.clock.as_ref(),
-        &ctx.config,
-        args.query.as_deref(),
-        window,
-        &ctx.tz,
-    )?;
+    ctx.dam().require_fresh(&bounds)?;
+    let found = ctx.dam().agenda(args.query.as_deref(), window, &ctx.tz)?;
     report(&Agenda {
         events: found.iter().map(AgendaEvent::new).collect(),
         zone: &ctx.tz,

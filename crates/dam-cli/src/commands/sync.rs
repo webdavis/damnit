@@ -1,4 +1,4 @@
-use dam_application::{Repositories, Side, pull, push, resolve, resolve_object};
+use dam_application::{Repositories, Side, pull, push};
 
 use crate::args::{PullArgs, PushArgs, ResolveArgs};
 use crate::context::Context;
@@ -12,7 +12,7 @@ use view::{PullRow, Pulled, PushRow, Pushed, Resolved};
 
 pub(crate) fn run_push(ctx: &Context, args: PushArgs) -> Result<Report, CliError> {
     let reports = push(
-        Repositories::of(ctx.store.as_ref()),
+        Repositories::of(&*ctx.store),
         ctx.launcher.as_ref(),
         ctx.credentials.as_ref(),
         ctx.clock.as_ref(),
@@ -26,7 +26,7 @@ pub(crate) fn run_push(ctx: &Context, args: PushArgs) -> Result<Report, CliError
 
 pub(crate) fn run_pull(ctx: &Context, args: PullArgs) -> Result<Report, CliError> {
     let reports = pull(
-        Repositories::of(ctx.store.as_ref()),
+        Repositories::of(&*ctx.store),
         ctx.launcher.as_ref(),
         ctx.credentials.as_ref(),
         ctx.clock.as_ref(),
@@ -40,21 +40,13 @@ pub(crate) fn run_pull(ctx: &Context, args: PullArgs) -> Result<Report, CliError
 }
 
 pub(crate) fn run_resolve(ctx: &Context, args: ResolveArgs) -> Result<Report, CliError> {
-    let oid = resolve_object(ctx.store.as_ref(), &args.oid)?;
+    let oid = ctx.dam().resolve_object(&args.oid)?;
     let side = if args.side.theirs {
         Side::Theirs
     } else {
         Side::Ours
     };
-    resolve(
-        ctx.store.as_ref(),
-        ctx.store.as_ref(),
-        ctx.store.as_ref(),
-        ctx.clock.as_ref(),
-        ctx.random.as_ref(),
-        &oid,
-        side,
-    )?;
+    ctx.dam().resolve(&oid, side)?;
     let side = if args.side.theirs { "theirs" } else { "ours" };
     report(&Resolved { oid: &oid, side })
 }

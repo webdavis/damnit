@@ -3,7 +3,8 @@ use std::collections::BTreeSet;
 use dam_domain::{Object, Oid};
 
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{ObjectRepository, StageRepository};
+use crate::ports::ObjectRepository;
+use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::load::no_such_object;
 
@@ -13,33 +14,33 @@ pub struct Restored {
     pub changed: bool,
 }
 
-pub fn restore(
-    objects: &dyn ObjectRepository,
-    stage: &dyn StageRepository,
-    oids: &[Oid],
-) -> Result<Vec<Restored>, UseCaseError> {
-    atomically(objects, || {
-        let oids = each_once(oids);
-        let committed = every_commit_before_writing_any(objects, &oids)?;
-        let staged: BTreeSet<Oid> = stage
-            .staged()?
-            .into_iter()
-            .map(|c| c.oid().clone())
-            .collect();
-        let mut restored = Vec::with_capacity(oids.len());
-        for (oid, object) in oids.into_iter().zip(committed) {
-            let changed = staged.contains(oid) || objects.get(oid)?.as_ref() != Some(&object);
-            if changed {
-                objects.put(&object)?;
-                stage.unstage(oid)?;
+impl Dam<'_> {
+    pub fn restore(&self, oids: &[Oid]) -> Result<Vec<Restored>, UseCaseError> {
+        atomically(self.store, || {
+            let oids = each_once(oids);
+            let committed = every_commit_before_writing_any(self.store, &oids)?;
+            let staged: BTreeSet<Oid> = self
+                .store
+                .staged()?
+                .into_iter()
+                .map(|c| c.oid().clone())
+                .collect();
+            let mut restored = Vec::with_capacity(oids.len());
+            for (oid, object) in oids.into_iter().zip(committed) {
+                let changed =
+                    staged.contains(oid) || self.store.get(oid)?.as_ref() != Some(&object);
+                if changed {
+                    self.store.put(&object)?;
+                    self.store.unstage(oid)?;
+                }
+                restored.push(Restored {
+                    oid: oid.clone(),
+                    changed,
+                });
             }
-            restored.push(Restored {
-                oid: oid.clone(),
-                changed,
-            });
-        }
-        Ok(restored)
-    })
+            Ok(restored)
+        })
+    }
 }
 
 fn each_once(oids: &[Oid]) -> Vec<&Oid> {

@@ -1,4 +1,3 @@
-use dam_application::{remove, resolve_object};
 use dam_domain::Oid;
 use serde::Serialize;
 
@@ -37,8 +36,8 @@ impl View for Removed<'_> {
 }
 
 pub(crate) fn run(ctx: &Context, args: RmArgs) -> Result<Report, CliError> {
-    let oid = resolve_object(ctx.store.as_ref(), &args.oid)?;
-    let plan = remove(ctx.store.as_ref(), &oid)?;
+    let oid = ctx.dam().resolve_object(&args.oid)?;
+    let plan = ctx.dam().remove(&oid)?;
     report(&Removed {
         oid: &oid,
         descendants: &plan.descendants,

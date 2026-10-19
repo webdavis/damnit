@@ -3,8 +3,10 @@ mod dispositions;
 mod recurrence;
 
 use super::*;
+use crate::ports::Clock;
+use crate::service::Dam;
 use crate::testing::prelude::*;
-use crate::testing::{FixedClock, FixedRandom, MemoryStore, oid};
+use crate::testing::{FixedClock, FixedRandom, Fixture, MemoryStore, oid};
 use dam_domain::{Completion, Event, Object, Path, Task, Tracked, When};
 use jiff::civil::date;
 
@@ -49,17 +51,14 @@ pub(super) fn today() -> FixedClock {
 fn an_unblocked_task_is_done() {
     let store = MemoryStore::new();
     let id = put_task(&store, 1, "milk", "", false);
-    assert!(plan_complete(&store, &id).unwrap().blockers.is_empty());
+    let fixture = Fixture {
+        random: FixedRandom::new(9),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    assert!(dam.plan_complete(&id).unwrap().blockers.is_empty());
     assert_eq!(
-        complete(
-            &store,
-            &today(),
-            &FixedRandom::new(9),
-            &id,
-            Force::No,
-            Tracked::No
-        )
-        .unwrap(),
+        dam.complete(&id, Force::No, Tracked::No).unwrap(),
         Completed::Done
     );
     assert!(task_of(&store, &id).completion.is_done());
@@ -75,15 +74,12 @@ fn an_event_is_not_a_task() {
         When::Day(date(2026, 1, 2)),
     );
     store.put(&Object::Event(e)).unwrap();
-    let err = complete(
-        &store,
-        &today(),
-        &FixedRandom::new(9),
-        &oid(5),
-        Force::No,
-        Tracked::No,
-    )
-    .unwrap_err();
+    let fixture = Fixture {
+        random: FixedRandom::new(9),
+        ..Fixture::default()
+    };
+    let dam = fixture.dam(&store);
+    let err = dam.complete(&oid(5), Force::No, Tracked::No).unwrap_err();
     assert_eq!(err, UseCaseError::Refused(Refusal::NotATask(oid(5))));
 }
 
@@ -93,15 +89,15 @@ fn completing_a_task_records_when_it_happened() {
     let id = put_task(&store, 1, "milk", "", false);
     let clock = FixedClock(date(2026, 9, 18));
     assert_eq!(task_of(&store, &id).completion, Completion::Open);
-    complete(
-        &store,
-        &clock,
-        &FixedRandom::new(1),
-        &id,
-        Force::No,
-        Tracked::No,
-    )
-    .unwrap();
+    let fixture = Fixture {
+        random: FixedRandom::new(1),
+        ..Fixture::default()
+    };
+    let dam = Dam {
+        clock: &clock,
+        ..fixture.dam(&store)
+    };
+    dam.complete(&id, Force::No, Tracked::No).unwrap();
     let task = task_of(&store, &id);
     assert_eq!(
         task.completion,
@@ -116,26 +112,24 @@ fn completing_an_already_completed_task_changes_nothing() {
     let store = MemoryStore::new();
     let id = put_task(&store, 1, "milk", "", false);
     let first = FixedClock(date(2026, 9, 18));
-    complete(
-        &store,
-        &first,
-        &FixedRandom::new(1),
-        &id,
-        Force::No,
-        Tracked::No,
-    )
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    Dam {
+        clock: &first,
+        random: &FixedRandom::new(1),
+        ..dam
+    }
+    .complete(&id, Force::No, Tracked::No)
     .unwrap();
     let after_first = store.get(&id).unwrap().unwrap();
 
     let later = FixedClock(date(2026, 9, 19));
-    complete(
-        &store,
-        &later,
-        &FixedRandom::new(1),
-        &id,
-        Force::No,
-        Tracked::No,
-    )
+    Dam {
+        clock: &later,
+        random: &FixedRandom::new(1),
+        ..dam
+    }
+    .complete(&id, Force::No, Tracked::No)
     .unwrap();
     assert_eq!(
         store.get(&id).unwrap().unwrap(),
@@ -151,5 +145,7 @@ fn a_dependency_that_no_longer_exists_counts_as_closed() {
     let mut t = store.get(&id).unwrap().unwrap();
     t.base_mut().depends.push(oid(3));
     store.put(&t).unwrap();
-    assert!(plan_complete(&store, &id).unwrap().blockers.is_empty());
+    let fixture = Fixture::default();
+    let dam = fixture.dam(&store);
+    assert!(dam.plan_complete(&id).unwrap().blockers.is_empty());
 }
