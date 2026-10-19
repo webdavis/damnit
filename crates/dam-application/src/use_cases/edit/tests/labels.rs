@@ -1,8 +1,7 @@
 use super::super::*;
-use super::seed;
 use crate::config::Config;
 use crate::errors::Refusal;
-use crate::testing::{Fixture, MemoryStore};
+use crate::testing::{Scenario, oid, task};
 use dam_domain::{Categories, Category};
 
 #[test]
@@ -13,16 +12,13 @@ fn labels_are_added_removed_and_checked() {
         exclusive: true,
     }])
     .unwrap();
-    let store = MemoryStore::new();
-    let id = seed(&store, 1);
-    let fixture = Fixture {
-        config: Config {
-            categories: cats,
-            ..Config::default()
-        },
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(&store);
+    let s = Scenario::default().configured(Config {
+        categories: cats,
+        ..Config::default()
+    });
+    s.working(task(1));
+    let id = oid(1);
+    let dam = s.dam();
     dam.edit(
         &id,
         EditFields {

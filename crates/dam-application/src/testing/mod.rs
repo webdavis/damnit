@@ -15,7 +15,7 @@ pub use launchers::{
     Pushed, accepting_all, answering, pulling, pulling_events, pushing, refusing_all,
 };
 pub use memory_store::MemoryStore;
-pub use scenario::{Scenario, config, task, todoist};
+pub use scenario::{Scenario, config, event, task, todoist};
 
 pub mod prelude {
     pub use crate::ports::{

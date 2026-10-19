@@ -1,5 +1,6 @@
-use dam_domain::{Object, Oid, Task};
+use dam_domain::{Event, Object, Oid, Task, When};
 use jiff::SignedDuration;
+use jiff::civil::date;
 
 use crate::config::{Config, CredentialSpec, RemoteConfig};
 use crate::ports::{
@@ -124,4 +125,13 @@ impl Scenario {
         dam.commit("m").unwrap();
         self
     }
+}
+
+pub fn event(byte: u8) -> Object {
+    Object::Event(Event::new(
+        oid(byte),
+        format!("e{byte}"),
+        When::Day(date(2026, 1, 1)),
+        When::Day(date(2026, 1, 2)),
+    ))
 }
