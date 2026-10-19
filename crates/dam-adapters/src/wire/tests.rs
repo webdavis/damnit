@@ -2,7 +2,6 @@ use super::*;
 use dam_domain::{
     Attendee, Completion, Event, Object, Oid, Priority, ResponseStatus, Task, Transparency, When,
 };
-use decode::WireError;
 use jiff::civil::date;
 
 fn oid(b: u8) -> Oid {
@@ -63,17 +62,6 @@ fn an_open_task_does_not_take_a_completion_time_from_the_wire() {
 }
 
 #[test]
-fn an_unreadable_completion_time_is_rejected_naming_the_field() {
-    let mut done = Task::new(oid(1), "milk");
-    done.completion = Completion::Done { at: None };
-    let mut wire = to_wire(&Object::Task(done), None);
-    wire.task.as_mut().unwrap().completed_at = Some("last tuesday".into());
-    let err = from_wire(&wire).unwrap_err();
-    assert_eq!(err.field(), "completed_at");
-    assert!(err.to_string().contains("last tuesday"), "{err}");
-}
-
-#[test]
 fn an_event_round_trips_with_a_zoned_start() {
     let start = date(2026, 9, 25)
         .at(14, 0, 0, 0)
@@ -94,101 +82,6 @@ fn an_event_round_trips_with_a_zoned_start() {
     );
     assert_eq!(wire.event.as_ref().unwrap().transparency, "free");
     assert_eq!(from_wire(&wire).unwrap(), object);
-}
-
-#[test]
-fn a_bad_date_is_a_date_rejection_that_names_the_field() {
-    let mut wire = to_wire(&Object::Task(Task::new(oid(3), "x")), None);
-    wire.task.as_mut().unwrap().due = Some("someday".into());
-    let err = from_wire(&wire).unwrap_err();
-    assert_eq!(
-        err,
-        WireError::Date {
-            field: "due",
-            value: "someday".into()
-        }
-    );
-    assert_eq!(err.to_string(), "due: cannot read \"someday\"");
-}
-
-#[test]
-fn an_unknown_kind_is_its_own_rejection() {
-    let mut wire = to_wire(&Object::Task(Task::new(oid(4), "x")), None);
-    wire.kind = "note".into();
-    let err = from_wire(&wire).unwrap_err();
-    assert_eq!(err, WireError::UnknownKind("note".into()));
-    assert_eq!(err.to_string(), "kind: cannot read \"note\"");
-}
-
-#[test]
-fn each_rejection_class_is_distinguishable_without_matching_a_sentence() {
-    let good = to_wire(&Object::Task(Task::new(oid(5), "x")), None);
-
-    let mut bad_oid = good.clone();
-    bad_oid.oid = "nothex".into();
-    assert!(matches!(
-        from_wire(&bad_oid).unwrap_err(),
-        WireError::Oid { field: "oid", .. }
-    ));
-
-    let mut bad_path = good.clone();
-    bad_path.path = "a//b".into();
-    assert!(matches!(
-        from_wire(&bad_path).unwrap_err(),
-        WireError::Path { .. }
-    ));
-
-    let mut bad_priority = good.clone();
-    bad_priority.task.as_mut().unwrap().priority = 9;
-    assert!(matches!(
-        from_wire(&bad_priority).unwrap_err(),
-        WireError::Priority { .. }
-    ));
-
-    let mut bad_depends = good.clone();
-    bad_depends.depends = vec!["nope".into()];
-    assert!(matches!(
-        from_wire(&bad_depends).unwrap_err(),
-        WireError::Oid {
-            field: "depends",
-            ..
-        }
-    ));
-}
-
-#[test]
-fn an_unknown_event_word_names_the_field_it_came_from() {
-    let start = date(2026, 9, 25)
-        .at(14, 0, 0, 0)
-        .in_tz("America/Denver")
-        .unwrap();
-    let object = Object::Event(Event::new(
-        oid(6),
-        "standup",
-        When::At(start.clone()),
-        When::At(start),
-    ));
-    let mut wire = to_wire(&object, None);
-    wire.event.as_mut().unwrap().transparency = "opaque".into();
-    assert_eq!(
-        from_wire(&wire).unwrap_err(),
-        WireError::UnknownEnum {
-            field: "transparency",
-            value: "opaque".into()
-        }
-    );
-}
-
-#[test]
-fn a_pull_hands_its_cancellations_on() {
-    let response = dam_protocol::PullResponse {
-        cancelled: vec!["primary/e1".into()],
-        ..Default::default()
-    };
-    assert_eq!(
-        pull_from_wire(response).cancelled,
-        vec!["primary/e1".to_string()]
-    );
 }
 
 #[test]
@@ -228,23 +121,6 @@ fn a_kind_or_field_this_dam_does_not_know_is_dropped_rather_than_refused() {
     assert_eq!(caps.fields, vec![dam_domain::Field::Subject]);
     assert_eq!(caps.credentials, vec!["api_token".to_string()]);
     assert!(caps.incremental);
-}
-
-#[test]
-fn a_pulled_object_with_no_remote_id_is_rejected_under_an_empty_name() {
-    let response = dam_protocol::PullResponse {
-        objects: vec![to_wire(&Object::Task(Task::new(oid(1), "milk")), None)],
-        ..Default::default()
-    };
-    let outcome = pull_from_wire(response);
-    assert!(outcome.objects.is_empty());
-    assert_eq!(
-        outcome.rejected,
-        vec![dam_application::RejectedObject {
-            remote_id: String::new(),
-            why: "an object with no remote id was skipped".into(),
-        }]
-    );
 }
 
 #[test]

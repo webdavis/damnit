@@ -6,8 +6,8 @@ use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, channel};
 use std::time::{Duration, Instant};
 
 use dam_application::{
-    HelperError, MutationOutcome, PullOutcome, RemoteCapabilities, RemoteConfig, RemoteHelper,
-    RemoteMutation,
+    ConfiguredDuration, HelperError, MutationOutcome, PullOutcome, RemoteCapabilities,
+    RemoteConfig, RemoteHelper, RemoteMutation,
 };
 use dam_protocol::{
     Capabilities, PullResponse, PushResponse, Reply, Request, read_line, write_line,
@@ -16,11 +16,16 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 
 use super::stderr_tail::{StderrTail, keep_the_tail_until_end_of_input};
-use crate::Interrupt;
 use crate::wire::{capabilities_from_wire, mutation_to_wire, outcomes_from_wire, pull_from_wire};
+use crate::{Interrupt, parse_duration};
 
-const ANSWER_DEADLINE_WHEN_THE_REMOTE_NAMES_NONE: Duration = Duration::from_secs(60);
-const ANSWER_DEADLINE_WHEN_THE_REMOTE_NAMES_NONE_AS_WRITTEN: &str = "60s";
+const DEFAULT_ANSWER_DEADLINE: &str = "60s";
+
+fn answer_deadline_when_the_remote_names_none() -> ConfiguredDuration {
+    let text = DEFAULT_ANSWER_DEADLINE.to_string();
+    let value = parse_duration("deadline", &text).expect("the default deadline parses");
+    ConfiguredDuration { value, text }
+}
 
 const RECHECK_INTERVAL: Duration = Duration::from_millis(25);
 
@@ -46,8 +51,7 @@ pub(super) struct ProcessHelper {
     answers: Receiver<std::io::Result<Option<Value>>>,
     helper: String,
     stderr_tail: StderrTail,
-    deadline: Duration,
-    deadline_as_written: String,
+    deadline: ConfiguredDuration,
     killed: bool,
     interrupt: Interrupt,
 }
@@ -78,16 +82,8 @@ impl ProcessHelper {
             stderr_tail,
             deadline: remote
                 .deadline
-                .as_ref()
-                .map(|d| d.value)
-                .unwrap_or(ANSWER_DEADLINE_WHEN_THE_REMOTE_NAMES_NONE),
-            deadline_as_written: remote
-                .deadline
-                .as_ref()
-                .map(|d| d.text.clone())
-                .unwrap_or_else(|| {
-                    ANSWER_DEADLINE_WHEN_THE_REMOTE_NAMES_NONE_AS_WRITTEN.to_string()
-                }),
+                .clone()
+                .unwrap_or_else(answer_deadline_when_the_remote_names_none),
             killed: false,
             interrupt,
         }
@@ -147,11 +143,11 @@ impl ProcessHelper {
                         self.kill_and_reap();
                         return Err(HelperError::Cancelled);
                     }
-                    if started.elapsed() >= self.deadline {
+                    if started.elapsed() >= self.deadline.value {
                         self.kill_and_reap();
                         return Err(HelperError::Timeout {
                             helper: self.helper.clone(),
-                            deadline: self.deadline_as_written.clone(),
+                            deadline: self.deadline.text.clone(),
                             said: self.said(),
                         });
                     }
