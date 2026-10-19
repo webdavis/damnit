@@ -1,6 +1,6 @@
 use super::*;
-use dam_application::EditorError;
-use dam_domain::{Blockers, QueryError};
+use crate::editor::EditorError;
+use dam_domain::{Blockers, Oid, QueryError};
 
 fn oid(byte: u8) -> Oid {
     Oid::generate(&mut |x: &mut [u8]| x.fill(byte))
@@ -43,11 +43,13 @@ fn the_message_is_the_sentence_the_human_form_prints() {
 
 #[test]
 fn an_ambiguous_prefix_is_a_usage_failure_listing_what_it_matched() {
-    let error = CliError::Ambiguous {
+    let error = CliError::from(Refusal::AmbiguousPrefix {
         text: "abab".into(),
-        matches: vec![oid(5), oid(6)],
-    };
+        matches: vec![oid(5).to_string(), oid(6).to_string()],
+    });
+    assert_eq!(error.exit_code(), 2);
     assert_eq!(error.document()["error"]["kind"], "usage");
+    assert_eq!(error.document()["error"]["rule"], "ambiguous_prefix");
     assert_eq!(
         error.document()["error"]["oids"],
         serde_json::json!([oid(5).to_string(), oid(6).to_string()])
@@ -55,8 +57,15 @@ fn an_ambiguous_prefix_is_a_usage_failure_listing_what_it_matched() {
 }
 
 #[test]
+fn a_prefix_that_is_not_an_oid_is_a_usage_failure() {
+    let error = CliError::UseCase(UseCaseError::NotAnOid("f5".into()));
+    assert_eq!(error.exit_code(), 2);
+    assert_eq!(error.kind(), "usage");
+}
+
+#[test]
 fn a_failure_naming_no_object_carries_an_empty_list() {
-    let error = CliError::UseCase(UseCaseError::Editor(EditorError("no editor".into())));
+    let error = CliError::Editor(EditorError("no editor".into()));
     assert_eq!(error.document()["error"]["oids"], serde_json::json!([]));
     assert_eq!(error.document()["error"]["rule"], serde_json::Value::Null);
 }
@@ -95,7 +104,7 @@ fn every_kind_the_readme_lists_is_one_dam_reports() {
         CliError::UseCase(UseCaseError::Credential(
             dam_application::CredentialError::Missing("x".into()),
         )),
-        CliError::UseCase(UseCaseError::Editor(EditorError("x".into()))),
+        CliError::Editor(EditorError("x".into())),
         CliError::UseCase(UseCaseError::Parse("x".into())),
         CliError::Usage("x".into()),
         CliError::Cancelled,

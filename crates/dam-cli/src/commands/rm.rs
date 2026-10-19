@@ -1,14 +1,13 @@
-use dam_application::remove;
+use dam_application::{remove, resolve_object};
 use dam_domain::Oid;
 
 use crate::args::RmArgs;
 use crate::context::Context;
 use crate::error::CliError;
-use crate::oids::resolve_oid;
 use crate::output::Report;
 
 pub(crate) fn run(ctx: &mut Context, args: RmArgs) -> Result<Report, CliError> {
-    let oid = resolve_oid(ctx.store.as_ref(), &args.oid)?;
+    let oid = resolve_object(ctx.store.as_ref(), &args.oid)?;
     let plan = remove(ctx.store.as_ref(), &oid)?;
     let shorts = |v: &[Oid]| v.iter().map(Oid::short).collect::<Vec<_>>().join(", ");
     let mut human = format!("removed {}", oid.short());

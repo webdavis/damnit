@@ -50,6 +50,9 @@ impl RemoteTrackingRepository for FaultyStore {
         self.inner.set_sync_token(remote, token)
     }
     fn last_pull(&self, remote: &RemoteName) -> Result<Option<Timestamp>, StoreError> {
+        if self.last_pull_unreadable.get() {
+            return Err(StoreError::Failed("the last pull could not be read".into()));
+        }
         self.inner.last_pull(remote)
     }
     fn set_last_pull(&self, remote: &RemoteName, at: Timestamp) -> Result<(), StoreError> {

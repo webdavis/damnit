@@ -13,6 +13,7 @@ pub struct FaultyStore {
     pub inner: MemoryStore,
     writes_before_failing: Cell<usize>,
     inside_a_unit_of_work: Cell<bool>,
+    last_pull_unreadable: Cell<bool>,
 }
 
 impl FaultyStore {
@@ -21,11 +22,16 @@ impl FaultyStore {
             inner,
             writes_before_failing: Cell::new(usize::MAX),
             inside_a_unit_of_work: Cell::new(false),
+            last_pull_unreadable: Cell::new(false),
         }
     }
 
     pub fn fail_at_write(&self, index: usize) {
         self.writes_before_failing.set(index);
+    }
+
+    pub fn fail_reading_the_last_pull(&self) {
+        self.last_pull_unreadable.set(true);
     }
 
     pub fn assert_unchanged_when_any_write_fails(

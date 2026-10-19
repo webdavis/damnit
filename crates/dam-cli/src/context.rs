@@ -1,13 +1,11 @@
 use std::path::{Path, PathBuf};
 
 use dam_adapters::{
-    EnvEditor, OsRandom, ProcessCredentialSource, ProcessLauncher, SqliteStore, SystemClock,
-    load_config,
+    OsRandom, ProcessCredentialSource, ProcessLauncher, SqliteStore, SystemClock, load_config,
 };
-use dam_application::{
-    Clock, Config, CredentialSource, EditorSession, HelperLauncher, Randomness, Store,
-};
+use dam_application::{Clock, Config, CredentialSource, HelperLauncher, Randomness, Store};
 
+use crate::editor::{EditorSession, EnvEditor};
 use crate::error::CliError;
 use crate::output::Format;
 use crate::prompt::{Prompt, RefusingPrompt, TerminalPrompt};

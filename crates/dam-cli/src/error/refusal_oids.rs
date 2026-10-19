@@ -11,6 +11,7 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
         Refusal::Cycle { oid, path } => std::iter::once(named(oid))
             .chain(path.iter().map(named))
             .collect(),
+        Refusal::AmbiguousPrefix { matches, .. } => matches.clone(),
         Refusal::NotATask(oid)
         | Refusal::NotAnEvent(oid)
         | Refusal::MoveInsideItself(oid)

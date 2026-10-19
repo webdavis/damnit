@@ -7,6 +7,7 @@ pub(crate) mod edit;
 pub(crate) mod freshness;
 pub(crate) mod list;
 pub(crate) mod new_object;
+pub(crate) mod prefix;
 pub(crate) mod pull;
 pub(crate) mod push;
 pub(crate) mod relocate;

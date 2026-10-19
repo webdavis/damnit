@@ -1,6 +1,6 @@
 use dam_domain::{Blockers, LabelViolation, Oid, QueryError, Tracked};
 
-use crate::ports::{CredentialError, EditorError, HelperError, StoreError};
+use crate::ports::{CredentialError, HelperError, StoreError};
 
 mod refusal_display;
 mod use_case_display;
@@ -23,6 +23,10 @@ pub enum Refusal {
     },
     NoSuchObject(String),
     NoWorkingObject(String),
+    AmbiguousPrefix {
+        text: String,
+        matches: Vec<String>,
+    },
     NoSuchRemote(String),
     RemoteExists(String),
     NotATask(Oid),
@@ -59,9 +63,9 @@ pub enum UseCaseError {
     Store(StoreError),
     Helper(HelperError),
     Credential(CredentialError),
-    Editor(EditorError),
     Parse(String),
     Query(QueryError),
+    NotAnOid(String),
 }
 
 impl Refusal {
@@ -74,6 +78,7 @@ impl Refusal {
             Refusal::NotACategoryValue { .. } => "not_a_category_value",
             Refusal::NoSuchObject(_) => "no_such_object",
             Refusal::NoWorkingObject(_) => "no_working_object",
+            Refusal::AmbiguousPrefix { .. } => "ambiguous_prefix",
             Refusal::NoSuchRemote(_) => "no_such_remote",
             Refusal::RemoteExists(_) => "remote_exists",
             Refusal::NotATask(_) => "not_a_task",
@@ -112,11 +117,6 @@ impl From<HelperError> for UseCaseError {
 impl From<CredentialError> for UseCaseError {
     fn from(e: CredentialError) -> UseCaseError {
         UseCaseError::Credential(e)
-    }
-}
-impl From<EditorError> for UseCaseError {
-    fn from(e: EditorError) -> UseCaseError {
-        UseCaseError::Editor(e)
     }
 }
 

@@ -1,19 +1,17 @@
-use dam_application::{Refusal, UseCaseError, log};
+use dam_application::{Refusal, UseCaseError, resolve_commit, resolve_object};
+use dam_domain::Object;
 
 use crate::args::ShowArgs;
 use crate::commands::commit::{commit_json, commit_line};
-use crate::commands::remote::maybe_pull_stale;
+use crate::commands::remote::refresh_stale_unless_no_pull;
 use crate::commands::status::change_line;
 use crate::context::Context;
 use crate::error::CliError;
-use crate::oids::resolve_oid;
 use crate::output::{Report, object_json, object_line};
 
 pub(crate) fn run_show(ctx: &mut Context, args: ShowArgs) -> Result<Report, CliError> {
-    maybe_pull_stale(ctx)?;
-    if let Ok(oid) = resolve_oid(ctx.store.as_ref(), &args.id)
-        && let Some(object) = ctx.store.get(&oid)?
-    {
+    refresh_stale_unless_no_pull(ctx)?;
+    if let Some(object) = working_object_named(ctx, &args.id)? {
         let b = object.base();
         let mut human = vec![object_line(&object), format!("oid: {}", b.oid)];
         if !b.body.is_empty() {
@@ -35,30 +33,25 @@ pub(crate) fn run_show(ctx: &mut Context, args: ShowArgs) -> Result<Report, CliE
             data: object_json(&object)?,
         });
     }
-    let matches: Vec<_> = log(ctx.store.as_ref())?
-        .into_iter()
-        .filter(|c| c.id.as_str().starts_with(&args.id))
-        .collect();
-    match matches.as_slice() {
-        [record] => {
-            let mut human = vec![commit_line(record)];
-            human.extend(
-                record
-                    .changes
-                    .iter()
-                    .map(|c| format!("  {}", change_line(c))),
-            );
-            Ok(Report {
-                human: human.join("\n"),
-                data: commit_json(record)?,
-            })
-        }
-        [] => Err(UseCaseError::Refused(Refusal::NoSuchObject(args.id)).into()),
-        many => Err(CliError::Usage(format!(
-            "{} matches {} commits",
-            args.id,
-            many.len()
-        ))),
+    let record = resolve_commit(ctx.store.as_ref(), &args.id)?;
+    let mut human = vec![commit_line(&record)];
+    human.extend(
+        record
+            .changes
+            .iter()
+            .map(|c| format!("  {}", change_line(c))),
+    );
+    Ok(Report {
+        human: human.join("\n"),
+        data: commit_json(&record)?,
+    })
+}
+
+fn working_object_named(ctx: &Context, text: &str) -> Result<Option<Object>, CliError> {
+    match resolve_object(ctx.store.as_ref(), text) {
+        Ok(oid) => Ok(ctx.store.get(&oid)?),
+        Err(UseCaseError::Refused(Refusal::NoWorkingObject(_))) => Ok(None),
+        Err(e) => Err(e.into()),
     }
 }
 
@@ -178,12 +171,15 @@ mod tests {
             },
         )
         .unwrap_err();
-        match err {
-            CliError::Usage(msg) => {
-                assert!(msg.contains("abababab"), "{msg}");
-                assert!(msg.contains("2 commits"), "{msg}");
-            }
-            other => panic!("expected a usage error, got {other:?}"),
-        }
+        let ids: Vec<String> = ctx
+            .store
+            .log()
+            .unwrap()
+            .iter()
+            .map(|c| c.id.to_string())
+            .collect();
+        assert_eq!(err.exit_code(), 2);
+        assert_eq!(err.document()["error"]["rule"], "ambiguous_prefix");
+        assert_eq!(err.document()["error"]["oids"], serde_json::json!(ids));
     }
 }

@@ -9,7 +9,7 @@ fn oid_of(byte: u8) -> Oid {
     Oid::generate(&mut |x: &mut [u8]| x.fill(byte))
 }
 
-const HAND_COUNTED_RULES: usize = 23;
+const HAND_COUNTED_RULES: usize = 24;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -36,6 +36,7 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::UnreadableRecurrence { .. } => 20,
         Refusal::NotACategoryValue { .. } => 21,
         Refusal::NoConflict(_) => 22,
+        Refusal::AmbiguousPrefix { .. } => 23,
     }
 }
 
@@ -89,6 +90,10 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
             value: "home".into(),
         },
         Refusal::NoConflict(oid()),
+        Refusal::AmbiguousPrefix {
+            text: "abab".into(),
+            matches: vec![oid().to_string(), oid_of(2).to_string()],
+        },
     ]
 }
 

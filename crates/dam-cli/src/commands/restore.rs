@@ -1,18 +1,17 @@
-use dam_application::{Restored, restore};
+use dam_application::{Restored, resolve_object, restore};
 use dam_domain::Oid;
 
 use crate::args::RestoreArgs;
 use crate::context::Context;
 use crate::error::CliError;
-use crate::oids::resolve_oid;
 use crate::output::Report;
 
 pub(crate) fn run(ctx: &mut Context, args: RestoreArgs) -> Result<Report, CliError> {
     let oids = args
         .oids
         .iter()
-        .map(|text| resolve_oid(ctx.store.as_ref(), text))
-        .collect::<Result<Vec<Oid>, CliError>>()?;
+        .map(|text| resolve_object(ctx.store.as_ref(), text))
+        .collect::<Result<Vec<Oid>, _>>()?;
     let restored = restore(ctx.store.as_ref(), ctx.store.as_ref(), &oids)?;
     let ids = |changed: bool| {
         restored

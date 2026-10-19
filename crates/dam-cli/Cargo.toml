@@ -18,6 +18,4 @@ clap = { workspace = true, features = ["env", "wrap_help"] }
 serde_json.workspace = true
 jiff.workspace = true
 toon-format.workspace = true
-
-[dev-dependencies]
 tempfile.workspace = true

@@ -1,9 +1,10 @@
-use dam_application::{PullReport, PushReport, Repositories, Side, pull, push, resolve};
+use dam_application::{
+    PullReport, PushReport, Repositories, Side, pull, push, resolve, resolve_object,
+};
 
 use crate::args::{PullArgs, PushArgs, ResolveArgs};
 use crate::context::Context;
 use crate::error::CliError;
-use crate::oids::resolve_oid;
 use crate::output::Report;
 
 pub(crate) fn run_push(ctx: &mut Context, args: PushArgs) -> Result<Report, CliError> {
@@ -38,7 +39,7 @@ pub(crate) fn run_pull(ctx: &mut Context, args: PullArgs) -> Result<Report, CliE
 }
 
 pub(crate) fn run_resolve(ctx: &mut Context, args: ResolveArgs) -> Result<Report, CliError> {
-    let oid = resolve_oid(ctx.store.as_ref(), &args.oid)?;
+    let oid = resolve_object(ctx.store.as_ref(), &args.oid)?;
     let side = if args.side.theirs {
         Side::Theirs
     } else {

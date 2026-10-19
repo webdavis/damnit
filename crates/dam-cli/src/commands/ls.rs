@@ -1,13 +1,13 @@
 use dam_application::list;
 
 use crate::args::LsArgs;
-use crate::commands::remote::maybe_pull_stale;
+use crate::commands::remote::refresh_stale_unless_no_pull;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::{Report, objects_report};
 
 pub(crate) fn run_ls(ctx: &mut Context, args: LsArgs) -> Result<Report, CliError> {
-    maybe_pull_stale(ctx)?;
+    refresh_stale_unless_no_pull(ctx)?;
     let objects = list(
         ctx.store.as_ref(),
         ctx.clock.as_ref(),

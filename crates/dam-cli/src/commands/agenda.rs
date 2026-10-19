@@ -4,7 +4,7 @@ use jiff::SignedDuration;
 
 use crate::args::AgendaArgs;
 use crate::commands::parsing::when_flag;
-use crate::commands::remote::maybe_pull_stale;
+use crate::commands::remote::refresh_stale_unless_no_pull;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::{Report, object_json};
@@ -18,7 +18,7 @@ pub(crate) fn run_agenda(ctx: &mut Context, args: AgendaArgs) -> Result<Report, 
         .iter()
         .map(|(remote, age)| (remote.0.clone(), *age))
         .collect();
-    maybe_pull_stale(ctx)?;
+    refresh_stale_unless_no_pull(ctx)?;
     require_fresh(ctx.store.as_ref(), ctx.clock.as_ref(), &ctx.config, &bounds)?;
     let found = agenda(
         ctx.store.as_ref(),

@@ -1,11 +1,10 @@
-use dam_application::{add, add_all, reset};
+use dam_application::{add, add_all, reset, resolve_object};
 use dam_domain::Oid;
 
 use crate::args::{AddArgs, ResetArgs};
 use crate::commands::status::{change_json, change_line};
 use crate::context::Context;
 use crate::error::CliError;
-use crate::oids::resolve_oid;
 use crate::output::Report;
 
 pub(crate) fn run_add(ctx: &mut Context, args: AddArgs) -> Result<Report, CliError> {
@@ -15,7 +14,7 @@ pub(crate) fn run_add(ctx: &mut Context, args: AddArgs) -> Result<Report, CliErr
         let oids = args
             .oids
             .iter()
-            .map(|t| resolve_oid(ctx.store.as_ref(), t))
+            .map(|t| resolve_object(ctx.store.as_ref(), t))
             .collect::<Result<Vec<Oid>, _>>()?;
         add(ctx.store.as_ref(), ctx.store.as_ref(), &oids)?
     };
@@ -37,7 +36,7 @@ pub(crate) fn run_reset(ctx: &mut Context, args: ResetArgs) -> Result<Report, Cl
     let oids = args
         .oids
         .iter()
-        .map(|t| resolve_oid(ctx.store.as_ref(), t))
+        .map(|t| resolve_object(ctx.store.as_ref(), t))
         .collect::<Result<Vec<Oid>, _>>()?;
     reset(ctx.store.as_ref(), &oids)?;
     let human = if oids.is_empty() {

@@ -1,16 +1,15 @@
 use dam_adapters::{parse_template, render_template};
-use dam_application::{EditFields, Refusal, UseCaseError, edit};
+use dam_application::{EditFields, Refusal, edit, resolve_object};
 use dam_domain::Oid;
 
 use crate::args::EditArgs;
 use crate::commands::parsing::{deadline_flag, when_flag};
 use crate::context::Context;
 use crate::error::CliError;
-use crate::oids::resolve_oid;
 use crate::output::{Report, object_json, object_line};
 
 pub(crate) fn run(ctx: &mut Context, args: EditArgs) -> Result<Report, CliError> {
-    let oid = resolve_oid(ctx.store.as_ref(), &args.oid)?;
+    let oid = resolve_object(ctx.store.as_ref(), &args.oid)?;
     let fields = if args.editor {
         through_editor(ctx, &oid)?
     } else {
@@ -25,7 +24,8 @@ pub(crate) fn run(ctx: &mut Context, args: EditArgs) -> Result<Report, CliError>
 
 fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
     let oid_of = |flag: &str, text: &str| {
-        resolve_oid(ctx.store.as_ref(), text).map_err(|e| CliError::Usage(format!("--{flag}: {e}")))
+        resolve_object(ctx.store.as_ref(), text)
+            .map_err(|e| CliError::Usage(format!("--{flag}: {e}")))
     };
     let mut f = EditFields {
         subject: args.subject,
@@ -89,11 +89,7 @@ fn through_editor(ctx: &Context, oid: &Oid) -> Result<EditFields, CliError> {
     let editor = ctx.editor.as_ref().ok_or(Refusal::NeedsAnEditor)?;
     let original = render_template(&current);
     let parse = |saved: &str| parse_template(saved, &current, ctx.clock.today(), &ctx.tz);
-    let save = |opened: &str| {
-        editor
-            .edit(opened)
-            .map_err(|e| CliError::UseCase(UseCaseError::Editor(e)))
-    };
+    let save = |opened: &str| editor.edit(opened).map_err(CliError::from);
     let saved = save(&original)?;
     if saved == original {
         return Err(CliError::Cancelled);
