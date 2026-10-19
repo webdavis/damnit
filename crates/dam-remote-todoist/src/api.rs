@@ -4,8 +4,7 @@ mod resources;
 pub use error::{ApiError, MAX_ERROR_BODY_CHARS};
 pub use resources::{Deadline, Due, Item, Project, Section, SyncResponse, SyncWrite};
 
-use dam_helper::Secret;
-use dam_protocol::credential_variable;
+use dam_helper::{Secret, credential};
 use error::read_json;
 
 pub const PRODUCTION_BASE: &str = "https://api.todoist.com/api/v1";
@@ -33,20 +32,9 @@ impl TodoistApi {
     }
 
     pub fn from_env(remote: &str) -> Result<TodoistApi, String> {
-        let api = TodoistApi::from_lookup(remote, |variable| std::env::var(variable).ok())?;
+        let token = credential(remote, "api_token", |variable| std::env::var(variable).ok())?;
         let base = production_base_unless_set(std::env::var("DAM_TODOIST_BASE_URL"))?;
-        Ok(TodoistApi { base, ..api })
-    }
-
-    pub fn from_lookup(
-        remote: &str,
-        lookup: impl Fn(&str) -> Option<String>,
-    ) -> Result<TodoistApi, String> {
-        let variable = credential_variable(remote, "api_token");
-        let token = lookup(&variable).filter(|t| !t.is_empty()).ok_or_else(|| {
-            format!("{variable} is not set; declare api_token under [remote.{remote}]")
-        })?;
-        Ok(TodoistApi::new(PRODUCTION_BASE, &token))
+        Ok(TodoistApi::new(&base, token.expose()))
     }
 
     pub fn sync_all(&self) -> Result<SyncResponse, ApiError> {

@@ -51,20 +51,3 @@ fn new_trims_a_trailing_slash_from_the_base() {
     let api = TodoistApi::new("http://example.test/", "tok");
     assert_eq!(api.base, "http://example.test");
 }
-
-#[test]
-fn the_token_is_read_under_the_remotes_own_name() {
-    let lookup = |variable: &str| (variable == "DAM_WORK_API_TOKEN").then(|| "tok".to_string());
-    assert!(TodoistApi::from_lookup("work", lookup).is_ok());
-    let err = TodoistApi::from_lookup("todoist", lookup).unwrap_err();
-    assert_eq!(
-        err,
-        "DAM_TODOIST_API_TOKEN is not set; declare api_token under [remote.todoist]"
-    );
-}
-
-#[test]
-fn an_empty_token_is_no_token() {
-    let err = TodoistApi::from_lookup("work", |_| Some(String::new())).unwrap_err();
-    assert!(err.starts_with("DAM_WORK_API_TOKEN is not set"), "{err}");
-}

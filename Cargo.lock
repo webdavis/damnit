@@ -242,6 +242,9 @@ dependencies = [
 [[package]]
 name = "dam-helper"
 version = "0.1.0"
+dependencies = [
+ "dam-protocol",
+]
 
 [[package]]
 name = "dam-protocol"

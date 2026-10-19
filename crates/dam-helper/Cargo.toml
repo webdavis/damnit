@@ -7,3 +7,4 @@ repository.workspace = true
 description = "the plumbing every dam remote helper shares"
 
 [dependencies]
+dam-protocol = { path = "../dam-protocol" }
