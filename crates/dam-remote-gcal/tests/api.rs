@@ -177,7 +177,7 @@ fn an_error_never_debug_prints_a_credential() {
     assert!(!format!("{err:?}").contains(CLIENT_SECRET));
 }
 
-use dam_remote_gcal::calendar_api::{CalendarApi, MAX_PAGES, Window};
+use dam_remote_gcal::calendar_api::{Calendar, CalendarApi, MAX_PAGES, Window};
 
 fn window() -> Window {
     Window {
