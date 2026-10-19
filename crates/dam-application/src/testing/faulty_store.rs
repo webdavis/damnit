@@ -1,4 +1,4 @@
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 
 use dam_domain::{Object, Oid, Path};
 
@@ -14,6 +14,7 @@ pub struct FaultyStore {
     writes_before_failing: Cell<usize>,
     inside_a_unit_of_work: Cell<bool>,
     last_pull_unreadable: Cell<bool>,
+    unreadable: RefCell<Option<Oid>>,
 }
 
 impl FaultyStore {
@@ -23,6 +24,7 @@ impl FaultyStore {
             writes_before_failing: Cell::new(usize::MAX),
             inside_a_unit_of_work: Cell::new(false),
             last_pull_unreadable: Cell::new(false),
+            unreadable: RefCell::new(None),
         }
     }
 
@@ -32,6 +34,10 @@ impl FaultyStore {
 
     pub fn fail_reading_the_last_pull(&self) {
         self.last_pull_unreadable.set(true);
+    }
+
+    pub fn fail_reading(&self, oid: &Oid) {
+        self.unreadable.replace(Some(oid.clone()));
     }
 
     pub fn assert_unchanged_when_any_write_fails(
@@ -71,6 +77,9 @@ impl FaultyStore {
 
 impl ObjectRepository for FaultyStore {
     fn get(&self, oid: &Oid) -> Result<Option<Object>, StoreError> {
+        if self.unreadable.borrow().as_ref() == Some(oid) {
+            return Err(StoreError::Failed("unreadable object".into()));
+        }
         self.inner.get(oid)
     }
     fn all(&self) -> Result<Vec<Object>, StoreError> {
