@@ -12,6 +12,12 @@ use crate::output::{Report, object_cells};
 pub(crate) enum Human {
     Table(Vec<Vec<String>>),
     Lines(Vec<String>),
+    Mixed(Vec<Line>),
+}
+
+pub(crate) enum Line {
+    Row(String),
+    Whole(String),
 }
 
 impl Human {
@@ -29,14 +35,21 @@ pub(crate) trait View: Serialize {
 }
 
 pub(crate) fn report(view: &impl View) -> Result<Report, CliError> {
-    let (lines, fits_the_terminal) = match view.human() {
-        Human::Table(rows) => (table(&rows), true),
-        Human::Lines(lines) => (lines, false),
+    let (lines, cut): (Vec<String>, Vec<bool>) = match view.human() {
+        Human::Table(rows) => table(&rows).into_iter().map(|l| (l, true)).collect(),
+        Human::Lines(lines) => lines.into_iter().map(|l| (l, false)).collect(),
+        Human::Mixed(lines) => lines
+            .into_iter()
+            .map(|line| match line {
+                Line::Row(l) => (l, true),
+                Line::Whole(l) => (l, false),
+            })
+            .collect(),
     };
     Ok(Report {
         human: lines.join("\n"),
         data: serde_json::to_value(view).map_err(|e| CliError::Internal(e.to_string()))?,
-        fits_the_terminal,
+        cut,
     })
 }
 

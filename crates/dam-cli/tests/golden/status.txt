@@ -1,4 +1,4 @@
-warning: a credential is a value in the config file: fake.api_token; prefer <na…
+warning: a credential is a value in the config file: fake.api_token; prefer <name>_command or <name>_env
 Staged:
   removed  2222222  call mom
 Not staged:

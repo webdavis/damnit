@@ -69,10 +69,26 @@ fn no_line_of_a_list_passes_a_forty_column_terminal() {
         let out = sb.command(args).env("COLUMNS", "40").output().unwrap();
         let text = String::from_utf8(out.stdout).unwrap();
         assert!(!text.is_empty(), "{args:?}");
-        for line in text.lines() {
+        for line in text.lines().filter(|l| !l.starts_with("warning:")) {
             assert!(line.chars().count() <= 40, "{args:?}: {line}");
         }
     }
+}
+
+#[test]
+fn status_prints_its_warning_whole_at_forty_columns() {
+    let sb = fixture::with_staged_and_unstaged_changes();
+    let out = sb
+        .command(&["status"])
+        .env("COLUMNS", "40")
+        .output()
+        .unwrap();
+    let text = String::from_utf8(out.stdout).unwrap();
+    assert!(
+        text.lines()
+            .any(|l| l.starts_with("warning:") && l.ends_with("<name>_command or <name>_env")),
+        "{text}"
+    );
 }
 
 #[test]

@@ -38,10 +38,11 @@ pub(crate) fn table(rows: &[Vec<String>]) -> Vec<String> {
         .collect()
 }
 
-pub(crate) fn fit(text: &str, width: usize) -> String {
+pub(crate) fn fit(text: &str, width: usize, cut: &[bool]) -> String {
     text.lines()
-        .map(|line| {
-            if line.chars().count() <= width {
+        .zip(cut.iter().copied().chain(std::iter::repeat(false)))
+        .map(|(line, cut)| {
+            if !cut || line.chars().count() <= width {
                 line.to_string()
             } else {
                 let kept: String = line.chars().take(width.saturating_sub(1)).collect();
@@ -88,8 +89,14 @@ mod tests {
 
     #[test]
     fn a_line_past_the_width_is_cut_with_an_ellipsis_and_a_short_one_is_kept() {
-        assert_eq!(fit("abcdef\nabc", 4), "abc…\nabc");
-        assert_eq!(fit("abcd", 4), "abcd");
+        assert_eq!(fit("abcdef\nabc", 4, &[true, true]), "abc…\nabc");
+        assert_eq!(fit("abcd", 4, &[true]), "abcd");
+    }
+
+    #[test]
+    fn a_line_not_marked_for_cutting_prints_whole() {
+        assert_eq!(fit("abcdef\nabcdef", 4, &[false, true]), "abcdef\nabc…");
+        assert_eq!(fit("abcdef", 4, &[]), "abcdef");
     }
 
     #[test]

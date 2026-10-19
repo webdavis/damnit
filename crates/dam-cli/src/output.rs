@@ -17,7 +17,7 @@ pub(crate) enum Format {
 pub(crate) struct Report {
     pub(crate) human: String,
     pub(crate) data: serde_json::Value,
-    pub(crate) fits_the_terminal: bool,
+    pub(crate) cut: Vec<bool>,
 }
 
 pub(crate) fn render(format: Format, report: &Report) -> Result<String, CliError> {
@@ -38,7 +38,7 @@ pub(crate) fn print_error(format: Format, error: &CliError) {
             let report = Report {
                 human: String::new(),
                 data: error.document(),
-                fits_the_terminal: false,
+                cut: Vec::new(),
             };
             render(format, &report).unwrap_or_else(|_| format!("dam: {error}"))
         }
@@ -47,19 +47,23 @@ pub(crate) fn print_error(format: Format, error: &CliError) {
 }
 
 pub(crate) fn print(format: Format, report: &Report) -> Result<(), CliError> {
-    let mut text = render(format, report)?;
     let terminal =
         terminal_size::terminal_size_of(std::io::stdout()).map(|(w, _)| usize::from(w.0));
     let width = terminal_width(std::env::var("COLUMNS").ok().as_deref(), terminal);
-    if let (Format::Human, true, Some(width)) = (format, report.fits_the_terminal, width) {
-        text = fit(&text, width);
-    }
+    let text = match (format, width) {
+        (Format::Human, Some(width)) => fitted(report, width),
+        _ => render(format, report)?,
+    };
     let mut out = std::io::stdout().lock();
     out.write_all(text.as_bytes())?;
     if !text.ends_with('\n') {
         out.write_all(b"\n")?;
     }
     Ok(())
+}
+
+pub(crate) fn fitted(report: &Report, width: usize) -> String {
+    fit(&report.human, width, &report.cut)
 }
 
 pub(crate) fn object_cells(object: &Object, zone: &TimeZone) -> Vec<String> {
@@ -134,7 +138,7 @@ mod tests {
             &Report {
                 human: String::new(),
                 data,
-                fits_the_terminal: false,
+                cut: Vec::new(),
             },
         )
         .unwrap();
@@ -146,7 +150,7 @@ mod tests {
         let report = Report {
             human: "hi".into(),
             data: serde_json::json!({"a": 1}),
-            fits_the_terminal: false,
+            cut: Vec::new(),
         };
         assert_eq!(render(Format::Human, &report).unwrap(), "hi");
         assert_eq!(render(Format::Json, &report).unwrap(), "{\n  \"a\": 1\n}");
