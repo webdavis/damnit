@@ -14,8 +14,8 @@ pub enum Request {
 #[serde(try_from = "PullResponseDoc")]
 pub struct PullResponse {
     pub objects: Vec<WireObject>,
-    #[serde(skip)]
-    pub unreadable: Vec<UnreadableObject>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub rejected: Vec<RejectedObject>,
     pub removed: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub cancelled: Vec<String>,
@@ -23,8 +23,8 @@ pub struct PullResponse {
     pub sync: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct UnreadableObject {
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RejectedObject {
     pub remote_id: String,
     pub why: String,
 }
@@ -32,6 +32,7 @@ pub struct UnreadableObject {
 #[derive(Deserialize)]
 struct PullResponseDoc {
     objects: Option<Vec<serde_json::Value>>,
+    rejected: Option<Vec<RejectedObject>>,
     removed: Option<Vec<String>>,
     cancelled: Option<Vec<String>>,
     #[serde(default, deserialize_with = "present")]
@@ -49,16 +50,18 @@ impl TryFrom<PullResponseDoc> for PullResponse {
 
     fn try_from(doc: PullResponseDoc) -> Result<PullResponse, String> {
         if doc.objects.is_none()
+            && doc.rejected.is_none()
             && doc.removed.is_none()
             && doc.cancelled.is_none()
             && doc.sync.is_none()
         {
             return Err(format!(
-                "a pull answer naming none of objects, removed, cancelled or sync, over {} keys",
+                "a pull answer naming none of objects, rejected, removed, cancelled or sync, over {} keys",
                 doc.other.len()
             ));
         }
         let mut response = PullResponse {
+            rejected: doc.rejected.unwrap_or_default(),
             removed: doc.removed.unwrap_or_default(),
             cancelled: doc.cancelled.unwrap_or_default(),
             sync: doc.sync.flatten(),
@@ -68,9 +71,7 @@ impl TryFrom<PullResponseDoc> for PullResponse {
             let remote_id = value["remote_id"].as_str().unwrap_or_default().to_string();
             match unreadable::read_object(&value) {
                 Ok(object) => response.objects.push(object),
-                Err(why) => response
-                    .unreadable
-                    .push(UnreadableObject { remote_id, why }),
+                Err(why) => response.rejected.push(RejectedObject { remote_id, why }),
             }
         }
         Ok(response)

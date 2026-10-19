@@ -48,15 +48,15 @@ pub fn pull_from_wire(response: PullResponse) -> PullOutcome {
     }
     rejected.extend(
         response
-            .unreadable
+            .rejected
             .into_iter()
-            .map(|unreadable| RejectedObject {
-                why: if unreadable.remote_id.is_empty() {
+            .map(|rejection| RejectedObject {
+                why: if rejection.remote_id.is_empty() {
                     NO_REMOTE_ID.into()
                 } else {
-                    unreadable.why
+                    rejection.why
                 },
-                remote_id: unreadable.remote_id,
+                remote_id: rejection.remote_id,
             }),
     );
     PullOutcome {

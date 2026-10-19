@@ -59,3 +59,16 @@ fn an_object_missing_a_required_field_names_that_field() {
     let outcome = pull(vec![bad]);
     assert_eq!(outcome.rejected[0].why, "done: missing");
 }
+
+#[test]
+fn an_object_the_helper_rejected_is_rejected_under_its_remote_id_and_reason() {
+    let line = r#"{"rejected":[{"remote_id":"i:i7","why":"its parent chain loops"}]}"#;
+    let outcome = pull_from_wire(serde_json::from_str(line).unwrap());
+    assert_eq!(
+        outcome.rejected,
+        vec![RejectedObject {
+            remote_id: "i:i7".into(),
+            why: "its parent chain loops".into(),
+        }]
+    );
+}

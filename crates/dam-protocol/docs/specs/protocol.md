@@ -63,7 +63,7 @@ a failure; otherwise it must carry the answer's required keys.
 | Response | Requires | Fields |
 |---|---|---|
 | capabilities | `protocol` | `protocol`, `kinds`, `fields`, `credentials`, `incremental` |
-| pull | `objects`, `removed`, `cancelled` or `sync` | `objects`, `removed`, `cancelled`, `sync` |
+| pull | `objects`, `rejected`, `removed`, `cancelled` or `sync` | `objects`, `rejected`, `removed`, `cancelled`, `sync` |
 | push | `results` | `results`, one entry per mutation |
 | error | `error` | `error`, the reason as text |
 
@@ -73,6 +73,10 @@ under each id to `cancelled` and keeps tracking it; an id it does not track, or 
 task, changes nothing. It lands under the same declared-fields rule as any pulled change, so a
 helper that sends `cancelled` declares `status` in `fields`; otherwise the id changes nothing.
 `removed` stays what it was: the remote no longer has the object, and `dam` stops tracking it.
+
+`rejected` lists objects the helper could not read, each as `{"remote_id", "why"}`. `dam` lands the
+rest of the pull and shows each entry in `dam status` as a notice naming the id and the reason. An
+object `dam` itself cannot read is reported the same way.
 
 One push result:
 
