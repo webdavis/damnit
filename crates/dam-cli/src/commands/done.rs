@@ -1,5 +1,5 @@
 use dam_application::{
-    Blocker, ChildDisposition, Completed, DependencyDisposition, Dispositions, Force, Tracked,
+    Blockers, ChildDisposition, Completed, DependencyDisposition, Dispositions, Force, Tracked,
     complete, plan_complete,
 };
 
@@ -44,7 +44,7 @@ fn tracked_by_a_remote(ctx: &Context, oid: &Oid) -> Result<Tracked, CliError> {
 fn how_far_this_run_forces(
     ctx: &Context,
     args: &DoneArgs,
-    blockers: &[Blocker],
+    blockers: &Blockers,
 ) -> Result<Force, CliError> {
     if !args.force {
         return Ok(Force::No);
@@ -73,15 +73,9 @@ fn dispositions_answered_on_the_command_line_over_any_config(
     }
 }
 
-fn ask(ctx: &Context, blockers: &[Blocker]) -> Result<Dispositions, CliError> {
-    let children = blockers
-        .iter()
-        .filter(|b| matches!(b, Blocker::OpenChild(_)))
-        .count();
-    let deps = blockers
-        .iter()
-        .filter(|b| matches!(b, Blocker::OpenDependency(_)))
-        .count();
+fn ask(ctx: &Context, blockers: &Blockers) -> Result<Dispositions, CliError> {
+    let children = blockers.children.len();
+    let deps = blockers.dependencies.len();
     let children = if children == 0 {
         ChildDisposition::Keep
     } else {

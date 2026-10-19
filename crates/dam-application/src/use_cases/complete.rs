@@ -1,6 +1,6 @@
 use dam_domain::{
-    Blocker, ChildDisposition, Completion, Date, DependencyDisposition, Dispositions, Force,
-    Object, Oid, Recurrence, Task, Tracked, When, blockers, roll_forward,
+    Blockers, ChildDisposition, Completion, Date, DependencyDisposition, Dispositions, Force,
+    Object, Oid, Recurrence, Task, Tracked, When, roll_forward,
 };
 
 use crate::errors::{Refusal, UseCaseError};
@@ -10,7 +10,7 @@ use crate::use_cases::subtree::{children, move_into};
 
 pub struct CompletePlan {
     pub oid: Oid,
-    pub blockers: Vec<Blocker>,
+    pub blockers: Blockers,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -24,20 +24,23 @@ pub fn plan_complete(
     oid: &Oid,
 ) -> Result<CompletePlan, UseCaseError> {
     let task = load_task(objects, oid)?;
-    let mut open_deps = Vec::new();
+    let mut dependencies = Vec::new();
     for dep in &task.base.depends {
         if is_an_open_task(objects, dep)? {
-            open_deps.push(dep.clone());
+            dependencies.push(dep.clone());
         }
     }
-    let open_children: Vec<Oid> = children(objects, &task.base)?
+    let children: Vec<Oid> = children(objects, &task.base)?
         .iter()
         .filter(|c| c.as_task().is_some_and(|t| !t.completion.is_done()))
         .map(|c| c.oid().clone())
         .collect();
     Ok(CompletePlan {
         oid: oid.clone(),
-        blockers: blockers(&open_deps, &open_children),
+        blockers: Blockers {
+            dependencies,
+            children,
+        },
     })
 }
 
@@ -108,29 +111,15 @@ fn apply_dispositions(
     objects: &dyn ObjectRepository,
     random: &dyn Randomness,
     oid: &Oid,
-    found: &[Blocker],
+    found: &Blockers,
     d: Dispositions,
 ) -> Result<(), UseCaseError> {
     let mut task = load_task(objects, oid)?;
-    let open_children: Vec<Oid> = found
-        .iter()
-        .filter_map(|b| match b {
-            Blocker::OpenChild(c) => Some(c.clone()),
-            Blocker::OpenDependency(_) => None,
-        })
-        .collect();
-    let deps: Vec<Oid> = found
-        .iter()
-        .filter_map(|b| match b {
-            Blocker::OpenDependency(x) => Some(x.clone()),
-            Blocker::OpenChild(_) => None,
-        })
-        .collect();
 
     let target = match d.children {
         ChildDisposition::Keep => None,
         ChildDisposition::Up => Some(task.base.path.clone()),
-        ChildDisposition::Into(_) if open_children.is_empty() => None,
+        ChildDisposition::Into(_) if found.children.is_empty() => None,
         ChildDisposition::Into(name) => {
             let group_oid = Oid::generate(&mut |b| random.fill(b));
             let mut group = Task::new(group_oid, name.clone());
@@ -144,12 +133,14 @@ fn apply_dispositions(
         }
     };
     if let Some(folder) = target {
-        for child in &open_children {
+        for child in &found.children {
             move_into(objects, child, &folder)?;
         }
     }
     if d.dependencies == DependencyDisposition::Drop {
-        task.base.depends.retain(|x| !deps.contains(x));
+        task.base
+            .depends
+            .retain(|x| !found.dependencies.contains(x));
         objects.put(&Object::Task(task))?;
     }
     Ok(())

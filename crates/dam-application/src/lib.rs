@@ -11,7 +11,7 @@ mod use_cases;
 pub use config::{Config, ConfiguredDuration, CredentialSpec, FilterConfig, RemoteConfig};
 pub use credentials::resolve_credentials;
 pub use dam_domain::{
-    Blocker, ChildDisposition, DependencyDisposition, Dispositions, Force, Tracked,
+    Blockers, ChildDisposition, DependencyDisposition, Dispositions, Force, Tracked,
 };
 pub use errors::{Refusal, UseCaseError};
 pub use ports::{

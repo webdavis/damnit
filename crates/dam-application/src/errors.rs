@@ -1,4 +1,4 @@
-use dam_domain::{Blocker, LabelViolation, Oid, QueryError, Tracked};
+use dam_domain::{Blockers, LabelViolation, Oid, QueryError, Tracked};
 
 use crate::ports::{CredentialError, EditorError, HelperError, StoreError};
 
@@ -9,7 +9,7 @@ mod use_case_display;
 pub enum Refusal {
     Blocked {
         oid: Oid,
-        blockers: Vec<Blocker>,
+        blockers: Blockers,
     },
     Cycle {
         oid: Oid,
