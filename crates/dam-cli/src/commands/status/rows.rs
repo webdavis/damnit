@@ -1,5 +1,5 @@
 use dam_application::Conflict;
-use dam_domain::{Change, Field, Object, Op, When, changed_fields, touched_fields};
+use dam_domain::{Change, Field, Object, When, changed_fields, touched_fields};
 
 use crate::error::CliError;
 use crate::output::object_json;
@@ -25,7 +25,7 @@ pub(crate) fn change_json(change: &Change, full: bool) -> Result<serde_json::Val
     let fields: Vec<&str> = touched_fields(change).iter().map(Field::as_str).collect();
     let mut row = serde_json::Map::new();
     row.insert("oid".into(), change.oid().to_string().into());
-    row.insert("op".into(), op_name(change.op()).into());
+    row.insert("op".into(), change.op().as_str().into());
     row.insert("fields".into(), fields.into());
     row.extend(state_left_behind_or_the_removed_objects_json(change));
     if full {
@@ -35,14 +35,6 @@ pub(crate) fn change_json(change: &Change, full: bool) -> Result<serde_json::Val
         row.insert("after".into(), after.into());
     }
     Ok(serde_json::Value::Object(row))
-}
-
-fn op_name(op: Op) -> &'static str {
-    match op {
-        Op::Create => "create",
-        Op::Update => "update",
-        Op::Delete => "delete",
-    }
 }
 
 fn state_left_behind_or_the_removed_objects_json(

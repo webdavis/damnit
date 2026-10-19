@@ -16,21 +16,8 @@ pub(super) fn object_from_json(s: &str) -> Result<Object, StoreError> {
     crate::wire::from_wire(&w).map_err(|e| StoreError::Failed(format!("stored object: {e}")))
 }
 
-pub(super) fn op_to_text(op: Op) -> &'static str {
-    match op {
-        Op::Create => "create",
-        Op::Update => "update",
-        Op::Delete => "delete",
-    }
-}
-
 pub(super) fn op_from_text(s: &str) -> Result<Op, StoreError> {
-    match s {
-        "create" => Ok(Op::Create),
-        "update" => Ok(Op::Update),
-        "delete" => Ok(Op::Delete),
-        other => Err(StoreError::Failed(format!("stored op {other:?}"))),
-    }
+    Op::parse(s).ok_or_else(|| StoreError::Failed(format!("stored op {s:?}")))
 }
 
 fn change_from_row(
@@ -46,7 +33,7 @@ fn change_from_row(
         .ok_or_else(|| {
             StoreError::Failed(format!(
                 "stored {} change disagrees with its before and after",
-                op_to_text(op)
+                op.as_str()
             ))
         })
 }

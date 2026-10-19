@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use dam_domain::{
-    Attachment, Attendee, Base, Completion, Conference, Date, Event, EventStatus, EventType,
+    Attachment, Attendee, Base, Completion, Conference, Date, Event, EventStatus, EventType, Kind,
     Object, Oid, OidError, Path, PathError, Person, Priority, PriorityError, Recurrence, Reminder,
     ResponseStatus, Task, Timestamp, Transparency, Visibility, When,
 };
@@ -77,11 +77,11 @@ fn date(field: &'static str) -> impl Fn(String) -> WireError {
     move |value| WireError::Date { field, value }
 }
 
-fn unknown(field: &'static str) -> impl Fn(&str) -> WireError {
-    move |value| WireError::UnknownEnum {
+fn word<T>(parse: fn(&str) -> Option<T>, field: &'static str, text: &str) -> Result<T, WireError> {
+    parse(text).ok_or_else(|| WireError::UnknownEnum {
         field,
-        value: value.to_string(),
-    }
+        value: text.to_string(),
+    })
 }
 
 pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
@@ -106,8 +106,8 @@ pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
             .collect(),
         recurrence: wire.recurrence.as_deref().map(Recurrence::parse),
     };
-    match (wire.kind.as_str(), &wire.task, &wire.event) {
-        ("task", Some(t), _) => Ok(Object::Task(Task {
+    match (Kind::parse(&wire.kind), &wire.task, &wire.event) {
+        (Some(Kind::Task), Some(t), _) => Ok(Object::Task(Task {
             base,
             completion: completion(t)?,
             priority: Priority::new(t.priority).map_err(|why| WireError::Priority {
@@ -134,7 +134,7 @@ pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
                 .map(|o| Oid::parse(o).map_err(oid("event", o)))
                 .transpose()?,
         })),
-        ("event", _, Some(e)) => Ok(Object::Event(Event {
+        (Some(Kind::Event), _, Some(e)) => Ok(Object::Event(Event {
             base,
             start: parse_when(&e.start).map_err(date("start"))?,
             end: parse_when(&e.end).map_err(date("end"))?,
@@ -146,37 +146,15 @@ pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
                 .map(|a| {
                     Ok(Attendee {
                         email: a.email.clone(),
-                        response: parse_response(&a.response)?,
+                        response: word(ResponseStatus::parse, "response", &a.response)?,
                         is_self: a.is_self,
                     })
                 })
                 .collect::<Result<_, WireError>>()?,
-            status: match e.status.as_str() {
-                "confirmed" => EventStatus::Confirmed,
-                "tentative" => EventStatus::Tentative,
-                "cancelled" => EventStatus::Cancelled,
-                v => return Err(unknown("status")(v)),
-            },
-            transparency: match e.transparency.as_str() {
-                "busy" => Transparency::Busy,
-                "free" => Transparency::Free,
-                v => return Err(unknown("transparency")(v)),
-            },
-            visibility: match e.visibility.as_str() {
-                "default" => Visibility::Default,
-                "public" => Visibility::Public,
-                "private" => Visibility::Private,
-                "confidential" => Visibility::Confidential,
-                v => return Err(unknown("visibility")(v)),
-            },
-            event_type: match e.event_type.as_str() {
-                "default" => EventType::Default,
-                "focus_time" => EventType::FocusTime,
-                "out_of_office" => EventType::OutOfOffice,
-                "working_location" => EventType::WorkingLocation,
-                "birthday" => EventType::Birthday,
-                v => return Err(unknown("event_type")(v)),
-            },
+            status: word(EventStatus::parse, "status", &e.status)?,
+            transparency: word(Transparency::parse, "transparency", &e.transparency)?,
+            visibility: word(Visibility::parse, "visibility", &e.visibility)?,
+            event_type: word(EventType::parse, "event_type", &e.event_type)?,
             color: e.color.clone(),
             organizer: e.organizer.as_ref().map(|p| Person {
                 email: p.email.clone(),
@@ -196,7 +174,7 @@ pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
                 })
                 .collect(),
         })),
-        (kind, _, _) => Err(WireError::UnknownKind(kind.to_string())),
+        _ => Err(WireError::UnknownKind(wire.kind.clone())),
     }
 }
 
@@ -222,19 +200,4 @@ fn parse_when(text: &str) -> Result<When, String> {
     text.parse::<Date>()
         .map(When::Day)
         .map_err(|_| text.to_string())
-}
-
-fn parse_response(text: &str) -> Result<ResponseStatus, WireError> {
-    Ok(match text {
-        "needs_action" => ResponseStatus::NeedsAction,
-        "accepted" => ResponseStatus::Accepted,
-        "declined" => ResponseStatus::Declined,
-        "tentative" => ResponseStatus::Tentative,
-        v => {
-            return Err(WireError::UnknownEnum {
-                field: "response",
-                value: v.to_string(),
-            });
-        }
-    })
 }

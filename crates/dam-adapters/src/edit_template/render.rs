@@ -3,10 +3,7 @@ use toml::Value;
 
 pub fn render_template(object: &Object) -> String {
     let b = object.base();
-    let kind = match object {
-        Object::Task(_) => "task",
-        Object::Event(_) => "event",
-    };
+    let kind = object.kind();
     let mut out = format!(
         "# dam edit {}  ({kind})\n# Comment lines are ignored. Save to apply, or quit without saving to cancel.\n",
         b.oid.short()

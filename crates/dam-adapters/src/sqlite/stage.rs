@@ -3,7 +3,7 @@ use dam_domain::{Change, Oid};
 use rusqlite::params;
 
 use super::SqliteStore;
-use super::codec::{object_to_json, op_to_text, read_changes};
+use super::codec::{object_to_json, read_changes};
 use super::objects::sql;
 
 impl StageRepository for SqliteStore {
@@ -14,7 +14,7 @@ impl StageRepository for SqliteStore {
             .execute(
                 "INSERT INTO stage (oid, op, before_json, after_json) VALUES (?1, ?2, ?3, ?4)
                  ON CONFLICT(oid) DO UPDATE SET op = excluded.op, before_json = excluded.before_json, after_json = excluded.after_json",
-                params![change.oid().as_str(), op_to_text(change.op()), before, after],
+                params![change.oid().as_str(), change.op().as_str(), before, after],
             )
             .map(|_| ())
             .map_err(sql)

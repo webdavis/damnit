@@ -1,23 +1,14 @@
-use dam_domain::{
-    EventStatus, EventType, Kind, Object, ResponseStatus, Transparency, Visibility, When,
-};
+use dam_domain::{Object, When};
 use dam_protocol::{
     WireAttachment, WireAttendee, WireConference, WireEvent, WireObject, WirePerson, WireTask,
 };
-
-fn wire_kind(object: &Object) -> &'static str {
-    match object.kind() {
-        Kind::Task => "task",
-        Kind::Event => "event",
-    }
-}
 
 pub fn to_wire(object: &Object, remote_id: Option<String>) -> WireObject {
     let b = object.base();
     WireObject {
         oid: b.oid.to_string(),
         remote_id,
-        kind: wire_kind(object).into(),
+        kind: object.kind().as_str().into(),
         subject: b.subject.clone(),
         body: b.body.clone(),
         path: b.path.to_string(),
@@ -29,13 +20,13 @@ pub fn to_wire(object: &Object, remote_id: Option<String>) -> WireObject {
             done: t.completion.is_done(),
             completed_at: t.completion.at().map(|at| at.to_string()),
             priority: t.priority.get(),
-            due: t.due.as_ref().map(when_text),
+            due: t.due.as_ref().map(When::to_text),
             deadline: t.deadline.map(|d| d.to_string()),
             event: t.event.as_ref().map(|o| o.to_string()),
         }),
         event: object.as_event().map(|e| WireEvent {
-            start: when_text(&e.start),
-            end: when_text(&e.end),
+            start: e.start.to_text(),
+            end: e.end.to_text(),
             timezone: e.timezone.clone(),
             location: e.location.clone(),
             attendees: e
@@ -43,36 +34,14 @@ pub fn to_wire(object: &Object, remote_id: Option<String>) -> WireObject {
                 .iter()
                 .map(|a| WireAttendee {
                     email: a.email.clone(),
-                    response: response_text(a.response).into(),
+                    response: a.response.as_str().into(),
                     is_self: a.is_self,
                 })
                 .collect(),
-            status: match e.status {
-                EventStatus::Confirmed => "confirmed",
-                EventStatus::Tentative => "tentative",
-                EventStatus::Cancelled => "cancelled",
-            }
-            .into(),
-            transparency: match e.transparency {
-                Transparency::Busy => "busy",
-                Transparency::Free => "free",
-            }
-            .into(),
-            visibility: match e.visibility {
-                Visibility::Default => "default",
-                Visibility::Public => "public",
-                Visibility::Private => "private",
-                Visibility::Confidential => "confidential",
-            }
-            .into(),
-            event_type: match e.event_type {
-                EventType::Default => "default",
-                EventType::FocusTime => "focus_time",
-                EventType::OutOfOffice => "out_of_office",
-                EventType::WorkingLocation => "working_location",
-                EventType::Birthday => "birthday",
-            }
-            .into(),
+            status: e.status.as_str().into(),
+            transparency: e.transparency.as_str().into(),
+            visibility: e.visibility.as_str().into(),
+            event_type: e.event_type.as_str().into(),
             color: e.color.clone(),
             organizer: e.organizer.as_ref().map(|p| WirePerson {
                 email: p.email.clone(),
@@ -92,21 +61,5 @@ pub fn to_wire(object: &Object, remote_id: Option<String>) -> WireObject {
                 })
                 .collect(),
         }),
-    }
-}
-
-pub(super) fn when_text(when: &When) -> String {
-    match when {
-        When::Day(d) => d.to_string(),
-        When::At(z) => z.to_string(),
-    }
-}
-
-pub(super) fn response_text(r: ResponseStatus) -> &'static str {
-    match r {
-        ResponseStatus::NeedsAction => "needs_action",
-        ResponseStatus::Accepted => "accepted",
-        ResponseStatus::Declined => "declined",
-        ResponseStatus::Tentative => "tentative",
     }
 }
