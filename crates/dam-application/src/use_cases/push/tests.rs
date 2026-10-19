@@ -9,115 +9,26 @@ mod refusals;
 mod retries;
 mod verbs;
 
-use std::cell::RefCell;
-use std::rc::Rc;
-
-use crate::remote::{MutationOp, MutationOutcome, MutationVerdict, PullOutcome, RemoteMutation};
-use dam_domain::{Event, Object, Task, When};
+use crate::remote::MutationOp;
+use dam_domain::{Event, Object, When};
 use jiff::civil::date;
 
-use super::*;
-use crate::config::{Config, CredentialSpec, RemoteConfig};
-use crate::ports::RemoteName;
 use crate::testing::prelude::*;
-use crate::testing::{
-    FixedClock, FixedRandom, Fixture, MemoryStore, ScriptedHelper, ScriptedLauncher, oid,
-    remotes_launched_by, task_caps,
-};
-
-pub(super) fn config() -> Config {
-    Config {
-        remotes: vec![RemoteConfig {
-            name: RemoteName("todoist".into()),
-            helper: "todoist".into(),
-            url: "todoist::".into(),
-            credentials: vec![CredentialSpec::Literal {
-                name: "api_token".into(),
-                value: "t".into(),
-            }],
-            stale: None,
-            deadline: None,
-            path: None,
-        }],
-        ..Config::default()
-    }
-}
-
-pub(super) fn launcher(
-    answer: impl Fn(&[RemoteMutation]) -> Vec<MutationOutcome> + Clone + 'static,
-) -> (ScriptedLauncher, Rc<RefCell<Vec<RemoteMutation>>>) {
-    let pushed = Rc::new(RefCell::new(Vec::new()));
-    let seen = pushed.clone();
-    let l = ScriptedLauncher {
-        make: Box::new(move || ScriptedHelper {
-            caps: task_caps(),
-            pull_answer: Ok(PullOutcome::default()),
-            push_answer: Box::new({
-                let answer = answer.clone();
-                move |ms| Ok(answer(ms))
-            }),
-            pushed: seen.clone(),
-            pulled_since: Rc::new(RefCell::new(vec![])),
-        }),
-        launched_with: Rc::new(RefCell::new(vec![])),
-    };
-    (l, pushed)
-}
-
-pub(super) fn clock() -> FixedClock {
-    FixedClock(date(2026, 9, 18))
-}
-
-pub(super) fn committed_task(store: &MemoryStore, byte: u8) {
-    store
-        .put(&Object::Task(Task::new(oid(byte), format!("t{byte}"))))
-        .unwrap();
-    let fixture = Fixture {
-        random: FixedRandom::new(byte),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(store);
-    dam.add_all().unwrap();
-    dam.commit("m").unwrap();
-}
+use crate::testing::{Scenario, accepting_all, oid, pushing, remotes_launched_by, task, todoist};
 
 #[test]
 fn a_committed_create_is_sent_and_its_remote_id_is_mapped() {
-    let store = MemoryStore::new();
-    committed_task(&store, 1);
-    let (l, pushed) = launcher(|ms| {
-        ms.iter()
-            .map(|m| MutationOutcome {
-                oid: m.oid.clone(),
-                verdict: MutationVerdict::Accepted {
-                    remote_id: Some("r1".into()),
-                },
-            })
-            .collect()
-    });
-    let reports = Dam {
-        store: &store,
-        clock: &clock(),
-        random: &FixedRandom::new(0),
-        config: &config(),
-    }
-    .push(remotes_launched_by(&l), None)
-    .unwrap();
+    let s = Scenario::default();
+    s.committed(task(1));
+    let (l, pushed) = pushing(accepting_all(Some("r1")));
+    let reports = s.dam().push(remotes_launched_by(&l), None).unwrap();
     assert_eq!(reports[0].succeeded, 1);
     assert_eq!(pushed.borrow()[0].op, MutationOp::Create);
     assert_eq!(
-        store
-            .remote_id(&RemoteName("todoist".into()), &oid(1))
-            .unwrap()
-            .as_deref(),
+        s.store.remote_id(&todoist(), &oid(1)).unwrap().as_deref(),
         Some("r1")
     );
-    assert!(
-        store
-            .unpushed(&RemoteName("todoist".into()))
-            .unwrap()
-            .is_empty()
-    );
+    assert!(s.store.unpushed(&todoist()).unwrap().is_empty());
     assert_eq!(
         *l.launched_with.borrow(),
         vec![vec![("api_token".to_string(), "t".into())]],
@@ -127,69 +38,31 @@ fn a_committed_create_is_sent_and_its_remote_id_is_mapped() {
 
 #[test]
 fn a_retry_is_sent_as_an_update_of_the_committed_state() {
-    let store = MemoryStore::new();
-    committed_task(&store, 1);
-    store
-        .map_remote_id(&RemoteName("todoist".into()), &oid(1), "r1")
-        .unwrap();
-    store
-        .set_push_retries(&RemoteName("todoist".into()), &[oid(1)])
-        .unwrap();
-    let (l, pushed) = launcher(|ms| {
-        ms.iter()
-            .map(|m| MutationOutcome {
-                oid: m.oid.clone(),
-                verdict: MutationVerdict::Accepted { remote_id: None },
-            })
-            .collect()
-    });
-    Dam {
-        store: &store,
-        clock: &clock(),
-        random: &FixedRandom::new(0),
-        config: &config(),
-    }
-    .push(remotes_launched_by(&l), None)
-    .unwrap();
+    let s = Scenario::default();
+    s.committed(task(1));
+    s.store.map_remote_id(&todoist(), &oid(1), "r1").unwrap();
+    s.store.set_push_retries(&todoist(), &[oid(1)]).unwrap();
+    let (l, pushed) = pushing(accepting_all(None));
+    s.dam().push(remotes_launched_by(&l), None).unwrap();
     let sent = pushed.borrow();
     assert!(
         sent.iter()
             .any(|m| m.op == MutationOp::Update && m.remote_id.as_deref() == Some("r1"))
     );
-    assert!(
-        store
-            .push_retries(&RemoteName("todoist".into()))
-            .unwrap()
-            .is_empty()
-    );
+    assert!(s.store.push_retries(&todoist()).unwrap().is_empty());
 }
 
 #[test]
 fn an_event_is_skipped_by_a_task_only_helper() {
-    let store = MemoryStore::new();
-    let e = Event::new(
+    let s = Scenario::default();
+    s.committed(Object::Event(Event::new(
         oid(2),
         "e",
         When::Day(date(2026, 1, 1)),
         When::Day(date(2026, 1, 2)),
-    );
-    store.put(&Object::Event(e)).unwrap();
-    let fixture = Fixture {
-        random: FixedRandom::new(3),
-        ..Fixture::default()
-    };
-    let dam = fixture.dam(&store);
-    dam.add_all().unwrap();
-    dam.commit("m").unwrap();
-    let (l, pushed) = launcher(|_| vec![]);
-    let reports = Dam {
-        store: &store,
-        clock: &clock(),
-        random: &FixedRandom::new(0),
-        config: &config(),
-    }
-    .push(remotes_launched_by(&l), None)
-    .unwrap();
+    )));
+    let (l, pushed) = pushing(|_| vec![]);
+    let reports = s.dam().push(remotes_launched_by(&l), None).unwrap();
     assert_eq!(reports[0].skipped, 1);
     assert!(pushed.borrow().is_empty());
 }
