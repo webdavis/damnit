@@ -13,13 +13,10 @@ pub use reports::{conflict_repository_contract, notice_repository_contract};
 pub use unit_of_work::transactional_contract;
 pub use working::{object_repository_contract, stage_repository_contract};
 
-use dam_domain::{CommitId, Object, Oid, Path, Task};
+use dam_domain::{CommitId, Object, Path, Task};
 
 use crate::ports::RemoteName;
-
-fn oid(byte: u8) -> Oid {
-    Oid::generate(&mut |b: &mut [u8]| b.fill(byte))
-}
+use crate::testing::oid;
 
 fn commit_id(byte: u8) -> CommitId {
     CommitId::generate(&mut |b: &mut [u8]| b.fill(byte))
