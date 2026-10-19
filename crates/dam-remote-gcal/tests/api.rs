@@ -1,12 +1,10 @@
-mod loopback;
-mod support;
-
+use dam_helper::testing;
 use std::collections::HashMap;
 
 use dam_helper::ServiceError;
 use dam_remote_gcal::access::access_token;
 use dam_remote_gcal::{ApiError, Client, Credentials, Endpoints};
-use loopback::Reply;
+use testing::Reply;
 
 const CLIENT_SECRET: &str = "GOCSPX-SUPERSECRETCLIENT";
 const REFRESH: &str = "1//0gSUPERSECRETREFRESH";
@@ -21,15 +19,15 @@ fn credentials() -> Credentials {
     }
 }
 
-fn token_route(reply: Reply) -> loopback::Loopback {
+fn token_route(reply: Reply) -> testing::Loopback {
     let mut routes = HashMap::new();
     routes.insert("POST /token", vec![reply]);
-    loopback::serve(routes)
+    testing::serve(routes)
 }
 
 #[test]
 fn the_refresh_grant_sends_the_three_credentials_in_a_form_and_reads_the_access_token() {
-    let _guard = support::guard(
+    let _guard = testing::guard(
         "the_refresh_grant_sends_the_three_credentials_in_a_form_and_reads_the_access_token",
     );
     let google = token_route(Reply::json(
@@ -37,7 +35,7 @@ fn the_refresh_grant_sends_the_three_credentials_in_a_form_and_reads_the_access_
         serde_json::json!({"access_token": "ya29.ACCESS", "expires_in": 3599, "token_type": "Bearer"}),
     ));
     let token = access_token(
-        &support::agent(),
+        &dam_helper::agent(),
         &Endpoints::loopback(&google.base).unwrap(),
         &credentials(),
     )
@@ -56,7 +54,7 @@ fn the_refresh_grant_sends_the_three_credentials_in_a_form_and_reads_the_access_
 
 #[test]
 fn a_revoked_refresh_token_says_to_sign_in_again_and_quotes_nothing() {
-    let _guard = support::guard("a_revoked_refresh_token_says_to_sign_in_again_and_quotes_nothing");
+    let _guard = testing::guard("a_revoked_refresh_token_says_to_sign_in_again_and_quotes_nothing");
     let google = token_route(Reply::json(
         400,
         serde_json::json!({
@@ -64,7 +62,7 @@ fn a_revoked_refresh_token_says_to_sign_in_again_and_quotes_nothing() {
         }),
     ));
     let err = access_token(
-        &support::agent(),
+        &dam_helper::agent(),
         &Endpoints::loopback(&google.base).unwrap(),
         &credentials(),
     )
@@ -85,13 +83,13 @@ fn a_revoked_refresh_token_says_to_sign_in_again_and_quotes_nothing() {
 
 #[test]
 fn an_answer_without_an_access_token_is_refused_without_quoting_it() {
-    let _guard = support::guard("an_answer_without_an_access_token_is_refused_without_quoting_it");
+    let _guard = testing::guard("an_answer_without_an_access_token_is_refused_without_quoting_it");
     let google = token_route(Reply::json(
         200,
         serde_json::json!({"token_type": "Bearer", "echo": REFRESH}),
     ));
     let err = access_token(
-        &support::agent(),
+        &dam_helper::agent(),
         &Endpoints::loopback(&google.base).unwrap(),
         &credentials(),
     )
@@ -111,13 +109,13 @@ fn an_answer_without_an_access_token_is_refused_without_quoting_it() {
 
 #[test]
 fn an_empty_access_token_is_refused() {
-    let _guard = support::guard("an_empty_access_token_is_refused");
+    let _guard = testing::guard("an_empty_access_token_is_refused");
     let google = token_route(Reply::json(
         200,
         serde_json::json!({"access_token": "", "token_type": "Bearer"}),
     ));
     let err = access_token(
-        &support::agent(),
+        &dam_helper::agent(),
         &Endpoints::loopback(&google.base).unwrap(),
         &credentials(),
     )
@@ -137,12 +135,12 @@ fn an_empty_access_token_is_refused() {
 #[test]
 fn a_token_endpoint_nobody_answers_is_an_exchange_that_did_not_reach_google() {
     let _guard =
-        support::guard("a_token_endpoint_nobody_answers_is_an_exchange_that_did_not_reach_google");
+        testing::guard("a_token_endpoint_nobody_answers_is_an_exchange_that_did_not_reach_google");
     let closed = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
     let base = format!("http://{}", closed.local_addr().unwrap());
     drop(closed);
     let err = access_token(
-        &support::agent(),
+        &dam_helper::agent(),
         &Endpoints::loopback(&base).unwrap(),
         &credentials(),
     )
@@ -165,13 +163,13 @@ fn a_token_endpoint_nobody_answers_is_an_exchange_that_did_not_reach_google() {
 
 #[test]
 fn an_error_never_debug_prints_a_credential() {
-    let _guard = support::guard("an_error_never_debug_prints_a_credential");
+    let _guard = testing::guard("an_error_never_debug_prints_a_credential");
     let google = token_route(Reply::json(
         401,
         serde_json::json!({"error": "invalid_client", "e": CLIENT_SECRET}),
     ));
     let err = access_token(
-        &support::agent(),
+        &dam_helper::agent(),
         &Endpoints::loopback(&google.base).unwrap(),
         &credentials(),
     )
@@ -190,7 +188,7 @@ fn window() -> Window {
 
 fn api(base: &str) -> CalendarApi {
     CalendarApi::new(
-        support::agent(),
+        dam_helper::agent(),
         &Endpoints::loopback(base).unwrap(),
         "ya29.ACCESS".into(),
     )
@@ -206,7 +204,7 @@ fn page(items: serde_json::Value, next: Option<&str>) -> Reply {
 
 #[test]
 fn one_calendar_is_asked_for_single_instances_deleted_included_over_the_window() {
-    let _guard = support::guard(
+    let _guard = testing::guard(
         "one_calendar_is_asked_for_single_instances_deleted_included_over_the_window",
     );
     let mut routes = HashMap::new();
@@ -214,7 +212,7 @@ fn one_calendar_is_asked_for_single_instances_deleted_included_over_the_window()
         "GET /calendar/v3/calendars/primary/events",
         vec![page(serde_json::json!([{"id": "e1"}]), None)],
     );
-    let google = loopback::serve(routes);
+    let google = testing::serve(routes);
     let listing = api(&google.base).events("primary", &window()).unwrap();
     assert_eq!(listing.summary.as_deref(), Some("me@example.com"));
     assert_eq!(listing.time_zone.as_deref(), Some("America/New_York"));
@@ -238,7 +236,7 @@ fn one_calendar_is_asked_for_single_instances_deleted_included_over_the_window()
 
 #[test]
 fn every_page_is_read_until_google_names_no_next_one() {
-    let _guard = support::guard("every_page_is_read_until_google_names_no_next_one");
+    let _guard = testing::guard("every_page_is_read_until_google_names_no_next_one");
     let mut routes = HashMap::new();
     routes.insert(
         "GET /calendar/v3/calendars/primary/events",
@@ -247,7 +245,7 @@ fn every_page_is_read_until_google_names_no_next_one() {
             page(serde_json::json!([{"id": "e2"}]), None),
         ],
     );
-    let google = loopback::serve(routes);
+    let google = testing::serve(routes);
     let listing = api(&google.base).events("primary", &window()).unwrap();
     assert_eq!(
         listing
@@ -262,13 +260,13 @@ fn every_page_is_read_until_google_names_no_next_one() {
 
 #[test]
 fn a_calendar_that_pages_forever_is_stopped_at_the_cap() {
-    let _guard = support::guard("a_calendar_that_pages_forever_is_stopped_at_the_cap");
+    let _guard = testing::guard("a_calendar_that_pages_forever_is_stopped_at_the_cap");
     let mut routes = HashMap::new();
     routes.insert(
         "GET /calendar/v3/calendars/primary/events",
         vec![page(serde_json::json!([]), Some("again"))],
     );
-    let google = loopback::serve(routes);
+    let google = testing::serve(routes);
     let err = api(&google.base).events("primary", &window()).unwrap_err();
     assert!(
         matches!(err, ApiError::TooManyPages { limit } if limit == MAX_PAGES),
@@ -279,13 +277,13 @@ fn a_calendar_that_pages_forever_is_stopped_at_the_cap() {
 
 #[test]
 fn a_calendar_id_is_one_percent_encoded_path_segment() {
-    let _guard = support::guard("a_calendar_id_is_one_percent_encoded_path_segment");
+    let _guard = testing::guard("a_calendar_id_is_one_percent_encoded_path_segment");
     let mut routes = HashMap::new();
     routes.insert(
         "GET /calendar/v3/calendars/en.usa%23holiday%40group.v.calendar.google.com/events",
         vec![page(serde_json::json!([]), None)],
     );
-    let google = loopback::serve(routes);
+    let google = testing::serve(routes);
     let listing = api(&google.base)
         .events("en.usa#holiday@group.v.calendar.google.com", &window())
         .unwrap();
@@ -297,7 +295,7 @@ fn a_calendar_id_is_one_percent_encoded_path_segment() {
 
 #[test]
 fn a_calendar_google_does_not_know_names_itself_in_the_error() {
-    let _guard = support::guard("a_calendar_google_does_not_know_names_itself_in_the_error");
+    let _guard = testing::guard("a_calendar_google_does_not_know_names_itself_in_the_error");
     let mut routes = HashMap::new();
     routes.insert(
         "GET /calendar/v3/calendars/nope/events",
@@ -306,7 +304,7 @@ fn a_calendar_google_does_not_know_names_itself_in_the_error() {
             serde_json::json!({"error": {"code": 404, "message": "Not Found"}}),
         )],
     );
-    let google = loopback::serve(routes);
+    let google = testing::serve(routes);
     let said = api(&google.base)
         .events("nope", &window())
         .unwrap_err()
@@ -316,20 +314,20 @@ fn a_calendar_google_does_not_know_names_itself_in_the_error() {
 
 #[test]
 fn a_rate_limit_carries_the_retry_time_google_named() {
-    let _guard = support::guard("a_rate_limit_carries_the_retry_time_google_named");
+    let _guard = testing::guard("a_rate_limit_carries_the_retry_time_google_named");
     let mut routes = HashMap::new();
     routes.insert(
         "GET /calendar/v3/calendars/primary/events",
         vec![Reply::json(429, serde_json::json!({})).with_header("Retry-After", "30")],
     );
-    let google = loopback::serve(routes);
+    let google = testing::serve(routes);
     let err = api(&google.base).events("primary", &window()).unwrap_err();
     assert!(err.to_string().contains("retry after 30s"), "{err}");
 }
 
 #[test]
 fn a_huge_error_body_is_bounded_to_one_short_line() {
-    let _guard = support::guard("a_huge_error_body_is_bounded_to_one_short_line");
+    let _guard = testing::guard("a_huge_error_body_is_bounded_to_one_short_line");
     let huge = Reply {
         status: 500,
         body: format!("line one\nline two {}", "x".repeat(100 * 1024)),
@@ -337,7 +335,7 @@ fn a_huge_error_body_is_bounded_to_one_short_line() {
     };
     let mut routes = HashMap::new();
     routes.insert("GET /calendar/v3/calendars/primary/events", vec![huge]);
-    let google = loopback::serve(routes);
+    let google = testing::serve(routes);
     let err = api(&google.base).events("primary", &window()).unwrap_err();
     let ApiError::Service(ServiceError::Http {
         status: 500, body, ..

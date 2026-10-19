@@ -1,13 +1,11 @@
-mod loopback;
-mod support;
-
+use dam_helper::testing;
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpStream;
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-use loopback::Reply;
+use testing::Reply;
 
 const CLIENT_SECRET: &str = "GOCSPX-SUPERSECRETCLIENT";
 const REFRESH: &str = "1//0gSUPERSECRETREFRESH";
@@ -70,7 +68,7 @@ fn walk_with_the_secret_piped_in(
             break url.to_string();
         }
     };
-    let asked = loopback::decoded_fields(&url);
+    let asked = testing::decoded_fields(&url);
     let field = |name: &str| asked.get(name).cloned().unwrap_or_default();
     let address = field("redirect_uri")
         .trim_start_matches("http://")
@@ -94,7 +92,7 @@ fn granted(state: &str) -> String {
     format!("state={state}&code=4%2F0AbCODE")
 }
 
-fn google_granting() -> loopback::Loopback {
+fn google_granting() -> testing::Loopback {
     let mut routes = HashMap::new();
     routes.insert(
         "POST /token",
@@ -103,7 +101,7 @@ fn google_granting() -> loopback::Loopback {
             serde_json::json!({"refresh_token": REFRESH, "access_token": "ya29.A"}),
         )],
     );
-    loopback::serve(routes)
+    testing::serve(routes)
 }
 
 fn assert_quotes_no_secret(stderr: &str) {
@@ -114,7 +112,7 @@ fn assert_quotes_no_secret(stderr: &str) {
 
 #[test]
 fn the_refresh_token_alone_reaches_standard_output() {
-    let _guard = support::guard("the_refresh_token_alone_reaches_standard_output");
+    let _guard = testing::guard("the_refresh_token_alone_reaches_standard_output");
     let home = tempfile::tempdir().unwrap();
     let google = google_granting();
     let walked = walk_with_the_secret_piped_in(&google.base, home.path(), granted, Stdout::Kept);
@@ -132,7 +130,7 @@ fn the_refresh_token_alone_reaches_standard_output() {
 
 #[test]
 fn a_consent_refused_in_the_browser_exits_one_and_prints_nothing() {
-    let _guard = support::guard("a_consent_refused_in_the_browser_exits_one_and_prints_nothing");
+    let _guard = testing::guard("a_consent_refused_in_the_browser_exits_one_and_prints_nothing");
     let home = tempfile::tempdir().unwrap();
     let google = google_granting();
     let walked = walk_with_the_secret_piped_in(
@@ -150,7 +148,7 @@ fn a_consent_refused_in_the_browser_exits_one_and_prints_nothing() {
 
 #[test]
 fn a_token_that_cannot_be_printed_is_lost_and_says_to_sign_in_again() {
-    let _guard = support::guard("a_token_that_cannot_be_printed_is_lost_and_says_to_sign_in_again");
+    let _guard = testing::guard("a_token_that_cannot_be_printed_is_lost_and_says_to_sign_in_again");
     let home = tempfile::tempdir().unwrap();
     let google = google_granting();
     let walked = walk_with_the_secret_piped_in(
@@ -166,9 +164,9 @@ fn a_token_that_cannot_be_printed_is_lost_and_says_to_sign_in_again() {
 
 #[test]
 fn an_unknown_flag_is_a_usage_error_before_anything_is_asked() {
-    let _guard = support::guard("an_unknown_flag_is_a_usage_error_before_anything_is_asked");
+    let _guard = testing::guard("an_unknown_flag_is_a_usage_error_before_anything_is_asked");
     let home = tempfile::tempdir().unwrap();
-    let google = loopback::serve(HashMap::new());
+    let google = testing::serve(HashMap::new());
     let out = sign_in(&google.base, home.path())
         .arg("--open")
         .stdin(Stdio::null())

@@ -1,8 +1,6 @@
-mod support;
-
 mod fixtures;
-mod loopback;
 
+use dam_helper::testing;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -12,7 +10,7 @@ use fixtures::{mutation, sync_body, task, todoist, with_fields};
 
 #[test]
 fn a_resent_mutation_repeats_its_uuids_and_creates_nothing_twice() {
-    let _guard = support::guard("a_resent_mutation_repeats_its_uuids_and_creates_nothing_twice");
+    let _guard = testing::guard("a_resent_mutation_repeats_its_uuids_and_creates_nothing_twice");
     let (server, recorded) = todoist(sync_body(), None);
     let api = TodoistApi::new(&server.base, "tok");
     let first = vec![mutation(
@@ -51,7 +49,7 @@ fn a_resent_mutation_repeats_its_uuids_and_creates_nothing_twice() {
 
 #[test]
 fn the_commands_of_one_mutation_have_distinct_uuids() {
-    let _guard = support::guard("the_commands_of_one_mutation_have_distinct_uuids");
+    let _guard = testing::guard("the_commands_of_one_mutation_have_distinct_uuids");
     let (server, recorded) = todoist(sync_body(), None);
     let api = TodoistApi::new(&server.base, "tok");
     let mutations = vec![mutation(
@@ -68,7 +66,7 @@ fn the_commands_of_one_mutation_have_distinct_uuids() {
 
 #[test]
 fn a_refused_command_fails_only_its_own_mutation() {
-    let _guard = support::guard("a_refused_command_fails_only_its_own_mutation");
+    let _guard = testing::guard("a_refused_command_fails_only_its_own_mutation");
     let (server, recorded) = todoist(sync_body(), Some("item_update"));
     let api = TodoistApi::new(&server.base, "tok");
     let mutations = vec![
@@ -101,7 +99,7 @@ fn a_refused_command_fails_only_its_own_mutation() {
 #[test]
 fn a_mutation_is_pushed_only_when_every_one_of_its_commands_is_accepted() {
     let _guard =
-        support::guard("a_mutation_is_pushed_only_when_every_one_of_its_commands_is_accepted");
+        testing::guard("a_mutation_is_pushed_only_when_every_one_of_its_commands_is_accepted");
     let (server, recorded) = todoist(sync_body(), Some("item_close"));
     let api = TodoistApi::new(&server.base, "tok");
     let mutations = vec![mutation(
@@ -118,10 +116,16 @@ fn a_mutation_is_pushed_only_when_every_one_of_its_commands_is_accepted() {
 
 #[test]
 fn a_failure_reading_the_tree_stops_the_push_before_any_mutation() {
-    let _guard = support::guard("a_failure_reading_the_tree_stops_the_push_before_any_mutation");
+    let _guard = testing::guard("a_failure_reading_the_tree_stops_the_push_before_any_mutation");
     let mut routes = HashMap::new();
-    routes.insert("POST /sync", (500, serde_json::json!({"error": "boom"})));
-    let server = loopback::serve(routes);
+    routes.insert(
+        "POST /sync",
+        vec![testing::Reply::json(
+            500,
+            serde_json::json!({"error": "boom"}),
+        )],
+    );
+    let server = testing::serve(routes);
     let api = TodoistApi::new(&server.base, "tok");
     let mutations = vec![mutation(
         "create",
@@ -143,19 +147,19 @@ fn a_failure_reading_the_tree_stops_the_push_before_any_mutation() {
 
 #[test]
 fn a_failure_part_way_through_belongs_to_its_own_mutation() {
-    let _guard = support::guard("a_failure_part_way_through_belongs_to_its_own_mutation");
+    let _guard = testing::guard("a_failure_part_way_through_belongs_to_its_own_mutation");
     let writes = Arc::new(Mutex::new(0u32));
     let counted = Arc::clone(&writes);
-    let server = loopback::serve_with(move |seen| {
-        if seen.body.get("commands").is_none() {
-            return loopback::Reply::new(200, sync_body());
+    let server = testing::serve_with(move |seen| {
+        if seen.json().get("commands").is_none() {
+            return testing::Reply::json(200, sync_body());
         }
         let mut n = counted.lock().unwrap();
         *n += 1;
         if *n == 2 {
-            return loopback::Reply::new(500, serde_json::json!({"error": "upstream is down"}));
+            return testing::Reply::json(500, serde_json::json!({"error": "upstream is down"}));
         }
-        let uuids: Vec<String> = seen.body["commands"]
+        let uuids: Vec<String> = seen.json()["commands"]
             .as_array()
             .unwrap()
             .iter()
@@ -165,7 +169,7 @@ fn a_failure_part_way_through_belongs_to_its_own_mutation() {
             .into_iter()
             .map(|u| (u, serde_json::Value::from("ok")))
             .collect();
-        loopback::Reply::new(
+        testing::Reply::json(
             200,
             serde_json::json!({"sync_status": status, "temp_id_mapping": {}}),
         )

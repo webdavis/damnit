@@ -1,8 +1,6 @@
-mod support;
-
 mod fixtures;
-mod loopback;
 
+use dam_helper::testing;
 use dam_protocol::{WireObject, WireTask};
 use dam_remote_todoist::api::TodoistApi;
 use dam_remote_todoist::push::push;
@@ -46,7 +44,7 @@ fn as_pulled(oid: &str, path: &str, subject: &str) -> WireObject {
 
 #[test]
 fn a_retry_declaring_every_field_with_only_the_name_differing_is_ok() {
-    let _guard = support::guard("a_retry_declaring_every_field_with_only_the_name_differing_is_ok");
+    let _guard = testing::guard("a_retry_declaring_every_field_with_only_the_name_differing_is_ok");
     let (server, recorded) = todoist(sync_body(), None);
     let api = TodoistApi::new(&server.base, "tok");
     let mutations = vec![with_fields(
@@ -68,7 +66,7 @@ fn a_retry_declaring_every_field_with_only_the_name_differing_is_ok() {
 
 #[test]
 fn a_path_change_among_every_declared_field_is_refused_for_the_path_only_until_reverted() {
-    let _guard = support::guard(
+    let _guard = testing::guard(
         "a_path_change_among_every_declared_field_is_refused_for_the_path_only_until_reverted",
     );
     let (server, _recorded) = todoist(sync_body(), None);
@@ -105,7 +103,7 @@ fn a_path_change_among_every_declared_field_is_refused_for_the_path_only_until_r
 
 #[test]
 fn an_uncarried_field_counts_as_changed_only_when_it_differs_from_the_pulled_value() {
-    let _guard = support::guard(
+    let _guard = testing::guard(
         "an_uncarried_field_counts_as_changed_only_when_it_differs_from_the_pulled_value",
     );
     let (server, _recorded) = todoist(sync_body(), None);

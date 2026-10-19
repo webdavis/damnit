@@ -19,3 +19,6 @@ dam-protocol = { path = "../dam-protocol" }
 serde.workspace = true
 serde_json.workspace = true
 ureq.workspace = true
+
+[dev-dependencies]
+dam-helper = { path = "../dam-helper", features = ["testing"] }

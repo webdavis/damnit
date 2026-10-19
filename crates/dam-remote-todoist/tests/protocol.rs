@@ -1,5 +1,4 @@
-mod support;
-
+use dam_helper::testing;
 use std::io::Write;
 use std::process::{Command, Stdio};
 
@@ -33,7 +32,7 @@ fn pull_error(command: &mut Command) -> String {
 
 #[test]
 fn capabilities_are_answered_without_a_token_and_pull_needs_one() {
-    let _guard = support::guard("capabilities_are_answered_without_a_token_and_pull_needs_one");
+    let _guard = testing::guard("capabilities_are_answered_without_a_token_and_pull_needs_one");
     let mut child = helper(&["todoist", ""])
         .env_remove("DAM_TODOIST_API_TOKEN")
         .stdin(Stdio::piped())
@@ -61,7 +60,7 @@ fn capabilities_are_answered_without_a_token_and_pull_needs_one() {
 
 #[test]
 fn a_malformed_line_answers_an_error_and_the_loop_keeps_going() {
-    let _guard = support::guard("a_malformed_line_answers_an_error_and_the_loop_keeps_going");
+    let _guard = testing::guard("a_malformed_line_answers_an_error_and_the_loop_keeps_going");
     let mut child = helper(&["todoist", ""])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -84,7 +83,7 @@ fn a_malformed_line_answers_an_error_and_the_loop_keeps_going() {
 
 #[test]
 fn a_remote_under_another_name_reads_its_own_token_and_not_todoists() {
-    let _guard = support::guard("a_remote_under_another_name_reads_its_own_token_and_not_todoists");
+    let _guard = testing::guard("a_remote_under_another_name_reads_its_own_token_and_not_todoists");
     let missing = pull_error(
         helper(&["work", ""])
             .env("DAM_TODOIST_API_TOKEN", "tok")
@@ -105,7 +104,7 @@ fn a_remote_under_another_name_reads_its_own_token_and_not_todoists() {
 
 #[test]
 fn any_invocation_but_remote_and_address_is_a_usage_error() {
-    let _guard = support::guard("any_invocation_but_remote_and_address_is_a_usage_error");
+    let _guard = testing::guard("any_invocation_but_remote_and_address_is_a_usage_error");
     for args in [&[][..], &["todoist"][..], &["todoist", "", "extra"][..]] {
         let out = helper(args).stdin(Stdio::null()).output().unwrap();
         assert_eq!(out.status.code(), Some(2), "{args:?}");

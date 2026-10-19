@@ -5,6 +5,8 @@ mod remote;
 mod secret;
 mod serve;
 mod service_error;
+#[cfg(feature = "testing")]
+pub mod testing;
 
 pub use base_url::{base_url, loopback_base};
 pub use credential::credential;

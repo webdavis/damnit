@@ -1,18 +1,16 @@
-mod loopback;
-mod support;
-
+use dam_helper::testing;
 use std::collections::HashMap;
 
 use dam_remote_gcal::Endpoints;
 use dam_remote_gcal::calendar_api::CalendarApi;
 use dam_remote_gcal::pull::{pull, window};
-use loopback::Reply;
+use testing::Reply;
 
 const NOW: &str = "2026-09-22T12:00:00Z";
 
 fn api(base: &str) -> CalendarApi {
     CalendarApi::new(
-        support::agent(),
+        dam_helper::agent(),
         &Endpoints::loopback(base).unwrap(),
         "ya29.A".into(),
     )
@@ -49,7 +47,7 @@ fn the_window_is_a_week_back_and_ninety_days_ahead() {
 
 #[test]
 fn every_calendar_is_pulled_and_cancelled_items_come_back_by_id() {
-    let _guard = support::guard("every_calendar_is_pulled_and_cancelled_items_come_back_by_id");
+    let _guard = testing::guard("every_calendar_is_pulled_and_cancelled_items_come_back_by_id");
     let mut routes = HashMap::new();
     routes.insert(
         "GET /calendar/v3/calendars/primary/events",
@@ -62,7 +60,7 @@ fn every_calendar_is_pulled_and_cancelled_items_come_back_by_id() {
         "GET /calendar/v3/calendars/team%40x/events",
         page("Team", serde_json::json!([event("b")])),
     );
-    let google = loopback::serve(routes);
+    let google = testing::serve(routes);
     let response = pull(
         &api(&google.base),
         &calendars(&["primary", "team@x"]),
@@ -80,20 +78,20 @@ fn every_calendar_is_pulled_and_cancelled_items_come_back_by_id() {
     assert_eq!(response.cancelled, vec!["primary/gone"]);
     assert!(response.removed.is_empty());
     assert!(response.sync.is_some());
-    let query = loopback::decoded_fields(&google.seen()[0].query);
+    let query = testing::decoded_fields(&google.seen()[0].query);
     assert_eq!(query["timeMin"], "2026-09-15T12:00:00Z");
     assert_eq!(query["timeMax"], "2026-12-21T12:00:00Z");
 }
 
 #[test]
 fn one_unreadable_event_fails_the_whole_pull_and_names_it() {
-    let _guard = support::guard("one_unreadable_event_fails_the_whole_pull_and_names_it");
+    let _guard = testing::guard("one_unreadable_event_fails_the_whole_pull_and_names_it");
     let mut routes = HashMap::new();
     routes.insert(
         "GET /calendar/v3/calendars/primary/events",
         page("me", serde_json::json!([event("a"), {"id": "broken"}])),
     );
-    let google = loopback::serve(routes);
+    let google = testing::serve(routes);
     let said = pull(
         &api(&google.base),
         &calendars(&["primary"]),
@@ -107,13 +105,13 @@ fn one_unreadable_event_fails_the_whole_pull_and_names_it() {
 
 #[test]
 fn one_calendar_that_fails_fails_the_pull() {
-    let _guard = support::guard("one_calendar_that_fails_fails_the_pull");
+    let _guard = testing::guard("one_calendar_that_fails_fails_the_pull");
     let mut routes = HashMap::new();
     routes.insert(
         "GET /calendar/v3/calendars/primary/events",
         page("me", serde_json::json!([event("a")])),
     );
-    let google = loopback::serve(routes);
+    let google = testing::serve(routes);
     let err = pull(
         &api(&google.base),
         &calendars(&["primary", "missing"]),
@@ -127,7 +125,7 @@ fn one_calendar_that_fails_fails_the_pull() {
 #[test]
 fn an_event_that_left_the_window_early_comes_back_cancelled_on_the_next_pull() {
     let _guard =
-        support::guard("an_event_that_left_the_window_early_comes_back_cancelled_on_the_next_pull");
+        testing::guard("an_event_that_left_the_window_early_comes_back_cancelled_on_the_next_pull");
     let mut routes = HashMap::new();
     routes.insert(
         "GET /calendar/v3/calendars/primary/events",
@@ -137,7 +135,7 @@ fn an_event_that_left_the_window_early_comes_back_cancelled_on_the_next_pull() {
             listed("me", serde_json::json!([event("stays")])),
         ],
     );
-    let google = loopback::serve(routes);
+    let google = testing::serve(routes);
     let now = NOW.parse().unwrap();
     let first = pull(&api(&google.base), &calendars(&["primary"]), None, now).unwrap();
     assert!(first.cancelled.is_empty());
@@ -161,7 +159,7 @@ fn an_event_that_left_the_window_early_comes_back_cancelled_on_the_next_pull() {
 
 #[test]
 fn a_calendar_taken_off_the_address_has_its_events_cancelled_once() {
-    let _guard = support::guard("a_calendar_taken_off_the_address_has_its_events_cancelled_once");
+    let _guard = testing::guard("a_calendar_taken_off_the_address_has_its_events_cancelled_once");
     let mut routes = HashMap::new();
     routes.insert(
         "GET /calendar/v3/calendars/primary/events",
@@ -175,7 +173,7 @@ fn a_calendar_taken_off_the_address_has_its_events_cancelled_once() {
         "GET /calendar/v3/calendars/team%40x/events",
         page("Team", serde_json::json!([event("b")])),
     );
-    let google = loopback::serve(routes);
+    let google = testing::serve(routes);
     let now = NOW.parse().unwrap();
     let first = pull(
         &api(&google.base),

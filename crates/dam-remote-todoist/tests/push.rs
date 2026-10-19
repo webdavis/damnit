@@ -1,8 +1,6 @@
-mod support;
-
 mod fixtures;
-mod loopback;
 
+use dam_helper::testing;
 use dam_remote_todoist::api::{ApiError, TodoistApi};
 use dam_remote_todoist::push::push;
 use fixtures::{
@@ -12,7 +10,7 @@ use fixtures::{
 
 #[test]
 fn creates_updates_and_deletes_become_the_right_commands() {
-    let _guard = support::guard("creates_updates_and_deletes_become_the_right_commands");
+    let _guard = testing::guard("creates_updates_and_deletes_become_the_right_commands");
     let (server, recorded) = todoist(sync_body(), None);
     let api = TodoistApi::new(&server.base, "tok");
     let mutations = vec![
@@ -108,7 +106,7 @@ fn creates_updates_and_deletes_become_the_right_commands() {
 
 #[test]
 fn a_depth_one_create_becomes_a_section_when_its_child_arrives_later_in_the_same_push() {
-    let _guard = support::guard(
+    let _guard = testing::guard(
         "a_depth_one_create_becomes_a_section_when_its_child_arrives_later_in_the_same_push",
     );
     let (server, recorded) = todoist(sync_body(), None);
@@ -141,7 +139,7 @@ fn a_depth_one_create_becomes_a_section_when_its_child_arrives_later_in_the_same
 
 #[test]
 fn clearing_done_becomes_the_uncomplete_command() {
-    let _guard = support::guard("clearing_done_becomes_the_uncomplete_command");
+    let _guard = testing::guard("clearing_done_becomes_the_uncomplete_command");
     let (server, recorded) = todoist(sync_body(), None);
     let api = TodoistApi::new(&server.base, "tok");
     let response = push(
@@ -165,7 +163,7 @@ fn clearing_done_becomes_the_uncomplete_command() {
 
 #[test]
 fn a_path_change_moves_the_task_through_the_move_command() {
-    let _guard = support::guard("a_path_change_moves_the_task_through_the_move_command");
+    let _guard = testing::guard("a_path_change_moves_the_task_through_the_move_command");
     let (server, recorded) = todoist(sync_body_with_two_projects(), None);
     let api = TodoistApi::new(&server.base, "tok");
     let mutations = vec![with_fields(
@@ -189,7 +187,7 @@ fn a_path_change_moves_the_task_through_the_move_command() {
 
 #[test]
 fn a_path_and_subject_change_moves_first_then_updates_the_content() {
-    let _guard = support::guard("a_path_and_subject_change_moves_first_then_updates_the_content");
+    let _guard = testing::guard("a_path_and_subject_change_moves_first_then_updates_the_content");
     let (server, recorded) = todoist(sync_body_with_two_projects(), None);
     let api = TodoistApi::new(&server.base, "tok");
     let mutations = vec![with_fields(
@@ -218,7 +216,7 @@ fn a_path_and_subject_change_moves_first_then_updates_the_content() {
 
 #[test]
 fn a_hostile_remote_id_is_refused_and_never_reaches_a_command() {
-    let _guard = support::guard("a_hostile_remote_id_is_refused_and_never_reaches_a_command");
+    let _guard = testing::guard("a_hostile_remote_id_is_refused_and_never_reaches_a_command");
     let (server, recorded) = todoist(sync_body(), None);
     let api = TodoistApi::new(&server.base, "tok");
     let mutations = vec![
@@ -246,12 +244,12 @@ fn a_hostile_remote_id_is_refused_and_never_reaches_a_command() {
 
 #[test]
 fn a_rate_limit_stops_the_push_and_names_the_retry_time() {
-    let _guard = support::guard("a_rate_limit_stops_the_push_and_names_the_retry_time");
-    let server = loopback::serve_with(|seen| {
-        if seen.body.get("commands").is_none() {
-            return loopback::Reply::new(200, sync_body());
+    let _guard = testing::guard("a_rate_limit_stops_the_push_and_names_the_retry_time");
+    let server = testing::serve_with(|seen| {
+        if seen.json().get("commands").is_none() {
+            return testing::Reply::json(200, sync_body());
         }
-        loopback::Reply::new(429, serde_json::json!({"error": "Rate limit exceeded"}))
+        testing::Reply::json(429, serde_json::json!({"error": "Rate limit exceeded"}))
             .with_header("Retry-After", "42")
     });
     let api = TodoistApi::new(&server.base, "tok");

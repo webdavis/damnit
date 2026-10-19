@@ -28,4 +28,5 @@ sha2.workspace = true
 ureq.workspace = true
 
 [dev-dependencies]
+dam-helper = { path = "../dam-helper", features = ["testing"] }
 tempfile.workspace = true

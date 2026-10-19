@@ -1,11 +1,10 @@
-mod loopback;
-mod support;
 mod walk;
 
+use dam_helper::testing;
 use std::collections::HashMap;
 
 use dam_remote_gcal::SignInError;
-use loopback::Reply;
+use testing::Reply;
 use walk::{
     CLIENT_SECRET, REFRESH, client, play_the_browser_returning_its_page, query_of,
     s256_computed_apart_from_the_code_under_test, sign_in_against, still_encoded_field,
@@ -13,13 +12,13 @@ use walk::{
 
 #[test]
 fn a_granted_consent_is_exchanged_for_the_refresh_token() {
-    let _guard = support::guard("a_granted_consent_is_exchanged_for_the_refresh_token");
+    let _guard = testing::guard("a_granted_consent_is_exchanged_for_the_refresh_token");
     let mut routes = HashMap::new();
     routes.insert("POST /token", vec![Reply::json(200, serde_json::json!({
         "access_token": "ya29.ACCESS", "expires_in": 3599, "refresh_token": REFRESH,
         "scope": "https://www.googleapis.com/auth/calendar.events.readonly", "token_type": "Bearer"
     }))]);
-    let google = loopback::serve(routes);
+    let google = testing::serve(routes);
     let mut browser = None;
     let mut announced = String::new();
     let token = sign_in_against(&google)
@@ -39,8 +38,8 @@ fn a_granted_consent_is_exchanged_for_the_refresh_token() {
         (seen[0].method.as_str(), seen[0].path.as_str()),
         ("POST", "/token")
     );
-    let asked = loopback::decoded_fields(query_of(&announced));
-    let sent = |name: &str| seen[0].decoded_form.get(name).cloned();
+    let asked = testing::decoded_fields(query_of(&announced));
+    let sent = |name: &str| seen[0].form().get(name).cloned();
     assert_eq!(sent("grant_type").as_deref(), Some("authorization_code"));
     assert_eq!(sent("code").as_deref(), Some("4/0AbCODE"));
     assert_eq!(
@@ -60,17 +59,12 @@ fn a_granted_consent_is_exchanged_for_the_refresh_token() {
         asked.get("code_challenge").cloned(),
         "the verifier sent does not answer the challenge announced"
     );
-    assert_eq!(
-        seen[0].decoded_form.len(),
-        6,
-        "{:?}",
-        seen[0].decoded_form.keys()
-    );
+    assert_eq!(seen[0].form().len(), 6, "{:?}", seen[0].form().keys());
 }
 
 #[test]
 fn the_tests_own_s256_is_the_rfc_7636_appendix_b_example() {
-    let _guard = support::guard("the_tests_own_s256_is_the_rfc_7636_appendix_b_example");
+    let _guard = testing::guard("the_tests_own_s256_is_the_rfc_7636_appendix_b_example");
     assert_eq!(
         s256_computed_apart_from_the_code_under_test("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"),
         "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
@@ -79,14 +73,14 @@ fn the_tests_own_s256_is_the_rfc_7636_appendix_b_example() {
 
 #[test]
 fn each_walk_announces_its_own_state_and_challenge() {
-    let _guard = support::guard("each_walk_announces_its_own_state_and_challenge");
-    let google = loopback::serve(HashMap::new());
+    let _guard = testing::guard("each_walk_announces_its_own_state_and_challenge");
+    let google = testing::serve(HashMap::new());
     let sign_in = sign_in_against(&google);
     let mut announced = Vec::new();
     for _ in 0..2 {
         let mut browser = None;
         let _ = sign_in.mint(&client(), &mut |url| {
-            announced.push(loopback::decoded_fields(query_of(url)));
+            announced.push(testing::decoded_fields(query_of(url)));
             browser = Some(play_the_browser_returning_its_page(url, |state| {
                 format!("error=access_denied&state={state}")
             }));
@@ -110,8 +104,8 @@ fn each_walk_announces_its_own_state_and_challenge() {
 
 #[test]
 fn a_consent_refused_in_the_browser_sends_no_exchange() {
-    let _guard = support::guard("a_consent_refused_in_the_browser_sends_no_exchange");
-    let google = loopback::serve(HashMap::new());
+    let _guard = testing::guard("a_consent_refused_in_the_browser_sends_no_exchange");
+    let google = testing::serve(HashMap::new());
     let mut browser = None;
     let err = sign_in_against(&google)
         .mint(&client(), &mut |url| {
@@ -128,7 +122,7 @@ fn a_consent_refused_in_the_browser_sends_no_exchange() {
 
 #[test]
 fn the_client_secret_travels_in_the_exchange_body_and_nowhere_else() {
-    let _guard = support::guard("the_client_secret_travels_in_the_exchange_body_and_nowhere_else");
+    let _guard = testing::guard("the_client_secret_travels_in_the_exchange_body_and_nowhere_else");
     let mut routes = HashMap::new();
     routes.insert(
         "POST /token",
@@ -137,7 +131,7 @@ fn the_client_secret_travels_in_the_exchange_body_and_nowhere_else() {
             serde_json::json!({"refresh_token": REFRESH}),
         )],
     );
-    let google = loopback::serve(routes);
+    let google = testing::serve(routes);
     let mut browser = None;
     let mut announced = String::new();
     sign_in_against(&google)
@@ -155,10 +149,7 @@ fn the_client_secret_travels_in_the_exchange_body_and_nowhere_else() {
     assert!(!seen[0].query.contains(CLIENT_SECRET), "{}", seen[0].query);
     assert_eq!(seen[0].authorization, None);
     assert_eq!(
-        seen[0]
-            .decoded_form
-            .get("client_secret")
-            .map(String::as_str),
+        seen[0].form().get("client_secret").map(String::as_str),
         Some(CLIENT_SECRET)
     );
 }
