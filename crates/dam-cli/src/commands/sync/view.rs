@@ -2,6 +2,7 @@ use dam_application::{PullReport, PushReport};
 use dam_domain::Oid;
 use serde::Serialize;
 
+use crate::layout::counted;
 use crate::view::{Human, View, display};
 
 #[derive(Serialize)]
@@ -58,7 +59,10 @@ impl<'a> PushRow<'a> {
 
 impl View for Pushed<'_> {
     fn human(&self) -> Human {
-        Human::Lines(self.remotes.iter().map(PushRow::line).collect())
+        match self.remotes.as_slice() {
+            [] => Human::Lines(vec!["no remotes to push to".to_string()]),
+            remotes => Human::Lines(remotes.iter().map(PushRow::line).collect()),
+        }
     }
 }
 
@@ -91,12 +95,12 @@ impl<'a> PullRow<'a> {
 
     fn line(&self) -> String {
         format!(
-            "{}: {} new, {} updated, {} unchanged, {} conflict(s), {} removed upstream",
+            "{}: {} new, {} updated, {} unchanged, {}, {} removed upstream",
             self.remote,
             self.created,
             self.updated,
             self.unchanged,
-            self.conflicts,
+            counted(self.conflicts, "conflict", "conflicts"),
             self.removed_upstream
         )
     }
@@ -104,7 +108,10 @@ impl<'a> PullRow<'a> {
 
 impl View for Pulled<'_> {
     fn human(&self) -> Human {
-        Human::Lines(self.remotes.iter().map(PullRow::line).collect())
+        match self.remotes.as_slice() {
+            [] => Human::Lines(vec!["no remotes to pull from".to_string()]),
+            remotes => Human::Lines(remotes.iter().map(PullRow::line).collect()),
+        }
     }
 }
 

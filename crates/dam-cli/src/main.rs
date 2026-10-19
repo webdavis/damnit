@@ -3,6 +3,7 @@ mod commands;
 mod context;
 mod editor;
 mod error;
+mod layout;
 mod output;
 mod prompt;
 mod view;

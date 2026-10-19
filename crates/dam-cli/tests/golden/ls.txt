@@ -1,4 +1,4 @@
-2222222  p4  -  call mom
-1111111  p2  2026-09-25  buy oat milk  [errand]  home/
-4444444  event  2026-09-25  offsite  [deep]  work/
-3333333  event  2026-09-25T09:00:00+00:00[UTC]  standup  work/
+2222222  p4     -                 -      call mom
+1111111  p2     2026-09-25        home/  buy oat milk  [errand]
+4444444  event  2026-09-25        work/  offsite  [deep]
+3333333  event  2026-09-25 09:00  work/  standup

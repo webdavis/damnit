@@ -149,7 +149,7 @@ fn an_all_day_event_reads_as_dates() {
     assert_eq!(report.data["events"][0]["all_day"], true);
     assert_eq!(
         report.human,
-        "4e4e4e4  busy  2026-09-18  2026-09-19  offsite  work/"
+        "4e4e4e4  busy  2026-09-18  2026-09-19  work/  offsite"
     );
 }
 
@@ -180,12 +180,9 @@ fn the_local_zone_places_the_day_the_window_and_the_printed_times() {
         (all_day["start"].as_i64(), all_day["end"].as_i64()),
         (Some(1_789_704_000), Some(1_789_790_400))
     );
-    assert!(
-        report
-            .human
-            .contains("3f3f3f3  busy  2026-09-18 10:00  2026-09-18 10:30  standup"),
-        "{}",
-        report.human
+    assert_eq!(
+        report.human.lines().last(),
+        Some("3f3f3f3  busy  2026-09-18 10:00  2026-09-18 10:30  -  standup")
     );
 }
 
@@ -196,6 +193,6 @@ fn the_human_line_says_busy_or_free_with_local_times() {
     let report = run_agenda(&ctx, args(None, None)).unwrap();
     assert_eq!(
         report.human,
-        "3f3f3f3  busy  2026-09-18 14:00  2026-09-18 14:30  standup"
+        "3f3f3f3  busy  2026-09-18 14:00  2026-09-18 14:30  -  standup"
     );
 }

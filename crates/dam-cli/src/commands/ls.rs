@@ -15,7 +15,10 @@ pub(crate) fn run_ls(ctx: &Context, args: LsArgs) -> Result<Report, CliError> {
         &ctx.config,
         args.query.as_deref(),
     )?;
-    report(&ObjectList { objects: &objects })
+    report(&ObjectList {
+        objects: &objects,
+        zone: &ctx.tz,
+    })
 }
 
 #[cfg(test)]

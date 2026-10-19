@@ -17,7 +17,7 @@ pub(crate) fn run(ctx: &Context, args: EditArgs) -> Result<Report, CliError> {
         from_flags(ctx, args)?
     };
     let object = edit(ctx.store.as_ref(), &ctx.config.categories, &oid, fields)?;
-    report(&ObjectRow(&object))
+    report(&ObjectRow(&object, &ctx.tz))
 }
 
 fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {

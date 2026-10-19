@@ -20,7 +20,7 @@ struct CategoryRow<'a> {
 
 impl View for CategoryList<'_> {
     fn human(&self) -> Human {
-        Human::Table(
+        Human::list(
             self.categories
                 .iter()
                 .map(|c| {
@@ -28,6 +28,7 @@ impl View for CategoryList<'_> {
                     vec![c.name.to_string(), holds.to_string(), c.values.join(", ")]
                 })
                 .collect(),
+            "no categories declared",
         )
     }
 }
@@ -45,11 +46,12 @@ struct FilterRow<'a> {
 
 impl View for FilterList<'_> {
     fn human(&self) -> Human {
-        Human::Table(
+        Human::list(
             self.filters
                 .iter()
                 .map(|f| vec![f.name.to_string(), f.query.to_string()])
                 .collect(),
+            "no filters declared",
         )
     }
 }
@@ -118,7 +120,7 @@ mod tests {
         let report = run_category(&config, CategoryCommand::List).unwrap();
         assert_eq!(
             report.human,
-            "effort  exclusive  light, deep\ncontext  any  home"
+            "effort   exclusive  light, deep\ncontext  any        home"
         );
         assert_eq!(
             report.data["categories"][0],
@@ -151,6 +153,14 @@ mod tests {
         assert_eq!(
             run_filter(&config, FilterCommand::List).unwrap().data,
             serde_json::json!({"filters": []})
+        );
+        assert_eq!(
+            run_category(&config, CategoryCommand::List).unwrap().human,
+            "no categories declared"
+        );
+        assert_eq!(
+            run_filter(&config, FilterCommand::List).unwrap().human,
+            "no filters declared"
         );
     }
 }

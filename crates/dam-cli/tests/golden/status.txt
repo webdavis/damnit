@@ -1,7 +1,7 @@
-warning: a credential is a value in the config file: fake.api_token; prefer <name>_command or <name>_env
+warning: a credential is a value in the config file: fake.api_token; prefer <na…
 Staged:
   removed  2222222  call mom
 Not staged:
   changed  1111111  buy soy milk  (subject)
 Unpushed:
-  fake: 1 commit(s)
+  fake: 1 commit

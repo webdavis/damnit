@@ -44,3 +44,33 @@ fn category_list_prints_the_golden_lines() {
 fn filter_list_prints_the_golden_lines() {
     assert_golden_output(&fixture::seeded(), &["filter", "list"], "filter_list.txt");
 }
+
+#[test]
+fn an_empty_list_names_its_empty_answer_in_one_sentence() {
+    let sb = support::sandbox::Sandbox::new();
+    assert_eq!(sb.dam(&["ls"]).1, "no objects match\n");
+    assert_eq!(
+        sb.dam(&["agenda", "--no-pull"]).1,
+        "no events in the window\n"
+    );
+    assert_eq!(sb.dam(&["log"]).1, "no commits yet\n");
+    assert_eq!(sb.dam(&["diff"]).1, "no changes\n");
+}
+
+#[test]
+fn no_line_of_a_list_passes_a_forty_column_terminal() {
+    let sb = fixture::with_staged_and_unstaged_changes();
+    for args in [
+        &["ls"][..],
+        &["agenda", "--from", "2026-09-25", "--to", "2026-09-26"],
+        &["status"],
+        &["remote", "list"],
+    ] {
+        let out = sb.command(args).env("COLUMNS", "40").output().unwrap();
+        let text = String::from_utf8(out.stdout).unwrap();
+        assert!(!text.is_empty(), "{args:?}");
+        for line in text.lines() {
+            assert!(line.chars().count() <= 40, "{args:?}: {line}");
+        }
+    }
+}

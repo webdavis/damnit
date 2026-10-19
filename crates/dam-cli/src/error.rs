@@ -95,7 +95,9 @@ impl fmt::Display for CliError {
             CliError::Editor(e) => write!(f, "editor: {}", e.0),
             CliError::Config(e) => write!(f, "{e}"),
             CliError::Open(e) => write!(f, "{e}"),
-            CliError::Usage(s) | CliError::Io(s) | CliError::Internal(s) => f.write_str(s),
+            CliError::Usage(text) | CliError::Io(text) | CliError::Internal(text) => {
+                f.write_str(text)
+            }
             CliError::Cancelled => f.write_str("cancelled"),
         }
     }

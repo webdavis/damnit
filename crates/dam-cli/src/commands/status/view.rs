@@ -4,6 +4,7 @@ use serde::Serialize;
 
 use super::notices::NoticeRow;
 use super::rows::{ChangeRow, ConflictRow};
+use crate::layout::counted;
 use crate::view::{Human, View, displays};
 
 #[derive(Serialize)]
@@ -64,13 +65,13 @@ impl View for StatusView<'_> {
             self.unpushed
                 .iter()
                 .filter(|u| u.commits > 0)
-                .map(|u| format!("{}: {} commit(s)", u.remote, u.commits))
+                .map(|u| format!("{}: {}", u.remote, counted(u.commits, "commit", "commits")))
                 .collect(),
         );
         if human.len() == self.warnings.len() {
             human.push("nothing staged, nothing changed".to_string());
         }
-        Human::Lines(human)
+        Human::Table(human.into_iter().map(|line| vec![line]).collect())
     }
 }
 
@@ -81,6 +82,9 @@ pub(super) struct DiffView<'a> {
 
 impl View for DiffView<'_> {
     fn human(&self) -> Human {
-        Human::Lines(self.changes.iter().map(ChangeRow::line).collect())
+        Human::list(
+            self.changes.iter().map(|c| vec![c.line()]).collect(),
+            "no changes",
+        )
     }
 }

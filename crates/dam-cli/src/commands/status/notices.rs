@@ -2,6 +2,7 @@ use dam_application::Notice;
 use dam_domain::Oid;
 use serde::Serialize;
 
+use crate::layout::counted;
 use crate::view::display;
 
 #[derive(Serialize)]
@@ -91,8 +92,9 @@ impl<'a> NoticeRow<'a> {
                 subject,
                 attached,
             } => format!(
-                "event {} {subject:?} was cancelled; {attached} attached task(s) kept",
-                oid.short()
+                "event {} {subject:?} was cancelled; {} kept",
+                oid.short(),
+                counted(*attached, "attached task", "attached tasks")
             ),
             NoticeRow::PushFailed { remote, oid, why } => {
                 format!("push of {} to {remote} failed: {why}", oid.short())
