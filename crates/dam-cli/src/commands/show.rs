@@ -1,4 +1,5 @@
 use dam_application::{Refusal, UseCaseError, log, resolve_object};
+use dam_domain::Object;
 
 use crate::args::ShowArgs;
 use crate::commands::commit::{commit_json, commit_line};
@@ -10,9 +11,7 @@ use crate::output::{Report, object_json, object_line};
 
 pub(crate) fn run_show(ctx: &mut Context, args: ShowArgs) -> Result<Report, CliError> {
     refresh_stale_unless_no_pull(ctx)?;
-    if let Ok(oid) = resolve_object(ctx.store.as_ref(), &args.id)
-        && let Some(object) = ctx.store.get(&oid)?
-    {
+    if let Some(object) = working_object_named(ctx, &args.id)? {
         let b = object.base();
         let mut human = vec![object_line(&object), format!("oid: {}", b.oid)];
         if !b.body.is_empty() {
@@ -58,6 +57,14 @@ pub(crate) fn run_show(ctx: &mut Context, args: ShowArgs) -> Result<Report, CliE
             args.id,
             many.len()
         ))),
+    }
+}
+
+fn working_object_named(ctx: &Context, text: &str) -> Result<Option<Object>, CliError> {
+    match resolve_object(ctx.store.as_ref(), text) {
+        Ok(oid) => Ok(ctx.store.get(&oid)?),
+        Err(UseCaseError::Refused(Refusal::NoWorkingObject(_))) => Ok(None),
+        Err(e) => Err(e.into()),
     }
 }
 
