@@ -35,39 +35,30 @@ mod tests {
     use super::*;
 
     use crate::testing::prelude::*;
-    use crate::testing::{FixedRandom, Fixture, MemoryStore, oid};
+    use crate::testing::{Scenario, oid};
     use dam_domain::{Object, Task};
 
     #[test]
     fn commit_records_the_stage_and_empties_it() {
-        let store = MemoryStore::new();
-        store.put(&Object::Task(Task::new(oid(1), "a"))).unwrap();
-        let fixture = Fixture {
-            random: FixedRandom::new(5),
-            ..Fixture::default()
-        };
-        let dam = fixture.dam(&store);
+        let s = Scenario::default().drawing_from(5);
+        s.working(Object::Task(Task::new(oid(1), "a")));
+        let dam = s.dam();
         dam.add_all().unwrap();
         let rec = dam.commit("first").unwrap();
         assert_eq!(rec.message, "first");
         assert_eq!(rec.changes.len(), 1);
-        assert!(store.staged().unwrap().is_empty());
+        assert!(s.store.staged().unwrap().is_empty());
         assert_eq!(
-            store.committed(&oid(1)).unwrap().unwrap().base().subject,
+            s.store.committed(&oid(1)).unwrap().unwrap().base().subject,
             "a"
         );
-        assert_eq!(store.log().unwrap()[0].id, rec.id);
+        assert_eq!(s.store.log().unwrap()[0].id, rec.id);
     }
 
     #[test]
     fn an_empty_stage_cannot_be_committed() {
-        let store = MemoryStore::new();
-        let fixture = Fixture {
-            random: FixedRandom::new(5),
-            ..Fixture::default()
-        };
-        let dam = fixture.dam(&store);
-        let err = dam.commit("x").unwrap_err();
+        let s = Scenario::default().drawing_from(5);
+        let err = s.dam().commit("x").unwrap_err();
         assert_eq!(err, UseCaseError::Refused(Refusal::NothingToCommit));
     }
 }

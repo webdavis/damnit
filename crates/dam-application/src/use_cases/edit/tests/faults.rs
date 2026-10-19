@@ -1,14 +1,14 @@
 use super::super::*;
-use super::seed;
 use crate::ports::StoreError;
-use crate::testing::{FaultyStore, Fixture, MemoryStore};
+use crate::testing::{FaultyStore, Scenario, oid, task};
 
 #[test]
 fn edit_that_fails_at_its_write_changes_nothing() {
-    let store = FaultyStore::new(MemoryStore::new());
-    let id = seed(&store.inner, 1);
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
+    let s = Scenario::default();
+    s.working(task(1));
+    let id = oid(1);
+    let store = FaultyStore::new(s.store);
+    let dam = s.fixture.dam(&store);
     store.assert_unchanged_when_any_write_fails(|| {
         dam.edit(
             &id,
@@ -23,12 +23,12 @@ fn edit_that_fails_at_its_write_changes_nothing() {
 
 #[test]
 fn a_dependency_that_cannot_be_read_fails_the_cycle_check() {
-    let store = FaultyStore::new(MemoryStore::new());
-    let id = seed(&store.inner, 1);
-    let dependency = seed(&store.inner, 2);
+    let s = Scenario::default();
+    s.working(task(1)).working(task(2));
+    let (id, dependency) = (oid(1), oid(2));
+    let store = FaultyStore::new(s.store);
     store.fail_reading(&dependency);
-    let fixture = Fixture::default();
-    let dam = fixture.dam(&store);
+    let dam = s.fixture.dam(&store);
     let err = dam
         .edit(
             &id,

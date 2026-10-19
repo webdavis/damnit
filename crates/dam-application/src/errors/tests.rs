@@ -1,13 +1,7 @@
 use super::*;
-use dam_domain::{Blockers, LabelViolation, Oid, Tracked};
+use dam_domain::{Blockers, LabelViolation, Tracked};
 
-fn oid() -> Oid {
-    oid_of(1)
-}
-
-fn oid_of(byte: u8) -> Oid {
-    Oid::generate(&mut |x: &mut [u8]| x.fill(byte))
-}
+use crate::testing::oid;
 
 const HAND_COUNTED_RULES: usize = 24;
 
@@ -43,14 +37,14 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
 fn one_sample_of_every_refusal() -> Vec<Refusal> {
     vec![
         Refusal::Blocked {
-            oid: oid(),
+            oid: oid(1),
             blockers: Blockers {
-                children: vec![oid_of(2)],
+                children: vec![oid(2)],
                 ..Blockers::default()
             },
         },
         Refusal::Cycle {
-            oid: oid(),
+            oid: oid(1),
             path: vec![],
         },
         Refusal::Labels(LabelViolation::Exclusive {
@@ -62,12 +56,12 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
         Refusal::NoWorkingObject("abab".into()),
         Refusal::NoSuchRemote("todoist".into()),
         Refusal::RemoteExists("todoist".into()),
-        Refusal::NotATask(oid()),
-        Refusal::NotAnEvent(oid()),
-        Refusal::NotCompleted(oid()),
-        Refusal::NotCommitted(oid()),
-        Refusal::DirtyOnPull { oid: oid() },
-        Refusal::MoveInsideItself(oid()),
+        Refusal::NotATask(oid(1)),
+        Refusal::NotAnEvent(oid(1)),
+        Refusal::NotCompleted(oid(1)),
+        Refusal::NotCommitted(oid(1)),
+        Refusal::DirtyOnPull { oid: oid(1) },
+        Refusal::MoveInsideItself(oid(1)),
         Refusal::NothingToCommit,
         Refusal::NeedsAnAnswer,
         Refusal::NeedsAnEditor,
@@ -89,10 +83,10 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
             category: "effort".into(),
             value: "home".into(),
         },
-        Refusal::NoConflict(oid()),
+        Refusal::NoConflict(oid(1)),
         Refusal::AmbiguousPrefix {
             text: "abab".into(),
-            matches: vec![oid().to_string(), oid_of(2).to_string()],
+            matches: vec![oid(1).to_string(), oid(2).to_string()],
         },
     ]
 }

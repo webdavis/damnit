@@ -27,12 +27,12 @@ pub fn resolve_credentials(
 mod tests {
     use super::*;
     use crate::config::CredentialSpec;
-    use crate::ports::{CredentialError, RemoteName};
-    use crate::testing::EchoCredentials;
+    use crate::ports::CredentialError;
+    use crate::testing::{EchoCredentials, todoist};
 
     fn remote(specs: Vec<CredentialSpec>) -> RemoteConfig {
         RemoteConfig {
-            name: RemoteName("todoist".into()),
+            name: todoist(),
             helper: "todoist".into(),
             url: "todoist::".into(),
             credentials: specs,

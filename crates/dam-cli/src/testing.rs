@@ -1,12 +1,13 @@
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 
-use dam_adapters::{Interrupt, SqliteStore};
+use dam_adapters::Interrupt;
+use dam_application::testing::{FixedClock, FixedRandom, MemoryStore};
 use dam_application::{
-    Clock, Config, CredentialError, CredentialSource, CredentialSpec, HelperError, HelperLauncher,
+    Config, CredentialError, CredentialSource, CredentialSpec, HelperError, HelperLauncher,
     MutationOutcome, MutationVerdict, PullOutcome, RemoteCapabilities, RemoteConfig, RemoteHelper,
     RemoteMutation, Secret,
 };
-use dam_domain::{Categories, Date, Field, Kind, Timestamp};
+use dam_domain::{Categories, Field, Kind};
 use jiff::civil::date;
 
 use crate::context::{Context, terminal_pair_for_a_human_and_refusals_for_a_machine};
@@ -17,33 +18,6 @@ use crate::prompt::Prompt;
 
 mod config_file;
 pub(crate) use config_file::FakeConfigFile;
-
-pub(crate) struct FixedClock(pub(crate) Date);
-impl Clock for FixedClock {
-    fn today(&self) -> Date {
-        self.0
-    }
-    fn now(&self) -> Timestamp {
-        self.0
-            .at(0, 0, 0, 0)
-            .to_zoned(jiff::tz::TimeZone::UTC)
-            .map(|z| z.timestamp())
-            .unwrap_or(Timestamp::UNIX_EPOCH)
-    }
-}
-
-pub(crate) struct CountingRandom(Cell<u8>);
-impl CountingRandom {
-    pub(crate) fn new(seed: u8) -> CountingRandom {
-        CountingRandom(Cell::new(seed))
-    }
-}
-impl dam_application::Randomness for CountingRandom {
-    fn fill(&self, buf: &mut [u8]) {
-        self.0.set(self.0.get().wrapping_add(1));
-        buf.fill(self.0.get());
-    }
-}
 
 pub(crate) struct ScriptedPrompt {
     pub(crate) choices: RefCell<Vec<usize>>,
@@ -164,7 +138,7 @@ impl HelperLauncher for FailingLauncher {
 
 pub(crate) fn context() -> Context {
     Context {
-        store: Box::new(SqliteStore::in_memory().unwrap_or_else(|e| panic!("{e}"))),
+        store: Box::new(MemoryStore::new()),
         config: Config {
             done_interactive: false,
             remotes: vec![],
@@ -173,7 +147,7 @@ pub(crate) fn context() -> Context {
         },
         config_file: Box::new(FakeConfigFile::default()),
         clock: Box::new(FixedClock(date(2026, 9, 18))),
-        random: Box::new(CountingRandom::new(0)),
+        random: Box::new(FixedRandom::new(1)),
         launcher: Box::new(EchoLauncher {
             pulled: RefCell::new(None),
         }),

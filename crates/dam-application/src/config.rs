@@ -104,6 +104,7 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::testing::todoist;
 
     const TOKEN: &str = "SUPERSECRETTOKEN";
 
@@ -111,7 +112,7 @@ mod tests {
     fn a_config_holding_a_literal_credential_never_debug_prints_it() {
         let config = Config {
             remotes: vec![RemoteConfig {
-                name: RemoteName("todoist".into()),
+                name: todoist(),
                 helper: "todoist".into(),
                 url: "todoist::".into(),
                 credentials: vec![CredentialSpec::Literal {
