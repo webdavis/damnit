@@ -2,10 +2,16 @@ use std::collections::BTreeSet;
 
 use crate::Oid;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Blocker {
-    OpenDependency(Oid),
-    OpenChild(Oid),
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Blockers {
+    pub dependencies: Vec<Oid>,
+    pub children: Vec<Oid>,
+}
+
+impl Blockers {
+    pub fn is_empty(&self) -> bool {
+        self.dependencies.is_empty() && self.children.is_empty()
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -17,7 +23,6 @@ pub enum Tracked {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Force {
     No,
-    Yes,
     With(Dispositions),
 }
 
@@ -40,15 +45,6 @@ pub enum DependencyDisposition {
     Drop,
     #[default]
     Keep,
-}
-
-pub fn blockers(open_dependencies: &[Oid], open_children: &[Oid]) -> Vec<Blocker> {
-    open_dependencies
-        .iter()
-        .cloned()
-        .map(Blocker::OpenDependency)
-        .chain(open_children.iter().cloned().map(Blocker::OpenChild))
-        .collect()
 }
 
 pub fn cycle_in(
@@ -100,21 +96,18 @@ mod tests {
     }
 
     #[test]
-    fn no_open_blockers_means_none() {
-        assert!(blockers(&[], &[]).is_empty());
-    }
-
-    #[test]
-    fn open_dependencies_come_before_open_children() {
-        let found = blockers(&[oid(1)], &[oid(2), oid(3)]);
-        assert_eq!(
-            found,
-            vec![
-                Blocker::OpenDependency(oid(1)),
-                Blocker::OpenChild(oid(2)),
-                Blocker::OpenChild(oid(3))
-            ]
-        );
+    fn no_open_dependency_and_no_open_child_means_nothing_blocks() {
+        assert!(Blockers::default().is_empty());
+        let one_child = Blockers {
+            children: vec![oid(2)],
+            ..Blockers::default()
+        };
+        assert!(!one_child.is_empty());
+        let one_dependency = Blockers {
+            dependencies: vec![oid(1)],
+            ..Blockers::default()
+        };
+        assert!(!one_dependency.is_empty());
     }
 
     #[test]

@@ -1,5 +1,5 @@
 use super::*;
-use dam_domain::{Blocker, LabelViolation, Oid, Tracked};
+use dam_domain::{Blockers, LabelViolation, Oid, Tracked};
 
 fn oid() -> Oid {
     oid_of(1)
@@ -43,7 +43,10 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
     vec![
         Refusal::Blocked {
             oid: oid(),
-            blockers: vec![Blocker::OpenChild(oid_of(2))],
+            blockers: Blockers {
+                children: vec![oid_of(2)],
+                ..Blockers::default()
+            },
         },
         Refusal::Cycle {
             oid: oid(),
@@ -149,30 +152,23 @@ fn no_refusal_spans_more_than_one_line() {
 
 #[test]
 fn a_blocked_task_names_its_open_children_and_dependencies_in_one_line() {
-    let blocked = |blockers| Refusal::Blocked {
+    let blocked = |dependencies, children| Refusal::Blocked {
         oid: oid_of(1),
-        blockers,
+        blockers: Blockers {
+            dependencies,
+            children,
+        },
     };
     assert_eq!(
-        blocked(vec![
-            Blocker::OpenChild(oid_of(2)),
-            Blocker::OpenChild(oid_of(3)),
-            Blocker::OpenChild(oid_of(4)),
-        ])
-        .to_string(),
+        blocked(vec![], vec![oid_of(2), oid_of(3), oid_of(4)]).to_string(),
         "0101010 has 3 open children: 0202020, 0303030, 0404040; pass --force to complete it anyway"
     );
     assert_eq!(
-        blocked(vec![Blocker::OpenDependency(oid_of(2))]).to_string(),
+        blocked(vec![oid_of(2)], vec![]).to_string(),
         "0101010 has 1 open dependency: 0202020; pass --force to complete it anyway"
     );
     assert_eq!(
-        blocked(vec![
-            Blocker::OpenDependency(oid_of(3)),
-            Blocker::OpenChild(oid_of(2)),
-            Blocker::OpenDependency(oid_of(4)),
-        ])
-        .to_string(),
+        blocked(vec![oid_of(3), oid_of(4)], vec![oid_of(2)]).to_string(),
         "0101010 has 1 open child: 0202020 and 2 open dependencies: 0303030, 0404040; pass --force to complete it anyway"
     );
 }

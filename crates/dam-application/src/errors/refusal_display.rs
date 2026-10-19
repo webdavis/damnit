@@ -1,6 +1,6 @@
 use std::fmt;
 
-use dam_domain::{Blocker, Oid, Tracked};
+use dam_domain::{Blockers, Oid, Tracked};
 
 use super::Refusal;
 
@@ -108,32 +108,18 @@ impl fmt::Display for Refusal {
     }
 }
 
-fn open_blockers(blockers: &[Blocker]) -> String {
-    let children: Vec<&Oid> = blockers
-        .iter()
-        .filter_map(|b| match b {
-            Blocker::OpenChild(c) => Some(c),
-            Blocker::OpenDependency(_) => None,
-        })
-        .collect();
-    let dependencies: Vec<&Oid> = blockers
-        .iter()
-        .filter_map(|b| match b {
-            Blocker::OpenDependency(d) => Some(d),
-            Blocker::OpenChild(_) => None,
-        })
-        .collect();
-    let group = |oids: &[&Oid], one: &str, many: &str| {
+fn open_blockers(blockers: &Blockers) -> String {
+    let group = |oids: &[Oid], one: &str, many: &str| {
         let shorts: Vec<&str> = oids.iter().map(|o| o.short()).collect();
         let noun = if oids.len() == 1 { one } else { many };
         format!("{} open {noun}: {}", oids.len(), shorts.join(", "))
     };
     let mut groups = Vec::new();
-    if !children.is_empty() {
-        groups.push(group(&children, "child", "children"));
+    if !blockers.children.is_empty() {
+        groups.push(group(&blockers.children, "child", "children"));
     }
-    if !dependencies.is_empty() {
-        groups.push(group(&dependencies, "dependency", "dependencies"));
+    if !blockers.dependencies.is_empty() {
+        groups.push(group(&blockers.dependencies, "dependency", "dependencies"));
     }
     groups.join(" and ")
 }

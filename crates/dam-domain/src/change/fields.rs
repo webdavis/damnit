@@ -1,92 +1,27 @@
 use super::Change;
-use crate::{Field, Object};
+use crate::{Field, Kind, Object};
 
 pub fn changed_fields(before: &Object, after: &Object) -> Vec<Field> {
-    let mut out = Vec::new();
-    let (b, a) = (before.base(), after.base());
-    if b.subject != a.subject {
-        out.push(Field::Subject);
+    Field::ALL
+        .into_iter()
+        .filter(|field| !field.same(before, after))
+        .collect()
+}
+
+pub fn merge_fields(ours: &Object, theirs: &Object, fields: &[Field]) -> Object {
+    if kind_change(ours, theirs).is_some() {
+        return ours.clone();
     }
-    if b.body != a.body {
-        out.push(Field::Body);
-    }
-    if b.path != a.path {
-        out.push(Field::Path);
-    }
-    if b.labels != a.labels {
-        out.push(Field::Labels);
-    }
-    if b.depends != a.depends {
-        out.push(Field::Depends);
-    }
-    if b.reminders != a.reminders {
-        out.push(Field::Reminders);
-    }
-    if b.recurrence != a.recurrence {
-        out.push(Field::Recurrence);
-    }
-    match (before, after) {
-        (Object::Task(b), Object::Task(a)) => {
-            if b.priority != a.priority {
-                out.push(Field::Priority);
-            }
-            if b.completion != a.completion {
-                out.push(Field::Done);
-            }
-            if b.due != a.due {
-                out.push(Field::Due);
-            }
-            if b.deadline != a.deadline {
-                out.push(Field::Deadline);
-            }
-            if b.event != a.event {
-                out.push(Field::Event);
-            }
-        }
-        (Object::Event(b), Object::Event(a)) => {
-            if b.start != a.start {
-                out.push(Field::Start);
-            }
-            if b.end != a.end {
-                out.push(Field::End);
-            }
-            if b.timezone != a.timezone {
-                out.push(Field::Timezone);
-            }
-            if b.location != a.location {
-                out.push(Field::Location);
-            }
-            if b.attendees != a.attendees {
-                out.push(Field::Attendees);
-            }
-            if b.status != a.status {
-                out.push(Field::Status);
-            }
-            if b.transparency != a.transparency {
-                out.push(Field::Transparency);
-            }
-            if b.visibility != a.visibility {
-                out.push(Field::Visibility);
-            }
-            if b.event_type != a.event_type {
-                out.push(Field::EventType);
-            }
-            if b.color != a.color {
-                out.push(Field::Color);
-            }
-            if b.organizer != a.organizer {
-                out.push(Field::Organizer);
-            }
-            if b.conference != a.conference {
-                out.push(Field::Conference);
-            }
-            if b.attachments != a.attachments {
-                out.push(Field::Attachments);
-            }
-        }
-        _ => out.push(Field::Kind),
+    let mut out = ours.clone();
+    for field in fields {
+        field.copy(theirs, &mut out);
     }
     out
+}
+
+pub fn kind_change(ours: &Object, theirs: &Object) -> Option<(Kind, Kind)> {
+    let (o, t) = (ours.kind(), theirs.kind());
+    (o != t).then_some((o, t))
 }
 
 pub fn touched_fields(change: &Change) -> Vec<Field> {

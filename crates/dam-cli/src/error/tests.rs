@@ -1,6 +1,6 @@
 use super::*;
 use dam_application::EditorError;
-use dam_domain::{Blocker, QueryError};
+use dam_domain::{Blockers, QueryError};
 
 fn oid(byte: u8) -> Oid {
     Oid::generate(&mut |x: &mut [u8]| x.fill(byte))
@@ -22,7 +22,10 @@ fn a_refusal_names_the_rule_it_broke_and_another_failure_names_none() {
 fn a_blocked_completion_names_the_task_and_then_its_blockers() {
     let error = CliError::UseCase(UseCaseError::Refused(Refusal::Blocked {
         oid: oid(1),
-        blockers: vec![Blocker::OpenChild(oid(2)), Blocker::OpenDependency(oid(3))],
+        blockers: Blockers {
+            dependencies: vec![oid(2)],
+            children: vec![oid(3)],
+        },
     }));
     let document = error.document();
     assert_eq!(document["error"]["kind"], "refused");

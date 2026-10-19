@@ -2,7 +2,7 @@ use super::super::*;
 use super::{path_of, put_task, today};
 use crate::testing::prelude::*;
 use crate::testing::{FixedRandom, MemoryStore};
-use dam_domain::Blocker;
+use dam_domain::Blockers;
 
 #[test]
 fn a_root_task_with_objects_in_subfolders_has_no_children() {
@@ -46,10 +46,10 @@ fn open_children_and_dependencies_block_and_force_no_refuses() {
     let found = plan_complete(&store, &plan).unwrap();
     assert_eq!(
         found.blockers,
-        vec![
-            Blocker::OpenDependency(dep.clone()),
-            Blocker::OpenChild(step.clone())
-        ]
+        Blockers {
+            dependencies: vec![dep.clone()],
+            children: vec![step.clone()],
+        }
     );
     let err = complete(
         &store,
@@ -85,7 +85,7 @@ fn done_children_do_not_block() {
 }
 
 #[test]
-fn force_yes_completes_and_leaves_children_where_they_are() {
+fn forcing_with_default_dispositions_completes_and_leaves_children_where_they_are() {
     let store = MemoryStore::new();
     let plan = put_task(&store, 1, "plan", "work", false);
     let step = put_task(&store, 2, "step", "work/plan", false);
@@ -94,7 +94,7 @@ fn force_yes_completes_and_leaves_children_where_they_are() {
         &today(),
         &FixedRandom::new(9),
         &plan,
-        Force::Yes,
+        Force::With(Dispositions::default()),
         Tracked::No,
     )
     .unwrap();

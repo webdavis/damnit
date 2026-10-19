@@ -1,8 +1,7 @@
-use dam_domain::{Object, Oid};
+use dam_domain::{Object, Oid, kind_change, merge_fields};
 
 use crate::config::RemoteConfig;
 use crate::errors::{Refusal, UseCaseError};
-use crate::merge::{kind_change, merge_fields};
 use crate::ports::{Notice, Randomness, Repositories};
 use crate::remote::{IncomingObject, RemoteCapabilities};
 

@@ -102,10 +102,16 @@ pub struct CommitRecord {
 
 mod fields;
 
-pub use fields::{changed_fields, touched_fields};
+pub use fields::{changed_fields, kind_change, merge_fields, touched_fields};
 
 #[cfg(test)]
 mod tests;
 
 #[cfg(test)]
 mod touched;
+
+#[cfg(test)]
+mod differing;
+
+#[cfg(test)]
+mod merging;
