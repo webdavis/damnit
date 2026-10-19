@@ -56,7 +56,6 @@ impl fmt::Display for UseCaseError {
             UseCaseError::Credential(CredentialError::EnvUnset { name, var }) => {
                 write!(f, "{name}: the variable {var} is not set")
             }
-            UseCaseError::Editor(e) => write!(f, "editor: {}", e.0),
             UseCaseError::Parse(s) => write!(f, "{s}"),
             UseCaseError::Query(e) => write!(f, "{e}"),
         }

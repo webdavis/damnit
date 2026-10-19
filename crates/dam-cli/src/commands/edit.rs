@@ -1,5 +1,5 @@
 use dam_adapters::{parse_template, render_template};
-use dam_application::{EditFields, Refusal, UseCaseError, edit};
+use dam_application::{EditFields, Refusal, edit};
 use dam_domain::Oid;
 
 use crate::args::EditArgs;
@@ -89,11 +89,7 @@ fn through_editor(ctx: &Context, oid: &Oid) -> Result<EditFields, CliError> {
     let editor = ctx.editor.as_ref().ok_or(Refusal::NeedsAnEditor)?;
     let original = render_template(&current);
     let parse = |saved: &str| parse_template(saved, &current, ctx.clock.today(), &ctx.tz);
-    let save = |opened: &str| {
-        editor
-            .edit(opened)
-            .map_err(|e| CliError::UseCase(UseCaseError::Editor(e)))
-    };
+    let save = |opened: &str| editor.edit(opened).map_err(CliError::from);
     let saved = save(&original)?;
     if saved == original {
         return Err(CliError::Cancelled);

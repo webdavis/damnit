@@ -1,5 +1,5 @@
 use super::*;
-use dam_application::EditorError;
+use crate::editor::EditorError;
 use dam_domain::{Blockers, QueryError};
 
 fn oid(byte: u8) -> Oid {
@@ -56,7 +56,7 @@ fn an_ambiguous_prefix_is_a_usage_failure_listing_what_it_matched() {
 
 #[test]
 fn a_failure_naming_no_object_carries_an_empty_list() {
-    let error = CliError::UseCase(UseCaseError::Editor(EditorError("no editor".into())));
+    let error = CliError::Editor(EditorError("no editor".into()));
     assert_eq!(error.document()["error"]["oids"], serde_json::json!([]));
     assert_eq!(error.document()["error"]["rule"], serde_json::Value::Null);
 }
@@ -95,7 +95,7 @@ fn every_kind_the_readme_lists_is_one_dam_reports() {
         CliError::UseCase(UseCaseError::Credential(
             dam_application::CredentialError::Missing("x".into()),
         )),
-        CliError::UseCase(UseCaseError::Editor(EditorError("x".into()))),
+        CliError::Editor(EditorError("x".into())),
         CliError::UseCase(UseCaseError::Parse("x".into())),
         CliError::Usage("x".into()),
         CliError::Cancelled,

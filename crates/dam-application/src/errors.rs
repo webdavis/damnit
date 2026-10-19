@@ -1,6 +1,6 @@
 use dam_domain::{Blockers, LabelViolation, Oid, QueryError, Tracked};
 
-use crate::ports::{CredentialError, EditorError, HelperError, StoreError};
+use crate::ports::{CredentialError, HelperError, StoreError};
 
 mod refusal_display;
 mod use_case_display;
@@ -59,7 +59,6 @@ pub enum UseCaseError {
     Store(StoreError),
     Helper(HelperError),
     Credential(CredentialError),
-    Editor(EditorError),
     Parse(String),
     Query(QueryError),
 }
@@ -112,11 +111,6 @@ impl From<HelperError> for UseCaseError {
 impl From<CredentialError> for UseCaseError {
     fn from(e: CredentialError) -> UseCaseError {
         UseCaseError::Credential(e)
-    }
-}
-impl From<EditorError> for UseCaseError {
-    fn from(e: EditorError) -> UseCaseError {
-        UseCaseError::Editor(e)
     }
 }
 

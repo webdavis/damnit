@@ -4,6 +4,8 @@ use dam_adapters::{ConfigError, OpenError};
 use dam_application::{Refusal, StoreError, UseCaseError};
 use dam_domain::Oid;
 
+use crate::editor::EditorError;
+
 mod refusal_oids;
 
 use refusal_oids::refusal_oids;
@@ -11,6 +13,7 @@ use refusal_oids::refusal_oids;
 #[derive(Debug)]
 pub(crate) enum CliError {
     UseCase(UseCaseError),
+    Editor(EditorError),
     Config(ConfigError),
     Open(OpenError),
     Usage(String),
@@ -48,9 +51,7 @@ impl CliError {
             | CliError::Config(ConfigError::Io(_)) => "store",
             CliError::UseCase(UseCaseError::Helper(_)) => "helper",
             CliError::UseCase(UseCaseError::Credential(_)) => "credential",
-            CliError::UseCase(UseCaseError::Editor(_)) => {
-                KIND_OF_AN_EDITOR_FAILURE_NO_DOCUMENT_CARRIES
-            }
+            CliError::Editor(_) => KIND_OF_AN_EDITOR_FAILURE_NO_DOCUMENT_CARRIES,
             CliError::UseCase(UseCaseError::Parse(_))
             | CliError::UseCase(UseCaseError::Query(_))
             | CliError::Config(_) => "parse",
@@ -91,6 +92,7 @@ impl fmt::Display for CliError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             CliError::UseCase(e) => write!(f, "{e}"),
+            CliError::Editor(e) => write!(f, "editor: {}", e.0),
             CliError::Config(e) => write!(f, "{e}"),
             CliError::Open(e) => write!(f, "{e}"),
             CliError::Usage(s) | CliError::Io(s) | CliError::Internal(s) => f.write_str(s),
@@ -109,6 +111,11 @@ impl fmt::Display for CliError {
 
 impl std::error::Error for CliError {}
 
+impl From<EditorError> for CliError {
+    fn from(e: EditorError) -> CliError {
+        CliError::Editor(e)
+    }
+}
 impl From<UseCaseError> for CliError {
     fn from(e: UseCaseError) -> CliError {
         CliError::UseCase(e)

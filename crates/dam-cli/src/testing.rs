@@ -2,14 +2,15 @@ use std::cell::{Cell, RefCell};
 
 use dam_adapters::SqliteStore;
 use dam_application::{
-    Clock, Config, CredentialError, CredentialSource, CredentialSpec, EditorError, EditorSession,
-    HelperError, HelperLauncher, MutationOutcome, MutationVerdict, PullOutcome, RemoteCapabilities,
-    RemoteConfig, RemoteHelper, RemoteMutation, Secret,
+    Clock, Config, CredentialError, CredentialSource, CredentialSpec, HelperError, HelperLauncher,
+    MutationOutcome, MutationVerdict, PullOutcome, RemoteCapabilities, RemoteConfig, RemoteHelper,
+    RemoteMutation, Secret,
 };
 use dam_domain::{Categories, Date, Field, Kind, Timestamp};
 use jiff::civil::date;
 
 use crate::context::{Context, terminal_pair_for_a_human_and_refusals_for_a_machine};
+use crate::editor::{EditorError, EditorSession};
 use crate::error::CliError;
 use crate::output::Format;
 use crate::prompt::Prompt;
