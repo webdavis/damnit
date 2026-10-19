@@ -130,7 +130,7 @@ fn diff_shows_working_or_staged() {
         },
     )
     .unwrap();
-    assert!(staged.human.is_empty());
+    assert_eq!(staged.human, "no changes");
 }
 
 #[test]
@@ -180,7 +180,7 @@ fn status_reports_conflicts_and_unpushed_commits() {
     assert!(report.human.contains("\"mine\""));
     assert!(report.human.contains("\"theirs\""));
     assert!(report.human.contains("Unpushed:"));
-    assert!(report.human.contains("todoist: 1 commit(s)"));
+    assert!(report.human.contains("todoist: 1 commit"));
     assert_eq!(report.data["conflicts"].as_array().unwrap().len(), 1);
     assert_eq!(report.data["conflicts"][0]["oid"], oid(1).to_string());
     assert_eq!(report.data["unpushed"][0]["remote"], "todoist");

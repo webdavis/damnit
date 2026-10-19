@@ -7,13 +7,14 @@ use crate::commands::commit::CommitDoc;
 use crate::commands::remote::refresh_stale_unless_no_pull;
 use crate::context::Context;
 use crate::error::CliError;
+use crate::layout::table;
 use crate::output::{Report, object_cells};
-use crate::view::{Human, View, report, row, wire};
+use crate::view::{Human, View, report, wire};
 
 pub(crate) fn run_show(ctx: &Context, args: ShowArgs) -> Result<Report, CliError> {
     refresh_stale_unless_no_pull(ctx)?;
     if let Some(object) = working_object_named(ctx, &args.id)? {
-        return report(&ShownObject(&object));
+        return report(&ShownObject(&object, &ctx.tz));
     }
     let record = resolve_commit(ctx.store.as_ref(), &args.id)?;
     report(&ShownCommit(CommitDoc::new(&record)))
@@ -29,12 +30,16 @@ fn working_object_named(ctx: &Context, text: &str) -> Result<Option<Object>, Cli
 
 #[derive(Serialize)]
 #[serde(transparent)]
-struct ShownObject<'a>(#[serde(serialize_with = "wire")] &'a Object);
+struct ShownObject<'a>(
+    #[serde(serialize_with = "wire")] &'a Object,
+    #[serde(skip)] &'a jiff::tz::TimeZone,
+);
 
 impl View for ShownObject<'_> {
     fn human(&self) -> Human {
         let b = self.0.base();
-        let mut human = vec![row(&object_cells(self.0)), format!("oid: {}", b.oid)];
+        let mut human = table(&[object_cells(self.0, self.1)]);
+        human.push(format!("oid: {}", b.oid));
         if !b.body.is_empty() {
             human.push(String::new());
             human.push(b.body.clone());
@@ -59,7 +64,7 @@ struct ShownCommit<'a>(CommitDoc<'a>);
 
 impl View for ShownCommit<'_> {
     fn human(&self) -> Human {
-        let mut human = vec![row(&self.0.cells())];
+        let mut human = table(&[self.0.cells()]);
         human.extend(self.0.changes.iter().map(|c| format!("  {}", c.line())));
         Human::Lines(human)
     }

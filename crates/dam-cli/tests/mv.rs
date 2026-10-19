@@ -18,7 +18,7 @@ fn mv_of_a_top_level_object_moves_that_object_alone_and_back() {
     let note = sb.new_object(&["note", "--path", "home"]);
     let short = |oid: &str| oid[..7].to_string();
     let at_top = format!(
-        "{}  p4  -  eggs\n{}  p4  -  milk\n{}  p4  -  note  home/\n{}  p4  -  plan  work/\n",
+        "{}  p4  -  -      eggs\n{}  p4  -  -      milk\n{}  p4  -  home/  note\n{}  p4  -  work/  plan\n",
         short(&eggs),
         short(&milk),
         short(&note),
@@ -28,11 +28,11 @@ fn mv_of_a_top_level_object_moves_that_object_alone_and_back() {
 
     let (ok, out, err) = sb.dam(&["mv", &milk, "work/"]);
     assert!(ok, "{err}");
-    assert_eq!(out, format!("{}  p4  -  milk  work/\n", short(&milk)));
+    assert_eq!(out, format!("{}  p4  -  work/  milk\n", short(&milk)));
     assert_eq!(
         ls(&sb),
         format!(
-            "{}  p4  -  eggs\n{}  p4  -  note  home/\n{}  p4  -  milk  work/\n{}  p4  -  plan  work/\n",
+            "{}  p4  -  -      eggs\n{}  p4  -  home/  note\n{}  p4  -  work/  milk\n{}  p4  -  work/  plan\n",
             short(&eggs),
             short(&note),
             short(&milk),

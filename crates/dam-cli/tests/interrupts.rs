@@ -108,7 +108,7 @@ fn an_interrupt_at_a_prompt_exits_three_instead_of_waiting_for_an_answer() {
     let _stdin_held_open_so_the_prompt_never_sees_end_of_input = dam.stdin.take().unwrap();
     let asked = drained_on_a_thread_so_a_full_pipe_cannot_deadlock(dam.stderr.take().unwrap());
     let waited = std::time::Instant::now();
-    while !asked.so_far().contains("open child task(s)") {
+    while !asked.so_far().contains("1 open child task.") {
         assert!(
             waited.elapsed() < A_LOADED_MACHINES_MARGIN,
             "the prompt never appeared: {}",

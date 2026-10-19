@@ -16,7 +16,10 @@ struct Staged<'a> {
 
 impl View for Staged<'_> {
     fn human(&self) -> Human {
-        Human::Lines(self.staged.iter().map(ChangeRow::line).collect())
+        Human::list(
+            self.staged.iter().map(|c| vec![c.line()]).collect(),
+            "nothing to stage",
+        )
     }
 }
 
