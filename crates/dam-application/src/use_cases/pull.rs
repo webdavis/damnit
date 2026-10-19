@@ -63,12 +63,9 @@ fn apply(
     };
     let mut land_everything_as_one_unit = || {
         for rejected in &response.rejected {
-            repos.notices.add_notice(&Notice::PullFailed {
+            repos.notices.add_notice(&Notice::PullSkipped {
                 remote: remote.name.clone(),
-                why: match rejected.remote_id.as_str() {
-                    "" => rejected.why.clone(),
-                    remote_id => format!("{remote_id}: {}", rejected.why),
-                },
+                object: rejected.clone(),
             })?;
         }
         let mut objects = std::mem::take(&mut response.objects);

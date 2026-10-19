@@ -264,11 +264,15 @@ fn one_unconvertible_object_is_skipped_with_a_notice_and_the_rest_still_pull() {
     )
     .unwrap();
     assert_eq!(reports[0].created, 1);
-    let notices = store.notices().unwrap();
-    assert!(
-        notices
-            .iter()
-            .any(|n| matches!(n, Notice::PullFailed { why, .. } if why.contains("r-bad")))
+    assert_eq!(
+        store.notices().unwrap(),
+        vec![Notice::PullSkipped {
+            remote: remote(),
+            object: RejectedObject {
+                remote_id: "r-bad".into(),
+                why: "path: cannot read \"a//b/\"".into(),
+            },
+        }]
     );
     assert!(
         store

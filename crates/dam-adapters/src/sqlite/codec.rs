@@ -1,4 +1,4 @@
-use dam_application::{Notice, RemoteName, StoreError};
+use dam_application::{Notice, RejectedObject, RemoteName, StoreError};
 use dam_domain::{Change, Kind, Object, Oid, Op};
 use rusqlite::Params;
 use serde::{Deserialize, Serialize};
@@ -79,6 +79,11 @@ enum NoticeRow {
         remote: String,
         why: String,
     },
+    PullSkipped {
+        remote: String,
+        remote_id: String,
+        why: String,
+    },
     KindChanged {
         oid: String,
         ours: String,
@@ -114,6 +119,11 @@ pub(super) fn notice_to_json(n: &Notice) -> Result<String, StoreError> {
         Notice::PullFailed { remote, why } => NoticeRow::PullFailed {
             remote: remote.0.clone(),
             why: why.clone(),
+        },
+        Notice::PullSkipped { remote, object } => NoticeRow::PullSkipped {
+            remote: remote.0.clone(),
+            remote_id: object.remote_id.clone(),
+            why: object.why.clone(),
         },
         Notice::KindChanged { oid, ours, theirs } => NoticeRow::KindChanged {
             oid: oid.to_string(),
@@ -164,6 +174,14 @@ pub(super) fn notice_from_json(s: &str) -> Result<Notice, StoreError> {
         NoticeRow::PullFailed { remote, why } => Notice::PullFailed {
             remote: RemoteName(remote),
             why,
+        },
+        NoticeRow::PullSkipped {
+            remote,
+            remote_id,
+            why,
+        } => Notice::PullSkipped {
+            remote: RemoteName(remote),
+            object: RejectedObject { remote_id, why },
         },
         NoticeRow::KindChanged {
             oid: o,

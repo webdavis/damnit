@@ -68,6 +68,13 @@ fn every_notice_variant_round_trips() {
             remote: RemoteName("t".into()),
             why: "w".into(),
         },
+        Notice::PullSkipped {
+            remote: RemoteName("t".into()),
+            object: RejectedObject {
+                remote_id: "up-7".into(),
+                why: "w".into(),
+            },
+        },
         Notice::KindChanged {
             oid: oid(4),
             ours: Kind::Task,

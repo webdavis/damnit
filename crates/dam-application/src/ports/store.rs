@@ -3,6 +3,7 @@ use std::fmt;
 use dam_domain::{Change, CommitId, CommitRecord, Kind, Object, Oid, Path, Timestamp};
 
 use crate::errors::UseCaseError;
+use crate::remote::RejectedObject;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct RemoteName(pub String);
@@ -87,6 +88,10 @@ pub enum Notice {
     PullFailed {
         remote: RemoteName,
         why: String,
+    },
+    PullSkipped {
+        remote: RemoteName,
+        object: RejectedObject,
     },
     KindChanged {
         oid: Oid,
