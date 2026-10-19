@@ -1,5 +1,6 @@
 use super::*;
 use crate::calendar_api::fake::FakeCalendar;
+use dam_protocol::RejectedObject;
 
 const NOW: &str = "2026-09-22T12:00:00Z";
 
@@ -51,16 +52,41 @@ fn every_calendar_is_pulled_and_cancelled_items_come_back_by_id() {
 }
 
 #[test]
-fn one_unreadable_event_fails_the_whole_pull_and_names_it() {
+fn an_event_with_no_start_is_skipped_and_reported_and_the_rest_land() {
     let google = FakeCalendar::default().listing(
         "primary",
         "me",
-        serde_json::json!([event("a"), {"id": "broken"}]),
+        serde_json::json!([event("a"), {"id": "broken"}, event("c")]),
     );
-    let said = pull(&google, &calendars(&["primary"]), None, now())
-        .unwrap_err()
-        .to_string();
-    assert_eq!(said, "calendar primary, event broken: start is missing");
+    let response = pull(&google, &calendars(&["primary"]), None, now()).unwrap();
+    let ids: Vec<&str> = response
+        .objects
+        .iter()
+        .filter_map(|o| o.remote_id.as_deref())
+        .collect();
+    assert_eq!(ids, vec!["primary/a", "primary/c"]);
+    assert_eq!(
+        response.rejected,
+        vec![RejectedObject {
+            remote_id: "primary/broken".into(),
+            why: "start is missing".into(),
+        }]
+    );
+    assert!(response.cancelled.is_empty());
+}
+
+#[test]
+fn an_event_that_turns_unreadable_is_kept_until_it_leaves() {
+    let google = FakeCalendar::default()
+        .listing("primary", "me", serde_json::json!([event("a")]))
+        .listing("primary", "me", serde_json::json!([{"id": "a"}]))
+        .listing("primary", "me", serde_json::json!([]));
+    let primary = calendars(&["primary"]);
+    let first = pull(&google, &primary, None, now()).unwrap();
+    let second = pull(&google, &primary, first.sync.as_deref(), now()).unwrap();
+    assert!(second.cancelled.is_empty(), "unreadable is not gone");
+    let third = pull(&google, &primary, second.sync.as_deref(), now()).unwrap();
+    assert_eq!(third.cancelled, vec!["primary/a"]);
 }
 
 #[test]

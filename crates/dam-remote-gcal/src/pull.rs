@@ -1,12 +1,11 @@
 use std::collections::BTreeSet;
-use std::fmt;
 
-use dam_protocol::PullResponse;
+use dam_protocol::{PullResponse, RejectedObject};
 use jiff::{SignedDuration, Timestamp};
 
 use crate::ApiError;
 use crate::calendar_api::{Calendar, Window};
-use crate::map::{MapError, Mapped, map_event};
+use crate::map::{Mapped, map_event, remote_id};
 use crate::memory::Memory;
 
 pub const LOOKBACK_DAYS: i32 = 7;
@@ -20,48 +19,42 @@ pub fn window(now: Timestamp) -> Window {
     }
 }
 
-#[derive(Debug)]
-pub enum PullError {
-    Api(ApiError),
-    Map(MapError),
-}
-
-impl fmt::Display for PullError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            PullError::Api(e) => e.fmt(f),
-            PullError::Map(e) => e.fmt(f),
-        }
-    }
-}
-
-impl std::error::Error for PullError {}
-
 pub fn pull(
     api: &impl Calendar,
     calendars: &[String],
     since: Option<&str>,
     now: Timestamp,
-) -> Result<PullResponse, PullError> {
+) -> Result<PullResponse, ApiError> {
     let window = window(now);
     let previous = Memory::read(since);
     let mut next = Memory::default();
     let mut seen = BTreeSet::new();
     let mut response = PullResponse::default();
     for calendar in calendars {
-        let listing = api.events(calendar, &window).map_err(PullError::Api)?;
+        let listing = api.events(calendar, &window)?;
         for event in &listing.items {
-            match map_event(&listing, event).map_err(PullError::Map)? {
-                Mapped::Live { object, end } => {
+            match map_event(&listing, event) {
+                Ok(Mapped::Live { object, end }) => {
                     if let Some(id) = &object.remote_id {
                         seen.insert(id.clone());
                         next.reported.insert(id.clone(), end);
                     }
                     response.objects.push(*object);
                 }
-                Mapped::Cancelled(id) => {
+                Ok(Mapped::Cancelled(id)) => {
                     seen.insert(id.clone());
                     response.cancelled.push(id);
+                }
+                Err(unreadable) => {
+                    let id = remote_id(&listing.calendar, &event.id);
+                    if let Some(end) = previous.reported.get(&id) {
+                        next.reported.insert(id.clone(), *end);
+                    }
+                    seen.insert(id.clone());
+                    response.rejected.push(RejectedObject {
+                        remote_id: id,
+                        why: unreadable.what.into(),
+                    });
                 }
             }
         }
