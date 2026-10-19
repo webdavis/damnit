@@ -7,7 +7,11 @@ use toml::Value;
 
 use super::{ConfigError, parse_config};
 
-pub fn append_remote(path: &FsPath, name: &str, url: &str) -> Result<Option<String>, ConfigError> {
+pub(super) fn append_remote(
+    path: &FsPath,
+    name: &str,
+    url: &str,
+) -> Result<Option<String>, ConfigError> {
     let mut text = match std::fs::read_to_string(path) {
         Ok(t) => t,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),

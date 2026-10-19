@@ -1,10 +1,11 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use dam_adapters::{
     Interrupt, OsRandom, ProcessCredentialSource, ProcessLauncher, SqliteStore, SystemClock,
-    load_config,
 };
-use dam_application::{Clock, Config, CredentialSource, HelperLauncher, Randomness, Store};
+use dam_application::{
+    Clock, Config, ConfigFile, CredentialSource, HelperLauncher, Randomness, Store,
+};
 
 use crate::editor::{EditorSession, EnvEditor};
 use crate::error::CliError;
@@ -14,7 +15,7 @@ use crate::prompt::{Prompt, RefusingPrompt, TerminalPrompt};
 pub(crate) struct Context {
     pub(crate) store: Box<dyn Store>,
     pub(crate) config: Config,
-    pub(crate) config_path: PathBuf,
+    pub(crate) config_file: Box<dyn ConfigFile>,
     pub(crate) clock: Box<dyn Clock>,
     pub(crate) random: Box<dyn Randomness>,
     pub(crate) launcher: Box<dyn HelperLauncher>,
@@ -27,20 +28,20 @@ pub(crate) struct Context {
 
 impl Context {
     pub(crate) fn open(
-        config_path: PathBuf,
+        config_file: Box<dyn ConfigFile>,
         store_path: &Path,
         format: Format,
         no_pull: bool,
         interrupt: &Interrupt,
     ) -> Result<Context, CliError> {
-        let config = load_config(&config_path)?;
+        let config = config_file.load()?;
         let store = SqliteStore::open(store_path)?;
         let (prompt, editor) =
             terminal_pair_for_a_human_and_refusals_for_a_machine(format, interrupt);
         Ok(Context {
             store: Box::new(store),
             config,
-            config_path,
+            config_file,
             clock: Box::new(SystemClock),
             random: Box::new(OsRandom),
             launcher: Box::new(ProcessLauncher::from_env(interrupt.clone())),

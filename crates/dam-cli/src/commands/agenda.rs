@@ -16,7 +16,7 @@ use crate::view::{Human, View, display, report};
 
 const DEFAULT_SPAN: SignedDuration = SignedDuration::from_hours(24);
 
-pub(crate) fn run_agenda(ctx: &mut Context, args: AgendaArgs) -> Result<Report, CliError> {
+pub(crate) fn run_agenda(ctx: &Context, args: AgendaArgs) -> Result<Report, CliError> {
     let window = window(ctx, &args)?;
     let bounds: Vec<_> = args
         .max_age

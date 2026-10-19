@@ -1,7 +1,7 @@
 use std::fmt;
 
-use dam_adapters::{ConfigError, OpenError};
-use dam_application::{Refusal, StoreError, UseCaseError};
+use dam_adapters::OpenError;
+use dam_application::{ConfigError, Refusal, StoreError, UseCaseError};
 
 use crate::editor::EditorError;
 

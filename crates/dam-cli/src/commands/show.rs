@@ -10,7 +10,7 @@ use crate::error::CliError;
 use crate::output::{Report, object_cells};
 use crate::view::{Human, View, report, row, wire};
 
-pub(crate) fn run_show(ctx: &mut Context, args: ShowArgs) -> Result<Report, CliError> {
+pub(crate) fn run_show(ctx: &Context, args: ShowArgs) -> Result<Report, CliError> {
     refresh_stale_unless_no_pull(ctx)?;
     if let Some(object) = working_object_named(ctx, &args.id)? {
         return report(&ShownObject(&object));
@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     fn show_finds_an_object_or_a_commit_by_prefix() {
-        let mut ctx = context();
+        let ctx = context();
         let oid = Oid::generate(&mut |x: &mut [u8]| {
             x.fill(A_BYTE_APART_FROM_THE_COMMIT_ID_COUNTING_RANDOM_FILLS_FIRST)
         });
@@ -84,7 +84,7 @@ mod tests {
             .put(&Object::Task(Task::new(oid.clone(), "milk")))
             .unwrap();
         run_add(
-            &mut ctx,
+            &ctx,
             AddArgs {
                 oids: vec![],
                 all: true,
@@ -92,14 +92,14 @@ mod tests {
         )
         .unwrap();
         run_commit(
-            &mut ctx,
+            &ctx,
             CommitArgs {
                 message: "first".into(),
             },
         )
         .unwrap();
         let object = super::run_show(
-            &mut ctx,
+            &ctx,
             ShowArgs {
                 id: oid.short().into(),
             },
@@ -108,10 +108,10 @@ mod tests {
         assert_eq!(object.data["subject"], "milk");
         assert!(object.human.contains("milk"));
         let id = ctx.store.log().unwrap()[0].id.to_string();
-        let commit = super::run_show(&mut ctx, ShowArgs { id: id[..8].into() }).unwrap();
+        let commit = super::run_show(&ctx, ShowArgs { id: id[..8].into() }).unwrap();
         assert_eq!(commit.data["message"], "first");
         assert!(matches!(
-            super::run_show(&mut ctx, ShowArgs { id: "ffff".into() }),
+            super::run_show(&ctx, ShowArgs { id: "ffff".into() }),
             Err(CliError::UseCase(_))
         ));
     }
@@ -139,7 +139,7 @@ mod tests {
             )))
             .unwrap();
         run_add(
-            &mut ctx,
+            &ctx,
             AddArgs {
                 oids: vec![],
                 all: true,
@@ -147,7 +147,7 @@ mod tests {
         )
         .unwrap();
         run_commit(
-            &mut ctx,
+            &ctx,
             CommitArgs {
                 message: "first".into(),
             },
@@ -160,7 +160,7 @@ mod tests {
             )))
             .unwrap();
         run_add(
-            &mut ctx,
+            &ctx,
             AddArgs {
                 oids: vec![],
                 all: true,
@@ -168,14 +168,14 @@ mod tests {
         )
         .unwrap();
         run_commit(
-            &mut ctx,
+            &ctx,
             CommitArgs {
                 message: "second".into(),
             },
         )
         .unwrap();
         let err = super::run_show(
-            &mut ctx,
+            &ctx,
             ShowArgs {
                 id: "abababab".into(),
             },

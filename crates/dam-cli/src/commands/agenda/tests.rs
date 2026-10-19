@@ -27,9 +27,9 @@ fn args(from: Option<&str>, to: Option<&str>) -> AgendaArgs {
 
 #[test]
 fn the_agenda_document_keeps_its_contract() {
-    let mut ctx = context();
+    let ctx = context();
     ctx.store.put(&Object::Event(standup())).unwrap();
-    let report = run_agenda(&mut ctx, args(None, None)).unwrap();
+    let report = run_agenda(&ctx, args(None, None)).unwrap();
     assert_eq!(
         report.data,
         serde_json::json!({"events": [{
@@ -59,7 +59,7 @@ fn subjects(report: &Report) -> Vec<&str> {
 
 #[test]
 fn with_no_flags_the_window_is_now_to_a_day_later() {
-    let mut ctx = context();
+    let ctx = context();
     for event in [
         timed(
             1,
@@ -82,15 +82,15 @@ fn with_no_flags_the_window_is_now_to_a_day_later() {
     ] {
         ctx.store.put(&event).unwrap();
     }
-    let report = run_agenda(&mut ctx, args(None, None)).unwrap();
+    let report = run_agenda(&ctx, args(None, None)).unwrap();
     assert_eq!(subjects(&report), ["early", "late"]);
-    let later = run_agenda(&mut ctx, args(Some("2026-09-19"), None)).unwrap();
+    let later = run_agenda(&ctx, args(Some("2026-09-19"), None)).unwrap();
     assert_eq!(subjects(&later), ["next"]);
 }
 
 #[test]
 fn the_query_narrows_the_events() {
-    let mut ctx = context();
+    let ctx = context();
     ctx.store.put(&Object::Event(standup())).unwrap();
     ctx.store
         .put(&timed(
@@ -102,15 +102,12 @@ fn the_query_narrows_the_events() {
         .unwrap();
     let mut narrowed = args(None, None);
     narrowed.query = Some("@work".into());
-    assert_eq!(
-        subjects(&run_agenda(&mut ctx, narrowed).unwrap()),
-        ["standup"]
-    );
+    assert_eq!(subjects(&run_agenda(&ctx, narrowed).unwrap()), ["standup"]);
 }
 
 #[test]
 fn a_declined_meeting_is_listed_as_not_busy() {
-    let mut ctx = context();
+    let ctx = context();
     let mut declined = standup();
     declined.attendees = vec![Attendee {
         email: "me@x".into(),
@@ -119,27 +116,27 @@ fn a_declined_meeting_is_listed_as_not_busy() {
     }];
     ctx.store.put(&Object::Event(declined)).unwrap();
     assert_eq!(
-        run_agenda(&mut ctx, args(None, None)).unwrap().data["events"][0]["busy"],
+        run_agenda(&ctx, args(None, None)).unwrap().data["events"][0]["busy"],
         false
     );
 }
 
 #[test]
 fn a_window_that_closes_before_it_opens_is_a_usage_error() {
-    let mut ctx = context();
-    let err = run_agenda(&mut ctx, args(Some("2026-09-20"), Some("2026-09-19"))).unwrap_err();
+    let ctx = context();
+    let err = run_agenda(&ctx, args(Some("2026-09-20"), Some("2026-09-19"))).unwrap_err();
     assert_eq!(err.exit_code(), 2);
     assert_eq!(err.to_string(), "--to must be later than --from");
-    let past = run_agenda(&mut ctx, args(None, Some("2026-09-17"))).unwrap_err();
+    let past = run_agenda(&ctx, args(None, Some("2026-09-17"))).unwrap_err();
     assert_eq!(past.exit_code(), 2);
     assert_eq!(past.to_string(), "--to must be later than now");
-    let empty = run_agenda(&mut ctx, args(Some("2026-09-20"), Some("2026-09-20"))).unwrap_err();
+    let empty = run_agenda(&ctx, args(Some("2026-09-20"), Some("2026-09-20"))).unwrap_err();
     assert_eq!(empty.exit_code(), 2);
 }
 
 #[test]
 fn an_all_day_event_reads_as_dates() {
-    let mut ctx = context();
+    let ctx = context();
     let mut offsite = Event::new(
         Oid::generate(&mut |b: &mut [u8]| b.fill(0x4e)),
         "offsite",
@@ -148,7 +145,7 @@ fn an_all_day_event_reads_as_dates() {
     );
     offsite.base.path = dam_domain::Path::parse("work").unwrap();
     ctx.store.put(&Object::Event(offsite)).unwrap();
-    let report = run_agenda(&mut ctx, args(None, None)).unwrap();
+    let report = run_agenda(&ctx, args(None, None)).unwrap();
     assert_eq!(report.data["events"][0]["all_day"], true);
     assert_eq!(
         report.human,
@@ -176,7 +173,7 @@ fn the_local_zone_places_the_day_the_window_and_the_printed_times() {
         ))
         .unwrap();
     ctx.store.put(&Object::Event(standup())).unwrap();
-    let report = run_agenda(&mut ctx, args(Some("2026-09-18"), None)).unwrap();
+    let report = run_agenda(&ctx, args(Some("2026-09-18"), None)).unwrap();
     assert_eq!(subjects(&report), ["offsite", "standup"]);
     let all_day = &report.data["events"][0];
     assert_eq!(
@@ -194,9 +191,9 @@ fn the_local_zone_places_the_day_the_window_and_the_printed_times() {
 
 #[test]
 fn the_human_line_says_busy_or_free_with_local_times() {
-    let mut ctx = context();
+    let ctx = context();
     ctx.store.put(&Object::Event(standup())).unwrap();
-    let report = run_agenda(&mut ctx, args(None, None)).unwrap();
+    let report = run_agenda(&ctx, args(None, None)).unwrap();
     assert_eq!(
         report.human,
         "3f3f3f3  busy  2026-09-18 14:00  2026-09-18 14:30  standup"

@@ -21,7 +21,7 @@ fn status_warns_once_when_a_credential_is_a_value_in_the_config_file() {
         name: "api_token".into(),
         value: "SUPERSECRETTOKEN".into(),
     }])];
-    let report = super::run_status(&mut ctx, StatusArgs { full: false }).unwrap();
+    let report = super::run_status(&ctx, StatusArgs { full: false }).unwrap();
     let warnings: Vec<&str> = report
         .human
         .lines()
@@ -40,7 +40,7 @@ fn status_does_not_warn_when_no_credential_is_a_value_in_the_config_file() {
         name: "api_token".into(),
         var: "DAM_TODOIST_API_TOKEN".into(),
     }])];
-    let report = super::run_status(&mut ctx, StatusArgs { full: false }).unwrap();
+    let report = super::run_status(&ctx, StatusArgs { full: false }).unwrap();
     assert!(!report.human.contains("warning:"), "{}", report.human);
     assert_eq!(report.data["warnings"], serde_json::json!([]));
 }

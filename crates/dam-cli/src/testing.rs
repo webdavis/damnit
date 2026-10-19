@@ -15,6 +15,9 @@ use crate::error::CliError;
 use crate::output::Format;
 use crate::prompt::Prompt;
 
+mod config_file;
+pub(crate) use config_file::FakeConfigFile;
+
 pub(crate) struct FixedClock(pub(crate) Date);
 impl Clock for FixedClock {
     fn today(&self) -> Date {
@@ -168,7 +171,7 @@ pub(crate) fn context() -> Context {
             categories: Categories::new(vec![]).unwrap_or_else(|_| unreachable!()),
             filters: vec![],
         },
-        config_path: std::path::PathBuf::from("/nonexistent/config.toml"),
+        config_file: Box::new(FakeConfigFile::default()),
         clock: Box::new(FixedClock(date(2026, 9, 18))),
         random: Box::new(CountingRandom::new(0)),
         launcher: Box::new(EchoLauncher {

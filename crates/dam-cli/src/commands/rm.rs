@@ -6,7 +6,7 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 
-pub(crate) fn run(ctx: &mut Context, args: RmArgs) -> Result<Report, CliError> {
+pub(crate) fn run(ctx: &Context, args: RmArgs) -> Result<Report, CliError> {
     let oid = resolve_object(ctx.store.as_ref(), &args.oid)?;
     let plan = remove(ctx.store.as_ref(), &oid)?;
     let shorts = |v: &[Oid]| v.iter().map(Oid::short).collect::<Vec<_>>().join(", ");
@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn removing_a_parent_moves_its_child_up_and_says_so() {
-        let mut ctx = context();
+        let ctx = context();
         let mut p = Task::new(oid(1), "plan");
         p.base.path = Path::parse("work").unwrap();
         let mut c = Task::new(oid(2), "step");
@@ -59,7 +59,7 @@ mod tests {
         ctx.store.put(&Object::Task(p)).unwrap();
         ctx.store.put(&Object::Task(c)).unwrap();
         let report = run(
-            &mut ctx,
+            &ctx,
             RmArgs {
                 oid: oid(1).as_str().into(),
             },

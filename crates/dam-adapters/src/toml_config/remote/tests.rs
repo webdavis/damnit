@@ -1,4 +1,5 @@
-use crate::toml_config::{ConfigError, parse_config};
+use crate::toml_config::parse_config;
+use dam_application::ConfigError;
 use dam_application::CredentialSpec;
 use std::time::Duration;
 

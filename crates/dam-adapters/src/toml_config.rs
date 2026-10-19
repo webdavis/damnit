@@ -1,41 +1,17 @@
-use std::fmt;
 use std::path::{Path as FsPath, PathBuf};
 use std::time::Duration;
 
-use dam_application::{Config, FilterConfig};
+use dam_application::{Config, ConfigError, FilterConfig};
 use dam_domain::{Categories, Category};
 
 mod append;
+mod file;
 mod remote;
 mod strict_table;
-pub use append::append_remote;
+use append::append_remote;
+pub use file::TomlConfigFile;
 use remote::parse_remote;
 pub(crate) use strict_table::{Place, StrictTable, parse_toml};
-
-#[derive(Debug)]
-pub enum ConfigError {
-    Io(String),
-    Syntax(String),
-    Invalid(String),
-}
-
-impl fmt::Display for ConfigError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ConfigError::Io(s) => write!(f, "reading config: {s}"),
-            ConfigError::Syntax(s) => write!(f, "config is not TOML: {s}"),
-            ConfigError::Invalid(s) => write!(f, "config: {s}"),
-        }
-    }
-}
-
-impl std::error::Error for ConfigError {}
-
-impl From<String> for ConfigError {
-    fn from(refusal: String) -> ConfigError {
-        ConfigError::Invalid(refusal)
-    }
-}
 
 fn home_dir() -> PathBuf {
     std::env::var_os("HOME")
@@ -57,7 +33,7 @@ pub fn default_store_path() -> PathBuf {
     base.join("dam").join("dam.db")
 }
 
-pub fn load_config(path: &FsPath) -> Result<Config, ConfigError> {
+fn load_config(path: &FsPath) -> Result<Config, ConfigError> {
     match std::fs::read_to_string(path) {
         Ok(text) => parse_config(&text),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => parse_config(""),

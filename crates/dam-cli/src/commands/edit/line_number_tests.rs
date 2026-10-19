@@ -10,7 +10,7 @@ fn refused_with_kept_file(saves: Vec<Save>) -> (String, Vec<String>) {
         .unwrap();
     ctx.editor = Some(Box::new(ScriptedEditor::saving(saves)));
     let message = run(
-        &mut ctx,
+        &ctx,
         EditArgs {
             editor: true,
             ..args(&oid(1))

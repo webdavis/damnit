@@ -9,7 +9,7 @@ use crate::error::CliError;
 use crate::output::Report;
 use dam_domain::Oid;
 
-pub(crate) fn run(ctx: &mut Context, args: DoneArgs) -> Result<Report, CliError> {
+pub(crate) fn run(ctx: &Context, args: DoneArgs) -> Result<Report, CliError> {
     let oid = resolve_object(ctx.store.as_ref(), &args.oid)?;
     let plan = plan_complete(ctx.store.as_ref(), &oid)?;
     let force = how_far_this_run_forces(ctx, &args, &plan.blockers)?;

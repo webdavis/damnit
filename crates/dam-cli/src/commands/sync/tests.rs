@@ -25,7 +25,7 @@ fn with_remote() -> Context {
 
 #[test]
 fn push_sends_unpushed_commits_and_reports_counts() {
-    let mut ctx = with_remote();
+    let ctx = with_remote();
     ctx.store
         .put(&Object::Task(Task::new(
             Oid::generate(&mut |x: &mut [u8]| x.fill(1)),
@@ -33,7 +33,7 @@ fn push_sends_unpushed_commits_and_reports_counts() {
         )))
         .unwrap();
     run_add(
-        &mut ctx,
+        &ctx,
         AddArgs {
             oids: vec![],
             all: true,
@@ -41,13 +41,13 @@ fn push_sends_unpushed_commits_and_reports_counts() {
     )
     .unwrap();
     run_commit(
-        &mut ctx,
+        &ctx,
         CommitArgs {
             message: "m".into(),
         },
     )
     .unwrap();
-    let report = run_push(&mut ctx, PushArgs { remote: None }).unwrap();
+    let report = run_push(&ctx, PushArgs { remote: None }).unwrap();
     assert!(report.human.contains("t: 1 sent, 1 ok"), "{}", report.human);
     assert_eq!(report.data["remotes"][0]["succeeded"], 1);
     assert!(
@@ -66,7 +66,7 @@ fn pull_reports_what_arrived_and_resolve_settles_a_conflict() {
         .put(&Object::Task(Task::new(oid.clone(), "mine")))
         .unwrap();
     run_add(
-        &mut ctx,
+        &ctx,
         AddArgs {
             oids: vec![],
             all: true,
@@ -74,18 +74,18 @@ fn pull_reports_what_arrived_and_resolve_settles_a_conflict() {
     )
     .unwrap();
     run_commit(
-        &mut ctx,
+        &ctx,
         CommitArgs {
             message: "m".into(),
         },
     )
     .unwrap();
-    run_push(&mut ctx, PushArgs { remote: None }).unwrap();
+    run_push(&ctx, PushArgs { remote: None }).unwrap();
     let mut mine = Task::new(oid.clone(), "mine, edited");
     mine.base.subject = "mine, edited".into();
     ctx.store.put(&Object::Task(mine)).unwrap();
     run_add(
-        &mut ctx,
+        &ctx,
         AddArgs {
             oids: vec![],
             all: true,
@@ -93,7 +93,7 @@ fn pull_reports_what_arrived_and_resolve_settles_a_conflict() {
     )
     .unwrap();
     run_commit(
-        &mut ctx,
+        &ctx,
         CommitArgs {
             message: "edit".into(),
         },
@@ -110,7 +110,7 @@ fn pull_reports_what_arrived_and_resolve_settles_a_conflict() {
         })),
     });
     let report = run_pull(
-        &mut ctx,
+        &ctx,
         PullArgs {
             remote: Some("t".into()),
         },
@@ -124,7 +124,7 @@ fn pull_reports_what_arrived_and_resolve_settles_a_conflict() {
     else {
         panic!("wrong command")
     };
-    run_resolve(&mut ctx, args).unwrap();
+    run_resolve(&ctx, args).unwrap();
     assert!(ctx.store.conflicts().unwrap().is_empty());
     assert_eq!(
         ctx.store.get(&oid).unwrap().unwrap().base().subject,
