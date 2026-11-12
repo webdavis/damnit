@@ -138,6 +138,10 @@ impl fmt::Display for RefusalText<'_> {
                 write!(f, "the token does not allow {permission}")
             }
             Refusal::NotOpenToTokens(verb) => write!(f, "a token cannot run dam {verb}"),
+            Refusal::TokenExists(name) => write!(f, "token {name} already exists"),
+            Refusal::NotGrantable(permission) => {
+                write!(f, "{permission} is reserved and cannot be granted")
+            }
         }
     }
 }

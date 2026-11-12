@@ -4,6 +4,7 @@ use dam_domain::{Channel, Grant, Timestamp, Token};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Tokens {
+    pub names: Vec<String>,
     pub entries: Vec<TokenConfig>,
     pub warnings: Vec<String>,
 }
@@ -28,4 +29,32 @@ pub struct TokenTerms {
     pub via: BTreeSet<Channel>,
     pub require: Vec<String>,
     pub grants: Vec<Grant>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TokenName(String);
+
+impl TokenName {
+    pub fn parse(text: &str) -> Result<TokenName, String> {
+        let bare = |c: char| c.is_ascii_alphanumeric() || c == '-' || c == '_';
+        if text.is_empty() || !text.chars().all(bare) {
+            return Err(format!(
+                "token name {text:?} must be letters, digits, - and _"
+            ));
+        }
+        Ok(TokenName(text.to_string()))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NewToken {
+    pub name: TokenName,
+    pub value: Token,
+    pub expires: Option<Timestamp>,
+    pub via: Option<BTreeSet<Channel>>,
+    pub grant: Grant,
 }

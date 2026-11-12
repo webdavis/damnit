@@ -61,6 +61,8 @@ pub enum Refusal {
         day: Date,
         focused: Vec<Oid>,
     },
+    TokenExists(String),
+    NotGrantable(String),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -106,6 +108,8 @@ impl Refusal {
             Refusal::NotPermitted(_) => "not_permitted",
             Refusal::NotOpenToTokens(_) => "not_open_to_tokens",
             Refusal::FocusFull { .. } => "focus_full",
+            Refusal::TokenExists(_) => "token_exists",
+            Refusal::NotGrantable(_) => "not_grantable",
         }
     }
 }

@@ -60,7 +60,9 @@
         "unreadable_recurrence",
         "no_conflict",
         "not_permitted",
-        "not_open_to_tokens"
+        "not_open_to_tokens",
+        "token_exists",
+        "not_grantable"
       ]
     },
     "tokenRule": {

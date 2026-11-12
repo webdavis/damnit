@@ -4,6 +4,7 @@ mod planning;
 mod reading;
 mod remotes;
 mod staging;
+mod tokens;
 mod values;
 mod writing;
 
@@ -20,6 +21,7 @@ pub(crate) use remotes::{PullArgs, PushArgs, RemoteArgs, RemoteCommand, ResolveA
 pub(crate) use staging::{
     AddArgs, CommitArgs, DiffArgs, ResetArgs, RestoreArgs, ShowArgs, StatusArgs,
 };
+pub(crate) use tokens::{CreateArgs, TokenArgs, TokenCommand};
 pub(crate) use writing::{DoneArgs, MvArgs, NewArgs, RmArgs};
 
 #[derive(Parser, Debug)]
@@ -119,6 +121,8 @@ pub(crate) enum Command {
     Pull(PullArgs),
     #[command(about = "Settle a conflict for one object")]
     Resolve(ResolveArgs),
+    #[command(about = "Manage the tokens tools and agents run dam with")]
+    Token(TokenArgs),
 }
 
 #[cfg(test)]

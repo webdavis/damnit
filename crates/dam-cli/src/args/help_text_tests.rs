@@ -105,6 +105,15 @@ dam resolve: about = Settle a conflict for one object
 dam resolve oid: help = Pick the conflicted object by oid, or by a prefix of 4 or more hex characters
 dam resolve ours: help = Keep the local side
 dam resolve theirs: help = Keep the remote's side
+dam token: about = Manage the tokens tools and agents run dam with
+dam token create: about = Make a token with one grant, add it to the config and print it once
+dam token create name: help = Name the token, such as vpt
+dam token create allow: help = Allow a permission, such as task:read. Repeatable
+dam token create paths: help = Narrow the grant to objects under a path. Repeatable
+dam token create labels: help = Narrow the grant to objects carrying a label. Repeatable
+dam token create remotes: help = Narrow the grant to a remote. Repeatable
+dam token create expires: help = Stop the token working at a date-time with an offset, such as 2027-05-11T00:00:00Z
+dam token create via: help = Let the token work over local or mcp. Repeatable. Default: local
 ";
 
 fn every_help_text(command: &clap::Command, path: &str, out: &mut String) {

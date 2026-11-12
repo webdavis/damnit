@@ -26,6 +26,7 @@ fn terms() -> TokenTerms {
 
 fn one(name: &str, value: Token, standing: Standing) -> Tokens {
     Tokens {
+        names: vec![name.into()],
         entries: vec![TokenConfig {
             name: name.into(),
             value,

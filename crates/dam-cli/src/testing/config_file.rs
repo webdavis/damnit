@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use dam_application::{Config, ConfigError, ConfigFile, RemoteName};
+use dam_application::{Config, ConfigError, ConfigFile, NewToken, RemoteName};
 
 #[derive(Clone, Default)]
 pub(crate) struct FakeConfigFile {
@@ -20,6 +20,9 @@ impl ConfigFile for FakeConfigFile {
         self.added
             .borrow_mut()
             .push((name.0.clone(), url.to_string()));
+        Ok(None)
+    }
+    fn add_token(&self, _: &NewToken) -> Result<Option<String>, ConfigError> {
         Ok(None)
     }
 }

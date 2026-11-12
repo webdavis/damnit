@@ -13,7 +13,7 @@ mod view;
 use std::path::Path;
 
 use clap::Parser;
-use dam_adapters::{Interrupt, SystemClock, TomlConfigFile};
+use dam_adapters::{Interrupt, OsRandom, SystemClock, TomlConfigFile};
 use dam_application::{Clock, ConfigFile};
 
 use crate::args::{Cli, Command};
@@ -77,6 +77,12 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     gate::refuse_any_token_to_an_owner_only_verb(presented_token.is_some(), &cli.command)?;
     if presented_token.is_none() {
         create_the_owners_config_when_missing(&config_file, &config_path, format);
+    }
+    if let Command::Token(args) = cli.command {
+        return output::print(
+            format,
+            &commands::token::run(&config_file, &OsRandom, args)?,
+        );
     }
     if let Command::Category(_) | Command::Filter(_) = cli.command {
         let config = config_file.load()?;

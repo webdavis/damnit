@@ -2,10 +2,12 @@ use std::fmt;
 
 use crate::config::Config;
 use crate::ports::RemoteName;
+use crate::tokens::NewToken;
 
 pub trait ConfigFile {
     fn load(&self) -> Result<Config, ConfigError>;
     fn add_remote(&self, name: &RemoteName, url: &str) -> Result<Option<String>, ConfigError>;
+    fn add_token(&self, token: &NewToken) -> Result<Option<String>, ConfigError>;
 }
 
 #[derive(Debug)]

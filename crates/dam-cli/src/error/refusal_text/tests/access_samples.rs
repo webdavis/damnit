@@ -60,3 +60,16 @@ pub(super) fn access_refusals_with_their_text() -> Vec<(Refusal, &'static str)> 
     ])
     .collect()
 }
+
+pub(super) fn token_command_refusals_with_their_text() -> Vec<(Refusal, &'static str)> {
+    vec![
+        (
+            Refusal::TokenExists("vpt".into()),
+            "token vpt already exists",
+        ),
+        (
+            Refusal::NotGrantable("config:change".into()),
+            "config:change is reserved and cannot be granted",
+        ),
+    ]
+}
