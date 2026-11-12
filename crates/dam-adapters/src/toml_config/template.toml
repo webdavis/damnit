@@ -61,13 +61,13 @@ schema = 1
 # pending:read, pending:accept, pending:reject, working:read, stage:read, history:read,
 # history:commit, remote:read, remote:pull, remote:push, conflict:read, conflict:resolve
 # and config:read.
-#[token.vpt]
+#[token.tool]
 #value = "damk_v1_..."
 #not_before = 2026-01-01T00:00:00Z
 #expires = 2027-01-01T00:00:00Z
 #via = ["local"]
 #require = ["session", "model"]
-#[[token.vpt.grant]]
+#[[token.tool.grant]]
 #allow = ["task:read", "task:create", "remote:pull"]
 #paths = ["work"]
 #labels = ["errand"]
