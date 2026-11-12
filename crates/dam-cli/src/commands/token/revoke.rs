@@ -13,9 +13,11 @@ struct TokenRevoked {
 
 impl View for TokenRevoked {
     fn human(&self) -> Human {
-        let warnings = self.warnings.iter().map(|w| format!("warning: {w}"));
-        let revoked = format!("revoked token {}", self.name);
-        Human::Lines(warnings.chain([revoked]).collect())
+        Human::Lines(vec![format!("revoked token {}", self.name)])
+    }
+
+    fn warnings(&self) -> Vec<String> {
+        self.warnings.clone()
     }
 }
 
