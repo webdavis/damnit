@@ -3,6 +3,7 @@ mod support;
 use dam_domain::Token;
 use support::errors::error_document;
 use support::sandbox::Sandbox;
+use support::schema::assert_matches_schema;
 
 fn token(fill: u8) -> String {
     Token::generate(&mut |b: &mut [u8]| b.fill(fill)).expose()
@@ -24,6 +25,7 @@ fn refused(sb: &Sandbox, presented: &str, args: &[&str]) -> serde_json::Value {
         "the token reached stderr"
     );
     let document = error_document(&out);
+    assert_matches_schema(&document, "error.schema.json");
     assert_eq!(document["error"]["kind"], "refused");
     document
 }

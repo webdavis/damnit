@@ -3,6 +3,7 @@ mod support;
 use dam_domain::Token;
 use support::errors::error_document;
 use support::sandbox::Sandbox;
+use support::schema::assert_matches_schema;
 
 fn token(fill: u8) -> String {
     Token::generate(&mut |b: &mut [u8]| b.fill(fill)).expose()
@@ -19,6 +20,7 @@ fn sandbox_granting(allow: &str) -> (Sandbox, String) {
 
 fn rule_of(out: &std::process::Output) -> String {
     assert_eq!(out.status.code(), Some(4), "{out:?}");
+    assert_matches_schema(&error_document(out), "error.schema.json");
     error_document(out)["error"]["rule"]
         .as_str()
         .unwrap()
