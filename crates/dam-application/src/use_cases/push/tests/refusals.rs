@@ -21,7 +21,10 @@ fn unresolved_conflicts_block_push() {
         .unwrap();
     let (l, _) = pushing(|_| vec![]);
     let err = s.dam().push(remotes_launched_by(&l), None).unwrap_err();
-    assert_eq!(err, UseCaseError::Refused(Refusal::UnresolvedConflicts(1)));
+    assert_eq!(
+        err,
+        UseCaseError::Refused(Refusal::UnresolvedConflicts(Some(1)))
+    );
 }
 
 #[test]

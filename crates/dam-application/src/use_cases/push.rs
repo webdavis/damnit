@@ -1,4 +1,4 @@
-use dam_domain::{CommitRecord, Oid};
+use dam_domain::{CommitRecord, Oid, Permission, Subject};
 
 use crate::config::RemoteConfig;
 use crate::errors::{Refusal, UseCaseError};
@@ -25,9 +25,13 @@ impl Dam<'_> {
     ) -> Result<Vec<PushReport>, UseCaseError> {
         let conflicts = self.store.conflicts()?.len();
         if conflicts > 0 {
-            return Err(Refusal::UnresolvedConflicts(conflicts).into());
+            let shown = self
+                .access
+                .permits(Permission::ConflictRead, &[Subject::Whole])
+                .then_some(conflicts);
+            return Err(Refusal::UnresolvedConflicts(shown).into());
         }
-        let targets = self.config.select_remotes(remote)?;
+        let targets = self.remotes_permitting(Permission::RemotePush, remote)?;
         let mut reports = Vec::with_capacity(targets.len());
         for target in targets {
             let (mut helper, caps) = connect(remotes, self.store, target)?;

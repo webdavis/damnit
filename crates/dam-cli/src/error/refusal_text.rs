@@ -69,8 +69,11 @@ impl fmt::Display for RefusalText<'_> {
                 "{} changed upstream and has uncommitted local changes; commit or reset it, then pull again",
                 oid.short()
             ),
-            Refusal::UnresolvedConflicts(n) => {
+            Refusal::UnresolvedConflicts(Some(n)) => {
                 write!(f, "{n} conflicts are unresolved; run dam resolve")
+            }
+            Refusal::UnresolvedConflicts(None) => {
+                f.write_str("conflicts are unresolved; run dam resolve")
             }
             Refusal::MoveInsideItself(o) => {
                 write!(f, "{} cannot move inside itself", o.short())

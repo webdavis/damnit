@@ -38,7 +38,7 @@ pub enum Refusal {
     NothingToCommit,
     NeedsAnAnswer,
     NeedsAnEditor,
-    UnresolvedConflicts(usize),
+    UnresolvedConflicts(Option<usize>),
     MissingCredential {
         remote: String,
         name: String,
