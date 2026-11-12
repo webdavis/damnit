@@ -12,6 +12,7 @@ pub mod request;
 pub mod sandbox;
 pub mod schema;
 pub mod tokens;
+pub mod upstream;
 
 use std::time::{Duration, Instant};
 

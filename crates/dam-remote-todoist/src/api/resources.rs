@@ -4,14 +4,40 @@ use serde::Deserialize;
 
 use dam_helper::one_line;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Default, Deserialize)]
 pub struct SyncResponse {
+    #[serde(default)]
+    pub sync_token: Option<String>,
+    #[serde(default)]
+    pub full_sync: bool,
     #[serde(default)]
     pub projects: Vec<Project>,
     #[serde(default)]
     pub sections: Vec<Section>,
     #[serde(default)]
     pub items: Vec<Item>,
+}
+
+impl SyncResponse {
+    pub fn updated_by(self, changes: SyncResponse) -> SyncResponse {
+        SyncResponse {
+            sync_token: changes.sync_token,
+            full_sync: false,
+            projects: newest(self.projects, changes.projects, |p| &p.id),
+            sections: newest(self.sections, changes.sections, |s| &s.id),
+            items: newest(self.items, changes.items, |i| &i.id),
+        }
+    }
+}
+
+fn newest<T>(mut held: Vec<T>, changed: Vec<T>, id: impl Fn(&T) -> &String) -> Vec<T> {
+    for change in changed {
+        match held.iter().position(|h| id(h) == id(&change)) {
+            Some(at) => held[at] = change,
+            None => held.push(change),
+        }
+    }
+    held
 }
 
 #[derive(Debug, Clone, Deserialize)]

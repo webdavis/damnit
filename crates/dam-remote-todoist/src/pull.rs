@@ -5,8 +5,15 @@ use crate::map::{RemoteId, Tree, item_to_wire, project_to_wire, section_to_wire}
 
 const UNPLACEABLE: &str = "its parent chain loops or its project or section is missing";
 
-pub fn pull(api: &impl TodoistSync) -> Result<PullResponse, ApiError> {
-    let sync = api.read_all()?;
+pub fn pull(api: &impl TodoistSync, since: Option<&str>) -> Result<PullResponse, ApiError> {
+    let listing = api.read_all()?;
+    let sync = match since {
+        None => listing,
+        Some(token) => match api.read_changes(token)? {
+            changes if changes.full_sync => changes,
+            changes => listing.updated_by(changes),
+        },
+    };
     let tree = Tree::from_sync(&sync);
     let mut objects = Vec::new();
     let mut rejected = Vec::new();
@@ -41,6 +48,7 @@ pub fn pull(api: &impl TodoistSync) -> Result<PullResponse, ApiError> {
         objects,
         rejected,
         removed,
+        sync: sync.sync_token,
         ..PullResponse::default()
     })
 }

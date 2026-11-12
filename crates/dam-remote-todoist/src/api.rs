@@ -11,6 +11,7 @@ const SERVICE: &str = "Todoist";
 
 pub trait TodoistSync {
     fn read_all(&self) -> Result<SyncResponse, ApiError>;
+    fn read_changes(&self, since: &str) -> Result<SyncResponse, ApiError>;
     fn write(&self, commands: &[serde_json::Value]) -> Result<SyncWrite, ApiError>;
 }
 
@@ -36,6 +37,12 @@ impl TodoistApi {
         Ok(TodoistApi::new(&base, token.expose()))
     }
 
+    fn read_since(&self, sync_token: &str) -> Result<SyncResponse, ApiError> {
+        let body = serde_json::json!({ "sync_token": sync_token, "resource_types": ["projects", "sections", "items"] });
+        let value = self.post("/sync", &body)?;
+        serde_json::from_value(value).map_err(|e| ApiError::decode(SERVICE, e))
+    }
+
     fn authorization(&self) -> String {
         format!("Bearer {}", self.token.expose())
     }
@@ -53,9 +60,11 @@ impl TodoistApi {
 
 impl TodoistSync for TodoistApi {
     fn read_all(&self) -> Result<SyncResponse, ApiError> {
-        let body = serde_json::json!({ "sync_token": "*", "resource_types": ["projects", "sections", "items"] });
-        let value = self.post("/sync", &body)?;
-        serde_json::from_value(value).map_err(|e| ApiError::decode(SERVICE, e))
+        self.read_since("*")
+    }
+
+    fn read_changes(&self, since: &str) -> Result<SyncResponse, ApiError> {
+        self.read_since(since)
     }
 
     fn write(&self, commands: &[serde_json::Value]) -> Result<SyncWrite, ApiError> {
