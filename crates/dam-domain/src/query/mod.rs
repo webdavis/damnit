@@ -136,4 +136,6 @@ fn in_week(d: Date, monday: Date) -> bool {
 #[cfg(test)]
 mod completed_tests;
 #[cfg(test)]
+mod field_name_terms_tests;
+#[cfg(test)]
 mod tests;
