@@ -115,7 +115,7 @@ const FULL_TASK_ROW: &str = concat!(
     r#""recurrence":"every 2 weeks on mon","task":{"done":true,"#,
     r#""completed_at":"2026-09-24T18:30:00Z","priority":2,"#,
     r#""due":"2026-09-25T09:00:00+02:00[Europe/Berlin]","deadline":"2026-09-30","#,
-    r#""event":"4444444444444444444444444444444444444444"}}"#,
+    r#""attached":"4444444444444444444444444444444444444444"}}"#,
 );
 
 const FULL_EVENT_ROW: &str = concat!(

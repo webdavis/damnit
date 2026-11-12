@@ -112,12 +112,12 @@ fn task_fields(
             fields.deadline = Some(value);
         }
     }
-    if let Some(s) = reader.string("attach")? {
+    if let Some(s) = reader.string("attached")? {
         let value = match s.is_empty() {
             true => None,
             false => Some(
                 Oid::parse(&s)
-                    .map_err(|e| reader.refuse("attach", format_args!("attach: {e:?}")))?,
+                    .map_err(|e| reader.refuse("attached", format_args!("attached: {e:?}")))?,
             ),
         };
         if value != t.event {

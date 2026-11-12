@@ -46,7 +46,7 @@ pub(crate) fn render_template(object: &Object) -> String {
     );
     if let Object::Task(t) = object {
         line(
-            "attach",
+            "attached",
             empty_when_none(t.event.as_ref().map(ToString::to_string)),
         );
     }

@@ -35,3 +35,19 @@ fn a_focus_mark_never_reaches_a_remote() {
     assert_eq!(task.focus, None);
     assert_eq!(task.estimate, Some(30));
 }
+
+#[test]
+fn a_task_names_its_event_attached_and_still_reads_a_row_that_named_it_event() {
+    let event = Oid::generate(&mut |x: &mut [u8]| x.fill(2));
+    let mut t = Task::new(Oid::generate(&mut |x: &mut [u8]| x.fill(1)), "prep");
+    t.event = Some(event.clone());
+    let object = Object::Task(t);
+    let row = serde_json::to_value(to_wire(&object, None)).unwrap();
+    assert_eq!(row["task"]["attached"], event.to_string());
+    assert!(row["task"].get("event").is_none());
+    let mut old = row.clone();
+    old["task"]["event"] = old["task"]["attached"].take();
+    old["task"].as_object_mut().unwrap().remove("attached");
+    let old: dam_protocol::WireObject = serde_json::from_value(old).unwrap();
+    assert_eq!(from_wire(&old).unwrap(), object);
+}
