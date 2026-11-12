@@ -1,7 +1,10 @@
 use dam_domain::Oid;
 use serde::Serialize;
 
+use dam_application::Named;
+
 use crate::args::RmArgs;
+use crate::commands::settled::Settled;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
@@ -36,7 +39,10 @@ impl View for Removed<'_> {
 }
 
 pub(crate) fn run(ctx: &Context, args: RmArgs) -> Result<Report, CliError> {
-    let oid = ctx.dam().resolve_object(&args.oid)?;
+    let oid = match ctx.dam().resolve_named(&args.oid)? {
+        Named::Object(oid) => oid,
+        Named::Item(hash) => return report(&Settled::new(&ctx.dam().dismiss(&hash)?)),
+    };
     let plan = ctx.dam().remove(&oid)?;
     report(&Removed {
         oid: &oid,

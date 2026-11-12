@@ -1,6 +1,6 @@
 use dam_domain::{Object, Oid};
 
-use crate::errors::UseCaseError;
+use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
 use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
@@ -20,6 +20,9 @@ impl Dam<'_> {
     }
 
     pub fn remove(&self, oid: &Oid) -> Result<RemovePlan, UseCaseError> {
+        if self.access.token().is_some() {
+            return Err(Refusal::NotOpenToTokens("rm").into());
+        }
         atomically(self.store, || {
             let object = load(self.store, oid)?;
             let plan = plan_for(self.store, &object)?;

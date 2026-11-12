@@ -13,6 +13,7 @@ mod remote;
 mod restore;
 mod rm;
 mod sent;
+mod settled;
 mod show;
 mod stage;
 mod status;
