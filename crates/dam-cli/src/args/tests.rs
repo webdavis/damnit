@@ -159,3 +159,19 @@ fn labels_and_unlabels_match_the_key_and_the_old_singular_names_still_parse() {
         }
     }
 }
+
+#[test]
+fn new_takes_the_kind_by_its_key_and_still_reads_event() {
+    let kind = |args: &[&str]| {
+        let mut argv = vec!["dam", "new", "standup"];
+        argv.extend_from_slice(args);
+        match Cli::try_parse_from(argv).unwrap().command {
+            Command::New(a) => a.kind,
+            _ => panic!("wrong command"),
+        }
+    };
+    assert_eq!(kind(&[]), dam_domain::Kind::Task);
+    assert_eq!(kind(&["--kind", "event"]), dam_domain::Kind::Event);
+    assert_eq!(kind(&["--event"]), dam_domain::Kind::Event);
+    assert!(Cli::try_parse_from(["dam", "new", "x", "--kind", "note"]).is_err());
+}
