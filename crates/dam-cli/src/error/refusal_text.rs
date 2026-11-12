@@ -78,6 +78,11 @@ impl fmt::Display for RefusalText<'_> {
             Refusal::MoveInsideItself(o) => {
                 write!(f, "{} cannot move inside itself", o.short())
             }
+            Refusal::SubjectNamesNoFolder(o) => write!(
+                f,
+                "{} has objects in its folder, so its subject cannot be empty, . or ..",
+                o.short()
+            ),
             Refusal::NothingToCommit => f.write_str("nothing to commit"),
             Refusal::NeedsAnAnswer => f.write_str(
                 "a question needs an answer; drop --json/--toon to answer interactively",

@@ -15,6 +15,7 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
         Refusal::NotATask(oid)
         | Refusal::NotAnEvent(oid)
         | Refusal::MoveInsideItself(oid)
+        | Refusal::SubjectNamesNoFolder(oid)
         | Refusal::NotCompleted(oid)
         | Refusal::NotCommitted(oid)
         | Refusal::NoConflict(oid)
