@@ -3,7 +3,7 @@ mod support;
 use support::errors::error_document;
 use support::sandbox::Sandbox;
 
-fn busy_intervals(document: &str) -> Vec<(u64, u64, bool)> {
+fn busy_intervals(document: &str) -> Vec<(String, String, bool)> {
     let value: serde_json::Value = serde_json::from_str(document).unwrap();
     value["events"]
         .as_array()
@@ -11,8 +11,8 @@ fn busy_intervals(document: &str) -> Vec<(u64, u64, bool)> {
         .iter()
         .map(|e| {
             (
-                e["start"].as_u64().unwrap(),
-                e["end"].as_u64().unwrap(),
+                e["start"].as_str().unwrap().to_string(),
+                e["end"].as_str().unwrap().to_string(),
                 e["busy"].as_bool().unwrap(),
             )
         })
@@ -59,8 +59,12 @@ fn dam_agenda_json_answers_every_event_in_the_window_as_intervals() {
     assert_eq!(
         busy_intervals(&out),
         vec![
-            (1_790_294_400, 1_790_380_800, true),
-            (1_790_344_800, 1_790_346_600, true)
+            ("2026-09-25".into(), "2026-09-26".into(), true),
+            (
+                "2026-09-25T14:00:00+00:00".into(),
+                "2026-09-25T14:30:00+00:00".into(),
+                true
+            )
         ]
     );
 }

@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use dam_adapters::to_wire;
-use dam_domain::Object;
+use dam_domain::{Object, When};
 use jiff::tz::TimeZone;
 use serde::{Serialize, Serializer};
 
@@ -110,17 +110,29 @@ pub(crate) fn displays<T: Display, S: Serializer>(
     serializer.collect_seq(values.iter().map(ToString::to_string))
 }
 
+fn document(object: &Object) -> impl Serialize + use<> {
+    let mut document = to_wire(object, None);
+    if let (Some(task), Some(t)) = (document.task.as_mut(), object.as_task()) {
+        task.due = t.due.as_ref().map(When::to_rfc3339);
+    }
+    if let (Some(event), Some(e)) = (document.event.as_mut(), object.as_event()) {
+        event.start = e.start.to_rfc3339();
+        event.end = e.end.to_rfc3339();
+    }
+    document
+}
+
 pub(crate) fn wire<S: Serializer>(object: &&Object, serializer: S) -> Result<S::Ok, S::Error> {
-    to_wire(object, None).serialize(serializer)
+    document(object).serialize(serializer)
 }
 
 pub(crate) fn optional_wire<S: Serializer>(
     object: &Option<&Object>,
     serializer: S,
 ) -> Result<S::Ok, S::Error> {
-    object.map(|o| to_wire(o, None)).serialize(serializer)
+    object.map(document).serialize(serializer)
 }
 
 fn wires<S: Serializer>(objects: &&[Object], serializer: S) -> Result<S::Ok, S::Error> {
-    serializer.collect_seq(objects.iter().map(|o| to_wire(o, None)))
+    serializer.collect_seq(objects.iter().map(document))
 }

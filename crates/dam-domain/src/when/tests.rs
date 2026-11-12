@@ -132,3 +132,12 @@ fn parse_human_reads_an_rfc_3339_time_as_that_instant_in_the_local_zone() {
         assert_eq!(at.time_zone(), &tz, "{text}");
     }
 }
+
+#[test]
+fn rfc_3339_text_is_a_plain_date_or_a_time_at_its_offset() {
+    let at: jiff::Zoned = "2026-09-25T09:00:00-04:00[America/New_York]"
+        .parse()
+        .unwrap();
+    assert_eq!(When::At(at).to_rfc3339(), "2026-09-25T09:00:00-04:00");
+    assert_eq!(When::Day(date(2026, 9, 25)).to_rfc3339(), "2026-09-25");
+}

@@ -364,16 +364,16 @@ dam agenda [<query>] [--from <when>] [--to <when>] [--max-age <remote>=<duration
 
 `dam agenda` lists the events a window overlaps as intervals, for a program that schedules around
 busy time. It answers `{"events": [...]}`, ordered by start: each row carries `oid`, `subject`,
-`path`, `labels`, `status`, `transparency` and `all_day`, and three keys a scheduler reads,
-`start` and `end` as epoch seconds with `end` exclusive, and `busy`, whether the event holds time:
-not cancelled, shown busy, and not declined by the attendee that stands for the calendar the event
-was read from. That attendee is per calendar, so a meeting on two configured calendars is two rows,
-and declining it marks only the copy on the calendar that is yours. Every event the window
-overlaps is listed, busy or not; an event made in `dam` with a `recurrence` is listed at its stored
-occurrence only, while a helper that expands recurrence into instances, as `dam-remote-gcal` does,
-has each instance listed. An all-day event runs midnight to midnight where `dam` runs. With no
-flags the window opens now and closes 24 hours later. Keys are only ever added; none is renamed,
-removed or retyped.
+`path`, `labels`, `status`, `transparency` and `all_day`, and three keys a scheduler reads, `start`
+and `end` as RFC 3339 times, or plain dates for an all-day event, with `end` exclusive, and `busy`,
+whether the event holds time: not cancelled, shown busy, and not declined by the attendee that
+stands for the calendar the event was read from. That attendee is per calendar, so a meeting on two
+configured calendars is two rows, and declining it marks only the copy on the calendar that is
+yours. Every event the window overlaps is listed, busy or not; an event made in `dam` with a
+`recurrence` is listed at its stored occurrence only, while a helper that expands recurrence into
+instances, as `dam-remote-gcal` does, has each instance listed. An all-day event runs midnight to
+midnight where `dam` runs. With no flags the window opens now and closes 24 hours later. Keys are
+only ever added; none is renamed, removed or retyped.
 
 A program that reads on a deadline runs `dam agenda --json --no-pull`, so the answer never waits on
 a pull, and keeps the store fresh with a separately scheduled `dam pull <remote>`, run where the

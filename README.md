@@ -175,6 +175,9 @@ under `--json`, an empty array when nothing is declared.
 
 ## Reading it from a program
 
+Every time under `--json` and `--toon` is RFC 3339 with its offset, such as
+`2026-09-25T09:00:00-04:00`, and every all-day date is a plain `YYYY-MM-DD`.
+
 `dam status --json` and `dam diff --json` answer in change documents, one per change:
 
     {"oid": "98d878...", "op": "update", "fields": ["subject", "due"], "kind": "task",
@@ -191,14 +194,15 @@ Add `--full` to either command for `before` and `after`, the whole object on eac
 
     {"events": [{"oid": "98d878...", "subject": "standup", "path": "me@example.com/",
      "labels": [], "status": "confirmed", "transparency": "busy", "all_day": false,
-     "start": 1790344800, "end": 1790346600, "busy": true}]}
+     "start": "2026-09-25T09:00:00-04:00", "end": "2026-09-25T09:30:00-04:00", "busy": true}]}
 
-`start` and `end` are epoch seconds, `end` exclusive; `busy` says whether the event holds time: not
-cancelled, shown busy, and not declined by the attendee that stands for the calendar the event came
-from. Every event the window overlaps is listed, busy or not; a recurring event made in dam is
-listed at its stored occurrence only. With no flags the window runs from now to 24 hours later;
-`--from` and `--to` take the same words `--due` does, and a query narrows it the way `dam ls` reads
-one. Keys are only ever added, never renamed or retyped.
+`start` and `end` are times in the local zone, or dates for an all-day event, `end` exclusive;
+`busy` says whether the event holds time: not cancelled, shown busy, and not declined by the
+attendee that stands for the calendar the event came from. Every event the window overlaps is
+listed, busy or not; a recurring event made in dam is listed at its stored occurrence only. With no
+flags the window runs from now to 24 hours later; `--from` and `--to` take the same words `--due`
+does, and a query narrows it the way `dam ls` reads one. Keys are only ever added, never renamed or
+retyped.
 
 Like `ls`, `agenda` pulls a stale remote first unless given `--no-pull`.
 
