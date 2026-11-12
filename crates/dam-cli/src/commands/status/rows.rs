@@ -83,11 +83,11 @@ impl<'a> ChangeRow<'a> {
                     done: t.completion.is_done(),
                     completed_at: t.completion.at(),
                     priority: t.priority.get(),
-                    due: t.due.as_ref().map(When::to_text),
+                    due: t.due.as_ref().map(When::to_rfc3339),
                 },
                 Object::Event(e) => KindState::Event {
-                    start: e.start.to_text(),
-                    end: e.end.to_text(),
+                    start: e.start.to_rfc3339(),
+                    end: e.end.to_rfc3339(),
                 },
             },
             sides: full.then(|| Sides {

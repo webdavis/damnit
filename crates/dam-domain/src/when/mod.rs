@@ -78,6 +78,13 @@ impl When {
             When::At(z) => z.to_string(),
         }
     }
+
+    pub fn to_rfc3339(&self) -> String {
+        match self {
+            When::Day(d) => d.to_string(),
+            When::At(z) => z.timestamp().display_with_offset(z.offset()).to_string(),
+        }
+    }
 }
 
 fn friendly_hint(text: &str) -> WhenError {

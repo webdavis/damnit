@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use dam_application::{Scheduled, Window};
-use dam_domain::{Oid, Timestamp};
+use dam_domain::{Oid, Timestamp, When};
 use jiff::SignedDuration;
 use jiff::tz::TimeZone;
 use serde::Serialize;
@@ -27,7 +27,7 @@ pub(crate) fn run_agenda(ctx: &Context, args: AgendaArgs) -> Result<Report, CliE
     ctx.dam().require_fresh(&bounds)?;
     let found = ctx.dam().agenda(args.query.as_deref(), window, &ctx.tz)?;
     report(&Agenda {
-        events: found.iter().map(AgendaEvent::new).collect(),
+        events: found.iter().map(|s| AgendaEvent::new(s, &ctx.tz)).collect(),
         zone: &ctx.tz,
     })
 }
@@ -74,14 +74,23 @@ struct AgendaEvent<'a> {
     status: &'static str,
     transparency: &'static str,
     all_day: bool,
-    start: i64,
-    end: i64,
+    start: String,
+    end: String,
     busy: bool,
 }
 
 impl<'a> AgendaEvent<'a> {
-    fn new(s: &'a Scheduled) -> AgendaEvent<'a> {
+    fn new(s: &'a Scheduled, zone: &TimeZone) -> AgendaEvent<'a> {
         let base = &s.event.base;
+        let all_day = s.event.start.is_all_day();
+        let text = |t: Timestamp| {
+            let local = t.to_zoned(zone.clone());
+            if all_day {
+                When::Day(local.date()).to_rfc3339()
+            } else {
+                When::At(local).to_rfc3339()
+            }
+        };
         AgendaEvent {
             scheduled: s,
             oid: &base.oid,
@@ -90,9 +99,9 @@ impl<'a> AgendaEvent<'a> {
             labels: &base.labels,
             status: s.event.status.as_str(),
             transparency: s.event.transparency.as_str(),
-            all_day: s.event.start.is_all_day(),
-            start: s.start.as_second(),
-            end: s.end.as_second(),
+            all_day,
+            start: text(s.start),
+            end: text(s.end),
             busy: s.busy,
         }
     }

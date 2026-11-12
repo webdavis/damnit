@@ -35,7 +35,7 @@ fn the_agenda_document_keeps_its_contract() {
         serde_json::json!({"events": [{
             "oid": "3f".repeat(20), "subject": "standup", "path": "", "labels": ["work"],
             "status": "confirmed", "transparency": "busy", "all_day": false,
-            "start": 1_789_740_000, "end": 1_789_741_800, "busy": true
+            "start": "2026-09-18T14:00:00+00:00", "end": "2026-09-18T14:30:00+00:00", "busy": true
         }]})
     );
 }
@@ -176,9 +176,11 @@ fn the_local_zone_places_the_day_the_window_and_the_printed_times() {
     let report = run_agenda(&ctx, args(Some("2026-09-18"), None)).unwrap();
     assert_eq!(subjects(&report), ["offsite", "standup"]);
     let all_day = &report.data["events"][0];
+    assert_eq!(all_day["start"], "2026-09-18");
+    assert_eq!(all_day["end"], "2026-09-19");
     assert_eq!(
-        (all_day["start"].as_i64(), all_day["end"].as_i64()),
-        (Some(1_789_704_000), Some(1_789_790_400))
+        report.data["events"][1]["start"],
+        "2026-09-18T10:00:00-04:00"
     );
     assert_eq!(
         report.human.lines().last(),
