@@ -27,14 +27,28 @@ impl Sandbox {
     }
 
     pub fn command(&self, args: &[&str]) -> Command {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_dam"));
+        command.args(args);
+        self.environ(command)
+    }
+
+    pub fn shell(&self, script: &str) -> Command {
+        let dam = self.dir.path().join("bin/dam");
+        if !dam.exists() {
+            std::os::unix::fs::symlink(env!("CARGO_BIN_EXE_dam"), dam).unwrap();
+        }
+        let mut command = Command::new("bash");
+        command.args(["-euo", "pipefail", "-c", script]);
+        self.environ(command)
+    }
+
+    fn environ(&self, mut command: Command) -> Command {
         let path = format!(
             "{}:{}",
             self.dir.path().join("bin").display(),
             std::env::var("PATH").unwrap_or_default()
         );
-        let mut command = Command::new(env!("CARGO_BIN_EXE_dam"));
         command
-            .args(args)
             .current_dir(self.dir.path())
             .env("PATH", path)
             .env("DAM_CONFIG", self.dir.path().join("config.toml"))

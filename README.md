@@ -275,8 +275,9 @@ Repeat the flag to bound more than one remote.
 
 ## Tokens
 
-A tool runs `dam` with a token in `DAM_TOKEN`. Without `DAM_TOKEN` the caller is you. Each token is
-a table in the config file, and its grants say what it may do:
+A tool runs `dam` with a token in `DAM_TOKEN`. Without `DAM_TOKEN` the caller is you.
+[docs/agents.md](docs/agents.md) tells a tool or an agent what to pass. Each token is a table in
+the config file, and its grants say what it may do:
 
     schema = 1
 
