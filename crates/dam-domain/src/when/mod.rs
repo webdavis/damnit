@@ -56,6 +56,9 @@ impl When {
                 .map(When::At)
                 .map_err(|_| friendly_hint(text));
         }
+        if let Ok(instant) = text.parse::<Timestamp>() {
+            return Ok(When::At(instant.to_zoned(tz.clone())));
+        }
         if names_a_local_time {
             return text
                 .parse::<jiff::civil::DateTime>()

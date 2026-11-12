@@ -114,8 +114,9 @@ characters before `dam status` shows it.
 `--due`, `--deadline`, `--start` and `--end` all read the same words, in any case: `today`,
 `tomorrow`, a weekday (`mon` or `monday`, meaning its next occurrence after today, so naming today's
 own weekday is a week out), `next mon` for that same day, `in 3 days`, `in 2 weeks`, `in 1 month`,
-`YYYY-MM-DD`, and `YYYY-MM-DDTHH:MM` where a time makes sense. A deadline is a whole day, so a time
-given to `--deadline` is dropped. Anything else exits 2 with a message naming the accepted forms.
+`YYYY-MM-DD`, and `YYYY-MM-DDTHH:MM` or an RFC 3339 time such as `2026-09-25T09:00:00-04:00`
+where a time makes sense. A deadline is a whole day, so a time given to `--deadline` is dropped.
+Anything else exits 2 with a message naming the accepted forms.
 
 Every verb that takes an oid takes it whole or as a prefix of at least 4 hex characters that names
 one object in the working layer. An object only the history holds, such as one you removed, takes

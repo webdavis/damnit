@@ -116,3 +116,19 @@ fn a_malformed_zoned_timestamp_gets_the_friendly_hint() {
         err.0
     );
 }
+
+#[test]
+fn parse_human_reads_an_rfc_3339_time_as_that_instant_in_the_local_zone() {
+    let today = date(2026, 9, 18);
+    let tz = jiff::tz::TimeZone::fixed(jiff::tz::offset(2));
+    for (text, second) in [
+        ("2026-09-25T09:00:00-04:00", 1_790_341_200),
+        ("2026-09-25T13:00:00Z", 1_790_341_200),
+    ] {
+        let When::At(at) = When::parse_human(text, today, &tz).unwrap() else {
+            panic!("{text} is not a time")
+        };
+        assert_eq!(at.timestamp().as_second(), second, "{text}");
+        assert_eq!(at.time_zone(), &tz, "{text}");
+    }
+}
