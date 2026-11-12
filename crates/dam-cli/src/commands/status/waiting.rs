@@ -2,7 +2,7 @@ use dam_domain::{Item, ItemHash, Oid, Timestamp};
 use serde::Serialize;
 
 use super::rows::ChangeRow;
-use crate::view::display;
+use crate::view::{Line, display};
 
 #[derive(Serialize)]
 pub(super) struct ItemRow<'a> {
@@ -30,18 +30,14 @@ impl<'a> ItemRow<'a> {
         }
     }
 
-    pub(super) fn line(&self, owner: &str) -> String {
+    pub(super) fn lines(&self, owner: &str) -> Vec<Line> {
         let target = self.target;
         let id = if target == self.hash.oid() {
             self.hash.short().to_string()
         } else {
             format!("{}  {}", self.hash.short(), target.short())
         };
-        format!(
-            "{}  {}",
-            self.change.status_line_naming(&id, owner),
-            age(self.age)
-        )
+        self.change.lines("  ", &id, owner, &[age(self.age)])
     }
 }
 

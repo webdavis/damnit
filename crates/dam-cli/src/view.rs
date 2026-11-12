@@ -110,7 +110,7 @@ pub(crate) fn displays<T: Display, S: Serializer>(
     serializer.collect_seq(values.iter().map(ToString::to_string))
 }
 
-fn document(object: &Object) -> impl Serialize + use<> {
+pub(crate) fn document(object: &Object) -> impl Serialize + use<> {
     let mut document = to_wire(object, None);
     if let (Some(task), Some(t)) = (document.task.as_mut(), object.as_task()) {
         task.due = t.due.as_ref().map(When::to_rfc3339);

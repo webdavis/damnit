@@ -1,6 +1,7 @@
 Staged:
   removed  2222222  call mom  you
 Not staged:
-  changed  1111111  buy soy milk  (subject)  home/  you
+  changed  1111111  -buy oat milk  home/  you
+                    +buy soy milk
 Unpushed:
   fake: 1 commit

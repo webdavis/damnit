@@ -57,18 +57,17 @@ impl View for StatusView<'_> {
                 .map(|l| Line::Row(format!("  {l}")))
                 .collect()
         };
+        let changes = |rows: &[ChangeRow]| -> Vec<Line> {
+            rows.iter()
+                .flat_map(|r| r.own_lines("  ", self.owner))
+                .collect()
+        };
+        section("Staged:", changes(&self.staged));
+        let waiting = self.waiting.iter().flat_map(|r| r.lines(self.owner));
         section(
-            "Staged:",
-            rows(
-                self.staged
-                    .iter()
-                    .map(|r| r.status_line(self.owner))
-                    .collect(),
-            ),
+            "Not staged:",
+            changes(&self.unstaged).into_iter().chain(waiting).collect(),
         );
-        let unstaged = self.unstaged.iter().map(|r| r.status_line(self.owner));
-        let waiting = self.waiting.iter().map(|r| r.line(self.owner));
-        section("Not staged:", rows(unstaged.chain(waiting).collect()));
         section(
             "Conflicts:",
             self.conflicts.iter().flat_map(ConflictRow::lines).collect(),
@@ -100,13 +99,20 @@ impl View for StatusView<'_> {
 #[derive(Serialize)]
 pub(super) struct DiffView<'a> {
     pub(super) changes: Vec<ChangeRow<'a>>,
+    #[serde(skip)]
+    pub(super) owner: &'static str,
 }
 
 impl View for DiffView<'_> {
     fn human(&self) -> Human {
-        Human::list(
-            self.changes.iter().map(|c| vec![c.line()]).collect(),
-            "no changes",
+        if self.changes.is_empty() {
+            return Human::Lines(vec!["no changes".to_string()]);
+        }
+        Human::Mixed(
+            self.changes
+                .iter()
+                .flat_map(|c| c.own_lines("", self.owner))
+                .collect(),
         )
     }
 }

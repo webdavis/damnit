@@ -53,11 +53,13 @@ pub(crate) fn run_diff(ctx: &Context, args: DiffArgs) -> Result<Report, CliError
         let staged = ctx.dam().seen_staged()?;
         return report(&DiffView {
             changes: authored_rows(&staged, args.full).collect(),
+            owner: the_owner_to(ctx.access.as_ref()),
         });
     }
     let working = ctx.dam().diff_working()?;
     report(&DiffView {
         changes: owner_rows(&working, args.full).collect(),
+        owner: the_owner_to(ctx.access.as_ref()),
     })
 }
 

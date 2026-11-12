@@ -20,7 +20,7 @@ fn a_waiting_change_in_status_text_names_its_hash_and_the_task_it_changes() {
     let (sb, rent, hash) = rent_and_a_retitle_from_vpt();
     let status = text(&sb.output(&["status"]).stdout);
     let row = format!(
-        "  changed  {}  {}  Pay the rent  (subject)  vpt  ",
+        "  changed  {}  {}  -Pay rent  vpt  ",
         &hash[..7],
         &rent[..7]
     );
