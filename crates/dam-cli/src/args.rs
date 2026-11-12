@@ -1,5 +1,6 @@
 mod dispositions;
 mod editing;
+mod new;
 mod planning;
 mod reading;
 mod remotes;
@@ -13,6 +14,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 
 pub(crate) use editing::EditArgs;
+pub(crate) use new::NewArgs;
 pub(crate) use planning::{DayArgs, DayCommand, RemindersArgs};
 pub(crate) use reading::{
     AgendaArgs, CategoryArgs, CategoryCommand, FilterArgs, FilterCommand, LsArgs,
@@ -22,7 +24,7 @@ pub(crate) use staging::{
     AddArgs, CommitArgs, DiffArgs, ResetArgs, RestoreArgs, ShowArgs, StatusArgs,
 };
 pub(crate) use tokens::{CreateArgs, TokenArgs, TokenCommand};
-pub(crate) use writing::{DoneArgs, MvArgs, NewArgs, RmArgs};
+pub(crate) use writing::{DoneArgs, MvArgs, RmArgs};
 
 #[derive(Parser, Debug)]
 #[command(
