@@ -1,10 +1,18 @@
 use dam_application::Config;
 use serde::Serialize;
 
-use crate::args::{CategoryCommand, FilterCommand};
+use crate::args::{CategoryCommand, Command, FilterCommand};
 use crate::error::CliError;
 use crate::output::Report;
 use crate::view::{Human, View, report};
+
+pub(crate) fn run(config: &Config, command: Command) -> Result<Report, CliError> {
+    match command {
+        Command::Category(a) => run_category(config, a.command),
+        Command::Filter(a) => run_filter(config, a.command),
+        _ => unreachable!("only category and filter read the config alone"),
+    }
+}
 
 #[derive(Serialize)]
 struct CategoryList<'a> {
@@ -56,7 +64,7 @@ impl View for FilterList<'_> {
     }
 }
 
-pub(crate) fn run_category(config: &Config, command: CategoryCommand) -> Result<Report, CliError> {
+fn run_category(config: &Config, command: CategoryCommand) -> Result<Report, CliError> {
     let CategoryCommand::List = command;
     report(&CategoryList {
         categories: config
@@ -72,7 +80,7 @@ pub(crate) fn run_category(config: &Config, command: CategoryCommand) -> Result<
     })
 }
 
-pub(crate) fn run_filter(config: &Config, command: FilterCommand) -> Result<Report, CliError> {
+fn run_filter(config: &Config, command: FilterCommand) -> Result<Report, CliError> {
     let FilterCommand::List = command;
     report(&FilterList {
         filters: config

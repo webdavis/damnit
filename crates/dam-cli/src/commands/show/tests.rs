@@ -123,3 +123,35 @@ fn an_ambiguous_commit_prefix_names_every_match() {
     assert_eq!(err.document()["error"]["rule"], "ambiguous_prefix");
     assert_eq!(err.document()["error"]["oids"], serde_json::json!(ids));
 }
+
+#[test]
+fn a_token_without_history_read_finds_no_commit_as_if_none_matched() {
+    let mut ctx = context();
+    ctx.store
+        .put(&Object::Task(Task::new(
+            Oid::generate(&mut |x: &mut [u8]| x.fill(9)),
+            "a",
+        )))
+        .unwrap();
+    run_add(
+        &ctx,
+        AddArgs {
+            oids: vec![],
+            all: true,
+        },
+    )
+    .unwrap();
+    run_commit(
+        &ctx,
+        CommitArgs {
+            message: "first".into(),
+        },
+    )
+    .unwrap();
+    let id = ctx.store.log().unwrap()[0].id.to_string();
+    ctx.access = crate::testing::holding(&[dam_domain::Permission::TaskRead]);
+    let err = super::run_show(&ctx, ShowArgs { id: id[..8].into() }).unwrap_err();
+    assert_eq!(err.document()["error"]["rule"], "no_such_object");
+    ctx.access = crate::testing::holding(&[dam_domain::Permission::HistoryRead]);
+    assert!(super::run_show(&ctx, ShowArgs { id: id[..8].into() }).is_ok());
+}

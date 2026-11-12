@@ -1,5 +1,5 @@
 use dam_application::{Refusal, UseCaseError};
-use dam_domain::Object;
+use dam_domain::{Object, Permission};
 use serde::Serialize;
 
 use crate::args::ShowArgs;
@@ -7,6 +7,7 @@ use crate::commands::commit::CommitDoc;
 use crate::commands::remote::refresh_stale_unless_no_pull;
 use crate::context::Context;
 use crate::error::CliError;
+use crate::gate::may;
 use crate::layout::table;
 use crate::output::{Report, object_cells};
 use crate::view::{Human, View, report, wire};
@@ -15,6 +16,9 @@ pub(crate) fn run_show(ctx: &Context, args: ShowArgs) -> Result<Report, CliError
     refresh_stale_unless_no_pull(ctx)?;
     if let Some(object) = working_object_named(ctx, &args.id)? {
         return report(&ShownObject(&object, &ctx.tz));
+    }
+    if !may(ctx.access.as_ref(), Permission::HistoryRead) {
+        return Err(Refusal::NoSuchObject(args.id).into());
     }
     let record = ctx.dam().resolve_commit(&args.id)?;
     report(&ShownCommit(CommitDoc::new(&record, &ctx.tz)))

@@ -1,0 +1,71 @@
+mod support;
+
+use dam_domain::Token;
+use support::errors::error_document;
+use support::sandbox::Sandbox;
+
+fn token(fill: u8) -> String {
+    Token::generate(&mut |b: &mut [u8]| b.fill(fill)).expose()
+}
+
+fn sandbox_granting(allow: &str) -> (Sandbox, String) {
+    let sb = Sandbox::new();
+    sb.add_config(&format!(
+        "[token.vpt]\nvalue = \"{}\"\n[[token.vpt.grant]]\nallow = [{allow}]\n",
+        token(1)
+    ));
+    (sb, token(1))
+}
+
+fn rule_of(out: &std::process::Output) -> String {
+    assert_eq!(out.status.code(), Some(4), "{out:?}");
+    error_document(out)["error"]["rule"]
+        .as_str()
+        .unwrap()
+        .to_string()
+}
+
+#[test]
+fn every_write_verb_is_refused_to_a_token_and_the_store_is_untouched() {
+    let _guard =
+        support::guard("every_write_verb_is_refused_to_a_token_and_the_store_is_untouched");
+    let (sb, held) = sandbox_granting("\"task:read\", \"task:create\", \"task:change\"");
+    let oid = sb.new_object(&["milk"]);
+    for line in [
+        vec!["new", "bread"],
+        vec!["edit", &oid, "--subject", "oat milk"],
+        vec!["done", &oid],
+        vec!["mv", &oid, "work"],
+        vec!["rm", &oid],
+        vec!["add", "-A"],
+        vec!["reset"],
+        vec!["restore", &oid],
+        vec!["commit", "-m", "m"],
+        vec!["remote", "add", "other", "fake::"],
+        vec!["resolve", &oid, "--ours"],
+    ] {
+        let mut args = line.clone();
+        args.push("--json");
+        let out = sb.output_holding(&held, &args);
+        assert_eq!(rule_of(&out), "not_open_to_tokens", "{line:?}");
+    }
+    let (ok, listed, _) = sb.dam(&["ls", "--json", "--no-pull"]);
+    assert!(ok);
+    assert!(listed.contains("milk") && !listed.contains("bread"));
+}
+
+#[test]
+fn a_read_the_token_does_not_hold_is_refused_and_one_it_holds_runs() {
+    let _guard = support::guard("a_read_the_token_does_not_hold_is_refused_and_one_it_holds_runs");
+    let (sb, held) = sandbox_granting("\"config:read\"");
+    let out = sb.output_holding(&held, &["log", "--json"]);
+    assert_eq!(rule_of(&out), "not_permitted");
+    assert!(
+        error_document(&out)["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains("history:read")
+    );
+    let out = sb.output_holding(&held, &["category", "list", "--json"]);
+    assert!(out.status.success(), "{out:?}");
+}

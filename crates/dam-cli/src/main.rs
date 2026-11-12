@@ -4,6 +4,7 @@ mod commands;
 mod context;
 mod editor;
 mod error;
+mod gate;
 mod layout;
 mod output;
 mod prompt;
@@ -71,33 +72,24 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     let config_file =
         TomlConfigFile::new(cli.config.unwrap_or_else(dam_adapters::default_config_path));
     let presented_token = std::env::var_os(TOKEN_VARIABLE);
-    match cli.command {
-        Command::Category(a) => {
-            let config = config_file.load()?;
-            caller(&config, presented_token, SystemClock.now())?;
-            let report = commands::catalogue::run_category(&config, a.command)?;
-            output::print(format, &report)
-        }
-        Command::Filter(a) => {
-            let config = config_file.load()?;
-            caller(&config, presented_token, SystemClock.now())?;
-            let report = commands::catalogue::run_filter(&config, a.command)?;
-            output::print(format, &report)
-        }
-        command => {
-            let store_path = cli.store.unwrap_or_else(dam_adapters::default_store_path);
-            let ctx = Context::open(
-                Box::new(config_file),
-                &store_path,
-                presented_token,
-                format,
-                cli.no_pull,
-                interrupt,
-            )?;
-            let report = commands::dispatch_a_verb_that_opens_the_store(&ctx, command)?;
-            output::print(format, &report)
-        }
+    if let Command::Category(_) | Command::Filter(_) = cli.command {
+        let config = config_file.load()?;
+        let access = caller(&config, presented_token, SystemClock.now())?;
+        gate::admit(access.as_ref(), &cli.command)?;
+        let report = commands::catalogue::run(&config, cli.command)?;
+        return output::print(format, &report);
     }
+    let store_path = cli.store.unwrap_or_else(dam_adapters::default_store_path);
+    let ctx = Context::open(
+        Box::new(config_file),
+        &store_path,
+        presented_token,
+        format,
+        cli.no_pull,
+        interrupt,
+    )?;
+    let report = commands::dispatch_a_verb_that_opens_the_store(&ctx, cli.command)?;
+    output::print(format, &report)
 }
 
 #[cfg(test)]

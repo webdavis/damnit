@@ -11,7 +11,7 @@ fn abab000() -> String {
     .to_string()
 }
 
-pub(super) const RULES: usize = 25;
+pub(super) const RULES: usize = 27;
 
 pub(super) fn rule_number(refusal: &Refusal) -> usize {
     match refusal {
@@ -40,6 +40,8 @@ pub(super) fn rule_number(refusal: &Refusal) -> usize {
         Refusal::UnreadableRecurrence { .. } => 22,
         Refusal::NoConflict(_) => 23,
         Refusal::Token(_) => 24,
+        Refusal::NotPermitted(_) => 25,
+        Refusal::NotOpenToTokens(_) => 26,
     }
 }
 
