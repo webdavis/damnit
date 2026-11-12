@@ -28,6 +28,7 @@ fn plain(done: bool) -> WireTask {
         due: None,
         deadline: None,
         event: None,
+        estimate: None,
     }
 }
 
@@ -66,6 +67,7 @@ pub fn item_to_wire(t: &Tree, i: &Item) -> Option<WireObject> {
         due: i.due.as_ref().map(|d| d.date.clone()),
         deadline: i.deadline.as_ref().map(|d| d.date.clone()),
         event: None,
+        estimate: None,
     };
     let mut w = wire(
         RemoteId::Item(i.id.clone()).to_string(),

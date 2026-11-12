@@ -25,6 +25,7 @@ fn milk(subject: &str, done: bool) -> WireObject {
             due: Some("2026-09-25".into()),
             deadline: None,
             event: None,
+            estimate: None,
         }),
         event: None,
     }

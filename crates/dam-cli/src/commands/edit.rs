@@ -71,6 +71,7 @@ fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
         .map(|s| when_flag(ctx, "end", s))
         .transpose()?;
     f.location = set_or_clear(args.location, args.no_location);
+    f.estimate = set_or_clear(args.estimate, args.no_estimate);
     Ok(f)
 }
 

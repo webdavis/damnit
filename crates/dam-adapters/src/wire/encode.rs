@@ -23,6 +23,7 @@ pub fn to_wire(object: &Object, remote_id: Option<String>) -> WireObject {
             due: t.due.as_ref().map(When::to_text),
             deadline: t.deadline.map(|d| d.to_string()),
             event: t.event.as_ref().map(|o| o.to_string()),
+            estimate: t.estimate,
         }),
         event: object.as_event().map(|e| WireEvent {
             start: e.start.to_text(),

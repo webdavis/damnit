@@ -28,6 +28,7 @@ pub struct Task {
     pub due: Option<When>,
     pub deadline: Option<Date>,
     pub event: Option<Oid>,
+    pub estimate: Option<u32>,
 }
 
 impl Task {
@@ -39,6 +40,7 @@ impl Task {
             due: None,
             deadline: None,
             event: None,
+            estimate: None,
         }
     }
 }
