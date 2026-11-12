@@ -104,7 +104,7 @@ characters before `dam status` shows it.
 
 ## Every day
 
-    dam new "buy oat milk" --due tomorrow -p 1 --label errand
+    dam new "buy oat milk" --due tomorrow -p 1 --labels errand
     dam ls due:today
     dam done 3f2a9c1
     dam add -A

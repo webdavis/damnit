@@ -38,7 +38,7 @@ pub(crate) struct NewArgs {
         help = "Set the deadline, a whole day read the way --due reads one"
     )]
     pub(crate) deadline: Option<String>,
-    #[arg(long = "label", help = "Add a label. Repeatable")]
+    #[arg(long, alias = "label", help = "Add a label. Repeatable")]
     pub(crate) labels: Vec<String>,
     #[arg(
         long,
