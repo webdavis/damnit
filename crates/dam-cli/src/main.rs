@@ -18,7 +18,7 @@ use dam_adapters::{Interrupt, OsRandom, SystemClock, TomlConfigFile};
 use dam_application::{Clock, ConfigFile};
 
 use crate::args::{Cli, Command};
-use crate::caller::caller;
+use crate::caller::{authenticated, caller};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Format;
@@ -90,7 +90,12 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     }
     if let Command::Category(_) | Command::Filter(_) = cli.command {
         let config = config_file.load()?;
-        let access = caller(&config, presented_token, SystemClock.now(), &meta)?;
+        let now = SystemClock.now();
+        let access = caller(
+            authenticated(&config, presented_token, now, &meta)?,
+            now,
+            &meta,
+        );
         gate::admit(access.as_ref(), &cli.command)?;
         let report = commands::catalogue::run(&config, cli.command)?;
         return output::print(format, color, &report);

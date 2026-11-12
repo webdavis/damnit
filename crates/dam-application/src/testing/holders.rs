@@ -10,6 +10,7 @@ pub fn holder(grants: Vec<Grant>) -> Holder {
                 .key_id()
                 .clone(),
             grants,
+            made: Default::default(),
         },
         channel: Channel::Local,
     }

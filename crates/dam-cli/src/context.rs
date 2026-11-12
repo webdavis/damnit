@@ -10,7 +10,7 @@ use dam_application::{
     Store,
 };
 
-use crate::caller::caller;
+use crate::caller::{authenticated, caller};
 use crate::editor::{EditorSession, EnvEditor};
 use crate::error::CliError;
 use crate::output::Format;
@@ -42,8 +42,11 @@ impl Context {
         interrupt: &Interrupt,
     ) -> Result<Context, CliError> {
         let config = config_file.load()?;
-        let access = caller(&config, presented_token, SystemClock.now(), meta)?;
+        let now = SystemClock.now();
+        let holder = authenticated(&config, presented_token, now, meta)?;
         let store = SqliteStore::open(store_path)?;
+        let holder = holder.map(|h| h.knowing_what_it_made(&store)).transpose()?;
+        let access = caller(holder, now, meta);
         let (prompt, editor) =
             terminal_pair_for_a_human_and_refusals_for_a_machine(format, interrupt);
         Ok(Context {

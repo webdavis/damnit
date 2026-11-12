@@ -36,6 +36,7 @@ fn holding(grants: Vec<Grant>) -> Grants {
     Grants {
         holder: token.key_id().clone(),
         grants,
+        made: BTreeSet::new(),
     }
 }
 
@@ -128,12 +129,22 @@ fn one_grant_must_cover_every_object_a_request_touches_before_and_after() {
 }
 
 #[test]
-fn own_matches_nothing_until_authorship_is_recorded() {
-    let g = holding(vec![Grant {
+fn own_covers_only_what_the_holder_made_while_every_other_limit_holds() {
+    let made = task("work", &[]);
+    let mut other = Task::new(Oid::generate(&mut |b: &mut [u8]| b.fill(4)), "o");
+    other.base.path = Path::parse("work").unwrap();
+    let other = Object::Task(other);
+    let mut g = holding(vec![Grant {
         own: true,
-        ..grant(&[Permission::TaskRead])
+        paths: paths(&["work"]),
+        ..grant(&[Permission::TaskRead, Permission::TaskCreate])
     }]);
-    assert!(!g.permits(Permission::TaskRead, &[Subject::Object(&task("", &[]))]));
+    g.made.insert(made.oid().clone());
+    let read = |o: &Object| g.permits(Permission::TaskRead, &[Subject::Object(o)]);
+    assert!(read(&made));
+    assert!(!read(&other));
+    assert!(!read(&task("home", &[])));
+    assert!(g.permits(Permission::TaskCreate, &[Subject::Object(&other)]));
 }
 
 #[test]

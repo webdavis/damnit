@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use super::{KeyId, Permission};
-use crate::{Object, Path};
+use crate::{Object, Oid, Path};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Grant {
@@ -23,6 +23,7 @@ pub enum Subject<'a> {
 pub struct Grants {
     pub holder: KeyId,
     pub grants: Vec<Grant>,
+    pub made: BTreeSet<Oid>,
 }
 
 impl Grants {
@@ -34,20 +35,29 @@ impl Grants {
         !touched.is_empty()
             && self.grants.iter().any(|grant| {
                 grant.allow.contains(&permission)
-                    && touched.iter().all(|s| grant.holds_for(permission, s))
+                    && touched
+                        .iter()
+                        .all(|s| grant.holds_for(permission, s, &self.made))
             })
     }
 }
 
 impl Grant {
-    fn holds_for(&self, permission: Permission, subject: &Subject<'_>) -> bool {
+    fn holds_for(
+        &self,
+        permission: Permission,
+        subject: &Subject<'_>,
+        made: &BTreeSet<Oid>,
+    ) -> bool {
         match subject {
             Subject::Object(object) => {
                 self.remotes.is_none()
                     && permission.kind().is_none_or(|kind| kind == object.kind())
                     && self.within_paths(&object.base().path)
                     && self.carries_a_label(&object.base().labels)
-                    && !self.own
+                    && (!self.own
+                        || permission == Permission::create(object.kind())
+                        || made.contains(object.oid()))
             }
             Subject::Remote(name) => {
                 self.only_restricts_remotes()

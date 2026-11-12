@@ -7,6 +7,7 @@ pub mod fixture;
 pub mod golden;
 pub mod help_flags;
 pub mod hidden;
+pub mod own;
 pub mod request;
 pub mod sandbox;
 pub mod schema;

@@ -287,9 +287,11 @@ as it was. The schemas of their `--json` answers are `docs/schemas/token-create.
 
 A grant allows only what `allow` lists, and only on objects under one of `paths`, carrying one of
 `labels`, or on the remotes `remotes` names. One grant must cover everything a command touches.
-`own = true` matches nothing yet. `not_before`, `expires` and `via` (default `["local"]`) bound when
-and where the token works. `require = ["session", "model"]` refuses, with rule `missing_details`,
-a request that does not pass each as `--meta session=...`. A token with `limits` is disabled until
+`own = true` covers only what the token made: a task it sent that you added, or its own waiting
+item. It never stops a `new`. Ownership follows the name, so a new token given a revoked token's
+name owns what the old one made. `not_before`, `expires` and `via` (default `["local"]`) bound when
+and where the token works. `require = ["session", "model"]` refuses, with rule `missing_details`, a
+request that does not pass each as `--meta session=...`. A token with `limits` is disabled until
 limits are enforced.
 
 The permissions are `task:` and `event:` `read`, `create`, `change`, `move` and `remove`,
