@@ -317,6 +317,13 @@ own waiting item.
 
 Your own rows in `status` and `log` read `you` to you and `owner` to a token.
 
+`dam new --id <text>` names the task with the tool's own id, which is not damnit's oid. The id is
+one line of up to 200 characters. A repeat of `dam new` with the same token and id changes that
+task: it waits as a change item, and only the fields that differ from the tool's last send change.
+Your own repeat with a new `--path` or subject carries the task's children, as `dam mv` and
+`dam edit` do. A token's repeat cannot change `--path`. Each token's ids, and your own, are kept
+apart.
+
 A token cannot run `mv`, `add`, `reset`, `restore`, `commit`, `remote add`, `resolve`, `day` or
 `token`, `rm` an object, or set `--focus`. A read pulls a stale remote only when the token holds
 `remote:pull` for it.
