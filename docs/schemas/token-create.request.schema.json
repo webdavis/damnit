@@ -34,6 +34,9 @@
         "type": "string"
       }
     },
+    "own": {
+      "type": "boolean"
+    },
     "remotes": {
       "type": "array",
       "items": {

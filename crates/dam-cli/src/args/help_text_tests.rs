@@ -116,6 +116,7 @@ dam token create name: help = Name the token, such as vpt
 dam token create allow: help = Allow a permission, such as task:read. Repeatable
 dam token create paths: help = Narrow the grant to objects under a path. Repeatable
 dam token create labels: help = Narrow the grant to objects carrying a label. Repeatable
+dam token create own: help = Narrow the grant to objects the token made
 dam token create remotes: help = Narrow the grant to a remote. Repeatable
 dam token create expires: help = Stop the token working at a date-time with an offset, such as 2027-05-11T00:00:00Z
 dam token create via: help = Let the token work over local or mcp. Repeatable. Default: local

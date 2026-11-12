@@ -60,6 +60,7 @@ fn tables(token: &NewToken) -> String {
             .map(|paths| strings(paths.iter().map(|p| p.to_string()))),
     );
     line(&mut text, "labels", grant.labels.as_ref().map(strings));
+    line(&mut text, "own", grant.own.then_some(Value::Boolean(true)));
     line(&mut text, "remotes", grant.remotes.as_ref().map(strings));
     text
 }
