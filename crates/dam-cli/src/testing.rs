@@ -186,6 +186,7 @@ pub(crate) fn holding(permissions: &[dam_domain::Permission]) -> Box<dam_applica
                 allow: permissions.iter().copied().collect(),
                 ..dam_domain::Grant::default()
             }],
+            made: Default::default(),
         },
         channel: dam_domain::Channel::Local,
     })

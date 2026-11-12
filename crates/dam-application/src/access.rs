@@ -1,5 +1,6 @@
 mod authenticate;
 mod detailed;
+mod made;
 
 use dam_domain::{Author, Channel, Details, Grants, Object, Permission, Subject, TokenAuthor};
 

@@ -53,7 +53,7 @@ schema = 1
 # Each grant allows the permissions in allow, and only within all of its limits that are set:
 #   paths, objects under one of these paths.
 #   labels, objects carrying one of these labels.
-#   own, objects this token made. It matches nothing yet.
+#   own, objects a token of this name made, and its own waiting items. A create always passes.
 #   remotes, the remotes named here.
 # One grant must cover everything a command touches.
 # The permissions are task:read, task:create, task:change, task:complete, task:move,

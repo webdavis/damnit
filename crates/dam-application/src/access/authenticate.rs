@@ -77,6 +77,7 @@ pub fn authenticate(
         grants: Grants {
             holder: presented.key_id().clone(),
             grants: terms.grants.clone(),
+            made: Default::default(),
         },
         channel,
     })
