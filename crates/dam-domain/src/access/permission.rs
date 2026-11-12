@@ -90,6 +90,20 @@ impl Permission {
         }
     }
 
+    pub fn create(kind: Kind) -> Permission {
+        match kind {
+            Kind::Task => Permission::TaskCreate,
+            Kind::Event => Permission::EventCreate,
+        }
+    }
+
+    pub fn change(kind: Kind) -> Permission {
+        match kind {
+            Kind::Task => Permission::TaskChange,
+            Kind::Event => Permission::EventChange,
+        }
+    }
+
     pub fn kind(&self) -> Option<Kind> {
         match self.as_str().split_once(':').map(|(kind, _)| kind) {
             Some("task") => Some(Kind::Task),

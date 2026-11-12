@@ -4,6 +4,7 @@ use dam_domain::{Blockers, Oid, Tracked};
 
 use dam_application::Refusal;
 
+use super::item_text::ItemText;
 use super::token_text::TokenText;
 
 pub(crate) struct RefusalText<'a>(pub(crate) &'a Refusal);
@@ -143,6 +144,7 @@ impl fmt::Display for RefusalText<'_> {
                 write!(f, "{permission} is reserved and cannot be granted")
             }
             Refusal::NoSuchToken(name) => write!(f, "no token named {name:?}"),
+            Refusal::Item(refusal) => write!(f, "{}", ItemText(refusal)),
         }
     }
 }

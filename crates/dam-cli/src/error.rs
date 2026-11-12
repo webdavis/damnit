@@ -5,6 +5,7 @@ use dam_application::{ConfigError, Refusal, StoreError, UseCaseError};
 
 use crate::editor::EditorError;
 
+mod item_text;
 mod refusal_oids;
 mod refusal_text;
 mod token_text;

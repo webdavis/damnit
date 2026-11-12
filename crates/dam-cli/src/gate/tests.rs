@@ -67,10 +67,10 @@ fn the_owner_is_admitted_to_every_command() {
 }
 
 #[test]
-fn a_token_holding_every_permission_still_cannot_write() {
+fn a_token_holding_every_permission_still_cannot_write_the_owners_layers() {
     let everything = allowing(&Permission::ALL);
     for verb in [
-        "new", "done", "edit", "mv", "rm", "add", "reset", "restore", "commit",
+        "done", "edit", "mv", "rm", "add", "reset", "restore", "commit",
     ] {
         let line = EVERY_COMMAND.iter().find(|l| l.starts_with(verb)).unwrap();
         assert_eq!(
@@ -92,6 +92,20 @@ fn a_token_holding_every_permission_still_cannot_write() {
             Err(Refusal::NotOpenToTokens("day"))
         );
     }
+}
+
+#[test]
+fn new_sends_an_item_for_a_token_holding_task_or_event_create() {
+    for permission in [Permission::TaskCreate, Permission::EventCreate] {
+        assert_eq!(
+            admit(&allowing(&[permission]), &command("new milk")),
+            Ok(())
+        );
+    }
+    assert_eq!(
+        admit(&allowing(&[Permission::TaskRead]), &command("new milk")),
+        Err(Refusal::NotPermitted(Permission::TaskCreate))
+    );
 }
 
 #[test]

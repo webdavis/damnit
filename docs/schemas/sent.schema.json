@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/sent.schema.json",
+  "title": "dam sent answer",
+  "description": "What dam new, dam edit and dam done print with --json or --toon when DAM_TOKEN is set. The item waits for the owner. A refusal is an error document instead.",
+  "type": "object",
+  "required": ["answer", "hash", "oid", "item", "kind", "subject", "path", "from", "key_id", "channel", "created"],
+  "additionalProperties": false,
+  "properties": {
+    "answer": {
+      "description": "new and changed store an item; duplicate stores nothing and names the item already waiting.",
+      "enum": ["new", "changed", "duplicate"]
+    },
+    "hash": { "$ref": "#/$defs/id" },
+    "oid": {
+      "description": "The object the item makes or changes. For a new item it equals hash.",
+      "$ref": "#/$defs/id"
+    },
+    "item": { "enum": ["new", "change", "removal"] },
+    "kind": { "enum": ["task", "event"] },
+    "subject": { "type": "string" },
+    "path": { "type": "string" },
+    "from": { "description": "The token's name.", "type": "string" },
+    "key_id": { "type": "string", "pattern": "^[0-9A-Za-z]{12}$" },
+    "channel": { "enum": ["local", "mcp"] },
+    "created": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+  }
+}

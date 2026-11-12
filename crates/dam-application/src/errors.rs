@@ -2,6 +2,7 @@ use dam_domain::{Blockers, Date, LabelViolation, Oid, Permission, QueryError, Tr
 
 use crate::access::TokenRefusal;
 use crate::ports::{CredentialError, HelperError, StoreError};
+use crate::use_cases::items::refusal::ItemRefusal;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Refusal {
@@ -64,6 +65,7 @@ pub enum Refusal {
     TokenExists(String),
     NotGrantable(String),
     NoSuchToken(String),
+    Item(ItemRefusal),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -112,6 +114,7 @@ impl Refusal {
             Refusal::TokenExists(_) => "token_exists",
             Refusal::NotGrantable(_) => "not_grantable",
             Refusal::NoSuchToken(_) => "no_such_token",
+            Refusal::Item(refusal) => refusal.name(),
         }
     }
 }
@@ -119,6 +122,11 @@ impl Refusal {
 impl From<Refusal> for UseCaseError {
     fn from(r: Refusal) -> UseCaseError {
         UseCaseError::Refused(r)
+    }
+}
+impl From<ItemRefusal> for UseCaseError {
+    fn from(r: ItemRefusal) -> UseCaseError {
+        UseCaseError::Refused(Refusal::Item(r))
     }
 }
 impl From<StoreError> for UseCaseError {

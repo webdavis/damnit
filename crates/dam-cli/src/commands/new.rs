@@ -2,6 +2,7 @@ use std::collections::BTreeSet;
 
 use crate::args::NewArgs;
 use crate::commands::parsing::{deadline_flag, when_flag};
+use crate::commands::sent::report_landed;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
@@ -26,7 +27,7 @@ impl View for Created<'_> {
 
 pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
     let labels: BTreeSet<String> = args.labels.into_iter().collect();
-    let oid = if args.event {
+    let landed = if args.event {
         let start = when_flag(
             ctx,
             "start",
@@ -71,11 +72,7 @@ pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
             body: args.body,
         })?
     };
-    let object = ctx
-        .store
-        .get(&oid)?
-        .ok_or_else(|| CliError::Internal("the new object did not persist".into()))?;
-    report(&Created(&object))
+    report_landed(&landed, |object| report(&Created(object)))
 }
 
 #[cfg(test)]
