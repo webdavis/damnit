@@ -33,6 +33,16 @@ pub enum Notice {
         ours: Kind,
         theirs: Kind,
     },
+    MissingUpstream {
+        remote: RemoteName,
+        tasks: Vec<MissingTask>,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MissingTask {
+    pub oid: Oid,
+    pub subject: String,
 }
 
 pub trait NoticeRepository {

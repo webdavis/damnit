@@ -56,4 +56,5 @@ pub struct PullOutcome {
     pub removed: Vec<String>,
     pub cancelled: Vec<String>,
     pub sync: Option<String>,
+    pub complete: bool,
 }

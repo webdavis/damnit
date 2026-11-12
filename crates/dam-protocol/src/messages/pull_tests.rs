@@ -85,3 +85,14 @@ fn a_helper_rejection_and_an_object_dam_cannot_read_are_both_rejected() {
     let ids: Vec<&str> = read.rejected.iter().map(|r| r.remote_id.as_str()).collect();
     assert_eq!(ids, vec!["r1", "r2"]);
 }
+
+#[test]
+fn a_pull_answer_is_a_complete_listing_only_when_it_says_so() {
+    let older: PullResponse = serde_json::from_str(r#"{"objects":[],"removed":[]}"#).unwrap();
+    assert!(!older.complete);
+    let full: PullResponse =
+        serde_json::from_str(r#"{"objects":[],"removed":[],"complete":true}"#).unwrap();
+    assert!(full.complete);
+    let written = serde_json::to_value(PullResponse::default()).unwrap();
+    assert!(written.get("complete").is_none(), "{written}");
+}

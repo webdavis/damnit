@@ -21,6 +21,8 @@ pub struct PullResponse {
     pub cancelled: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sync: Option<String>,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub complete: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -37,6 +39,8 @@ struct PullResponseDoc {
     cancelled: Option<Vec<String>>,
     #[serde(default, deserialize_with = "present")]
     sync: Option<Option<String>>,
+    #[serde(default)]
+    complete: bool,
     #[serde(flatten)]
     other: serde_json::Map<String, serde_json::Value>,
 }
@@ -65,6 +69,7 @@ impl TryFrom<PullResponseDoc> for PullResponse {
             removed: doc.removed.unwrap_or_default(),
             cancelled: doc.cancelled.unwrap_or_default(),
             sync: doc.sync.flatten(),
+            complete: doc.complete,
             ..PullResponse::default()
         };
         for value in doc.objects.unwrap_or_default() {

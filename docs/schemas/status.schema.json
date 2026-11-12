@@ -11,7 +11,28 @@
     "unstaged": { "type": "array", "items": { "$ref": "#/$defs/change" } },
     "waiting": { "type": "array", "items": { "$ref": "#/$defs/waiting" } },
     "conflicts": { "type": "array", "items": { "type": "object" } },
-    "notices": { "type": "array", "items": { "type": "object", "required": ["kind"] } },
+    "notices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind"],
+        "if": { "properties": { "kind": { "const": "missing_upstream" } } },
+        "then": {
+          "required": ["remote", "tasks"],
+          "properties": {
+            "remote": { "type": "string" },
+            "tasks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["oid", "subject"],
+                "properties": { "oid": { "$ref": "#/$defs/id" }, "subject": { "type": "string" } }
+              }
+            }
+          }
+        }
+      }
+    },
     "unpushed": {
       "type": "array",
       "items": {

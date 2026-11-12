@@ -49,6 +49,7 @@ pub fn pull(api: &impl TodoistSync, since: Option<&str>) -> Result<PullResponse,
         rejected,
         removed,
         sync: sync.sync_token,
+        complete: true,
         ..PullResponse::default()
     })
 }

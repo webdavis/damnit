@@ -46,6 +46,7 @@ fn a_task_completed_in_the_app_since_the_token_comes_in_done_with_its_time() {
     assert_eq!(task.completed_at.as_deref(), Some("2026-11-12T09:15:22Z"));
     assert!(!object(&response, "i:i2").task.as_ref().unwrap().done);
     assert_eq!(response.sync.as_deref(), Some("t2"));
+    assert!(response.complete);
     let recorded = todoist.recorded.borrow();
     assert_eq!(recorded.changes_asked_since, vec!["t0".to_string()]);
     assert_eq!(recorded.reads, 1);

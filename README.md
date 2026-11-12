@@ -95,7 +95,9 @@ are the levels below that: `Work/Now/milk/` is under the task `milk` in section 
 project comes in done, and dam's `p1` is Todoist's highest priority.
 
 A pull asks Todoist what changed since the last pull, so a task completed in the app comes in done
-with its completion time and a task deleted there shows in `dam status` as removed.
+with its completion time and a task deleted there shows in `dam status` as removed. An open task
+that Todoist no longer lists, for a reason that pull cannot tell, is named in `dam status`; settle
+it with `dam done <oid>` or `dam rm <oid>`.
 
 A push goes the other way. An object at the top level becomes a project. One level down it becomes
 a task in that project, or a section when something lives under it or arrives under it in the same

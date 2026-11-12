@@ -1,5 +1,5 @@
 use super::*;
-use dam_application::{Notice, RejectedObject, RemoteName};
+use dam_application::{MissingTask, Notice, RejectedObject, RemoteName};
 use dam_domain::{Kind, Object, Oid, Task};
 
 fn oid(b: u8) -> Oid {
@@ -79,6 +79,13 @@ fn every_notice_variant_round_trips() {
             oid: oid(4),
             ours: Kind::Task,
             theirs: Kind::Event,
+        },
+        Notice::MissingUpstream {
+            remote: RemoteName("t".into()),
+            tasks: vec![MissingTask {
+                oid: oid(5),
+                subject: "milk".into(),
+            }],
         },
     ];
     for n in notices {

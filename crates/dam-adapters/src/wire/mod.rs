@@ -65,6 +65,7 @@ pub fn pull_from_wire(response: PullResponse) -> PullOutcome {
         removed: response.removed,
         cancelled: response.cancelled,
         sync: response.sync,
+        complete: response.complete,
     }
 }
 

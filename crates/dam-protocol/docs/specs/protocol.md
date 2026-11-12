@@ -57,11 +57,16 @@ a failure. Any other response must carry one of the answer's required keys.
 | Response | Requires one of | Fields |
 |---|---|---|
 | capabilities | `protocol` | `protocol`, `kinds`, `fields`, `credentials`, `incremental` |
-| pull | `objects`, `rejected`, `removed`, `cancelled`, `sync` | the same five |
+| pull | `objects`, `rejected`, `removed`, `cancelled`, `sync` | the same five, and `complete` |
 | push | `results` | `results`, one entry per mutation |
 | error | `error` | `error`, the reason as text |
 
 `removed` lists remote ids the remote no longer has. `dam` stops tracking each one.
+
+`complete` is true when `objects` and `rejected` together list everything the remote holds. `dam`
+then shows in `dam status` one notice naming each open task it tracks on that remote that the answer
+leaves out and that has no local change since the last pull or push. Without `complete`, or with
+false, `dam` notices nothing.
 
 `cancelled` lists remote ids of events the remote cancelled without restating the object. `dam`
 moves the event it tracks under each id to `cancelled` and keeps tracking it. An id it does not
