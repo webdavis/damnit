@@ -149,7 +149,7 @@ impl fmt::Display for RefusalText<'_> {
     }
 }
 
-fn open_blockers(blockers: &Blockers) -> String {
+pub(super) fn open_blockers(blockers: &Blockers) -> String {
     let group = |oids: &[Oid], one: &str, many: &str| {
         let shorts: Vec<&str> = oids.iter().map(|o| o.short()).collect();
         let noun = if oids.len() == 1 { one } else { many };

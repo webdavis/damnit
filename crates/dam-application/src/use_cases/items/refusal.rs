@@ -1,4 +1,4 @@
-use dam_domain::{Field, ItemHash, Oid};
+use dam_domain::{Blockers, Field, ItemHash, Oid};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ItemRefusal {
@@ -27,6 +27,16 @@ pub enum ItemRefusal {
         target: Oid,
         fields: Vec<Field>,
     },
+    Cycle {
+        hash: ItemHash,
+        target: Oid,
+        path: Vec<Oid>,
+    },
+    Blocked {
+        hash: ItemHash,
+        target: Oid,
+        blockers: Blockers,
+    },
     EditedSinceAdded {
         hash: ItemHash,
         target: Oid,
@@ -49,6 +59,8 @@ impl ItemRefusal {
             ItemRefusal::TargetNotCommitted { .. } => "target_not_committed",
             ItemRefusal::TargetStaged { .. } => "target_staged",
             ItemRefusal::Clash { .. } => "item_clash",
+            ItemRefusal::Cycle { .. } => "item_cycle",
+            ItemRefusal::Blocked { .. } => "item_blocked",
             ItemRefusal::EditedSinceAdded { .. } => "item_edited_since_added",
             ItemRefusal::SubjectNamesNoFolder { .. } => "item_subject_names_no_folder",
         }

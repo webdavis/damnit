@@ -57,6 +57,21 @@ fn item_oids(refusal: &ItemRefusal) -> Vec<String> {
         | ItemRefusal::EditedSinceAdded { hash, target }
         | ItemRefusal::SubjectNamesNoFolder { hash, target }
         | ItemRefusal::Clash { hash, target, .. } => vec![hash.to_string(), target.to_string()],
+        ItemRefusal::Cycle { hash, target, path } => [hash.oid(), target]
+            .into_iter()
+            .chain(path)
+            .map(Oid::to_string)
+            .collect(),
+        ItemRefusal::Blocked {
+            hash,
+            target,
+            blockers,
+        } => [hash.oid(), target]
+            .into_iter()
+            .chain(&blockers.dependencies)
+            .chain(&blockers.children)
+            .map(Oid::to_string)
+            .collect(),
         ItemRefusal::NothingChanged => Vec::new(),
     }
 }

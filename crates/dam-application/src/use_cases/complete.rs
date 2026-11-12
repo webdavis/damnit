@@ -28,6 +28,13 @@ impl Dam<'_> {
             Object::Task(t) => t,
             Object::Event(_) => return Err(Refusal::NotATask(oid.clone()).into()),
         };
+        Ok(CompletePlan {
+            oid: oid.clone(),
+            blockers: self.blockers_of(&task)?,
+        })
+    }
+
+    pub(crate) fn blockers_of(&self, task: &Task) -> Result<Blockers, UseCaseError> {
         let mut dependencies = Vec::new();
         for dep in &task.base.depends {
             if is_an_open_task(self.store, dep)? && !self.hides(dep)? {
@@ -40,12 +47,9 @@ impl Dam<'_> {
             .filter(|c| self.access.sees(c))
             .map(|c| c.oid().clone())
             .collect();
-        Ok(CompletePlan {
-            oid: oid.clone(),
-            blockers: Blockers {
-                dependencies,
-                children,
-            },
+        Ok(Blockers {
+            dependencies,
+            children,
         })
     }
 

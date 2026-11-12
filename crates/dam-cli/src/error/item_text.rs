@@ -2,6 +2,8 @@ use std::fmt;
 
 use dam_application::ItemRefusal;
 
+use super::refusal_text::open_blockers;
+
 pub(super) struct ItemText<'a>(pub(super) &'a ItemRefusal);
 
 impl fmt::Display for ItemText<'_> {
@@ -59,6 +61,30 @@ impl fmt::Display for ItemText<'_> {
                     .map(|f| f.as_str())
                     .collect::<Vec<_>>()
                     .join(", "),
+                target.short(),
+                hash.short()
+            ),
+            ItemRefusal::Cycle { hash, target, path } => write!(
+                f,
+                "{} makes {} depend on what leads back to it, a cycle through {}; decline it with dam rm {}",
+                hash.short(),
+                target.short(),
+                path.iter()
+                    .map(|o| o.short())
+                    .collect::<Vec<_>>()
+                    .join(" -> "),
+                hash.short()
+            ),
+            ItemRefusal::Blocked {
+                hash,
+                target,
+                blockers,
+            } => write!(
+                f,
+                "{} completes {}, which has {}; finish those first, or run dam done {} --force and dam rm {}",
+                hash.short(),
+                target.short(),
+                open_blockers(blockers),
                 target.short(),
                 hash.short()
             ),
