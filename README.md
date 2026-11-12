@@ -265,18 +265,18 @@ a table in the config file, and its grants say what it may do:
     paths = ["work"]
 
 `dam token create vpt --allow task:read --allow event:read --paths work` writes such a table with
-one grant and prints the token once. `--labels`, `--remotes`, `--expires` and `--via` set the keys of
-the same name. `dam token list` shows each token's key id, grants, conditions and standing, never its
-value. `dam token revoke vpt` removes its tables and leaves the rest of the file as it was. The
-schemas of their `--json` answers are `docs/schemas/token-create.schema.json`,
+one grant and prints the token once. `--labels`, `--remotes`, `--expires`, `--via` and `--require`
+set the keys of the same name. `dam token list` shows each token's key id, grants, conditions and
+standing, never its value. `dam token revoke vpt` removes its tables and leaves the rest of the file
+as it was. The schemas of their `--json` answers are `docs/schemas/token-create.schema.json`,
 `token-list.schema.json` and `token-revoke.schema.json`.
 
 A grant allows only what `allow` lists, and only on objects under one of `paths`, carrying one of
 `labels`, or on the remotes `remotes` names. One grant must cover everything a command touches.
 `own = true` matches nothing yet. `not_before`, `expires` and `via` (default `["local"]`) bound when
-and where the token works. A request cannot carry details yet, so a token whose `require` names
-any is refused with rule `missing_details`. A token with `limits` is disabled until limits are
-enforced.
+and where the token works. `require = ["session", "model"]` refuses, with rule `missing_details`,
+a request that does not pass each as `--meta session=...`. A token with `limits` is disabled until
+limits are enforced.
 
 The permissions are `task:` and `event:` `read`, `create`, `change`, `move` and `remove`,
 `task:complete`, `pending:read`, `pending:accept`, `pending:reject`, `working:read`, `stage:read`,
@@ -317,12 +317,22 @@ own waiting item.
 
 Your own rows in `status` and `log` read `you` to you and `owner` to a token.
 
+Every task and event has an `author`: the name of the token that made it, or yours, set as
+`owner = "Stephen"` at the top of the config. A request states its details with a repeatable
+`--meta key=value`, such as harness, session, model, effort and version; any key is kept as given.
+Each change keeps them with the host, working directory, repo, branch, time and channel. `dam show
+<oid>` prints the author and the details of the change that made it, and `--json` and `--toon` carry
+them as `author` and `details` on every object in `ls` and `show` and every change in `status`,
+`diff` and `log`. A token reads the details of its own changes only. `dam ls --by mine`, `--by
+agents` or `--by all` lists what you made, what tokens made, or both. damnit takes these values as
+given; the token is the security check.
+
 `dam new --id <text>` names the task with the tool's own id, which is not damnit's oid. The id is
 one line of up to 200 characters. A repeat of `dam new` with the same token and id changes that
 task: it waits as a change item, and only the fields that differ from the tool's last send change.
 Your own repeat with a new `--path` or subject carries the task's children, as `dam mv` and
 `dam edit` do. A token's repeat cannot change `--path`. Each token's ids, and your own, are kept
-apart.
+apart, and so are each session's when the request passes `--meta session=...`.
 
 A token cannot run `mv`, `add`, `reset`, `restore`, `commit`, `remote add`, `resolve`, `day` or
 `token`, `rm` an object, or set `--focus`. A read pulls a stale remote only when the token holds
