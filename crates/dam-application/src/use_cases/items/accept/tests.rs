@@ -152,4 +152,5 @@ fn a_prefix_names_a_waiting_item_and_an_object_verb_refuses_it() {
     );
 }
 
+mod blocked_after_merge;
 mod removal_clash;

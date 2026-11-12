@@ -1,5 +1,5 @@
 use dam_application::{ItemRefusal, Refusal};
-use dam_domain::{Field, ItemHash};
+use dam_domain::{Blockers, Field, ItemHash};
 
 use super::oid;
 
@@ -60,6 +60,25 @@ pub(super) fn item_refusals_with_their_text() -> Vec<(Refusal, &'static str)> {
                 fields: vec![Field::Subject, Field::Due],
             },
             "0101010 changes subject, due of 0202020, which you changed too; run dam resolve 0101010 --ours|--theirs",
+        ),
+        (
+            ItemRefusal::Cycle {
+                hash: hash(),
+                target: oid(2),
+                path: vec![oid(3), oid(2)],
+            },
+            "0101010 makes 0202020 depend on what leads back to it, a cycle through 0303030 -> 0202020; decline it with dam rm 0101010",
+        ),
+        (
+            ItemRefusal::Blocked {
+                hash: hash(),
+                target: oid(2),
+                blockers: Blockers {
+                    dependencies: vec![oid(3)],
+                    children: Vec::new(),
+                },
+            },
+            "0101010 completes 0202020, which has 1 open dependency: 0303030; finish those first, or run dam done 0202020 --force and dam rm 0101010",
         ),
         (
             ItemRefusal::EditedSinceAdded {

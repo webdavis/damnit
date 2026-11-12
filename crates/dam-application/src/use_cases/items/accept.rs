@@ -86,28 +86,19 @@ impl Dam<'_> {
             }
             .into());
         }
-        self.take_theirs(item, &committed, &working, after)
-    }
-
-    fn take_theirs(
-        &self,
-        item: &Item,
-        committed: &Object,
-        working: &Object,
-        after: &Object,
-    ) -> Result<Option<Change>, UseCaseError> {
-        let fields = changed_fields(item.change.before().unwrap_or(after), after);
-        let merged = merge_fields(working, after, &fields);
-        if loses_a_held_folder(self.store, working, &merged)? {
+        let fields = changed_fields(before, after);
+        let merged = merge_fields(&working, after, &fields);
+        self.refuse_what_the_owners_edit_or_done_would(item, &working, &merged)?;
+        if loses_a_held_folder(self.store, &working, &merged)? {
             return Err(ItemRefusal::SubjectNamesNoFolder {
                 hash: item.hash.clone(),
                 target: item.target().clone(),
             }
             .into());
         }
-        replace_carrying_folder(self.store, working, &merged)?;
-        let staged = merge_fields(committed, after, &fields);
-        Ok(Change::between(Some(committed.clone()), Some(staged)))
+        replace_carrying_folder(self.store, &working, &merged)?;
+        let staged = merge_fields(&committed, after, &fields);
+        Ok(Change::between(Some(committed), Some(staged)))
     }
 
     fn apply_removal(

@@ -298,8 +298,9 @@ task before and after the change.
 `dam add <hash>` takes an item into your working layer and stage, and `dam commit` records it as
 the token's change. Your own edit of the same task is staged and committed as yours. `dam add -A`
 takes every item that applies. An item that changes a field you edited and have not saved stops
-the add; settle it with `dam resolve <hash> --ours|--theirs`. `dam reset` sends an added item
-back to waiting and keeps your own edits.
+the add; settle it with `dam resolve <hash> --ours|--theirs`. An item that would make a dependency
+cycle, or completes a task with open children or dependencies, is refused the way your own `edit`
+or `done` would be. `dam reset` sends an added item back to waiting and keeps your own edits.
 `dam rm <hash>` declines it, and the same change sent again is refused. A token may `dam rm` its
 own waiting item.
 
