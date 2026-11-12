@@ -8,8 +8,8 @@ fn token(fill: u8) -> Token {
 }
 
 #[test]
-fn a_pull_a_token_runs_is_recorded_as_the_tokens_change() {
-    let _guard = support::guard("a_pull_a_token_runs_is_recorded_as_the_tokens_change");
+fn a_pull_a_token_runs_is_recorded_as_the_owners_change() {
+    let _guard = support::guard("a_pull_a_token_runs_is_recorded_as_the_owners_change");
     let sb = Sandbox::new();
     let held = token(1);
     sb.add_config(&format!(
@@ -23,10 +23,10 @@ fn a_pull_a_token_runs_is_recorded_as_the_tokens_change() {
     let log: serde_json::Value = serde_json::from_str(&log).unwrap();
     let pulled = &log["commits"][0]["changes"][0];
     assert_eq!(pulled["subject"], "from upstream");
-    assert_eq!(pulled["from"], "vpt");
-    assert_eq!(pulled["key_id"], held.key_id().as_str());
-    assert_eq!(pulled["channel"], "local");
+    for field in ["from", "key_id", "channel"] {
+        assert!(pulled[field].is_null(), "{pulled}");
+    }
     let (ok, show, _) = sb.dam(&["show", log["commits"][0]["id"].as_str().unwrap()]);
     assert!(ok);
-    assert!(show.contains("from upstream  vpt"), "{show}");
+    assert!(!show.contains("vpt"), "{show}");
 }

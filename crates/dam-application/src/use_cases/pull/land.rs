@@ -52,14 +52,7 @@ impl Dam<'_> {
             self.clock,
             self.random,
             format!("pull from {}", remote.name.0),
-            landed
-                .into_iter()
-                .map(|change| Authored {
-                    change,
-                    author: self.access.author(),
-                    details: self.access.details().cloned(),
-                })
-                .collect(),
+            landed.into_iter().map(Authored::by_owner).collect(),
         );
         self.store.commit(&pulled)?;
         self.store.mark_pushed(&remote.name, &pulled.id)?;
