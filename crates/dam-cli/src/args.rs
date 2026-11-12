@@ -81,7 +81,7 @@ pub(crate) struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum Command {
-    #[command(about = "Create a task, or an event with --event")]
+    #[command(about = "Create a task, or an event with --kind event")]
     New(NewArgs),
     #[command(about = "Mark a task done")]
     Done(DoneArgs),

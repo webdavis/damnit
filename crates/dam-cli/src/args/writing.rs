@@ -1,8 +1,8 @@
 use clap::Args;
-use dam_domain::{ChildDisposition, DependencyDisposition, Path, Priority};
+use dam_domain::{ChildDisposition, DependencyDisposition, Kind, Path, Priority};
 
 use super::dispositions::{child_disposition, dependency_disposition};
-use super::values::{path_arg, priority_arg};
+use super::values::{kind_arg, path_arg, priority_arg};
 
 #[derive(Args, Debug)]
 pub(crate) struct NewArgs {
@@ -10,8 +10,15 @@ pub(crate) struct NewArgs {
     pub(crate) subject: String,
     #[arg(
         long,
-        help = "Create an event instead of a task, which needs --start and --end"
+        default_value = "task",
+        hide_default_value = true,
+        default_value_if("event", "true", Some("event")),
+        value_name = "task|event",
+        value_parser = kind_arg,
+        help = "Create a task or an event; an event needs --start and --end. Default: task"
     )]
+    pub(crate) kind: Kind,
+    #[arg(long, hide = true, conflicts_with = "kind")]
     pub(crate) event: bool,
     #[arg(
         long,
@@ -49,13 +56,11 @@ pub(crate) struct NewArgs {
     pub(crate) body: String,
     #[arg(
         long,
-        requires = "event",
         help = "Start the event at this time, read the way --due reads one"
     )]
     pub(crate) start: Option<String>,
     #[arg(
         long,
-        requires = "event",
         help = "End the event at this time, read the way --due reads one"
     )]
     pub(crate) end: Option<String>,

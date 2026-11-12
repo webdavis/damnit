@@ -8,7 +8,7 @@ use crate::error::CliError;
 use crate::output::Report;
 use crate::view::{Human, View, report, wire};
 use dam_application::{NewEvent, NewTask};
-use dam_domain::Object;
+use dam_domain::{Kind, Object};
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -27,20 +27,20 @@ impl View for Created<'_> {
 
 pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
     let labels: BTreeSet<String> = args.labels.into_iter().collect();
-    let landed = if args.event {
+    let landed = if args.kind == Kind::Event {
         let start = when_flag(
             ctx,
             "start",
             args.start
                 .as_deref()
-                .ok_or_else(|| CliError::Usage("--event needs --start and --end".into()))?,
+                .ok_or_else(|| CliError::Usage("--kind event needs --start and --end".into()))?,
         )?;
         let end = when_flag(
             ctx,
             "end",
             args.end
                 .as_deref()
-                .ok_or_else(|| CliError::Usage("--event needs --start and --end".into()))?,
+                .ok_or_else(|| CliError::Usage("--kind event needs --start and --end".into()))?,
         )?;
         ctx.dam().new_event(NewEvent {
             subject: args.subject,
@@ -51,6 +51,11 @@ pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
             body: args.body,
         })?
     } else {
+        if args.start.is_some() || args.end.is_some() {
+            return Err(CliError::Usage(
+                "--start and --end need --kind event".into(),
+            ));
+        }
         let priority = args.priority.unwrap_or_default();
         let due = args
             .due
@@ -85,6 +90,7 @@ mod tests {
     fn args(subject: &str) -> NewArgs {
         NewArgs {
             subject: subject.into(),
+            kind: Kind::Task,
             event: false,
             path: Path::root(),
             due: None,
@@ -135,7 +141,7 @@ mod tests {
             run(
                 &ctx,
                 NewArgs {
-                    event: true,
+                    kind: Kind::Event,
                     ..args("dentist")
                 }
             ),
@@ -144,7 +150,7 @@ mod tests {
         let report = run(
             &ctx,
             NewArgs {
-                event: true,
+                kind: Kind::Event,
                 start: Some("2026-09-25T14:00".into()),
                 end: Some("2026-09-25T15:00".into()),
                 ..args("dentist")
@@ -152,6 +158,16 @@ mod tests {
         )
         .unwrap();
         assert_eq!(report.data["kind"], "event");
+    }
+
+    #[test]
+    fn a_task_given_a_start_is_a_usage_error() {
+        let ctx = context();
+        let started = NewArgs {
+            start: Some("2026-09-25T14:00".into()),
+            ..args("dentist")
+        };
+        assert!(matches!(run(&ctx, started), Err(CliError::Usage(_))));
     }
 
     #[test]
