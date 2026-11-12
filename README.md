@@ -161,8 +161,8 @@ they were set. The mark and the estimate stay in damnit and never reach a remote
 
 `dam day show [DAY]` prints a day's record: the plan, the proposals for the next day, the
 decisions, each task's stall count and carry-forward, and `closed_at`. `dam day set` replaces a
-day's record with the JSON or TOON document on stdin, and `dam day list` lists the recorded days
-with when each closed. `docs/schemas/day.schema.json` is the document's schema.
+day's record with the JSON or TOON document on stdin, or in the file `--request` names, and
+`dam day list` lists the recorded days with when each closed. `docs/schemas/day.schema.json` is the document's schema.
 
 `dam reminders` lists the reminders that fall due between `--from` and `--to`, by default from the
 start of today until now: each one's `at`, its `anchor` (the due time or start) and
@@ -210,6 +210,20 @@ Every answer has a JSON Schema in `docs/schemas/`, named after its command: `dam
 answers by `remote-list.schema.json`. A command that writes also publishes
 `<command>.request.schema.json`, whose keys are its flags without the dashes.
 `object.schema.json` is a task or an event.
+
+`--request FILE` gives a writing command its request as one JSON or TOON document instead of
+flags, and `--request -` reads it from standard input. It means what the same flags mean. The
+keys are those of the command's request schema: its arguments, such as `subject` or `oid`, its
+flags, and `meta` as an object of details. Only global flags may come beside it, and `edit` cannot
+open an editor from a request.
+
+    dam new --request - <<< '{"subject": "buy oat milk", "due": "fri", "labels": ["errand"], "meta": {"session": "s1"}}'
+    dam edit --request - <<< '{"oid": "98d878", "estimate": 30, "no_due": true}'
+    dam done --request - <<< '{"oid": "98d878", "force": true, "children": "up"}'
+    dam mv --request - <<< '{"oid": "98d878", "path": "work/"}'
+    dam rm --request - <<< '{"oid": "98d878"}'
+    dam token create --request - <<< '{"name": "vpt", "allow": ["task:read"], "require": ["session"]}'
+    dam day set --request day.json
 
 `dam status --json` and `dam diff --json` answer in change documents, one per change:
 

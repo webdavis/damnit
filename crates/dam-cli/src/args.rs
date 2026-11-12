@@ -85,6 +85,13 @@ pub(crate) struct Cli {
         help = "State a detail of this request, such as session=abc123, kept with each change it makes. Repeatable"
     )]
     pub(crate) meta: Vec<(String, String)>,
+    #[arg(
+        long,
+        global = true,
+        value_name = "FILE",
+        help = "Read the request from FILE, or stdin when FILE is -, as JSON or TOON keyed by the command's flags"
+    )]
+    pub(crate) request: Option<PathBuf>,
     #[command(subcommand)]
     pub(crate) command: Command,
 }

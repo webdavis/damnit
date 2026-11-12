@@ -14,6 +14,18 @@ pub(crate) enum Format {
     Toon,
 }
 
+impl Format {
+    pub(crate) fn of(json: bool, toon: bool) -> Format {
+        if json {
+            Format::Json
+        } else if toon {
+            Format::Toon
+        } else {
+            Format::Human
+        }
+    }
+}
+
 #[derive(Debug)]
 pub(crate) struct Report {
     pub(crate) human: String,
