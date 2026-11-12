@@ -1,6 +1,7 @@
 mod cancel;
 mod clock;
 mod credentials;
+mod day_doc;
 mod helper_process;
 mod random;
 mod sqlite;
@@ -10,6 +11,7 @@ mod wire;
 pub use cancel::{Interrupt, catch_interrupts};
 pub use clock::SystemClock;
 pub use credentials::ProcessCredentialSource;
+pub use day_doc::{DayDoc, TaskStateDoc, day_from_doc, day_to_doc};
 pub use helper_process::ProcessLauncher;
 pub use random::OsRandom;
 pub use sqlite::{OpenError, SqliteStore};

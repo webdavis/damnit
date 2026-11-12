@@ -1,6 +1,7 @@
 mod agenda;
 pub(crate) mod catalogue;
 mod commit;
+mod day;
 mod done;
 mod edit;
 mod ls;
@@ -48,6 +49,7 @@ pub(crate) fn dispatch_a_verb_that_opens_the_store(
         Command::Diff(a) => status::run_diff(ctx, a),
         Command::Ls(a) => ls::run_ls(ctx, a),
         Command::Agenda(a) => agenda::run_agenda(ctx, a),
+        Command::Day(a) => day::run_day(ctx, a),
         Command::Remote(a) => remote::run_remote(ctx, a),
         Command::Push(a) => sync::run_push(ctx, a),
         Command::Pull(a) => sync::run_pull(ctx, a),

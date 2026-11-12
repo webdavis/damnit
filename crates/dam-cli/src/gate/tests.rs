@@ -30,7 +30,7 @@ fn allowing(permissions: &[Permission]) -> Holder {
     }])
 }
 
-const EVERY_COMMAND: [&str; 21] = [
+const EVERY_COMMAND: [&str; 24] = [
     "new x",
     "done abcd",
     "edit abcd --subject y",
@@ -52,6 +52,9 @@ const EVERY_COMMAND: [&str; 21] = [
     "remote list",
     "push",
     "pull",
+    "day show",
+    "day set",
+    "day list",
 ];
 
 #[test]
@@ -81,6 +84,12 @@ fn a_token_holding_every_permission_still_cannot_write() {
         admit(&everything, &command("resolve abcd --ours")),
         Err(Refusal::NotOpenToTokens("resolve"))
     );
+    for line in ["day show", "day set", "day list"] {
+        assert_eq!(
+            admit(&everything, &command(line)),
+            Err(Refusal::NotOpenToTokens("day"))
+        );
+    }
 }
 
 #[test]

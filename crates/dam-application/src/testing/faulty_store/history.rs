@@ -48,6 +48,18 @@ impl CommitRepository for FaultyStore {
     }
 }
 
+impl crate::ports::DayRepository for FaultyStore {
+    fn day(&self, on: dam_domain::Date) -> Result<Option<dam_domain::Day>, StoreError> {
+        self.inner.day(on)
+    }
+    fn put_day(&self, day: &dam_domain::Day) -> Result<(), StoreError> {
+        self.inner.put_day(day)
+    }
+    fn days(&self) -> Result<Vec<dam_domain::Day>, StoreError> {
+        self.inner.days()
+    }
+}
+
 impl AcceptedKindsRepository for FaultyStore {
     fn accepted_kinds(&self, remote: &RemoteName) -> Result<Option<Vec<Kind>>, StoreError> {
         self.inner.accepted_kinds(remote)

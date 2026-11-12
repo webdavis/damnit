@@ -25,6 +25,7 @@ struct Inner {
     last_pulls: BTreeMap<RemoteName, Timestamp>,
     last_pushes: BTreeMap<RemoteName, Timestamp>,
     accepted_kinds: BTreeMap<RemoteName, Vec<Kind>>,
+    days: BTreeMap<dam_domain::Date, dam_domain::Day>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -160,4 +161,5 @@ impl CommitRepository for MemoryStore {
 }
 
 mod accepted_kinds;
+mod days;
 mod remote_state;
