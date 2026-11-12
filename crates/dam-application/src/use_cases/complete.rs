@@ -1,12 +1,13 @@
 use dam_domain::{
     Blockers, ChildDisposition, Completion, Date, DependencyDisposition, Dispositions, Force,
-    Object, Oid, Recurrence, Task, Tracked, When, roll_forward,
+    Object, Oid, Permission, Recurrence, Task, Tracked, When, roll_forward,
 };
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{ObjectRepository, Randomness};
 use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
+use crate::use_cases::items::land::Landed;
 use crate::use_cases::load::load;
 use crate::use_cases::subtree::{children, move_into};
 
@@ -23,16 +24,20 @@ pub enum Completed {
 
 impl Dam<'_> {
     pub fn plan_complete(&self, oid: &Oid) -> Result<CompletePlan, UseCaseError> {
-        let task = load_task(self.store, oid)?;
+        let task = match self.load_permitted(oid, |_| Permission::TaskComplete)? {
+            Object::Task(t) => t,
+            Object::Event(_) => return Err(Refusal::NotATask(oid.clone()).into()),
+        };
         let mut dependencies = Vec::new();
         for dep in &task.base.depends {
-            if is_an_open_task(self.store, dep)? {
+            if is_an_open_task(self.store, dep)? && !self.hides(dep)? {
                 dependencies.push(dep.clone());
             }
         }
         let children: Vec<Oid> = children(self.store, &task.base)?
             .iter()
             .filter(|c| c.as_task().is_some_and(|t| !t.completion.is_done()))
+            .filter(|c| self.access.sees(c))
             .map(|c| c.oid().clone())
             .collect();
         Ok(CompletePlan {
@@ -49,8 +54,11 @@ impl Dam<'_> {
         oid: &Oid,
         force: Force,
         tracked: Tracked,
-    ) -> Result<Completed, UseCaseError> {
+    ) -> Result<(Completed, Landed), UseCaseError> {
         atomically(self.store, || {
+            if matches!(force, Force::With(_)) && self.access.token().is_some() {
+                return Err(Refusal::NotOpenToTokens("done --force").into());
+            }
             let plan = self.plan_complete(oid)?;
             if !plan.blockers.is_empty() {
                 match force {
@@ -66,7 +74,8 @@ impl Dam<'_> {
                     }
                 }
             }
-            let mut task = load_task(self.store, oid)?;
+            let before = load_task(self.store, oid)?;
+            let mut task = before.clone();
             let outcome = match next_due_if_recurring(&task, self.clock.today(), tracked)? {
                 Some(next) => {
                     task.due = Some(When::Day(next));
@@ -81,8 +90,12 @@ impl Dam<'_> {
                     Completed::Done
                 }
             };
-            self.store.put(&Object::Task(task))?;
-            Ok(outcome)
+            let landed = self.put_or_send(
+                Permission::TaskComplete,
+                Some(&Object::Task(before)),
+                Object::Task(task),
+            )?;
+            Ok((outcome, landed))
         })
     }
 }

@@ -14,8 +14,9 @@ pub(crate) fn need(command: &Command) -> Need {
     use Permission::*;
     match command {
         Command::New(_) => Need::NarrowedFrom(&[TaskCreate, EventCreate]),
-        Command::Done(_) => Need::OwnerOnly("done"),
-        Command::Edit(_) => Need::OwnerOnly("edit"),
+        Command::Done(_) => Need::NarrowedFrom(&[TaskComplete]),
+        Command::Edit(a) if a.editor => Need::OwnerOnly("edit -e"),
+        Command::Edit(_) => Need::NarrowedFrom(&[TaskChange, EventChange]),
         Command::Mv(_) => Need::OwnerOnly("mv"),
         Command::Rm(_) => Need::OwnerOnly("rm"),
         Command::Add(_) => Need::OwnerOnly("add"),

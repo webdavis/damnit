@@ -1,14 +1,31 @@
-use dam_domain::{Object, Oid};
+use dam_domain::{Kind, Object, Oid, Permission, Subject};
 
-use crate::errors::UseCaseError;
+use crate::errors::{Refusal, UseCaseError};
 use crate::ports::StoreError;
 use crate::service::Dam;
+use crate::use_cases::load::{load, no_such_object};
 
 impl Dam<'_> {
     pub fn seen_object(&self, oid: &Oid) -> Result<Option<Object>, UseCaseError> {
         match self.store.get(oid)? {
             Some(object) if self.access.sees(&object) => Ok(Some(self.as_seen(object)?)),
             _ => Ok(None),
+        }
+    }
+
+    pub(crate) fn load_permitted(
+        &self,
+        oid: &Oid,
+        permission: fn(Kind) -> Permission,
+    ) -> Result<Object, UseCaseError> {
+        let object = load(self.store, oid)?;
+        let permission = permission(object.kind());
+        if self.access.permits(permission, &[Subject::Object(&object)]) {
+            Ok(object)
+        } else if self.access.sees(&object) {
+            Err(Refusal::NotPermitted(permission).into())
+        } else {
+            Err(no_such_object(oid).into())
         }
     }
 
@@ -32,7 +49,7 @@ impl Dam<'_> {
         Ok(object)
     }
 
-    fn hides(&self, oid: &Oid) -> Result<bool, StoreError> {
+    pub(crate) fn hides(&self, oid: &Oid) -> Result<bool, StoreError> {
         Ok(!self.store.get(oid)?.is_some_and(|o| self.access.sees(&o)))
     }
 }

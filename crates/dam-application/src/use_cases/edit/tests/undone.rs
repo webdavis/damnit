@@ -21,7 +21,8 @@ fn undone_reopens_a_completed_task() {
                 ..Default::default()
             },
         )
-        .unwrap();
+        .unwrap()
+        .written();
     assert_eq!(out.as_task().unwrap().completion, Completion::Open);
     assert_eq!(s.store.get(&id).unwrap(), Some(out));
 }

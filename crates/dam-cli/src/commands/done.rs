@@ -3,6 +3,7 @@ use dam_application::{
 };
 
 use crate::args::DoneArgs;
+use crate::commands::sent::report_landed;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::layout::counted;
@@ -28,14 +29,14 @@ pub(crate) fn run(ctx: &Context, args: DoneArgs) -> Result<Report, CliError> {
     let oid = ctx.dam().resolve_object(&args.oid)?;
     let plan = ctx.dam().plan_complete(&oid)?;
     let force = how_far_this_run_forces(ctx, &args, &plan.blockers)?;
-    let outcome = ctx
+    let (outcome, landed) = ctx
         .dam()
         .complete(&oid, force, tracked_by_a_remote(ctx, &oid)?)?;
     let result = match outcome {
         Completed::Done => "done".to_string(),
         Completed::RolledForward { next_due } => format!("rolled forward to {next_due}"),
     };
-    report(&Finished { oid: &oid, result })
+    report_landed(&landed, |_| report(&Finished { oid: &oid, result }))
 }
 
 fn tracked_by_a_remote(ctx: &Context, oid: &Oid) -> Result<Tracked, CliError> {

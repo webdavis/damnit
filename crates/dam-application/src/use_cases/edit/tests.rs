@@ -24,7 +24,8 @@ fn subject_priority_and_due_are_set() {
                 ..EditFields::default()
             },
         )
-        .unwrap();
+        .unwrap()
+        .written();
     let t = out.as_task().unwrap();
     assert_eq!(t.base.subject, "new");
     assert_eq!(t.priority, Priority::HIGHEST);
@@ -54,7 +55,8 @@ fn some_none_clears_a_date() {
                 ..Default::default()
             },
         )
-        .unwrap();
+        .unwrap()
+        .written();
     assert_eq!(out.as_task().unwrap().due, None);
 }
 
@@ -114,7 +116,8 @@ fn a_bad_recurrence_is_a_parse_error_and_a_good_one_is_kept() {
                 ..Default::default()
             },
         )
-        .unwrap();
+        .unwrap()
+        .written();
     assert_eq!(
         out.base().recurrence.as_ref().map(ToString::to_string),
         Some("every! week".into())
@@ -149,7 +152,8 @@ fn attach_needs_an_existing_event() {
                 ..Default::default()
             },
         )
-        .unwrap();
+        .unwrap()
+        .written();
     assert_eq!(out.as_task().unwrap().event, Some(oid(9)));
 }
 

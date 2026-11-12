@@ -69,9 +69,7 @@ fn the_owner_is_admitted_to_every_command() {
 #[test]
 fn a_token_holding_every_permission_still_cannot_write_the_owners_layers() {
     let everything = allowing(&Permission::ALL);
-    for verb in [
-        "done", "edit", "mv", "rm", "add", "reset", "restore", "commit",
-    ] {
+    for verb in ["mv", "rm", "add", "reset", "restore", "commit"] {
         let line = EVERY_COMMAND.iter().find(|l| l.starts_with(verb)).unwrap();
         assert_eq!(
             admit(&everything, &command(line)),
@@ -95,17 +93,27 @@ fn a_token_holding_every_permission_still_cannot_write_the_owners_layers() {
 }
 
 #[test]
-fn new_sends_an_item_for_a_token_holding_task_or_event_create() {
-    for permission in [Permission::TaskCreate, Permission::EventCreate] {
+fn new_edit_and_done_send_items_for_a_token_holding_their_permission() {
+    let reader = allowing(&[Permission::TaskRead]);
+    for (line, permissions) in [
+        (
+            "new milk",
+            &[Permission::TaskCreate, Permission::EventCreate][..],
+        ),
+        (
+            "edit abcd --subject x",
+            &[Permission::TaskChange, Permission::EventChange],
+        ),
+        ("done abcd", &[Permission::TaskComplete]),
+    ] {
+        for permission in permissions {
+            assert_eq!(admit(&allowing(&[*permission]), &command(line)), Ok(()));
+        }
         assert_eq!(
-            admit(&allowing(&[permission]), &command("new milk")),
-            Ok(())
+            admit(&reader, &command(line)),
+            Err(Refusal::NotPermitted(permissions[0]))
         );
     }
-    assert_eq!(
-        admit(&allowing(&[Permission::TaskRead]), &command("new milk")),
-        Err(Refusal::NotPermitted(Permission::TaskCreate))
-    );
 }
 
 #[test]
