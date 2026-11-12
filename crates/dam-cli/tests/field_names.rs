@@ -154,3 +154,19 @@ fn a_value_read_from_show_passes_back_through_the_flag_of_the_same_name() {
         }
     }
 }
+
+#[test]
+fn the_id_flag_of_new_names_the_key_that_new_and_show_print() {
+    let _guard = support::guard("the_id_flag_of_new_names_the_key_that_new_and_show_print");
+    let sb = Sandbox::new();
+    assert!(own_flags(&sb, &["new"]).contains(&"id".to_string()));
+    let (ok, out, err) = sb.dam(&["new", "report", "--id", "weekly", "--json"]);
+    assert!(ok, "{err}");
+    let made: Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(made["id"], "weekly");
+    let oid = made["oid"].as_str().unwrap();
+    assert_eq!(shown(&sb, oid)["id"], "weekly");
+    let (ok, toon, err) = sb.dam(&["show", oid, "--toon"]);
+    assert!(ok, "{err}");
+    assert!(toon.contains("id: weekly"), "{toon}");
+}

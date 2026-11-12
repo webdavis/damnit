@@ -25,6 +25,7 @@ fn dentist_from_vpt(s: &Scenario) -> ItemHash {
         deadline: None,
         labels: BTreeSet::new(),
         body: String::new(),
+        id: None,
     };
     match dam.new_task(task).unwrap() {
         Landed::Sent(sent) => sent.item.hash,

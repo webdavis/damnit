@@ -14,9 +14,7 @@ impl IdRepository for MemoryStore {
             .borrow()
             .ids
             .iter()
-            .find(|(key, mapped)| {
-                key.holder == *holder && key.session.is_none() && *mapped == oid
-            })
+            .find(|(key, mapped)| key.holder == *holder && key.session.is_none() && *mapped == oid)
             .map(|(key, _)| key.id.clone()))
     }
 

@@ -1,6 +1,7 @@
 use std::collections::BTreeSet;
 
 use crate::args::NewArgs;
+use crate::commands::caller_id::with_caller_id;
 use crate::commands::parsing::{deadline_flag, when_flag};
 use crate::commands::sent::report_landed;
 use crate::context::Context;
@@ -27,6 +28,7 @@ impl View for Created<'_> {
 
 pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
     let labels: BTreeSet<String> = args.labels.into_iter().collect();
+    let id = args.id.clone();
     let landed = if args.kind == Kind::Event {
         let start = when_flag(
             ctx,
@@ -49,6 +51,7 @@ pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
             end,
             labels,
             body: args.body,
+            id: args.id,
         })?
     } else {
         if args.start.is_some() || args.end.is_some() {
@@ -75,9 +78,11 @@ pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
             deadline,
             labels,
             body: args.body,
+            id: args.id,
         })?
     };
     report_landed(&landed, |object| report(&Created(object)))
+        .map(|answer| with_caller_id(answer, id.as_ref()))
 }
 
 #[cfg(test)]
@@ -100,6 +105,7 @@ mod tests {
             body: String::new(),
             start: None,
             end: None,
+            id: None,
         }
     }
 

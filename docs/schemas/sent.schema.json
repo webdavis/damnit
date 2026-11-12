@@ -8,7 +8,7 @@
   "additionalProperties": false,
   "properties": {
     "answer": {
-      "description": "new and changed store an item; duplicate stores nothing and names the item already waiting.",
+      "description": "new and changed store an item; duplicate stores nothing and names the item that already says the same.",
       "enum": ["new", "changed", "duplicate"]
     },
     "hash": { "$ref": "#/$defs/id" },
@@ -23,7 +23,8 @@
     "from": { "description": "The token's name.", "type": "string" },
     "key_id": { "type": "string", "pattern": "^[0-9A-Za-z]{12}$" },
     "channel": { "enum": ["local", "mcp"] },
-    "created": { "type": "string", "format": "date-time" }
+    "created": { "type": "string", "format": "date-time" },
+    "id": { "description": "The tool's own id, when it passed --id.", "type": "string" }
   },
   "$defs": {
     "id": { "type": "string", "pattern": "^[0-9a-f]{40}$" }

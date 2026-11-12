@@ -32,6 +32,7 @@ fn dentist(s: &Scenario) -> ItemHash {
             deadline: None,
             labels: Default::default(),
             body: String::new(),
+            id: None,
         })
         .unwrap(),
     )
