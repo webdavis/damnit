@@ -25,13 +25,13 @@ pub(crate) fn run_pull(ctx: &Context, args: PullArgs) -> Result<Report, CliError
 }
 
 pub(crate) fn run_resolve(ctx: &Context, args: ResolveArgs) -> Result<Report, CliError> {
-    let oid = ctx.dam().resolve_object(&args.oid)?;
+    let named = ctx.dam().resolve_named(&args.oid)?;
     let side = if args.side.theirs {
         Side::Theirs
     } else {
         Side::Ours
     };
-    ctx.dam().resolve(&oid, side)?;
+    let oid = ctx.dam().settle(&named, side)?;
     let side = if args.side.theirs { "theirs" } else { "ours" };
     report(&Resolved { oid: &oid, side })
 }
