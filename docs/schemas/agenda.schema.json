@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/agenda.schema.json",
+  "title": "dam agenda answer",
+  "description": "What dam agenda prints with --json or --toon: the events in the window, earliest first. An all-day event has dates for start and end.",
+  "type": "object",
+  "required": [
+    "events"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "oid",
+          "subject",
+          "path",
+          "labels",
+          "status",
+          "transparency",
+          "all_day",
+          "start",
+          "end",
+          "busy"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "oid": {
+            "$ref": "object.schema.json#/$defs/oid"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "enum": [
+              "confirmed",
+              "tentative",
+              "cancelled"
+            ]
+          },
+          "transparency": {
+            "enum": [
+              "busy",
+              "free"
+            ]
+          },
+          "all_day": {
+            "type": "boolean"
+          },
+          "start": {
+            "$ref": "object.schema.json#/$defs/when"
+          },
+          "end": {
+            "$ref": "object.schema.json#/$defs/when"
+          },
+          "busy": {
+            "type": "boolean",
+            "description": "Whether the event holds the time."
+          }
+        }
+      }
+    }
+  }
+}

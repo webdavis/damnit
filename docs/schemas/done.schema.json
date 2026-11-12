@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/done.schema.json",
+  "title": "dam done answer",
+  "description": "What dam done prints with --json or --toon: the task and what became of it, or the item it sent when DAM_TOKEN is set.",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": [
+        "oid",
+        "result"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "oid": {
+          "$ref": "object.schema.json#/$defs/oid"
+        },
+        "result": {
+          "type": "string",
+          "pattern": "^(done|rolled forward to .+)$",
+          "description": "done, or rolled forward to the next due date of a repeating task."
+        }
+      }
+    },
+    {
+      "$ref": "sent.schema.json"
+    }
+  ]
+}

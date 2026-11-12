@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/mv.schema.json",
+  "title": "dam mv answer",
+  "description": "What dam mv prints with --json or --toon: the moved object at its new path.",
+  "$ref": "object.schema.json"
+}

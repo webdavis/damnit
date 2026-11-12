@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/reset.schema.json",
+  "title": "dam reset answer",
+  "description": "What dam reset prints with --json or --toon: the objects it unstaged, or an empty list when it unstaged everything.",
+  "type": "object",
+  "required": [
+    "unstaged"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "unstaged": {
+      "$ref": "object.schema.json#/$defs/oids"
+    }
+  }
+}

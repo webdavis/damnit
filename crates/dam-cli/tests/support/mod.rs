@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+pub mod answers;
+pub mod commands;
 pub mod errors;
 pub mod fixture;
 pub mod golden;

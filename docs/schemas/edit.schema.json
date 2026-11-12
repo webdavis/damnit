@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/edit.schema.json",
+  "title": "dam edit answer",
+  "description": "What dam edit prints with --json or --toon: the object as it now stands, or the item it sent when DAM_TOKEN is set.",
+  "oneOf": [
+    {
+      "$ref": "object.schema.json"
+    },
+    {
+      "$ref": "sent.schema.json"
+    }
+  ]
+}

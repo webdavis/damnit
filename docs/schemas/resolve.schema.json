@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/resolve.schema.json",
+  "title": "dam resolve answer",
+  "description": "What dam resolve prints with --json or --toon: the object and the side kept.",
+  "type": "object",
+  "required": [
+    "oid",
+    "side"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "oid": {
+      "$ref": "object.schema.json#/$defs/oid"
+    },
+    "side": {
+      "enum": [
+        "ours",
+        "theirs"
+      ]
+    }
+  }
+}

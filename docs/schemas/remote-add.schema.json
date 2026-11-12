@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/remote-add.schema.json",
+  "title": "dam remote add answer",
+  "description": "What dam remote add prints with --json or --toon.",
+  "type": "object",
+  "required": [
+    "name",
+    "url",
+    "warnings"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

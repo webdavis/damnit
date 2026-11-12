@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/rm.schema.json",
+  "title": "dam rm answer",
+  "description": "What dam rm prints with --json or --toon: the removed object and what it touched, or, given an item's hash, the settled item.",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": [
+        "oid",
+        "descendants",
+        "dependents",
+        "attached"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "oid": {
+          "$ref": "object.schema.json#/$defs/oid"
+        },
+        "descendants": {
+          "$ref": "object.schema.json#/$defs/oids",
+          "description": "Children moved up to its parent's path."
+        },
+        "dependents": {
+          "$ref": "object.schema.json#/$defs/oids",
+          "description": "Tasks that no longer wait on it."
+        },
+        "attached": {
+          "$ref": "object.schema.json#/$defs/oids",
+          "description": "Tasks still attached to the removed event."
+        }
+      }
+    },
+    {
+      "$ref": "settled.schema.json"
+    }
+  ]
+}

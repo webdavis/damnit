@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/show.schema.json",
+  "title": "dam show answer",
+  "description": "What dam show prints with --json or --toon: an object, or a commit.",
+  "oneOf": [
+    {
+      "$ref": "object.schema.json"
+    },
+    {
+      "$ref": "commit.schema.json"
+    }
+  ]
+}
