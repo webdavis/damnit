@@ -31,11 +31,11 @@ pub(super) fn term(word: &str, categories: &Categories) -> Result<Term, QueryErr
         "due" => Term::Due(date_sel(key, value)?),
         "deadline" => Term::Deadline(date_sel(key, value)?),
         "focus" => Term::Focus(date_sel(key, value)?),
-        "completed" => Term::Completed(date_sel(key, value)?),
+        "completed" | "completed_at" => Term::Completed(date_sel(key, value)?),
         "estimate" => Term::Estimate(estimate_sel(value).ok_or_else(|| bad(key, value))?),
         "start" => Term::Start(date_sel(key, value)?),
         "path" => Term::Path(Path::parse(value).map_err(|_| bad(key, value))?),
-        "label" => Term::Label(value.to_string()),
+        "label" | "labels" => Term::Label(value.to_string()),
         "priority" => Term::Priority(
             value
                 .parse::<u8>()

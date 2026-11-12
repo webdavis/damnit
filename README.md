@@ -152,7 +152,7 @@ all. Every other verb refuses the flag with exit 2.
     dam edit 3f2a9c1 --estimate 5m
     dam ls estimate:max:5m
     dam edit 3f2a9c1 --focus today
-    dam ls completed:today
+    dam ls completed_at:today
     dam reminders --json
 
 `--focus DAY` marks a task to work on first that day and records who set it and when. A day holds
@@ -186,11 +186,11 @@ start of today until now: each one's `at`, its `anchor` (the due time or start) 
     @errand & p1
 
 `estimate:max:5m`, `estimate:min:1h` and `estimate:none` read the estimate; `focus:` and
-`completed:` take the same date words as `due:`.
+`completed_at:` take the same date words as `due:`.
 
-`|` or, `&` and, `!` not, parentheses group. `@label`, `pN`, `key:value`; any other key is a
-category and the value must be one of its values. Saved filters live under `[filter.<name>]` and
-run by name.
+`|` or, `&` and, `!` not, parentheses group. `@label`, `pN`, `key:value`, where a key is a
+field's JSON key such as `labels:` or `attached:`; any other key is a category and the value must
+be one of its values. Saved filters live under `[filter.<name>]` and run by name.
 
 `dam filter list` prints the saved filters and `dam category list` prints the label categories with
 their values and whether each is exclusive:
