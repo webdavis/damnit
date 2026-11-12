@@ -697,7 +697,7 @@ other kind. `refused` alone is too coarse for a client: a task that is gone and 
 blocked are both refusals, and a list that should refresh itself on the first should show the
 blockers on the second. The words are `blocked`, `cycle`, `exclusive_label`, `unknown_category`,
 `no_such_object`, `no_working_object`, `no_such_remote`, `not_a_task`, `not_an_event`,
-`not_completed`, `not_committed`, `dirty_on_pull`, `move_inside_itself`, `nothing_to_commit`,
+`not_completed`, `not_committed`, `dirty_on_pull`, `move_inside_itself`, `subject_names_no_folder`, `nothing_to_commit`,
 `needs_an_answer`, `needs_an_editor`, `unresolved_conflicts`, `missing_credential` and
 `stale_remote`. A token's refusals add `not_permitted` and `not_open_to_tokens`, and
 `malformed_token`, `unknown_token_version`, `unknown_token`, `disabled_token`, `expired_token`,

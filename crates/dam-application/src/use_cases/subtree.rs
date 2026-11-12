@@ -18,18 +18,38 @@ pub(crate) fn children(
         .collect())
 }
 
+pub(crate) fn holds_objects(
+    objects: &dyn ObjectRepository,
+    folder: &Path,
+) -> Result<bool, UseCaseError> {
+    Ok(objects
+        .all()?
+        .iter()
+        .any(|o| o.base().path.is_within(folder)))
+}
+
 pub(crate) fn move_into(
     objects: &dyn ObjectRepository,
     oid: &Oid,
     folder: &Path,
 ) -> Result<(), UseCaseError> {
-    let mut object = load(objects, oid)?;
-    let owned_before = object.base().owned_folder();
-    object.base_mut().path = folder.clone();
-    if let (Some(from), Some(to)) = (owned_before, object.base().owned_folder()) {
+    let before = load(objects, oid)?;
+    let mut after = before.clone();
+    after.base_mut().path = folder.clone();
+    replace_carrying_folder(objects, &before, &after)
+}
+
+pub(crate) fn replace_carrying_folder(
+    objects: &dyn ObjectRepository,
+    before: &Object,
+    after: &Object,
+) -> Result<(), UseCaseError> {
+    if let (Some(from), Some(to)) = (before.base().owned_folder(), after.base().owned_folder())
+        && from != to
+    {
         move_folder(objects, &from, &to)?;
     }
-    objects.put(&object)?;
+    objects.put(after)?;
     Ok(())
 }
 

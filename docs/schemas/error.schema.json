@@ -49,6 +49,7 @@
         "not_committed",
         "dirty_on_pull",
         "move_inside_itself",
+        "subject_names_no_folder",
         "nothing_to_commit",
         "needs_an_answer",
         "needs_an_editor",

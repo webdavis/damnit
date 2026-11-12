@@ -1,6 +1,6 @@
 use super::super::*;
 use crate::ports::StoreError;
-use crate::testing::{FaultyStore, Scenario, oid, task};
+use crate::testing::{FaultyStore, Scenario, oid, task, task_in};
 
 #[test]
 fn edit_that_fails_at_its_write_changes_nothing() {
@@ -14,6 +14,26 @@ fn edit_that_fails_at_its_write_changes_nothing() {
             &id,
             EditFields {
                 subject: Some("new".into()),
+                ..EditFields::default()
+            },
+        )
+        .map(drop)
+    });
+}
+
+#[test]
+fn a_rename_that_fails_between_parent_and_child_renames_and_moves_nothing() {
+    let s = Scenario::default();
+    s.filed(task_in(1, "p", "a"))
+        .filed(task_in(2, "c", "a/p"))
+        .filed(task_in(3, "d", "a/p/c"));
+    let store = FaultyStore::new(s.store);
+    let dam = s.fixture.dam(&store);
+    store.assert_unchanged_when_any_write_fails(|| {
+        dam.edit(
+            &oid(1),
+            EditFields {
+                subject: Some("renamed".into()),
                 ..EditFields::default()
             },
         )

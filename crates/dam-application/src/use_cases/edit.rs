@@ -7,6 +7,7 @@ use crate::ports::ObjectRepository;
 use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::load::{load, no_such_object};
+use crate::use_cases::subtree::{holds_objects, replace_carrying_folder};
 
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct EditFields {
@@ -52,7 +53,13 @@ impl Dam<'_> {
             {
                 return Err(no_such_object(event).into());
             }
-            self.store.put(&next)?;
+            if next.base().owned_folder().is_none()
+                && let Some(folder) = current.base().owned_folder()
+                && holds_objects(self.store, &folder)?
+            {
+                return Err(Refusal::SubjectNamesNoFolder(oid.clone()).into());
+            }
+            replace_carrying_folder(self.store, &current, &next)?;
             Ok(next)
         })
     }

@@ -3,7 +3,7 @@ use dam_domain::{Blockers, LabelViolation, Tracked};
 
 use crate::testing::oid;
 
-const HAND_COUNTED_RULES: usize = 27;
+const HAND_COUNTED_RULES: usize = 28;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -34,6 +34,7 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::Token(_) => 24,
         Refusal::NotPermitted(_) => 25,
         Refusal::NotOpenToTokens(_) => 26,
+        Refusal::SubjectNamesNoFolder(_) => 27,
     }
 }
 
@@ -65,6 +66,7 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
         Refusal::NotCommitted(oid(1)),
         Refusal::DirtyOnPull { oid: oid(1) },
         Refusal::MoveInsideItself(oid(1)),
+        Refusal::SubjectNamesNoFolder(oid(1)),
         Refusal::NothingToCommit,
         Refusal::NeedsAnAnswer,
         Refusal::NeedsAnEditor,

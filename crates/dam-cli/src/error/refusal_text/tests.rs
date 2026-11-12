@@ -1,10 +1,12 @@
 mod access_samples;
+mod rule_numbers;
 mod samples;
 mod schema;
 
 use super::*;
 use dam_domain::Oid;
-use samples::{RULES, every_refusal_with_its_text, rule_number};
+use rule_numbers::{RULES, rule_number};
+use samples::every_refusal_with_its_text;
 
 pub(super) fn oid(byte: u8) -> Oid {
     Oid::generate(&mut |x: &mut [u8]| x.fill(byte))
