@@ -43,7 +43,7 @@ fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
         args.deadline.map(|d| deadline_flag(ctx, &d)).transpose()?,
         args.no_deadline,
     );
-    f.undone = args.undone;
+    f.undone = args.no_done;
     f.add_labels = args.labels;
     f.remove_labels = args.unlabels;
     f.add_depends = args

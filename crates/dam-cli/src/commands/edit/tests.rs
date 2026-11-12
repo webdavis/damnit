@@ -18,7 +18,7 @@ pub(super) fn args(oid: &Oid) -> EditArgs {
         no_due: false,
         deadline: None,
         no_deadline: false,
-        undone: false,
+        no_done: false,
         labels: vec![],
         unlabels: vec![],
         depends: vec![],
@@ -81,7 +81,7 @@ fn undone_reopens_a_completed_task_as_one_update_naming_done() {
     run(
         &ctx,
         EditArgs {
-            undone: true,
+            no_done: true,
             ..args(&oid(1))
         },
     )
@@ -114,7 +114,7 @@ fn undone_on_an_open_task_is_refused_by_dams_own_rule() {
     let err = run(
         &ctx,
         EditArgs {
-            undone: true,
+            no_done: true,
             ..args(&oid(1))
         },
     )

@@ -54,11 +54,13 @@ fn resolve_needs_exactly_one_side() {
 }
 
 #[test]
-fn edit_takes_undone_beside_the_other_clearing_flags() {
-    let cli = Cli::try_parse_from(["dam", "edit", "abcd", "--undone"]).unwrap();
-    match cli.command {
-        Command::Edit(a) => assert!(a.undone),
-        _ => panic!("wrong command"),
+fn edit_takes_no_done_beside_the_other_clearing_flags_and_still_reads_undone() {
+    for flag in ["--no-done", "--undone"] {
+        let cli = Cli::try_parse_from(["dam", "edit", "abcd", flag]).unwrap();
+        match cli.command {
+            Command::Edit(a) => assert!(a.no_done),
+            _ => panic!("wrong command"),
+        }
     }
 }
 
