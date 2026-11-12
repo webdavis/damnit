@@ -5,6 +5,7 @@ use dam_domain::{Categories, Path};
 use crate::errors::Refusal;
 use crate::ports::RemoteName;
 use crate::secret::Secret;
+use crate::tokens::Tokens;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Config {
@@ -12,6 +13,7 @@ pub struct Config {
     pub remotes: Vec<RemoteConfig>,
     pub categories: Categories,
     pub filters: Vec<FilterConfig>,
+    pub tokens: Tokens,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

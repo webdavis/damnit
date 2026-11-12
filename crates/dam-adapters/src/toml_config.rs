@@ -7,9 +7,11 @@ use dam_toml::{Place, StrictTable, parse_toml};
 mod append;
 mod file;
 mod remote;
+mod token;
 use append::append_remote;
 pub use file::TomlConfigFile;
 use remote::parse_remote;
+use token::parse_tokens;
 
 fn home_dir() -> PathBuf {
     std::env::var_os("HOME")
@@ -39,7 +41,7 @@ fn load_config(path: &FsPath) -> Result<Config, ConfigError> {
     }
 }
 
-const SECTIONS: [&str; 4] = ["done", "remote", "category", "filter"];
+const SECTIONS: [&str; 6] = ["done", "remote", "category", "filter", "schema", "token"];
 
 pub fn parse_config(text: &str) -> Result<Config, ConfigError> {
     let table = parse_toml(text).map_err(ConfigError::Syntax)?;
@@ -70,6 +72,7 @@ pub fn parse_config(text: &str) -> Result<Config, ConfigError> {
         remotes,
         categories,
         filters,
+        tokens: parse_tokens(&root),
     })
 }
 

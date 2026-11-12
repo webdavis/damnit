@@ -14,8 +14,8 @@ mod weekday;
 mod when;
 
 pub use access::{
-    Grant, Grants, KeyId, Permission, PermissionName, RESERVED_PERMISSIONS, Subject, Token,
-    TokenError,
+    Channel, Grant, Grants, KeyId, Permission, PermissionName, RESERVED_PERMISSIONS, Subject,
+    Token, TokenError,
 };
 pub use category::{Categories, Category, CategoryError, LabelViolation};
 pub use change::{
