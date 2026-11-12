@@ -41,7 +41,7 @@ impl IdRepository for SqliteStore {
         let (holder, token) = holder_columns(holder);
         self.conn
             .query_row(
-                "SELECT id FROM caller_ids WHERE holder = ?1 AND token = ?2 AND session = '' AND oid = ?3 LIMIT 1",
+                "SELECT id FROM caller_ids WHERE holder = ?1 AND token = ?2 AND oid = ?3 LIMIT 1",
                 params![holder, token, oid.as_str()],
                 |r| r.get::<_, String>(0),
             )

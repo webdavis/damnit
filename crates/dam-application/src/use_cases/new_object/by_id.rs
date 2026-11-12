@@ -49,7 +49,11 @@ impl Dam<'_> {
     fn id_key(&self, id: &CallerId) -> IdKey {
         IdKey {
             holder: self.id_holder(),
-            session: None,
+            session: self
+                .access
+                .details()
+                .and_then(|d| d.session())
+                .map(str::to_string),
             id: id.clone(),
         }
     }
