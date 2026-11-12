@@ -129,11 +129,11 @@ refused, and saving the template untouched cancels. A save that does not parse r
 once with the error on its first line; a second one exits 2 and names the file that keeps your
 edit. Under `--json` or `--toon` it refuses instead of opening an editor.
 
-`dam edit <oid> --undone` reopens a task you completed by mistake, and
+`dam edit <oid> --no-done` reopens a task you completed by mistake, and
 `dam restore <oid>...` throws a working change away, back to the last commit and out of the stage.
 
 `dam done` records when it ran, as `completed_at` on the task: RFC 3339 in UTC, null on an open
-task, and cleared again by `--undone`. A task completed in Todoist comes in with Todoist's time.
+task, and cleared again by `--no-done`. A task completed in Todoist comes in with Todoist's time.
 
 `dam status`, `dam diff`, `dam log` and `dam show` read the way their git namesakes do. `--json`
 and `--toon` on any read give a program the same answer. A change's minus line is red and its plus
