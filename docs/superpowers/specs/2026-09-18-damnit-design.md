@@ -194,6 +194,11 @@ Four layers, all in SQLite, modeled on git:
 | Stage | index | `add`, `reset` |
 | Commits | local history | `commit` |
 | Remote state | remote-tracking refs | `pull`, `push` |
+| Items | fetched commits, not merged | a token's `new`, `edit`, `done` |
+
+An item waits apart from the other layers until the owner adds or declines it, and is never
+deleted. The stage and every commit record who made each change: the owner, or a token's name, key
+id and channel.
 
 No task files sit on disk. `dam edit -e` opens a temporary file the way `git commit` opens a message
 file, and parses it back on save.
@@ -240,8 +245,9 @@ your text intact. Nothing reaches the working layer until it parses.
 ### Staging and committing
 
 ```
-dam add <oid>...              stage
-dam add -A                    stage everything
+dam add <oid|hash>...         stage an object, or take a waiting item
+dam add -A                    stage everything, waiting items that apply included
+dam rm <hash>                 decline a waiting item; a token withdraws its own
 dam reset [<oid>...]          unstage one or all
 dam restore <oid>...          back to the last commit, working and stage together
 dam status [--full]           working versus stage versus last commit, and remote notices
@@ -258,7 +264,7 @@ dam remote add todoist todoist::
 dam remote add gcal gcal::
 dam push [<remote>]         send unpushed commits
 dam pull [<remote>]         fetch and merge
-dam resolve <oid> --ours | --theirs
+dam resolve <oid|hash> --ours | --theirs
 ```
 
 `dam restore <oid>...` sets each named object's working copy back to its last commit and drops
@@ -417,7 +423,8 @@ statusline count and a change list actually read.
 #### The status document
 
 `dam status` answers one document beside the change documents it carries: `staged` and `unstaged`
-are change documents, `conflicts` is one row per object both sides changed, `notices` is what a pull
+are change documents, `waiting` is one change document per waiting item with its `hash`, `item`,
+`created` and `age`, `conflicts` is one row per object both sides changed, `notices` is what a pull
 or a push left to read, and `unpushed` is one row per configured remote.
 
 ```json

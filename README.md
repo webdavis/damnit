@@ -277,14 +277,37 @@ The permissions are `task:` and `event:` `read`, `create`, `change`, `move` and 
 | Command | Needs |
 |---|---|
 | `ls`, `show`, `agenda`, `reminders` | `task:read` or `event:read`; objects outside every grant are left out, oids included |
-| `status`, `diff` | `working:read` and `stage:read`; conflicts also need `conflict:read` |
+| `new`, `edit`, `done` | `task:create` or `event:create`, `task:change` or `event:change`, `task:complete` |
+| `status` | nothing for its own items; `stage:read`, `working:read`, `pending:read` and `conflict:read` for the rest, each row only for objects a grant covers |
+| `diff` | `working:read` and `stage:read` |
 | `log`, `show <commit>` | `history:read` |
 | `category list`, `filter list` | `config:read` |
 | `remote list`, `pull`, `push` | `remote:read`, `remote:pull`, `remote:push` |
 
-A token cannot run `new`, `edit`, `done`, `mv`, `rm`, `add`, `reset`, `restore`, `commit`,
-`remote add`, `resolve`, `day` or `token`. A read pulls a stale remote only when the token holds `remote:pull`
-for it.
+A token's `new`, `edit` and `done` never touch your tasks. Each waits as an item in `dam status`,
+with its hash, the task a change changes, the token's name and its age:
+
+    Not staged:
+      new      a1b2c3d  Call the dentist  inbox/  vpt  2h
+      changed  e4f5a6b  0c1d2e3  Pay the rent  (subject)  vpt  5m
+
+The tool's answer is `new`, `changed` or `duplicate` with the item's hash, and for a change the oid
+of the task it changes. A new item's hash is the oid its task gets. Its grant must hold for the
+task before and after the change.
+
+`dam add <hash>` takes an item into your working layer and stage, and `dam commit` records it as
+the token's change. Your own edit of the same task is staged and committed as yours. `dam add -A`
+takes every item that applies. An item that changes a field you edited and have not saved stops
+the add; settle it with `dam resolve <hash> --ours|--theirs`. `dam reset` sends an added item
+back to waiting and keeps your own edits.
+`dam rm <hash>` declines it, and the same change sent again is refused. A token may `dam rm` its
+own waiting item.
+
+Your own rows in `status` and `log` read `you` to you and `owner` to a token.
+
+A token cannot run `mv`, `add`, `reset`, `restore`, `commit`, `remote add`, `resolve`, `day` or
+`token`, `rm` an object, or set `--focus`. A read pulls a stale remote only when the token holds
+`remote:pull` for it.
 
 An unknown permission is skipped. An unknown key, or a reserved name such as `config:change`,
 disables the token, and so does sharing a value with another token. A `schema` above 1 disables
