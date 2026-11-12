@@ -26,6 +26,17 @@ fn a_task_round_trips_with_a_day_due() {
 }
 
 #[test]
+fn a_completion_time_with_microseconds_from_todoist_is_read() {
+    let mut wire = to_wire(&Object::Task(Task::new(oid(1), "milk")), None);
+    let task = wire.task.as_mut().unwrap();
+    task.done = true;
+    task.completed_at = Some("2026-11-12T09:15:22.123456Z".into());
+    let read = from_wire(&wire).unwrap();
+    let at = read.as_task().unwrap().completion.at().unwrap();
+    assert_eq!(at, "2026-11-12T09:15:22.123456Z".parse().unwrap());
+}
+
+#[test]
 fn a_completion_time_round_trips_as_rfc_3339_since_the_store_is_wire_json() {
     let mut t = Task::new(oid(1), "milk");
     t.completion = Completion::Done {

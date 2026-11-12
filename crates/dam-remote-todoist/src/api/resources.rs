@@ -59,6 +59,8 @@ pub struct Item {
     #[serde(default)]
     pub checked: bool,
     #[serde(default)]
+    pub completed_at: Option<String>,
+    #[serde(default)]
     pub is_deleted: bool,
 }
 

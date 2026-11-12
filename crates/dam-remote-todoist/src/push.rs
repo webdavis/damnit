@@ -143,6 +143,7 @@ fn add_created_to_tree(tree: &mut Tree, object: &WireObject, shape: Shape, id: S
                 deadline: None,
                 labels: object.labels.clone(),
                 checked: task.is_some_and(|t| t.done),
+                completed_at: None,
                 is_deleted: false,
             });
             RemoteId::Item(id).to_string()
