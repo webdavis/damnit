@@ -61,6 +61,7 @@ pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
                 .as_deref()
                 .map(|o| Oid::parse(o).map_err(oid("event", o)))
                 .transpose()?,
+            estimate: t.estimate,
         })),
         (Some(Kind::Event), _, Some(e)) => Ok(Object::Event(Event {
             base,

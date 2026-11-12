@@ -2,6 +2,7 @@ mod access;
 mod category;
 mod change;
 mod completion;
+mod estimate;
 mod field;
 mod object;
 mod oid;
@@ -24,6 +25,7 @@ pub use change::{
 pub use completion::{
     Blockers, ChildDisposition, DependencyDisposition, Dispositions, Force, Tracked, cycle_in,
 };
+pub use estimate::parse_minutes;
 pub use field::Field;
 pub use object::{
     Attachment, Attendee, Base, Completion, Conference, Event, EventStatus, EventType, Kind,
@@ -32,7 +34,7 @@ pub use object::{
 pub use oid::{Oid, OidError};
 pub use path::{Path, PathError};
 pub use priority::{Priority, PriorityError};
-pub use query::{DateSel, Expr, QueryError, Term, matches, parse as parse_query};
+pub use query::{DateSel, EstimateSel, Expr, QueryError, Term, matches, parse as parse_query};
 pub use recurrence::{Anchor, Freq, Recurrence, Rule, RuleError, roll_forward};
 pub use weekday::{parse_weekday, weekday_text};
 pub use when::{Date, Timestamp, When, WhenError};

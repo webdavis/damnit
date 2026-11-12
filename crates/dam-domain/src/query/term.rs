@@ -1,6 +1,6 @@
 use super::parse::QueryError;
-use super::{DateSel, Term};
-use crate::{Categories, Kind, Oid, Path, Priority, Transparency};
+use super::{DateSel, EstimateSel, Term};
+use crate::{Categories, Kind, Oid, Path, Priority, Transparency, parse_minutes};
 
 pub(super) fn term(word: &str, categories: &Categories) -> Result<Term, QueryError> {
     if let Some(label) = word.strip_prefix('@') {
@@ -30,6 +30,7 @@ pub(super) fn term(word: &str, categories: &Categories) -> Result<Term, QueryErr
         }),
         "due" => Term::Due(date_sel(key, value)?),
         "deadline" => Term::Deadline(date_sel(key, value)?),
+        "estimate" => Term::Estimate(estimate_sel(value).ok_or_else(|| bad(key, value))?),
         "start" => Term::Start(date_sel(key, value)?),
         "path" => Term::Path(Path::parse(value).map_err(|_| bad(key, value))?),
         "label" => Term::Label(value.to_string()),
@@ -82,6 +83,19 @@ fn date_sel(key: &str, value: &str) -> Result<DateSel, QueryError> {
             }
         }
     })
+}
+
+fn estimate_sel(value: &str) -> Option<EstimateSel> {
+    if value == "none" {
+        return Some(EstimateSel::None);
+    }
+    let (bound, minutes) = value.split_once(':')?;
+    let minutes = parse_minutes(minutes)?;
+    match bound {
+        "max" => Some(EstimateSel::Max(minutes)),
+        "min" => Some(EstimateSel::Min(minutes)),
+        _ => None,
+    }
 }
 
 fn bad(key: &str, value: &str) -> QueryError {

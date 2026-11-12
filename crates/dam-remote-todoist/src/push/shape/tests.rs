@@ -54,6 +54,7 @@ fn object(path: &str, subject: &str) -> WireObject {
             due: None,
             deadline: None,
             event: None,
+            estimate: None,
         }),
         event: None,
     }

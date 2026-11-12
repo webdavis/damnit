@@ -21,6 +21,13 @@ pub enum DateSel {
     None,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EstimateSel {
+    Max(u32),
+    Min(u32),
+    None,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Term {
     Done,
@@ -28,6 +35,7 @@ pub enum Term {
     Kind(Kind),
     Due(DateSel),
     Deadline(DateSel),
+    Estimate(EstimateSel),
     Start(DateSel),
     Path(Path),
     Label(String),
@@ -67,6 +75,12 @@ fn term_matches(term: &Term, object: &Object, today: Date) -> bool {
             task.is_some_and(|t| date_matches(sel, t.due.as_ref().map(|d| d.date()), today))
         }
         Term::Deadline(sel) => task.is_some_and(|t| date_matches(sel, t.deadline, today)),
+        Term::Estimate(sel) => task.is_some_and(|t| match (sel, t.estimate) {
+            (EstimateSel::None, estimate) => estimate.is_none(),
+            (EstimateSel::Max(most), Some(m)) => m <= *most,
+            (EstimateSel::Min(least), Some(m)) => m >= *least,
+            (_, None) => false,
+        }),
         Term::Start(sel) => event.is_some_and(|e| date_matches(sel, Some(e.start.date()), today)),
         Term::Path(prefix) => object.base().path.is_within(prefix),
         Term::Label(name) => object.base().labels.contains(name),

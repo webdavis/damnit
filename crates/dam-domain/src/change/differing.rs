@@ -34,6 +34,7 @@ pub(super) fn task_differing_in_every_field(tag: &str) -> Task {
     t.due = Some(When::Day(date(2026, 1, n as i8)));
     t.deadline = Some(date(2026, 2, n as i8));
     t.event = Some(oid(92 + n));
+    t.estimate = Some(u32::from(n) * 5);
     t
 }
 

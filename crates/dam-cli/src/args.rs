@@ -1,4 +1,5 @@
 mod dispositions;
+mod editing;
 mod reading;
 mod remotes;
 mod staging;
@@ -9,6 +10,7 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
+pub(crate) use editing::EditArgs;
 pub(crate) use reading::{
     AgendaArgs, CategoryArgs, CategoryCommand, FilterArgs, FilterCommand, LsArgs,
 };
@@ -16,7 +18,7 @@ pub(crate) use remotes::{PullArgs, PushArgs, RemoteArgs, RemoteCommand, ResolveA
 pub(crate) use staging::{
     AddArgs, CommitArgs, DiffArgs, ResetArgs, RestoreArgs, ShowArgs, StatusArgs,
 };
-pub(crate) use writing::{DoneArgs, EditArgs, MvArgs, NewArgs, RmArgs};
+pub(crate) use writing::{DoneArgs, MvArgs, NewArgs, RmArgs};
 
 #[derive(Parser, Debug)]
 #[command(

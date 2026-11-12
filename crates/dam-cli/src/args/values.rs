@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use dam_application::{ConfiguredDuration, RemoteName};
-use dam_domain::{Path, PathError, Priority};
+use dam_domain::{Path, PathError, Priority, parse_minutes};
 
 pub(super) fn path_arg(text: &str) -> Result<Path, String> {
     Path::parse(text).map_err(|e| match e {
@@ -15,6 +15,10 @@ pub(super) fn priority_arg(text: &str) -> Result<Priority, String> {
         .ok()
         .and_then(|n| Priority::new(n).ok())
         .ok_or_else(|| "priority is 1 (highest) to 4".to_string())
+}
+
+pub(super) fn estimate_arg(text: &str) -> Result<u32, String> {
+    parse_minutes(text).ok_or_else(|| format!("{text:?} is not whole minutes such as 5, 5m or 2h"))
 }
 
 pub(super) fn max_age_arg(text: &str) -> Result<(RemoteName, Duration), String> {

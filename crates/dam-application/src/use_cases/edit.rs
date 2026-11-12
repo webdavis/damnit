@@ -26,6 +26,7 @@ pub struct EditFields {
     pub start: Option<When>,
     pub end: Option<When>,
     pub location: Option<Option<String>>,
+    pub estimate: Option<Option<u32>>,
 }
 
 impl Dam<'_> {
@@ -94,6 +95,7 @@ pub fn apply(object: &Object, fields: &EditFields) -> Result<Object, UseCaseErro
             || fields.deadline.is_some()
             || fields.attach.is_some()
             || fields.recurrence.is_some()
+            || fields.estimate.is_some()
             || fields.undone)
     {
         return Err(Refusal::NotATask(next.oid().clone()).into());
@@ -142,6 +144,9 @@ pub fn apply(object: &Object, fields: &EditFields) -> Result<Object, UseCaseErro
             }
             if let Some(a) = &fields.attach {
                 t.event = a.clone();
+            }
+            if let Some(e) = fields.estimate {
+                t.estimate = e;
             }
             if fields.undone {
                 if !t.completion.is_done() {

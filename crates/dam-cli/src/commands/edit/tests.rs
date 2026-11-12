@@ -31,6 +31,8 @@ pub(super) fn args(oid: &Oid) -> EditArgs {
         end: None,
         location: None,
         no_location: false,
+        estimate: None,
+        no_estimate: false,
     }
 }
 

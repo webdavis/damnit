@@ -65,6 +65,7 @@ pub(crate) fn task(oid: &str, path: &str, subject: &str, done: bool) -> WireObje
             due: Some("2026-09-25".into()),
             deadline: None,
             event: None,
+            estimate: None,
         }),
         event: None,
     }
@@ -79,6 +80,7 @@ pub(crate) fn task_with_dates_cleared(oid: &str) -> WireObject {
         due: None,
         deadline: None,
         event: None,
+        estimate: None,
     });
     t
 }
