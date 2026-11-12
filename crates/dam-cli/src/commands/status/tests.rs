@@ -121,7 +121,7 @@ fn diff_shows_working_or_staged() {
     )
     .unwrap();
     assert!(working.human.contains("changed"));
-    assert!(working.human.contains("subject"));
+    assert!(working.human.contains("-a") && working.human.contains("+b"));
     let staged = super::run_diff(
         &ctx,
         DiffArgs {

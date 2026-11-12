@@ -8,6 +8,9 @@ use serde::Serialize;
 
 use crate::view::{Line, display, optional_display, optional_wire, wire};
 
+mod lines;
+mod values;
+
 fn what_changed(change: &Change, oid: &str) -> String {
     let subject = &change.object().base().subject;
     match change {
@@ -119,19 +122,6 @@ impl<'a> ChangeRow<'a> {
     pub(crate) fn sender<'s>(&'s self, owner: &'s str) -> &'s str {
         self.from.unwrap_or(owner)
     }
-
-    pub(super) fn status_line(&self, owner: &str) -> String {
-        self.status_line_naming(self.change.oid().short(), owner)
-    }
-
-    pub(super) fn status_line_naming(&self, id: &str, owner: &str) -> String {
-        let mut cells = vec![what_changed(self.change, id)];
-        if !self.path.is_empty() {
-            cells.push(self.path.to_string());
-        }
-        cells.push(self.sender(owner).to_string());
-        cells.join("  ")
-    }
 }
 
 pub(crate) fn the_owner_to(reader: &dyn Access) -> &'static str {
@@ -176,5 +166,7 @@ impl<'a> ConflictRow<'a> {
     }
 }
 
+#[cfg(test)]
+mod lines_tests;
 #[cfg(test)]
 mod tests;

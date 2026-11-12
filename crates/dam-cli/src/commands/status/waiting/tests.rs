@@ -1,6 +1,14 @@
 use dam_domain::{Change, Channel, Item, Object, Oid, Path, Task, Timestamp, Token, TokenAuthor};
 
 use super::ItemRow;
+use crate::view::Line;
+
+fn only(lines: Vec<Line>) -> String {
+    match lines.as_slice() {
+        [Line::Row(line)] => line.clone(),
+        _ => panic!("a waiting new item reads as one row"),
+    }
+}
 
 fn dentist_sent_at(created: &str) -> Item {
     let mut task = Task::new(
@@ -30,8 +38,8 @@ fn a_waiting_item_reads_as_what_it_does_its_hash_path_sender_and_age() {
     let now: Timestamp = "2026-11-11T09:30:00Z".parse().unwrap();
     let row = ItemRow::new(&item, now, false);
     assert_eq!(
-        row.line("you"),
-        "new      a1a1a1a  Call the dentist  inbox/  vpt  2h"
+        only(row.lines("you")),
+        "  new      a1a1a1a  Call the dentist  inbox/  vpt  2h"
     );
     let json = serde_json::to_value(&row).unwrap();
     assert_eq!(json["hash"], item.hash.to_string());
@@ -46,7 +54,7 @@ fn a_waiting_item_reads_as_what_it_does_its_hash_path_sender_and_age() {
 #[test]
 fn age_reads_in_the_largest_whole_unit() {
     let item = dentist_sent_at("2026-11-11T09:00:00Z");
-    let at = |now: &str| ItemRow::new(&item, now.parse().unwrap(), false).line("you");
+    let at = |now: &str| only(ItemRow::new(&item, now.parse().unwrap(), false).lines("you"));
     assert!(at("2026-11-11T09:00:45Z").ends_with("vpt  45s"));
     assert!(at("2026-11-11T09:05:00Z").ends_with("vpt  5m"));
     assert!(at("2026-11-14T09:00:00Z").ends_with("vpt  3d"));

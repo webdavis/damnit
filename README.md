@@ -285,11 +285,13 @@ The permissions are `task:` and `event:` `read`, `create`, `change`, `move` and 
 | `remote list`, `pull`, `push` | `remote:read`, `remote:pull`, `remote:push` |
 
 A token's `new`, `edit` and `done` never touch your tasks. Each waits as an item in `dam status`,
-with its hash, the task a change changes, the token's name and its age:
+with its hash, the task a change changes, the token's name and its age. A change shows the current
+values on a minus line and the proposed ones on a plus line:
 
     Not staged:
       new      a1b2c3d  Call the dentist  inbox/  vpt  2h
-      changed  e4f5a6b  0c1d2e3  Pay the rent  (subject)  vpt  5m
+      changed  e4f5a6b  0c1d2e3  -Pay rent  due: 2026-11-13  vpt  5m
+                                 +Pay the rent  due: 2026-11-12
 
 The tool's answer is `new`, `changed` or `duplicate` with the item's hash, and for a change the oid
 of the task it changes. A new item's hash is the oid its task gets. Its grant must hold for the
