@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use dam_domain::{Authored, Change, CommitId, Kind, Object, Oid};
+use dam_domain::{Authored, Change, CommitId, Item, Kind, Object, Oid, Permission};
 
 use crate::errors::UseCaseError;
 use crate::ports::{CommitRepository, Conflict, Notice, RemoteName, Store};
@@ -10,6 +10,7 @@ use crate::use_cases::stage::working_and_ever_committed_oids;
 pub struct Status {
     pub staged: Vec<Authored>,
     pub unstaged: Vec<Change>,
+    pub waiting: Vec<Item>,
     pub conflicts: Vec<Conflict>,
     pub notices: Vec<Notice>,
     pub unpushed: Vec<Unpushed>,
@@ -29,16 +30,34 @@ impl Dam<'_> {
             unpushed.push(unpushed_for(self.store, remote, accepted.as_deref())?);
         }
         Ok(Status {
-            staged: self.store.staged()?,
-            unstaged: working_changes(self.store)?,
+            staged: self.seen_staged()?,
+            unstaged: self.diff_working()?,
+            waiting: self.waiting_items()?,
             conflicts: self.store.conflicts()?,
             notices: self.store.notices()?,
             unpushed,
         })
     }
 
+    pub fn seen_staged(&self) -> Result<Vec<Authored>, UseCaseError> {
+        let mut seen = Vec::new();
+        for mut authored in self.store.staged()? {
+            if self.permits_change(Permission::StageRead, &authored.change) {
+                authored.change = self.as_seen_change(authored.change)?;
+                seen.push(authored);
+            }
+        }
+        Ok(seen)
+    }
+
     pub fn diff_working(&self) -> Result<Vec<Change>, UseCaseError> {
-        working_changes(self.store)
+        let mut seen = Vec::new();
+        for change in working_changes(self.store)? {
+            if self.permits_change(Permission::WorkingRead, &change) {
+                seen.push(self.as_seen_change(change)?);
+            }
+        }
+        Ok(seen)
     }
 }
 

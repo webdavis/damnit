@@ -83,7 +83,10 @@ fn a_path_restricted_token_is_refused_the_reads_that_cannot_filter_by_path_yet()
     let sb = Sandbox::new();
     let held = work_only_reader(&sb);
     sb.new_object(&["diary", "--path", "home"]);
-    for read in ["status", "diff", "log"] {
+    let status = sb.output_holding(&held, &["status", "--json"]);
+    assert!(status.status.success(), "{status:?}");
+    assert!(!String::from_utf8_lossy(&status.stdout).contains("diary"));
+    for read in ["diff", "log"] {
         let out = sb.output_holding(&held, &[read, "--json"]);
         assert_eq!(out.status.code(), Some(4), "{read}");
         assert_eq!(

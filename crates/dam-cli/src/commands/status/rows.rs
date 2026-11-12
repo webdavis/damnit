@@ -1,25 +1,15 @@
 use std::collections::BTreeSet;
 
-use dam_application::Conflict;
+use dam_application::{Access, Conflict};
 use dam_domain::{
-    Author, Change, Field, Object, Oid, Timestamp, When, changed_fields, touched_fields,
+    Change, Field, Object, Oid, Timestamp, TokenAuthor, When, changed_fields, touched_fields,
 };
 use serde::Serialize;
 
 use crate::view::{Line, display, optional_display, optional_wire, wire};
 
-pub(crate) const OWNER: &Author = &Author::Owner;
-
-fn change_line(change: &Change, author: &Author) -> String {
-    match author.token() {
-        Some(token) => format!("{}  {}", what_changed(change), token.name),
-        None => what_changed(change),
-    }
-}
-
-fn what_changed(change: &Change) -> String {
+fn what_changed(change: &Change, oid: &str) -> String {
     let subject = &change.object().base().subject;
-    let oid = change.oid().short();
     match change {
         Change::Create { .. } => format!("new      {oid}  {subject}"),
         Change::Delete { .. } => format!("removed  {oid}  {subject}"),
@@ -38,8 +28,6 @@ fn what_changed(change: &Change) -> String {
 pub(crate) struct ChangeRow<'a> {
     #[serde(skip)]
     change: &'a Change,
-    #[serde(skip)]
-    author: &'a Author,
     #[serde(serialize_with = "display")]
     oid: &'a Oid,
     op: &'static str,
@@ -82,13 +70,15 @@ struct Sides<'a> {
 }
 
 impl<'a> ChangeRow<'a> {
-    pub(crate) fn new(change: &'a Change, author: &'a Author, full: bool) -> ChangeRow<'a> {
+    pub(crate) fn new(
+        change: &'a Change,
+        token: Option<&'a TokenAuthor>,
+        full: bool,
+    ) -> ChangeRow<'a> {
         let object = change.object();
         let base = object.base();
-        let token = author.token();
         ChangeRow {
             change,
-            author,
             from: token.map(|t| t.name.as_str()),
             key_id: token.map(|t| t.key_id.as_str()),
             channel: token.map(|t| t.channel.as_str()),
@@ -119,7 +109,31 @@ impl<'a> ChangeRow<'a> {
     }
 
     pub(crate) fn line(&self) -> String {
-        change_line(self.change, self.author)
+        let what = what_changed(self.change, self.change.oid().short());
+        match self.from {
+            Some(name) => format!("{what}  {name}"),
+            None => what,
+        }
+    }
+
+    pub(super) fn status_line(&self, owner: &str) -> String {
+        self.status_line_naming(self.change.oid().short(), owner)
+    }
+
+    pub(super) fn status_line_naming(&self, id: &str, owner: &str) -> String {
+        let mut cells = vec![what_changed(self.change, id)];
+        if !self.path.is_empty() {
+            cells.push(self.path.to_string());
+        }
+        cells.push(self.from.unwrap_or(owner).to_string());
+        cells.join("  ")
+    }
+}
+
+pub(crate) fn the_owner_to(reader: &dyn Access) -> &'static str {
+    match reader.token() {
+        Some(_) => "owner",
+        None => "you",
     }
 }
 
