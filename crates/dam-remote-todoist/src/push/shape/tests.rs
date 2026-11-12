@@ -30,6 +30,7 @@ fn tree() -> Tree {
             deadline: None,
             labels: vec![],
             checked: false,
+            completed_at: None,
             is_deleted: false,
         }],
     })

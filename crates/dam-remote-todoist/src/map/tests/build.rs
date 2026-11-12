@@ -33,6 +33,7 @@ pub(super) fn item(id: &str, content: &str) -> Item {
         deadline: None,
         labels: vec![],
         checked: false,
+        completed_at: None,
         is_deleted: false,
     }
 }

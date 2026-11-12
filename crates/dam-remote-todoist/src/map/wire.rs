@@ -63,7 +63,7 @@ pub fn item_to_wire(t: &Tree, i: &Item) -> Option<WireObject> {
     let path = t.item_path(i)?;
     let task = WireTask {
         done: i.checked,
-        completed_at: None,
+        completed_at: i.completed_at.clone().filter(|_| i.checked),
         priority: dam_priority(i.priority),
         due: i.due.as_ref().map(|d| d.date.clone()),
         deadline: i.deadline.as_ref().map(|d| d.date.clone()),

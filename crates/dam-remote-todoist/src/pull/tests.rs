@@ -66,3 +66,20 @@ fn a_rate_limit_on_the_opening_sync_keeps_its_class_and_retry_time() {
     assert_eq!(err.retry_after(), Some(std::time::Duration::from_secs(42)));
     assert!(err.to_string().contains("42s"), "{err}");
 }
+
+#[test]
+fn a_task_completed_in_the_app_carries_its_completion_time() {
+    let todoist = FakeTodoist::new(serde_json::json!({
+        "projects": [{"id": "p1", "name": "Work"}],
+        "items": [
+            {"id": "i1", "content": "milk", "project_id": "p1", "checked": true, "completed_at": "2026-11-12T09:15:22.123456Z"},
+            {"id": "i2", "content": "eggs", "project_id": "p1", "checked": false, "completed_at": null}
+        ]
+    }));
+    let response = pull(&todoist).unwrap();
+    let completed: Vec<Option<&str>> = response.objects[1..]
+        .iter()
+        .map(|o| o.task.as_ref().unwrap().completed_at.as_deref())
+        .collect();
+    assert_eq!(completed, vec![Some("2026-11-12T09:15:22.123456Z"), None]);
+}
