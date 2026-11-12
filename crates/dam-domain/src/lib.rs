@@ -13,7 +13,10 @@ mod vocabulary;
 mod weekday;
 mod when;
 
-pub use access::{KeyId, Token, TokenError};
+pub use access::{
+    Grant, Grants, KeyId, Permission, PermissionName, RESERVED_PERMISSIONS, Subject, Token,
+    TokenError,
+};
 pub use category::{Categories, Category, CategoryError, LabelViolation};
 pub use change::{
     Change, CommitId, CommitRecord, Op, changed_fields, kind_change, merge_fields, touched_fields,
