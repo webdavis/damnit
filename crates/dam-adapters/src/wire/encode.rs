@@ -1,6 +1,7 @@
 use dam_domain::{Object, When};
 use dam_protocol::{
-    WireAttachment, WireAttendee, WireConference, WireEvent, WireObject, WirePerson, WireTask,
+    WireAttachment, WireAttendee, WireConference, WireEvent, WireFocus, WireObject, WirePerson,
+    WireTask,
 };
 
 pub fn to_wire(object: &Object, remote_id: Option<String>) -> WireObject {
@@ -24,6 +25,11 @@ pub fn to_wire(object: &Object, remote_id: Option<String>) -> WireObject {
             deadline: t.deadline.map(|d| d.to_string()),
             event: t.event.as_ref().map(|o| o.to_string()),
             estimate: t.estimate,
+            focus: t.focus.as_ref().map(|f| WireFocus {
+                day: f.day.to_string(),
+                set_by: f.set_by.clone(),
+                set_at: f.set_at.to_string(),
+            }),
         }),
         event: object.as_event().map(|e| WireEvent {
             start: e.start.to_text(),

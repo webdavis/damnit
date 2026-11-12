@@ -3,7 +3,7 @@ use dam_domain::{Blockers, LabelViolation, Tracked};
 
 use crate::testing::oid;
 
-const HAND_COUNTED_RULES: usize = 28;
+const HAND_COUNTED_RULES: usize = 29;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -35,6 +35,7 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::NotPermitted(_) => 25,
         Refusal::NotOpenToTokens(_) => 26,
         Refusal::SubjectNamesNoFolder(_) => 27,
+        Refusal::FocusFull { .. } => 28,
     }
 }
 
@@ -96,6 +97,10 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
         Refusal::Token(crate::TokenRefusal::Unknown),
         Refusal::NotPermitted(dam_domain::Permission::TaskRead),
         Refusal::NotOpenToTokens("new"),
+        Refusal::FocusFull {
+            day: jiff::civil::date(2026, 11, 12),
+            focused: vec![oid(1), oid(2), oid(3)],
+        },
     ]
 }
 

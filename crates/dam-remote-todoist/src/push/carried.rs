@@ -79,6 +79,7 @@ mod tests {
                 deadline: None,
                 event: None,
                 estimate: None,
+                focus: None,
             }),
             event: None,
         }

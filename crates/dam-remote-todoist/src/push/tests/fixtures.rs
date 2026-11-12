@@ -66,6 +66,7 @@ pub(crate) fn task(oid: &str, path: &str, subject: &str, done: bool) -> WireObje
             deadline: None,
             event: None,
             estimate: None,
+            focus: None,
         }),
         event: None,
     }
@@ -81,6 +82,7 @@ pub(crate) fn task_with_dates_cleared(oid: &str) -> WireObject {
         deadline: None,
         event: None,
         estimate: None,
+        focus: None,
     });
     t
 }

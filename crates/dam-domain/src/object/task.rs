@@ -20,6 +20,15 @@ impl Completion {
     }
 }
 
+pub const FOCUS_PER_DAY: usize = 3;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Focus {
+    pub day: Date,
+    pub set_by: String,
+    pub set_at: Timestamp,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Task {
     pub base: Base,
@@ -29,9 +38,14 @@ pub struct Task {
     pub deadline: Option<Date>,
     pub event: Option<Oid>,
     pub estimate: Option<u32>,
+    pub focus: Option<Focus>,
 }
 
 impl Task {
+    pub fn focus_on(&self, day: Date) -> Option<&Focus> {
+        self.focus.as_ref().filter(|f| f.day == day)
+    }
+
     pub fn new(oid: Oid, subject: impl Into<String>) -> Task {
         Task {
             base: Base::new(oid, subject),
@@ -41,6 +55,7 @@ impl Task {
             deadline: None,
             event: None,
             estimate: None,
+            focus: None,
         }
     }
 }

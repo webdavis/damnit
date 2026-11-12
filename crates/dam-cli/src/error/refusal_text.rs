@@ -84,6 +84,15 @@ impl fmt::Display for RefusalText<'_> {
                 o.short()
             ),
             Refusal::NothingToCommit => f.write_str("nothing to commit"),
+            Refusal::FocusFull { day, focused } => {
+                let shorts: Vec<&str> = focused.iter().map(|o| o.short()).collect();
+                write!(
+                    f,
+                    "{day} already has {} focus tasks: {}; clear one with --no-focus first",
+                    focused.len(),
+                    shorts.join(", ")
+                )
+            }
             Refusal::NeedsAnAnswer => f.write_str(
                 "a question needs an answer; drop --json/--toon to answer interactively",
             ),

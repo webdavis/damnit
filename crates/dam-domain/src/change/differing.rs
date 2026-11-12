@@ -35,6 +35,11 @@ pub(super) fn task_differing_in_every_field(tag: &str) -> Task {
     t.deadline = Some(date(2026, 2, n as i8));
     t.event = Some(oid(92 + n));
     t.estimate = Some(u32::from(n) * 5);
+    t.focus = Some(crate::Focus {
+        day: date(2026, 3, n as i8),
+        set_by: format!("by-{tag}"),
+        set_at: crate::Timestamp::UNIX_EPOCH,
+    });
     t
 }
 

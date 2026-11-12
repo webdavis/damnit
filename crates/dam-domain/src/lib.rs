@@ -28,8 +28,9 @@ pub use completion::{
 pub use estimate::parse_minutes;
 pub use field::Field;
 pub use object::{
-    Attachment, Attendee, Base, Completion, Conference, Event, EventStatus, EventType, Kind,
-    Object, Person, Reminder, ResponseStatus, Task, Transparency, Visibility,
+    Attachment, Attendee, Base, Completion, Conference, Event, EventStatus, EventType,
+    FOCUS_PER_DAY, Focus, Kind, Object, Person, Reminder, ResponseStatus, Task, Transparency,
+    Visibility,
 };
 pub use oid::{Oid, OidError};
 pub use path::{Path, PathError};

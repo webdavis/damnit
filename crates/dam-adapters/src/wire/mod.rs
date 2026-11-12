@@ -5,8 +5,8 @@ use dam_application::{
     IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, RejectedObject,
     RemoteCapabilities, RemoteMutation,
 };
-use dam_domain::{Field, Kind, Oid};
-use dam_protocol::{Capabilities, Mutation, MutationResult, PullResponse, Verdict};
+use dam_domain::{Field, Kind, Object, Oid};
+use dam_protocol::{Capabilities, Mutation, MutationResult, PullResponse, Verdict, WireObject};
 
 pub use decode::from_wire;
 pub use encode::to_wire;
@@ -79,13 +79,21 @@ pub fn mutation_to_wire(mutation: RemoteMutation) -> Mutation {
         oid: mutation.oid.to_string(),
         idempotency_key: mutation.idempotency_key,
         remote_id: mutation.remote_id,
-        object: mutation.object.as_ref().map(|o| to_wire(o, None)),
+        object: mutation.object.as_ref().map(without_local_fields),
         fields: mutation
             .fields
             .iter()
             .map(|f| f.as_str().to_string())
             .collect(),
     }
+}
+
+fn without_local_fields(object: &Object) -> WireObject {
+    let mut wire = to_wire(object, None);
+    if let Some(task) = &mut wire.task {
+        task.focus = None;
+    }
+    wire
 }
 
 pub fn outcomes_from_wire(results: Vec<MutationResult>) -> Vec<MutationOutcome> {
@@ -105,6 +113,9 @@ pub fn outcomes_from_wire(results: Vec<MutationResult>) -> Vec<MutationOutcome> 
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod local_field_tests;
 
 #[cfg(test)]
 mod pull_tests;

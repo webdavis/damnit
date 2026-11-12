@@ -42,7 +42,7 @@ fn every_task_field_moves_alone_and_nothing_else_does() {
     let fields = changed_fields(&ours, &theirs);
     assert_eq!(
         fields.len(),
-        13,
+        14,
         "expected every task field to differ: {fields:?}"
     );
     for f in &fields {

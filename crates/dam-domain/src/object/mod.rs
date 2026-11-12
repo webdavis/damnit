@@ -11,7 +11,7 @@ pub use event::{
     Attachment, Attendee, Conference, Event, EventStatus, EventType, Person, ResponseStatus,
     Transparency, Visibility,
 };
-pub use task::{Completion, Task};
+pub use task::{Completion, FOCUS_PER_DAY, Focus, Task};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Kind {

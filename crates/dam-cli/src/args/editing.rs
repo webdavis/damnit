@@ -93,4 +93,13 @@ pub(crate) struct EditArgs {
     pub(crate) estimate: Option<u32>,
     #[arg(long, help = "Clear the task's estimate")]
     pub(crate) no_estimate: bool,
+    #[arg(
+        long,
+        conflicts_with = "no_focus",
+        value_name = "DAY",
+        help = "Mark the task to work on first on DAY, after the ones marked before it. 3 a day"
+    )]
+    pub(crate) focus: Option<String>,
+    #[arg(long, help = "Clear the task's focus mark")]
+    pub(crate) no_focus: bool,
 }

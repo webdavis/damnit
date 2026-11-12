@@ -2,7 +2,7 @@ use dam_application::{EditFields, Refusal};
 use dam_domain::Oid;
 
 use crate::args::EditArgs;
-use crate::commands::parsing::{deadline_flag, when_flag};
+use crate::commands::parsing::{day_flag, deadline_flag, when_flag};
 use crate::context::Context;
 use crate::error::{CliError, UseCaseText};
 use crate::output::Report;
@@ -72,6 +72,10 @@ fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
         .transpose()?;
     f.location = set_or_clear(args.location, args.no_location);
     f.estimate = set_or_clear(args.estimate, args.no_estimate);
+    f.focus = set_or_clear(
+        args.focus.map(|d| day_flag(ctx, "focus", &d)).transpose()?,
+        args.no_focus,
+    );
     Ok(f)
 }
 

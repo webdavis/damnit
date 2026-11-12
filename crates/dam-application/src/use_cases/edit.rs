@@ -27,13 +27,17 @@ pub struct EditFields {
     pub end: Option<When>,
     pub location: Option<Option<String>>,
     pub estimate: Option<Option<u32>>,
+    pub focus: Option<Option<Date>>,
 }
 
 impl Dam<'_> {
     pub fn edit(&self, oid: &Oid, fields: EditFields) -> Result<Object, UseCaseError> {
         atomically(self.store, || {
             let current = load(self.store, oid)?;
-            let next = apply(&current, &fields)?;
+            let mut next = apply(&current, &fields)?;
+            if let Some(day) = fields.focus {
+                self.mark_focus(&mut next, day)?;
+            }
             self.config
                 .categories
                 .check(&next.base().labels)
@@ -96,6 +100,7 @@ pub fn apply(object: &Object, fields: &EditFields) -> Result<Object, UseCaseErro
             || fields.attach.is_some()
             || fields.recurrence.is_some()
             || fields.estimate.is_some()
+            || fields.focus.is_some()
             || fields.undone)
     {
         return Err(Refusal::NotATask(next.oid().clone()).into());
@@ -169,6 +174,8 @@ pub fn apply(object: &Object, fields: &EditFields) -> Result<Object, UseCaseErro
     }
     Ok(next)
 }
+
+mod focus;
 
 #[cfg(test)]
 mod tests;

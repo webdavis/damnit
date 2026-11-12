@@ -44,6 +44,7 @@
         "no_such_remote",
         "remote_exists",
         "not_a_task",
+        "focus_full",
         "not_an_event",
         "not_completed",
         "not_committed",
