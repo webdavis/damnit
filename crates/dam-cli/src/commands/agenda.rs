@@ -1,5 +1,6 @@
 use std::collections::BTreeSet;
 
+use dam_adapters::{WireAttendee, WireConference, WirePerson, event_to_wire};
 use dam_application::{Scheduled, Window};
 use dam_domain::{Oid, Timestamp, When};
 use jiff::SignedDuration;
@@ -77,6 +78,13 @@ struct AgendaEvent<'a> {
     start: String,
     end: String,
     busy: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    location: Option<String>,
+    attendees: Vec<WireAttendee>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    organizer: Option<WirePerson>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    conference: Option<WireConference>,
 }
 
 impl<'a> AgendaEvent<'a> {
@@ -91,6 +99,7 @@ impl<'a> AgendaEvent<'a> {
                 When::At(local).to_rfc3339()
             }
         };
+        let wire = event_to_wire(&s.event);
         AgendaEvent {
             scheduled: s,
             oid: &base.oid,
@@ -103,6 +112,10 @@ impl<'a> AgendaEvent<'a> {
             start: text(s.start),
             end: text(s.end),
             busy: s.busy,
+            location: wire.location,
+            attendees: wire.attendees,
+            organizer: wire.organizer,
+            conference: wire.conference,
         }
     }
 

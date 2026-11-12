@@ -34,7 +34,7 @@ fn the_agenda_document_keeps_its_contract() {
         report.data,
         serde_json::json!({"events": [{
             "oid": "3f".repeat(20), "subject": "standup", "path": "", "labels": ["work"],
-            "status": "confirmed", "transparency": "busy", "all_day": false,
+            "status": "confirmed", "transparency": "busy", "all_day": false, "attendees": [],
             "start": "2026-09-18T14:00:00+00:00", "end": "2026-09-18T14:30:00+00:00", "busy": true
         }]})
     );
