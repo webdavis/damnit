@@ -143,3 +143,17 @@ fn add_all_and_oids_are_alternatives() {
     assert!(Cli::try_parse_from(["dam", "add", "abc", "def"]).is_ok());
     assert!(Cli::try_parse_from(["dam", "add"]).is_err());
 }
+
+#[test]
+fn labels_and_unlabels_match_the_key_and_the_old_singular_names_still_parse() {
+    for (add, remove) in [("--labels", "--unlabels"), ("--label", "--unlabel")] {
+        let cli = Cli::try_parse_from(["dam", "edit", "abcd", add, "a", remove, "b"]).unwrap();
+        match cli.command {
+            Command::Edit(a) => {
+                assert_eq!(a.labels, vec!["a".to_string()]);
+                assert_eq!(a.unlabels, vec!["b".to_string()]);
+            }
+            _ => panic!("wrong command"),
+        }
+    }
+}

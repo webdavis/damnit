@@ -42,9 +42,9 @@ pub(crate) struct EditArgs {
     pub(crate) no_deadline: bool,
     #[arg(long, help = "Reopen a completed task")]
     pub(crate) undone: bool,
-    #[arg(long = "label", help = "Add a label. Repeatable")]
+    #[arg(long, alias = "label", help = "Add a label. Repeatable")]
     pub(crate) labels: Vec<String>,
-    #[arg(long = "unlabel", help = "Remove a label. Repeatable")]
+    #[arg(long, alias = "unlabel", help = "Remove a label. Repeatable")]
     pub(crate) unlabels: Vec<String>,
     #[arg(
         long = "depends",
