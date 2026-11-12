@@ -2,6 +2,7 @@ mod parse;
 mod term;
 
 use jiff::ToSpan;
+use jiff::tz::TimeZone;
 
 use crate::weekday::week_start;
 use crate::{Date, Kind, Object, Oid, Path, Priority, Transparency};
@@ -37,6 +38,7 @@ pub enum Term {
     Deadline(DateSel),
     Estimate(EstimateSel),
     Focus(DateSel),
+    Completed(DateSel),
     Start(DateSel),
     Path(Path),
     Label(String),
@@ -54,16 +56,16 @@ pub enum Expr {
     Term(Term),
 }
 
-pub fn matches(expr: &Expr, object: &Object, today: Date) -> bool {
+pub fn matches(expr: &Expr, object: &Object, today: Date, zone: &TimeZone) -> bool {
     match expr {
-        Expr::And(a, b) => matches(a, object, today) && matches(b, object, today),
-        Expr::Or(a, b) => matches(a, object, today) || matches(b, object, today),
-        Expr::Not(a) => !matches(a, object, today),
-        Expr::Term(term) => term_matches(term, object, today),
+        Expr::And(a, b) => matches(a, object, today, zone) && matches(b, object, today, zone),
+        Expr::Or(a, b) => matches(a, object, today, zone) || matches(b, object, today, zone),
+        Expr::Not(a) => !matches(a, object, today, zone),
+        Expr::Term(term) => term_matches(term, object, today, zone),
     }
 }
 
-fn term_matches(term: &Term, object: &Object, today: Date) -> bool {
+fn term_matches(term: &Term, object: &Object, today: Date, zone: &TimeZone) -> bool {
     let task = object.as_task();
     let event = object.as_event();
     match term {
@@ -76,6 +78,10 @@ fn term_matches(term: &Term, object: &Object, today: Date) -> bool {
             task.is_some_and(|t| date_matches(sel, t.due.as_ref().map(|d| d.date()), today))
         }
         Term::Deadline(sel) => task.is_some_and(|t| date_matches(sel, t.deadline, today)),
+        Term::Completed(sel) => task.is_some_and(|t| {
+            let day = t.completion.at().map(|at| at.to_zoned(zone.clone()).date());
+            date_matches(sel, day, today)
+        }),
         Term::Focus(sel) => {
             task.is_some_and(|t| date_matches(sel, t.focus.as_ref().map(|f| f.day), today))
         }
@@ -127,5 +133,7 @@ fn in_week(d: Date, monday: Date) -> bool {
         .is_some_and(|sunday| d >= monday && d <= sunday)
 }
 
+#[cfg(test)]
+mod completed_tests;
 #[cfg(test)]
 mod tests;

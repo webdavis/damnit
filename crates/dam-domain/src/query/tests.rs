@@ -35,7 +35,7 @@ fn parse(query: &str) -> Result<Expr, QueryError> {
 }
 
 fn hit(query: &str, object: &Object) -> bool {
-    matches(&parse(query).unwrap(), object, TODAY)
+    matches(&parse(query).unwrap(), object, TODAY, &TimeZone::UTC)
 }
 
 #[test]
