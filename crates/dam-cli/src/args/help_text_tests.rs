@@ -7,6 +7,7 @@ dam toon: help = Print TOON, a compact form for language models; errors as --jso
 dam config: help = Read the config from FILE. Default: ${XDG_CONFIG_HOME:-~/.config}/dam/config.toml
 dam store: help = Open the store at FILE. Default: ${XDG_DATA_HOME:-~/.local/share}/dam/dam.db
 dam no_pull: help = Never pull a stale remote first; answer from the local store
+dam no_color: help = Print without color; color is also off under NO_COLOR or when not a terminal
 dam new: about = Create a task, or an event with --event
 dam new subject: help = Title the new task or event
 dam new event: help = Create an event instead of a task, which needs --start and --end

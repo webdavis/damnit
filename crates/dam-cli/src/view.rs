@@ -8,6 +8,7 @@ use serde::{Serialize, Serializer};
 use crate::error::CliError;
 use crate::layout::table;
 use crate::output::{Report, object_cells};
+use crate::paint::Tint;
 
 pub(crate) enum Human {
     Table(Vec<Vec<String>>),
@@ -18,6 +19,8 @@ pub(crate) enum Human {
 pub(crate) enum Line {
     Row(String),
     Whole(String),
+    Removed(String),
+    Added(String),
 }
 
 impl Human {
@@ -35,21 +38,31 @@ pub(crate) trait View: Serialize {
 }
 
 pub(crate) fn report(view: &impl View) -> Result<Report, CliError> {
-    let (lines, cut): (Vec<String>, Vec<bool>) = match view.human() {
-        Human::Table(rows) => table(&rows).into_iter().map(|l| (l, true)).collect(),
-        Human::Lines(lines) => lines.into_iter().map(|l| (l, false)).collect(),
+    let lines: Vec<(String, bool, Tint)> = match view.human() {
+        Human::Table(rows) => table(&rows)
+            .into_iter()
+            .map(|l| (l, true, Tint::Plain))
+            .collect(),
+        Human::Lines(lines) => lines.into_iter().map(|l| (l, false, Tint::Plain)).collect(),
         Human::Mixed(lines) => lines
             .into_iter()
             .map(|line| match line {
-                Line::Row(l) => (l, true),
-                Line::Whole(l) => (l, false),
+                Line::Row(l) => (l, true, Tint::Plain),
+                Line::Whole(l) => (l, false, Tint::Plain),
+                Line::Removed(l) => (l, true, Tint::Removed),
+                Line::Added(l) => (l, true, Tint::Added),
             })
             .collect(),
     };
     Ok(Report {
-        human: lines.join("\n"),
+        human: lines
+            .iter()
+            .map(|(l, ..)| l.as_str())
+            .collect::<Vec<_>>()
+            .join("\n"),
         data: serde_json::to_value(view).map_err(|e| CliError::Internal(e.to_string()))?,
-        cut,
+        cut: lines.iter().map(|(_, cut, _)| *cut).collect(),
+        tints: lines.iter().map(|(.., tint)| *tint).collect(),
     })
 }
 

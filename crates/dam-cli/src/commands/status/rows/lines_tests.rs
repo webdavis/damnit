@@ -7,7 +7,7 @@ fn text(lines: Vec<Line>) -> Vec<String> {
     lines
         .into_iter()
         .map(|line| match line {
-            Line::Row(l) | Line::Whole(l) => l,
+            Line::Row(l) | Line::Whole(l) | Line::Removed(l) | Line::Added(l) => l,
         })
         .collect()
 }

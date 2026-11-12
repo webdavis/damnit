@@ -5,6 +5,7 @@ use jiff::tz::TimeZone;
 
 use crate::error::CliError;
 use crate::layout::{fit, terminal_width};
+use crate::paint::{Tint, painted};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Format {
@@ -18,6 +19,7 @@ pub(crate) struct Report {
     pub(crate) human: String,
     pub(crate) data: serde_json::Value,
     pub(crate) cut: Vec<bool>,
+    pub(crate) tints: Vec<Tint>,
 }
 
 pub(crate) fn render(format: Format, report: &Report) -> Result<String, CliError> {
@@ -39,6 +41,7 @@ pub(crate) fn print_error(format: Format, error: &CliError) {
                 human: String::new(),
                 data: error.document(),
                 cut: Vec::new(),
+                tints: Vec::new(),
             };
             render(format, &report).unwrap_or_else(|_| format!("dam: {error}"))
         }
@@ -46,13 +49,17 @@ pub(crate) fn print_error(format: Format, error: &CliError) {
     eprintln!("{line}");
 }
 
-pub(crate) fn print(format: Format, report: &Report) -> Result<(), CliError> {
+pub(crate) fn print(format: Format, color: bool, report: &Report) -> Result<(), CliError> {
     let terminal =
         terminal_size::terminal_size_of(std::io::stdout()).map(|(w, _)| usize::from(w.0));
     let width = terminal_width(std::env::var("COLUMNS").ok().as_deref(), terminal);
     let text = match (format, width) {
         (Format::Human, Some(width)) => fitted(report, width),
         _ => render(format, report)?,
+    };
+    let text = match format {
+        Format::Human if color => painted(&text, &report.tints),
+        _ => text,
     };
     let mut out = std::io::stdout().lock();
     out.write_all(text.as_bytes())?;
@@ -142,6 +149,7 @@ mod tests {
                 human: String::new(),
                 data,
                 cut: Vec::new(),
+                tints: Vec::new(),
             },
         )
         .unwrap();
@@ -154,6 +162,7 @@ mod tests {
             human: "hi".into(),
             data: serde_json::json!({"a": 1}),
             cut: Vec::new(),
+            tints: Vec::new(),
         };
         assert_eq!(render(Format::Human, &report).unwrap(), "hi");
         assert_eq!(render(Format::Json, &report).unwrap(), "{\n  \"a\": 1\n}");

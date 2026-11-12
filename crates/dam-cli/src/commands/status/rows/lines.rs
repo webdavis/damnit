@@ -37,7 +37,10 @@ impl ChangeRow<'_> {
         if fields.contains(&Field::Path) {
             plus.extend(path_cell(after));
         }
-        vec![Line::Row(minus.join("  ")), Line::Row(plus.join("  "))]
+        vec![
+            Line::Removed(minus.join("  ")),
+            Line::Added(plus.join("  ")),
+        ]
     }
 }
 

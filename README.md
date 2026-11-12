@@ -136,7 +136,8 @@ edit. Under `--json` or `--toon` it refuses instead of opening an editor.
 task, and cleared again by `--undone`. A task completed in Todoist comes in with Todoist's time.
 
 `dam status`, `dam diff`, `dam log` and `dam show` read the way their git namesakes do. `--json`
-and `--toon` on any read give a program the same answer.
+and `--toon` on any read give a program the same answer. A change's minus line is red and its plus
+line green, unless output is not a terminal, `NO_COLOR` is set or `--no-color` is given.
 
 `dam remote list` names every remote with when it was last pulled and last pushed: `pulled 4m ago`
 in the line, `last_pull` and `last_push` as RFC 3339 under `--json`, null until that verb has
