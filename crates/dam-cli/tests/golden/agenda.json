@@ -12,7 +12,8 @@
       "all_day": true,
       "start": "2026-09-25",
       "end": "2026-09-27",
-      "busy": true
+      "busy": true,
+      "attendees": []
     },
     {
       "oid": "3333333333333333333333333333333333333333",
@@ -24,7 +25,8 @@
       "all_day": false,
       "start": "2026-09-25T09:00:00+00:00",
       "end": "2026-09-25T09:15:00+00:00",
-      "busy": true
+      "busy": true,
+      "attendees": []
     }
   ]
 }

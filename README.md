@@ -248,15 +248,18 @@ Add `--full` to either command for `before` and `after`, the whole object on eac
 
     {"events": [{"oid": "98d878...", "subject": "standup", "path": "me@example.com/",
      "labels": [], "status": "confirmed", "transparency": "busy", "all_day": false,
-     "start": "2026-09-25T09:00:00-04:00", "end": "2026-09-25T09:30:00-04:00", "busy": true}]}
+     "start": "2026-09-25T09:00:00-04:00", "end": "2026-09-25T09:30:00-04:00", "busy": true,
+     "attendees": [{"email": "ada@example.com", "response": "accepted"}],
+     "organizer": {"email": "ada@example.com"}}]}
 
 `start` and `end` are times in the local zone, or dates for an all-day event, `end` exclusive;
 `busy` says whether the event holds time: not cancelled, shown busy, and not declined by the
-attendee that stands for the calendar the event came from. Every event the window overlaps is
-listed, busy or not; a recurring event made in dam is listed at its stored occurrence only. With no
-flags the window runs from now to 24 hours later; `--from` and `--to` take the same words `--due`
-does, and a query narrows it the way `dam ls` reads one. Keys are only ever added, never renamed or
-retyped.
+attendee that stands for the calendar the event came from. `attendees`, `organizer`, `location` and
+`conference` read as they do in `dam show`; `attendees` is always a list, and the others appear only
+when the event has them. Every event the window overlaps is listed, busy or not; a recurring event
+made in dam is listed at its stored occurrence only. With no flags the window runs from now to 24
+hours later; `--from` and `--to` take the same words `--due` does, and a query narrows it the way
+`dam ls` reads one. Keys are only ever added, never renamed or retyped.
 
 Like `ls`, `agenda` pulls a stale remote first unless given `--no-pull`.
 

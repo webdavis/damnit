@@ -23,7 +23,8 @@
           "all_day",
           "start",
           "end",
-          "busy"
+          "busy",
+          "attendees"
         ],
         "additionalProperties": false,
         "properties": {
@@ -67,6 +68,18 @@
           "busy": {
             "type": "boolean",
             "description": "Whether the event holds the time."
+          },
+          "location": {
+            "$ref": "object.schema.json#/$defs/event/properties/location"
+          },
+          "attendees": {
+            "$ref": "object.schema.json#/$defs/event/properties/attendees"
+          },
+          "organizer": {
+            "$ref": "object.schema.json#/$defs/event/properties/organizer"
+          },
+          "conference": {
+            "$ref": "object.schema.json#/$defs/event/properties/conference"
           }
         }
       }

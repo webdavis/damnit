@@ -1,4 +1,4 @@
-use dam_domain::{Object, When};
+use dam_domain::{Event, Object, When};
 use dam_protocol::{
     WireAttachment, WireAttendee, WireConference, WireEvent, WireFocus, WireObject, WirePerson,
     WireTask,
@@ -31,42 +31,46 @@ pub fn to_wire(object: &Object, remote_id: Option<String>) -> WireObject {
                 set_at: f.set_at.to_string(),
             }),
         }),
-        event: object.as_event().map(|e| WireEvent {
-            start: e.start.to_text(),
-            end: e.end.to_text(),
-            timezone: e.timezone.clone(),
-            location: e.location.clone(),
-            attendees: e
-                .attendees
-                .iter()
-                .map(|a| WireAttendee {
-                    email: a.email.clone(),
-                    response: a.response.as_str().into(),
-                    is_self: a.is_self,
-                })
-                .collect(),
-            status: e.status.as_str().into(),
-            transparency: e.transparency.as_str().into(),
-            visibility: e.visibility.as_str().into(),
-            event_type: e.event_type.as_str().into(),
-            color: e.color.clone(),
-            organizer: e.organizer.as_ref().map(|p| WirePerson {
-                email: p.email.clone(),
-                name: p.name.clone(),
-            }),
-            conference: e.conference.as_ref().map(|c| WireConference {
-                provider: c.provider.clone(),
-                url: c.url.clone(),
-            }),
-            attachments: e
-                .attachments
-                .iter()
-                .map(|a| WireAttachment {
-                    url: a.url.clone(),
-                    title: a.title.clone(),
-                    mime_type: a.mime_type.clone(),
-                })
-                .collect(),
+        event: object.as_event().map(event_to_wire),
+    }
+}
+
+pub fn event_to_wire(e: &Event) -> WireEvent {
+    WireEvent {
+        start: e.start.to_text(),
+        end: e.end.to_text(),
+        timezone: e.timezone.clone(),
+        location: e.location.clone(),
+        attendees: e
+            .attendees
+            .iter()
+            .map(|a| WireAttendee {
+                email: a.email.clone(),
+                response: a.response.as_str().into(),
+                is_self: a.is_self,
+            })
+            .collect(),
+        status: e.status.as_str().into(),
+        transparency: e.transparency.as_str().into(),
+        visibility: e.visibility.as_str().into(),
+        event_type: e.event_type.as_str().into(),
+        color: e.color.clone(),
+        organizer: e.organizer.as_ref().map(|p| WirePerson {
+            email: p.email.clone(),
+            name: p.name.clone(),
         }),
+        conference: e.conference.as_ref().map(|c| WireConference {
+            provider: c.provider.clone(),
+            url: c.url.clone(),
+        }),
+        attachments: e
+            .attachments
+            .iter()
+            .map(|a| WireAttachment {
+                url: a.url.clone(),
+                title: a.title.clone(),
+                mime_type: a.mime_type.clone(),
+            })
+            .collect(),
     }
 }
