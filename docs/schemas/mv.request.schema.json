@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/mv.request.schema.json",
+  "title": "dam mv request",
+  "description": "The arguments dam mv takes.",
+  "type": "object",
+  "required": [
+    "oid",
+    "path"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "oid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{4,40}$",
+      "description": "An oid, or a prefix of 4 or more hex characters."
+    },
+    "path": {
+      "type": "string",
+      "description": "A path such as work/clients/."
+    }
+  }
+}

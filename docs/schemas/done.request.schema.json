@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/done.request.schema.json",
+  "title": "dam done request",
+  "description": "The flags dam done takes, one key per flag without its dashes, and oid for its argument. interactive, children and depends need force.",
+  "type": "object",
+  "required": [
+    "oid"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "oid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{4,40}$",
+      "description": "An oid, or a prefix of 4 or more hex characters."
+    },
+    "force": {
+      "type": "boolean"
+    },
+    "interactive": {
+      "type": "boolean"
+    },
+    "children": {
+      "type": "string",
+      "pattern": "^(up|keep|into:.*\\S.*)$",
+      "description": "up, keep or into:<name>. Default: keep."
+    },
+    "depends": {
+      "enum": [
+        "drop",
+        "keep"
+      ],
+      "description": "Default: keep."
+    }
+  },
+  "dependentRequired": {
+    "interactive": [
+      "force"
+    ],
+    "children": [
+      "force"
+    ],
+    "depends": [
+      "force"
+    ]
+  },
+  "allOf": [
+    {
+      "not": {
+        "required": [
+          "interactive",
+          "children"
+        ]
+      }
+    },
+    {
+      "not": {
+        "required": [
+          "interactive",
+          "depends"
+        ]
+      }
+    }
+  ]
+}

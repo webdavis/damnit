@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/edit.request.schema.json",
+  "title": "dam edit request",
+  "description": "The flags dam edit takes, one key per flag without its dashes, and oid for its argument. A no_ key clears the field its name ends in, so the two never come together.",
+  "type": "object",
+  "required": [
+    "oid"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "oid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{4,40}$",
+      "description": "An oid, or a prefix of 4 or more hex characters."
+    },
+    "editor": {
+      "const": false,
+      "description": "A request cannot open an editor."
+    },
+    "subject": {
+      "type": "string"
+    },
+    "body": {
+      "type": "string"
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4,
+      "description": "1 is the highest."
+    },
+    "due": {
+      "type": "string",
+      "description": "A date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
+    },
+    "no_due": {
+      "type": "boolean"
+    },
+    "deadline": {
+      "type": "string",
+      "description": "A date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
+    },
+    "no_deadline": {
+      "type": "boolean"
+    },
+    "no_done": {
+      "type": "boolean"
+    },
+    "labels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "unlabels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "depends": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{4,40}$",
+        "description": "An oid, or a prefix of 4 or more hex characters."
+      }
+    },
+    "undepends": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{4,40}$",
+        "description": "An oid, or a prefix of 4 or more hex characters."
+      }
+    },
+    "recurrence": {
+      "type": "string",
+      "description": "A rule such as every 2 weeks on mon."
+    },
+    "no_recurrence": {
+      "type": "boolean"
+    },
+    "attached": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{4,40}$",
+      "description": "An oid, or a prefix of 4 or more hex characters."
+    },
+    "no_attached": {
+      "type": "boolean"
+    },
+    "start": {
+      "type": "string",
+      "description": "A date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
+    },
+    "end": {
+      "type": "string",
+      "description": "A date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
+    },
+    "location": {
+      "type": "string"
+    },
+    "no_location": {
+      "type": "boolean"
+    },
+    "estimate": {
+      "description": "Minutes, such as 5, or 5m or 2h.",
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "type": "string",
+          "pattern": "^[0-9]+[mh]?$"
+        }
+      ]
+    },
+    "no_estimate": {
+      "type": "boolean"
+    },
+    "focus": {
+      "type": "string",
+      "description": "A date word or YYYY-MM-DD."
+    },
+    "no_focus": {
+      "type": "boolean"
+    }
+  },
+  "allOf": [
+    {
+      "not": {
+        "required": [
+          "due",
+          "no_due"
+        ]
+      }
+    },
+    {
+      "not": {
+        "required": [
+          "deadline",
+          "no_deadline"
+        ]
+      }
+    },
+    {
+      "not": {
+        "required": [
+          "recurrence",
+          "no_recurrence"
+        ]
+      }
+    },
+    {
+      "not": {
+        "required": [
+          "attached",
+          "no_attached"
+        ]
+      }
+    },
+    {
+      "not": {
+        "required": [
+          "location",
+          "no_location"
+        ]
+      }
+    },
+    {
+      "not": {
+        "required": [
+          "estimate",
+          "no_estimate"
+        ]
+      }
+    },
+    {
+      "not": {
+        "required": [
+          "focus",
+          "no_focus"
+        ]
+      }
+    }
+  ]
+}

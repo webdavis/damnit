@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/token-create.request.schema.json",
+  "title": "dam token create request",
+  "description": "The flags dam token create takes, one key per flag without its dashes, and name for its argument.",
+  "type": "object",
+  "required": [
+    "name",
+    "allow"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "allow": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z]+:[a-z]+$"
+      }
+    },
+    "paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "labels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "remotes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "expires": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "via": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "local",
+          "mcp"
+        ]
+      },
+      "description": "Default: local."
+    }
+  }
+}
