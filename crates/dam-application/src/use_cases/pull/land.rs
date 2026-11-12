@@ -57,6 +57,7 @@ impl Dam<'_> {
                 .map(|change| Authored {
                     change,
                     author: self.access.author(),
+                    details: self.access.details().cloned(),
                 })
                 .collect(),
         );

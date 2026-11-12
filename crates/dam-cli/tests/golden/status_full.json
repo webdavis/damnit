@@ -29,7 +29,17 @@
       "after": null,
       "from": null,
       "key_id": null,
-      "channel": null
+      "channel": null,
+      "author": "owner",
+      "details": {
+        "meta": {},
+        "host": "<host>",
+        "dir": "<dir>",
+        "repo": null,
+        "branch": null,
+        "at": "<now>",
+        "channel": "local"
+      }
     }
   ],
   "unstaged": [
@@ -85,7 +95,9 @@
       },
       "from": null,
       "key_id": null,
-      "channel": null
+      "channel": null,
+      "author": "owner",
+      "details": null
     }
   ],
   "waiting": [],

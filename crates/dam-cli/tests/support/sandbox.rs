@@ -35,6 +35,7 @@ impl Sandbox {
         let mut command = Command::new(env!("CARGO_BIN_EXE_dam"));
         command
             .args(args)
+            .current_dir(self.dir.path())
             .env("PATH", path)
             .env("DAM_CONFIG", self.dir.path().join("config.toml"))
             .env("DAM_STORE", self.dir.path().join("dam.db"))

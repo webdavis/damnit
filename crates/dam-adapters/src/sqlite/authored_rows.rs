@@ -3,10 +3,11 @@ use dam_domain::{Author, Authored, Change, Channel, KeyId, TokenAuthor};
 use rusqlite::Params;
 
 use super::codec::{change_from_row, object_to_json};
+use super::details_json::details_from_json;
 use super::objects::sql;
 
 pub(super) const AUTHORED_COLUMNS: &str =
-    "op, before_json, after_json, author_token, author_key_id, author_channel";
+    "op, before_json, after_json, author_token, author_key_id, author_channel, details_json";
 
 pub(super) struct ChangeColumns {
     pub(super) op: &'static str,
@@ -82,6 +83,7 @@ type AuthoredRow = (
     Option<String>,
     Option<String>,
     Option<String>,
+    Option<String>,
 );
 
 pub(super) fn read_authored(
@@ -96,14 +98,16 @@ pub(super) fn read_authored(
             r.get(3)?,
             r.get(4)?,
             r.get(5)?,
+            r.get(6)?,
         ))
     })
     .map_err(sql)?
     .map(|row| {
-        let (op, before, after, token, key_id, channel): AuthoredRow = row.map_err(sql)?;
+        let (op, before, after, token, key_id, channel, details): AuthoredRow = row.map_err(sql)?;
         Ok(Authored {
             change: change_from_row(&op, before, after)?,
             author: author_from_columns(token, key_id, channel)?,
+            details: details_from_json(details)?,
         })
     })
     .collect()

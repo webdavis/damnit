@@ -1,7 +1,8 @@
 use dam_domain::{Item, ItemHash, Oid, Timestamp};
 use serde::Serialize;
 
-use super::rows::ChangeRow;
+use super::rows::{ChangeRow, visible};
+use crate::context::Context;
 use crate::view::{Line, display};
 
 #[derive(Serialize)]
@@ -27,6 +28,18 @@ impl<'a> ItemRow<'a> {
             change: ChangeRow::new(&item.change, Some(&item.author), full),
             created: &item.created,
             age: now.duration_since(item.created).as_secs().max(0),
+        }
+    }
+
+    pub(super) fn told(self, ctx: &'a Context, item: &'a Item) -> ItemRow<'a> {
+        let details = visible(
+            ctx.access.as_ref(),
+            Some(&item.author),
+            item.details.as_ref(),
+        );
+        ItemRow {
+            change: self.change.sent(ctx.config.owner_name(), details),
+            ..self
         }
     }
 

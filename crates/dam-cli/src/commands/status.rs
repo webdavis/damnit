@@ -26,12 +26,12 @@ pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliE
     let shown = |permission| may(ctx.access.as_ref(), permission);
     let warnings = token_warnings(ctx);
     report(&StatusView {
-        staged: authored_rows(&s.staged, args.full).collect(),
-        unstaged: owner_rows(&s.unstaged, args.full).collect(),
+        staged: authored_rows(ctx, &s.staged, args.full).collect(),
+        unstaged: owner_rows(ctx, &s.unstaged, args.full).collect(),
         waiting: s
             .waiting
             .iter()
-            .map(|item| ItemRow::new(item, ctx.clock.now(), args.full))
+            .map(|item| ItemRow::new(item, ctx.clock.now(), args.full).told(ctx, item))
             .collect(),
         conflicts: only_if(
             shown(ConflictRead),
@@ -52,25 +52,36 @@ pub(crate) fn run_diff(ctx: &Context, args: DiffArgs) -> Result<Report, CliError
     if args.staged {
         let staged = ctx.dam().seen_staged()?;
         return report(&DiffView {
-            changes: authored_rows(&staged, args.full).collect(),
+            changes: authored_rows(ctx, &staged, args.full).collect(),
             owner: the_owner_to(ctx.access.as_ref()),
         });
     }
     let working = ctx.dam().diff_working()?;
     report(&DiffView {
-        changes: owner_rows(&working, args.full).collect(),
+        changes: owner_rows(ctx, &working, args.full).collect(),
         owner: the_owner_to(ctx.access.as_ref()),
     })
 }
 
-fn authored_rows(changes: &[Authored], full: bool) -> impl Iterator<Item = ChangeRow<'_>> {
+fn authored_rows<'a>(
+    ctx: &'a Context,
+    changes: &'a [Authored],
+    full: bool,
+) -> impl Iterator<Item = ChangeRow<'a>> {
     changes
         .iter()
-        .map(move |c| ChangeRow::new(&c.change, c.author.token(), full))
+        .map(move |c| ChangeRow::authored(ctx, c, full))
 }
 
-fn owner_rows(changes: &[Change], full: bool) -> impl Iterator<Item = ChangeRow<'_>> {
-    changes.iter().map(move |c| ChangeRow::new(c, None, full))
+fn owner_rows<'a>(
+    ctx: &'a Context,
+    changes: &'a [Change],
+    full: bool,
+) -> impl Iterator<Item = ChangeRow<'a>> {
+    let owner = ctx.config.owner_name();
+    changes
+        .iter()
+        .map(move |c| ChangeRow::new(c, None, full).sent(owner, None))
 }
 
 fn token_warnings(ctx: &Context) -> impl Iterator<Item = String> + '_ {

@@ -133,7 +133,8 @@ impl Dam<'_> {
         }
         let item = Item::propose(author, change, self.clock.now(), &mut |b| {
             self.random.fill(b)
-        });
+        })
+        .with_details(self.access.details());
         self.store.put_item(&item)?;
         let answer = match item.change {
             Change::Create { .. } => Answer::New,

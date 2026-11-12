@@ -59,7 +59,7 @@ impl<'a> CommitDoc<'a> {
             changes: record
                 .changes
                 .iter()
-                .map(|c| ChangeRow::new(&c.change, c.author.token(), false))
+                .map(|c| ChangeRow::authored(ctx, c, false))
                 .collect(),
             zone: &ctx.tz,
             owner: the_owner_to(ctx.access.as_ref()),

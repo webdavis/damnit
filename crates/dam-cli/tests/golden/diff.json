@@ -18,7 +18,9 @@
       "due": "2026-09-25",
       "from": null,
       "key_id": null,
-      "channel": null
+      "channel": null,
+      "author": "owner",
+      "details": null
     }
   ]
 }

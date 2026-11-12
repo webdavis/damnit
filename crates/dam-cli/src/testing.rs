@@ -140,6 +140,7 @@ pub(crate) fn context() -> Context {
     Context {
         store: Box::new(MemoryStore::new()),
         config: Config {
+            owner: None,
             done_interactive: false,
             remotes: vec![],
             categories: Categories::new(vec![]).unwrap_or_else(|_| unreachable!()),

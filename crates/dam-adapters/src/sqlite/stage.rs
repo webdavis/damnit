@@ -4,6 +4,7 @@ use rusqlite::params;
 
 use super::SqliteStore;
 use super::authored_rows::{AUTHORED_COLUMNS, author_columns, change_columns, read_authored};
+use super::details_json::details_to_json;
 use super::objects::sql;
 
 impl StageRepository for SqliteStore {
@@ -12,7 +13,7 @@ impl StageRepository for SqliteStore {
         let author = author_columns(&staged.author);
         self.conn
             .execute(
-                "INSERT OR REPLACE INTO stage (oid, op, before_json, after_json, author_token, author_key_id, author_channel) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                "INSERT OR REPLACE INTO stage (oid, op, before_json, after_json, author_token, author_key_id, author_channel, details_json) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
                 params![
                     staged.change.oid().as_str(),
                     change.op,
@@ -20,7 +21,8 @@ impl StageRepository for SqliteStore {
                     change.after,
                     author.token,
                     author.key_id,
-                    author.channel
+                    author.channel,
+                    details_to_json(staged.details.as_ref())?
                 ],
             )
             .map(|_| ())

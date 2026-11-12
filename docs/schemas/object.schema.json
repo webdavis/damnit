@@ -25,6 +25,21 @@
     { "properties": { "kind": { "const": "event" } }, "required": ["event"], "not": { "required": ["task"] } }
   ],
   "$defs": {
+    "details": {
+      "description": "What a request stated with --meta, kept as given, and what dam knew of its own process: the host, the working directory, the repo and branch of that directory, the time and the channel.",
+      "type": "object",
+      "required": ["meta", "host", "dir", "repo", "branch", "at", "channel"],
+      "additionalProperties": false,
+      "properties": {
+        "meta": { "type": "object", "additionalProperties": { "type": "string" } },
+        "host": { "type": ["string", "null"] },
+        "dir": { "type": ["string", "null"] },
+        "repo": { "type": ["string", "null"] },
+        "branch": { "type": ["string", "null"] },
+        "at": { "type": "string", "format": "date-time" },
+        "channel": { "enum": ["local", "mcp"] }
+      }
+    },
     "oid": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
     "oids": { "type": "array", "items": { "$ref": "#/$defs/oid" } },
     "when": {
