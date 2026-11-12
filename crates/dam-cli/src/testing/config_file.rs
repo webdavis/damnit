@@ -25,4 +25,7 @@ impl ConfigFile for FakeConfigFile {
     fn add_token(&self, _: &NewToken) -> Result<Option<String>, ConfigError> {
         Ok(None)
     }
+    fn remove_token(&self, _: &str) -> Result<Option<String>, ConfigError> {
+        Ok(None)
+    }
 }

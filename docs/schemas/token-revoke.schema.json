@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/token-revoke.schema.json",
+  "title": "dam token revoke answer",
+  "description": "What dam token revoke prints on standard output with --json or --toon, once the token's tables are gone from the config.",
+  "type": "object",
+  "required": ["name", "warnings"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "type": "string" },
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  }
+}

@@ -4,6 +4,7 @@ use dam_application::{Config, ConfigError, ConfigFile, NewToken, RemoteName};
 
 use super::create::create_if_missing;
 use super::token_append::append_token;
+use super::token_remove::remove_token;
 use super::{append_remote, load_config};
 
 pub struct TomlConfigFile {
@@ -31,6 +32,10 @@ impl ConfigFile for TomlConfigFile {
 
     fn add_token(&self, token: &NewToken) -> Result<Option<String>, ConfigError> {
         append_token(&self.path, token)
+    }
+
+    fn remove_token(&self, name: &str) -> Result<Option<String>, ConfigError> {
+        remove_token(&self.path, name)
     }
 }
 

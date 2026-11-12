@@ -24,6 +24,7 @@ fn any_dam_token_is_refused_by_the_token_commands_before_it_is_looked_up() {
         for line in [
             vec!["token", "create", "x", "--allow", "task:read", "--json"],
             vec!["token", "list", "--json"],
+            vec!["token", "revoke", "vpt", "--json"],
         ] {
             let out = sb.output_holding(presented, &line);
             assert_eq!(out.status.code(), Some(4), "{line:?}: {out:?}");

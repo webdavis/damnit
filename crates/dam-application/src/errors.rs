@@ -63,6 +63,7 @@ pub enum Refusal {
     },
     TokenExists(String),
     NotGrantable(String),
+    NoSuchToken(String),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -110,6 +111,7 @@ impl Refusal {
             Refusal::FocusFull { .. } => "focus_full",
             Refusal::TokenExists(_) => "token_exists",
             Refusal::NotGrantable(_) => "not_grantable",
+            Refusal::NoSuchToken(_) => "no_such_token",
         }
     }
 }

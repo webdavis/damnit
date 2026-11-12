@@ -39,6 +39,7 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
         | Refusal::NotPermitted(_)
         | Refusal::NotOpenToTokens(_)
         | Refusal::TokenExists(_)
-        | Refusal::NotGrantable(_) => Vec::new(),
+        | Refusal::NotGrantable(_)
+        | Refusal::NoSuchToken(_) => Vec::new(),
     }
 }
