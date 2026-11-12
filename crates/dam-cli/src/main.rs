@@ -7,6 +7,7 @@ mod error;
 mod gate;
 mod layout;
 mod output;
+mod paint;
 mod prompt;
 mod view;
 
@@ -66,6 +67,7 @@ fn cancelled_when_interrupted_whatever_the_work_reported(
 const TOKEN_VARIABLE: &str = "DAM_TOKEN";
 
 fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> {
+    let color = paint::wanted(cli.no_color);
     if cli.no_pull && !commands::pulls_a_stale_remote(&cli.command) {
         return Err(CliError::Usage(
             "--no-pull applies to ls, show, agenda and reminders, the reads that pull a stale remote".into(),
@@ -81,6 +83,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     if let Command::Token(args) = cli.command {
         return output::print(
             format,
+            color,
             &commands::token::run(&config_file, &OsRandom, SystemClock.now(), args)?,
         );
     }
@@ -89,7 +92,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         let access = caller(&config, presented_token, SystemClock.now())?;
         gate::admit(access.as_ref(), &cli.command)?;
         let report = commands::catalogue::run(&config, cli.command)?;
-        return output::print(format, &report);
+        return output::print(format, color, &report);
     }
     let store_path = cli.store.unwrap_or_else(dam_adapters::default_store_path);
     let ctx = Context::open(
@@ -101,7 +104,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         interrupt,
     )?;
     let report = commands::dispatch_a_verb_that_opens_the_store(&ctx, cli.command)?;
-    output::print(format, &report)
+    output::print(format, color, &report)
 }
 
 fn create_the_owners_config_when_missing(file: &TomlConfigFile, path: &Path, format: Format) {

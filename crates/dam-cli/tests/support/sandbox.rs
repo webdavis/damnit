@@ -47,7 +47,9 @@ impl Sandbox {
             .env("XDG_STATE_HOME", self.dir.path().join("state"))
             .env("TZ", "UTC")
             .env("COLUMNS", "80")
-            .env_remove("DAM_TOKEN");
+            .env_remove("DAM_TOKEN")
+            .env_remove("NO_COLOR")
+            .env_remove("CLICOLOR_FORCE");
         command
     }
 
