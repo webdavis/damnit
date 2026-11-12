@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/object.schema.json",
+  "title": "dam object document",
+  "description": "One task or one event, as dam show, dam ls, dam new, dam edit and dam mv print it. A task carries task and no event; an event carries event and no task. An optional key is left out when it holds nothing.",
+  "type": "object",
+  "required": ["oid", "kind", "subject", "body", "path", "labels", "depends", "reminders"],
+  "additionalProperties": false,
+  "properties": {
+    "oid": { "$ref": "#/$defs/oid" },
+    "kind": { "enum": ["task", "event"] },
+    "subject": { "type": "string" },
+    "body": { "type": "string" },
+    "path": { "type": "string", "description": "The folder it sits under, such as work/clients/, or empty for the root." },
+    "labels": { "type": "array", "items": { "type": "string" } },
+    "depends": { "$ref": "#/$defs/oids", "description": "The tasks it waits on." },
+    "reminders": { "type": "array", "items": { "type": "integer" }, "description": "Minutes before the due time or start that each reminder falls due." },
+    "recurrence": { "type": "string", "description": "The rule it repeats by, such as every 2 weeks on mon." },
+    "task": { "$ref": "#/$defs/task" },
+    "event": { "$ref": "#/$defs/event" }
+  },
+  "oneOf": [
+    { "properties": { "kind": { "const": "task" } }, "required": ["task"], "not": { "required": ["event"] } },
+    { "properties": { "kind": { "const": "event" } }, "required": ["event"], "not": { "required": ["task"] } }
+  ],
+  "$defs": {
+    "oid": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "oids": { "type": "array", "items": { "$ref": "#/$defs/oid" } },
+    "when": {
+      "description": "A whole day, or an instant with its offset.",
+      "anyOf": [{ "type": "string", "format": "date" }, { "type": "string", "format": "date-time" }]
+    },
+    "task": {
+      "type": "object",
+      "required": ["done", "priority"],
+      "additionalProperties": false,
+      "properties": {
+        "done": { "type": "boolean" },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "priority": { "type": "integer", "minimum": 1, "maximum": 4, "description": "1 is the highest." },
+        "due": { "$ref": "#/$defs/when" },
+        "deadline": { "type": "string", "format": "date" },
+        "attached": { "$ref": "#/$defs/oid", "description": "The event the task is attached to." },
+        "estimate": { "type": "integer", "minimum": 0, "description": "Minutes the task should take." },
+        "focus": {
+          "description": "The day the task is marked to work on first, and who marked it.",
+          "type": "object",
+          "required": ["day", "set_by", "set_at"],
+          "additionalProperties": false,
+          "properties": {
+            "day": { "type": "string", "format": "date" },
+            "set_by": { "type": "string", "description": "owner, or the name of the token that set it." },
+            "set_at": { "type": "string", "format": "date-time" }
+          }
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "required": ["start", "end", "attendees", "status", "transparency", "visibility", "event_type", "attachments"],
+      "additionalProperties": false,
+      "properties": {
+        "start": { "$ref": "#/$defs/when" },
+        "end": { "$ref": "#/$defs/when" },
+        "timezone": { "type": "string" },
+        "location": { "type": "string" },
+        "attendees": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["email", "response"],
+            "additionalProperties": false,
+            "properties": {
+              "email": { "type": "string" },
+              "response": { "enum": ["needs_action", "accepted", "declined", "tentative"] },
+              "self": { "const": true }
+            }
+          }
+        },
+        "status": { "enum": ["confirmed", "tentative", "cancelled"] },
+        "transparency": { "enum": ["busy", "free"] },
+        "visibility": { "enum": ["default", "public", "private", "confidential"] },
+        "event_type": { "enum": ["default", "focus_time", "out_of_office", "working_location", "birthday"] },
+        "color": { "type": "string" },
+        "organizer": {
+          "type": "object",
+          "required": ["email"],
+          "additionalProperties": false,
+          "properties": { "email": { "type": "string" }, "name": { "type": "string" } }
+        },
+        "conference": {
+          "type": "object",
+          "required": ["provider", "url"],
+          "additionalProperties": false,
+          "properties": { "provider": { "type": "string" }, "url": { "type": "string" } }
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["url", "title"],
+            "additionalProperties": false,
+            "properties": { "url": { "type": "string" }, "title": { "type": "string" }, "mime_type": { "type": "string" } }
+          }
+        }
+      }
+    }
+  }
+}

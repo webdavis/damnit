@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/pull.schema.json",
+  "title": "dam pull answer",
+  "description": "What dam pull prints with --json or --toon, one row per remote.",
+  "type": "object",
+  "required": [
+    "remotes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "remotes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "remote",
+          "created",
+          "updated",
+          "unchanged",
+          "conflicts",
+          "removed_upstream"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "remote": {
+            "type": "string"
+          },
+          "created": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "updated": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "unchanged": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "conflicts": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "removed_upstream": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

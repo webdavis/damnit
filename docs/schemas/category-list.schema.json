@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/category-list.schema.json",
+  "title": "dam category list answer",
+  "description": "What dam category list prints with --json or --toon. An exclusive category lets an object carry one of its values.",
+  "type": "object",
+  "required": [
+    "categories"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "values",
+          "exclusive"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "exclusive": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

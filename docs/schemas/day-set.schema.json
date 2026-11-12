@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/day-set.schema.json",
+  "title": "dam day set answer",
+  "description": "What dam day set prints with --json or --toon: the day's record as it now stands.",
+  "$ref": "day.schema.json"
+}

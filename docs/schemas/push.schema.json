@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/push.schema.json",
+  "title": "dam push answer",
+  "description": "What dam push prints with --json or --toon, one row per remote.",
+  "type": "object",
+  "required": [
+    "remotes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "remotes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "remote",
+          "sent",
+          "succeeded",
+          "skipped",
+          "failed"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "remote": {
+            "type": "string"
+          },
+          "sent": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "succeeded": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "skipped": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "failed": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "oid",
+                "why"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "oid": {
+                  "$ref": "object.schema.json#/$defs/oid"
+                },
+                "why": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

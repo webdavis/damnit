@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/diff.schema.json",
+  "title": "dam diff answer",
+  "description": "What dam diff prints with --json or --toon: the unstaged changes, or the staged ones with --staged. --full adds before and after.",
+  "type": "object",
+  "required": [
+    "changes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "changes": {
+      "type": "array",
+      "items": {
+        "$ref": "status.schema.json#/$defs/change"
+      }
+    }
+  }
+}
