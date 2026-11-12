@@ -145,3 +145,17 @@ fn a_reserved_name_cannot_be_created_for_any_token() {
         );
     }
 }
+
+#[test]
+fn own_narrows_the_grant_to_what_the_token_made() {
+    let _guard = support::guard("own_narrows_the_grant_to_what_the_token_made");
+    let sb = Sandbox::new();
+    sb.new_object(&["diary"]);
+    let answer = created(&sb, &["vpt", "--allow", "task:read", "--own"]);
+    assert_eq!(answer["grants"][0]["own"], true);
+    assert!(config_of(&sb).contains("own = true\n"));
+    let value = answer["value"].as_str().unwrap();
+    let out = sb.output_holding(value, &["ls", "--json", "--no-pull"]);
+    let listed: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(listed["objects"], serde_json::json!([]));
+}

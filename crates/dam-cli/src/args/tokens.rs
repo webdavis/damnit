@@ -44,6 +44,8 @@ pub(crate) struct CreateArgs {
         help = "Narrow the grant to objects carrying a label. Repeatable"
     )]
     pub(crate) labels: Vec<String>,
+    #[arg(long, help = "Narrow the grant to objects the token made")]
+    pub(crate) own: bool,
     #[arg(
         long,
         value_name = "REMOTE",

@@ -17,7 +17,7 @@ fn new_token() -> NewToken {
             allow: BTreeSet::from([Permission::TaskRead]),
             paths: Some(vec![Path::parse("work").unwrap()]),
             labels: Some(BTreeSet::from(["home".to_string()])),
-            own: false,
+            own: true,
             remotes: Some(vec!["todoist".into()]),
         },
     }

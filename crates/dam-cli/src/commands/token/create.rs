@@ -57,7 +57,7 @@ pub(super) fn run(
                 .map(|texts| texts.iter().map(|p| path(p)).collect())
                 .transpose()?,
             labels: some_unless_empty(args.labels).map(BTreeSet::from_iter),
-            own: false,
+            own: args.own,
             remotes: some_unless_empty(args.remotes),
         },
     };

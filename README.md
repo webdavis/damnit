@@ -279,11 +279,11 @@ a table in the config file, and its grants say what it may do:
     paths = ["work"]
 
 `dam token create vpt --allow task:read --allow event:read --paths work` writes such a table with
-one grant and prints the token once. `--labels`, `--remotes`, `--expires`, `--via` and `--require`
-set the keys of the same name. `dam token list` shows each token's key id, grants, conditions and
-standing, never its value. `dam token revoke vpt` removes its tables and leaves the rest of the file
-as it was. The schemas of their `--json` answers are `docs/schemas/token-create.schema.json`,
-`token-list.schema.json` and `token-revoke.schema.json`.
+one grant and prints the token once. `--labels`, `--own`, `--remotes`, `--expires`, `--via` and
+`--require` set the keys of the same name. `dam token list` shows each token's key id, grants,
+conditions and standing, never its value. `dam token revoke vpt` removes its tables and leaves the
+rest of the file as it was. The schemas of their `--json` answers are
+`docs/schemas/token-create.schema.json`, `token-list.schema.json` and `token-revoke.schema.json`.
 
 A grant allows only what `allow` lists, and only on objects under one of `paths`, carrying one of
 `labels`, or on the remotes `remotes` names. One grant must cover everything a command touches.
