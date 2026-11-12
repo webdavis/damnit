@@ -1,5 +1,6 @@
-# dam config. dam made this file because none was here. It stays yours: dam never rewrites it,
-# and `dam remote add` only appends to it. Each setting is commented out or set to its default.
+# dam config. dam made this file because none was here. It stays yours: `dam remote add` and
+# `dam token create` add a table to it, and `dam token revoke` removes one and keeps the rest.
+# Each setting is commented out or set to its default.
 # Remove the leading # from an example line to use it.
 
 # The config format this file is written in. A schema dam does not know disables every token.
@@ -40,6 +41,7 @@ schema = 1
 #query = "due:today | overdue"
 
 # A token lets a tool run dam as itself: it sets DAM_TOKEN to the value.
+# `dam token create` makes one, `dam token list` shows them, and `dam token revoke` removes one.
 # not_before and expires bound when the token works, and via names where it may arrive from:
 # local, mcp, or both. via is ["local"] by default.
 # require and limits are not supported yet. A token that names any cannot be used.
