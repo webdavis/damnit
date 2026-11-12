@@ -11,6 +11,10 @@ impl Clock for SystemClock {
     fn now(&self) -> Timestamp {
         Timestamp::now()
     }
+
+    fn zone(&self) -> jiff::tz::TimeZone {
+        jiff::tz::TimeZone::system()
+    }
 }
 
 #[cfg(test)]

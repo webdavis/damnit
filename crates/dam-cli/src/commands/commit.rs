@@ -97,6 +97,9 @@ mod tests {
         fn now(&self) -> Timestamp {
             "2026-10-13T14:00:00Z".parse().unwrap()
         }
+        fn zone(&self) -> jiff::tz::TimeZone {
+            jiff::tz::TimeZone::UTC
+        }
     }
 
     #[test]

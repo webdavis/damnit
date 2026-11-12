@@ -46,6 +46,9 @@ impl Clock for FixedClock {
             .map(|z| z.timestamp())
             .unwrap_or(Timestamp::UNIX_EPOCH)
     }
+    fn zone(&self) -> jiff::tz::TimeZone {
+        jiff::tz::TimeZone::UTC
+    }
 }
 
 type PushAnswer = Box<dyn Fn(&[RemoteMutation]) -> Result<Vec<MutationOutcome>, HelperError>>;

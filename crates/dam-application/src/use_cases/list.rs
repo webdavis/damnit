@@ -15,7 +15,7 @@ impl Dam<'_> {
                 Some(parse_query(text, &config.categories).map_err(query_error)?)
             }
         };
-        let today = self.clock.today();
+        let (today, zone) = (self.clock.today(), self.clock.zone());
         let seen = self
             .store
             .all()?
@@ -25,7 +25,7 @@ impl Dam<'_> {
             .collect::<Result<Vec<Object>, _>>()?;
         let mut out: Vec<Object> = seen
             .into_iter()
-            .filter(|o| expr.as_ref().is_none_or(|e| matches(e, o, today)))
+            .filter(|o| expr.as_ref().is_none_or(|e| matches(e, o, today, &zone)))
             .collect();
         out.sort_by(|a, b| order(a, b, today));
         Ok(out)
