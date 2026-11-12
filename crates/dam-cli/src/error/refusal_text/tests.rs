@@ -1,3 +1,4 @@
+mod access_samples;
 mod samples;
 
 use super::*;

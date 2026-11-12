@@ -1,4 +1,5 @@
 mod args;
+mod caller;
 mod commands;
 mod context;
 mod editor;
@@ -9,10 +10,11 @@ mod prompt;
 mod view;
 
 use clap::Parser;
-use dam_adapters::{Interrupt, TomlConfigFile};
-use dam_application::ConfigFile;
+use dam_adapters::{Interrupt, SystemClock, TomlConfigFile};
+use dam_application::{Clock, ConfigFile};
 
 use crate::args::{Cli, Command};
+use crate::caller::caller;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Format;
@@ -58,6 +60,8 @@ fn cancelled_when_interrupted_whatever_the_work_reported(
     }
 }
 
+const TOKEN_VARIABLE: &str = "DAM_TOKEN";
+
 fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> {
     if cli.no_pull && !commands::pulls_a_stale_remote(&cli.command) {
         return Err(CliError::Usage(
@@ -66,14 +70,17 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     }
     let config_file =
         TomlConfigFile::new(cli.config.unwrap_or_else(dam_adapters::default_config_path));
+    let presented_token = std::env::var_os(TOKEN_VARIABLE);
     match cli.command {
         Command::Category(a) => {
             let config = config_file.load()?;
+            caller(&config, presented_token, SystemClock.now())?;
             let report = commands::catalogue::run_category(&config, a.command)?;
             output::print(format, &report)
         }
         Command::Filter(a) => {
             let config = config_file.load()?;
+            caller(&config, presented_token, SystemClock.now())?;
             let report = commands::catalogue::run_filter(&config, a.command)?;
             output::print(format, &report)
         }
@@ -82,6 +89,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
             let ctx = Context::open(
                 Box::new(config_file),
                 &store_path,
+                presented_token,
                 format,
                 cli.no_pull,
                 interrupt,

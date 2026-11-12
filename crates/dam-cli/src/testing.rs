@@ -146,6 +146,7 @@ pub(crate) fn context() -> Context {
             filters: vec![],
             tokens: Default::default(),
         },
+        access: Box::new(dam_application::Owner),
         config_file: Box::new(FakeConfigFile::default()),
         clock: Box::new(FixedClock(date(2026, 9, 18))),
         random: Box::new(FixedRandom::new(1)),

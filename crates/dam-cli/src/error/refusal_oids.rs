@@ -32,6 +32,7 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
         | Refusal::UnreadableRecurrence { .. }
         | Refusal::NothingToCommit
         | Refusal::NeedsAnAnswer
-        | Refusal::NeedsAnEditor => Vec::new(),
+        | Refusal::NeedsAnEditor
+        | Refusal::Token(_) => Vec::new(),
     }
 }

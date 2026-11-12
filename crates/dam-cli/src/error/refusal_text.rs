@@ -4,6 +4,8 @@ use dam_domain::{Blockers, Oid, Tracked};
 
 use dam_application::Refusal;
 
+use super::token_text::TokenText;
+
 pub(crate) struct RefusalText<'a>(pub(crate) &'a Refusal);
 
 impl fmt::Display for RefusalText<'_> {
@@ -114,6 +116,7 @@ impl fmt::Display for RefusalText<'_> {
                 tracked: Tracked::No,
             } => write!(f, "cannot roll {rule:?} forward; set --recurrence"),
             Refusal::NoConflict(o) => write!(f, "{} has no conflict to resolve", o.short()),
+            Refusal::Token(refusal) => write!(f, "{}", TokenText(refusal)),
         }
     }
 }
