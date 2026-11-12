@@ -33,6 +33,7 @@ fn tree() -> Tree {
             completed_at: None,
             is_deleted: false,
         }],
+        ..SyncResponse::default()
     })
 }
 

@@ -19,7 +19,7 @@ pub fn capabilities() -> Capabilities {
         .map(|s| s.to_string())
         .collect(),
         credentials: vec!["api_token".into()],
-        incremental: false,
+        incremental: true,
     }
 }
 
@@ -34,7 +34,7 @@ mod tests {
         assert!(caps.supported());
         assert_eq!(caps.kinds, vec!["task".to_string()]);
         assert_eq!(caps.credentials, vec!["api_token".to_string()]);
-        assert!(!caps.incremental);
+        assert!(caps.incremental);
         assert!(caps.fields.contains(&"deadline".to_string()));
     }
 }

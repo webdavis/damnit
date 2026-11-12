@@ -71,6 +71,7 @@ fn a_blank_name_becomes_untitled_with_the_remote_id() {
         projects: vec![project("p1", "")],
         sections: vec![section("s1", "").under("p1")],
         items: vec![item("i1", "/").under("p1").in_section("s1")],
+        ..SyncResponse::default()
     };
     let t = Tree::from_sync(&s);
     assert_eq!(t.project_path("p1").as_deref(), Some("untitled-p1/"));

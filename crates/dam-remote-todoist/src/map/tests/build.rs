@@ -41,8 +41,8 @@ pub(super) fn item(id: &str, content: &str) -> Item {
 pub(super) fn sync_of(projects: Vec<Project>, items: Vec<Item>) -> SyncResponse {
     SyncResponse {
         projects,
-        sections: vec![],
         items,
+        ..SyncResponse::default()
     }
 }
 

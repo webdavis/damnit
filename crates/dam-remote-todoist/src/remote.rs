@@ -13,9 +13,9 @@ impl Remote for Todoist<'_> {
         capabilities::capabilities()
     }
 
-    fn pull(&self, _since: Option<&str>) -> Result<PullResponse, String> {
+    fn pull(&self, since: Option<&str>) -> Result<PullResponse, String> {
         let api = TodoistApi::from_env(self.remote)?;
-        pull::pull(&api).map_err(|e| e.to_string())
+        pull::pull(&api, since).map_err(|e| e.to_string())
     }
 
     fn push(&self, mutations: Vec<Mutation>) -> Result<PushResponse, String> {

@@ -10,6 +10,7 @@ pub(crate) struct Recorded {
     pub(crate) uuids_seen: HashSet<String>,
     pub(crate) ids_issued: u32,
     pub(crate) reads: u32,
+    pub(crate) changes_asked_since: Vec<String>,
     pub(crate) writes: u32,
 }
 
@@ -33,6 +34,7 @@ impl Recorded {
 #[derive(Default)]
 pub(crate) struct FakeTodoist {
     tree: serde_json::Value,
+    changes_by_token: HashMap<String, serde_json::Value>,
     refused_command_type: Option<&'static str>,
     failing_read: RefCell<Option<ApiError>>,
     failing_writes: RefCell<HashMap<u32, ApiError>>,
@@ -63,6 +65,15 @@ impl FakeTodoist {
         }
     }
 
+    pub(crate) fn with_changes_since(
+        mut self,
+        token: &str,
+        changes: serde_json::Value,
+    ) -> FakeTodoist {
+        self.changes_by_token.insert(token.to_string(), changes);
+        self
+    }
+
     pub(crate) fn refusing(mut self, command_type: &'static str) -> FakeTodoist {
         self.refused_command_type = Some(command_type);
         self
@@ -86,6 +97,18 @@ impl TodoistSync for FakeTodoist {
             return Err(error);
         }
         serde_json::from_value(self.tree.clone()).map_err(|e| ApiError::decode(SERVICE, e))
+    }
+
+    fn read_changes(&self, since: &str) -> Result<SyncResponse, ApiError> {
+        self.recorded
+            .borrow_mut()
+            .changes_asked_since
+            .push(since.to_string());
+        let changes = self
+            .changes_by_token
+            .get(since)
+            .ok_or_else(|| answered(400, "unknown sync token"))?;
+        serde_json::from_value(changes.clone()).map_err(|e| ApiError::decode(SERVICE, e))
     }
 
     fn write(&self, commands: &[serde_json::Value]) -> Result<SyncWrite, ApiError> {

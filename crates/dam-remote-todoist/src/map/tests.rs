@@ -36,6 +36,7 @@ fn sync() -> SyncResponse {
                 ..item("i3", "loose").under("p1")
             },
         ],
+        ..SyncResponse::default()
     }
 }
 
