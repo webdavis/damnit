@@ -11,7 +11,7 @@ const KEYS_A_TASK_TEMPLATE_MAY_CARRY: [&str; 9] = [
     "priority",
     "due",
     "deadline",
-    "attach",
+    "attached",
 ];
 const KEYS_AN_EVENT_TEMPLATE_MAY_CARRY: [&str; 8] = [
     "subject",

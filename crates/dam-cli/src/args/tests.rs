@@ -175,3 +175,19 @@ fn new_takes_the_kind_by_its_key_and_still_reads_event() {
     assert_eq!(kind(&["--event"]), dam_domain::Kind::Event);
     assert!(Cli::try_parse_from(["dam", "new", "x", "--kind", "note"]).is_err());
 }
+
+#[test]
+fn attached_and_no_attached_match_the_key_and_attach_and_detach_still_parse() {
+    let edit = |args: &[&str]| {
+        let mut argv = vec!["dam", "edit", "abcd"];
+        argv.extend_from_slice(args);
+        match Cli::try_parse_from(argv).unwrap().command {
+            Command::Edit(a) => (a.attached, a.no_attached),
+            _ => panic!("wrong command"),
+        }
+    };
+    for (set, clear) in [("--attached", "--no-attached"), ("--attach", "--detach")] {
+        assert_eq!(edit(&[set, "beef"]), (Some("beef".to_string()), false));
+        assert_eq!(edit(&[clear]), (None, true));
+    }
+}

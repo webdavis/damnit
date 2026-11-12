@@ -35,7 +35,12 @@ pub struct WireTask {
     pub due: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub deadline: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "attached",
+        alias = "event",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub event: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub estimate: Option<u32>,

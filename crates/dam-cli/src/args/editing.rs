@@ -66,12 +66,13 @@ pub(crate) struct EditArgs {
     pub(crate) no_recurrence: bool,
     #[arg(
         long,
-        conflicts_with = "detach",
+        alias = "attach",
+        conflicts_with = "no_attached",
         help = "Attach the task to the event with this oid"
     )]
-    pub(crate) attach: Option<String>,
-    #[arg(long, help = "Detach the task from its event")]
-    pub(crate) detach: bool,
+    pub(crate) attached: Option<String>,
+    #[arg(long, alias = "detach", help = "Detach the task from its event")]
+    pub(crate) no_attached: bool,
     #[arg(long, help = "Move the event's start, read the way --due reads one")]
     pub(crate) start: Option<String>,
     #[arg(long, help = "Move the event's end, read the way --due reads one")]

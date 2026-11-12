@@ -58,8 +58,8 @@ fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
         .collect::<Result<Vec<Oid>, _>>()?;
     f.recurrence = set_or_clear(args.recurrence, args.no_recurrence);
     f.attach = set_or_clear(
-        args.attach.map(|e| oid_of("attach", &e)).transpose()?,
-        args.detach,
+        args.attached.map(|e| oid_of("attached", &e)).transpose()?,
+        args.no_attached,
     );
     f.start = args
         .start
