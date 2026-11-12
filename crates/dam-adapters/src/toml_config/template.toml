@@ -7,7 +7,7 @@
 schema = 1
 
 # The name your own tasks, events and changes carry as their author. Default: owner.
-#owner = "Stephen"
+#owner = "Ada"
 
 # With interactive = true, `dam done` asks what to do with a task's open children and
 # dependencies instead of refusing.

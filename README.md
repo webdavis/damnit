@@ -332,7 +332,7 @@ own waiting item.
 Your own rows in `status` and `log` read `you` to you and `owner` to a token.
 
 Every task and event has an `author`: the name of the token that made it, or yours, set as
-`owner = "Stephen"` at the top of the config. A request states its details with a repeatable
+`owner = "Ada"` at the top of the config. A request states its details with a repeatable
 `--meta key=value`, such as harness, session, model, effort and version; any key is kept as given.
 Each change keeps them with the host, working directory, repo, branch, time and channel. `dam show
 <oid>` prints the author and the details of the change that made it, and `--json` and `--toon` carry

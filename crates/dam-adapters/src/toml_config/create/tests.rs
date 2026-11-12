@@ -58,7 +58,7 @@ fn every_example_uncommented_at_once_is_a_working_config() {
         .join("\n")
         .replace("damk_v1_...", &value);
     let config = parse_config(&text).unwrap();
-    assert_eq!(config.owner_name(), "Stephen");
+    assert_eq!(config.owner_name(), "Ada");
     let remote = config.remote("todoist").unwrap();
     assert_eq!(remote.credentials.len(), 1, "{remote:?}");
     assert!(remote.stale.is_some() && remote.deadline.is_some() && remote.path.is_some());
