@@ -9,7 +9,9 @@ files: a working layer you edit, a stage you `add` to, commits you `push` to a r
     cargo install --git https://github.com/webdavis/damnit damnit
     cargo install --git https://github.com/webdavis/damnit dam-remote-todoist
 
-`dam` finds a remote helper the way git does: a `dam-remote-<name>` binary on `PATH`.
+`dam` finds a remote helper the way git does: a `dam-remote-<name>` binary on `PATH`. Each remote's
+helper is its own install: `dam-remote-todoist` for Todoist, and `dam-remote-gcal` for
+[Google Calendar](#google-calendar).
 
 ## First run
 
