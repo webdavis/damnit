@@ -33,6 +33,8 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
         | Refusal::NothingToCommit
         | Refusal::NeedsAnAnswer
         | Refusal::NeedsAnEditor
-        | Refusal::Token(_) => Vec::new(),
+        | Refusal::Token(_)
+        | Refusal::NotPermitted(_)
+        | Refusal::NotOpenToTokens(_) => Vec::new(),
     }
 }

@@ -1,5 +1,5 @@
 use dam_application::{Refusal, TokenRefusal};
-use dam_domain::Channel;
+use dam_domain::{Channel, Permission};
 
 pub(super) fn access_refusals_with_their_text() -> Vec<(Refusal, &'static str)> {
     let name = || "vpt".to_string();
@@ -41,5 +41,15 @@ pub(super) fn access_refusals_with_their_text() -> Vec<(Refusal, &'static str)> 
     ]
     .into_iter()
     .map(|(refusal, text)| (Refusal::Token(refusal), text))
+    .chain([
+        (
+            Refusal::NotPermitted(Permission::RemotePush),
+            "the token does not allow remote:push",
+        ),
+        (
+            Refusal::NotOpenToTokens("remote add"),
+            "a token cannot run dam remote add",
+        ),
+    ])
     .collect()
 }

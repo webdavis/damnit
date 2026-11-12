@@ -1,9 +1,11 @@
 use dam_application::{CredentialSpec, Standing};
 use dam_domain::Change;
+use dam_domain::Permission::{ConfigRead, ConflictRead, RemoteRead};
 
 use crate::args::{DiffArgs, StatusArgs};
 use crate::context::Context;
 use crate::error::CliError;
+use crate::gate::may;
 use crate::output::Report;
 use crate::view::report;
 
@@ -19,17 +21,25 @@ use view::{DiffView, StatusView, UnpushedRow};
 pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliError> {
     let remotes: Vec<_> = ctx.config.remotes.iter().map(|r| r.name.clone()).collect();
     let s = ctx.dam().status(&remotes)?;
+    let shown = |permission| may(ctx.access.as_ref(), permission);
+    let warnings = literal_credential_warning(ctx)
+        .into_iter()
+        .chain(token_warnings(ctx));
     report(&StatusView {
         staged: change_rows(&s.staged, args.full),
         unstaged: change_rows(&s.unstaged, args.full),
-        conflicts: s.conflicts.iter().map(ConflictRow::new).collect(),
-        notices: s.notices.iter().map(NoticeRow::new).collect(),
-        unpushed: s.unpushed.iter().map(UnpushedRow::new).collect(),
-        warnings: literal_credential_warning(ctx)
-            .into_iter()
-            .chain(token_warnings(ctx))
-            .collect(),
+        conflicts: only_if(
+            shown(ConflictRead),
+            s.conflicts.iter().map(ConflictRow::new),
+        ),
+        notices: only_if(shown(RemoteRead), s.notices.iter().map(NoticeRow::new)),
+        unpushed: only_if(shown(RemoteRead), s.unpushed.iter().map(UnpushedRow::new)),
+        warnings: only_if(shown(ConfigRead), warnings),
     })
+}
+
+fn only_if<T>(shown: bool, rows: impl Iterator<Item = T>) -> Vec<T> {
+    if shown { rows.collect() } else { Vec::new() }
 }
 
 pub(crate) fn run_diff(ctx: &Context, args: DiffArgs) -> Result<Report, CliError> {
@@ -82,6 +92,8 @@ fn literal_credential_warning(ctx: &Context) -> Option<String> {
 mod skipped_tests;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod token_section_tests;
 #[cfg(test)]
 mod token_warning_tests;
 #[cfg(test)]

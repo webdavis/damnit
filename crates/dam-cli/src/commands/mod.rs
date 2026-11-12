@@ -31,6 +31,7 @@ pub(crate) fn dispatch_a_verb_that_opens_the_store(
     ctx: &Context,
     command: Command,
 ) -> Result<Report, CliError> {
+    crate::gate::admit(ctx.access.as_ref(), &command)?;
     match command {
         Command::New(a) => new::run(ctx, a),
         Command::Done(a) => done::run(ctx, a),

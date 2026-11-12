@@ -117,6 +117,10 @@ impl fmt::Display for RefusalText<'_> {
             } => write!(f, "cannot roll {rule:?} forward; set --recurrence"),
             Refusal::NoConflict(o) => write!(f, "{} has no conflict to resolve", o.short()),
             Refusal::Token(refusal) => write!(f, "{}", TokenText(refusal)),
+            Refusal::NotPermitted(permission) => {
+                write!(f, "the token does not allow {permission}")
+            }
+            Refusal::NotOpenToTokens(verb) => write!(f, "a token cannot run dam {verb}"),
         }
     }
 }
