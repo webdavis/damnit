@@ -1,6 +1,6 @@
 mod authenticate;
 
-use dam_domain::{Grants, Permission, Subject};
+use dam_domain::{Grants, Object, Permission, Subject};
 
 pub use authenticate::{TokenRefusal, authenticate};
 
@@ -8,6 +8,10 @@ pub trait Access {
     fn token(&self) -> Option<&str>;
     fn holds(&self, permission: Permission) -> bool;
     fn permits(&self, permission: Permission, touched: &[Subject<'_>]) -> bool;
+
+    fn sees(&self, object: &Object) -> bool {
+        self.permits(Permission::read(object.kind()), &[Subject::Object(object)])
+    }
 }
 
 pub struct Owner;
