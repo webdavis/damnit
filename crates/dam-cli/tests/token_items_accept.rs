@@ -103,3 +103,19 @@ fn a_change_to_a_field_the_owner_has_not_saved_stops_the_add_and_add_all_leaves_
         .unwrap();
     assert_eq!(staged_dentist["from"], "vpt");
 }
+
+#[test]
+fn resolve_settles_a_clash_with_the_items_values_or_the_owners() {
+    let _guard = support::guard("resolve_settles_a_clash_with_the_items_values_or_the_owners");
+    let (sb, held, rent) = seeded_with_rent();
+    let retitle = send(&sb, &held, &["edit", &rent, "--subject", "Pay the rent"]);
+    let (ok, _, err) = sb.dam(&["edit", &rent, "--subject", "Pay rent now"]);
+    assert!(ok, "{err}");
+    let (ok, out, err) = sb.dam(&["resolve", &retitle[..7], "--theirs"]);
+    assert!(ok, "{err}");
+    assert_eq!(out.trim(), format!("{} resolved with theirs", &rent[..7]));
+    let status = owner(&sb, &["status"], "status.schema.json");
+    assert_eq!(status["staged"][0]["subject"], "Pay the rent");
+    assert_eq!(status["staged"][0]["from"], "vpt");
+    assert_eq!(status["waiting"], serde_json::json!([]));
+}

@@ -8,16 +8,32 @@ use crate::errors::UseCaseError;
 use crate::service::Dam;
 use crate::use_cases::subtree::{loses_a_held_folder, replace_carrying_folder};
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum OnClash {
+    Stop,
+    TakeTheirs,
+}
+
 impl Dam<'_> {
     pub(crate) fn accept(&self, hash: &ItemHash) -> Result<Option<Authored>, UseCaseError> {
+        self.take(hash, OnClash::Stop)
+    }
+
+    pub(crate) fn take(
+        &self,
+        hash: &ItemHash,
+        on_clash: OnClash,
+    ) -> Result<Option<Authored>, UseCaseError> {
         let item = self.waiting_item(hash)?;
         let change = match &item.change {
             Change::Create { after } => {
                 self.store.put(after)?;
                 Some(item.change.clone())
             }
-            Change::Update { before, after } => self.apply_change(&item, before, after)?,
-            Change::Delete { before } => self.apply_removal(&item, before)?,
+            Change::Update { before, after } => {
+                self.apply_change(&item, before, after, on_clash)?
+            }
+            Change::Delete { before } => self.apply_removal(&item, before, on_clash)?,
         };
         self.store.settle(hash, Outcome::Added(self.clock.now()))?;
         let Some(change) = change else {
@@ -51,6 +67,7 @@ impl Dam<'_> {
         item: &Item,
         before: &Object,
         after: &Object,
+        on_clash: OnClash,
     ) -> Result<Option<Change>, UseCaseError> {
         let committed = self.committed_target(item)?;
         let working = self
@@ -61,7 +78,7 @@ impl Dam<'_> {
                 target: item.target().clone(),
             })?;
         let clash = clashing_fields(before, after, &committed, &working);
-        if !clash.is_empty() {
+        if !clash.is_empty() && on_clash == OnClash::Stop {
             return Err(ItemRefusal::Clash {
                 hash: item.hash.clone(),
                 target: item.target().clone(),
@@ -72,7 +89,7 @@ impl Dam<'_> {
         self.take_theirs(item, &committed, &working, after)
     }
 
-    pub(crate) fn take_theirs(
+    fn take_theirs(
         &self,
         item: &Item,
         committed: &Object,
@@ -93,9 +110,16 @@ impl Dam<'_> {
         Ok(Change::between(Some(committed.clone()), Some(staged)))
     }
 
-    fn apply_removal(&self, item: &Item, before: &Object) -> Result<Option<Change>, UseCaseError> {
+    fn apply_removal(
+        &self,
+        item: &Item,
+        before: &Object,
+        on_clash: OnClash,
+    ) -> Result<Option<Change>, UseCaseError> {
         let committed = self.committed_target(item)?;
-        if let Some(working) = self.store.get(item.target())? {
+        if on_clash == OnClash::Stop
+            && let Some(working) = self.store.get(item.target())?
+        {
             let fields = fields_the_owner_moved(before, &committed, &working);
             if !fields.is_empty() {
                 return Err(ItemRefusal::Clash {
