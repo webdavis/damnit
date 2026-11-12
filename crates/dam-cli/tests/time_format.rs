@@ -172,3 +172,25 @@ fn a_conflict_prints_both_sides_times_as_rfc_3339_or_a_plain_date() {
     prints_times(&sb, &["status"]);
     times_in(&sb, &["resolve", &short(OAT_MILK), "--theirs"]);
 }
+
+#[test]
+fn token_create_and_list_print_their_terms_as_rfc_3339() {
+    let sb = Sandbox::new();
+    let value = dam_domain::Token::generate(&mut |b: &mut [u8]| b.fill(7)).expose();
+    sb.add_config(&format!(
+        "\n[token.later]\nvalue = \"{value}\"\nnot_before = 2998-01-01T00:00:00+02:00\n"
+    ));
+    prints_times(
+        &sb,
+        &[
+            "token",
+            "create",
+            "vpt",
+            "--allow",
+            "task:read",
+            "--expires",
+            "2999-05-11T09:00:00+02:00",
+        ],
+    );
+    assert_eq!(times_in(&sb, &["token", "list"]), 2);
+}

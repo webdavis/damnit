@@ -81,7 +81,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     if let Command::Token(args) = cli.command {
         return output::print(
             format,
-            &commands::token::run(&config_file, &OsRandom, args)?,
+            &commands::token::run(&config_file, &OsRandom, SystemClock.now(), args)?,
         );
     }
     if let Command::Category(_) | Command::Filter(_) = cli.command {
