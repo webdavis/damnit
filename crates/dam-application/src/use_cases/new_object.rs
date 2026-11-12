@@ -1,11 +1,13 @@
 use std::collections::BTreeSet;
 
-use dam_domain::{Date, Event, Kind, Object, Oid, Path, Permission, Priority, Task, When};
+use dam_domain::{CallerId, Date, Event, Object, Oid, Path, Permission, Priority, Task, When};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::items::land::Landed;
+
+mod by_id;
 
 pub struct NewTask {
     pub subject: String,
@@ -15,6 +17,7 @@ pub struct NewTask {
     pub deadline: Option<Date>,
     pub labels: BTreeSet<String>,
     pub body: String,
+    pub id: Option<CallerId>,
 }
 
 pub struct NewEvent {
@@ -24,6 +27,7 @@ pub struct NewEvent {
     pub end: When,
     pub labels: BTreeSet<String>,
     pub body: String,
+    pub id: Option<CallerId>,
 }
 
 impl Dam<'_> {
@@ -37,7 +41,7 @@ impl Dam<'_> {
             task.priority = input.priority;
             task.due = input.due;
             task.deadline = input.deadline;
-            self.permitted_with_valid_labels(Permission::create(Kind::Task), Object::Task(task))
+            self.land_new(input.id.as_ref(), Object::Task(task))
         })
     }
 
@@ -48,21 +52,22 @@ impl Dam<'_> {
             event.base.path = input.path;
             event.base.labels = input.labels;
             event.base.body = input.body;
-            self.permitted_with_valid_labels(Permission::create(Kind::Event), Object::Event(event))
+            self.land_new(input.id.as_ref(), Object::Event(event))
         })
     }
 
-    fn permitted_with_valid_labels(
+    fn refuse_unpermitted_or_unlabelled(
         &self,
         permission: Permission,
-        object: Object,
-    ) -> Result<Landed, UseCaseError> {
-        self.refuse_unless_permitted(permission, None, &object)?;
+        before: Option<&Object>,
+        object: &Object,
+    ) -> Result<(), UseCaseError> {
+        self.refuse_unless_permitted(permission, before, object)?;
         self.config
             .categories
             .check(&object.base().labels)
             .map_err(Refusal::Labels)?;
-        self.put_or_send(permission, None, object)
+        Ok(())
     }
 }
 
@@ -83,6 +88,7 @@ mod tests {
             deadline: None,
             labels: labels.iter().map(|s| s.to_string()).collect(),
             body: String::new(),
+            id: None,
         }
     }
 
@@ -103,6 +109,7 @@ mod tests {
             end,
             labels: Default::default(),
             body: String::new(),
+            id: None,
         }
     }
 

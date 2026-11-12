@@ -20,6 +20,7 @@ fn new_task(subject: &str, path: &str) -> NewTask {
         deadline: None,
         labels: BTreeSet::new(),
         body: String::new(),
+        id: None,
     }
 }
 

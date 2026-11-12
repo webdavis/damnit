@@ -1,7 +1,7 @@
 use clap::Args;
-use dam_domain::{Kind, Path, Priority};
+use dam_domain::{CallerId, Kind, Path, Priority};
 
-use super::values::{kind_arg, path_arg, priority_arg};
+use super::values::{caller_id_arg, kind_arg, path_arg, priority_arg};
 
 #[derive(Args, Debug)]
 pub(crate) struct NewArgs {
@@ -63,4 +63,11 @@ pub(crate) struct NewArgs {
         help = "End the event at this time, read the way --due reads one"
     )]
     pub(crate) end: Option<String>,
+    #[arg(
+        long,
+        value_parser = caller_id_arg,
+        help = "Name it with your own id, so a repeat with the same id changes it. \
+                One line, up to 200 characters; not damnit's oid"
+    )]
+    pub(crate) id: Option<CallerId>,
 }

@@ -19,6 +19,7 @@ dam new labels: help = Add a label. Repeatable
 dam new body: help = Set the body text
 dam new start: help = Start the event at this time, read the way --due reads one
 dam new end: help = End the event at this time, read the way --due reads one
+dam new id: help = Name it with your own id, so a repeat with the same id changes it. One line, up to 200 characters; not damnit's oid
 dam done: about = Mark a task done
 dam done oid: help = Pick the task by oid, or by a prefix of 4 or more hex characters
 dam done force: help = Complete it even though something it waits on is still open

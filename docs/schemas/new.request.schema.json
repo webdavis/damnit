@@ -53,6 +53,13 @@
     "end": {
       "type": "string",
       "description": "A date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[^\\r\\n]*$",
+      "description": "The caller's own id; a repeat with the same id changes the same object."
     }
   },
   "if": {

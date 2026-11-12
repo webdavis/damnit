@@ -16,6 +16,7 @@
     "depends": { "$ref": "#/$defs/oids", "description": "The tasks it waits on." },
     "reminders": { "type": "array", "items": { "type": "integer" }, "description": "Minutes before the due time or start that each reminder falls due." },
     "recurrence": { "type": "string", "description": "The rule it repeats by, such as every 2 weeks on mon." },
+    "id": { "type": "string", "description": "The caller's own id for it, given with dam new --id." },
     "task": { "$ref": "#/$defs/task" },
     "event": { "$ref": "#/$defs/event" }
   },

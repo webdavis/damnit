@@ -1,5 +1,5 @@
 use dam_domain::{
-    Author, Change, Item, Object, Outcome, Permission, Subject, TokenAuthor, same_proposal,
+    Author, Change, Item, Object, Oid, Outcome, Permission, Subject, TokenAuthor, same_proposal,
 };
 
 use super::refusal::ItemRefusal;
@@ -50,12 +50,31 @@ impl Landed {
     }
 }
 
+impl Landed {
+    pub fn oid(&self) -> &Oid {
+        match self {
+            Landed::Written(object) => object.oid(),
+            Landed::Sent(sent) => sent.item.target(),
+        }
+    }
+}
+
 impl Dam<'_> {
     pub(crate) fn put_or_send(
         &self,
         permission: Permission,
         before: Option<&Object>,
         after: Object,
+    ) -> Result<Landed, UseCaseError> {
+        self.put_or_send_among(permission, before, after, &|_| true)
+    }
+
+    pub(crate) fn put_or_send_among(
+        &self,
+        permission: Permission,
+        before: Option<&Object>,
+        after: Object,
+        related: &dyn Fn(&Item) -> bool,
     ) -> Result<Landed, UseCaseError> {
         self.refuse_unless_permitted(permission, before, &after)?;
         let Author::Token(author) = self.access.author() else {
@@ -67,7 +86,7 @@ impl Dam<'_> {
         };
         let change =
             Change::between(before.cloned(), Some(after)).ok_or(ItemRefusal::NothingChanged)?;
-        self.send(author, change)
+        self.send(author, change, related)
     }
 
     pub(crate) fn refuse_unless_permitted(
@@ -88,9 +107,17 @@ impl Dam<'_> {
         }
     }
 
-    fn send(&self, author: TokenAuthor, change: Change) -> Result<Landed, UseCaseError> {
+    fn send(
+        &self,
+        author: TokenAuthor,
+        change: Change,
+        related: &dyn Fn(&Item) -> bool,
+    ) -> Result<Landed, UseCaseError> {
         for earlier in self.store.items()? {
-            if earlier.author.name != author.name || !same_proposal(&earlier.change, &change) {
+            if earlier.author.name != author.name
+                || !related(&earlier)
+                || !same_proposal(&earlier.change, &change)
+            {
                 continue;
             }
             match earlier.outcome {

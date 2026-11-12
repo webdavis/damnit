@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use dam_application::{ConfiguredDuration, RemoteName};
-use dam_domain::{Kind, Path, PathError, Priority, parse_minutes};
+use dam_domain::{CallerId, Kind, Path, PathError, Priority, parse_minutes};
 
 pub(super) fn path_arg(text: &str) -> Result<Path, String> {
     Path::parse(text).map_err(|e| match e {
@@ -12,6 +12,10 @@ pub(super) fn path_arg(text: &str) -> Result<Path, String> {
 
 pub(super) fn kind_arg(text: &str) -> Result<Kind, String> {
     Kind::parse(text).ok_or_else(|| "kind is task or event".to_string())
+}
+
+pub(super) fn caller_id_arg(text: &str) -> Result<CallerId, String> {
+    CallerId::parse(text).map_err(|e| e.to_string())
 }
 
 pub(super) fn priority_arg(text: &str) -> Result<Priority, String> {
