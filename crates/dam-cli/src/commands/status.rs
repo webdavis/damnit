@@ -12,11 +12,13 @@ use crate::view::report;
 mod notices;
 mod rows;
 mod view;
+mod waiting;
 
 use notices::NoticeRow;
 use rows::ConflictRow;
-pub(crate) use rows::{ChangeRow, OWNER};
+pub(crate) use rows::{ChangeRow, the_owner_to};
 use view::{DiffView, StatusView, UnpushedRow};
+use waiting::ItemRow;
 
 pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliError> {
     let remotes: Vec<_> = ctx.config.remotes.iter().map(|r| r.name.clone()).collect();
@@ -24,8 +26,13 @@ pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliE
     let shown = |permission| may(ctx.access.as_ref(), permission);
     let warnings = token_warnings(ctx);
     report(&StatusView {
-        staged: authored_rows(&s.staged, args.full),
-        unstaged: owner_rows(&s.unstaged, args.full),
+        staged: authored_rows(&s.staged, args.full).collect(),
+        unstaged: owner_rows(&s.unstaged, args.full).collect(),
+        waiting: s
+            .waiting
+            .iter()
+            .map(|item| ItemRow::new(item, ctx.clock.now(), args.full))
+            .collect(),
         conflicts: only_if(
             shown(ConflictRead),
             s.conflicts.iter().map(ConflictRow::new),
@@ -33,6 +40,7 @@ pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliE
         notices: only_if(shown(RemoteRead), s.notices.iter().map(NoticeRow::new)),
         unpushed: only_if(shown(RemoteRead), s.unpushed.iter().map(UnpushedRow::new)),
         warnings: only_if(shown(ConfigRead), warnings),
+        owner: the_owner_to(ctx.access.as_ref()),
     })
 }
 
@@ -42,29 +50,25 @@ fn only_if<T>(shown: bool, rows: impl Iterator<Item = T>) -> Vec<T> {
 
 pub(crate) fn run_diff(ctx: &Context, args: DiffArgs) -> Result<Report, CliError> {
     if args.staged {
-        let staged = ctx.store.staged()?;
+        let staged = ctx.dam().seen_staged()?;
         return report(&DiffView {
-            changes: authored_rows(&staged, args.full),
+            changes: authored_rows(&staged, args.full).collect(),
         });
     }
     let working = ctx.dam().diff_working()?;
     report(&DiffView {
-        changes: owner_rows(&working, args.full),
+        changes: owner_rows(&working, args.full).collect(),
     })
 }
 
-fn authored_rows(changes: &[Authored], full: bool) -> Vec<ChangeRow<'_>> {
+fn authored_rows(changes: &[Authored], full: bool) -> impl Iterator<Item = ChangeRow<'_>> {
     changes
         .iter()
-        .map(|c| ChangeRow::new(&c.change, &c.author, full))
-        .collect()
+        .map(move |c| ChangeRow::new(&c.change, c.author.token(), full))
 }
 
-fn owner_rows(changes: &[Change], full: bool) -> Vec<ChangeRow<'_>> {
-    changes
-        .iter()
-        .map(|c| ChangeRow::new(c, OWNER, full))
-        .collect()
+fn owner_rows(changes: &[Change], full: bool) -> impl Iterator<Item = ChangeRow<'_>> {
+    changes.iter().map(move |c| ChangeRow::new(c, None, full))
 }
 
 fn token_warnings(ctx: &Context) -> impl Iterator<Item = String> + '_ {

@@ -5,6 +5,7 @@ use crate::args::{Command, RemoteCommand, TokenCommand};
 
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum Need {
+    Open,
     OwnerOnly(&'static str),
     Whole(&'static [Permission]),
     NarrowedFrom(&'static [Permission]),
@@ -24,7 +25,8 @@ pub(crate) fn need(command: &Command) -> Need {
         Command::Restore(_) => Need::OwnerOnly("restore"),
         Command::Commit(_) => Need::OwnerOnly("commit"),
         Command::Log => Need::Whole(&[HistoryRead]),
-        Command::Status(_) | Command::Diff(_) => Need::Whole(&[WorkingRead, StageRead]),
+        Command::Status(_) => Need::Open,
+        Command::Diff(_) => Need::Whole(&[WorkingRead, StageRead]),
         Command::Category(_) | Command::Filter(_) => Need::Whole(&[ConfigRead]),
         Command::Ls(_) => Need::NarrowedFrom(&[TaskRead, EventRead]),
         Command::Agenda(_) => Need::NarrowedFrom(&[EventRead]),
@@ -58,6 +60,7 @@ pub(crate) fn refuse_any_token_to_an_owner_only_verb(
 
 pub(crate) fn admit(access: &dyn Access, command: &Command) -> Result<(), Refusal> {
     match need(command) {
+        Need::Open => Ok(()),
         Need::OwnerOnly(verb) if access.token().is_some() => Err(Refusal::NotOpenToTokens(verb)),
         Need::OwnerOnly(_) => Ok(()),
         Need::Whole(permissions) => match permissions

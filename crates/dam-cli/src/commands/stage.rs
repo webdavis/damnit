@@ -54,7 +54,7 @@ pub(crate) fn run_add(ctx: &Context, args: AddArgs) -> Result<Report, CliError> 
     report(&Staged {
         staged: changes
             .iter()
-            .map(|c| ChangeRow::new(&c.change, &c.author, false))
+            .map(|c| ChangeRow::new(&c.change, c.author.token(), false))
             .collect(),
     })
 }

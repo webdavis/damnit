@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/status.schema.json",
+  "title": "dam status document",
+  "description": "What dam status prints with --json or --toon. A token sees staged with stage:read, unstaged with working:read, its own waiting items, and other senders' waiting items with pending:read.",
+  "type": "object",
+  "required": ["staged", "unstaged", "waiting", "conflicts", "notices", "unpushed", "warnings"],
+  "additionalProperties": false,
+  "properties": {
+    "staged": { "type": "array", "items": { "$ref": "#/$defs/change" } },
+    "unstaged": { "type": "array", "items": { "$ref": "#/$defs/change" } },
+    "waiting": { "type": "array", "items": { "$ref": "#/$defs/waiting" } },
+    "conflicts": { "type": "array", "items": { "type": "object" } },
+    "notices": { "type": "array", "items": { "type": "object", "required": ["kind"] } },
+    "unpushed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["remote", "commits", "commit_ids", "oids"],
+        "additionalProperties": false,
+        "properties": {
+          "remote": { "type": "string" },
+          "commits": { "type": "integer", "minimum": 0 },
+          "commit_ids": { "type": "array", "items": { "$ref": "#/$defs/id" } },
+          "oids": { "type": "array", "items": { "$ref": "#/$defs/id" } }
+        }
+      }
+    },
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "change": {
+      "description": "One change. from, key_id and channel name the token that made it, and are null for the owner.",
+      "type": "object",
+      "required": ["oid", "op", "fields", "kind", "subject", "path", "labels", "from", "key_id", "channel"],
+      "properties": {
+        "oid": { "$ref": "#/$defs/id" },
+        "op": { "enum": ["create", "update", "delete"] },
+        "fields": { "type": "array", "items": { "type": "string" } },
+        "kind": { "enum": ["task", "event"] },
+        "subject": { "type": "string" },
+        "path": { "type": "string" },
+        "labels": { "type": "array", "items": { "type": "string" } },
+        "done": { "type": "boolean" },
+        "completed_at": { "type": ["string", "null"] },
+        "priority": { "type": "integer" },
+        "due": { "type": ["string", "null"] },
+        "start": { "type": "string" },
+        "end": { "type": "string" },
+        "before": { "type": ["object", "null"] },
+        "after": { "type": ["object", "null"] },
+        "from": { "type": ["string", "null"] },
+        "key_id": { "type": ["string", "null"], "pattern": "^[0-9A-Za-z]{12}$" },
+        "channel": { "enum": ["local", "mcp", null] }
+      }
+    },
+    "waiting": {
+      "description": "An item a token sent, waiting for the owner. oid is the object it makes or changes; dam add <hash> takes it and dam rm <hash> declines it. age is whole seconds since created.",
+      "allOf": [{ "$ref": "#/$defs/change" }],
+      "required": ["hash", "item", "created", "age"],
+      "properties": {
+        "hash": { "$ref": "#/$defs/id" },
+        "item": { "enum": ["new", "change", "removal"] },
+        "from": { "type": "string" },
+        "key_id": { "type": "string" },
+        "channel": { "enum": ["local", "mcp"] },
+        "created": { "type": "string", "format": "date-time" },
+        "age": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

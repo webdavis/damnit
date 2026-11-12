@@ -1,10 +1,10 @@
 use dam_domain::{Change, Completion, Event, Object, Oid, Path, Priority, Task, When};
 use jiff::civil::date;
 
-use super::{ChangeRow, OWNER};
+use super::ChangeRow;
 
 fn change_json(change: &Change, full: bool) -> serde_json::Result<serde_json::Value> {
-    serde_json::to_value(ChangeRow::new(change, OWNER, full))
+    serde_json::to_value(ChangeRow::new(change, None, full))
 }
 
 fn oid(byte: u8) -> Oid {
@@ -162,7 +162,7 @@ fn a_change_a_token_made_names_the_token_its_key_and_its_channel() {
         channel: dam_domain::Channel::Local,
     });
     let change = Change::between(None, Some(task("call the dentist"))).unwrap();
-    let row = ChangeRow::new(&change, &author, false);
+    let row = ChangeRow::new(&change, author.token(), false);
     let json = serde_json::to_value(&row).unwrap();
     assert_eq!(json["from"], "vpt");
     assert_eq!(json["key_id"], author.token().unwrap().key_id.as_str());

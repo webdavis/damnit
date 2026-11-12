@@ -4,6 +4,7 @@ use serde::Serialize;
 
 use super::notices::NoticeRow;
 use super::rows::{ChangeRow, ConflictRow};
+use super::waiting::ItemRow;
 use crate::layout::counted;
 use crate::view::{Human, Line, View, displays};
 
@@ -11,10 +12,13 @@ use crate::view::{Human, Line, View, displays};
 pub(super) struct StatusView<'a> {
     pub(super) staged: Vec<ChangeRow<'a>>,
     pub(super) unstaged: Vec<ChangeRow<'a>>,
+    pub(super) waiting: Vec<ItemRow<'a>>,
     pub(super) conflicts: Vec<ConflictRow<'a>>,
     pub(super) notices: Vec<NoticeRow<'a>>,
     pub(super) unpushed: Vec<UnpushedRow<'a>>,
     pub(super) warnings: Vec<String>,
+    #[serde(skip)]
+    pub(super) owner: &'static str,
 }
 
 #[derive(Serialize)]
@@ -55,12 +59,16 @@ impl View for StatusView<'_> {
         };
         section(
             "Staged:",
-            rows(self.staged.iter().map(ChangeRow::line).collect()),
+            rows(
+                self.staged
+                    .iter()
+                    .map(|r| r.status_line(self.owner))
+                    .collect(),
+            ),
         );
-        section(
-            "Not staged:",
-            rows(self.unstaged.iter().map(ChangeRow::line).collect()),
-        );
+        let unstaged = self.unstaged.iter().map(|r| r.status_line(self.owner));
+        let waiting = self.waiting.iter().map(|r| r.line(self.owner));
+        section("Not staged:", rows(unstaged.chain(waiting).collect()));
         section(
             "Conflicts:",
             self.conflicts.iter().flat_map(ConflictRow::lines).collect(),

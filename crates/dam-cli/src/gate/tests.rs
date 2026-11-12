@@ -117,16 +117,17 @@ fn new_edit_and_done_send_items_for_a_token_holding_their_permission() {
 }
 
 #[test]
-fn a_token_holding_nothing_is_refused_every_command() {
+fn a_token_holding_nothing_is_refused_every_command_but_status() {
     let nothing = allowing(&[]);
     for line in EVERY_COMMAND.iter().chain(&["resolve abcd --ours"]) {
-        assert!(admit(&nothing, &command(line)).is_err(), "{line}");
+        let admitted = admit(&nothing, &command(line));
+        assert_eq!(admitted.is_ok(), *line == "status", "{line}");
     }
 }
 
 #[test]
 fn whole_store_reads_need_every_permission_they_name_without_restrictions() {
-    let status = command("status");
+    let status = command("diff");
     assert_eq!(
         admit(&allowing(&[Permission::WorkingRead]), &status),
         Err(Refusal::NotPermitted(Permission::StageRead))
