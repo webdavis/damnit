@@ -207,6 +207,48 @@ runs:
 
 Repeat the flag to bound more than one remote.
 
+## Tokens
+
+A tool runs `dam` with a token in `DAM_TOKEN`. Without `DAM_TOKEN` the caller is you. Each token is
+a table in the config file, and its grants say what it may do:
+
+    schema = 1
+
+    [token.vpt]
+    value = "damk_v1_..."
+    expires = 2027-05-11T00:00:00Z
+
+    [[token.vpt.grant]]
+    allow = ["task:read", "event:read"]
+    paths = ["work"]
+
+A grant allows only what `allow` lists, and only on objects under one of `paths`, carrying one of
+`labels`, or on the remotes `remotes` names. One grant must cover everything a command touches.
+`own = true` matches nothing yet. `not_before`, `expires` and `via` (default `["local"]`) bound when
+and where the token works. `require` is read and kept, and not enforced yet. A token with `limits`
+is disabled until limits are enforced.
+
+The permissions are `task:` and `event:` `read`, `create`, `change`, `move` and `remove`,
+`task:complete`, `pending:read`, `pending:accept`, `pending:reject`, `working:read`, `stage:read`,
+`history:read`, `history:commit`, `remote:read`, `remote:pull`, `remote:push`, `conflict:read`,
+`conflict:resolve` and `config:read`.
+
+| Command | Needs |
+|---|---|
+| `ls`, `show`, `agenda` | `task:read` or `event:read`; objects outside every grant are left out, oids included |
+| `status`, `diff` | `working:read` and `stage:read`; conflicts also need `conflict:read` |
+| `log`, `show <commit>` | `history:read` |
+| `category list`, `filter list` | `config:read` |
+| `remote list`, `pull`, `push` | `remote:read`, `remote:pull`, `remote:push` |
+
+A token cannot run `new`, `edit`, `done`, `mv`, `rm`, `add`, `reset`, `restore`, `commit`,
+`remote add` or `resolve`. A read pulls a stale remote only when the token holds `remote:pull`
+for it.
+
+An unknown permission is skipped. An unknown key, or a reserved name such as `config:change`,
+disables the token, and so does sharing a value with another token. A `schema` above 1 disables
+every token. `dam status` warns about each.
+
 ## Errors
 
 With `--json` or `--toon` a failure prints one document on standard error and nothing on standard
@@ -238,6 +280,7 @@ flag says. Without those flags you get the plain `dam: <message>` line instead.
 | 2 | The command line was wrong: an unknown argument, an unreadable value or query, or a bad oid. |
 | 3 | Cancelled: you interrupted, a prompt could not be answered, or you saved an edit untouched. |
 | 4 | `dam` refused by one of its own rules, and the message names the rule. |
+| 5 | `dam` refused the token in `DAM_TOKEN`, and the message names the rule. |
 
-Every rule `dam` keeps reports code 4, and nothing else does. A `--recurrence` rule `dam` cannot
+Every rule `dam` keeps reports code 4, except a refused token, which reports code 5. A `--recurrence` rule `dam` cannot
 read is the one flag value outside code 2: it exits 1, and its error document's kind is `parse`.
