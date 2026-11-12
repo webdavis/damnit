@@ -23,7 +23,7 @@ pub(crate) enum TokenCommand {
 
 #[derive(Args, Debug)]
 pub(crate) struct CreateArgs {
-    #[arg(help = "Name the token, such as vpt")]
+    #[arg(help = "Name the token, such as tool")]
     pub(crate) name: String,
     #[arg(
         long,

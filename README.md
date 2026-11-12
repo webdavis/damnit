@@ -227,7 +227,7 @@ open an editor from a request.
     dam done --request - <<< '{"oid": "98d878", "force": true, "children": "up"}'
     dam mv --request - <<< '{"oid": "98d878", "path": "work/"}'
     dam rm --request - <<< '{"oid": "98d878"}'
-    dam token create --request - <<< '{"name": "vpt", "allow": ["task:read"], "require": ["session"]}'
+    dam token create --request - <<< '{"name": "tool", "allow": ["task:read"], "require": ["session"]}'
     dam day set --request day.json
 
 `dam status --json` and `dam diff --json` answer in change documents, one per change:
@@ -275,18 +275,18 @@ a table in the config file, and its grants say what it may do:
 
     schema = 1
 
-    [token.vpt]
+    [token.tool]
     value = "damk_v1_..."
     expires = 2027-05-11T00:00:00Z
 
-    [[token.vpt.grant]]
+    [[token.tool.grant]]
     allow = ["task:read", "event:read"]
     paths = ["work"]
 
-`dam token create vpt --allow task:read --allow event:read --paths work` writes such a table with
+`dam token create tool --allow task:read --allow event:read --paths work` writes such a table with
 one grant and prints the token once. `--labels`, `--own`, `--remotes`, `--expires`, `--via` and
 `--require` set the keys of the same name. `dam token list` shows each token's key id, grants,
-conditions and standing, never its value. `dam token revoke vpt` removes its tables and leaves the
+conditions and standing, never its value. `dam token revoke tool` removes its tables and leaves the
 rest of the file as it was. The schemas of their `--json` answers are
 `docs/schemas/token-create.schema.json`, `token-list.schema.json` and `token-revoke.schema.json`.
 
@@ -319,8 +319,8 @@ with its hash, the task a change changes, the token's name and its age. A change
 values on a minus line and the proposed ones on a plus line:
 
     Not staged:
-      new      a1b2c3d  Call the dentist  inbox/  vpt  2h
-      changed  e4f5a6b  0c1d2e3  -Pay rent  due: 2026-11-13  vpt  5m
+      new      a1b2c3d  Call the dentist  inbox/  tool  2h
+      changed  e4f5a6b  0c1d2e3  -Pay rent  due: 2026-11-13  tool  5m
                                  +Pay the rent  due: 2026-11-12
 
 The tool's answer is `new`, `changed` or `duplicate` with the item's hash, and for a change the oid
