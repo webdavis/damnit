@@ -1,3 +1,5 @@
+use dam_domain::Permission;
+
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
 use crate::ports::RemoteName;
@@ -32,7 +34,7 @@ impl Dam<'_> {
         remote: Option<&str>,
     ) -> Result<Vec<PullReport>, UseCaseError> {
         let mut reports = Vec::new();
-        for target in self.config.select_remotes(remote)? {
+        for target in self.remotes_permitting(Permission::RemotePull, remote)? {
             let (mut helper, caps) = connect(remotes, self.store, target)?;
             let since = self.store.sync_token(&target.name)?;
             let response = helper.pull(since.as_deref())?;

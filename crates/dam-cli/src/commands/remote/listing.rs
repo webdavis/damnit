@@ -1,4 +1,4 @@
-use dam_domain::Timestamp;
+use dam_domain::{Permission, Subject, Timestamp};
 use serde::Serialize;
 
 use crate::context::Context;
@@ -11,6 +11,10 @@ pub(super) fn run(ctx: &Context) -> Result<Report, CliError> {
         .config
         .remotes
         .iter()
+        .filter(|r| {
+            ctx.access
+                .permits(Permission::RemoteRead, &[Subject::Remote(&r.name.0)])
+        })
         .map(|r| -> Result<RemoteRow<'_>, CliError> {
             Ok(RemoteRow {
                 name: &r.name.0,

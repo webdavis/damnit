@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use dam_domain::Permission;
+
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{Clock, HelperError, Notice, RemoteName, RemoteTrackingRepository, StoreError};
 use crate::service::{Dam, Remotes};
@@ -10,6 +12,7 @@ impl Dam<'_> {
             let remote = self
                 .config
                 .remote(name)
+                .filter(|r| self.may_reach(Permission::RemoteRead, r))
                 .ok_or_else(|| Refusal::NoSuchRemote(name.clone()))?;
             let age = age_of_last_pull(self.store, self.clock, &remote.name)?;
             if is_stale(age, *bound) {
@@ -33,6 +36,9 @@ impl Dam<'_> {
             let Some(window) = remote.stale else {
                 continue;
             };
+            if !self.may_reach(Permission::RemotePull, remote) {
+                continue;
+            }
             let age = age_of_last_pull(self.store, self.clock, &remote.name)?;
             if !is_stale(age, window) {
                 continue;
@@ -65,6 +71,8 @@ fn age_of_last_pull(
     }))
 }
 
+#[cfg(test)]
+mod access_tests;
 #[cfg(test)]
 mod refresh_tests;
 #[cfg(test)]

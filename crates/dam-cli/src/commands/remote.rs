@@ -56,4 +56,6 @@ pub(crate) fn refresh_stale_unless_no_pull(ctx: &Context) -> Result<(), CliError
 }
 
 #[cfg(test)]
+mod access_tests;
+#[cfg(test)]
 mod tests;

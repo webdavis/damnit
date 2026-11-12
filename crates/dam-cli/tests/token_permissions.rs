@@ -69,3 +69,25 @@ fn a_read_the_token_does_not_hold_is_refused_and_one_it_holds_runs() {
     let out = sb.output_holding(&held, &["category", "list", "--json"]);
     assert!(out.status.success(), "{out:?}");
 }
+
+#[test]
+fn a_token_reaches_only_the_remotes_its_grant_names() {
+    let _guard = support::guard("a_token_reaches_only_the_remotes_its_grant_names");
+    let sb = Sandbox::new();
+    let held = token(1);
+    sb.add_config(&format!(
+        "[token.vpt]\nvalue = \"{held}\"\n[[token.vpt.grant]]\nallow = [\"remote:pull\", \"remote:push\"]\nremotes = [\"elsewhere\"]\n"
+    ));
+    for verb in ["pull", "push"] {
+        for named in ["fake", "nope"] {
+            let out = sb.output_holding(&held, &[verb, named, "--json"]);
+            assert_eq!(rule_of(&out), "not_permitted", "{verb} {named}");
+        }
+        let out = sb.output_holding(&held, &[verb, "--json"]);
+        assert!(
+            out.status.success(),
+            "{verb} of every remote narrows to none: {out:?}"
+        );
+    }
+    assert!(sb.pushes().is_empty());
+}

@@ -145,8 +145,12 @@ fn refusals_by_object_rules() -> Vec<(Refusal, &'static str)> {
             "-e opens an editor; drop --json/--toon to use it",
         ),
         (
-            Refusal::UnresolvedConflicts(2),
+            Refusal::UnresolvedConflicts(Some(2)),
             "2 conflicts are unresolved; run dam resolve",
+        ),
+        (
+            Refusal::UnresolvedConflicts(None),
+            "conflicts are unresolved; run dam resolve",
         ),
         (
             Refusal::MissingCredential {

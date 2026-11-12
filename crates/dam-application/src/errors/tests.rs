@@ -68,7 +68,7 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
         Refusal::NothingToCommit,
         Refusal::NeedsAnAnswer,
         Refusal::NeedsAnEditor,
-        Refusal::UnresolvedConflicts(2),
+        Refusal::UnresolvedConflicts(Some(2)),
         Refusal::MissingCredential {
             remote: "todoist".into(),
             name: "api_token".into(),
