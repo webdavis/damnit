@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use dam_domain::Permission;
 
 use crate::config::RemoteConfig;
@@ -10,10 +12,12 @@ use crate::use_cases::connect::connect;
 mod cancelled;
 mod classify;
 mod land;
+mod missing;
 mod notices;
 mod skipped;
 
 use classify::classify;
+use missing::record_missing;
 use notices::record_removals;
 use skipped::record_skipped;
 
@@ -58,6 +62,12 @@ impl Dam<'_> {
             removed_upstream: 0,
             unchanged: 0,
         };
+        let listed: HashSet<String> = response
+            .objects
+            .iter()
+            .map(|o| o.remote_id.clone())
+            .chain(response.rejected.iter().map(|r| r.remote_id.clone()))
+            .collect();
         let mut land_everything_as_one_unit = || {
             record_skipped(store, &remote.name, &response.objects, &response.rejected)?;
             let mut objects = std::mem::take(&mut response.objects);
@@ -74,6 +84,9 @@ impl Dam<'_> {
             self.land(remote, planned, &mut report)?;
             let removed = std::mem::take(&mut response.removed);
             report.removed_upstream = record_removals(store, remote, removed)?;
+            if response.complete {
+                record_missing(store, remote, &listed)?;
+            }
             store.set_sync_token(&remote.name, response.sync.as_deref())?;
             store.set_last_pull(&remote.name, self.clock.now())?;
             Ok(())

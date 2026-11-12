@@ -76,7 +76,8 @@ impl View for StatusView<'_> {
             "Notices:",
             self.notices
                 .iter()
-                .map(|n| Line::Whole(format!("  {}", n.line())))
+                .flat_map(NoticeRow::lines)
+                .map(|l| Line::Whole(format!("  {l}")))
                 .collect(),
         );
         section(

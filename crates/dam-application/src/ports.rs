@@ -15,7 +15,7 @@ pub use environment::{Clock, Randomness};
 pub use helper::{CredentialError, CredentialSource, HelperError, HelperLauncher, RemoteHelper};
 pub use ids::IdRepository;
 pub use items::ItemRepository;
-pub use notices::{Notice, NoticeRepository};
+pub use notices::{MissingTask, Notice, NoticeRepository};
 pub use origins::OriginRepository;
 pub use repositories::Store;
 pub use store::{

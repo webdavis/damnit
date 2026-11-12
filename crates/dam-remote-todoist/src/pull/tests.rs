@@ -27,6 +27,7 @@ fn pull_returns_every_live_object_and_names_the_removed_ones() {
         vec!["p:p9".to_string(), "i:i9".to_string()]
     );
     assert_eq!(response.sync.as_deref(), Some("t1"));
+    assert!(response.complete);
     assert!(todoist.recorded.borrow().changes_asked_since.is_empty());
     assert_eq!(todoist.recorded.borrow().reads, 1);
 }

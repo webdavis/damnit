@@ -1,4 +1,4 @@
-use dam_application::{Notice, RejectedObject, RemoteName, StoreError};
+use dam_application::{MissingTask, Notice, RejectedObject, RemoteName, StoreError};
 use dam_domain::{Kind, Oid};
 use serde::{Deserialize, Serialize};
 
@@ -34,6 +34,16 @@ enum NoticeRow {
         ours: String,
         theirs: String,
     },
+    MissingUpstream {
+        remote: String,
+        tasks: Vec<MissingTaskRow>,
+    },
+}
+
+#[derive(Serialize, Deserialize)]
+struct MissingTaskRow {
+    oid: String,
+    subject: String,
 }
 
 pub(in crate::sqlite) fn notice_to_json(n: &Notice) -> Result<String, StoreError> {
@@ -74,6 +84,16 @@ pub(in crate::sqlite) fn notice_to_json(n: &Notice) -> Result<String, StoreError
             oid: oid.to_string(),
             ours: ours.as_str().to_string(),
             theirs: theirs.as_str().to_string(),
+        },
+        Notice::MissingUpstream { remote, tasks } => NoticeRow::MissingUpstream {
+            remote: remote.0.clone(),
+            tasks: tasks
+                .iter()
+                .map(|t| MissingTaskRow {
+                    oid: t.oid.to_string(),
+                    subject: t.subject.clone(),
+                })
+                .collect(),
         },
     };
     serde_json::to_string(&row).map_err(|e| StoreError::Failed(format!("stored notice: {e}")))
@@ -136,6 +156,18 @@ pub(in crate::sqlite) fn notice_from_json(s: &str) -> Result<Notice, StoreError>
             oid: oid(&o)?,
             ours: kind(&ours)?,
             theirs: kind(&theirs)?,
+        },
+        NoticeRow::MissingUpstream { remote, tasks } => Notice::MissingUpstream {
+            remote: RemoteName(remote),
+            tasks: tasks
+                .into_iter()
+                .map(|t| {
+                    Ok(MissingTask {
+                        oid: oid(&t.oid)?,
+                        subject: t.subject,
+                    })
+                })
+                .collect::<Result<_, StoreError>>()?,
         },
     })
 }

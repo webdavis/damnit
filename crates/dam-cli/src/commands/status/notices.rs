@@ -41,6 +41,17 @@ pub(super) enum NoticeRow<'a> {
         ours: &'static str,
         theirs: &'static str,
     },
+    MissingUpstream {
+        remote: &'a str,
+        tasks: Vec<MissingTaskRow<'a>>,
+    },
+}
+
+#[derive(Serialize)]
+pub(super) struct MissingTaskRow<'a> {
+    #[serde(serialize_with = "display")]
+    oid: &'a Oid,
+    subject: &'a str,
 }
 
 impl<'a> NoticeRow<'a> {
@@ -83,10 +94,32 @@ impl<'a> NoticeRow<'a> {
                 ours: ours.as_str(),
                 theirs: theirs.as_str(),
             },
+            Notice::MissingUpstream { remote, tasks } => NoticeRow::MissingUpstream {
+                remote: &remote.0,
+                tasks: tasks
+                    .iter()
+                    .map(|t| MissingTaskRow {
+                        oid: &t.oid,
+                        subject: &t.subject,
+                    })
+                    .collect(),
+            },
         }
     }
 
-    pub(super) fn line(&self) -> String {
+    pub(super) fn lines(&self) -> Vec<String> {
+        let mut lines = vec![self.line()];
+        if let NoticeRow::MissingUpstream { tasks, .. } = self {
+            lines.extend(
+                tasks
+                    .iter()
+                    .map(|t| format!("  {} {:?}", t.oid.short(), t.subject)),
+            );
+        }
+        lines
+    }
+
+    fn line(&self) -> String {
         match self {
             NoticeRow::RemovedUpstream {
                 remote,
@@ -122,6 +155,10 @@ impl<'a> NoticeRow<'a> {
                 remote_id,
                 why,
             } => format!("pull from {remote} skipped {remote_id}: {why}"),
+            NoticeRow::MissingUpstream { remote, tasks } => format!(
+                "{remote} no longer lists {}; dam done <oid> if finished there, dam rm <oid> if deleted",
+                counted(tasks.len(), "open task", "open tasks")
+            ),
             NoticeRow::KindChanged { oid, ours, theirs } => format!(
                 "{} is {} {ours} here and {} {theirs} upstream",
                 oid.short(),
