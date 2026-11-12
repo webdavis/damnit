@@ -13,6 +13,10 @@ files: a working layer you edit, a stage you `add` to, commits you `push` to a r
 
 ## First run
 
+The first `dam` run creates `~/.config/dam/config.toml`, or the file `DAM_CONFIG` names, readable
+by you alone, with every setting commented out and explained. dam never rewrites a config that
+exists, and a run with `DAM_TOKEN` set creates nothing.
+
     dam remote add todoist todoist::
 
 Then give the helper a token, in `~/.config/dam/config.toml` under the table `dam remote add`

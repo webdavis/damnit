@@ -43,7 +43,7 @@ fn readable_with_the_new_remote(text: &str, name: &str) -> Result<(), ConfigErro
     })
 }
 
-fn parent_of(path: &FsPath) -> PathBuf {
+pub(super) fn parent_of(path: &FsPath) -> PathBuf {
     match path.parent() {
         Some(dir) if !dir.as_os_str().is_empty() => dir.to_path_buf(),
         _ => PathBuf::from("."),

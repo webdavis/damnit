@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use dam_application::{Config, ConfigError, ConfigFile, RemoteName};
 
+use super::create::create_if_missing;
 use super::{append_remote, load_config};
 
 pub struct TomlConfigFile {
@@ -11,6 +12,10 @@ pub struct TomlConfigFile {
 impl TomlConfigFile {
     pub fn new(path: PathBuf) -> TomlConfigFile {
         TomlConfigFile { path }
+    }
+
+    pub fn create_if_missing(&self) -> std::io::Result<bool> {
+        create_if_missing(&self.path)
     }
 }
 

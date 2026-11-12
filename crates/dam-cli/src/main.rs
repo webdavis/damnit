@@ -10,6 +10,8 @@ mod output;
 mod prompt;
 mod view;
 
+use std::path::Path;
+
 use clap::Parser;
 use dam_adapters::{Interrupt, SystemClock, TomlConfigFile};
 use dam_application::{Clock, ConfigFile};
@@ -69,9 +71,12 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
             "--no-pull applies to ls, show and agenda, the reads that pull a stale remote".into(),
         ));
     }
-    let config_file =
-        TomlConfigFile::new(cli.config.unwrap_or_else(dam_adapters::default_config_path));
+    let config_path = cli.config.unwrap_or_else(dam_adapters::default_config_path);
+    let config_file = TomlConfigFile::new(config_path.clone());
     let presented_token = std::env::var_os(TOKEN_VARIABLE);
+    if presented_token.is_none() {
+        create_the_owners_config_when_missing(&config_file, &config_path, format);
+    }
     if let Command::Category(_) | Command::Filter(_) = cli.command {
         let config = config_file.load()?;
         let access = caller(&config, presented_token, SystemClock.now())?;
@@ -90,6 +95,20 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     )?;
     let report = commands::dispatch_a_verb_that_opens_the_store(&ctx, cli.command)?;
     output::print(format, &report)
+}
+
+fn create_the_owners_config_when_missing(file: &TomlConfigFile, path: &Path, format: Format) {
+    let said = match file.create_if_missing() {
+        Ok(false) => return,
+        Ok(true) => format!(
+            "dam: created {}, with every setting explained",
+            path.display()
+        ),
+        Err(e) => format!("dam: could not create {}: {e}", path.display()),
+    };
+    if format == Format::Human {
+        eprintln!("{said}");
+    }
 }
 
 #[cfg(test)]
