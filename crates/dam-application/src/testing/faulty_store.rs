@@ -7,6 +7,7 @@ use crate::ports::{ObjectRepository, StoreError, Transactional};
 use crate::testing::MemoryStore;
 
 mod history;
+mod ids;
 mod items;
 mod remote_state;
 

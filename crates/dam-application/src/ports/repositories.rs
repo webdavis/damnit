@@ -1,4 +1,5 @@
 use super::days::DayRepository;
+use super::ids::IdRepository;
 use super::items::ItemRepository;
 use super::notices::NoticeRepository;
 use super::store::{
@@ -16,6 +17,7 @@ pub trait Store:
     + NoticeRepository
     + DayRepository
     + ItemRepository
+    + IdRepository
     + Transactional
 {
 }
@@ -30,6 +32,7 @@ impl<T> Store for T where
         + NoticeRepository
         + DayRepository
         + ItemRepository
+        + IdRepository
         + Transactional
 {
 }

@@ -1,7 +1,9 @@
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 
-use dam_domain::{Author, Authored, CommitId, CommitRecord, Item, Kind, Object, Oid, Timestamp};
+use dam_domain::{
+    Author, Authored, CommitId, CommitRecord, IdKey, Item, Kind, Object, Oid, Timestamp,
+};
 
 use crate::errors::UseCaseError;
 use crate::ports::{
@@ -27,6 +29,7 @@ struct Inner {
     accepted_kinds: BTreeMap<RemoteName, Vec<Kind>>,
     days: BTreeMap<dam_domain::Date, dam_domain::Day>,
     items: Vec<Item>,
+    ids: BTreeMap<IdKey, Oid>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -166,5 +169,6 @@ impl CommitRepository for MemoryStore {
 
 mod accepted_kinds;
 mod days;
+mod ids;
 mod items;
 mod remote_state;

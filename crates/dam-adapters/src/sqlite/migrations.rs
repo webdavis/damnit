@@ -1,6 +1,6 @@
 use rusqlite::Connection;
 
-pub(super) const VERSION: u32 = 7;
+pub(super) const VERSION: u32 = 8;
 
 const V1: &str = r#"
 CREATE TABLE objects (oid TEXT PRIMARY KEY, kind TEXT NOT NULL, path TEXT NOT NULL, json TEXT NOT NULL);
@@ -60,6 +60,10 @@ ALTER TABLE commit_changes ADD COLUMN author_key_id TEXT;
 ALTER TABLE commit_changes ADD COLUMN author_channel TEXT;
 "#;
 
+const V8: &str = r#"
+CREATE TABLE caller_ids (holder TEXT NOT NULL, token TEXT NOT NULL, session TEXT NOT NULL, id TEXT NOT NULL, oid TEXT NOT NULL, PRIMARY KEY (holder, token, session, id));
+"#;
+
 pub(super) fn migrate_above_user_version_in_one_transaction(
     conn: &mut Connection,
 ) -> Result<(), rusqlite::Error> {
@@ -88,6 +92,9 @@ pub(super) fn migrate_above_user_version_in_one_transaction(
     }
     if current < 7 {
         tx.execute_batch(V7)?;
+    }
+    if current < 8 {
+        tx.execute_batch(V8)?;
     }
     tx.pragma_update(None, "user_version", VERSION)?;
     tx.commit()

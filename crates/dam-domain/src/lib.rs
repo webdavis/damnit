@@ -1,4 +1,5 @@
 mod access;
+mod caller_id;
 mod category;
 mod change;
 mod completion;
@@ -20,6 +21,7 @@ pub use access::{
     Channel, Grant, Grants, KeyId, Permission, PermissionName, RESERVED_PERMISSIONS, Subject,
     Token, TokenError,
 };
+pub use caller_id::{CALLER_ID_CAP, CallerId, CallerIdError, IdHolder, IdKey};
 pub use category::{Categories, Category, CategoryError, LabelViolation};
 pub use change::{
     Author, Authored, Change, CommitId, CommitRecord, Op, TokenAuthor, changed_fields, kind_change,
