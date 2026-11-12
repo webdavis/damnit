@@ -57,3 +57,8 @@ fn it_keeps_the_day_repository_contract() {
 fn it_keeps_the_accepted_kinds_repository_contract() {
     contract::accepted_kinds_repository_contract(&store());
 }
+
+#[test]
+fn it_keeps_the_item_repository_contract() {
+    contract::item_repository_contract(&store());
+}

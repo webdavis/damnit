@@ -2,6 +2,7 @@ mod config_file;
 mod days;
 mod environment;
 mod helper;
+mod items;
 mod notices;
 mod repositories;
 mod store;
@@ -10,6 +11,7 @@ pub use config_file::{ConfigError, ConfigFile};
 pub use days::DayRepository;
 pub use environment::{Clock, Randomness};
 pub use helper::{CredentialError, CredentialSource, HelperError, HelperLauncher, RemoteHelper};
+pub use items::ItemRepository;
 pub use notices::{Notice, NoticeRepository};
 pub use repositories::Store;
 pub use store::{

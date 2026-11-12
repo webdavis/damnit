@@ -21,7 +21,7 @@ pub use scenario::{Scenario, config, event, task, task_in, todoist};
 
 pub mod prelude {
     pub use crate::ports::{
-        AcceptedKindsRepository, CommitRepository, ConflictRepository, NoticeRepository,
-        ObjectRepository, RemoteTrackingRepository, StageRepository,
+        AcceptedKindsRepository, CommitRepository, ConflictRepository, ItemRepository,
+        NoticeRepository, ObjectRepository, RemoteTrackingRepository, StageRepository,
     };
 }

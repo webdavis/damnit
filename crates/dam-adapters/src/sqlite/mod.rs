@@ -5,6 +5,7 @@ mod commits;
 mod conflicts;
 mod days;
 mod file;
+mod items;
 mod migrations;
 mod notices;
 mod objects;
