@@ -144,6 +144,7 @@ pub(crate) fn context() -> Context {
             remotes: vec![],
             categories: Categories::new(vec![]).unwrap_or_else(|_| unreachable!()),
             filters: vec![],
+            tokens: Default::default(),
         },
         config_file: Box::new(FakeConfigFile::default()),
         clock: Box::new(FixedClock(date(2026, 9, 18))),

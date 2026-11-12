@@ -98,6 +98,7 @@ mod tests {
             remotes: vec![],
             categories: Categories::default(),
             filters: vec![],
+            tokens: Default::default(),
         }
     }
 

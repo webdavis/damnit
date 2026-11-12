@@ -7,6 +7,7 @@ mod secret;
 mod service;
 #[cfg(any(test, feature = "testing"))]
 pub mod testing;
+mod tokens;
 mod use_cases;
 
 pub use config::{Config, ConfiguredDuration, CredentialSpec, FilterConfig, RemoteConfig};
@@ -27,6 +28,7 @@ pub use remote::{
 };
 pub use secret::Secret;
 pub use service::{Dam, Remotes};
+pub use tokens::{Standing, TokenConfig, TokenTerms, Tokens};
 pub use use_cases::agenda::{Scheduled, Window};
 pub use use_cases::complete::{CompletePlan, Completed};
 pub use use_cases::edit::{EditFields, apply};
