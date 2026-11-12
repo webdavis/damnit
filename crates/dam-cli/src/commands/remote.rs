@@ -18,13 +18,11 @@ struct RemoteAdded<'a> {
 
 impl View for RemoteAdded<'_> {
     fn human(&self) -> Human {
-        let mut lines: Vec<String> = self
-            .warnings
-            .iter()
-            .map(|w| format!("warning: {w}"))
-            .collect();
-        lines.push(format!("added {} ({})", self.name, self.url));
-        Human::Lines(lines)
+        Human::Lines(vec![format!("added {} ({})", self.name, self.url)])
+    }
+
+    fn warnings(&self) -> Vec<String> {
+        self.warnings.clone()
     }
 }
 

@@ -35,6 +35,10 @@ impl Human {
 
 pub(crate) trait View: Serialize {
     fn human(&self) -> Human;
+
+    fn warnings(&self) -> Vec<String> {
+        Vec::new()
+    }
 }
 
 pub(crate) fn report(view: &impl View) -> Result<Report, CliError> {
@@ -63,6 +67,7 @@ pub(crate) fn report(view: &impl View) -> Result<Report, CliError> {
         data: serde_json::to_value(view).map_err(|e| CliError::Internal(e.to_string()))?,
         cut: lines.iter().map(|(_, cut, _)| *cut).collect(),
         tints: lines.iter().map(|(.., tint)| *tint).collect(),
+        warnings: view.warnings(),
     })
 }
 

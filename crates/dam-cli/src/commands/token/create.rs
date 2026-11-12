@@ -24,8 +24,11 @@ struct TokenCreated {
 
 impl View for TokenCreated {
     fn human(&self) -> Human {
-        let warnings = self.warnings.iter().map(|w| format!("warning: {w}"));
-        Human::Lines(warnings.chain([self.value.clone()]).collect())
+        Human::Lines(vec![self.value.clone()])
+    }
+
+    fn warnings(&self) -> Vec<String> {
+        self.warnings.clone()
     }
 }
 
