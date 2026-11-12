@@ -1,5 +1,3 @@
-use std::io::Read;
-
 use dam_adapters::{DayDoc, day_from_doc, day_to_doc};
 use dam_application::UseCaseError;
 use dam_domain::Day;
@@ -10,6 +8,7 @@ use crate::commands::parsing::day_flag;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
+use crate::request;
 use crate::view::{Human, View, report};
 
 #[derive(Serialize)]
@@ -72,9 +71,11 @@ pub(crate) fn run_day(ctx: &Context, args: DayArgs) -> Result<Report, CliError> 
             };
             shown(ctx.dam().day(on)?)
         }
-        DayCommand::Set => {
-            let mut text = String::new();
-            std::io::stdin().read_to_string(&mut text)?;
+        DayCommand::Set { document } => {
+            let text = match document {
+                Some(text) => text,
+                None => request::read_stdin()?,
+            };
             shown(ctx.dam().record_day(read_document(&text)?)?)
         }
         DayCommand::List => {
@@ -97,11 +98,7 @@ fn shown(day: Day) -> Result<Report, CliError> {
 }
 
 pub(crate) fn read_document(text: &str) -> Result<Day, CliError> {
-    let doc: Result<DayDoc, String> = if text.trim_start().starts_with('{') {
-        serde_json::from_str(text).map_err(|e| e.to_string())
-    } else {
-        toon_format::decode_default(text).map_err(|e| e.to_string())
-    };
-    doc.and_then(day_from_doc)
+    request::decode::<DayDoc>(text)
+        .and_then(day_from_doc)
         .map_err(|why| CliError::UseCase(UseCaseError::Parse(format!("day document: {why}"))))
 }

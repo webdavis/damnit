@@ -14,7 +14,10 @@ pub(crate) enum DayCommand {
         day: Option<String>,
     },
     #[command(about = "Replace a day's record with the JSON or TOON document read from stdin")]
-    Set,
+    Set {
+        #[arg(skip)]
+        document: Option<String>,
+    },
     #[command(about = "List the recorded days, newest first, with when each was closed")]
     List,
 }

@@ -9,6 +9,7 @@ dam store: help = Open the store at FILE. Default: ${XDG_DATA_HOME:-~/.local/sha
 dam no_pull: help = Never pull a stale remote first; answer from the local store
 dam no_color: help = Print without color; color is also off under NO_COLOR or when not a terminal
 dam meta: help = State a detail of this request, such as session=abc123, kept with each change it makes. Repeatable
+dam request: help = Read the request from FILE, or stdin when FILE is -, as JSON or TOON keyed by the command's flags
 dam new: about = Create a task, or an event with --kind event
 dam new subject: help = Title the new task or event
 dam new kind: help = Create a task or an event; an event needs --start and --end. Default: task

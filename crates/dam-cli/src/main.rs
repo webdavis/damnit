@@ -9,11 +9,11 @@ mod layout;
 mod output;
 mod paint;
 mod prompt;
+mod request;
 mod view;
 
 use std::path::Path;
 
-use clap::Parser;
 use dam_adapters::{Interrupt, OsRandom, SystemClock, TomlConfigFile};
 use dam_application::{Clock, ConfigFile};
 
@@ -26,14 +26,14 @@ use crate::output::Format;
 fn main() {
     let interrupt = Interrupt::default();
     let interrupts_installed = dam_adapters::catch_interrupts(&interrupt);
-    let cli = Cli::parse();
-    let format = if cli.json {
-        Format::Json
-    } else if cli.toon {
-        Format::Toon
-    } else {
-        Format::Human
+    let cli = match request::parse(std::env::args_os().collect()) {
+        Ok(cli) => cli,
+        Err(refused) => {
+            output::print_error(refused.format, &refused.error);
+            std::process::exit(refused.error.exit_code());
+        }
     };
+    let format = Format::of(cli.json, cli.toon);
     if !interrupts_installed {
         warn_a_human_that_ctrl_c_will_not_cancel_cleanly(format);
     }
