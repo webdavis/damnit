@@ -19,7 +19,7 @@ pub(crate) fn need(command: &Command) -> Need {
         Command::Edit(a) if a.editor => Need::OwnerOnly("edit -e"),
         Command::Edit(_) => Need::NarrowedFrom(&[TaskChange, EventChange]),
         Command::Mv(_) => Need::OwnerOnly("mv"),
-        Command::Rm(_) => Need::OwnerOnly("rm"),
+        Command::Rm(_) => Need::Open,
         Command::Add(_) => Need::OwnerOnly("add"),
         Command::Reset(_) => Need::OwnerOnly("reset"),
         Command::Restore(_) => Need::OwnerOnly("restore"),

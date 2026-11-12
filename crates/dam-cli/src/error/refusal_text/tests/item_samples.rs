@@ -22,6 +22,10 @@ pub(super) fn item_refusals_with_their_text() -> Vec<(Refusal, &'static str)> {
             "0101010 is a waiting item, not an object; dam add or dam rm it",
         ),
         (
+            ItemRefusal::NotYours(hash()),
+            "0101010 was sent by another token; a token may remove only its own items",
+        ),
+        (
             ItemRefusal::NotWaiting {
                 hash: hash(),
                 outcome: "declined",

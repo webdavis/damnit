@@ -72,6 +72,7 @@
         "target_not_committed",
         "target_staged",
         "item_clash",
+        "not_your_item",
         "item_edited_since_added",
         "item_subject_names_no_folder"
       ]

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/settled.schema.json",
+  "title": "dam rm answer for an item",
+  "description": "What dam rm <hash> prints with --json or --toon. The owner declines an item, which is never offered again; a token withdraws its own.",
+  "type": "object",
+  "required": ["hash", "outcome", "at", "oid", "item", "subject", "from"],
+  "additionalProperties": false,
+  "properties": {
+    "hash": { "$ref": "#/$defs/id" },
+    "outcome": { "enum": ["declined", "withdrawn"] },
+    "at": { "type": "string", "format": "date-time" },
+    "oid": { "$ref": "#/$defs/id" },
+    "item": { "enum": ["new", "change", "removal"] },
+    "subject": { "type": "string" },
+    "from": { "type": "string" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+  }
+}

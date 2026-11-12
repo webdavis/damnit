@@ -35,10 +35,7 @@ impl Dam<'_> {
             .into_iter()
             .map(|i| Named::Item(i.hash));
         if let Ok(oid) = Oid::parse(text) {
-            return Ok(waiting
-                .into_iter()
-                .find(|named| *named.id() == oid)
-                .unwrap_or(Named::Object(oid)));
+            return self.named_in_full(oid);
         }
         require_a_hex_prefix(text)?;
         let objects = self
@@ -60,6 +57,15 @@ impl Dam<'_> {
             }
             .into()),
         }
+    }
+
+    fn named_in_full(&self, oid: Oid) -> Result<Named, UseCaseError> {
+        let hash = ItemHash::new(oid.clone());
+        let item = self.store.item(&hash)?;
+        Ok(match item {
+            Some(item) if item.is_waiting() && self.sees_item(&item) => Named::Item(hash),
+            _ => Named::Object(oid),
+        })
     }
 
     pub fn resolve_commit(&self, text: &str) -> Result<CommitRecord, UseCaseError> {

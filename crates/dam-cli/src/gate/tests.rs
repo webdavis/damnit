@@ -69,7 +69,7 @@ fn the_owner_is_admitted_to_every_command() {
 #[test]
 fn a_token_holding_every_permission_still_cannot_write_the_owners_layers() {
     let everything = allowing(&Permission::ALL);
-    for verb in ["mv", "rm", "add", "reset", "restore", "commit"] {
+    for verb in ["mv", "add", "reset", "restore", "commit"] {
         let line = EVERY_COMMAND.iter().find(|l| l.starts_with(verb)).unwrap();
         assert_eq!(
             admit(&everything, &command(line)),
@@ -121,7 +121,8 @@ fn a_token_holding_nothing_is_refused_every_command_but_status() {
     let nothing = allowing(&[]);
     for line in EVERY_COMMAND.iter().chain(&["resolve abcd --ours"]) {
         let admitted = admit(&nothing, &command(line));
-        assert_eq!(admitted.is_ok(), *line == "status", "{line}");
+        let open = ["status", "rm abcd"].contains(line);
+        assert_eq!(admitted.is_ok(), open, "{line}");
     }
 }
 

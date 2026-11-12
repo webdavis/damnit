@@ -5,6 +5,7 @@ pub enum ItemRefusal {
     NothingChanged,
     Declined(ItemHash),
     NotAnObject(ItemHash),
+    NotYours(ItemHash),
     NotWaiting {
         hash: ItemHash,
         outcome: &'static str,
@@ -42,6 +43,7 @@ impl ItemRefusal {
             ItemRefusal::NothingChanged => "nothing_changed",
             ItemRefusal::Declined(_) => "item_declined",
             ItemRefusal::NotAnObject(_) => "item_not_an_object",
+            ItemRefusal::NotYours(_) => "not_your_item",
             ItemRefusal::NotWaiting { .. } => "item_not_waiting",
             ItemRefusal::TargetGone { .. } => "item_target_gone",
             ItemRefusal::TargetNotCommitted { .. } => "target_not_committed",
