@@ -24,7 +24,7 @@ pub(super) fn classify(
     let staged: Vec<Oid> = store
         .staged()?
         .into_iter()
-        .map(|c| c.oid().clone())
+        .map(|c| c.change.oid().clone())
         .collect();
     let mut notices = store.notices()?;
     let mut planned = Vec::new();

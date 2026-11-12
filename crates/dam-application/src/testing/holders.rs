@@ -1,4 +1,4 @@
-use dam_domain::{Grant, Grants, Path, Permission, Token};
+use dam_domain::{Channel, Grant, Grants, Path, Permission, Token};
 
 use crate::access::Holder;
 
@@ -11,6 +11,7 @@ pub fn holder(grants: Vec<Grant>) -> Holder {
                 .clone(),
             grants,
         },
+        channel: Channel::Local,
     }
 }
 

@@ -33,7 +33,7 @@ fn an_edit_after_staging_shows_as_unstaged_on_top_of_the_stage() {
     dam.add(&[oid(1)]).unwrap();
     s.working(named(1, "b"));
     let status = dam.status(&[]).unwrap();
-    assert_eq!(status.staged[0].after().unwrap().base().subject, "a");
+    assert_eq!(status.staged[0].change.after().unwrap().base().subject, "a");
     assert_eq!(status.unstaged[0].op(), Op::Update);
     assert_eq!(status.unstaged[0].after().unwrap().base().subject, "b");
 }
@@ -89,7 +89,7 @@ fn a_working_delete_not_yet_staged_shows_as_an_unstaged_delete() {
     assert_eq!(unstaged[0].op(), Op::Delete);
     let staged = dam.add_all().unwrap();
     assert_eq!(staged.len(), 1);
-    assert_eq!(staged[0].op(), Op::Delete);
+    assert_eq!(staged[0].change.op(), Op::Delete);
 }
 
 #[test]

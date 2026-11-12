@@ -1,4 +1,4 @@
-use dam_domain::{Change, Oid};
+use dam_domain::{Authored, Change, Oid};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::service::Dam;
@@ -27,7 +27,7 @@ impl Dam<'_> {
                 }
                 Side::Ours => ("ours", conflict.theirs, conflict.ours),
             };
-            let resolution = Change::Update { before, after };
+            let resolution = Authored::by_owner(Change::Update { before, after });
             let message = format!("resolve {} with {word}", oid.short());
             self.store
                 .commit(&record(self.clock, self.random, message, vec![resolution]))?;

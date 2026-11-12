@@ -70,6 +70,7 @@ pub fn authenticate(
             holder: presented.key_id().clone(),
             grants: terms.grants.clone(),
         },
+        channel,
     })
 }
 

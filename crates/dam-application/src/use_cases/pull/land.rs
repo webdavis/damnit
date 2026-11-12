@@ -1,4 +1,4 @@
-use dam_domain::{Change, Object, Oid};
+use dam_domain::{Authored, Change, Object, Oid};
 
 use super::PullReport;
 use super::classify::Incoming;
@@ -52,7 +52,13 @@ impl Dam<'_> {
             self.clock,
             self.random,
             format!("pull from {}", remote.name.0),
-            landed,
+            landed
+                .into_iter()
+                .map(|change| Authored {
+                    change,
+                    author: self.access.author(),
+                })
+                .collect(),
         );
         self.store.commit(&pulled)?;
         self.store.mark_pushed(&remote.name, &pulled.id)?;

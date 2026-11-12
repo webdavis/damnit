@@ -50,7 +50,12 @@ fn a_mutation_the_helper_never_answered_is_a_failure() {
     ));
     let still_unpushed = s.store.unpushed(&todoist()).unwrap();
     assert_eq!(still_unpushed.len(), 1);
-    assert!(still_unpushed[0].changes.iter().any(|c| *c.oid() == oid(2)));
+    assert!(
+        still_unpushed[0]
+            .changes
+            .iter()
+            .any(|c| *c.change.oid() == oid(2))
+    );
 }
 
 #[test]

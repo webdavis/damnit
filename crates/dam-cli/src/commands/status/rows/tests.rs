@@ -1,10 +1,10 @@
 use dam_domain::{Change, Completion, Event, Object, Oid, Path, Priority, Task, When};
 use jiff::civil::date;
 
-use super::ChangeRow;
+use super::{ChangeRow, OWNER};
 
 fn change_json(change: &Change, full: bool) -> serde_json::Result<serde_json::Value> {
-    serde_json::to_value(ChangeRow::new(change, full))
+    serde_json::to_value(ChangeRow::new(change, OWNER, full))
 }
 
 fn oid(byte: u8) -> Oid {
@@ -77,6 +77,9 @@ fn the_default_row_is_the_after_state_without_the_object() {
             "completed_at": null,
             "priority": 1,
             "due": "2026-09-25",
+            "from": null,
+            "key_id": null,
+            "channel": null,
         })
     );
 }
@@ -114,6 +117,9 @@ fn an_event_row_carries_its_start_and_end_in_place_of_the_task_fields() {
             "labels": [],
             "start": "2026-09-25",
             "end": "2026-09-26",
+            "from": null,
+            "key_id": null,
+            "channel": null,
         })
     );
 }
@@ -144,4 +150,26 @@ fn an_open_task_row_carries_a_null_completion_time() {
     let change = Change::between(None, Some(task("a"))).unwrap();
     let document = change_json(&change, false).unwrap();
     assert_eq!(document["completed_at"], serde_json::Value::Null);
+}
+
+#[test]
+fn a_change_a_token_made_names_the_token_its_key_and_its_channel() {
+    let author = dam_domain::Author::Token(dam_domain::TokenAuthor {
+        name: "vpt".into(),
+        key_id: dam_domain::Token::generate(&mut |b: &mut [u8]| b.fill(1))
+            .key_id()
+            .clone(),
+        channel: dam_domain::Channel::Local,
+    });
+    let change = Change::between(None, Some(task("call the dentist"))).unwrap();
+    let row = ChangeRow::new(&change, &author, false);
+    let json = serde_json::to_value(&row).unwrap();
+    assert_eq!(json["from"], "vpt");
+    assert_eq!(json["key_id"], author.token().unwrap().key_id.as_str());
+    assert_eq!(json["channel"], "local");
+    assert!(
+        row.line().ends_with("call the dentist  vpt"),
+        "{}",
+        row.line()
+    );
 }

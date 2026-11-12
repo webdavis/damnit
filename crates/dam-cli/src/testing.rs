@@ -186,5 +186,6 @@ pub(crate) fn holding(permissions: &[dam_domain::Permission]) -> Box<dam_applica
                 ..dam_domain::Grant::default()
             }],
         },
+        channel: dam_domain::Channel::Local,
     })
 }

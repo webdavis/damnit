@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 
-use dam_domain::{Change, CommitId, CommitRecord, Kind, Object, Oid, Timestamp};
+use dam_domain::{Author, Authored, CommitId, CommitRecord, Kind, Object, Oid, Timestamp};
 
 use crate::errors::UseCaseError;
 use crate::ports::{
@@ -13,7 +13,7 @@ use crate::ports::{
 struct Inner {
     working: BTreeMap<Oid, Object>,
     committed: BTreeMap<Oid, Object>,
-    staged: BTreeMap<Oid, Change>,
+    staged: BTreeMap<(Oid, bool), Authored>,
     commits: Vec<CommitRecord>,
     pushed: BTreeMap<RemoteName, Vec<CommitId>>,
     remote_ids: BTreeMap<(RemoteName, Oid), String>,
@@ -87,22 +87,25 @@ impl ObjectRepository for MemoryStore {
 }
 
 impl StageRepository for MemoryStore {
-    fn put_staged(&self, change: Change) -> Result<(), StoreError> {
-        self.0
-            .borrow_mut()
-            .staged
-            .insert(change.oid().clone(), change);
+    fn put_staged(&self, change: Authored) -> Result<(), StoreError> {
+        self.0.borrow_mut().staged.insert(
+            (change.change.oid().clone(), change.author == Author::Owner),
+            change,
+        );
         Ok(())
     }
     fn unstage(&self, oid: &Oid) -> Result<(), StoreError> {
-        self.0.borrow_mut().staged.remove(oid);
+        self.0
+            .borrow_mut()
+            .staged
+            .retain(|(staged, _), _| staged != oid);
         Ok(())
     }
     fn unstage_all(&self) -> Result<(), StoreError> {
         self.0.borrow_mut().staged.clear();
         Ok(())
     }
-    fn staged(&self) -> Result<Vec<Change>, StoreError> {
+    fn staged(&self) -> Result<Vec<Authored>, StoreError> {
         Ok(self.0.borrow().staged.values().cloned().collect())
     }
 }
@@ -110,12 +113,12 @@ impl StageRepository for MemoryStore {
 impl CommitRepository for MemoryStore {
     fn commit(&self, record: &CommitRecord) -> Result<(), StoreError> {
         let mut inner = self.0.borrow_mut();
-        for change in &record.changes {
+        for Authored { change, .. } in &record.changes {
             match change.after() {
                 Some(after) => inner.committed.insert(change.oid().clone(), after.clone()),
                 None => inner.committed.remove(change.oid()),
             };
-            inner.staged.remove(change.oid());
+            inner.staged.retain(|(staged, _), _| staged != change.oid());
         }
         inner.commits.push(record.clone());
         Ok(())

@@ -1,6 +1,6 @@
 use dam_application::Standing;
-use dam_domain::Change;
 use dam_domain::Permission::{ConfigRead, ConflictRead, RemoteRead};
+use dam_domain::{Authored, Change};
 
 use crate::args::{DiffArgs, StatusArgs};
 use crate::context::Context;
@@ -14,8 +14,8 @@ mod rows;
 mod view;
 
 use notices::NoticeRow;
-pub(crate) use rows::ChangeRow;
 use rows::ConflictRow;
+pub(crate) use rows::{ChangeRow, OWNER};
 use view::{DiffView, StatusView, UnpushedRow};
 
 pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliError> {
@@ -24,8 +24,8 @@ pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliE
     let shown = |permission| may(ctx.access.as_ref(), permission);
     let warnings = token_warnings(ctx);
     report(&StatusView {
-        staged: change_rows(&s.staged, args.full),
-        unstaged: change_rows(&s.unstaged, args.full),
+        staged: authored_rows(&s.staged, args.full),
+        unstaged: owner_rows(&s.unstaged, args.full),
         conflicts: only_if(
             shown(ConflictRead),
             s.conflicts.iter().map(ConflictRow::new),
@@ -41,18 +41,30 @@ fn only_if<T>(shown: bool, rows: impl Iterator<Item = T>) -> Vec<T> {
 }
 
 pub(crate) fn run_diff(ctx: &Context, args: DiffArgs) -> Result<Report, CliError> {
-    let changes = if args.staged {
-        ctx.store.staged()?
-    } else {
-        ctx.dam().diff_working()?
-    };
+    if args.staged {
+        let staged = ctx.store.staged()?;
+        return report(&DiffView {
+            changes: authored_rows(&staged, args.full),
+        });
+    }
+    let working = ctx.dam().diff_working()?;
     report(&DiffView {
-        changes: change_rows(&changes, args.full),
+        changes: owner_rows(&working, args.full),
     })
 }
 
-fn change_rows(changes: &[Change], full: bool) -> Vec<ChangeRow<'_>> {
-    changes.iter().map(|c| ChangeRow::new(c, full)).collect()
+fn authored_rows(changes: &[Authored], full: bool) -> Vec<ChangeRow<'_>> {
+    changes
+        .iter()
+        .map(|c| ChangeRow::new(&c.change, &c.author, full))
+        .collect()
+}
+
+fn owner_rows(changes: &[Change], full: bool) -> Vec<ChangeRow<'_>> {
+    changes
+        .iter()
+        .map(|c| ChangeRow::new(c, OWNER, full))
+        .collect()
 }
 
 fn token_warnings(ctx: &Context) -> impl Iterator<Item = String> + '_ {

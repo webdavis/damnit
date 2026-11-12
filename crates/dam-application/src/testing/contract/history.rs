@@ -1,7 +1,7 @@
 use crate::ports::{CommitRepository, RemoteTrackingRepository, Store};
-use dam_domain::{Change, CommitRecord, Timestamp};
+use dam_domain::{Authored, Change, CommitRecord, Timestamp};
 
-use super::{commit_id, oid, remote, task};
+use super::{commit_id, oid, remote, task, token_author};
 
 pub fn commit_repository_contract(commits: &dyn CommitRepository) {
     let here = remote("here");
@@ -10,7 +10,8 @@ pub fn commit_repository_contract(commits: &dyn CommitRepository) {
     assert!(commits.unpushed(&here).unwrap().is_empty());
 
     let first = record(1, "first", 1);
-    let second = record(2, "second", 2);
+    let mut second = record(2, "second", 2);
+    second.changes[0].author = token_author();
     commits.commit(&first).unwrap();
     commits.commit(&second).unwrap();
 
@@ -20,7 +21,11 @@ pub fn commit_repository_contract(commits: &dyn CommitRepository) {
         vec![second.id.clone(), first.id.clone()],
         "the log reads newest first"
     );
-    assert_eq!(log[0].changes, second.changes, "a commit keeps its changes");
+    assert_eq!(
+        log[0].changes, second.changes,
+        "a commit keeps its changes and who made each"
+    );
+    assert_eq!(log[1].changes, first.changes);
 
     assert_eq!(commits.unpushed(&here).unwrap().len(), 2);
     commits.mark_pushed(&here, &first.id).unwrap();
@@ -77,9 +82,9 @@ pub(super) fn record(byte: u8, message: &str, object: u8) -> CommitRecord {
         id: commit_id(byte),
         message: message.to_string(),
         at: Timestamp::UNIX_EPOCH,
-        changes: vec![Change::Create {
+        changes: vec![Authored::by_owner(Change::Create {
             after: task(object, message, ""),
-        }],
+        })],
     }
 }
 

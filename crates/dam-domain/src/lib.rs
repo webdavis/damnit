@@ -21,7 +21,8 @@ pub use access::{
 };
 pub use category::{Categories, Category, CategoryError, LabelViolation};
 pub use change::{
-    Change, CommitId, CommitRecord, Op, changed_fields, kind_change, merge_fields, touched_fields,
+    Author, Authored, Change, CommitId, CommitRecord, Op, TokenAuthor, changed_fields, kind_change,
+    merge_fields, touched_fields,
 };
 pub use completion::{
     Blockers, ChildDisposition, DependencyDisposition, Dispositions, Force, Tracked, cycle_in,

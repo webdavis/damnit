@@ -1,4 +1,4 @@
-use dam_domain::{Change, CommitId, CommitRecord, Kind, Oid};
+use dam_domain::{Authored, CommitId, CommitRecord, Kind, Oid};
 
 use crate::ports::{
     AcceptedKindsRepository, CommitRepository, RemoteName, StageRepository, StoreError,
@@ -7,7 +7,7 @@ use crate::ports::{
 use super::FaultyStore;
 
 impl StageRepository for FaultyStore {
-    fn put_staged(&self, change: Change) -> Result<(), StoreError> {
+    fn put_staged(&self, change: Authored) -> Result<(), StoreError> {
         self.write()?;
         self.inner.put_staged(change)
     }
@@ -19,7 +19,7 @@ impl StageRepository for FaultyStore {
         self.write()?;
         self.inner.unstage_all()
     }
-    fn staged(&self) -> Result<Vec<Change>, StoreError> {
+    fn staged(&self) -> Result<Vec<Authored>, StoreError> {
         self.inner.staged()
     }
 }

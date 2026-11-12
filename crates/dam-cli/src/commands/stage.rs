@@ -52,7 +52,10 @@ pub(crate) fn run_add(ctx: &Context, args: AddArgs) -> Result<Report, CliError> 
         ctx.dam().add(&oids)?
     };
     report(&Staged {
-        staged: changes.iter().map(|c| ChangeRow::new(c, false)).collect(),
+        staged: changes
+            .iter()
+            .map(|c| ChangeRow::new(&c.change, &c.author, false))
+            .collect(),
     })
 }
 

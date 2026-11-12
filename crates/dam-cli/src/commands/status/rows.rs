@@ -1,12 +1,23 @@
 use std::collections::BTreeSet;
 
 use dam_application::Conflict;
-use dam_domain::{Change, Field, Object, Oid, Timestamp, When, changed_fields, touched_fields};
+use dam_domain::{
+    Author, Change, Field, Object, Oid, Timestamp, When, changed_fields, touched_fields,
+};
 use serde::Serialize;
 
 use crate::view::{Line, display, optional_display, optional_wire, wire};
 
-fn change_line(change: &Change) -> String {
+pub(crate) const OWNER: &Author = &Author::Owner;
+
+fn change_line(change: &Change, author: &Author) -> String {
+    match author.token() {
+        Some(token) => format!("{}  {}", what_changed(change), token.name),
+        None => what_changed(change),
+    }
+}
+
+fn what_changed(change: &Change) -> String {
     let subject = &change.object().base().subject;
     let oid = change.oid().short();
     match change {
@@ -27,6 +38,8 @@ fn change_line(change: &Change) -> String {
 pub(crate) struct ChangeRow<'a> {
     #[serde(skip)]
     change: &'a Change,
+    #[serde(skip)]
+    author: &'a Author,
     #[serde(serialize_with = "display")]
     oid: &'a Oid,
     op: &'static str,
@@ -39,6 +52,9 @@ pub(crate) struct ChangeRow<'a> {
     state: KindState,
     #[serde(flatten)]
     sides: Option<Sides<'a>>,
+    from: Option<&'a str>,
+    key_id: Option<&'a str>,
+    channel: Option<&'static str>,
 }
 
 #[derive(Serialize)]
@@ -66,11 +82,16 @@ struct Sides<'a> {
 }
 
 impl<'a> ChangeRow<'a> {
-    pub(crate) fn new(change: &'a Change, full: bool) -> ChangeRow<'a> {
+    pub(crate) fn new(change: &'a Change, author: &'a Author, full: bool) -> ChangeRow<'a> {
         let object = change.object();
         let base = object.base();
+        let token = author.token();
         ChangeRow {
             change,
+            author,
+            from: token.map(|t| t.name.as_str()),
+            key_id: token.map(|t| t.key_id.as_str()),
+            channel: token.map(|t| t.channel.as_str()),
             oid: change.oid(),
             op: change.op().as_str(),
             fields: touched_fields(change).iter().map(Field::as_str).collect(),
@@ -98,7 +119,7 @@ impl<'a> ChangeRow<'a> {
     }
 
     pub(crate) fn line(&self) -> String {
-        change_line(self.change)
+        change_line(self.change, self.author)
     }
 }
 

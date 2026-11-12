@@ -1,6 +1,6 @@
 use std::fmt;
 
-use dam_domain::{Change, CommitId, CommitRecord, Kind, Object, Oid, Timestamp};
+use dam_domain::{Authored, CommitId, CommitRecord, Kind, Object, Oid, Timestamp};
 
 use crate::errors::UseCaseError;
 
@@ -77,10 +77,10 @@ pub trait ObjectRepository: Transactional {
 }
 
 pub trait StageRepository {
-    fn put_staged(&self, change: Change) -> Result<(), StoreError>;
+    fn put_staged(&self, change: Authored) -> Result<(), StoreError>;
     fn unstage(&self, oid: &Oid) -> Result<(), StoreError>;
     fn unstage_all(&self) -> Result<(), StoreError>;
-    fn staged(&self) -> Result<Vec<Change>, StoreError>;
+    fn staged(&self) -> Result<Vec<Authored>, StoreError>;
 }
 
 pub trait CommitRepository {

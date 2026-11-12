@@ -13,6 +13,10 @@ const MAX_VERSION_DIGITS: usize = 4;
 pub struct KeyId(String);
 
 impl KeyId {
+    pub fn parse(text: &str) -> Option<KeyId> {
+        (text.len() == KEY_ID_LEN && base62::all(text)).then(|| KeyId(text.to_string()))
+    }
+
     pub fn as_str(&self) -> &str {
         &self.0
     }

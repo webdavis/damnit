@@ -20,6 +20,7 @@ fn holding(grants: Vec<Grant>) -> Holder {
                 .clone(),
             grants,
         },
+        channel: dam_domain::Channel::Local,
     }
 }
 

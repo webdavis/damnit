@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use dam_domain::{Change, CommitId, Kind, Object, Oid};
+use dam_domain::{Authored, Change, CommitId, Kind, Object, Oid};
 
 use crate::errors::UseCaseError;
 use crate::ports::{CommitRepository, Conflict, Notice, RemoteName, Store};
@@ -8,7 +8,7 @@ use crate::service::Dam;
 use crate::use_cases::stage::working_and_ever_committed_oids;
 
 pub struct Status {
-    pub staged: Vec<Change>,
+    pub staged: Vec<Authored>,
     pub unstaged: Vec<Change>,
     pub conflicts: Vec<Conflict>,
     pub notices: Vec<Notice>,
@@ -55,6 +55,7 @@ fn unpushed_for(
         let owed: Vec<&Change> = record
             .changes
             .iter()
+            .map(|authored| &authored.change)
             .filter(|change| taken_by(accepted, change))
             .collect();
         if owed.is_empty() {
@@ -85,7 +86,7 @@ fn working_changes(store: &dyn Store) -> Result<Vec<Change>, UseCaseError> {
     let staged: BTreeMap<Oid, Change> = store
         .staged()?
         .into_iter()
-        .map(|c| (c.oid().clone(), c))
+        .map(|c| (c.change.oid().clone(), c.change))
         .collect();
     let mut out = Vec::new();
     for oid in working_and_ever_committed_oids(store)? {

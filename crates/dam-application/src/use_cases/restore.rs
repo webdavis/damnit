@@ -23,7 +23,7 @@ impl Dam<'_> {
                 .store
                 .staged()?
                 .into_iter()
-                .map(|c| c.oid().clone())
+                .map(|c| c.change.oid().clone())
                 .collect();
             let mut restored = Vec::with_capacity(oids.len());
             for (oid, object) in oids.into_iter().zip(committed) {

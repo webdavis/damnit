@@ -92,7 +92,7 @@ fn staging_inside_an_open_unit_rolls_back_with_it() {
         after: dam_domain::Object::Task(dam_domain::Task::new(oid, "milk")),
     };
     let outcome = store.in_savepoint::<(), StoreError>("dam_test", || {
-        store.put_staged(change.clone())?;
+        store.put_staged(dam_domain::Authored::by_owner(change.clone()))?;
         assert_eq!(store.staged().unwrap().len(), 1);
         Err(StoreError::Failed("the caller gave up".into()))
     });

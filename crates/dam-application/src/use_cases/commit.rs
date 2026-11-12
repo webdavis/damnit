@@ -1,4 +1,4 @@
-use dam_domain::{Change, CommitId, CommitRecord};
+use dam_domain::{Authored, CommitId, CommitRecord};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{Clock, Randomness};
@@ -20,7 +20,7 @@ pub(crate) fn record(
     clock: &dyn Clock,
     random: &dyn Randomness,
     message: String,
-    changes: Vec<Change>,
+    changes: Vec<Authored>,
 ) -> CommitRecord {
     CommitRecord {
         id: CommitId::generate(&mut |b| random.fill(b)),
