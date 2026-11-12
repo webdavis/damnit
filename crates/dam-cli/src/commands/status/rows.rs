@@ -8,8 +8,12 @@ use serde::Serialize;
 
 use crate::view::{Line, display, optional_display, optional_wire, wire};
 
+mod details;
 mod lines;
 mod values;
+
+use details::DetailsView;
+pub(crate) use details::visible;
 
 fn what_changed(change: &Change, oid: &str) -> String {
     let subject = &change.object().base().subject;
@@ -46,6 +50,8 @@ pub(crate) struct ChangeRow<'a> {
     from: Option<&'a str>,
     key_id: Option<&'a str>,
     channel: Option<&'static str>,
+    author: Option<&'a str>,
+    details: Option<DetailsView<'a>>,
 }
 
 #[derive(Serialize)]
@@ -83,6 +89,8 @@ impl<'a> ChangeRow<'a> {
         ChangeRow {
             change,
             from: token.map(|t| t.name.as_str()),
+            author: token.map(|t| t.name.as_str()),
+            details: None,
             key_id: token.map(|t| t.key_id.as_str()),
             channel: token.map(|t| t.channel.as_str()),
             oid: change.oid(),

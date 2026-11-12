@@ -27,7 +27,8 @@ impl Dam<'_> {
                 }
                 Side::Ours => ("ours", conflict.theirs, conflict.ours),
             };
-            let resolution = Authored::by_owner(Change::Update { before, after });
+            let resolution = Authored::by_owner(Change::Update { before, after })
+                .with_details(self.access.details());
             let message = format!("resolve {} with {word}", oid.short());
             self.store
                 .commit(&record(self.clock, self.random, message, vec![resolution]))?;

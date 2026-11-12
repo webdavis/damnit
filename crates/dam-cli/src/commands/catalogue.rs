@@ -102,6 +102,7 @@ mod tests {
 
     fn config() -> Config {
         Config {
+            owner: None,
             done_interactive: false,
             remotes: vec![],
             categories: Categories::default(),

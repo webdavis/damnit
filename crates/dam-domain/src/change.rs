@@ -108,9 +108,11 @@ pub struct CommitRecord {
 }
 
 mod authored;
+mod details;
 mod fields;
 
 pub use authored::{Author, Authored, TokenAuthor};
+pub use details::Details;
 
 pub use fields::{changed_fields, kind_change, merge_fields, touched_fields};
 

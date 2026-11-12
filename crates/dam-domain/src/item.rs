@@ -4,7 +4,7 @@ mod clash;
 mod proposal;
 
 use crate::vocabulary::vocabulary;
-use crate::{Change, Oid, Op, Timestamp, TokenAuthor};
+use crate::{Change, Details, Oid, Op, Timestamp, TokenAuthor};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct ItemHash(Oid);
@@ -89,6 +89,7 @@ pub struct Item {
     pub change: Change,
     pub created: Timestamp,
     pub outcome: Outcome,
+    pub details: Option<Details>,
 }
 
 impl Item {
@@ -108,6 +109,14 @@ impl Item {
             change,
             created,
             outcome: Outcome::Waiting,
+            details: None,
+        }
+    }
+
+    pub fn with_details(self, details: Option<&Details>) -> Item {
+        Item {
+            details: details.cloned(),
+            ..self
         }
     }
 

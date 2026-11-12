@@ -23,7 +23,17 @@
           "due": "2026-09-25",
           "from": null,
           "key_id": null,
-          "channel": null
+          "channel": null,
+          "author": "owner",
+          "details": {
+            "meta": {},
+            "host": "<host>",
+            "dir": "<dir>",
+            "repo": null,
+            "branch": null,
+            "at": "<now>",
+            "channel": "local"
+          }
         }
       ]
     },
@@ -54,7 +64,17 @@
           "due": "2026-09-25",
           "from": null,
           "key_id": null,
-          "channel": null
+          "channel": null,
+          "author": "owner",
+          "details": {
+            "meta": {},
+            "host": "<host>",
+            "dir": "<dir>",
+            "repo": null,
+            "branch": null,
+            "at": "<now>",
+            "channel": "local"
+          }
         },
         {
           "oid": "2222222222222222222222222222222222222222",
@@ -72,7 +92,17 @@
           "due": null,
           "from": null,
           "key_id": null,
-          "channel": null
+          "channel": null,
+          "author": "owner",
+          "details": {
+            "meta": {},
+            "host": "<host>",
+            "dir": "<dir>",
+            "repo": null,
+            "branch": null,
+            "at": "<now>",
+            "channel": "local"
+          }
         },
         {
           "oid": "3333333333333333333333333333333333333333",
@@ -91,7 +121,17 @@
           "end": "2026-09-25T09:15:00+00:00",
           "from": null,
           "key_id": null,
-          "channel": null
+          "channel": null,
+          "author": "owner",
+          "details": {
+            "meta": {},
+            "host": "<host>",
+            "dir": "<dir>",
+            "repo": null,
+            "branch": null,
+            "at": "<now>",
+            "channel": "local"
+          }
         },
         {
           "oid": "4444444444444444444444444444444444444444",
@@ -113,7 +153,17 @@
           "end": "2026-09-27",
           "from": null,
           "key_id": null,
-          "channel": null
+          "channel": null,
+          "author": "owner",
+          "details": {
+            "meta": {},
+            "host": "<host>",
+            "dir": "<dir>",
+            "repo": null,
+            "branch": null,
+            "at": "<now>",
+            "channel": "local"
+          }
         }
       ]
     }

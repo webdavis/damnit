@@ -24,7 +24,27 @@ pub fn assert_golden_output(sb: &Sandbox, args: &[&str], name: &str) {
     assert_golden(name, &normalize(&out, &super::fixture::seeded_oids()));
 }
 
+const MACHINE_KEYS: [&str; 2] = ["host", "dir"];
+
+fn without_the_machine(line: &str) -> String {
+    for key in MACHINE_KEYS {
+        let lead = format!("\"{key}\": \"");
+        if let Some(start) = line.find(&lead) {
+            let comma = if line.ends_with(',') { "," } else { "" };
+            return format!("{}<{key}>\"{comma}", &line[..start + lead.len()]);
+        }
+    }
+    line.to_string()
+}
+
 pub fn normalize(text: &str, seeded: &[String]) -> String {
+    let text = &text
+        .split_inclusive('\n')
+        .map(|line| match line.strip_suffix('\n') {
+            Some(bare) => without_the_machine(bare) + "\n",
+            None => without_the_machine(line),
+        })
+        .collect::<String>();
     let bytes = text.as_bytes();
     let mut ids: Vec<String> = Vec::new();
     let mut out = String::new();

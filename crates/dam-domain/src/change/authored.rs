@@ -1,4 +1,4 @@
-use super::Change;
+use super::{Change, Details};
 use crate::{Channel, KeyId};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -18,6 +18,7 @@ pub enum Author {
 pub struct Authored {
     pub change: Change,
     pub author: Author,
+    pub details: Option<Details>,
 }
 
 impl Authored {
@@ -25,6 +26,14 @@ impl Authored {
         Authored {
             change,
             author: Author::Owner,
+            details: None,
+        }
+    }
+
+    pub fn with_details(self, details: Option<&Details>) -> Authored {
+        Authored {
+            details: details.cloned(),
+            ..self
         }
     }
 }

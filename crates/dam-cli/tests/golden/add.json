@@ -22,7 +22,17 @@
       "due": "2026-09-25",
       "from": null,
       "key_id": null,
-      "channel": null
+      "channel": null,
+      "author": "owner",
+      "details": {
+        "meta": {},
+        "host": "<host>",
+        "dir": "<dir>",
+        "repo": null,
+        "branch": null,
+        "at": "<now>",
+        "channel": "local"
+      }
     }
   ]
 }

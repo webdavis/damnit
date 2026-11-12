@@ -4,6 +4,7 @@ use rusqlite::{Connection, params};
 
 use super::SqliteStore;
 use super::authored_rows::{AUTHORED_COLUMNS, author_columns, change_columns, read_authored};
+use super::details_json::details_to_json;
 use super::objects::sql;
 
 impl CommitRepository for SqliteStore {
@@ -107,7 +108,7 @@ fn write_change(
     let change = change_columns(&authored.change)?;
     let author = author_columns(&authored.author);
     conn.execute(
-        "INSERT INTO commit_changes (commit_id, ord, oid, op, before_json, after_json, author_token, author_key_id, author_channel) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        "INSERT INTO commit_changes (commit_id, ord, oid, op, before_json, after_json, author_token, author_key_id, author_channel, details_json) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
         params![
             record.id.as_str(),
             ord as i64,
@@ -117,7 +118,8 @@ fn write_change(
             change.after,
             author.token,
             author.key_id,
-            author.channel
+            author.channel,
+            details_to_json(authored.details.as_ref())?
         ],
     )
     .map_err(sql)?;

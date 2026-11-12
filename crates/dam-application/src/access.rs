@@ -1,14 +1,20 @@
 mod authenticate;
+mod detailed;
 
-use dam_domain::{Author, Channel, Grants, Object, Permission, Subject, TokenAuthor};
+use dam_domain::{Author, Channel, Details, Grants, Object, Permission, Subject, TokenAuthor};
 
 pub use authenticate::{TokenRefusal, authenticate};
+pub use detailed::Detailed;
 
 pub trait Access {
     fn token(&self) -> Option<&str>;
     fn author(&self) -> Author;
     fn holds(&self, permission: Permission) -> bool;
     fn permits(&self, permission: Permission, touched: &[Subject<'_>]) -> bool;
+
+    fn details(&self) -> Option<&Details> {
+        None
+    }
 
     fn sees(&self, object: &Object) -> bool {
         self.permits(Permission::read(object.kind()), &[Subject::Object(object)])

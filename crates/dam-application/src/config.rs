@@ -9,6 +9,7 @@ use crate::tokens::Tokens;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Config {
+    pub owner: Option<String>,
     pub done_interactive: bool,
     pub remotes: Vec<RemoteConfig>,
     pub categories: Categories,
@@ -81,6 +82,10 @@ impl RemoteConfig {
 }
 
 impl Config {
+    pub fn owner_name(&self) -> &str {
+        self.owner.as_deref().unwrap_or("owner")
+    }
+
     pub fn remote(&self, name: &str) -> Option<&RemoteConfig> {
         self.remotes.iter().find(|r| r.name.0 == name)
     }

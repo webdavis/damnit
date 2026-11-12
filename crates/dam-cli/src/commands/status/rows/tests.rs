@@ -80,6 +80,8 @@ fn the_default_row_is_the_after_state_without_the_object() {
             "from": null,
             "key_id": null,
             "channel": null,
+            "author": null,
+            "details": null,
         })
     );
 }
@@ -120,6 +122,8 @@ fn an_event_row_carries_its_start_and_end_in_place_of_the_task_fields() {
             "from": null,
             "key_id": null,
             "channel": null,
+            "author": null,
+            "details": null,
         })
     );
 }

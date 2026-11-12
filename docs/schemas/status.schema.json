@@ -31,9 +31,9 @@
   "$defs": {
     "id": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
     "change": {
-      "description": "One change. from, key_id and channel name the token that made it, and are null for the owner.",
+      "description": "One change. from, key_id and channel name the token that made it, and are null for the owner. author is the token's name, or the owner's from the config. details are null for a change not yet staged, one recorded before dam kept them, and another sender's change read with a token.",
       "type": "object",
-      "required": ["oid", "op", "fields", "kind", "subject", "path", "labels", "from", "key_id", "channel"],
+      "required": ["oid", "op", "fields", "kind", "subject", "path", "labels", "from", "key_id", "channel", "author", "details"],
       "properties": {
         "oid": { "$ref": "#/$defs/id" },
         "op": { "enum": ["create", "update", "delete"] },
@@ -52,7 +52,9 @@
         "after": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json" }] },
         "from": { "type": ["string", "null"] },
         "key_id": { "type": ["string", "null"], "pattern": "^[0-9A-Za-z]{12}$" },
-        "channel": { "enum": ["local", "mcp", null] }
+        "channel": { "enum": ["local", "mcp", null] },
+        "author": { "type": "string" },
+        "details": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/$defs/details" }] }
       }
     },
     "waiting": {

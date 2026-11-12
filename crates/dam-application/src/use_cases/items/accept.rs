@@ -42,6 +42,7 @@ impl Dam<'_> {
         let staged = Authored {
             change,
             author: Author::Token(item.author),
+            details: item.details,
         };
         self.store.put_staged(staged.clone())?;
         Ok(Some(staged))

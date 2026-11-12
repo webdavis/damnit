@@ -45,7 +45,9 @@ fn load_config(path: &FsPath) -> Result<Config, ConfigError> {
     }
 }
 
-const SECTIONS: [&str; 6] = ["done", "remote", "category", "filter", "schema", "token"];
+const SECTIONS: [&str; 7] = [
+    "owner", "done", "remote", "category", "filter", "schema", "token",
+];
 
 pub fn parse_config(text: &str) -> Result<Config, ConfigError> {
     let table = parse_toml(text).map_err(ConfigError::Syntax)?;
@@ -72,6 +74,7 @@ pub fn parse_config(text: &str) -> Result<Config, ConfigError> {
         .map(|(name, t)| parse_filter(name, &t))
         .collect::<Result<Vec<_>, _>>()?;
     Ok(Config {
+        owner: root.string("owner")?,
         done_interactive,
         remotes,
         categories,

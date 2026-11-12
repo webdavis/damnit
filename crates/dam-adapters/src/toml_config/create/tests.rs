@@ -41,7 +41,7 @@ fn the_template_reads_as_an_empty_config() {
 #[test]
 fn every_example_block_reads_on_its_own() {
     let blocks = example_blocks();
-    assert_eq!(blocks.len(), 5, "{blocks:?}");
+    assert_eq!(blocks.len(), 6, "{blocks:?}");
     for block in blocks {
         let text = block.join("\n");
         parse_config(&text).unwrap_or_else(|e| panic!("{e:?}:\n{text}"));
@@ -58,6 +58,7 @@ fn every_example_uncommented_at_once_is_a_working_config() {
         .join("\n")
         .replace("damk_v1_...", &value);
     let config = parse_config(&text).unwrap();
+    assert_eq!(config.owner_name(), "Stephen");
     let remote = config.remote("todoist").unwrap();
     assert_eq!(remote.credentials.len(), 1, "{remote:?}");
     assert!(remote.stale.is_some() && remote.deadline.is_some() && remote.path.is_some());
