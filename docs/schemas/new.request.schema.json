@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/new.request.schema.json",
+  "title": "dam new request",
+  "description": "The flags dam new takes, one key per flag without its dashes, and subject for its argument.",
+  "type": "object",
+  "required": [
+    "subject"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "subject": {
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "task",
+        "event"
+      ],
+      "default": "task"
+    },
+    "path": {
+      "type": "string",
+      "description": "A path such as work/clients/. Default: the root."
+    },
+    "due": {
+      "type": "string",
+      "description": "A date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4,
+      "description": "1 is the highest."
+    },
+    "deadline": {
+      "type": "string",
+      "description": "A whole day, read the way due reads one."
+    },
+    "labels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "body": {
+      "type": "string"
+    },
+    "start": {
+      "type": "string",
+      "description": "A date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
+    },
+    "end": {
+      "type": "string",
+      "description": "A date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
+    }
+  },
+  "if": {
+    "required": [
+      "kind"
+    ],
+    "properties": {
+      "kind": {
+        "const": "event"
+      }
+    }
+  },
+  "then": {
+    "required": [
+      "start",
+      "end"
+    ]
+  }
+}

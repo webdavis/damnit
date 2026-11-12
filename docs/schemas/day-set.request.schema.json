@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/day-set.request.schema.json",
+  "title": "dam day set request",
+  "description": "The day document dam day set reads from stdin as JSON or TOON. It takes no flags. Every key but day may be left out.",
+  "type": "object",
+  "required": [
+    "day"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "day": {
+      "$ref": "day.schema.json#/properties/day"
+    },
+    "plan": {
+      "$ref": "day.schema.json#/properties/plan"
+    },
+    "proposals": {
+      "$ref": "day.schema.json#/properties/proposals"
+    },
+    "decisions": {
+      "$ref": "day.schema.json#/properties/decisions"
+    },
+    "tasks": {
+      "$ref": "day.schema.json#/properties/tasks"
+    },
+    "closed_at": {
+      "$ref": "day.schema.json#/properties/closed_at"
+    }
+  }
+}

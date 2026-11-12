@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/rm.request.schema.json",
+  "title": "dam rm request",
+  "description": "The argument dam rm takes: an object's oid, or a waiting item's hash.",
+  "type": "object",
+  "required": [
+    "oid"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "oid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{4,40}$",
+      "description": "An oid, or a prefix of 4 or more hex characters."
+    }
+  }
+}
