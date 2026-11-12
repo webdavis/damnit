@@ -5,6 +5,7 @@ use dam_domain::{Categories, Category};
 use dam_toml::{Place, StrictTable, parse_toml};
 
 mod append;
+mod create;
 mod file;
 mod remote;
 mod token;

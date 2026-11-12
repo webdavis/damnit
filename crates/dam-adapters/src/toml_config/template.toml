@@ -1,0 +1,67 @@
+# dam config. dam made this file because none was here. It stays yours: dam never rewrites it,
+# and `dam remote add` only appends to it. Each setting is commented out or set to its default.
+# Remove the leading # from an example line to use it.
+
+# The config format this file is written in. A schema dam does not know disables every token.
+schema = 1
+
+# With interactive = true, `dam done` asks what to do with a task's open children and
+# dependencies instead of refusing.
+#[done]
+#interactive = false
+
+# A remote dam pulls from and pushes to, run by the dam-remote-<helper> program on PATH.
+# url is <helper>::<address>; `dam remote add <name> <url>` writes this table for you.
+# A credential takes one of three forms, and the first one set wins:
+#   api_token is the value itself, and needs its name in credentials.
+#   api_token_command is a command that prints it.
+#   api_token_env names an environment variable that holds it.
+# stale makes reads pull first when the last pull is older than that.
+# deadline bounds one helper answer, 60s by default.
+# path limits a push to the objects under that path.
+#[remote.todoist]
+#url = "todoist::"
+#credentials = ["api_token"]
+#api_token = "your-api-token"
+#api_token_command = ["security", "find-generic-password", "-w", "-s", "Todoist API Token"]
+#api_token_env = "TODOIST_API_TOKEN"
+#stale = "15m"
+#deadline = "60s"
+#path = "work"
+
+# A label category groups labels so a query can say effort:deep. With exclusive = true an
+# object carries at most one of its values.
+#[category.effort]
+#values = ["light", "admin", "deep"]
+#exclusive = true
+
+# A saved filter runs by name in place of a query.
+#[filter.today]
+#query = "due:today | overdue"
+
+# A token lets a tool run dam as itself: it sets DAM_TOKEN to the value.
+# not_before and expires bound when the token works, and via names where it may arrive from:
+# local, mcp, or both. via is ["local"] by default.
+# require and limits are not supported yet. A token that names any cannot be used.
+# Each grant allows the permissions in allow, and only within all of its limits that are set:
+#   paths, objects under one of these paths.
+#   labels, objects carrying one of these labels.
+#   own, objects this token made. It matches nothing yet.
+#   remotes, the remotes named here.
+# One grant must cover everything a command touches.
+# The permissions are task:read, task:create, task:change, task:complete, task:move,
+# task:remove, event:read, event:create, event:change, event:move, event:remove,
+# pending:read, pending:accept, pending:reject, working:read, stage:read, history:read,
+# history:commit, remote:read, remote:pull, remote:push, conflict:read, conflict:resolve
+# and config:read.
+#[token.vpt]
+#value = "damk_v1_..."
+#not_before = 2026-01-01T00:00:00Z
+#expires = 2027-01-01T00:00:00Z
+#via = ["local"]
+#[[token.vpt.grant]]
+#allow = ["task:read", "task:create", "remote:pull"]
+#paths = ["work"]
+#labels = ["errand"]
+#own = false
+#remotes = ["todoist"]
