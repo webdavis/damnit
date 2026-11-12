@@ -21,9 +21,9 @@ pub use errors::{Refusal, UseCaseError};
 pub use ports::{
     AcceptedKindsRepository, Clock, CommitRepository, ConfigError, ConfigFile, Conflict,
     ConflictRepository, CredentialError, CredentialSource, DayRepository, HelperError,
-    HelperLauncher, Notice, NoticeRepository, ObjectRepository, Randomness, RemoteHelper,
-    RemoteName, RemoteNameError, RemoteTrackingRepository, StageRepository, Store, StoreError,
-    Transactional,
+    HelperLauncher, ItemRepository, Notice, NoticeRepository, ObjectRepository, Randomness,
+    RemoteHelper, RemoteName, RemoteNameError, RemoteTrackingRepository, StageRepository, Store,
+    StoreError, Transactional,
 };
 pub use remote::{
     IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, RejectedObject,

@@ -1,4 +1,5 @@
 use super::days::DayRepository;
+use super::items::ItemRepository;
 use super::notices::NoticeRepository;
 use super::store::{
     AcceptedKindsRepository, CommitRepository, ConflictRepository, ObjectRepository,
@@ -14,6 +15,7 @@ pub trait Store:
     + ConflictRepository
     + NoticeRepository
     + DayRepository
+    + ItemRepository
     + Transactional
 {
 }
@@ -27,6 +29,7 @@ impl<T> Store for T where
         + ConflictRepository
         + NoticeRepository
         + DayRepository
+        + ItemRepository
         + Transactional
 {
 }

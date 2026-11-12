@@ -49,6 +49,7 @@ CREATE TABLE days (day TEXT PRIMARY KEY, json TEXT NOT NULL);
 "#;
 
 const V7: &str = r#"
+CREATE TABLE items (hash TEXT PRIMARY KEY, token TEXT NOT NULL, key_id TEXT NOT NULL, channel TEXT NOT NULL, op TEXT NOT NULL, target TEXT NOT NULL, before_json TEXT, after_json TEXT, created TEXT NOT NULL, outcome TEXT NOT NULL, outcome_at TEXT);
 CREATE TABLE stage_by_author (oid TEXT NOT NULL, op TEXT NOT NULL, before_json TEXT, after_json TEXT, author_token TEXT, author_key_id TEXT, author_channel TEXT);
 INSERT INTO stage_by_author (oid, op, before_json, after_json) SELECT oid, op, before_json, after_json FROM stage;
 DROP TABLE stage;
