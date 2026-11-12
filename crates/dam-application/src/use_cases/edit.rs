@@ -1,13 +1,14 @@
 use std::collections::BTreeMap;
 
-use dam_domain::{Completion, Date, Object, Oid, Priority, Recurrence, When, cycle_in};
+use dam_domain::{Completion, Date, Object, Oid, Permission, Priority, Recurrence, When, cycle_in};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
 use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
-use crate::use_cases::load::{load, no_such_object};
-use crate::use_cases::subtree::{holds_objects, replace_carrying_folder};
+use crate::use_cases::items::land::Landed;
+use crate::use_cases::load::no_such_object;
+use crate::use_cases::subtree::holds_objects;
 
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct EditFields {
@@ -31,9 +32,10 @@ pub struct EditFields {
 }
 
 impl Dam<'_> {
-    pub fn edit(&self, oid: &Oid, fields: EditFields) -> Result<Object, UseCaseError> {
+    pub fn edit(&self, oid: &Oid, fields: EditFields) -> Result<Landed, UseCaseError> {
         atomically(self.store, || {
-            let current = load(self.store, oid)?;
+            let current = self.load_permitted(oid, Permission::change)?;
+            self.refuse_what_a_token_may_not_edit(&fields)?;
             let mut next = apply(&current, &fields)?;
             if let Some(day) = fields.focus {
                 self.mark_focus(&mut next, day)?;
@@ -42,16 +44,14 @@ impl Dam<'_> {
                 .categories
                 .check(&next.base().labels)
                 .map_err(Refusal::Labels)?;
-            if !fields.add_depends.is_empty() {
-                let edges = depends_reachable_from(self.store, &fields.add_depends)?;
-                let edges_of = |o: &Oid| edges.get(o).cloned().unwrap_or_default();
-                if let Some(path) = cycle_in(&fields.add_depends, oid, &edges_of) {
-                    return Err(Refusal::Cycle {
-                        oid: oid.clone(),
-                        path,
-                    }
-                    .into());
+            if self.access.token().is_none()
+                && let Some(path) = self.cycle_through(oid, &fields.add_depends)?
+            {
+                return Err(Refusal::Cycle {
+                    oid: oid.clone(),
+                    path,
                 }
+                .into());
             }
             if let Some(Some(event)) = &fields.attach
                 && !matches!(self.store.get(event)?, Some(Object::Event(_)))
@@ -64,9 +64,18 @@ impl Dam<'_> {
             {
                 return Err(Refusal::SubjectNamesNoFolder(oid.clone()).into());
             }
-            replace_carrying_folder(self.store, &current, &next)?;
-            Ok(next)
+            self.put_or_send(Permission::change(current.kind()), Some(&current), next)
         })
+    }
+
+    pub(crate) fn cycle_through(
+        &self,
+        oid: &Oid,
+        added: &[Oid],
+    ) -> Result<Option<Vec<Oid>>, UseCaseError> {
+        let edges = depends_reachable_from(self.store, added)?;
+        let edges_of = |o: &Oid| edges.get(o).cloned().unwrap_or_default();
+        Ok(cycle_in(added, oid, &edges_of))
     }
 }
 
@@ -176,6 +185,7 @@ pub fn apply(object: &Object, fields: &EditFields) -> Result<Object, UseCaseErro
 }
 
 mod focus;
+mod token_limits;
 
 #[cfg(test)]
 mod tests;

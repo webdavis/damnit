@@ -21,7 +21,7 @@ fn an_unblocked_task_is_done() {
     let dam = s.dam();
     assert!(dam.plan_complete(&id).unwrap().blockers.is_empty());
     assert_eq!(
-        dam.complete(&id, Force::No, Tracked::No).unwrap(),
+        dam.complete(&id, Force::No, Tracked::No).unwrap().0,
         Completed::Done
     );
     assert!(task_of(&s, &id).completion.is_done());

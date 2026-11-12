@@ -5,6 +5,7 @@ use dam_domain::{
 use super::refusal::ItemRefusal;
 use crate::errors::{Refusal, UseCaseError};
 use crate::service::Dam;
+use crate::use_cases::subtree::replace_carrying_folder;
 
 #[allow(
     clippy::large_enum_variant,
@@ -39,6 +40,16 @@ impl Answer {
     }
 }
 
+#[cfg(any(test, feature = "testing"))]
+impl Landed {
+    pub fn written(self) -> Object {
+        match self {
+            Landed::Written(object) => object,
+            Landed::Sent(sent) => panic!("the owner's write was sent as an item: {sent:?}"),
+        }
+    }
+}
+
 impl Dam<'_> {
     pub(crate) fn put_or_send(
         &self,
@@ -48,7 +59,10 @@ impl Dam<'_> {
     ) -> Result<Landed, UseCaseError> {
         self.refuse_unless_permitted(permission, before, &after)?;
         let Author::Token(author) = self.access.author() else {
-            self.store.put(&after)?;
+            match before {
+                Some(before) => replace_carrying_folder(self.store, before, &after)?,
+                None => self.store.put(&after)?,
+            }
             return Ok(Landed::Written(after));
         };
         let change =
@@ -102,5 +116,7 @@ impl Dam<'_> {
     }
 }
 
+#[cfg(test)]
+mod change_tests;
 #[cfg(test)]
 mod tests;

@@ -12,7 +12,7 @@ fn a_recurring_task_rolls_forward_instead_of_closing() {
     plants.due = Some(When::Day(date(2026, 9, 18)));
     s.filed(plants);
     let id = oid(1);
-    let out = s.dam().complete(&id, Force::No, Tracked::No).unwrap();
+    let (out, _) = s.dam().complete(&id, Force::No, Tracked::No).unwrap();
     assert_eq!(
         out,
         Completed::RolledForward {

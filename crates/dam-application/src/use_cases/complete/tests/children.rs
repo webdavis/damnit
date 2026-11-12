@@ -13,7 +13,7 @@ fn a_root_task_with_objects_in_subfolders_has_no_children() {
     let dam = s.dam();
     assert!(dam.plan_complete(&milk).unwrap().blockers.is_empty());
     assert_eq!(
-        dam.complete(&milk, Force::No, Tracked::No).unwrap(),
+        dam.complete(&milk, Force::No, Tracked::No).unwrap().0,
         Completed::Done
     );
 }

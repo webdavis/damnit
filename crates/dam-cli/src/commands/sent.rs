@@ -26,12 +26,12 @@ struct SentView<'a> {
 
 impl View for SentView<'_> {
     fn human(&self) -> Human {
-        Human::Lines(vec![format!(
-            "{}  {}  {}",
-            self.answer,
-            self.hash.short(),
-            self.subject
-        )])
+        let mut cells = vec![self.answer, self.hash.short()];
+        if self.oid != self.hash.oid() {
+            cells.push(self.oid.short());
+        }
+        cells.push(self.subject);
+        Human::Lines(vec![cells.join("  ")])
     }
 }
 

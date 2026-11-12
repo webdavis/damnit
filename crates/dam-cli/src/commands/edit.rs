@@ -3,6 +3,7 @@ use dam_domain::Oid;
 
 use crate::args::EditArgs;
 use crate::commands::parsing::{day_flag, deadline_flag, when_flag};
+use crate::commands::sent::report_landed;
 use crate::context::Context;
 use crate::error::{CliError, UseCaseText};
 use crate::output::Report;
@@ -18,8 +19,8 @@ pub(crate) fn run(ctx: &Context, args: EditArgs) -> Result<Report, CliError> {
     } else {
         from_flags(ctx, args)?
     };
-    let object = ctx.dam().edit(&oid, fields)?;
-    report(&ObjectRow(&object, &ctx.tz))
+    let landed = ctx.dam().edit(&oid, fields)?;
+    report_landed(&landed, |object| report(&ObjectRow(object, &ctx.tz)))
 }
 
 fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {

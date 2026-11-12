@@ -46,6 +46,7 @@ fn labels_are_added_removed_and_checked() {
                 ..Default::default()
             },
         )
-        .unwrap();
+        .unwrap()
+        .written();
     assert!(out.base().labels.contains("light") && !out.base().labels.contains("deep"));
 }
