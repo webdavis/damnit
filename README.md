@@ -200,6 +200,9 @@ under `--json`, an empty array when nothing is declared.
 
 ## Reading it from a program
 
+A flag is named after the key it writes: a value `dam show --json` prints under `due` goes back
+through `dam edit --due`, and `--no-due` clears it.
+
 Every time under `--json` and `--toon` is RFC 3339 with its offset, such as
 `2026-09-25T09:00:00-04:00`, and every all-day date is a plain `YYYY-MM-DD`.
 
