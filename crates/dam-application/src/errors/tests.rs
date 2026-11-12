@@ -3,7 +3,7 @@ use dam_domain::{Blockers, LabelViolation, Tracked};
 
 use crate::testing::oid;
 
-const HAND_COUNTED_RULES: usize = 34;
+const HAND_COUNTED_RULES: usize = 42;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -41,7 +41,19 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::NoSuchToken(_) => 31,
         Refusal::Item(ItemRefusal::NothingChanged) => 32,
         Refusal::Item(ItemRefusal::Declined(_)) => 33,
+        Refusal::Item(ItemRefusal::NotAnObject(_)) => 34,
+        Refusal::Item(ItemRefusal::NotWaiting { .. }) => 35,
+        Refusal::Item(ItemRefusal::TargetGone { .. }) => 36,
+        Refusal::Item(ItemRefusal::TargetNotCommitted { .. }) => 37,
+        Refusal::Item(ItemRefusal::TargetStaged { .. }) => 38,
+        Refusal::Item(ItemRefusal::Clash { .. }) => 39,
+        Refusal::Item(ItemRefusal::EditedSinceAdded { .. }) => 40,
+        Refusal::Item(ItemRefusal::SubjectNamesNoFolder { .. }) => 41,
     }
+}
+
+fn hash() -> dam_domain::ItemHash {
+    dam_domain::ItemHash::new(oid(1))
 }
 
 fn one_sample_of_every_refusal() -> Vec<Refusal> {
@@ -110,7 +122,37 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
         Refusal::NotGrantable("config:change".into()),
         Refusal::NoSuchToken("vpt".into()),
         Refusal::Item(ItemRefusal::NothingChanged),
-        Refusal::Item(ItemRefusal::Declined(dam_domain::ItemHash::new(oid(1)))),
+        Refusal::Item(ItemRefusal::Declined(hash())),
+        Refusal::Item(ItemRefusal::NotAnObject(hash())),
+        Refusal::Item(ItemRefusal::NotWaiting {
+            hash: hash(),
+            outcome: "added",
+        }),
+        Refusal::Item(ItemRefusal::TargetGone {
+            hash: hash(),
+            target: oid(2),
+        }),
+        Refusal::Item(ItemRefusal::TargetNotCommitted {
+            hash: hash(),
+            target: oid(2),
+        }),
+        Refusal::Item(ItemRefusal::TargetStaged {
+            hash: hash(),
+            target: oid(2),
+        }),
+        Refusal::Item(ItemRefusal::Clash {
+            hash: hash(),
+            target: oid(2),
+            fields: vec![dam_domain::Field::Subject],
+        }),
+        Refusal::Item(ItemRefusal::EditedSinceAdded {
+            hash: hash(),
+            target: oid(2),
+        }),
+        Refusal::Item(ItemRefusal::SubjectNamesNoFolder {
+            hash: hash(),
+            target: oid(2),
+        }),
     ]
 }
 

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/add.schema.json",
+  "title": "dam add document",
+  "description": "What dam add prints with --json or --toon: each change it staged. A waiting item it took is staged as the change of the token that sent it.",
+  "type": "object",
+  "required": ["staged"],
+  "additionalProperties": false,
+  "properties": {
+    "staged": { "type": "array", "items": { "$ref": "status.schema.json#/$defs/change" } }
+  }
+}

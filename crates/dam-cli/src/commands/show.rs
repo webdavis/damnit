@@ -21,7 +21,7 @@ pub(crate) fn run_show(ctx: &Context, args: ShowArgs) -> Result<Report, CliError
         return Err(Refusal::NoSuchObject(args.id).into());
     }
     let record = ctx.dam().resolve_commit(&args.id)?;
-    report(&ShownCommit(CommitDoc::new(&record, &ctx.tz)))
+    report(&ShownCommit(CommitDoc::new(&record, ctx)))
 }
 
 fn working_object_named(ctx: &Context, text: &str) -> Result<Option<Object>, CliError> {

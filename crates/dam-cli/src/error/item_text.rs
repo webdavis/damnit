@@ -13,6 +13,63 @@ impl fmt::Display for ItemText<'_> {
                 "the owner declined this as {}; it is not offered again",
                 hash.short()
             ),
+            ItemRefusal::NotAnObject(hash) => write!(
+                f,
+                "{} is a waiting item, not an object; dam add or dam rm it",
+                hash.short()
+            ),
+            ItemRefusal::NotWaiting { hash, outcome } => {
+                write!(f, "{} was already {outcome}", hash.short())
+            }
+            ItemRefusal::TargetGone { hash, target } => write!(
+                f,
+                "{} changes {}, which is no longer in the working layer",
+                hash.short(),
+                target.short()
+            ),
+            ItemRefusal::TargetNotCommitted { hash, target } => write!(
+                f,
+                "{} changes {}, which has never been committed; commit it, then add {}",
+                hash.short(),
+                target.short(),
+                hash.short()
+            ),
+            ItemRefusal::TargetStaged { hash, target } => write!(
+                f,
+                "{} changes {}, which already has a staged change; commit or reset it, then add {}",
+                hash.short(),
+                target.short(),
+                hash.short()
+            ),
+            ItemRefusal::Clash {
+                hash,
+                target,
+                fields,
+            } => write!(
+                f,
+                "{} changes {} of {}, which you changed too; run dam resolve {} --ours|--theirs",
+                hash.short(),
+                fields
+                    .iter()
+                    .map(|f| f.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                target.short(),
+                hash.short()
+            ),
+            ItemRefusal::EditedSinceAdded { hash, target } => write!(
+                f,
+                "{} is new from {}, and you have changed it since you added it; commit it first",
+                target.short(),
+                hash.short()
+            ),
+            ItemRefusal::SubjectNamesNoFolder { hash, target } => write!(
+                f,
+                "{} renames {}, whose folder holds objects, to a subject that cannot name a folder; decline it with dam rm {}",
+                hash.short(),
+                target.short(),
+                hash.short()
+            ),
         }
     }
 }

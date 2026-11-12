@@ -116,6 +116,10 @@ impl<'a> ChangeRow<'a> {
         }
     }
 
+    pub(crate) fn sender<'s>(&'s self, owner: &'s str) -> &'s str {
+        self.from.unwrap_or(owner)
+    }
+
     pub(super) fn status_line(&self, owner: &str) -> String {
         self.status_line_naming(self.change.oid().short(), owner)
     }
@@ -125,7 +129,7 @@ impl<'a> ChangeRow<'a> {
         if !self.path.is_empty() {
             cells.push(self.path.to_string());
         }
-        cells.push(self.from.unwrap_or(owner).to_string());
+        cells.push(self.sender(owner).to_string());
         cells.join("  ")
     }
 }

@@ -65,7 +65,9 @@ mod tests {
         ctx.store
             .put(&Object::Task(Task::new(id.clone(), "milk")))
             .unwrap();
-        ctx.dam().add(std::slice::from_ref(&id)).unwrap();
+        ctx.dam()
+            .add(&[dam_application::Named::Object(id.clone())])
+            .unwrap();
         ctx.dam().commit("m").unwrap();
         id
     }

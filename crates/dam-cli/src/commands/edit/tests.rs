@@ -74,7 +74,9 @@ fn undone_reopens_a_completed_task_as_one_update_naming_done() {
     let mut task = Task::new(oid(1), "milk");
     task.completion = Completion::Done { at: None };
     ctx.store.put(&Object::Task(task)).unwrap();
-    ctx.dam().add(&[oid(1)]).unwrap();
+    ctx.dam()
+        .add(&[dam_application::Named::Object(oid(1))])
+        .unwrap();
     ctx.dam().commit("done").unwrap();
     run(
         &ctx,

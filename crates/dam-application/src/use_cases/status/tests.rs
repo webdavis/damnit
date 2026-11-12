@@ -1,6 +1,7 @@
 use super::*;
 use crate::testing::prelude::*;
 use crate::testing::{Scenario, event, oid, todoist};
+use crate::use_cases::prefix::Named;
 use dam_domain::{Kind, Object, Op, Task};
 
 fn named(byte: u8, subject: &str) -> Object {
@@ -10,7 +11,7 @@ fn named(byte: u8, subject: &str) -> Object {
 fn committing(s: &Scenario, object: Object) -> CommitId {
     s.working(object.clone());
     let dam = s.dam();
-    dam.add(&[object.oid().clone()]).unwrap();
+    dam.add(&[Named::Object(object.oid().clone())]).unwrap();
     dam.commit("m").unwrap().id
 }
 
@@ -19,7 +20,7 @@ fn a_fully_staged_change_is_not_also_unstaged() {
     let s = Scenario::default();
     s.working(named(1, "a"));
     let dam = s.dam();
-    dam.add(&[oid(1)]).unwrap();
+    dam.add(&[Named::Object(oid(1))]).unwrap();
     let status = dam.status(&[]).unwrap();
     assert_eq!(status.staged.len(), 1);
     assert!(status.unstaged.is_empty());
@@ -30,7 +31,7 @@ fn an_edit_after_staging_shows_as_unstaged_on_top_of_the_stage() {
     let s = Scenario::default();
     s.working(named(1, "a"));
     let dam = s.dam();
-    dam.add(&[oid(1)]).unwrap();
+    dam.add(&[Named::Object(oid(1))]).unwrap();
     s.working(named(1, "b"));
     let status = dam.status(&[]).unwrap();
     assert_eq!(status.staged[0].change.after().unwrap().base().subject, "a");
@@ -119,7 +120,8 @@ fn a_mixed_commit_owes_a_remote_only_the_objects_of_kinds_it_accepts() {
     let s = Scenario::default().drawing_from(3);
     s.working(named(1, "a")).working(event(2));
     let dam = s.dam();
-    dam.add(&[oid(1), oid(2)]).unwrap();
+    dam.add(&[Named::Object(oid(1)), Named::Object(oid(2))])
+        .unwrap();
     let both = dam.commit("m").unwrap();
     s.store
         .set_accepted_kinds(&todoist(), &[Kind::Task])

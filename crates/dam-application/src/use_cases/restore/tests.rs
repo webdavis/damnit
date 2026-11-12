@@ -1,6 +1,7 @@
 use super::*;
 use crate::testing::prelude::*;
 use crate::testing::{FaultyStore, Scenario, oid, task};
+use crate::use_cases::prefix::Named;
 use dam_domain::{Object, Task};
 
 fn retitled(s: &Scenario, byte: u8, subject: &str) {
@@ -43,7 +44,7 @@ fn a_staged_change_is_unstaged_and_discarded_together() {
     s.committed(task(1));
     retitled(&s, 1, "edited");
     let dam = s.dam();
-    dam.add(&[oid(1)]).unwrap();
+    dam.add(&[Named::Object(oid(1))]).unwrap();
     assert_eq!(s.store.staged().unwrap().len(), 1);
     dam.restore(&[oid(1)]).unwrap();
     assert!(s.store.staged().unwrap().is_empty());
@@ -91,7 +92,7 @@ fn a_stale_stage_is_cleared_even_when_the_working_copy_already_matches() {
     s.committed(task(1));
     retitled(&s, 1, "edited");
     let dam = s.dam();
-    dam.add(&[oid(1)]).unwrap();
+    dam.add(&[Named::Object(oid(1))]).unwrap();
     retitled(&s, 1, "t1");
     let out = dam.restore(&[oid(1)]).unwrap();
     assert!(out[0].changed);
