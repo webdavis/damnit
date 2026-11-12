@@ -133,7 +133,7 @@ edit. Under `--json` or `--toon` it refuses instead of opening an editor.
 `dam restore <oid>...` throws a working change away, back to the last commit and out of the stage.
 
 `dam done` records when it ran, as `completed_at` on the task: RFC 3339 in UTC, null on an open
-task, and cleared again by `--undone`. A task Todoist completed comes in done with no time on it.
+task, and cleared again by `--undone`. A task completed in Todoist comes in with Todoist's time.
 
 `dam status`, `dam diff`, `dam log` and `dam show` read the way their git namesakes do. `--json`
 and `--toon` on any read give a program the same answer.
@@ -142,9 +142,30 @@ and `--toon` on any read give a program the same answer.
 in the line, `last_pull` and `last_push` as RFC 3339 under `--json`, null until that verb has
 reached the remote once.
 
-`--no-pull` answers from the local store: `dam ls`, `dam show` and `dam agenda` otherwise pull a
-remote whose `stale` window has passed, and with the flag they spawn no helper at all. Every other
-verb refuses the flag with exit 2.
+`--no-pull` answers from the local store: `dam ls`, `dam show`, `dam agenda` and `dam reminders`
+otherwise pull a remote whose `stale` window has passed, and with the flag they spawn no helper at
+all. Every other verb refuses the flag with exit 2.
+
+## Planning a day
+
+    dam edit 3f2a9c1 --estimate 5m
+    dam ls estimate:max:5m
+    dam edit 3f2a9c1 --focus today
+    dam ls completed:today
+    dam reminders --json
+
+`--focus DAY` marks a task to work on first that day and records who set it and when. A day holds
+three marks; a fourth exits 4, rule `focus_full`. `dam ls` lists today's marks first, in the order
+they were set. The mark and the estimate stay in damnit and never reach a remote.
+
+`dam day show [DAY]` prints a day's record: the plan, the proposals for the next day, the
+decisions, each task's stall count and carry-forward, and `closed_at`. `dam day set` replaces a
+day's record with the JSON or TOON document on stdin, and `dam day list` lists the recorded days
+with when each closed. `docs/schemas/day.schema.json` is the document's schema.
+
+`dam reminders` lists the reminders that fall due between `--from` and `--to`, by default from the
+start of today until now: each one's `at`, its `anchor` (the due time or start) and
+`minutes_before`, all times RFC 3339. `docs/schemas/reminders.schema.json` is its schema.
 
 ## The rules it keeps
 
@@ -162,6 +183,9 @@ verb refuses the flag with exit 2.
     due:today | overdue
     path:work/ & effort:deep & !done
     @errand & p1
+
+`estimate:max:5m`, `estimate:min:1h` and `estimate:none` read the estimate; `focus:` and
+`completed:` take the same date words as `due:`.
 
 `|` or, `&` and, `!` not, parentheses group. `@label`, `pN`, `key:value`; any other key is a
 category and the value must be one of its values. Saved filters live under `[filter.<name>]` and
@@ -245,14 +269,14 @@ The permissions are `task:` and `event:` `read`, `create`, `change`, `move` and 
 
 | Command | Needs |
 |---|---|
-| `ls`, `show`, `agenda` | `task:read` or `event:read`; objects outside every grant are left out, oids included |
+| `ls`, `show`, `agenda`, `reminders` | `task:read` or `event:read`; objects outside every grant are left out, oids included |
 | `status`, `diff` | `working:read` and `stage:read`; conflicts also need `conflict:read` |
 | `log`, `show <commit>` | `history:read` |
 | `category list`, `filter list` | `config:read` |
 | `remote list`, `pull`, `push` | `remote:read`, `remote:pull`, `remote:push` |
 
 A token cannot run `new`, `edit`, `done`, `mv`, `rm`, `add`, `reset`, `restore`, `commit`,
-`remote add` or `resolve`. A read pulls a stale remote only when the token holds `remote:pull`
+`remote add`, `resolve` or `day`. A read pulls a stale remote only when the token holds `remote:pull`
 for it.
 
 An unknown permission is skipped. An unknown key, or a reserved name such as `config:change`,
