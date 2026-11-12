@@ -114,6 +114,7 @@ dam token create labels: help = Narrow the grant to objects carrying a label. Re
 dam token create remotes: help = Narrow the grant to a remote. Repeatable
 dam token create expires: help = Stop the token working at a date-time with an offset, such as 2027-05-11T00:00:00Z
 dam token create via: help = Let the token work over local or mcp. Repeatable. Default: local
+dam token list: about = List the config's tokens with their grants and standing, never their values
 ";
 
 fn every_help_text(command: &clap::Command, path: &str, out: &mut String) {

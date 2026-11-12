@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/token-list.schema.json",
+  "title": "dam token list answer",
+  "description": "What dam token list prints on standard output with --json or --toon. It never holds a token's value. A disabled token carries why and no terms.",
+  "type": "object",
+  "required": ["tokens", "warnings"],
+  "additionalProperties": false,
+  "properties": {
+    "tokens": { "type": "array", "items": { "$ref": "#/$defs/token" } },
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "token": {
+      "type": "object",
+      "required": ["name", "key_id", "standing", "why", "expires", "not_before", "via", "require", "grants"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "key_id": { "type": "string", "pattern": "^[0-9A-Za-z]{12}$" },
+        "standing": { "enum": ["active", "expired", "not_yet_valid", "disabled"] },
+        "why": { "type": ["string", "null"] },
+        "expires": { "type": ["string", "null"], "format": "date-time" },
+        "not_before": { "type": ["string", "null"], "format": "date-time" },
+        "via": { "type": "array", "items": { "enum": ["local", "mcp"] } },
+        "require": { "type": "array", "items": { "type": "string" } },
+        "grants": { "type": "array", "items": { "$ref": "#/$defs/grant" } }
+      }
+    },
+    "grant": {
+      "type": "object",
+      "required": ["allow", "paths", "labels", "own", "remotes"],
+      "additionalProperties": false,
+      "properties": {
+        "allow": { "type": "array", "items": { "type": "string", "pattern": "^[a-z]+:[a-z]+$" } },
+        "paths": { "type": ["array", "null"], "items": { "type": "string" } },
+        "labels": { "type": ["array", "null"], "items": { "type": "string" } },
+        "own": { "type": "boolean" },
+        "remotes": { "type": ["array", "null"], "items": { "type": "string" } }
+      }
+    }
+  }
+}

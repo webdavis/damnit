@@ -10,6 +10,10 @@ pub(crate) struct TokenArgs {
 pub(crate) enum TokenCommand {
     #[command(about = "Make a token with one grant, add it to the config and print it once")]
     Create(CreateArgs),
+    #[command(
+        about = "List the config's tokens with their grants and standing, never their values"
+    )]
+    List,
 }
 
 #[derive(Args, Debug)]

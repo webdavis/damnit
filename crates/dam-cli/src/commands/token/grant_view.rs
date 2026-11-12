@@ -23,4 +23,22 @@ impl GrantView {
             remotes: grant.remotes.clone(),
         }
     }
+
+    pub(super) fn text(&self) -> String {
+        let mut text = self.allow.join(", ");
+        let narrowing = [
+            ("paths", &self.paths),
+            ("labels", &self.labels),
+            ("remotes", &self.remotes),
+        ];
+        for (key, values) in narrowing {
+            if let Some(values) = values {
+                text.push_str(&format!(" {key} {}", values.join(", ")));
+            }
+        }
+        if self.own {
+            text.push_str(" own");
+        }
+        text
+    }
 }
