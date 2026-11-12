@@ -1,6 +1,6 @@
 use rusqlite::Connection;
 
-pub(super) const VERSION: u32 = 9;
+pub(super) const VERSION: u32 = 10;
 
 const V1: &str = r#"
 CREATE TABLE objects (oid TEXT PRIMARY KEY, kind TEXT NOT NULL, path TEXT NOT NULL, json TEXT NOT NULL);
@@ -70,6 +70,14 @@ ALTER TABLE commit_changes ADD COLUMN details_json TEXT;
 ALTER TABLE items ADD COLUMN details_json TEXT;
 "#;
 
+const V10: &str = r#"
+UPDATE commit_changes SET author_token = NULL, author_key_id = NULL, author_channel = NULL, details_json = NULL
+WHERE commit_id IN (
+    SELECT c.id FROM commits AS c JOIN pushed AS p ON p.commit_id = c.id
+    WHERE c.message = 'pull from ' || p.remote
+);
+"#;
+
 pub(super) fn migrate_above_user_version_in_one_transaction(
     conn: &mut Connection,
 ) -> Result<(), rusqlite::Error> {
@@ -105,6 +113,9 @@ pub(super) fn migrate_above_user_version_in_one_transaction(
     if current < 9 {
         tx.execute_batch(V9)?;
     }
+    if current < 10 {
+        tx.execute_batch(V10)?;
+    }
     tx.pragma_update(None, "user_version", VERSION)?;
     tx.commit()
 }
@@ -114,3 +125,6 @@ mod tests;
 
 #[cfg(test)]
 mod author_tests;
+
+#[cfg(test)]
+mod pulled_author_tests;
