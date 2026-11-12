@@ -1,5 +1,6 @@
 mod dispositions;
 mod editing;
+mod planning;
 mod reading;
 mod remotes;
 mod staging;
@@ -11,6 +12,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 
 pub(crate) use editing::EditArgs;
+pub(crate) use planning::{DayArgs, DayCommand};
 pub(crate) use reading::{
     AgendaArgs, CategoryArgs, CategoryCommand, FilterArgs, FilterCommand, LsArgs,
 };
@@ -101,6 +103,8 @@ pub(crate) enum Command {
     Ls(LsArgs),
     #[command(about = "Show events over a window, each with whether it holds time")]
     Agenda(AgendaArgs),
+    #[command(about = "Read and record the day's plan, proposals, decisions and task states")]
+    Day(DayArgs),
     #[command(about = "Read the label categories the config declares")]
     Category(CategoryArgs),
     #[command(about = "Read the saved filters the config declares")]

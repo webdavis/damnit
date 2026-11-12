@@ -1,6 +1,6 @@
 use rusqlite::Connection;
 
-pub(super) const VERSION: u32 = 5;
+pub(super) const VERSION: u32 = 6;
 
 const V1: &str = r#"
 CREATE TABLE objects (oid TEXT PRIMARY KEY, kind TEXT NOT NULL, path TEXT NOT NULL, json TEXT NOT NULL);
@@ -44,6 +44,10 @@ UPDATE commit_changes SET op = 'update' WHERE op = 'create' AND before_json IS N
 ALTER TABLE objects DROP COLUMN kind;
 "#;
 
+const V6: &str = r#"
+CREATE TABLE days (day TEXT PRIMARY KEY, json TEXT NOT NULL);
+"#;
+
 pub(super) fn migrate_above_user_version_in_one_transaction(
     conn: &mut Connection,
 ) -> Result<(), rusqlite::Error> {
@@ -66,6 +70,9 @@ pub(super) fn migrate_above_user_version_in_one_transaction(
     }
     if current < 5 {
         tx.execute_batch(V5)?;
+    }
+    if current < 6 {
+        tx.execute_batch(V6)?;
     }
     tx.pragma_update(None, "user_version", VERSION)?;
     tx.commit()

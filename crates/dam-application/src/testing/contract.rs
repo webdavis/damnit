@@ -1,10 +1,12 @@
 mod accepted_kinds;
+mod days;
 mod history;
 mod reports;
 mod unit_of_work;
 mod working;
 
 pub use accepted_kinds::accepted_kinds_repository_contract;
+pub use days::day_repository_contract;
 pub use history::{
     commit_clears_the_stage_contract, commit_repository_contract,
     remote_tracking_repository_contract,

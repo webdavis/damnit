@@ -49,6 +49,11 @@ fn it_keeps_the_transactional_contract() {
 }
 
 #[test]
+fn it_keeps_the_day_repository_contract() {
+    contract::day_repository_contract(&store());
+}
+
+#[test]
 fn it_keeps_the_accepted_kinds_repository_contract() {
     contract::accepted_kinds_repository_contract(&store());
 }

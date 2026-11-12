@@ -35,6 +35,7 @@ pub(crate) fn need(command: &Command) -> Need {
         Command::Push(_) => Need::NarrowedFrom(&[RemotePush]),
         Command::Pull(_) => Need::NarrowedFrom(&[RemotePull]),
         Command::Resolve(_) => Need::OwnerOnly("resolve"),
+        Command::Day(_) => Need::OwnerOnly("day"),
     }
 }
 

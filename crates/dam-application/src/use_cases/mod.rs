@@ -4,6 +4,7 @@ pub(crate) mod caller_view;
 pub(crate) mod commit;
 pub(crate) mod complete;
 pub(crate) mod connect;
+pub(crate) mod day;
 pub(crate) mod edit;
 pub(crate) mod freshness;
 pub(crate) mod list;

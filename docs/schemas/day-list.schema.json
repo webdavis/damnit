@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/day-list.schema.json",
+  "title": "dam day list answer",
+  "description": "Every recorded day, newest first, with when it was closed. The first day with a closed_at is the last day closed.",
+  "type": "object",
+  "required": ["days"],
+  "additionalProperties": false,
+  "properties": {
+    "days": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["day", "closed_at"],
+        "additionalProperties": false,
+        "properties": {
+          "day": { "type": "string", "format": "date" },
+          "closed_at": { "anyOf": [{ "type": "null" }, { "type": "string", "format": "date-time" }] }
+        }
+      }
+    }
+  }
+}

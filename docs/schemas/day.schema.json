@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/day.schema.json",
+  "title": "dam day document",
+  "description": "One day's record. dam day show prints it and dam day set reads it from stdin, as JSON or TOON, and replaces that day's record. On input every key but day may be left out.",
+  "type": "object",
+  "required": ["day", "plan", "proposals", "decisions", "tasks", "closed_at"],
+  "additionalProperties": false,
+  "properties": {
+    "day": { "type": "string", "format": "date" },
+    "plan": { "$ref": "#/$defs/oids", "description": "The tasks planned for the day, in order." },
+    "proposals": { "$ref": "#/$defs/oids", "description": "The tasks proposed for the next day." },
+    "decisions": { "type": "array", "items": { "type": "string" } },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["oid", "stalls", "carried_forward"],
+        "additionalProperties": false,
+        "properties": {
+          "oid": { "$ref": "#/$defs/oid" },
+          "stalls": { "type": "integer", "minimum": 0 },
+          "carried_forward": { "type": "boolean" }
+        }
+      }
+    },
+    "closed_at": {
+      "anyOf": [{ "type": "null" }, { "type": "string", "format": "date-time" }],
+      "description": "When the day was closed, or null while it is open."
+    }
+  },
+  "$defs": {
+    "oid": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "oids": { "type": "array", "items": { "$ref": "#/$defs/oid" } }
+  }
+}

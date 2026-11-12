@@ -2,6 +2,7 @@ mod access;
 mod category;
 mod change;
 mod completion;
+mod day;
 mod estimate;
 mod field;
 mod object;
@@ -25,6 +26,7 @@ pub use change::{
 pub use completion::{
     Blockers, ChildDisposition, DependencyDisposition, Dispositions, Force, Tracked, cycle_in,
 };
+pub use day::{Day, TaskState};
 pub use estimate::parse_minutes;
 pub use field::Field;
 pub use object::{

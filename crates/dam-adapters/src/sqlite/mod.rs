@@ -2,6 +2,7 @@ mod accepted_kinds;
 mod codec;
 mod commits;
 mod conflicts;
+mod days;
 mod file;
 mod migrations;
 mod notices;
