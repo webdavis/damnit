@@ -14,5 +14,6 @@ pub use messages::{
 };
 pub use reply::Reply;
 pub use wire::{
-    WireAttachment, WireAttendee, WireConference, WireEvent, WireObject, WirePerson, WireTask,
+    WireAttachment, WireAttendee, WireConference, WireEvent, WireFocus, WireObject, WirePerson,
+    WireTask,
 };

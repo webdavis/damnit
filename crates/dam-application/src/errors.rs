@@ -1,4 +1,4 @@
-use dam_domain::{Blockers, LabelViolation, Oid, Permission, QueryError, Tracked};
+use dam_domain::{Blockers, Date, LabelViolation, Oid, Permission, QueryError, Tracked};
 
 use crate::access::TokenRefusal;
 use crate::ports::{CredentialError, HelperError, StoreError};
@@ -57,6 +57,10 @@ pub enum Refusal {
     Token(TokenRefusal),
     NotPermitted(Permission),
     NotOpenToTokens(&'static str),
+    FocusFull {
+        day: Date,
+        focused: Vec<Oid>,
+    },
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -101,6 +105,7 @@ impl Refusal {
             Refusal::Token(refusal) => refusal.name(),
             Refusal::NotPermitted(_) => "not_permitted",
             Refusal::NotOpenToTokens(_) => "not_open_to_tokens",
+            Refusal::FocusFull { .. } => "focus_full",
         }
     }
 }

@@ -36,6 +36,7 @@ fn as_pulled(oid: &str, path: &str, subject: &str) -> WireObject {
             deadline: None,
             event: None,
             estimate: None,
+            focus: None,
         }),
         event: None,
     }

@@ -26,6 +26,7 @@ fn milk(subject: &str, done: bool) -> WireObject {
             deadline: None,
             event: None,
             estimate: None,
+            focus: None,
         }),
         event: None,
     }

@@ -1,11 +1,11 @@
 use std::collections::BTreeSet;
 
 use dam_domain::{
-    Attachment, Attendee, Base, Completion, Conference, Date, Event, EventStatus, EventType, Kind,
-    Object, Oid, Path, Person, Priority, Recurrence, Reminder, ResponseStatus, Task, Timestamp,
-    Transparency, Visibility, When,
+    Attachment, Attendee, Base, Completion, Conference, Date, Event, EventStatus, EventType, Focus,
+    Kind, Object, Oid, Path, Person, Priority, Recurrence, Reminder, ResponseStatus, Task,
+    Timestamp, Transparency, Visibility, When,
 };
-use dam_protocol::{WireObject, WireTask};
+use dam_protocol::{WireFocus, WireObject, WireTask};
 
 mod error;
 
@@ -62,6 +62,7 @@ pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
                 .map(|o| Oid::parse(o).map_err(oid("event", o)))
                 .transpose()?,
             estimate: t.estimate,
+            focus: t.focus.as_ref().map(focus).transpose()?,
         })),
         (Some(Kind::Event), _, Some(e)) => Ok(Object::Event(Event {
             base,
@@ -105,6 +106,20 @@ pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
         })),
         _ => Err(WireError::UnknownKind(wire.kind.clone())),
     }
+}
+
+fn focus(f: &WireFocus) -> Result<Focus, WireError> {
+    Ok(Focus {
+        day: f
+            .day
+            .parse()
+            .map_err(|_| date("focus.day")(f.day.clone()))?,
+        set_by: f.set_by.clone(),
+        set_at: f
+            .set_at
+            .parse()
+            .map_err(|_| date("focus.set_at")(f.set_at.clone()))?,
+    })
 }
 
 fn completion(t: &WireTask) -> Result<Completion, WireError> {

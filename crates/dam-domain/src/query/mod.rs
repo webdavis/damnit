@@ -36,6 +36,7 @@ pub enum Term {
     Due(DateSel),
     Deadline(DateSel),
     Estimate(EstimateSel),
+    Focus(DateSel),
     Start(DateSel),
     Path(Path),
     Label(String),
@@ -75,6 +76,9 @@ fn term_matches(term: &Term, object: &Object, today: Date) -> bool {
             task.is_some_and(|t| date_matches(sel, t.due.as_ref().map(|d| d.date()), today))
         }
         Term::Deadline(sel) => task.is_some_and(|t| date_matches(sel, t.deadline, today)),
+        Term::Focus(sel) => {
+            task.is_some_and(|t| date_matches(sel, t.focus.as_ref().map(|f| f.day), today))
+        }
         Term::Estimate(sel) => task.is_some_and(|t| match (sel, t.estimate) {
             (EstimateSel::None, estimate) => estimate.is_none(),
             (EstimateSel::Max(most), Some(m)) => m <= *most,

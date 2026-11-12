@@ -39,6 +39,15 @@ pub struct WireTask {
     pub event: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub estimate: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub focus: Option<WireFocus>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WireFocus {
+    pub day: String,
+    pub set_by: String,
+    pub set_at: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

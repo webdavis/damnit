@@ -12,6 +12,7 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
             .chain(path.iter().map(named))
             .collect(),
         Refusal::AmbiguousPrefix { matches, .. } => matches.clone(),
+        Refusal::FocusFull { focused, .. } => focused.iter().map(named).collect(),
         Refusal::NotATask(oid)
         | Refusal::NotAnEvent(oid)
         | Refusal::MoveInsideItself(oid)
