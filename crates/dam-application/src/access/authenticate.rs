@@ -12,6 +12,7 @@ pub enum TokenRefusal {
     NotYetValid { name: String },
     Expired { name: String },
     ChannelNotAllowed { name: String, channel: Channel },
+    MissingDetails { name: String, details: Vec<String> },
 }
 
 impl TokenRefusal {
@@ -24,6 +25,7 @@ impl TokenRefusal {
             TokenRefusal::NotYetValid { .. } => "token_not_yet_valid",
             TokenRefusal::Expired { .. } => "expired_token",
             TokenRefusal::ChannelNotAllowed { .. } => "channel_not_allowed",
+            TokenRefusal::MissingDetails { .. } => "missing_details",
         }
     }
 }
@@ -57,6 +59,10 @@ pub fn authenticate(
     }
     if !terms.via.contains(&channel) {
         return Err(TokenRefusal::ChannelNotAllowed { name, channel });
+    }
+    if !terms.require.is_empty() {
+        let details = terms.require.clone();
+        return Err(TokenRefusal::MissingDetails { name, details });
     }
     Ok(Holder {
         name,

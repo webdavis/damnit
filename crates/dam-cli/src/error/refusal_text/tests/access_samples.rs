@@ -38,6 +38,13 @@ pub(super) fn access_refusals_with_their_text() -> Vec<(Refusal, &'static str)> 
             },
             "token vpt may not be used locally; its via leaves it out",
         ),
+        (
+            TokenRefusal::MissingDetails {
+                name: "claude".into(),
+                details: vec!["session".into(), "model".into()],
+            },
+            "token claude requires the request details session, model, which this dam cannot take yet",
+        ),
     ]
     .into_iter()
     .map(|(refusal, text)| (Refusal::Token(refusal), text))

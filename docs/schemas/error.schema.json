@@ -69,7 +69,8 @@
         "disabled_token",
         "expired_token",
         "token_not_yet_valid",
-        "channel_not_allowed"
+        "channel_not_allowed",
+        "missing_details"
       ]
     }
   }

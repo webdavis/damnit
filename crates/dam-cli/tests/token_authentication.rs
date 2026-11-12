@@ -107,3 +107,20 @@ fn reading_the_config_alone_still_checks_the_token() {
     let document = refused(&sb, &token(2), &["category", "list", "--json"]);
     assert_eq!(rule(&document), "unknown_token");
 }
+
+#[test]
+fn a_token_that_requires_request_details_is_refused_naming_them() {
+    let _guard = support::guard("a_token_that_requires_request_details_is_refused_naming_them");
+    let sb = sandbox_with(&format!(
+        "[token.claude]\nvalue = \"{}\"\nrequire = [\"session\", \"model\"]\n\
+         [[token.claude.grant]]\nallow = [\"task:read\"]\n",
+        token(1)
+    ));
+    let document = refused(&sb, &token(1), &["ls", "--json", "--no-pull"]);
+    assert_eq!(rule(&document), "missing_details");
+    let message = document["error"]["message"].as_str().unwrap();
+    assert!(
+        message.contains("session") && message.contains("model"),
+        "{message}"
+    );
+}

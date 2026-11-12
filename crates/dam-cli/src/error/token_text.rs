@@ -29,6 +29,11 @@ impl fmt::Display for TokenText<'_> {
                     Channel::Mcp => "over MCP",
                 }
             ),
+            TokenRefusal::MissingDetails { name, details } => write!(
+                f,
+                "token {name} requires the request details {}, which this dam cannot take yet",
+                details.join(", ")
+            ),
         }
     }
 }
