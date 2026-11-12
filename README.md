@@ -255,6 +255,13 @@ a table in the config file, and its grants say what it may do:
     allow = ["task:read", "event:read"]
     paths = ["work"]
 
+`dam token create vpt --allow task:read --allow event:read --paths work` writes such a table with
+one grant and prints the token once. `--labels`, `--remotes`, `--expires` and `--via` set the keys of
+the same name. `dam token list` shows each token's key id, grants, conditions and standing, never its
+value. `dam token revoke vpt` removes its tables and leaves the rest of the file as it was. The
+schemas of their `--json` answers are `docs/schemas/token-create.schema.json`,
+`token-list.schema.json` and `token-revoke.schema.json`.
+
 A grant allows only what `allow` lists, and only on objects under one of `paths`, carrying one of
 `labels`, or on the remotes `remotes` names. One grant must cover everything a command touches.
 `own = true` matches nothing yet. `not_before`, `expires` and `via` (default `["local"]`) bound when
@@ -276,7 +283,7 @@ The permissions are `task:` and `event:` `read`, `create`, `change`, `move` and 
 | `remote list`, `pull`, `push` | `remote:read`, `remote:pull`, `remote:push` |
 
 A token cannot run `new`, `edit`, `done`, `mv`, `rm`, `add`, `reset`, `restore`, `commit`,
-`remote add`, `resolve` or `day`. A read pulls a stale remote only when the token holds `remote:pull`
+`remote add`, `resolve`, `day` or `token`. A read pulls a stale remote only when the token holds `remote:pull`
 for it.
 
 An unknown permission is skipped. An unknown key, or a reserved name such as `config:change`,
