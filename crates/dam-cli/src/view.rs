@@ -71,6 +71,8 @@ pub(crate) struct ObjectList<'a> {
     #[serde(serialize_with = "wires")]
     pub(crate) objects: &'a [Object],
     #[serde(skip)]
+    pub(crate) authors: &'a [&'a str],
+    #[serde(skip)]
     pub(crate) zone: &'a TimeZone,
 }
 
@@ -79,7 +81,12 @@ impl View for ObjectList<'_> {
         Human::list(
             self.objects
                 .iter()
-                .map(|o| object_cells(o, self.zone))
+                .zip(self.authors)
+                .map(|(o, author)| {
+                    let mut cells = object_cells(o, self.zone);
+                    cells.insert(4, author.to_string());
+                    cells
+                })
                 .collect(),
             "no objects match",
         )

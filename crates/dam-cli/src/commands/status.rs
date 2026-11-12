@@ -16,7 +16,7 @@ mod waiting;
 
 use notices::NoticeRow;
 use rows::ConflictRow;
-pub(crate) use rows::{ChangeRow, the_owner_to};
+pub(crate) use rows::{ChangeRow, DetailsView, the_owner_to, visible};
 use view::{DiffView, StatusView, UnpushedRow};
 use waiting::ItemRow;
 

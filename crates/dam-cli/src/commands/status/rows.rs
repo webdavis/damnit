@@ -12,8 +12,7 @@ mod details;
 mod lines;
 mod values;
 
-use details::DetailsView;
-pub(crate) use details::visible;
+pub(crate) use details::{DetailsView, visible};
 
 fn what_changed(change: &Change, oid: &str) -> String {
     let subject = &change.object().base().subject;

@@ -12,6 +12,16 @@
       "task": {
         "done": false,
         "priority": 4
+      },
+      "author": "owner",
+      "details": {
+        "meta": {},
+        "host": "<host>",
+        "dir": "<dir>",
+        "repo": null,
+        "branch": null,
+        "at": "<now>",
+        "channel": "local"
       }
     },
     {
@@ -29,6 +39,16 @@
         "done": false,
         "priority": 2,
         "due": "2026-09-25"
+      },
+      "author": "owner",
+      "details": {
+        "meta": {},
+        "host": "<host>",
+        "dir": "<dir>",
+        "repo": null,
+        "branch": null,
+        "at": "<now>",
+        "channel": "local"
       }
     },
     {
@@ -51,6 +71,16 @@
         "visibility": "default",
         "event_type": "default",
         "attachments": []
+      },
+      "author": "owner",
+      "details": {
+        "meta": {},
+        "host": "<host>",
+        "dir": "<dir>",
+        "repo": null,
+        "branch": null,
+        "at": "<now>",
+        "channel": "local"
       }
     },
     {
@@ -71,6 +101,16 @@
         "visibility": "default",
         "event_type": "default",
         "attachments": []
+      },
+      "author": "owner",
+      "details": {
+        "meta": {},
+        "host": "<host>",
+        "dir": "<dir>",
+        "repo": null,
+        "branch": null,
+        "at": "<now>",
+        "channel": "local"
       }
     }
   ]

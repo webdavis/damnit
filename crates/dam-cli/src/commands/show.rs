@@ -3,6 +3,7 @@ use dam_domain::{Object, Permission};
 use serde::Serialize;
 
 use crate::args::ShowArgs;
+use crate::commands::authorship::Authorship;
 use crate::commands::caller_id::with_caller_id;
 use crate::commands::commit::CommitDoc;
 use crate::commands::remote::refresh_stale_unless_no_pull;
@@ -17,8 +18,14 @@ pub(crate) fn run_show(ctx: &Context, args: ShowArgs) -> Result<Report, CliError
     refresh_stale_unless_no_pull(ctx)?;
     if let Some(object) = working_object_named(ctx, &args.id)? {
         let id = ctx.dam().caller_id(object.oid())?;
-        return report(&ShownObject(&object, &ctx.tz))
-            .map(|shown| with_caller_id(shown, id.as_ref()));
+        let authorship = Authorship::read(ctx)?;
+        let mut shown = report(&ShownObject(
+            &object,
+            &ctx.tz,
+            authorship.lines(object.oid()),
+        ))?;
+        authorship.stamp(object.oid(), &mut shown.data)?;
+        return Ok(with_caller_id(shown, id.as_ref()));
     }
     if !may(ctx.access.as_ref(), Permission::HistoryRead) {
         return Err(Refusal::NoSuchObject(args.id).into());
@@ -40,6 +47,7 @@ fn working_object_named(ctx: &Context, text: &str) -> Result<Option<Object>, Cli
 struct ShownObject<'a>(
     #[serde(serialize_with = "wire")] &'a Object,
     #[serde(skip)] &'a jiff::tz::TimeZone,
+    #[serde(skip)] Vec<String>,
 );
 
 impl View for ShownObject<'_> {
@@ -47,6 +55,7 @@ impl View for ShownObject<'_> {
         let b = self.0.base();
         let mut human = table(&[object_cells(self.0, self.1)]);
         human.push(format!("oid: {}", b.oid));
+        human.extend(self.2.iter().cloned());
         if !b.body.is_empty() {
             human.push(String::new());
             human.push(b.body.clone());

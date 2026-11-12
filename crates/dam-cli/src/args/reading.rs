@@ -9,6 +9,20 @@ use super::values::max_age_arg;
 pub(crate) struct LsArgs {
     #[arg(help = "Narrow the list by a query, such as due:today, or a saved filter's name")]
     pub(crate) query: Option<String>,
+    #[arg(
+        long,
+        value_enum,
+        default_value_t = AuthorKind::All,
+        help = "List what you made, what tokens made, or all of it"
+    )]
+    pub(crate) by: AuthorKind,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
+pub(crate) enum AuthorKind {
+    Mine,
+    Agents,
+    All,
 }
 
 #[derive(Args, Debug)]

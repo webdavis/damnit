@@ -62,7 +62,7 @@ pub(super) fn token_from_columns(
     })
 }
 
-fn author_from_columns(
+pub(super) fn author_from_columns(
     token: Option<String>,
     key_id: Option<String>,
     channel: Option<String>,

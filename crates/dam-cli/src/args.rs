@@ -17,7 +17,7 @@ pub(crate) use editing::EditArgs;
 pub(crate) use new::NewArgs;
 pub(crate) use planning::{DayArgs, DayCommand, RemindersArgs};
 pub(crate) use reading::{
-    AgendaArgs, CategoryArgs, CategoryCommand, FilterArgs, FilterCommand, LsArgs,
+    AgendaArgs, AuthorKind, CategoryArgs, CategoryCommand, FilterArgs, FilterCommand, LsArgs,
 };
 pub(crate) use remotes::{PullArgs, PushArgs, RemoteArgs, RemoteCommand, ResolveArgs};
 pub(crate) use staging::{

@@ -12,7 +12,11 @@
     "objects": {
       "type": "array",
       "items": {
-        "$ref": "object.schema.json"
+        "$ref": "object.schema.json",
+        "required": [
+          "author",
+          "details"
+        ]
       }
     }
   }

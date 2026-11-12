@@ -9,6 +9,7 @@ use crate::testing::MemoryStore;
 mod history;
 mod ids;
 mod items;
+mod origins;
 mod remote_state;
 
 pub struct FaultyStore {

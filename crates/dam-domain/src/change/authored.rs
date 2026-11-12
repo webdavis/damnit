@@ -15,6 +15,12 @@ pub enum Author {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Origin {
+    pub author: Author,
+    pub details: Option<Details>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Authored {
     pub change: Change,
     pub author: Author,
@@ -27,6 +33,13 @@ impl Authored {
             change,
             author: Author::Owner,
             details: None,
+        }
+    }
+
+    pub fn origin(&self) -> Origin {
+        Origin {
+            author: self.author.clone(),
+            details: self.details.clone(),
         }
     }
 
