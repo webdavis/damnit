@@ -1,4 +1,5 @@
 mod agenda;
+mod authorship;
 mod caller_id;
 pub(crate) mod catalogue;
 mod commit;

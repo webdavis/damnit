@@ -78,6 +78,7 @@ dam diff staged: help = Show the staged changes instead of the unstaged ones
 dam diff full: help = Embed the whole object before and after each change, in --json and --toon
 dam ls: about = List objects, optionally by query or saved filter
 dam ls query: help = Narrow the list by a query, such as due:today, or a saved filter's name
+dam ls by: help = List what you made, what tokens made, or all of it
 dam agenda: about = Show events over a window, each with whether it holds time
 dam agenda query: help = Narrow the events by a query or saved filter, read the way `ls` reads one
 dam agenda from: help = Open the window at a date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM. Default: now

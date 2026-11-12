@@ -17,6 +17,8 @@
     "reminders": { "type": "array", "items": { "type": "integer" }, "description": "Minutes before the due time or start that each reminder falls due." },
     "recurrence": { "type": "string", "description": "The rule it repeats by, such as every 2 weeks on mon." },
     "id": { "type": "string", "description": "The caller's own id for it, given with dam new --id." },
+    "author": { "type": "string", "description": "Who made it: the token's name, or the owner's from the config. dam ls and dam show always carry it." },
+    "details": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/details" }], "description": "The details of the change that made it; null until that change is staged, and for another sender's object read with a token. dam ls and dam show always carry it." },
     "task": { "$ref": "#/$defs/task" },
     "event": { "$ref": "#/$defs/event" }
   },

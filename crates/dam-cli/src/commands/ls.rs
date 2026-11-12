@@ -1,4 +1,7 @@
+use dam_domain::Object;
+
 use crate::args::LsArgs;
+use crate::commands::authorship::Authorship;
 use crate::commands::remote::refresh_stale_unless_no_pull;
 use crate::context::Context;
 use crate::error::CliError;
@@ -7,16 +10,30 @@ use crate::view::{ObjectList, report};
 
 pub(crate) fn run_ls(ctx: &Context, args: LsArgs) -> Result<Report, CliError> {
     refresh_stale_unless_no_pull(ctx)?;
-    let objects = ctx.dam().list(args.query.as_deref())?;
-    report(&ObjectList {
+    let authorship = Authorship::read(ctx)?;
+    let objects: Vec<Object> = ctx
+        .dam()
+        .list(args.query.as_deref())?
+        .into_iter()
+        .filter(|o| authorship.by(args.by, o))
+        .collect();
+    let authors: Vec<&str> = objects.iter().map(|o| authorship.author(o.oid())).collect();
+    let mut listed = report(&ObjectList {
         objects: &objects,
+        authors: &authors,
         zone: &ctx.tz,
-    })
+    })?;
+    if let Some(rows) = listed.data["objects"].as_array_mut() {
+        for (row, object) in rows.iter_mut().zip(&objects) {
+            authorship.stamp(object.oid(), row)?;
+        }
+    }
+    Ok(listed)
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::args::LsArgs;
+    use crate::args::{AuthorKind, LsArgs};
     use crate::testing::context;
     use dam_application::FilterConfig;
     use dam_domain::{Categories, Category, Object, Oid, Task, When};
@@ -39,7 +56,15 @@ mod tests {
             query: "due:today".into(),
         });
         assert_eq!(
-            super::run_ls(&ctx, LsArgs { query: None }).unwrap().data["objects"]
+            super::run_ls(
+                &ctx,
+                LsArgs {
+                    query: None,
+                    by: AuthorKind::All
+                }
+            )
+            .unwrap()
+            .data["objects"]
                 .as_array()
                 .unwrap()
                 .len(),
@@ -49,6 +74,7 @@ mod tests {
             super::run_ls(
                 &ctx,
                 LsArgs {
+                    by: AuthorKind::All,
                     query: Some("due:today".into())
                 }
             )
@@ -62,6 +88,7 @@ mod tests {
         let saved = super::run_ls(
             &ctx,
             LsArgs {
+                by: AuthorKind::All,
                 query: Some("now".into()),
             },
         )
@@ -82,6 +109,7 @@ mod tests {
         let err = super::run_ls(
             &ctx,
             LsArgs {
+                by: AuthorKind::All,
                 query: Some("effort:home".into()),
             },
         )
@@ -96,6 +124,7 @@ mod tests {
         let err = super::run_ls(
             &ctx,
             LsArgs {
+                by: AuthorKind::All,
                 query: Some("mood:happy".into()),
             },
         )

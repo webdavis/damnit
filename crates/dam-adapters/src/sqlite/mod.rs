@@ -11,6 +11,7 @@ mod items;
 mod migrations;
 mod notices;
 mod objects;
+mod origins;
 mod remote_tracking;
 mod savepoint;
 mod stage;

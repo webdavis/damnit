@@ -5,6 +5,7 @@ mod helper;
 mod ids;
 mod items;
 mod notices;
+mod origins;
 mod repositories;
 mod store;
 
@@ -15,6 +16,7 @@ pub use helper::{CredentialError, CredentialSource, HelperError, HelperLauncher,
 pub use ids::IdRepository;
 pub use items::ItemRepository;
 pub use notices::{Notice, NoticeRepository};
+pub use origins::OriginRepository;
 pub use repositories::Store;
 pub use store::{
     AcceptedKindsRepository, CommitRepository, Conflict, ConflictRepository, ObjectRepository,
