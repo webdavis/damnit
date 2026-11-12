@@ -1,4 +1,4 @@
-use dam_application::{CredentialSpec, Standing};
+use dam_application::Standing;
 use dam_domain::Change;
 use dam_domain::Permission::{ConfigRead, ConflictRead, RemoteRead};
 
@@ -22,9 +22,7 @@ pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliE
     let remotes: Vec<_> = ctx.config.remotes.iter().map(|r| r.name.clone()).collect();
     let s = ctx.dam().status(&remotes)?;
     let shown = |permission| may(ctx.access.as_ref(), permission);
-    let warnings = literal_credential_warning(ctx)
-        .into_iter()
-        .chain(token_warnings(ctx));
+    let warnings = token_warnings(ctx);
     report(&StatusView {
         staged: change_rows(&s.staged, args.full),
         unstaged: change_rows(&s.unstaged, args.full),
@@ -65,27 +63,6 @@ fn token_warnings(ctx: &Context) -> impl Iterator<Item = String> + '_ {
         Standing::Usable(_) => None,
     });
     skipped.chain(disabled)
-}
-
-fn literal_credential_warning(ctx: &Context) -> Option<String> {
-    let literals: Vec<String> = ctx
-        .config
-        .remotes
-        .iter()
-        .flat_map(|r| {
-            r.credentials.iter().filter_map(move |c| match c {
-                CredentialSpec::Literal { name, .. } => Some(format!("{}.{name}", r.name.0)),
-                _ => None,
-            })
-        })
-        .collect();
-    if literals.is_empty() {
-        return None;
-    }
-    Some(format!(
-        "warning: a credential is a value in the config file: {}; prefer <name>_command or <name>_env",
-        literals.join(", ")
-    ))
 }
 
 #[cfg(test)]
