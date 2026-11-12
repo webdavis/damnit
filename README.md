@@ -365,6 +365,25 @@ An unknown permission is skipped. An unknown key, or a reserved name such as `co
 disables the token, and so does sharing a value with another token. A `schema` above 1 disables
 every token. `dam status` warns about each.
 
+## Tokens in a config your dotfiles manage
+
+`dam token create`, `dam token revoke` and `dam remote add` edit the config file in place. When a
+template renders your config, change the template instead, or the next render undoes the edit.
+
+1. Run `dam token generate`. It prints a new token and writes nothing.
+2. Save the token in your password manager.
+3. Have your template write the token's table with that value:
+
+       [token.tool]
+       value = "damk_v1_..."
+
+       [[token.tool.grant]]
+       allow = ["task:read"]
+
+4. Give the tool the same value as `DAM_TOKEN`.
+
+`dam token generate --json` also prints the token's `key_id`, the one `dam token list` shows.
+
 ## Errors
 
 With `--json` or `--toon` a failure prints one document on standard error and nothing on standard

@@ -111,6 +111,7 @@ dam resolve oid: help = Pick the conflicted object by oid, or by a prefix of 4 o
 dam resolve ours: help = Keep the local side
 dam resolve theirs: help = Keep the remote's side
 dam token: about = Manage the tokens tools and agents run dam with
+dam token generate: about = Print a new token for a config you write yourself; nothing is written
 dam token create: about = Make a token with one grant, add it to the config and print it once
 dam token create name: help = Name the token, such as tool
 dam token create allow: help = Allow a permission, such as task:read. Repeatable
