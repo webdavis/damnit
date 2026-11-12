@@ -18,3 +18,14 @@ pub(crate) enum DayCommand {
     #[command(about = "List the recorded days, newest first, with when each was closed")]
     List,
 }
+
+#[derive(Args, Debug)]
+pub(crate) struct RemindersArgs {
+    #[arg(
+        long,
+        help = "Open the window at a date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM. Default: today"
+    )]
+    pub(crate) from: Option<String>,
+    #[arg(long, help = "Close the window here, exclusive. Default: now")]
+    pub(crate) to: Option<String>,
+}

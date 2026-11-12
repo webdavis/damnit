@@ -27,6 +27,7 @@ pub(crate) fn need(command: &Command) -> Need {
         Command::Category(_) | Command::Filter(_) => Need::Whole(&[ConfigRead]),
         Command::Ls(_) => Need::NarrowedFrom(&[TaskRead, EventRead]),
         Command::Agenda(_) => Need::NarrowedFrom(&[EventRead]),
+        Command::Reminders(_) => Need::NarrowedFrom(&[TaskRead, EventRead]),
         Command::Show(_) => Need::NarrowedFrom(&[TaskRead, EventRead, HistoryRead]),
         Command::Remote(a) => match a.command {
             RemoteCommand::Add { .. } => Need::OwnerOnly("remote add"),
