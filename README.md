@@ -206,6 +206,11 @@ through `dam edit --due`, and `--no-due` clears it.
 Every time under `--json` and `--toon` is RFC 3339 with its offset, such as
 `2026-09-25T09:00:00-04:00`, and every all-day date is a plain `YYYY-MM-DD`.
 
+Every answer has a JSON Schema in `docs/schemas/`, named after its command: `dam remote list`
+answers by `remote-list.schema.json`. A command that writes also publishes
+`<command>.request.schema.json`, whose keys are its flags without the dashes.
+`object.schema.json` is a task or an event.
+
 `dam status --json` and `dam diff --json` answer in change documents, one per change:
 
     {"oid": "98d878...", "op": "update", "fields": ["subject", "due"], "kind": "task",
