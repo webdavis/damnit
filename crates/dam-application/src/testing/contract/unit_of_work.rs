@@ -1,6 +1,6 @@
 use crate::errors::UseCaseError;
 use crate::ports::{Store, StoreError};
-use dam_domain::Change;
+use dam_domain::{Authored, Change};
 
 use super::{oid, task};
 
@@ -8,9 +8,9 @@ pub fn transactional_contract(store: &dyn Store) {
     store
         .in_transaction(&mut || {
             store.put(&task(1, "kept", ""))?;
-            store.put_staged(Change::Create {
+            store.put_staged(Authored::by_owner(Change::Create {
                 after: task(1, "kept", ""),
-            })?;
+            }))?;
             Ok(())
         })
         .expect("work that succeeds commits");

@@ -26,7 +26,10 @@
           "priority": 4
         }
       },
-      "after": null
+      "after": null,
+      "from": null,
+      "key_id": null,
+      "channel": null
     }
   ],
   "unstaged": [
@@ -79,7 +82,10 @@
           "priority": 2,
           "due": "2026-09-25"
         }
-      }
+      },
+      "from": null,
+      "key_id": null,
+      "channel": null
     }
   ],
   "conflicts": [],

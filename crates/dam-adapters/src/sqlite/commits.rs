@@ -1,9 +1,9 @@
 use dam_application::{CommitRepository, RemoteName, StoreError};
-use dam_domain::{Change, CommitId, CommitRecord, Oid};
+use dam_domain::{Authored, CommitId, CommitRecord, Oid};
 use rusqlite::{Connection, params};
 
 use super::SqliteStore;
-use super::codec::{object_to_json, read_changes};
+use super::authored_rows::{AUTHORED_COLUMNS, author_columns, change_columns, read_authored};
 use super::objects::sql;
 
 impl CommitRepository for SqliteStore {
@@ -101,17 +101,27 @@ fn write_change(
     conn: &Connection,
     record: &CommitRecord,
     ord: usize,
-    change: &Change,
+    authored: &Authored,
 ) -> Result<(), StoreError> {
-    let oid = change.oid().as_str();
-    let before = change.before().map(object_to_json).transpose()?;
-    let after = change.after().map(object_to_json).transpose()?;
+    let oid = authored.change.oid().as_str();
+    let change = change_columns(&authored.change)?;
+    let author = author_columns(&authored.author);
     conn.execute(
-        "INSERT INTO commit_changes (commit_id, ord, oid, op, before_json, after_json) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        params![record.id.as_str(), ord as i64, oid, change.op().as_str(), before, after],
+        "INSERT INTO commit_changes (commit_id, ord, oid, op, before_json, after_json, author_token, author_key_id, author_channel) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        params![
+            record.id.as_str(),
+            ord as i64,
+            oid,
+            change.op,
+            change.before,
+            change.after,
+            author.token,
+            author.key_id,
+            author.channel
+        ],
     )
     .map_err(sql)?;
-    match after {
+    match change.after {
         Some(after) => conn.execute(
             "INSERT INTO committed (oid, json) VALUES (?1, ?2)
              ON CONFLICT(oid) DO UPDATE SET json = excluded.json",
@@ -141,9 +151,9 @@ fn records(
         .into_iter()
         .map(|(id, message, at)| {
             let mut stmt = conn
-                .prepare(
-                    "SELECT op, before_json, after_json FROM commit_changes WHERE commit_id = ?1 ORDER BY ord",
-                )
+                .prepare(&format!(
+                    "SELECT {AUTHORED_COLUMNS} FROM commit_changes WHERE commit_id = ?1 ORDER BY ord"
+                ))
                 .map_err(sql)?;
             Ok(CommitRecord {
                 id: CommitId::parse(&id).map_err(|e| StoreError::Failed(e.to_string()))?,
@@ -151,7 +161,7 @@ fn records(
                 at: at
                     .parse()
                     .map_err(|e: jiff::Error| StoreError::Failed(e.to_string()))?,
-                changes: read_changes(&mut stmt, params![id])?,
+                changes: read_authored(&mut stmt, params![id])?,
             })
         })
         .collect()

@@ -1,4 +1,5 @@
 mod accepted_kinds;
+mod authored_rows;
 mod codec;
 mod commits;
 mod conflicts;

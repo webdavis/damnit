@@ -1,9 +1,6 @@
 use dam_application::{Notice, RejectedObject, RemoteName, StoreError};
 use dam_domain::{Change, Kind, Object, Oid, Op};
-use rusqlite::Params;
 use serde::{Deserialize, Serialize};
-
-use super::objects::sql;
 
 pub(super) fn object_to_json(o: &Object) -> Result<String, StoreError> {
     serde_json::to_string(&crate::wire::to_wire(o, None))
@@ -20,7 +17,7 @@ pub(super) fn op_from_text(s: &str) -> Result<Op, StoreError> {
     Op::parse(s).ok_or_else(|| StoreError::Failed(format!("stored op {s:?}")))
 }
 
-fn change_from_row(
+pub(super) fn change_from_row(
     op: &str,
     before: Option<String>,
     after: Option<String>,
@@ -36,25 +33,6 @@ fn change_from_row(
                 op.as_str()
             ))
         })
-}
-
-pub(super) fn read_changes(
-    stmt: &mut rusqlite::Statement,
-    params: impl Params,
-) -> Result<Vec<Change>, StoreError> {
-    stmt.query_map(params, |r| {
-        Ok((
-            r.get::<_, String>(0)?,
-            r.get::<_, Option<String>>(1)?,
-            r.get::<_, Option<String>>(2)?,
-        ))
-    })
-    .map_err(sql)?
-    .map(|r| {
-        r.map_err(sql)
-            .and_then(|(op, b, a)| change_from_row(&op, b, a))
-    })
-    .collect()
 }
 
 #[derive(Serialize, Deserialize)]

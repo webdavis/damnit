@@ -10,7 +10,7 @@ fn add_stages_a_create_for_a_new_working_object() {
     s.working(task(1));
     let staged = s.dam().add(&[oid(1)]).unwrap();
     assert_eq!(staged.len(), 1);
-    assert_eq!(staged[0].op(), Op::Create);
+    assert_eq!(staged[0].change.op(), Op::Create);
     assert_eq!(s.store.staged().unwrap().len(), 1);
 }
 
@@ -39,7 +39,7 @@ fn add_all_includes_deletes_of_committed_objects_gone_from_working() {
     s.committed(task(1));
     s.store.delete(&oid(1)).unwrap();
     let staged = s.dam().add_all().unwrap();
-    assert_eq!(staged[0].op(), Op::Delete);
+    assert_eq!(staged[0].change.op(), Op::Delete);
 }
 
 #[test]

@@ -104,10 +104,13 @@ pub struct CommitRecord {
     pub id: CommitId,
     pub message: String,
     pub at: Timestamp,
-    pub changes: Vec<Change>,
+    pub changes: Vec<Authored>,
 }
 
+mod authored;
 mod fields;
+
+pub use authored::{Author, Authored, TokenAuthor};
 
 pub use fields::{changed_fields, kind_change, merge_fields, touched_fields};
 

@@ -1,7 +1,7 @@
 use crate::ports::{ObjectRepository, StageRepository};
-use dam_domain::Change;
+use dam_domain::{Authored, Change};
 
-use super::{oid, task};
+use super::{oid, task, token_author};
 
 pub fn object_repository_contract(objects: &dyn ObjectRepository) {
     assert_eq!(objects.get(&oid(1)).unwrap(), None, "absent reads as none");
@@ -59,8 +59,17 @@ pub fn stage_repository_contract(stage: &dyn StageRepository) {
     stage.put_staged(edited.clone()).unwrap();
     assert_eq!(
         stage.staged().unwrap(),
-        vec![edited],
-        "a second put for one oid replaces the first"
+        vec![edited.clone()],
+        "a second put by the owner for one oid replaces the first"
+    );
+
+    let mut sent = staged_create(1, "sent");
+    sent.author = token_author();
+    stage.put_staged(sent.clone()).unwrap();
+    assert_eq!(
+        stage.staged().unwrap(),
+        vec![sent, edited],
+        "a token's change and the owner's change of one oid stay apart, the token's first"
     );
 
     let other = staged_create(2, "other");
@@ -77,8 +86,8 @@ pub fn stage_repository_contract(stage: &dyn StageRepository) {
     assert!(stage.staged().unwrap().is_empty());
 }
 
-fn staged_create(byte: u8, subject: &str) -> Change {
-    Change::Create {
+fn staged_create(byte: u8, subject: &str) -> Authored {
+    Authored::by_owner(Change::Create {
         after: task(byte, subject, ""),
-    }
+    })
 }

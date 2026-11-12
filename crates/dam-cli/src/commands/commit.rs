@@ -57,7 +57,7 @@ impl<'a> CommitDoc<'a> {
             changes: record
                 .changes
                 .iter()
-                .map(|c| ChangeRow::new(c, false))
+                .map(|c| ChangeRow::new(&c.change, &c.author, false))
                 .collect(),
             zone,
         }

@@ -1,11 +1,12 @@
 mod authenticate;
 
-use dam_domain::{Grants, Object, Permission, Subject};
+use dam_domain::{Author, Channel, Grants, Object, Permission, Subject, TokenAuthor};
 
 pub use authenticate::{TokenRefusal, authenticate};
 
 pub trait Access {
     fn token(&self) -> Option<&str>;
+    fn author(&self) -> Author;
     fn holds(&self, permission: Permission) -> bool;
     fn permits(&self, permission: Permission, touched: &[Subject<'_>]) -> bool;
 
@@ -21,6 +22,10 @@ impl Access for Owner {
         None
     }
 
+    fn author(&self) -> Author {
+        Author::Owner
+    }
+
     fn holds(&self, _: Permission) -> bool {
         true
     }
@@ -34,11 +39,20 @@ impl Access for Owner {
 pub struct Holder {
     pub name: String,
     pub grants: Grants,
+    pub channel: Channel,
 }
 
 impl Access for Holder {
     fn token(&self) -> Option<&str> {
         Some(&self.name)
+    }
+
+    fn author(&self) -> Author {
+        Author::Token(TokenAuthor {
+            name: self.name.clone(),
+            key_id: self.grants.holder.clone(),
+            channel: self.channel,
+        })
     }
 
     fn holds(&self, permission: Permission) -> bool {

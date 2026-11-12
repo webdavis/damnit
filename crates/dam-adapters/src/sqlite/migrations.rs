@@ -1,6 +1,6 @@
 use rusqlite::Connection;
 
-pub(super) const VERSION: u32 = 6;
+pub(super) const VERSION: u32 = 7;
 
 const V1: &str = r#"
 CREATE TABLE objects (oid TEXT PRIMARY KEY, kind TEXT NOT NULL, path TEXT NOT NULL, json TEXT NOT NULL);
@@ -48,6 +48,17 @@ const V6: &str = r#"
 CREATE TABLE days (day TEXT PRIMARY KEY, json TEXT NOT NULL);
 "#;
 
+const V7: &str = r#"
+CREATE TABLE stage_by_author (oid TEXT NOT NULL, op TEXT NOT NULL, before_json TEXT, after_json TEXT, author_token TEXT, author_key_id TEXT, author_channel TEXT);
+INSERT INTO stage_by_author (oid, op, before_json, after_json) SELECT oid, op, before_json, after_json FROM stage;
+DROP TABLE stage;
+ALTER TABLE stage_by_author RENAME TO stage;
+CREATE UNIQUE INDEX stage_one_change_per_author ON stage (oid, author_token IS NULL);
+ALTER TABLE commit_changes ADD COLUMN author_token TEXT;
+ALTER TABLE commit_changes ADD COLUMN author_key_id TEXT;
+ALTER TABLE commit_changes ADD COLUMN author_channel TEXT;
+"#;
+
 pub(super) fn migrate_above_user_version_in_one_transaction(
     conn: &mut Connection,
 ) -> Result<(), rusqlite::Error> {
@@ -74,9 +85,15 @@ pub(super) fn migrate_above_user_version_in_one_transaction(
     if current < 6 {
         tx.execute_batch(V6)?;
     }
+    if current < 7 {
+        tx.execute_batch(V7)?;
+    }
     tx.pragma_update(None, "user_version", VERSION)?;
     tx.commit()
 }
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod author_tests;

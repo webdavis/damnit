@@ -11,7 +11,10 @@
       "done": false,
       "completed_at": null,
       "priority": 4,
-      "due": null
+      "due": null,
+      "from": null,
+      "key_id": null,
+      "channel": null
     }
   ],
   "unstaged": [
@@ -30,7 +33,10 @@
       "done": false,
       "completed_at": null,
       "priority": 2,
-      "due": "2026-09-25"
+      "due": "2026-09-25",
+      "from": null,
+      "key_id": null,
+      "channel": null
     }
   ],
   "conflicts": [],

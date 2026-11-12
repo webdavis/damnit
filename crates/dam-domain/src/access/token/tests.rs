@@ -107,3 +107,14 @@ fn tokens_compare_equal_only_on_every_character() {
     assert!(a.matches(&a.clone()));
     assert!(!a.matches(&b));
 }
+
+#[test]
+fn a_key_id_read_back_from_the_store_is_twelve_base62_characters() {
+    let token = Token::generate(&mut |b: &mut [u8]| b.fill(9));
+    assert_eq!(
+        KeyId::parse(token.key_id().as_str()).as_ref(),
+        Some(token.key_id())
+    );
+    assert_eq!(KeyId::parse("short"), None);
+    assert_eq!(KeyId::parse("abcdefghijk_"), None);
+}

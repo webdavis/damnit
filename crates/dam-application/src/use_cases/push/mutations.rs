@@ -25,7 +25,7 @@ fn net_changes_with_the_commit_of_their_last_change(
 ) -> OwedChanges {
     let mut changes = OwedChanges::new();
     for record in unpushed {
-        for change in &record.changes {
+        for change in record.changes.iter().map(|c| &c.change) {
             let merged = match changes.remove(change.oid()) {
                 Some((first, _)) => {
                     Change::between(first.before().cloned(), change.after().cloned())

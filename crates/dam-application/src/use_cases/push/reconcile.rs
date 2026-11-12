@@ -24,7 +24,11 @@ impl Settlement {
     ) -> impl Iterator<Item = &'a CommitId> {
         unpushed
             .iter()
-            .filter(|r| !r.changes.iter().any(|c| self.unanswered.contains(c.oid())))
+            .filter(|r| {
+                !r.changes
+                    .iter()
+                    .any(|c| self.unanswered.contains(c.change.oid()))
+            })
             .map(|r| &r.id)
     }
 

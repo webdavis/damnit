@@ -20,7 +20,10 @@
           "done": true,
           "completed_at": "<now>",
           "priority": 2,
-          "due": "2026-09-25"
+          "due": "2026-09-25",
+          "from": null,
+          "key_id": null,
+          "channel": null
         }
       ]
     },
@@ -48,7 +51,10 @@
           "done": false,
           "completed_at": null,
           "priority": 2,
-          "due": "2026-09-25"
+          "due": "2026-09-25",
+          "from": null,
+          "key_id": null,
+          "channel": null
         },
         {
           "oid": "2222222222222222222222222222222222222222",
@@ -63,7 +69,10 @@
           "done": false,
           "completed_at": null,
           "priority": 4,
-          "due": null
+          "due": null,
+          "from": null,
+          "key_id": null,
+          "channel": null
         },
         {
           "oid": "3333333333333333333333333333333333333333",
@@ -79,7 +88,10 @@
           "path": "work/",
           "labels": [],
           "start": "2026-09-25T09:00:00+00:00",
-          "end": "2026-09-25T09:15:00+00:00"
+          "end": "2026-09-25T09:15:00+00:00",
+          "from": null,
+          "key_id": null,
+          "channel": null
         },
         {
           "oid": "4444444444444444444444444444444444444444",
@@ -98,7 +110,10 @@
             "deep"
           ],
           "start": "2026-09-25",
-          "end": "2026-09-27"
+          "end": "2026-09-27",
+          "from": null,
+          "key_id": null,
+          "channel": null
         }
       ]
     }
