@@ -71,5 +71,6 @@ pub(super) fn token_command_refusals_with_their_text() -> Vec<(Refusal, &'static
             Refusal::NotGrantable("config:change".into()),
             "config:change is reserved and cannot be granted",
         ),
+        (Refusal::NoSuchToken("vpt".into()), "no token named \"vpt\""),
     ]
 }

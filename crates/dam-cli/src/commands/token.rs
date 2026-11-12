@@ -1,6 +1,7 @@
 mod create;
 mod grant_view;
 mod list;
+mod revoke;
 
 use dam_application::{ConfigFile, Randomness};
 use dam_domain::Timestamp;
@@ -19,5 +20,6 @@ pub(crate) fn run(
     match args.command {
         TokenCommand::Create(a) => create::run(file, &config, random, a),
         TokenCommand::List => list::run(&config, now),
+        TokenCommand::Revoke { name } => revoke::run(file, &config, name),
     }
 }

@@ -14,6 +14,11 @@ pub(crate) enum TokenCommand {
         about = "List the config's tokens with their grants and standing, never their values"
     )]
     List,
+    #[command(about = "Remove a token's tables from the config")]
+    Revoke {
+        #[arg(help = "Name the token to remove")]
+        name: String,
+    },
 }
 
 #[derive(Args, Debug)]

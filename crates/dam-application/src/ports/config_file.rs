@@ -8,6 +8,7 @@ pub trait ConfigFile {
     fn load(&self) -> Result<Config, ConfigError>;
     fn add_remote(&self, name: &RemoteName, url: &str) -> Result<Option<String>, ConfigError>;
     fn add_token(&self, token: &NewToken) -> Result<Option<String>, ConfigError>;
+    fn remove_token(&self, name: &str) -> Result<Option<String>, ConfigError>;
 }
 
 #[derive(Debug)]

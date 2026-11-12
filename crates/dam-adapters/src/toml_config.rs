@@ -11,6 +11,7 @@ mod remote;
 mod rewrite;
 mod token;
 mod token_append;
+mod token_remove;
 use append::append_remote;
 pub use file::TomlConfigFile;
 use remote::parse_remote;

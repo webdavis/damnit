@@ -142,6 +142,7 @@ impl fmt::Display for RefusalText<'_> {
             Refusal::NotGrantable(permission) => {
                 write!(f, "{permission} is reserved and cannot be granted")
             }
+            Refusal::NoSuchToken(name) => write!(f, "no token named {name:?}"),
         }
     }
 }
