@@ -7,6 +7,7 @@ use crate::editor::EditorError;
 
 mod refusal_oids;
 mod refusal_text;
+mod token_text;
 mod use_case_text;
 
 use refusal_oids::refusal_oids;
@@ -28,6 +29,7 @@ const EXIT_FAILED: i32 = 1;
 const EXIT_USAGE_AS_CLAP_EXITS: i32 = 2;
 const EXIT_CANCELLED: i32 = 3;
 const EXIT_REFUSED_BY_A_RULE: i32 = 4;
+const EXIT_TOKEN_REFUSED: i32 = 5;
 
 const KIND_OF_AN_EDITOR_FAILURE_NO_DOCUMENT_CARRIES: &str = "editor";
 
@@ -39,6 +41,7 @@ impl CliError {
             | CliError::UseCase(UseCaseError::NotAnOid(_))
             | CliError::UseCase(UseCaseError::Query(_)) => EXIT_USAGE_AS_CLAP_EXITS,
             CliError::Cancelled => EXIT_CANCELLED,
+            CliError::UseCase(UseCaseError::Refused(Refusal::Token(_))) => EXIT_TOKEN_REFUSED,
             CliError::UseCase(UseCaseError::Refused(_)) => EXIT_REFUSED_BY_A_RULE,
             _ => EXIT_FAILED,
         }

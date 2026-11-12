@@ -1,12 +1,15 @@
+use std::ffi::OsString;
 use std::path::Path;
 
 use dam_adapters::{
     Interrupt, OsRandom, ProcessCredentialSource, ProcessLauncher, SqliteStore, SystemClock,
 };
 use dam_application::{
-    Clock, Config, ConfigFile, CredentialSource, Dam, HelperLauncher, Randomness, Remotes, Store,
+    Access, Clock, Config, ConfigFile, CredentialSource, Dam, HelperLauncher, Randomness, Remotes,
+    Store,
 };
 
+use crate::caller::caller;
 use crate::editor::{EditorSession, EnvEditor};
 use crate::error::CliError;
 use crate::output::Format;
@@ -15,6 +18,7 @@ use crate::prompt::{Prompt, RefusingPrompt, TerminalPrompt};
 pub(crate) struct Context {
     pub(crate) store: Box<dyn Store>,
     pub(crate) config: Config,
+    pub(crate) access: Box<dyn Access>,
     pub(crate) config_file: Box<dyn ConfigFile>,
     pub(crate) clock: Box<dyn Clock>,
     pub(crate) random: Box<dyn Randomness>,
@@ -30,17 +34,20 @@ impl Context {
     pub(crate) fn open(
         config_file: Box<dyn ConfigFile>,
         store_path: &Path,
+        presented_token: Option<OsString>,
         format: Format,
         no_pull: bool,
         interrupt: &Interrupt,
     ) -> Result<Context, CliError> {
         let config = config_file.load()?;
+        let access = caller(&config, presented_token, SystemClock.now())?;
         let store = SqliteStore::open(store_path)?;
         let (prompt, editor) =
             terminal_pair_for_a_human_and_refusals_for_a_machine(format, interrupt);
         Ok(Context {
             store: Box::new(store),
             config,
+            access,
             config_file,
             clock: Box::new(SystemClock),
             random: Box::new(OsRandom),
@@ -59,6 +66,7 @@ impl Context {
             clock: self.clock.as_ref(),
             random: self.random.as_ref(),
             config: &self.config,
+            access: self.access.as_ref(),
         }
     }
 

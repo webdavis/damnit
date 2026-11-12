@@ -1,5 +1,6 @@
 use dam_domain::{Blockers, LabelViolation, Oid, QueryError, Tracked};
 
+use crate::access::TokenRefusal;
 use crate::ports::{CredentialError, HelperError, StoreError};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -52,6 +53,7 @@ pub enum Refusal {
         tracked: Tracked,
     },
     NoConflict(Oid),
+    Token(TokenRefusal),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -92,6 +94,7 @@ impl Refusal {
             Refusal::StaleRemote { .. } => "stale_remote",
             Refusal::UnreadableRecurrence { .. } => "unreadable_recurrence",
             Refusal::NoConflict(_) => "no_conflict",
+            Refusal::Token(refusal) => refusal.name(),
         }
     }
 }

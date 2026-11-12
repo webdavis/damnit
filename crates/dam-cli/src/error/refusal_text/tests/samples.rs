@@ -11,7 +11,7 @@ fn abab000() -> String {
     .to_string()
 }
 
-pub(super) const RULES: usize = 24;
+pub(super) const RULES: usize = 25;
 
 pub(super) fn rule_number(refusal: &Refusal) -> usize {
     match refusal {
@@ -39,10 +39,17 @@ pub(super) fn rule_number(refusal: &Refusal) -> usize {
         Refusal::StaleRemote { .. } => 21,
         Refusal::UnreadableRecurrence { .. } => 22,
         Refusal::NoConflict(_) => 23,
+        Refusal::Token(_) => 24,
     }
 }
 
 pub(super) fn every_refusal_with_its_text() -> Vec<(Refusal, &'static str)> {
+    let mut samples = refusals_by_object_rules();
+    samples.extend(super::access_samples::access_refusals_with_their_text());
+    samples
+}
+
+fn refusals_by_object_rules() -> Vec<(Refusal, &'static str)> {
     vec![
         (
             Refusal::Blocked {

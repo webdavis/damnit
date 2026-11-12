@@ -46,8 +46,24 @@ impl Sandbox {
             .env("XDG_DATA_HOME", self.dir.path().join("data"))
             .env("XDG_STATE_HOME", self.dir.path().join("state"))
             .env("TZ", "UTC")
-            .env("COLUMNS", "80");
+            .env("COLUMNS", "80")
+            .env_remove("DAM_TOKEN");
         command
+    }
+
+    pub fn add_config(&self, text: &str) {
+        let path = self.dir.path().join("config.toml");
+        let mut config = std::fs::read_to_string(&path).unwrap();
+        config.push_str(text);
+        std::fs::write(path, config).unwrap();
+    }
+
+    pub fn output_holding(&self, token: &str, args: &[&str]) -> std::process::Output {
+        self.command(args)
+            .env("DAM_TOKEN", token)
+            .stdin(std::process::Stdio::null())
+            .output()
+            .unwrap()
     }
 
     pub fn spawn(&self, args: &[&str]) -> std::process::Child {

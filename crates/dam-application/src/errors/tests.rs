@@ -3,7 +3,7 @@ use dam_domain::{Blockers, LabelViolation, Tracked};
 
 use crate::testing::oid;
 
-const HAND_COUNTED_RULES: usize = 24;
+const HAND_COUNTED_RULES: usize = 25;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -31,6 +31,7 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::NotACategoryValue { .. } => 21,
         Refusal::NoConflict(_) => 22,
         Refusal::AmbiguousPrefix { .. } => 23,
+        Refusal::Token(_) => 24,
     }
 }
 
@@ -88,6 +89,7 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
             text: "abab".into(),
             matches: vec![oid(1).to_string(), oid(2).to_string()],
         },
+        Refusal::Token(crate::TokenRefusal::Unknown),
     ]
 }
 

@@ -28,6 +28,7 @@ impl Fixture {
             clock: &self.clock,
             random: &self.random,
             config: &self.config,
+            access: &crate::access::Owner,
         }
     }
 }
