@@ -56,5 +56,6 @@ pub struct NewToken {
     pub value: Token,
     pub expires: Option<Timestamp>,
     pub via: Option<BTreeSet<Channel>>,
+    pub require: Vec<String>,
     pub grant: Grant,
 }

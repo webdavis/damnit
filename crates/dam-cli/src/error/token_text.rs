@@ -31,8 +31,13 @@ impl fmt::Display for TokenText<'_> {
             ),
             TokenRefusal::MissingDetails { name, details } => write!(
                 f,
-                "token {name} requires the request details {}, which this dam cannot take yet",
-                details.join(", ")
+                "token {name} requires the request details {}; pass each as {}",
+                details.join(", "),
+                details
+                    .iter()
+                    .map(|key| format!("--meta {key}=<value>"))
+                    .collect::<Vec<_>>()
+                    .join(" ")
             ),
         }
     }

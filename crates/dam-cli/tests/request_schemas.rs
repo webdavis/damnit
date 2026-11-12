@@ -8,6 +8,13 @@ use support::schema::{schema_errors, schemas};
 
 const TAKING_FLAGS: [&str; 6] = ["new", "edit", "done", "mv", "rm", "token create"];
 
+fn details_flag(spoken: &str) -> Vec<String> {
+    match spoken {
+        "token create" => vec![],
+        _ => vec!["meta".to_string()],
+    }
+}
+
 #[test]
 fn every_writing_command_publishes_a_request_schema_named_after_its_flags() {
     let _guard =
@@ -23,7 +30,12 @@ fn every_writing_command_publishes_a_request_schema_named_after_its_flags() {
             .as_object()
             .map(|p| p.keys().cloned().collect())
             .unwrap_or_default();
-        let mut taken = [arguments(&sb, &command), own_flags(&sb, &command)].concat();
+        let mut taken = [
+            arguments(&sb, &command),
+            own_flags(&sb, &command),
+            details_flag(spoken),
+        ]
+        .concat();
         published.sort();
         taken.sort();
         assert_eq!(

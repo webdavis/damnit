@@ -13,6 +13,13 @@
       "type": "string",
       "pattern": "^[0-9a-f]{4,40}$",
       "description": "An oid, or a prefix of 4 or more hex characters."
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "The request's details, as --meta KEY=VALUE passes them: harness, session, model, effort, version or any other key."
     }
   }
 }

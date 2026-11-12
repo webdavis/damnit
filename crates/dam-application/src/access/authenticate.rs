@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use dam_domain::{Channel, Grants, Timestamp, Token, TokenError};
 
 use super::Holder;
@@ -35,6 +37,7 @@ pub fn authenticate(
     presented: &str,
     channel: Channel,
     now: Timestamp,
+    offered: &BTreeMap<String, String>,
 ) -> Result<Holder, TokenRefusal> {
     let presented = Token::parse(presented).map_err(|e| match e {
         TokenError::UnknownVersion(version) => TokenRefusal::UnknownVersion(version),
@@ -60,8 +63,13 @@ pub fn authenticate(
     if !terms.via.contains(&channel) {
         return Err(TokenRefusal::ChannelNotAllowed { name, channel });
     }
-    if !terms.require.is_empty() {
-        let details = terms.require.clone();
+    let details: Vec<String> = terms
+        .require
+        .iter()
+        .filter(|key| !offered.contains_key(*key))
+        .cloned()
+        .collect();
+    if !details.is_empty() {
         return Err(TokenRefusal::MissingDetails { name, details });
     }
     Ok(Holder {

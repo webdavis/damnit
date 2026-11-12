@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::ffi::OsString;
 use std::path::Path;
 
@@ -35,12 +36,13 @@ impl Context {
         config_file: Box<dyn ConfigFile>,
         store_path: &Path,
         presented_token: Option<OsString>,
+        meta: &BTreeMap<String, String>,
         format: Format,
         no_pull: bool,
         interrupt: &Interrupt,
     ) -> Result<Context, CliError> {
         let config = config_file.load()?;
-        let access = caller(&config, presented_token, SystemClock.now())?;
+        let access = caller(&config, presented_token, SystemClock.now(), meta)?;
         let store = SqliteStore::open(store_path)?;
         let (prompt, editor) =
             terminal_pair_for_a_human_and_refusals_for_a_machine(format, interrupt);

@@ -17,6 +17,7 @@ struct TokenCreated {
     value: String,
     expires: Option<String>,
     via: Vec<&'static str>,
+    require: Vec<String>,
     grants: Vec<GrantView>,
     warnings: Vec<String>,
 }
@@ -45,6 +46,7 @@ pub(super) fn run(
         via: some_unless_empty(args.via)
             .map(|words| words.iter().map(|w| channel(w)).collect())
             .transpose()?,
+        require: args.require,
         grant: Grant {
             allow: args
                 .allow
@@ -71,6 +73,7 @@ pub(super) fn run(
             .iter()
             .map(|c| c.as_str())
             .collect(),
+        require: token.require,
         grants: vec![GrantView::of(&token.grant)],
         warnings: Vec::from_iter(warning),
     })

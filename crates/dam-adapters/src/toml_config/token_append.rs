@@ -39,6 +39,11 @@ fn tables(token: &NewToken) -> String {
             .as_ref()
             .map(|via| strings(via.iter().map(|c| c.as_str()))),
     );
+    line(
+        &mut text,
+        "require",
+        (!token.require.is_empty()).then(|| strings(&token.require)),
+    );
     let grant = &token.grant;
     text.push_str(&format!("\n[[token.{name}.grant]]\n"));
     line(

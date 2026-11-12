@@ -18,6 +18,13 @@
     "path": {
       "type": "string",
       "description": "A path such as work/clients/."
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "The request's details, as --meta KEY=VALUE passes them: harness, session, model, effort, version or any other key."
     }
   }
 }

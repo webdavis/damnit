@@ -43,7 +43,7 @@ pub(super) fn access_refusals_with_their_text() -> Vec<(Refusal, &'static str)> 
                 name: "claude".into(),
                 details: vec!["session".into(), "model".into()],
             },
-            "token claude requires the request details session, model, which this dam cannot take yet",
+            "token claude requires the request details session, model; pass each as --meta session=<value> --meta model=<value>",
         ),
     ]
     .into_iter()

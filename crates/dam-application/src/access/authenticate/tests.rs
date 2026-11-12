@@ -39,7 +39,13 @@ fn one(name: &str, value: Token, standing: Standing) -> Tokens {
 const NOW: &str = "2026-11-11T12:00:00Z";
 
 fn local(tokens: &Tokens, presented: &str) -> Result<Holder, TokenRefusal> {
-    authenticate(tokens, presented, Channel::Local, at(NOW))
+    authenticate(
+        tokens,
+        presented,
+        Channel::Local,
+        at(NOW),
+        &Default::default(),
+    )
 }
 
 #[test]
@@ -132,7 +138,16 @@ fn a_token_is_refused_on_a_channel_its_via_leaves_out() {
             channel: Channel::Local
         })
     );
-    assert!(authenticate(&tokens, &token(1).expose(), Channel::Mcp, at(NOW)).is_ok());
+    assert!(
+        authenticate(
+            &tokens,
+            &token(1).expose(),
+            Channel::Mcp,
+            at(NOW),
+            &Default::default()
+        )
+        .is_ok()
+    );
 }
 
 #[test]
@@ -157,17 +172,24 @@ fn every_refusal_has_its_own_rule_name() {
 }
 
 #[test]
-fn a_token_that_requires_details_is_refused_since_no_request_carries_them_yet() {
+fn a_token_that_requires_details_is_refused_naming_only_those_the_request_left_out() {
     let requiring = TokenTerms {
         require: vec!["session".into(), "model".into()],
         ..terms()
     };
     let tokens = one("claude", token(1), Standing::Usable(requiring));
+    let offered = [("session".to_string(), "s1".to_string())].into();
     assert_eq!(
-        local(&tokens, &token(1).expose()),
+        authenticate(
+            &tokens,
+            &token(1).expose(),
+            Channel::Local,
+            at(NOW),
+            &offered
+        ),
         Err(TokenRefusal::MissingDetails {
             name: "claude".into(),
-            details: vec!["session".into(), "model".into()],
+            details: vec!["model".into()],
         })
     );
 }

@@ -76,6 +76,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     let config_path = cli.config.unwrap_or_else(dam_adapters::default_config_path);
     let config_file = TomlConfigFile::new(config_path.clone());
     let presented_token = std::env::var_os(TOKEN_VARIABLE);
+    let meta = cli.meta.into_iter().collect();
     gate::refuse_any_token_to_an_owner_only_verb(presented_token.is_some(), &cli.command)?;
     if presented_token.is_none() {
         create_the_owners_config_when_missing(&config_file, &config_path, format);
@@ -89,7 +90,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     }
     if let Command::Category(_) | Command::Filter(_) = cli.command {
         let config = config_file.load()?;
-        let access = caller(&config, presented_token, SystemClock.now())?;
+        let access = caller(&config, presented_token, SystemClock.now(), &meta)?;
         gate::admit(access.as_ref(), &cli.command)?;
         let report = commands::catalogue::run(&config, cli.command)?;
         return output::print(format, color, &report);
@@ -99,6 +100,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         Box::new(config_file),
         &store_path,
         presented_token,
+        &meta,
         format,
         cli.no_pull,
         interrupt,

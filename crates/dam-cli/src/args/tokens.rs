@@ -62,4 +62,10 @@ pub(crate) struct CreateArgs {
         help = "Let the token work over local or mcp. Repeatable. Default: local"
     )]
     pub(crate) via: Vec<String>,
+    #[arg(
+        long,
+        value_name = "KEY",
+        help = "Refuse a request that does not pass --meta KEY=..., such as session. Repeatable"
+    )]
+    pub(crate) require: Vec<String>,
 }

@@ -53,6 +53,14 @@
         ]
       },
       "description": "Default: local."
+    },
+    "require": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "The --meta keys a request from this token must pass."
     }
   }
 }

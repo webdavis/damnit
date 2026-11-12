@@ -12,6 +12,7 @@ fn new_token() -> NewToken {
         value: Token::generate(&mut |b: &mut [u8]| b.fill(7)),
         expires: Some("2999-05-11T00:00:00Z".parse().unwrap()),
         via: Some(BTreeSet::from([Channel::Local, Channel::Mcp])),
+        require: vec!["session".into()],
         grant: Grant {
             allow: BTreeSet::from([Permission::TaskRead]),
             paths: Some(vec![Path::parse("work").unwrap()]),
@@ -39,6 +40,7 @@ fn the_new_token_reads_back_with_every_term_after_the_text_already_there() {
     };
     assert_eq!(terms.expires, token.expires);
     assert_eq!(Some(&terms.via), token.via.as_ref());
+    assert_eq!(terms.require, token.require);
     assert_eq!(terms.grants, vec![token.grant]);
 }
 

@@ -8,6 +8,7 @@ dam config: help = Read the config from FILE. Default: ${XDG_CONFIG_HOME:-~/.con
 dam store: help = Open the store at FILE. Default: ${XDG_DATA_HOME:-~/.local/share}/dam/dam.db
 dam no_pull: help = Never pull a stale remote first; answer from the local store
 dam no_color: help = Print without color; color is also off under NO_COLOR or when not a terminal
+dam meta: help = State a detail of this request, such as session=abc123, kept with each change it makes. Repeatable
 dam new: about = Create a task, or an event with --kind event
 dam new subject: help = Title the new task or event
 dam new kind: help = Create a task or an event; an event needs --start and --end. Default: task
@@ -116,6 +117,7 @@ dam token create labels: help = Narrow the grant to objects carrying a label. Re
 dam token create remotes: help = Narrow the grant to a remote. Repeatable
 dam token create expires: help = Stop the token working at a date-time with an offset, such as 2027-05-11T00:00:00Z
 dam token create via: help = Let the token work over local or mcp. Repeatable. Default: local
+dam token create require: help = Refuse a request that does not pass --meta KEY=..., such as session. Repeatable
 dam token list: about = List the config's tokens with their grants and standing, never their values
 dam token revoke: about = Remove a token's tables from the config
 dam token revoke name: help = Name the token to remove
