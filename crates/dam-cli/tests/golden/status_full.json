@@ -99,7 +99,5 @@
       ]
     }
   ],
-  "warnings": [
-    "warning: a credential is a value in the config file: fake.api_token; prefer <name>_command or <name>_env"
-  ]
+  "warnings": []
 }

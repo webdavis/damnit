@@ -78,6 +78,7 @@ fn no_line_of_a_list_passes_a_forty_column_terminal() {
 #[test]
 fn status_prints_its_warning_whole_at_forty_columns() {
     let sb = fixture::with_staged_and_unstaged_changes();
+    sb.add_config("[token.vpt]\nvalue = \"not-a-token\"\n");
     let out = sb
         .command(&["status"])
         .env("COLUMNS", "40")
@@ -86,7 +87,7 @@ fn status_prints_its_warning_whole_at_forty_columns() {
     let text = String::from_utf8(out.stdout).unwrap();
     assert!(
         text.lines()
-            .any(|l| l.starts_with("warning:") && l.ends_with("<name>_command or <name>_env")),
+            .any(|l| l.starts_with("warning:") && l.ends_with("not a damnit token")),
         "{text}"
     );
 }

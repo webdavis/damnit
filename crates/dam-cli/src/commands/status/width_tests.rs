@@ -1,7 +1,7 @@
 use crate::args::StatusArgs;
 use crate::output::fitted;
 use crate::testing::context;
-use dam_application::{Conflict, CredentialSpec, Notice, RemoteConfig, RemoteName};
+use dam_application::{Conflict, Notice, RemoteName};
 use dam_domain::{Object, Oid, Task};
 
 const WIDTH: usize = 20;
@@ -13,18 +13,8 @@ fn oid(b: u8) -> Oid {
 #[test]
 fn status_cuts_its_rows_and_prints_warnings_and_notices_whole() {
     let mut ctx = context();
-    ctx.config.remotes = vec![RemoteConfig {
-        name: RemoteName("todoist".into()),
-        helper: "todoist".into(),
-        url: "todoist::".into(),
-        credentials: vec![CredentialSpec::Literal {
-            name: "api_token".into(),
-            value: "secret".into(),
-        }],
-        stale: None,
-        deadline: None,
-        path: None,
-    }];
+    ctx.config.tokens.warnings =
+        vec!["token vpt: unknown permission \"task:fly\" is skipped".into()];
     ctx.store
         .put(&Object::Task(Task::new(
             oid(1),
