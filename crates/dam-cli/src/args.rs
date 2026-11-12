@@ -77,6 +77,14 @@ pub(crate) struct Cli {
         help = "Print without color; color is also off under NO_COLOR or when not a terminal"
     )]
     pub(crate) no_color: bool,
+    #[arg(
+        long,
+        global = true,
+        value_name = "KEY=VALUE",
+        value_parser = values::meta_arg,
+        help = "State a detail of this request, such as session=abc123, kept with each change it makes. Repeatable"
+    )]
+    pub(crate) meta: Vec<(String, String)>,
     #[command(subcommand)]
     pub(crate) command: Command,
 }

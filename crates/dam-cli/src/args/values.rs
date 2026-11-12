@@ -10,6 +10,13 @@ pub(super) fn path_arg(text: &str) -> Result<Path, String> {
     })
 }
 
+pub(super) fn meta_arg(text: &str) -> Result<(String, String), String> {
+    match text.split_once('=') {
+        Some((key, value)) if !key.trim().is_empty() => Ok((key.to_string(), value.to_string())),
+        _ => Err("a detail is KEY=VALUE, such as session=abc123".to_string()),
+    }
+}
+
 pub(super) fn kind_arg(text: &str) -> Result<Kind, String> {
     Kind::parse(text).ok_or_else(|| "kind is task or event".to_string())
 }

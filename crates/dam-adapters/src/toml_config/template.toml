@@ -44,7 +44,9 @@ schema = 1
 # `dam token create` makes one, `dam token list` shows them, and `dam token revoke` removes one.
 # not_before and expires bound when the token works, and via names where it may arrive from:
 # local, mcp, or both. via is ["local"] by default.
-# require and limits are not supported yet. A token that names any cannot be used.
+# require names the details each request must state with --meta KEY=VALUE, such as session and
+# model; a request missing one is refused. A tool requires none; an agent requires what you list.
+# limits are not supported yet. A token that sets any cannot be used.
 # Each grant allows the permissions in allow, and only within all of its limits that are set:
 #   paths, objects under one of these paths.
 #   labels, objects carrying one of these labels.
@@ -61,6 +63,7 @@ schema = 1
 #not_before = 2026-01-01T00:00:00Z
 #expires = 2027-01-01T00:00:00Z
 #via = ["local"]
+#require = ["session", "model"]
 #[[token.vpt.grant]]
 #allow = ["task:read", "task:create", "remote:pull"]
 #paths = ["work"]

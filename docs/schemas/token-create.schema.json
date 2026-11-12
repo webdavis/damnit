@@ -4,7 +4,7 @@
   "title": "dam token create answer",
   "description": "What dam token create prints on standard output with --json or --toon. value is the token itself and appears nowhere else.",
   "type": "object",
-  "required": ["name", "key_id", "value", "expires", "via", "grants", "warnings"],
+  "required": ["name", "key_id", "value", "expires", "via", "require", "grants", "warnings"],
   "additionalProperties": false,
   "properties": {
     "name": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
@@ -12,6 +12,7 @@
     "value": { "type": "string", "pattern": "^damk_v1_[0-9A-Za-z]{12}_[0-9A-Za-z]{38}$" },
     "expires": { "type": ["string", "null"], "format": "date-time" },
     "via": { "type": "array", "items": { "enum": ["local", "mcp"] } },
+    "require": { "type": "array", "items": { "type": "string" } },
     "grants": { "type": "array", "minItems": 1, "maxItems": 1, "items": { "$ref": "#/$defs/grant" } },
     "warnings": { "type": "array", "items": { "type": "string" } }
   },

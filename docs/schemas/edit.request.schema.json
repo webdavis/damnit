@@ -126,6 +126,13 @@
     },
     "no_focus": {
       "type": "boolean"
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "The request's details, as --meta KEY=VALUE passes them: harness, session, model, effort, version or any other key."
     }
   },
   "allOf": [

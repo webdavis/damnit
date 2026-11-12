@@ -37,13 +37,6 @@ impl TokenRow {
             Standing::Usable(t) if t.not_before.is_some_and(|at| now < at) => {
                 ("not_yet_valid", None, Some(t))
             }
-            Standing::Usable(t) if !t.require.is_empty() => {
-                let why = format!(
-                    "it requires the request details {}, which this dam cannot take yet",
-                    t.require.join(", ")
-                );
-                ("disabled", Some(why), Some(t))
-            }
             Standing::Usable(t) => ("active", None, Some(t)),
         };
         let stamp = |at: Option<Timestamp>| at.map(|at| at.to_string());

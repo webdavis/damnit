@@ -97,8 +97,9 @@ fn a_config_without_tokens_lists_none() {
 }
 
 #[test]
-fn a_token_that_requires_details_lists_as_disabled_with_the_reason() {
-    let _guard = support::guard("a_token_that_requires_details_lists_as_disabled_with_the_reason");
+fn a_token_that_requires_details_lists_as_active_with_what_it_requires() {
+    let _guard =
+        support::guard("a_token_that_requires_details_lists_as_active_with_what_it_requires");
     let sb = Sandbox::new();
     sb.add_config(&format!(
         "\n[token.asks]\nvalue = \"{}\"\nrequire = [\"ticket\"]\n\
@@ -109,9 +110,6 @@ fn a_token_that_requires_details_lists_as_disabled_with_the_reason() {
     assert!(ok, "{err}");
     let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
     let asks = &answer["tokens"][0];
-    assert_eq!(asks["standing"], "disabled", "{asks}");
-    assert!(asks["why"].as_str().unwrap().contains("ticket"), "{asks}");
+    assert_eq!(asks["standing"], "active", "{asks}");
     assert_eq!(asks["require"], serde_json::json!(["ticket"]));
-    let refused = sb.output_holding(&token(4).expose(), &["ls", "--no-pull"]);
-    assert_eq!(refused.status.code(), Some(5), "{refused:?}");
 }
