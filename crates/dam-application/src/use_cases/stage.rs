@@ -2,68 +2,104 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use dam_domain::{Author, Authored, Change, Oid};
 
-use crate::errors::UseCaseError;
+use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{ObjectRepository, Store};
 use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::load::no_such_object;
+use crate::use_cases::prefix::Named;
 
 impl Dam<'_> {
-    pub fn add(&self, oids: &[Oid]) -> Result<Vec<Authored>, UseCaseError> {
+    pub fn add(&self, named: &[Named]) -> Result<Vec<Authored>, UseCaseError> {
         atomically(self.store, || {
-            for oid in oids {
-                refuse_unknown(self.store, oid)?;
+            let mut staged = Vec::new();
+            let mut oids = Vec::new();
+            for name in named {
+                match name {
+                    Named::Object(oid) => {
+                        refuse_unknown(self.store, oid)?;
+                        oids.push(oid.clone());
+                    }
+                    Named::Item(hash) => staged.extend(self.accept(hash)?),
+                }
             }
-            self.stage_each(oids)
+            staged.extend(self.stage_each(&oids)?);
+            Ok(staged)
         })
     }
 
     pub fn add_all(&self) -> Result<Vec<Authored>, UseCaseError> {
         atomically(self.store, || {
-            let staged_by_a_token: BTreeSet<Oid> = self
-                .store
-                .staged()?
-                .into_iter()
-                .filter(|s| s.author != Author::Owner)
-                .map(|s| s.change.oid().clone())
-                .collect();
+            let mut staged = self.accept_every_item_that_applies()?;
             let list: Vec<Oid> = working_and_ever_committed_oids(self.store)?
                 .into_iter()
-                .filter(|oid| !staged_by_a_token.contains(oid))
                 .collect();
-            self.stage_each(&list)
+            staged.extend(self.stage_each(&list)?);
+            Ok(staged)
         })
     }
 
+    fn accept_every_item_that_applies(&self) -> Result<Vec<Authored>, UseCaseError> {
+        let mut staged = Vec::new();
+        for item in self.store.items()?.into_iter().filter(|i| i.is_waiting()) {
+            match self.accept(&item.hash) {
+                Ok(accepted) => staged.extend(accepted),
+                Err(UseCaseError::Refused(Refusal::Item(_))) => {}
+                Err(e) => return Err(e),
+            }
+        }
+        Ok(staged)
+    }
+
     pub fn reset(&self, oids: &[Oid]) -> Result<(), UseCaseError> {
-        if oids.is_empty() {
-            self.store.unstage_all()?;
-        }
-        for oid in oids {
-            self.store.unstage(oid)?;
-        }
-        Ok(())
+        atomically(self.store, || {
+            let everything: Vec<Oid>;
+            let oids = if oids.is_empty() {
+                everything = self
+                    .store
+                    .staged()?
+                    .into_iter()
+                    .map(|s| s.change.oid().clone())
+                    .collect();
+                &everything
+            } else {
+                oids
+            };
+            for oid in oids {
+                self.unpick(oid)?;
+                self.store.unstage(oid)?;
+            }
+            Ok(())
+        })
     }
 
     fn stage_each(&self, oids: &[Oid]) -> Result<Vec<Authored>, UseCaseError> {
-        let mut already: BTreeMap<Oid, Authored> = self
+        let sent: BTreeMap<Oid, Authored> = self
             .store
             .staged()?
             .into_iter()
+            .filter(|s| s.author != Author::Owner)
             .map(|s| (s.change.oid().clone(), s))
             .collect();
         let mut staged = Vec::new();
         for oid in oids {
-            match Change::between(self.store.committed(oid)?, self.store.get(oid)?) {
+            let token_change = sent.get(oid);
+            let base = match token_change {
+                Some(sent) => sent.change.after().cloned(),
+                None => self.store.committed(oid)?,
+            };
+            match Change::between(base, self.store.get(oid)?) {
                 Some(change) => {
-                    let authored = match already.remove(oid) {
-                        Some(kept) if kept.change == change => kept,
-                        _ => Authored::by_owner(change),
-                    };
+                    let authored = Authored::by_owner(change);
                     self.store.put_staged(authored.clone())?;
                     staged.push(authored);
                 }
-                None => self.store.unstage(oid)?,
+                None => {
+                    self.store.unstage(oid)?;
+                    if let Some(sent) = token_change {
+                        self.store.put_staged(sent.clone())?;
+                    }
+                }
             }
         }
         Ok(staged)

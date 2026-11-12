@@ -1,6 +1,6 @@
 use dam_domain::{Base, Object, Oid, Path};
 
-use crate::errors::UseCaseError;
+use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
 use crate::use_cases::load::load;
 
@@ -26,6 +26,30 @@ pub(crate) fn holds_objects(
         .all()?
         .iter()
         .any(|o| o.base().path.is_within(folder)))
+}
+
+pub(crate) fn refuse_losing_a_held_folder(
+    objects: &dyn ObjectRepository,
+    before: &Object,
+    after: &Object,
+) -> Result<(), UseCaseError> {
+    if loses_a_held_folder(objects, before, after)? {
+        return Err(Refusal::SubjectNamesNoFolder(before.oid().clone()).into());
+    }
+    Ok(())
+}
+
+pub(crate) fn loses_a_held_folder(
+    objects: &dyn ObjectRepository,
+    before: &Object,
+    after: &Object,
+) -> Result<bool, UseCaseError> {
+    Ok(
+        match (before.base().owned_folder(), after.base().owned_folder()) {
+            (Some(folder), None) => holds_objects(objects, &folder)?,
+            _ => false,
+        },
+    )
 }
 
 pub(crate) fn move_into(

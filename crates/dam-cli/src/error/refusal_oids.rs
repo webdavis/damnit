@@ -47,7 +47,15 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
 
 fn item_oids(refusal: &ItemRefusal) -> Vec<String> {
     match refusal {
-        ItemRefusal::Declined(hash) => vec![hash.to_string()],
+        ItemRefusal::Declined(hash)
+        | ItemRefusal::NotAnObject(hash)
+        | ItemRefusal::NotWaiting { hash, .. } => vec![hash.to_string()],
+        ItemRefusal::TargetGone { hash, target }
+        | ItemRefusal::TargetNotCommitted { hash, target }
+        | ItemRefusal::TargetStaged { hash, target }
+        | ItemRefusal::EditedSinceAdded { hash, target }
+        | ItemRefusal::SubjectNamesNoFolder { hash, target }
+        | ItemRefusal::Clash { hash, target, .. } => vec![hash.to_string(), target.to_string()],
         ItemRefusal::NothingChanged => Vec::new(),
     }
 }

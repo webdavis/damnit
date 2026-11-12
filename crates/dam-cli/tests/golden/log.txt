@@ -1,2 +1,2 @@
-<id-1>  <now>  1 change   close the errand
-<id-2>  <now>  4 changes  seed the week
+<id-1>  <now>  1 change   you  close the errand
+<id-2>  <now>  4 changes  you  seed the week

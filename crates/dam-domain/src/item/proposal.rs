@@ -18,7 +18,7 @@ pub fn same_proposal(a: &Change, b: &Change) -> bool {
     }
 }
 
-fn agree(field: Field, a: &Object, b: &Object) -> bool {
+pub(super) fn agree(field: Field, a: &Object, b: &Object) -> bool {
     match (field, a.as_task(), b.as_task()) {
         (Field::Done, Some(x), Some(y)) => x.completion.is_done() == y.completion.is_done(),
         _ => field.same(a, b),

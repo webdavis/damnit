@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/commit.schema.json",
+  "title": "dam commit document",
+  "description": "What dam commit and dam show <commit> print with --json or --toon. Each change names the token that made it, or null for the owner.",
+  "type": "object",
+  "required": ["id", "at", "message", "changes"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "at": { "type": "string", "format": "date-time" },
+    "message": { "type": "string" },
+    "changes": { "type": "array", "items": { "$ref": "status.schema.json#/$defs/change" } }
+  }
+}

@@ -1,5 +1,6 @@
 use std::fmt;
 
+mod clash;
 mod proposal;
 
 use crate::vocabulary::vocabulary;
@@ -127,8 +128,11 @@ impl Item {
     }
 }
 
+pub use clash::{clashing_fields, fields_the_owner_moved};
 pub use proposal::same_proposal;
 
+#[cfg(test)]
+mod clash_tests;
 #[cfg(test)]
 mod proposal_tests;
 #[cfg(test)]

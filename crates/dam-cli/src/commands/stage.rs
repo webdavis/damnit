@@ -44,12 +44,12 @@ pub(crate) fn run_add(ctx: &Context, args: AddArgs) -> Result<Report, CliError> 
     let changes = if args.all {
         ctx.dam().add_all()?
     } else {
-        let oids = args
+        let named = args
             .oids
             .iter()
-            .map(|t| ctx.dam().resolve_object(t))
-            .collect::<Result<Vec<Oid>, _>>()?;
-        ctx.dam().add(&oids)?
+            .map(|t| ctx.dam().resolve_named(t))
+            .collect::<Result<Vec<_>, _>>()?;
+        ctx.dam().add(&named)?
     };
     report(&Staged {
         staged: changes

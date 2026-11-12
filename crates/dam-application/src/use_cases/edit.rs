@@ -8,7 +8,7 @@ use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::items::land::Landed;
 use crate::use_cases::load::no_such_object;
-use crate::use_cases::subtree::holds_objects;
+use crate::use_cases::subtree::refuse_losing_a_held_folder;
 
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct EditFields {
@@ -58,12 +58,7 @@ impl Dam<'_> {
             {
                 return Err(no_such_object(event).into());
             }
-            if next.base().owned_folder().is_none()
-                && let Some(folder) = current.base().owned_folder()
-                && holds_objects(self.store, &folder)?
-            {
-                return Err(Refusal::SubjectNamesNoFolder(oid.clone()).into());
-            }
+            refuse_losing_a_held_folder(self.store, &current, &next)?;
             self.put_or_send(Permission::change(current.kind()), Some(&current), next)
         })
     }

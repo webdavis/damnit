@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/log.schema.json",
+  "title": "dam log document",
+  "description": "What dam log prints with --json or --toon, newest commit first.",
+  "type": "object",
+  "required": ["commits"],
+  "additionalProperties": false,
+  "properties": {
+    "commits": { "type": "array", "items": { "$ref": "commit.schema.json" } }
+  }
+}
