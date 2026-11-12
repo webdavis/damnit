@@ -8,6 +8,8 @@ pub(crate) struct TokenArgs {
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum TokenCommand {
+    #[command(about = "Print a new token for a config you write yourself; nothing is written")]
+    Generate,
     #[command(about = "Make a token with one grant, add it to the config and print it once")]
     Create(CreateArgs),
     #[command(

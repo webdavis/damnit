@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/token-generate.schema.json",
+  "title": "dam token generate answer",
+  "description": "What dam token generate prints on standard output with --json or --toon. value is a new token that no config holds yet, and key_id is what dam token list shows once a config does.",
+  "type": "object",
+  "required": ["key_id", "value"],
+  "additionalProperties": false,
+  "properties": {
+    "key_id": { "type": "string", "pattern": "^[0-9A-Za-z]{12}$" },
+    "value": { "type": "string", "pattern": "^damk_v1_[0-9A-Za-z]{12}_[0-9A-Za-z]{38}$" }
+  }
+}
