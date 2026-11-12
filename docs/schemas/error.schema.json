@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/error.schema.json",
+  "title": "dam error document",
+  "description": "What dam prints on standard error when a command run with --json or --toon fails. A rule in tokenRule exits 5; every other rule exits 4, except ambiguous_prefix, whose kind is usage and which exits 2.",
+  "type": "object",
+  "required": ["error"],
+  "additionalProperties": false,
+  "properties": {
+    "error": {
+      "type": "object",
+      "required": ["kind", "rule", "message", "oids"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": ["refused", "store", "helper", "credential", "editor", "parse", "usage", "cancelled", "internal"]
+        },
+        "rule": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/rule" },
+            { "$ref": "#/$defs/tokenRule" }
+          ]
+        },
+        "message": { "type": "string" },
+        "oids": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "rule": {
+      "enum": [
+        "blocked",
+        "cycle",
+        "exclusive_label",
+        "unknown_category",
+        "not_a_category_value",
+        "no_such_object",
+        "no_working_object",
+        "ambiguous_prefix",
+        "no_such_remote",
+        "remote_exists",
+        "not_a_task",
+        "not_an_event",
+        "not_completed",
+        "not_committed",
+        "dirty_on_pull",
+        "move_inside_itself",
+        "nothing_to_commit",
+        "needs_an_answer",
+        "needs_an_editor",
+        "unresolved_conflicts",
+        "missing_credential",
+        "stale_remote",
+        "unreadable_recurrence",
+        "no_conflict",
+        "not_permitted",
+        "not_open_to_tokens"
+      ]
+    },
+    "tokenRule": {
+      "enum": [
+        "malformed_token",
+        "unknown_token_version",
+        "unknown_token",
+        "disabled_token",
+        "expired_token",
+        "token_not_yet_valid",
+        "channel_not_allowed"
+      ]
+    }
+  }
+}

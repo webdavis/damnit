@@ -259,6 +259,7 @@ output:
      "oids": ["98d878013fb0e026d37170e7ceed6707192ae99a",
               "a9db854060d1943ef9eb9f6d7a8ac0b1ace45d77"]}}
 
+`docs/schemas/error.schema.json` is the JSON Schema of this document.
 `kind` is one of `refused`, `store`, `helper`, `credential`, `editor`, `parse`, `usage`,
 `cancelled` and `internal`, the last meaning a bug in `dam` itself.
 `rule` names which rule a refusal broke, such as `blocked`, `no_such_object` or

@@ -4,6 +4,7 @@ pub mod errors;
 pub mod fixture;
 pub mod golden;
 pub mod sandbox;
+pub mod schema;
 
 use std::time::{Duration, Instant};
 

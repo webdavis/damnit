@@ -1,5 +1,6 @@
 mod access_samples;
 mod samples;
+mod schema;
 
 use super::*;
 use dam_domain::Oid;
