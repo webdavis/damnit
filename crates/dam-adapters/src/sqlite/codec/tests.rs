@@ -1,6 +1,6 @@
 use super::*;
-use dam_application::{Notice, RemoteName};
-use dam_domain::{Object, Oid, Task};
+use dam_application::{Notice, RejectedObject, RemoteName};
+use dam_domain::{Kind, Object, Oid, Task};
 
 fn oid(b: u8) -> Oid {
     Oid::generate(&mut |x: &mut [u8]| x.fill(b))
