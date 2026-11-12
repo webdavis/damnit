@@ -30,7 +30,7 @@ fn allowing(permissions: &[Permission]) -> Holder {
     }])
 }
 
-const EVERY_COMMAND: [&str; 24] = [
+const EVERY_COMMAND: [&str; 25] = [
     "new x",
     "done abcd",
     "edit abcd --subject y",
@@ -55,6 +55,7 @@ const EVERY_COMMAND: [&str; 24] = [
     "day show",
     "day set",
     "day list",
+    "reminders",
 ];
 
 #[test]
@@ -130,6 +131,7 @@ fn narrowed_reads_need_one_of_their_permissions_in_any_grant() {
     let events = allowing(&[Permission::EventRead]);
     assert_eq!(admit(&events, &command("ls")), Ok(()));
     assert_eq!(admit(&events, &command("agenda")), Ok(()));
+    assert_eq!(admit(&events, &command("reminders")), Ok(()));
     assert_eq!(
         admit(&allowing(&[Permission::TaskRead]), &command("agenda")),
         Err(Refusal::NotPermitted(Permission::EventRead))

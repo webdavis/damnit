@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/reminders.schema.json",
+  "title": "dam reminders answer",
+  "description": "The reminders that fall due inside the window dam reminders was given, earliest first. A reminder is due minutes_before its anchor, the open task's due time or the event's start. A task due on a whole day is anchored at the start of that day in the local zone.",
+  "type": "object",
+  "required": ["reminders"],
+  "additionalProperties": false,
+  "properties": {
+    "reminders": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["oid", "kind", "subject", "at", "anchor", "minutes_before"],
+        "additionalProperties": false,
+        "properties": {
+          "oid": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+          "kind": { "enum": ["task", "event"] },
+          "subject": { "type": "string" },
+          "at": { "type": "string", "format": "date-time", "description": "When the reminder falls due." },
+          "anchor": { "type": "string", "format": "date-time" },
+          "minutes_before": { "type": "integer" }
+        }
+      }
+    }
+  }
+}

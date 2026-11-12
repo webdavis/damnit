@@ -8,6 +8,7 @@ mod ls;
 mod mv;
 mod new;
 mod parsing;
+mod reminders;
 mod remote;
 mod restore;
 mod rm;
@@ -24,7 +25,7 @@ use crate::output::Report;
 pub(crate) fn pulls_a_stale_remote(command: &Command) -> bool {
     matches!(
         command,
-        Command::Ls(_) | Command::Show(_) | Command::Agenda(_)
+        Command::Ls(_) | Command::Show(_) | Command::Agenda(_) | Command::Reminders(_)
     )
 }
 
@@ -50,6 +51,7 @@ pub(crate) fn dispatch_a_verb_that_opens_the_store(
         Command::Ls(a) => ls::run_ls(ctx, a),
         Command::Agenda(a) => agenda::run_agenda(ctx, a),
         Command::Day(a) => day::run_day(ctx, a),
+        Command::Reminders(a) => reminders::run_reminders(ctx, a),
         Command::Remote(a) => remote::run_remote(ctx, a),
         Command::Push(a) => sync::run_push(ctx, a),
         Command::Pull(a) => sync::run_pull(ctx, a),
