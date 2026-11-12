@@ -2,6 +2,7 @@ pub mod contract;
 mod doubles;
 mod faulty_store;
 mod fixture;
+mod holders;
 mod launchers;
 mod memory_store;
 mod scenario;
@@ -11,6 +12,7 @@ pub use doubles::{
 };
 pub use faulty_store::FaultyStore;
 pub use fixture::{Fixture, remotes_launched_by};
+pub use holders::{allowed, holder};
 pub use launchers::{
     Pushed, accepting_all, answering, pulling, pulling_events, pushing, refusing_all,
 };

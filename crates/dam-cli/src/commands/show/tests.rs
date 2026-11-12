@@ -155,3 +155,22 @@ fn a_token_without_history_read_finds_no_commit_as_if_none_matched() {
     ctx.access = crate::testing::holding(&[dam_domain::Permission::HistoryRead]);
     assert!(super::run_show(&ctx, ShowArgs { id: id[..8].into() }).is_ok());
 }
+
+#[test]
+fn an_object_outside_the_tokens_grants_is_shown_as_if_it_did_not_exist() {
+    let mut ctx = context();
+    let mut hidden = Task::new(Oid::generate(&mut |x: &mut [u8]| x.fill(7)), "secret");
+    hidden.base.path = dam_domain::Path::parse("home").unwrap();
+    ctx.store.put(&Object::Task(hidden.clone())).unwrap();
+    let mut token = crate::testing::holding(&[
+        dam_domain::Permission::TaskRead,
+        dam_domain::Permission::HistoryRead,
+    ]);
+    token.grants.grants[0].paths = Some(vec![dam_domain::Path::parse("work").unwrap()]);
+    ctx.access = token;
+    for id in [hidden.base.oid.as_str(), hidden.base.oid.short()] {
+        let err = super::run_show(&ctx, ShowArgs { id: id.into() }).unwrap_err();
+        assert_eq!(err.document()["error"]["rule"], "no_such_object", "{id}");
+        assert!(!err.to_string().contains("secret"));
+    }
+}

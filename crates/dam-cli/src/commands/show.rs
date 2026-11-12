@@ -26,7 +26,7 @@ pub(crate) fn run_show(ctx: &Context, args: ShowArgs) -> Result<Report, CliError
 
 fn working_object_named(ctx: &Context, text: &str) -> Result<Option<Object>, CliError> {
     match ctx.dam().resolve_object(text) {
-        Ok(oid) => Ok(ctx.store.get(&oid)?),
+        Ok(oid) => Ok(ctx.dam().seen_object(&oid)?),
         Err(UseCaseError::Refused(Refusal::NoWorkingObject(_))) => Ok(None),
         Err(e) => Err(e.into()),
     }

@@ -16,9 +16,14 @@ impl Dam<'_> {
             }
         };
         let today = self.clock.today();
-        let mut out: Vec<Object> = self
+        let seen = self
             .store
             .all()?
+            .into_iter()
+            .filter(|o| self.access.sees(o))
+            .map(|o| self.as_seen(o))
+            .collect::<Result<Vec<Object>, _>>()?;
+        let mut out: Vec<Object> = seen
             .into_iter()
             .filter(|o| expr.as_ref().is_none_or(|e| matches(e, o, today)))
             .collect();
@@ -61,6 +66,9 @@ fn order(a: &Object, b: &Object) -> Ordering {
         })
         .then_with(|| a.base().subject.cmp(&b.base().subject))
 }
+
+#[cfg(test)]
+mod access_tests;
 
 #[cfg(test)]
 mod tests {

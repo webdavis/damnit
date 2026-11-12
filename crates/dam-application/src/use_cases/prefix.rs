@@ -15,6 +15,7 @@ impl Dam<'_> {
             .store
             .all()?
             .into_iter()
+            .filter(|o| self.access.sees(o))
             .map(|o| o.oid().clone())
             .filter(|o| o.as_str().starts_with(text))
             .collect();
@@ -56,5 +57,7 @@ fn require_a_hex_prefix(text: &str) -> Result<(), UseCaseError> {
     Ok(())
 }
 
+#[cfg(test)]
+mod access_tests;
 #[cfg(test)]
 mod tests;
