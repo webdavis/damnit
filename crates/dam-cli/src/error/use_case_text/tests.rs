@@ -34,6 +34,27 @@ fn a_helper_on_protocol_zero_is_told_dam_never_supported_it_and_a_newer_one_to_u
 }
 
 #[test]
+fn a_missing_helper_dam_ships_names_its_install_command_and_another_says_it_is_its_own() {
+    let missing = |helper: &str| {
+        text(UseCaseError::Helper(HelperError::NotFound {
+            helper: helper.into(),
+        }))
+    };
+    assert_eq!(
+        missing("dam-remote-todoist"),
+        "dam-remote-todoist was not found on PATH; install it with: cargo install --git https://github.com/webdavis/damnit dam-remote-todoist"
+    );
+    assert_eq!(
+        missing("dam-remote-gcal"),
+        "dam-remote-gcal was not found on PATH; install it with: cargo install --git https://github.com/webdavis/damnit dam-remote-gcal"
+    );
+    assert_eq!(
+        missing("dam-remote-other"),
+        "dam-remote-other was not found on PATH; a remote's helper is installed on its own"
+    );
+}
+
+#[test]
 fn text_that_is_not_an_oid_asks_for_four_hex_characters() {
     assert_eq!(
         text(UseCaseError::NotAnOid("f5".into())),

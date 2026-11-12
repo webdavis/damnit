@@ -8,6 +8,8 @@ use super::refusal_text::RefusalText;
 
 pub(crate) struct UseCaseText<'a>(pub(crate) &'a UseCaseError);
 
+const SHIPPED_HELPERS: [&str; 2] = ["dam-remote-todoist", "dam-remote-gcal"];
+
 impl fmt::Display for UseCaseText<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.0 {
@@ -17,7 +19,16 @@ impl fmt::Display for UseCaseText<'_> {
             }
             UseCaseError::Store(StoreError::Failed(why)) => write!(f, "storage: {why}"),
             UseCaseError::Helper(HelperError::NotFound { helper }) => {
-                write!(f, "{helper} was not found on PATH")
+                write!(f, "{helper} was not found on PATH; ")?;
+                if SHIPPED_HELPERS.contains(&helper.as_str()) {
+                    let repository = env!("CARGO_PKG_REPOSITORY");
+                    write!(
+                        f,
+                        "install it with: cargo install --git {repository} {helper}"
+                    )
+                } else {
+                    write!(f, "a remote's helper is installed on its own")
+                }
             }
             UseCaseError::Helper(HelperError::Protocol(s)) => {
                 write!(f, "the helper answered something dam cannot read: {s}")
