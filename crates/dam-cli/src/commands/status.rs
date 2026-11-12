@@ -1,4 +1,4 @@
-use dam_application::CredentialSpec;
+use dam_application::{CredentialSpec, Standing};
 use dam_domain::Change;
 
 use crate::args::{DiffArgs, StatusArgs};
@@ -25,7 +25,10 @@ pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliE
         conflicts: s.conflicts.iter().map(ConflictRow::new).collect(),
         notices: s.notices.iter().map(NoticeRow::new).collect(),
         unpushed: s.unpushed.iter().map(UnpushedRow::new).collect(),
-        warnings: Vec::from_iter(literal_credential_warning(ctx)),
+        warnings: literal_credential_warning(ctx)
+            .into_iter()
+            .chain(token_warnings(ctx))
+            .collect(),
     })
 }
 
@@ -42,6 +45,16 @@ pub(crate) fn run_diff(ctx: &Context, args: DiffArgs) -> Result<Report, CliError
 
 fn change_rows(changes: &[Change], full: bool) -> Vec<ChangeRow<'_>> {
     changes.iter().map(|c| ChangeRow::new(c, full)).collect()
+}
+
+fn token_warnings(ctx: &Context) -> impl Iterator<Item = String> + '_ {
+    let tokens = &ctx.config.tokens;
+    let skipped = tokens.warnings.iter().map(|w| format!("warning: {w}"));
+    let disabled = tokens.entries.iter().filter_map(|t| match &t.standing {
+        Standing::Disabled(why) => Some(format!("warning: token {} is disabled: {why}", t.name)),
+        Standing::Usable(_) => None,
+    });
+    skipped.chain(disabled)
 }
 
 fn literal_credential_warning(ctx: &Context) -> Option<String> {
@@ -69,6 +82,8 @@ fn literal_credential_warning(ctx: &Context) -> Option<String> {
 mod skipped_tests;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod token_warning_tests;
 #[cfg(test)]
 mod warning_tests;
 #[cfg(test)]
