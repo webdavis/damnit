@@ -40,6 +40,16 @@ pub(crate) fn need(command: &Command) -> Need {
     }
 }
 
+pub(crate) fn refuse_any_token_to_an_owner_only_verb(
+    token_presented: bool,
+    command: &Command,
+) -> Result<(), Refusal> {
+    match need(command) {
+        Need::OwnerOnly(verb) if token_presented => Err(Refusal::NotOpenToTokens(verb)),
+        _ => Ok(()),
+    }
+}
+
 pub(crate) fn admit(access: &dyn Access, command: &Command) -> Result<(), Refusal> {
     match need(command) {
         Need::OwnerOnly(verb) if access.token().is_some() => Err(Refusal::NotOpenToTokens(verb)),

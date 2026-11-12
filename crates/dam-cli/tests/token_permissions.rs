@@ -93,3 +93,11 @@ fn a_token_reaches_only_the_remotes_its_grant_names() {
     }
     assert!(sb.pushes().is_empty());
 }
+
+#[test]
+fn an_owner_only_write_refuses_a_token_it_could_not_look_up() {
+    let _guard = support::guard("an_owner_only_write_refuses_a_token_it_could_not_look_up");
+    let sb = Sandbox::new();
+    let out = sb.output_holding("not-a-token", &["new", "bread", "--json"]);
+    assert_eq!(rule_of(&out), "not_open_to_tokens");
+}
