@@ -5,6 +5,7 @@ pub mod fixture;
 pub mod golden;
 pub mod sandbox;
 pub mod schema;
+pub mod tokens;
 
 use std::time::{Duration, Instant};
 

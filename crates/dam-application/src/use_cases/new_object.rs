@@ -1,10 +1,11 @@
 use std::collections::BTreeSet;
 
-use dam_domain::{Date, Event, Object, Oid, Path, Priority, Task, When};
+use dam_domain::{Date, Event, Kind, Object, Oid, Path, Permission, Priority, Task, When};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
+use crate::use_cases::items::land::Landed;
 
 pub struct NewTask {
     pub subject: String,
@@ -26,39 +27,42 @@ pub struct NewEvent {
 }
 
 impl Dam<'_> {
-    pub fn new_task(&self, input: NewTask) -> Result<Oid, UseCaseError> {
+    pub fn new_task(&self, input: NewTask) -> Result<Landed, UseCaseError> {
         atomically(self.store, || {
-            self.config
-                .categories
-                .check(&input.labels)
-                .map_err(Refusal::Labels)?;
             let oid = Oid::generate(&mut |b| self.random.fill(b));
-            let mut task = Task::new(oid.clone(), input.subject);
+            let mut task = Task::new(oid, input.subject);
             task.base.path = input.path;
             task.base.labels = input.labels;
             task.base.body = input.body;
             task.priority = input.priority;
             task.due = input.due;
             task.deadline = input.deadline;
-            self.store.put(&Object::Task(task))?;
-            Ok(oid)
+            self.permitted_with_valid_labels(Permission::create(Kind::Task), Object::Task(task))
         })
     }
 
-    pub fn new_event(&self, input: NewEvent) -> Result<Oid, UseCaseError> {
+    pub fn new_event(&self, input: NewEvent) -> Result<Landed, UseCaseError> {
         atomically(self.store, || {
-            self.config
-                .categories
-                .check(&input.labels)
-                .map_err(Refusal::Labels)?;
             let oid = Oid::generate(&mut |b| self.random.fill(b));
-            let mut event = Event::new(oid.clone(), input.subject, input.start, input.end);
+            let mut event = Event::new(oid, input.subject, input.start, input.end);
             event.base.path = input.path;
             event.base.labels = input.labels;
             event.base.body = input.body;
-            self.store.put(&Object::Event(event))?;
-            Ok(oid)
+            self.permitted_with_valid_labels(Permission::create(Kind::Event), Object::Event(event))
         })
+    }
+
+    fn permitted_with_valid_labels(
+        &self,
+        permission: Permission,
+        object: Object,
+    ) -> Result<Landed, UseCaseError> {
+        self.refuse_unless_permitted(permission, None, &object)?;
+        self.config
+            .categories
+            .check(&object.base().labels)
+            .map_err(Refusal::Labels)?;
+        self.put_or_send(permission, None, object)
     }
 }
 
@@ -102,6 +106,13 @@ mod tests {
         }
     }
 
+    fn written_oid(landed: Landed) -> Oid {
+        match landed {
+            Landed::Written(object) => object.oid().clone(),
+            Landed::Sent(sent) => panic!("the owner's object was sent as {sent:?}"),
+        }
+    }
+
     fn drawing_from(byte: u8) -> Fixture {
         Fixture {
             random: FixedRandom::new(byte),
@@ -112,7 +123,7 @@ mod tests {
     #[test]
     fn a_new_task_lands_in_working_with_a_generated_oid_and_nothing_staged() {
         let s = Scenario::default().drawing_from(7);
-        let id = s.dam().new_task(input("milk", &[])).unwrap();
+        let id = written_oid(s.dam().new_task(input("milk", &[])).unwrap());
         assert_eq!(id, oid(7));
         let got = s.store.get(&id).unwrap().unwrap();
         assert_eq!(got.base().subject, "milk");
@@ -139,7 +150,7 @@ mod tests {
         let s = Scenario::default().drawing_from(2);
         let start = When::Day(jiff::civil::date(2026, 9, 25));
         let end = When::Day(jiff::civil::date(2026, 9, 26));
-        let id = s.dam().new_event(dentist(start, end)).unwrap();
+        let id = written_oid(s.dam().new_event(dentist(start, end)).unwrap());
         assert!(matches!(s.store.get(&id).unwrap(), Some(Object::Event(_))));
     }
 

@@ -1,5 +1,7 @@
 use std::fmt;
 
+mod proposal;
+
 use crate::vocabulary::vocabulary;
 use crate::{Change, Oid, Op, Timestamp, TokenAuthor};
 
@@ -125,5 +127,9 @@ impl Item {
     }
 }
 
+pub use proposal::same_proposal;
+
+#[cfg(test)]
+mod proposal_tests;
 #[cfg(test)]
 mod tests;

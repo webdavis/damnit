@@ -1,4 +1,4 @@
-use dam_application::Refusal;
+use dam_application::{ItemRefusal, Refusal};
 use dam_domain::Oid;
 
 pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
@@ -41,5 +41,13 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
         | Refusal::TokenExists(_)
         | Refusal::NotGrantable(_)
         | Refusal::NoSuchToken(_) => Vec::new(),
+        Refusal::Item(refusal) => item_oids(refusal),
+    }
+}
+
+fn item_oids(refusal: &ItemRefusal) -> Vec<String> {
+    match refusal {
+        ItemRefusal::Declined(hash) => vec![hash.to_string()],
+        ItemRefusal::NothingChanged => Vec::new(),
     }
 }

@@ -34,7 +34,6 @@ fn every_write_verb_is_refused_to_a_token_and_the_store_is_untouched() {
     let (sb, held) = sandbox_granting("\"task:read\", \"task:create\", \"task:change\"");
     let oid = sb.new_object(&["milk"]);
     for line in [
-        vec!["new", "bread"],
         vec!["edit", &oid, "--subject", "oat milk"],
         vec!["done", &oid],
         vec!["mv", &oid, "work"],
@@ -53,7 +52,7 @@ fn every_write_verb_is_refused_to_a_token_and_the_store_is_untouched() {
     }
     let (ok, listed, _) = sb.dam(&["ls", "--json", "--no-pull"]);
     assert!(ok);
-    assert!(listed.contains("milk") && !listed.contains("bread"));
+    assert!(listed.contains("milk"));
 }
 
 #[test]
@@ -98,6 +97,6 @@ fn a_token_reaches_only_the_remotes_its_grant_names() {
 fn an_owner_only_write_refuses_a_token_it_could_not_look_up() {
     let _guard = support::guard("an_owner_only_write_refuses_a_token_it_could_not_look_up");
     let sb = Sandbox::new();
-    let out = sb.output_holding("not-a-token", &["new", "bread", "--json"]);
+    let out = sb.output_holding("not-a-token", &["add", "-A", "--json"]);
     assert_eq!(rule_of(&out), "not_open_to_tokens");
 }

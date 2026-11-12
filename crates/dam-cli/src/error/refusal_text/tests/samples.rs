@@ -20,6 +20,7 @@ pub(super) fn every_refusal_with_its_text() -> Vec<(Refusal, &'static str)> {
     ));
     samples.extend(super::planning_samples::planning_refusals_with_their_text());
     samples.extend(super::access_samples::token_command_refusals_with_their_text());
+    samples.extend(super::item_samples::item_refusals_with_their_text());
     samples
 }
 

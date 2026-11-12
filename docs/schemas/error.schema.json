@@ -63,7 +63,9 @@
         "not_open_to_tokens",
         "token_exists",
         "not_grantable",
-        "no_such_token"
+        "no_such_token",
+        "nothing_changed",
+        "item_declined"
       ]
     },
     "tokenRule": {

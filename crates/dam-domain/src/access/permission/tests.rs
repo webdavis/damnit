@@ -93,3 +93,12 @@ fn task_and_event_permissions_name_their_kind_and_the_rest_name_none() {
     assert_eq!(Permission::WorkingRead.kind(), None);
     assert_eq!(Permission::read(Kind::Event), Permission::EventRead);
 }
+
+#[test]
+fn each_kind_names_its_own_create_and_change() {
+    use crate::Kind;
+    assert_eq!(Permission::create(Kind::Task), Permission::TaskCreate);
+    assert_eq!(Permission::create(Kind::Event), Permission::EventCreate);
+    assert_eq!(Permission::change(Kind::Task), Permission::TaskChange);
+    assert_eq!(Permission::change(Kind::Event), Permission::EventChange);
+}

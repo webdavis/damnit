@@ -13,7 +13,7 @@ pub(crate) enum Need {
 pub(crate) fn need(command: &Command) -> Need {
     use Permission::*;
     match command {
-        Command::New(_) => Need::OwnerOnly("new"),
+        Command::New(_) => Need::NarrowedFrom(&[TaskCreate, EventCreate]),
         Command::Done(_) => Need::OwnerOnly("done"),
         Command::Edit(_) => Need::OwnerOnly("edit"),
         Command::Mv(_) => Need::OwnerOnly("mv"),

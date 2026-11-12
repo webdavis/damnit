@@ -12,6 +12,7 @@ mod reminders;
 mod remote;
 mod restore;
 mod rm;
+mod sent;
 mod show;
 mod stage;
 mod status;
