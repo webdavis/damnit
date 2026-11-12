@@ -19,6 +19,7 @@ pub(super) fn parse_tokens(root: &StrictTable) -> Tokens {
             Vec::new()
         }
     };
+    let names = tables.iter().map(|(name, _)| name.to_string()).collect();
     let newer_schema = newer_schema(root.get("schema"));
     let entries: Vec<TokenConfig> = tables
         .into_iter()
@@ -39,6 +40,7 @@ pub(super) fn parse_tokens(root: &StrictTable) -> Tokens {
         })
         .collect();
     Tokens {
+        names,
         entries: disable_shared_values(entries),
         warnings,
     }

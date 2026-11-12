@@ -16,6 +16,7 @@ mod show;
 mod stage;
 mod status;
 mod sync;
+pub(crate) mod token;
 
 use crate::args::Command;
 use crate::context::Context;
@@ -56,6 +57,8 @@ pub(crate) fn dispatch_a_verb_that_opens_the_store(
         Command::Push(a) => sync::run_push(ctx, a),
         Command::Pull(a) => sync::run_pull(ctx, a),
         Command::Resolve(a) => sync::run_resolve(ctx, a),
-        Command::Category(_) | Command::Filter(_) => unreachable!("answered before the store"),
+        Command::Category(_) | Command::Filter(_) | Command::Token(_) => {
+            unreachable!("answered before the store")
+        }
     }
 }

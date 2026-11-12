@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 
-use dam_application::{Config, ConfigError, ConfigFile, RemoteName};
+use dam_application::{Config, ConfigError, ConfigFile, NewToken, RemoteName};
 
 use super::create::create_if_missing;
+use super::token_append::append_token;
 use super::{append_remote, load_config};
 
 pub struct TomlConfigFile {
@@ -26,6 +27,10 @@ impl ConfigFile for TomlConfigFile {
 
     fn add_remote(&self, name: &RemoteName, url: &str) -> Result<Option<String>, ConfigError> {
         append_remote(&self.path, &name.0, url)
+    }
+
+    fn add_token(&self, token: &NewToken) -> Result<Option<String>, ConfigError> {
+        append_token(&self.path, token)
     }
 }
 

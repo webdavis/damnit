@@ -3,7 +3,7 @@ use std::io::{ErrorKind, Write};
 use std::os::unix::fs::DirBuilderExt;
 use std::path::Path as FsPath;
 
-use super::append::parent_of;
+use super::rewrite::parent_of;
 
 pub(super) const TEMPLATE: &str = include_str!("template.toml");
 
