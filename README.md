@@ -225,8 +225,9 @@ a table in the config file, and its grants say what it may do:
 A grant allows only what `allow` lists, and only on objects under one of `paths`, carrying one of
 `labels`, or on the remotes `remotes` names. One grant must cover everything a command touches.
 `own = true` matches nothing yet. `not_before`, `expires` and `via` (default `["local"]`) bound when
-and where the token works. `require` is read and kept, and not enforced yet. A token with `limits`
-is disabled until limits are enforced.
+and where the token works. A request cannot carry details yet, so a token whose `require` names
+any is refused with rule `missing_details`. A token with `limits` is disabled until limits are
+enforced.
 
 The permissions are `task:` and `event:` `read`, `create`, `change`, `move` and `remove`,
 `task:complete`, `pending:read`, `pending:accept`, `pending:reject`, `working:read`, `stage:read`,

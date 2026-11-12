@@ -154,3 +154,19 @@ fn every_refusal_has_its_own_rule_name() {
     let names: std::collections::BTreeSet<&str> = refusals.iter().map(|r| r.name()).collect();
     assert_eq!(names.len(), refusals.len());
 }
+
+#[test]
+fn a_token_that_requires_details_is_refused_since_no_request_carries_them_yet() {
+    let requiring = TokenTerms {
+        require: vec!["session".into(), "model".into()],
+        ..terms()
+    };
+    let tokens = one("claude", token(1), Standing::Usable(requiring));
+    assert_eq!(
+        local(&tokens, &token(1).expose()),
+        Err(TokenRefusal::MissingDetails {
+            name: "claude".into(),
+            details: vec!["session".into(), "model".into()],
+        })
+    );
+}
