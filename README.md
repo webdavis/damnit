@@ -431,8 +431,10 @@ names them.
 
 Standard error carries that one document and nothing else, so parse the whole stream; a run that
 succeeds writes nothing there. A `usage` error also carries `usage`, which says what was wrong with
-the command line. Without those flags you get the plain `dam: <message>` line, or clap's usage text
-for a command line it rejects.
+the command line. An error about an id you gave, such as `no_such_object`, also carries `prefix`,
+that id as the message shows it: the text you gave, or the first seven characters of a whole id.
+Without those flags you get the plain `dam: <message>` line, or clap's usage text for a command
+line it rejects.
 
 ## Exit codes
 

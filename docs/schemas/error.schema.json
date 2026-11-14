@@ -27,11 +27,29 @@
           "type": "array",
           "items": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
         },
-        "usage": { "$ref": "#/$defs/usage" }
+        "usage": { "$ref": "#/$defs/usage" },
+        "prefix": {
+          "description": "The id the error is about, as the message shows it: the text the caller gave, or the first seven characters of a whole id.",
+          "type": "string",
+          "minLength": 1
+        }
       },
-      "if": { "properties": { "kind": { "const": "usage" } } },
-      "then": { "required": ["usage"] },
-      "else": { "not": { "required": ["usage"] } }
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "usage" } } },
+          "then": { "required": ["usage"] },
+          "else": { "not": { "required": ["usage"] } }
+        },
+        {
+          "if": { "required": ["prefix"] },
+          "then": {
+            "anyOf": [
+              { "properties": { "rule": { "enum": ["ambiguous_prefix", "no_such_object", "no_working_object"] } } },
+              { "properties": { "kind": { "const": "usage" }, "rule": { "const": null } } }
+            ]
+          }
+        }
+      ]
     }
   },
   "$defs": {
