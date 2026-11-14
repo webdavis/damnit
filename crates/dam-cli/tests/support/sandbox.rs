@@ -60,6 +60,10 @@ impl Sandbox {
             .env("FAKE_TOKEN_FILE", self.dir.path().join("token.txt"))
             .env("PUSH_LOG", self.dir.path().join("pushes.jsonl"))
             .env("FAIL_NEXT_PUSH", self.dir.path().join("fail-next-push"))
+            .env(
+                "FAIL_FIRST_OF_NEXT_PUSH",
+                self.dir.path().join("fail-first-of-next-push"),
+            )
             .env("HOME", self.dir.path())
             .env("XDG_CONFIG_HOME", self.dir.path().join("config"))
             .env("XDG_DATA_HOME", self.dir.path().join("data"))
@@ -120,6 +124,10 @@ impl Sandbox {
 
     pub fn fail_next_push(&self) {
         std::fs::write(self.dir.path().join("fail-next-push"), "").unwrap();
+    }
+
+    pub fn fail_the_first_mutation_of_the_next_push(&self) {
+        std::fs::write(self.dir.path().join("fail-first-of-next-push"), "").unwrap();
     }
 
     pub fn pushes(&self) -> Vec<serde_json::Value> {

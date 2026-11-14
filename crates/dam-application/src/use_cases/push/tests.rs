@@ -2,6 +2,7 @@ mod accepted_kinds;
 mod answers;
 mod conflict_count;
 mod deletes;
+mod holds;
 mod keys;
 mod last_push;
 mod order;
@@ -9,6 +10,8 @@ mod read_only;
 mod reconcile;
 mod refusals;
 mod retries;
+mod scope;
+mod stops;
 mod verbs;
 
 use crate::remote::MutationOp;

@@ -46,6 +46,14 @@ fn sent_ops(push: &serde_json::Value) -> Vec<(String, String)> {
         .collect()
 }
 
+fn last_two_calls(sb: &Sandbox) -> Vec<(String, String)> {
+    let pushes = sb.pushes();
+    pushes[pushes.len() - 2..]
+        .iter()
+        .flat_map(sent_ops)
+        .collect()
+}
+
 fn child_moved_then_parent_removed(family: &Family) -> Vec<(String, String)> {
     vec![
         (family.child.clone(), "update".to_string()),
@@ -63,24 +71,31 @@ fn removing_a_parent_pushes_its_child_moving_up_before_the_removal() {
     assert!(out.contains("moved up"), "{out}");
     let (ok, out) = commit_and_push(&sb, "rm parent");
     assert!(ok && out.contains("fake: 2 sent, 2 ok"), "{out}");
-    let push = sb.pushes().pop().unwrap();
-    assert_eq!(sent_ops(&push), child_moved_then_parent_removed(&family));
+    assert_eq!(
+        last_two_calls(&sb),
+        child_moved_then_parent_removed(&family)
+    );
 }
 
 #[test]
-fn a_failed_push_of_a_removal_is_finished_in_the_same_order() {
-    let _guard = support::guard("a_failed_push_of_a_removal_is_finished_in_the_same_order");
+fn a_refused_move_holds_the_removal_until_a_later_push_sends_it() {
+    let _guard = support::guard("a_refused_move_holds_the_removal_until_a_later_push_sends_it");
     let sb = Sandbox::new();
     let family = a_pushed_parent_sorting_before_its_child(&sb);
     assert!(sb.dam(&["rm", &family.parent]).0);
-    sb.fail_next_push();
+    sb.fail_the_first_mutation_of_the_next_push();
     let (_, out) = commit_and_push(&sb, "rm parent");
-    assert!(out.contains("fake: 2 sent, 0 ok, 2 failed"), "{out}");
+    assert!(out.contains("fake: 1 sent, 0 ok, 2 failed"), "{out}");
+    let held = sb.pushes().pop().unwrap();
+    assert_eq!(
+        sent_ops(&held),
+        vec![(family.child.clone(), "update".to_string())]
+    );
     let (ok, out, err) = sb.dam(&["push"]);
     assert!(ok, "{err}");
     assert!(out.contains("fake: 2 sent, 2 ok"), "{out}");
-    let pushes = sb.pushes();
-    for push in &pushes[pushes.len() - 2..] {
-        assert_eq!(sent_ops(push), child_moved_then_parent_removed(&family));
-    }
+    assert_eq!(
+        last_two_calls(&sb),
+        child_moved_then_parent_removed(&family)
+    );
 }
