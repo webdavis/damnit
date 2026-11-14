@@ -59,3 +59,36 @@ fn two_edits_racing_for_one_name_let_exactly_one_through() {
         assert_eq!(folder.text("secrets.lua").matches("tool = {").count(), 1);
     }
 }
+
+fn files_in(folder: &Folder, dir: &str) -> Vec<String> {
+    let mut names: Vec<String> = std::fs::read_dir(folder.path(dir))
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+        .collect();
+    names.sort();
+    names
+}
+
+fn edit_both(folder: &Folder) {
+    let todoist = RemoteName::parse("todoist").unwrap();
+    folder.file().add_remote(&todoist, "todoist::").unwrap();
+    folder.file().add_token(&bare_token("tool")).unwrap();
+    folder.file().remove_token("tool").unwrap();
+}
+
+#[test]
+fn edits_leave_no_file_beside_the_two_they_edit() {
+    let folder = Folder::new();
+    edit_both(&folder);
+    assert_eq!(files_in(&folder, ""), ["config.lua", "secrets.lua"]);
+}
+
+#[test]
+fn edits_through_links_leave_no_file_beside_the_links_or_their_targets() {
+    let folder = Folder::new();
+    linked(&folder, "config.lua");
+    linked(&folder, "secrets.lua");
+    edit_both(&folder);
+    assert_eq!(files_in(&folder, ""), ["config.lua", "real", "secrets.lua"]);
+    assert_eq!(files_in(&folder, "real"), ["config.lua", "secrets.lua"]);
+}

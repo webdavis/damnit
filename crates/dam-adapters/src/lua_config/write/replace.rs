@@ -1,7 +1,6 @@
-use std::ffi::OsString;
-use std::fs::{DirBuilder, File, OpenOptions, Permissions};
+use std::fs::{DirBuilder, File, Permissions};
 use std::io::{ErrorKind, Write};
-use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt, PermissionsExt};
+use std::os::unix::fs::{DirBuilderExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 
 use dam_application::ConfigError;
@@ -29,14 +28,8 @@ pub(super) fn replace(
         .mode(0o700)
         .create(&dir)
         .map_err(io_error)?;
-    let lock = OpenOptions::new()
-        .create(true)
-        .truncate(false)
-        .write(true)
-        .mode(OWNER_ONLY)
-        .open(lock_path(path))
-        .map_err(io_error)?;
-    lock.lock().map_err(io_error)?;
+    let folder = File::open(&dir).map_err(io_error)?;
+    folder.lock().map_err(io_error)?;
     let text = change(read_text(path)?.as_deref())?;
     let mode_before = std::fs::metadata(path)
         .ok()
@@ -55,9 +48,7 @@ pub(super) fn replace(
     file.write_all(text.as_bytes()).map_err(io_error)?;
     file.as_file().sync_all().map_err(io_error)?;
     file.persist(path).map_err(|e| io_error(e.error))?;
-    File::open(&dir)
-        .and_then(|folder| folder.sync_all())
-        .map_err(io_error)?;
+    folder.sync_all().map_err(io_error)?;
     Ok(match (holds, mode_before) {
         (Holds::Secrets, Some(mode)) if mode & 0o077 != 0 => Some(format!(
             "secrets.lua was mode {mode:o}; dam wrote it 600, since it holds secrets"
@@ -79,12 +70,6 @@ fn resolved(path: &Path) -> Result<PathBuf, ConfigError> {
         Err(e) if e.kind() == ErrorKind::NotFound => Ok(path.to_path_buf()),
         Err(e) => Err(io_error(e)),
     }
-}
-
-fn lock_path(path: &Path) -> PathBuf {
-    let mut name = OsString::from(path.as_os_str());
-    name.push(".lock");
-    PathBuf::from(name)
 }
 
 fn io_error(error: std::io::Error) -> ConfigError {
