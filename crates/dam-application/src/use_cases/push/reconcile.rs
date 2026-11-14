@@ -13,6 +13,7 @@ pub(super) struct Settlement {
     pub(super) snapshot: Vec<Object>,
     pub(super) failed: Vec<(Oid, String)>,
     pub(super) unanswered: BTreeSet<Oid>,
+    pub(super) answered: Vec<Oid>,
 }
 
 impl Settlement {
@@ -26,6 +27,7 @@ impl Settlement {
         self.snapshot.extend(later.snapshot);
         self.failed.extend(later.failed);
         self.unanswered.extend(later.unanswered);
+        self.answered.extend(later.answered);
     }
 
     pub(super) fn pushed<'a>(
@@ -44,6 +46,9 @@ impl Settlement {
 
     fn settle(&mut self, mutation: &RemoteMutation, verdict: MutationVerdict) {
         let oid = mutation.oid.clone();
+        if !matches!(verdict, MutationVerdict::Unanswered { .. }) {
+            self.answered.push(oid.clone());
+        }
         match verdict {
             MutationVerdict::Accepted { remote_id } => {
                 if let Some(id) = remote_id {

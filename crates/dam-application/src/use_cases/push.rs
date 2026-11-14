@@ -95,6 +95,9 @@ impl Dam<'_> {
                 why: why.clone(),
             })?;
         }
+        for oid in &settlement.answered {
+            store.count_answer(&remote.name, oid)?;
+        }
         store.set_push_retries(&remote.name, &settlement.retries())?;
         for id in settlement.pushed(unpushed) {
             store.mark_pushed(&remote.name, id)?;

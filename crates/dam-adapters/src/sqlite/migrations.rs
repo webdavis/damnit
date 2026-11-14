@@ -1,6 +1,6 @@
 use rusqlite::Connection;
 
-pub(super) const VERSION: u32 = 10;
+pub(super) const VERSION: u32 = 11;
 
 const V1: &str = r#"
 CREATE TABLE objects (oid TEXT PRIMARY KEY, kind TEXT NOT NULL, path TEXT NOT NULL, json TEXT NOT NULL);
@@ -78,6 +78,10 @@ WHERE commit_id IN (
 );
 "#;
 
+const V11: &str = r#"
+CREATE TABLE answers (remote TEXT NOT NULL, oid TEXT NOT NULL, count INTEGER NOT NULL, PRIMARY KEY (remote, oid));
+"#;
+
 pub(super) fn migrate_above_user_version_in_one_transaction(
     conn: &mut Connection,
 ) -> Result<(), rusqlite::Error> {
@@ -116,6 +120,9 @@ pub(super) fn migrate_above_user_version_in_one_transaction(
     if current < 10 {
         tx.execute_batch(V10)?;
     }
+    if current < 11 {
+        tx.execute_batch(V11)?;
+    }
     tx.pragma_update(None, "user_version", VERSION)?;
     tx.commit()
 }
@@ -128,3 +135,6 @@ mod author_tests;
 
 #[cfg(test)]
 mod pulled_author_tests;
+
+#[cfg(test)]
+mod answer_count_tests;

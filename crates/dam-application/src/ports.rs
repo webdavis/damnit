@@ -1,3 +1,4 @@
+mod answers;
 mod config_file;
 mod days;
 mod environment;
@@ -9,6 +10,7 @@ mod origins;
 mod repositories;
 mod store;
 
+pub use answers::AnswerRepository;
 pub use config_file::{
     ByHand, ConfigError, ConfigFile, EditFault, EditedTable, Expected, LoadedConfig, Misread,
     Place, SecretsTightened, Uneditable,
