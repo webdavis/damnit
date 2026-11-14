@@ -130,6 +130,10 @@ dam config print-default: about = Print the starter config.lua a first run write
 dam config print-default: after_help = Examples:
   dam config print-default
   dam config print-default > config.lua
+dam config validate: about = Check the config as dam doctor does; an error's message may show a value from the file
+dam config validate: after_help = Examples:
+  dam config validate
+  dam config validate --json
 dam doctor: about = Read config.lua and secrets.lua in full and print where they are; an error's message may show a value from the file
 ";
 

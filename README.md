@@ -48,6 +48,7 @@ not know fails with exit 1. `docs/examples/` holds one of each file.
 error. It prints `no secrets.lua` for a missing file. Its error may quote `secrets.lua`. Elsewhere only a credential function's own error reaches
 you, and only when you run the command without `DAM_TOKEN`.
 `docs/schemas/doctor.schema.json` is the schema of its `--json` answer.
+`dam config validate` checks the config as `dam doctor` does, and never creates `config.lua`.
 
 `stale` makes reads pull first when the last pull is older than that. A failed pull that a read
 started leaves a notice in `dam status`, and the read still answers. `deadline` (default `"60s"`)

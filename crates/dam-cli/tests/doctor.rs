@@ -67,8 +67,9 @@ fn a_lua_error_in_config_lua_names_its_line_and_doctor() {
 }
 
 #[test]
-fn a_runtime_error_in_secrets_lua_is_quoted_by_doctor_alone() {
-    let _guard = support::guard("a_runtime_error_in_secrets_lua_is_quoted_by_doctor_alone");
+fn a_runtime_error_in_secrets_lua_is_quoted_by_doctor_and_validate_alone() {
+    let _guard =
+        support::guard("a_runtime_error_in_secrets_lua_is_quoted_by_doctor_and_validate_alone");
     let sb = Sandbox::new();
     sb.write_secrets_lua(RAISES);
     let secrets = sb.secrets_path().display().to_string();
