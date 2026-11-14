@@ -38,7 +38,8 @@ impl ConfiguredDuration {
     pub fn parse(text: &str) -> Option<ConfiguredDuration> {
         let mut chars = text.chars();
         let unit = chars.next_back()?;
-        let n: u64 = chars.as_str().parse().ok()?;
+        let digits = Some(chars.as_str()).filter(|d| d.bytes().all(|b| b.is_ascii_digit()))?;
+        let n: u64 = digits.parse().ok()?;
         let secs = match unit {
             's' => Some(n),
             'm' => n.checked_mul(60),
@@ -165,6 +166,7 @@ mod tests {
         assert_eq!(ConfiguredDuration::parse("2h").unwrap().text, "2h");
         assert_eq!(seconds("15"), None);
         assert_eq!(seconds("1d"), None);
+        assert_eq!(seconds("+15m"), None);
     }
 
     #[test]
