@@ -1,7 +1,7 @@
 use super::super::*;
 use super::task_of;
 use crate::testing::{Scenario, oid, task_in};
-use dam_domain::{Blockers, Completion};
+use dam_domain::{Blockers, Completion, Dispositions};
 
 #[test]
 fn a_root_task_with_objects_in_subfolders_has_no_children() {

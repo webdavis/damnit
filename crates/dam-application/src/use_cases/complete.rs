@@ -1,20 +1,16 @@
 use dam_domain::{
-    Blockers, ChildDisposition, Completion, Date, DependencyDisposition, Dispositions, Force,
-    Object, Oid, Permission, Recurrence, Task, Tracked, When, roll_forward,
+    Completion, Date, Force, Object, Oid, Permission, Recurrence, Task, Tracked, When, roll_forward,
 };
 
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{ObjectRepository, Randomness};
+use crate::ports::ObjectRepository;
 use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::items::land::Landed;
 use crate::use_cases::load::load;
-use crate::use_cases::subtree::{children, move_into};
+use dispositions::apply_dispositions;
 
-pub struct CompletePlan {
-    pub oid: Oid,
-    pub blockers: Blockers,
-}
+pub use blockers::CompletePlan;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Completed {
@@ -23,36 +19,6 @@ pub enum Completed {
 }
 
 impl Dam<'_> {
-    pub fn plan_complete(&self, oid: &Oid) -> Result<CompletePlan, UseCaseError> {
-        let task = match self.load_permitted(oid, |_| Permission::TaskComplete)? {
-            Object::Task(t) => t,
-            Object::Event(_) => return Err(Refusal::NotATask(oid.clone()).into()),
-        };
-        Ok(CompletePlan {
-            oid: oid.clone(),
-            blockers: self.blockers_of(&task)?,
-        })
-    }
-
-    pub(crate) fn blockers_of(&self, task: &Task) -> Result<Blockers, UseCaseError> {
-        let mut dependencies = Vec::new();
-        for dep in &task.base.depends {
-            if is_an_open_task(self.store, dep)? && !self.hides(dep)? {
-                dependencies.push(dep.clone());
-            }
-        }
-        let children: Vec<Oid> = children(self.store, &task.base)?
-            .iter()
-            .filter(|c| c.as_task().is_some_and(|t| !t.completion.is_done()))
-            .filter(|c| self.access.sees(c))
-            .map(|c| c.oid().clone())
-            .collect();
-        Ok(Blockers {
-            dependencies,
-            children,
-        })
-    }
-
     pub fn complete(
         &self,
         oid: &Oid,
@@ -124,45 +90,6 @@ fn next_due_if_recurring(
     Ok(roll_forward(rule, due, today))
 }
 
-fn apply_dispositions(
-    objects: &dyn ObjectRepository,
-    random: &dyn Randomness,
-    oid: &Oid,
-    found: &Blockers,
-    d: Dispositions,
-) -> Result<(), UseCaseError> {
-    let mut task = load_task(objects, oid)?;
-
-    let target = match d.children {
-        ChildDisposition::Keep => None,
-        ChildDisposition::Up => Some(task.base.path.clone()),
-        ChildDisposition::Into(_) if found.children.is_empty() => None,
-        ChildDisposition::Into(name) => {
-            let group_oid = Oid::generate(&mut |b| random.fill(b));
-            let mut group = Task::new(group_oid, name.clone());
-            group.base.path = task.base.path.clone();
-            let folder = group
-                .base
-                .owned_folder()
-                .ok_or_else(|| UseCaseError::Parse(format!("{name:?} cannot name a folder")))?;
-            objects.put(&Object::Task(group))?;
-            Some(folder)
-        }
-    };
-    if let Some(folder) = target {
-        for child in &found.children {
-            move_into(objects, child, &folder)?;
-        }
-    }
-    if d.dependencies == DependencyDisposition::Drop {
-        task.base
-            .depends
-            .retain(|x| !found.dependencies.contains(x));
-        objects.put(&Object::Task(task))?;
-    }
-    Ok(())
-}
-
 fn load_task(objects: &dyn ObjectRepository, oid: &Oid) -> Result<Task, UseCaseError> {
     match load(objects, oid)? {
         Object::Task(t) => Ok(t),
@@ -170,9 +97,8 @@ fn load_task(objects: &dyn ObjectRepository, oid: &Oid) -> Result<Task, UseCaseE
     }
 }
 
-fn is_an_open_task(objects: &dyn ObjectRepository, oid: &Oid) -> Result<bool, UseCaseError> {
-    Ok(matches!(objects.get(oid)?, Some(Object::Task(t)) if !t.completion.is_done()))
-}
+mod blockers;
+mod dispositions;
 
 #[cfg(test)]
 mod tests;
