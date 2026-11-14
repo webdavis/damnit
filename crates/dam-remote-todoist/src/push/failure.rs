@@ -5,6 +5,7 @@ use crate::api::{ApiError, NotAccepted, SyncWrite};
 pub enum Failure {
     OnlyThisMutation(String),
     Unanswered(String),
+    Unreachable(String),
     StopsThePush(ApiError),
 }
 
@@ -29,9 +30,8 @@ impl From<ApiError> for Failure {
             ApiError::TooLarge { limit, .. } => Failure::Unanswered(format!(
                 "Todoist's answer was past {limit} bytes and could not be read"
             )),
-            ApiError::TimedOut { .. } | ApiError::Unreachable { .. } => {
-                Failure::Unanswered(e.to_string())
-            }
+            ApiError::TimedOut { .. } => Failure::Unanswered(e.to_string()),
+            ApiError::Unreachable { .. } => Failure::Unreachable(e.to_string()),
         }
     }
 }

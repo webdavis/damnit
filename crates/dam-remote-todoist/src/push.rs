@@ -2,6 +2,7 @@ mod carried;
 mod commands;
 mod created;
 mod failure;
+mod off_limits;
 mod plan;
 mod shape;
 
@@ -12,6 +13,7 @@ use crate::map::Tree;
 use commands::Command;
 use created::add_created_to_tree;
 use failure::{Failure, every_command_accepted, no_id_named_for};
+use off_limits::OffLimits;
 use plan::{TreeChange, missing_object, plan_for, resend_stable_temp_id};
 
 pub fn push(api: &impl TodoistSync, mutations: Vec<Mutation>) -> Result<PushResponse, ApiError> {
@@ -19,25 +21,28 @@ pub fn push(api: &impl TodoistSync, mutations: Vec<Mutation>) -> Result<PushResp
     let mut tree = Tree::from_sync(&sync);
     let containers_filled = containers_this_push_fills(&mutations);
     let mut results = Vec::with_capacity(mutations.len());
+    let mut off_limits = OffLimits::default();
     for m in &mutations {
-        match apply(api, &mut tree, m, &containers_filled) {
-            Ok(remote_id) => results.push(MutationResult {
-                oid: m.oid.clone(),
-                verdict: Verdict::Accepted { remote_id },
-            }),
-            Err(Failure::OnlyThisMutation(why)) => results.push(MutationResult {
-                oid: m.oid.clone(),
-                verdict: Verdict::Refused { why },
-            }),
-            Err(Failure::Unanswered(why)) => {
-                results.push(MutationResult {
-                    oid: m.oid.clone(),
-                    verdict: Verdict::Unanswered { why },
-                });
-                break;
-            }
-            Err(Failure::StopsThePush(e)) => return Err(e),
+        let verdict = match off_limits.why_left_out(m) {
+            Some(why) => Verdict::Unanswered { why },
+            None => match apply(api, &mut tree, m, &containers_filled) {
+                Ok(remote_id) => Verdict::Accepted { remote_id },
+                Err(Failure::OnlyThisMutation(why)) => Verdict::Refused { why },
+                Err(Failure::Unanswered(why)) => Verdict::Unanswered { why },
+                Err(Failure::Unreachable(why)) => {
+                    off_limits.end_the_call(&why);
+                    Verdict::Unanswered { why }
+                }
+                Err(Failure::StopsThePush(e)) => return Err(e),
+            },
+        };
+        if matches!(verdict, Verdict::Unanswered { .. }) {
+            off_limits.unanswered(m);
         }
+        results.push(MutationResult {
+            oid: m.oid.clone(),
+            verdict,
+        });
     }
     Ok(PushResponse { results })
 }

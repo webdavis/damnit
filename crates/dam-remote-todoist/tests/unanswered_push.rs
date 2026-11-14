@@ -4,19 +4,8 @@ use dam_application::testing::prelude::*;
 use dam_application::testing::{Scenario, oid, remotes_launched_by, task_in, todoist};
 use dam_domain::{Completion, Object};
 use dam_helper::testing;
-use serde_json::json;
 use support::real_helper::{FRESH_HELPER_PROCESSES_TRIED, the_real_helper_against};
-use support::stateful_todoist::{Fault, Held, serve};
-
-fn work_held_upstream() -> Held {
-    Held::new(
-        vec![
-            json!({"id": "work", "name": "Work", "parent_id": null, "is_deleted": false, "is_archived": false, "inbox_project": false}),
-        ],
-        vec![],
-        vec![],
-    )
-}
+use support::stateful_todoist::{Fault, serve, work_held_upstream};
 
 fn a_create_whose_write_got_no_answer_lands_once_on_the_next_push(fault: Fault) {
     for _ in 0..FRESH_HELPER_PROCESSES_TRIED {
