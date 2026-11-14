@@ -31,7 +31,7 @@ pub(crate) enum CliError {
     UseCase(UseCaseError),
     Editor(EditorError),
     Config(ConfigError),
-    ConfigCheck(ConfigError),
+    Doctor(ConfigError),
     Open(OpenError),
     Usage(String),
     CommandLine(Misuse),
@@ -81,7 +81,7 @@ impl CliError {
                 | ConfigError::Unwritable { .. }
                 | ConfigError::ReadOnly { .. },
             )
-            | CliError::ConfigCheck(ConfigError::Unreadable { .. }) => "store",
+            | CliError::Doctor(ConfigError::Unreadable { .. }) => "store",
             CliError::UseCase(UseCaseError::PushStopped {
                 by: HelperError::Cancelled,
                 ..
@@ -94,7 +94,7 @@ impl CliError {
             CliError::UseCase(UseCaseError::Parse(_))
             | CliError::UseCase(UseCaseError::Query(_))
             | CliError::Config(_)
-            | CliError::ConfigCheck(_) => "parse",
+            | CliError::Doctor(_) => "parse",
             CliError::Usage(_) | CliError::CommandLine(_) => KIND_USAGE,
             CliError::Cancelled => "cancelled",
             CliError::Internal(_) => "internal",
@@ -122,7 +122,7 @@ impl fmt::Display for CliError {
             CliError::UseCase(e) => write!(f, "{}", UseCaseText(e)),
             CliError::Editor(e) => write!(f, "editor: {}", e.0),
             CliError::Config(e @ (ConfigError::NotLua(_) | ConfigError::ReadOnly { .. }))
-            | CliError::ConfigCheck(e) => {
+            | CliError::Doctor(e) => {
                 write!(f, "{}", ConfigText(e))
             }
             CliError::Config(e) => write!(f, "{}; run dam doctor", ConfigText(e)),
