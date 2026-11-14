@@ -5,7 +5,7 @@ use serde_json::Value;
 use super::filter_support::{every_field_event, every_field_task, field_names, run_filter};
 use crate::object_document;
 
-const NOT_IN_THE_TABLE: [&str; 3] = ["author", "details", "id"];
+pub(super) const NOT_IN_THE_TABLE: [&str; 3] = ["author", "details", "id"];
 
 const WRITE_FIELD_NAMES: &str = r#"
         local names = {}
