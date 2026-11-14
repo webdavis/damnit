@@ -64,6 +64,7 @@ impl Sandbox {
                 "FAIL_FIRST_OF_NEXT_PUSH",
                 self.dir.path().join("fail-first-of-next-push"),
             )
+            .env("HANG_NEXT_PUSH", self.dir.path().join("hang-next-push"))
             .env(
                 "RATE_LIMIT_NEXT_PUSH",
                 self.dir.path().join("rate-limit-next-push"),
@@ -137,6 +138,23 @@ impl Sandbox {
     pub fn rate_limit_the_next_push(&self, after_the_first: bool) {
         let answer = if after_the_first { "partial" } else { "error" };
         std::fs::write(self.dir.path().join("rate-limit-next-push"), answer).unwrap();
+    }
+
+    pub fn hang_the_next_push(&self, after_the_first: bool) {
+        let answer = if after_the_first { "partial" } else { "whole" };
+        std::fs::write(self.dir.path().join("hang-next-push"), answer).unwrap();
+    }
+
+    pub fn until_the_push_hangs(&self) {
+        let hung = self.dir.path().join("hang-next-push.hung");
+        let give_up_at = std::time::Instant::now() + std::time::Duration::from_secs(10);
+        while !hung.exists() {
+            assert!(
+                std::time::Instant::now() < give_up_at,
+                "the push never hung"
+            );
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
     }
 
     pub fn pushes(&self) -> Vec<serde_json::Value> {

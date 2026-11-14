@@ -69,6 +69,18 @@ impl fmt::Display for UseCaseText<'_> {
                 }
             }
             UseCaseError::Helper(HelperError::Cancelled) => f.write_str("cancelled"),
+            UseCaseError::PushStopped {
+                by,
+                kept,
+                unanswered,
+            } => {
+                let stop = UseCaseError::Helper(by.clone());
+                write!(
+                    f,
+                    "{}; {kept} kept, {unanswered} unanswered",
+                    UseCaseText(&stop)
+                )
+            }
             UseCaseError::Credential(CredentialError::Missing(n)) => {
                 write!(f, "credential {n} has no source")
             }

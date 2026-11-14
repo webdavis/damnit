@@ -55,8 +55,12 @@ impl Dam<'_> {
         atomically(self.store, || {
             self.settle_push(remote, &unpushed, &sent.settlement)
         })?;
-        if let Some(stop) = sent.stopped_by {
-            return Err(stop.into());
+        if let Some(by) = sent.stopped_by {
+            return Err(UseCaseError::PushStopped {
+                by,
+                kept: sent.answered,
+                unanswered: sent.settlement.unanswered.len(),
+            });
         }
         let refused = sent.settlement.failed.len() - sent.held;
         Ok(PushReport {

@@ -7,6 +7,7 @@ use crate::use_cases::push::removals::Removals;
 pub(super) struct Sent {
     pub(super) settlement: Settlement,
     pub(super) mutations: usize,
+    pub(super) answered: usize,
     pub(super) held: usize,
     pub(super) stopped_by: Option<HelperError>,
 }
@@ -39,6 +40,7 @@ pub(super) fn send_in_waves(
         }
         sent.mutations += wave.ready.len();
         let settled = reconcile(&wave.ready, answer.outcomes);
+        sent.answered += wave.ready.len().saturating_sub(settled.unanswered.len());
         removals.record(&wave.ready, &settled);
         sent.settlement.absorb(settled);
         if let Some(stop) = answer.stopped_by {

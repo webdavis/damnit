@@ -56,7 +56,14 @@ fn a_rate_limit_after_the_move_sends_no_removal_and_keeps_the_move() {
         s.filed(task_in(child, "c", "Home/")).deleted(&oid(parent));
         let (l, pushed) = accepting_one_call_then_rate_limited();
         let err = s.dam().push(remotes_launched_by(&l), None).unwrap_err();
-        assert_eq!(err, UseCaseError::Helper(rate_limited()));
+        assert_eq!(
+            err,
+            UseCaseError::PushStopped {
+                by: rate_limited(),
+                kept: 1,
+                unanswered: 1,
+            }
+        );
         let sent_before_the_stop: Vec<_> = pushed
             .borrow()
             .iter()

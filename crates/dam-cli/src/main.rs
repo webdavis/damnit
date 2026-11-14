@@ -15,7 +15,7 @@ mod view;
 use std::path::Path;
 
 use dam_adapters::{Interrupt, LuaConfigFile, OsRandom, SystemClock};
-use dam_application::{Clock, ConfigError, ConfigFile};
+use dam_application::{Clock, ConfigError, ConfigFile, HelperError, UseCaseError};
 
 use crate::args::{Cli, Command};
 use crate::caller::{authenticated, caller};
@@ -57,10 +57,16 @@ fn cancelled_when_interrupted_whatever_the_work_reported(
     e: CliError,
     interrupt: &Interrupt,
 ) -> CliError {
-    if interrupt.requested() {
-        CliError::Cancelled
-    } else {
-        e
+    match e {
+        _ if !interrupt.requested() => e,
+        CliError::UseCase(UseCaseError::PushStopped {
+            kept, unanswered, ..
+        }) => CliError::UseCase(UseCaseError::PushStopped {
+            by: HelperError::Cancelled,
+            kept,
+            unanswered,
+        }),
+        _ => CliError::Cancelled,
     }
 }
 
