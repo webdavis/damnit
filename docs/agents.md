@@ -23,7 +23,7 @@ dam token create agent --allow task:read --allow task:create --allow task:change
 
 `--paths` limits the token to objects under that path, so each task the token sends needs a
 `--path` under it. The README's Tokens section lists every permission and grant key.
-When a template renders the config, the template writes the token's table with the value
+When a template renders `secrets.lua`, the template writes the token's table with the value
 `dam token create` printed.
 
 ## Sending a task

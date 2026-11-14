@@ -8,7 +8,7 @@ pub(crate) struct RemoteArgs {
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum RemoteCommand {
-    #[command(about = "Add a remote to the config file")]
+    #[command(about = "Add a remote to config.lua")]
     Add {
         #[arg(help = "Name the remote, such as todoist")]
         name: String,

@@ -8,13 +8,13 @@ pub(crate) struct TokenArgs {
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum TokenCommand {
-    #[command(about = "Make a token with one grant, add it to the config and print it once")]
+    #[command(about = "Make a token with one grant, add it to secrets.lua and print it once")]
     Create(CreateArgs),
     #[command(
-        about = "List the config's tokens with their grants and standing, never their values"
+        about = "List the tokens in secrets.lua with their grants and standing, never their values"
     )]
     List,
-    #[command(about = "Remove a token's tables from the config")]
+    #[command(about = "Remove a token's table from secrets.lua")]
     Revoke {
         #[arg(help = "Name the token to remove")]
         name: String,
