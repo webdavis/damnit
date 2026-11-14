@@ -4,15 +4,18 @@ use serde_json::{Value, json};
 use support::errors::error_document;
 use support::request::{request_file, without_oids_hashes_or_times};
 use support::sandbox::Sandbox;
-use support::tokens::{answer, grant_to};
+use support::token_table::TokenTable;
+use support::tokens::{answer, grant, token};
 
 fn requiring_a_session(sb: &Sandbox) -> String {
-    grant_to(
-        sb,
+    let held = token(1).expose();
+    sb.add_token(
         "claude",
-        1,
-        "require = [\"session\"]\n[[token.claude.grant]]\nallow = [\"task:create\"]\n",
-    )
+        TokenTable::valued(&held)
+            .require(&["session"])
+            .grant(grant(&["task:create"])),
+    );
+    held
 }
 
 fn sent(out: &std::process::Output) -> Value {

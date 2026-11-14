@@ -12,8 +12,7 @@ mod strict;
 mod token;
 mod write;
 
-pub use computed::ConfiguredCredentials;
-pub use file::{LoadedConfig, LuaConfigFile};
+pub use file::LuaConfigFile;
 
 #[cfg(test)]
 mod tests;

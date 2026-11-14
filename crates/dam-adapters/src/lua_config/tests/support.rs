@@ -3,12 +3,13 @@ use std::path::PathBuf;
 use std::collections::BTreeSet;
 
 use dam_application::{
-    Config, ConfigError, NewToken, Standing, TokenConfig, TokenName, TokenTerms,
+    Config, ConfigError, ConfigFile, LoadedConfig, NewToken, Standing, TokenConfig, TokenName,
+    TokenTerms,
 };
 use dam_domain::{Grant, Permission, Token};
 use tempfile::TempDir;
 
-use crate::lua_config::{LoadedConfig, LuaConfigFile};
+use crate::lua_config::LuaConfigFile;
 
 pub(super) struct Folder {
     _dir: TempDir,
@@ -58,13 +59,11 @@ impl Folder {
     }
 
     pub(super) fn loaded(&self) -> LoadedConfig {
-        self.file().load_with_credentials().unwrap()
+        self.file().load().unwrap()
     }
 
     pub(super) fn load(&self) -> Result<Config, ConfigError> {
-        self.file()
-            .load_with_credentials()
-            .map(|loaded| loaded.config)
+        self.file().load().map(|loaded| loaded.config)
     }
 
     pub(super) fn refusal(&self) -> String {

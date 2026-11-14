@@ -25,14 +25,9 @@ pub fn seeded_oids() -> Vec<String> {
 
 pub fn seeded() -> Sandbox {
     let sb = Sandbox::new();
-    let config = sb.dir.path().join("config.toml");
-    let mut text = std::fs::read_to_string(&config).unwrap();
-    text.push_str(
-        "\n[category.effort]\nvalues = [\"light\", \"deep\"]\nexclusive = true\n\
-         \n[category.context]\nvalues = [\"home\", \"errand\"]\n\
-         \n[filter.today]\nquery = \"due:today | overdue\"\n",
-    );
-    std::fs::write(&config, text).unwrap();
+    sb.add_category("effort", &["light", "deep"], true);
+    sb.add_category("context", &["home", "errand"], false);
+    sb.add_filter("today", "due:today | overdue");
     let store = SqliteStore::open(&sb.dir.path().join("dam.db")).unwrap();
     for object in mixed_rows() {
         store.put(&object).unwrap();

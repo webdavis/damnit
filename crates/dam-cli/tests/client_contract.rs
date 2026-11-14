@@ -8,12 +8,19 @@ fn a_machine_format_writes_nothing_to_stderr_but_the_document() {
     let _guard = support::guard("a_machine_format_writes_nothing_to_stderr_but_the_document");
     let sb = Sandbox::new();
     std::fs::set_permissions(
-        sb.dir.path().join("config.toml"),
+        sb.secrets_path(),
         std::os::unix::fs::PermissionsExt::from_mode(0o644),
     )
     .unwrap();
 
-    let added = sb.output(&["remote", "add", "second", "fake::", "--json"]);
+    let added = sb.output(&[
+        "token",
+        "create",
+        "second",
+        "--allow",
+        "task:read",
+        "--json",
+    ]);
     assert_eq!(added.status.code(), Some(0));
     assert_eq!(
         String::from_utf8_lossy(&added.stderr),
@@ -32,7 +39,7 @@ fn a_machine_format_writes_nothing_to_stderr_but_the_document() {
     assert!(said.contains("644"), "{said}");
     assert!(!said.contains('/'), "the advisory carries a path: {said}");
 
-    let quiet = sb.output(&["remote", "add", "third", "fake::", "--json"]);
+    let quiet = sb.output(&["token", "create", "third", "--allow", "task:read", "--json"]);
     let answer: serde_json::Value = serde_json::from_slice(&quiet.stdout).unwrap();
     assert_eq!(
         answer["warnings"],
@@ -40,7 +47,14 @@ fn a_machine_format_writes_nothing_to_stderr_but_the_document() {
         "an already-private config warns about nothing"
     );
 
-    let failed = sb.output(&["remote", "add", "second", "fake::", "--json"]);
+    let failed = sb.output(&[
+        "token",
+        "create",
+        "second",
+        "--allow",
+        "task:read",
+        "--json",
+    ]);
     let err = String::from_utf8_lossy(&failed.stderr);
     serde_json::from_str::<serde_json::Value>(&err)
         .unwrap_or_else(|e| panic!("stderr is not one JSON document: {e}\n{err}"));

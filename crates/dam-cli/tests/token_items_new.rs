@@ -14,7 +14,7 @@ fn a_tokens_new_task_answers_new_with_the_oid_it_will_have_and_waits() {
     let _guard =
         support::guard("a_tokens_new_task_answers_new_with_the_oid_it_will_have_and_waits");
     let sb = Sandbox::new();
-    let held = grant_to(&sb, "tool", 1, &grant("\"task:create\""));
+    let held = grant_to(&sb, "tool", 1, vec![grant(&["task:create"])]);
     let line = ["new", "Call the dentist", "--path", "inbox", "--json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     assert_eq!(sent["answer"], "new");
@@ -44,7 +44,7 @@ fn a_tokens_new_task_answers_new_with_the_oid_it_will_have_and_waits() {
 fn an_identical_resend_answers_duplicate_with_the_same_hash() {
     let _guard = support::guard("an_identical_resend_answers_duplicate_with_the_same_hash");
     let sb = Sandbox::new();
-    let held = grant_to(&sb, "tool", 1, &grant("\"task:create\""));
+    let held = grant_to(&sb, "tool", 1, vec![grant(&["task:create"])]);
     let line = ["new", "Call the dentist", "--json"];
     let first = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     let again = answer(&sb.output_holding(&held, &line), "sent.schema.json");
@@ -60,7 +60,7 @@ fn a_new_task_outside_the_grant_is_refused_and_nothing_waits() {
         &sb,
         "tool",
         1,
-        &format!("{}paths = [\"work\"]\n", grant("\"task:create\"")),
+        vec![grant(&["task:create"]).paths(&["work"])],
     );
     let home = ["new", "laundry", "--path", "home", "--json"];
     assert_eq!(refused(&sb.output_holding(&held, &home)), "not_permitted");

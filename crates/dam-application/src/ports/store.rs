@@ -18,14 +18,14 @@ impl RemoteName {
         if text.is_empty() {
             return Err(RemoteNameError::Empty);
         }
-        if !text.chars().all(is_a_toml_bare_key_character) {
+        if !text.chars().all(is_a_remote_name_character) {
             return Err(RemoteNameError::OutsideTheAlphabet(text.to_string()));
         }
         Ok(RemoteName(text.to_string()))
     }
 }
 
-fn is_a_toml_bare_key_character(c: char) -> bool {
+fn is_a_remote_name_character(c: char) -> bool {
     c.is_ascii_alphanumeric() || c == '-' || c == '_'
 }
 
@@ -140,7 +140,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn a_remote_name_is_a_toml_bare_key() {
+    fn a_remote_name_holds_only_letters_digits_hyphens_and_underscores() {
         assert_eq!(
             RemoteName::parse("to-do_1"),
             Ok(RemoteName("to-do_1".into()))

@@ -6,14 +6,9 @@ use support::sandbox::Sandbox;
 fn category_list_and_filter_list_print_what_config_declares() {
     let _guard = support::guard("category_list_and_filter_list_print_what_config_declares");
     let sb = Sandbox::new();
-    let config = sb.dir.path().join("config.toml");
-    let mut text = std::fs::read_to_string(&config).unwrap();
-    text.push_str(
-        "\n[category.effort]\nvalues = [\"light\", \"admin\", \"deep\"]\nexclusive = true\n\
-         \n[category.context]\nvalues = [\"home\", \"errand\"]\n\
-         \n[filter.today]\nquery = \"due:today | overdue\"\n",
-    );
-    std::fs::write(&config, text).unwrap();
+    sb.add_category("effort", &["light", "admin", "deep"], true);
+    sb.add_category("context", &["home", "errand"], false);
+    sb.add_filter("today", "due:today | overdue");
 
     let (ok, out, err) = sb.dam(&["category", "list", "--json"]);
     assert!(ok, "{err}");
@@ -65,10 +60,7 @@ fn an_empty_catalogue_is_an_empty_array() {
 fn the_catalogue_renders_as_a_toon_table_per_list() {
     let _guard = support::guard("the_catalogue_renders_as_a_toon_table_per_list");
     let sb = Sandbox::new();
-    let config = sb.dir.path().join("config.toml");
-    let mut text = std::fs::read_to_string(&config).unwrap();
-    text.push_str("\n[filter.today]\nquery = \"due:today\"\n");
-    std::fs::write(&config, text).unwrap();
+    sb.add_filter("today", "due:today");
 
     let (ok, out, err) = sb.dam(&["filter", "list", "--toon"]);
     assert!(ok, "{err}");
@@ -79,13 +71,8 @@ fn the_catalogue_renders_as_a_toon_table_per_list() {
 fn the_catalogue_answers_although_the_store_will_not_open() {
     let _guard = support::guard("the_catalogue_answers_although_the_store_will_not_open");
     let sb = Sandbox::new();
-    let config = sb.dir.path().join("config.toml");
-    let mut text = std::fs::read_to_string(&config).unwrap();
-    text.push_str(
-        "\n[category.effort]\nvalues = [\"deep\"]\nexclusive = true\n\
-         \n[filter.today]\nquery = \"due:today\"\n",
-    );
-    std::fs::write(&config, text).unwrap();
+    sb.add_category("effort", &["deep"], true);
+    sb.add_filter("today", "due:today");
 
     let a_directory_where_the_store_file_goes = sb.dir.path().join("dam.db");
     std::fs::create_dir(&a_directory_where_the_store_file_goes).unwrap();

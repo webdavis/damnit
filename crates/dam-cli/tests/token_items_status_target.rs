@@ -7,7 +7,7 @@ use support::tokens::{answer, grant, grant_to};
 fn rent_and_a_retitle_from_tool() -> (Sandbox, String, String) {
     let sb = Sandbox::new();
     let rent = full_oid(&sb, &sb.new_object(&["Pay rent"]));
-    let held = grant_to(&sb, "tool", 1, &grant("\"task:read\", \"task:change\""));
+    let held = grant_to(&sb, "tool", 1, vec![grant(&["task:read", "task:change"])]);
     let line = ["edit", &rent, "--subject", "Pay the rent", "--json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     (sb, rent, sent["hash"].as_str().unwrap().to_string())

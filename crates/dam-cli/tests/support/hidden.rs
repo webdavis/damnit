@@ -1,7 +1,7 @@
 use std::process::Output;
 
 use super::sandbox::Sandbox;
-use super::tokens::grant_to;
+use super::tokens::{grant, grant_to};
 
 pub struct Hidden {
     pub sb: Sandbox,
@@ -16,9 +16,16 @@ impl Hidden {
             &sb,
             "tool",
             1,
-            "[[token.tool.grant]]\n\
-             allow = [\"task:read\", \"task:change\", \"task:complete\", \"event:read\", \"event:change\"]\n\
-             paths = [\"work\"]\n",
+            vec![
+                grant(&[
+                    "task:read",
+                    "task:change",
+                    "task:complete",
+                    "event:read",
+                    "event:change",
+                ])
+                .paths(&["work"]),
+            ],
         );
         let report = full_oid(&sb, &sb.new_object(&["report", "--path", "work"]));
         Hidden { sb, held, report }

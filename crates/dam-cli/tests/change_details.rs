@@ -2,21 +2,19 @@ mod support;
 
 use serde_json::Value;
 use support::sandbox::Sandbox;
-use support::tokens::{answer, grant_to};
+use support::tokens::{answer, grant, grant_to};
 
 fn claude(sb: &Sandbox) -> String {
     grant_to(
         sb,
         "claude",
         1,
-        "[[token.claude.grant]]\nallow = [\"task:read\", \"task:create\", \"history:read\"]\n",
+        vec![grant(&["task:read", "task:create", "history:read"])],
     )
 }
 
-fn owned_by_stephen(sb: &Sandbox) {
-    let path = sb.dir.path().join("config.toml");
-    let config = std::fs::read_to_string(&path).unwrap();
-    std::fs::write(path, format!("owner = \"Stephen\"\n{config}")).unwrap();
+fn owned_by_ada(sb: &Sandbox) {
+    sb.set_owner("Ada");
 }
 
 fn json(out: &std::process::Output) -> Value {
@@ -75,7 +73,7 @@ fn a_commit_keeps_each_senders_details_and_names_the_owner_from_the_config() {
     let _guard =
         support::guard("a_commit_keeps_each_senders_details_and_names_the_owner_from_the_config");
     let sb = Sandbox::new();
-    owned_by_stephen(&sb);
+    owned_by_ada(&sb);
     let held = claude(&sb);
     let hash = sent_by_claude(&sb, &held);
     let mine = sb.new_object(&["Pay rent"]);
@@ -87,7 +85,7 @@ fn a_commit_keeps_each_senders_details_and_names_the_owner_from_the_config() {
     let changes = log["commits"][0]["changes"].as_array().unwrap();
     let by = |author: &str| changes.iter().find(|c| c["author"] == author).unwrap();
     assert_eq!(by("claude")["details"]["meta"]["session"], "s1");
-    assert_eq!(by("Stephen")["details"]["meta"]["harness"], "shell");
+    assert_eq!(by("Ada")["details"]["meta"]["harness"], "shell");
 }
 
 #[test]
@@ -128,7 +126,7 @@ fn a_token_reads_the_author_of_another_senders_change_but_not_its_details() {
         &sb,
         "auditor",
         2,
-        "[[token.auditor.grant]]\nallow = [\"task:read\", \"history:read\"]\n",
+        vec![grant(&["task:read", "history:read"])],
     );
     let theirs = json(&sb.output_holding(&reader, &["log", "--json"]));
     let change = &theirs["commits"][0]["changes"][0];

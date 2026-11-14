@@ -7,8 +7,8 @@ use support::errors::{error_document, kind_of};
 use support::sandbox::Sandbox;
 use support::schema::assert_matches_schema;
 
-fn config_of(sb: &Sandbox) -> String {
-    std::fs::read_to_string(sb.dir.path().join("config.toml")).unwrap()
+fn secrets_of(sb: &Sandbox) -> String {
+    std::fs::read_to_string(sb.secrets_path()).unwrap()
 }
 
 fn created(sb: &Sandbox, args: &[&str]) -> serde_json::Value {
@@ -22,11 +22,34 @@ fn created(sb: &Sandbox, args: &[&str]) -> serde_json::Value {
     answer
 }
 
+fn inserted_block(before: &str, after: &str) -> String {
+    let before: Vec<&str> = before.lines().collect();
+    let after: Vec<&str> = after.lines().collect();
+    let head = before
+        .iter()
+        .zip(&after)
+        .take_while(|(b, a)| b == a)
+        .count();
+    let tail = before[head..]
+        .iter()
+        .rev()
+        .zip(after[head..].iter().rev())
+        .take_while(|(b, a)| b == a)
+        .count();
+    assert_eq!(
+        head + tail,
+        before.len(),
+        "the old file is not the new file minus one inserted block:\n{}",
+        after.join("\n")
+    );
+    after[head..after.len() - tail].join("\n")
+}
+
 #[test]
 fn a_created_token_lets_its_holder_run_what_the_grant_allows() {
     let _guard = support::guard("a_created_token_lets_its_holder_run_what_the_grant_allows");
     let sb = Sandbox::new();
-    let before = config_of(&sb);
+    let before = secrets_of(&sb);
     let answer = created(
         &sb,
         &[
@@ -52,9 +75,10 @@ fn a_created_token_lets_its_holder_run_what_the_grant_allows() {
         serde_json::json!([{"allow": ["task:read", "event:read"], "paths": ["work/"],
                             "labels": null, "own": false, "remotes": null}])
     );
-    let after = config_of(&sb);
-    assert!(after.starts_with(&before), "{after}");
-    let mode = std::fs::metadata(sb.dir.path().join("config.toml"))
+    let after = secrets_of(&sb);
+    let inserted = inserted_block(&before, &after);
+    assert!(inserted.contains("tool"), "{inserted}");
+    let mode = std::fs::metadata(sb.secrets_path())
         .unwrap()
         .permissions()
         .mode();
@@ -67,8 +91,7 @@ fn a_created_token_lets_its_holder_run_what_the_grant_allows() {
 fn text_prints_the_token_alone_and_toon_carries_the_json_facts() {
     let _guard = support::guard("text_prints_the_token_alone_and_toon_carries_the_json_facts");
     let sb = Sandbox::new();
-    let config = sb.dir.path().join("config.toml");
-    std::fs::set_permissions(&config, std::fs::Permissions::from_mode(0o600)).unwrap();
+    std::fs::set_permissions(sb.secrets_path(), std::fs::Permissions::from_mode(0o600)).unwrap();
     let (ok, out, err) = sb.dam(&["token", "create", "a", "--allow", "task:read"]);
     assert!(ok, "{err}");
     assert_eq!(out.lines().count(), 1, "{out}");
@@ -94,7 +117,7 @@ fn a_taken_name_a_bad_name_and_a_bad_permission_change_nothing() {
     let _guard = support::guard("a_taken_name_a_bad_name_and_a_bad_permission_change_nothing");
     let sb = Sandbox::new();
     created(&sb, &["tool", "--allow", "task:read"]);
-    let before = config_of(&sb);
+    let before = secrets_of(&sb);
     let cases: [(&[&str], i32, &str, Option<&str>); 5] = [
         (
             &["tool", "--allow", "task:read"],
@@ -127,7 +150,7 @@ fn a_taken_name_a_bad_name_and_a_bad_permission_change_nothing() {
         assert_eq!(kind_of(&out), kind, "{args:?}");
         assert_eq!(error_document(&out)["error"]["rule"].as_str(), rule);
     }
-    assert_eq!(config_of(&sb), before);
+    assert_eq!(secrets_of(&sb), before);
 }
 
 #[test]
@@ -153,7 +176,7 @@ fn own_narrows_the_grant_to_what_the_token_made() {
     sb.new_object(&["diary"]);
     let answer = created(&sb, &["tool", "--allow", "task:read", "--own"]);
     assert_eq!(answer["grants"][0]["own"], true);
-    assert!(config_of(&sb).contains("own = true\n"));
+    assert!(secrets_of(&sb).contains("own = true"));
     let value = answer["value"].as_str().unwrap();
     let out = sb.output_holding(value, &["ls", "--json", "--no-pull"]);
     let listed: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();

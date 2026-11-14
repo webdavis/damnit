@@ -22,6 +22,7 @@ pub(crate) enum CliError {
     UseCase(UseCaseError),
     Editor(EditorError),
     Config(ConfigError),
+    ConfigNotLua(std::path::PathBuf),
     Open(OpenError),
     Usage(String),
     CommandLine(Misuse),
@@ -68,7 +69,8 @@ impl CliError {
             CliError::Editor(_) => KIND_OF_AN_EDITOR_FAILURE_NO_DOCUMENT_CARRIES,
             CliError::UseCase(UseCaseError::Parse(_))
             | CliError::UseCase(UseCaseError::Query(_))
-            | CliError::Config(_) => "parse",
+            | CliError::Config(_)
+            | CliError::ConfigNotLua(_) => "parse",
             CliError::Usage(_) | CliError::CommandLine(_) => KIND_USAGE,
             CliError::Cancelled => "cancelled",
             CliError::Internal(_) => "internal",
@@ -109,6 +111,11 @@ impl fmt::Display for CliError {
             CliError::UseCase(e) => write!(f, "{}", UseCaseText(e)),
             CliError::Editor(e) => write!(f, "editor: {}", e.0),
             CliError::Config(e) => write!(f, "{e}"),
+            CliError::ConfigNotLua(path) => write!(
+                f,
+                "config: {} does not end in .lua; the config is config.lua now",
+                path.display()
+            ),
             CliError::Open(e) => write!(f, "{e}"),
             CliError::Usage(text) | CliError::Io(text) | CliError::Internal(text) => {
                 f.write_str(text)

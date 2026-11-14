@@ -18,7 +18,7 @@ fn seeded_with_rent() -> (Sandbox, String, String) {
         &sb,
         "tool",
         1,
-        &grant("\"task:read\", \"task:create\", \"task:change\""),
+        vec![grant(&["task:read", "task:create", "task:change"])],
     );
     (sb, held, rent)
 }

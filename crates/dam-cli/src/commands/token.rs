@@ -16,7 +16,7 @@ pub(crate) fn run(
     now: Timestamp,
     args: TokenArgs,
 ) -> Result<Report, CliError> {
-    let config = file.load()?;
+    let config = file.load()?.config;
     match args.command {
         TokenCommand::Create(a) => create::run(file, &config, random, a),
         TokenCommand::List => list::run(&config, now),

@@ -48,7 +48,7 @@ fn different_ids_make_different_tasks() {
 fn the_owners_ids_are_kept_apart_from_a_tokens() {
     let _guard = support::guard("the_owners_ids_are_kept_apart_from_a_tokens");
     let sb = Sandbox::new();
-    let held = grant_to(&sb, "tool", 1, &grant("\"task:read\", \"task:create\""));
+    let held = grant_to(&sb, "tool", 1, vec![grant(&["task:read", "task:create"])]);
     let mine = owner_new(&sb, &["Call dentist", "--id", "dentist"]);
     let line = ["new", "Call the dentist", "--id", "dentist", "--json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");

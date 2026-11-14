@@ -21,7 +21,7 @@ fn add_all_leaves_a_rename_that_cannot_name_a_folder_waiting_and_takes_the_rest(
         &sb,
         "tool",
         1,
-        &grant("\"task:read\", \"task:change\", \"task:create\""),
+        vec![grant(&["task:read", "task:change", "task:create"])],
     );
     let line = ["edit", &parent, "--subject", ".", "--json"];
     let rename = answer(&sb.output_holding(&held, &line), "sent.schema.json");

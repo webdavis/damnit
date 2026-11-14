@@ -16,7 +16,7 @@ fn path_of(sb: &Sandbox, oid: &str) -> String {
 }
 
 fn renamed_by_tool(sb: &Sandbox, oid: &str, subject: &str) -> String {
-    let held = grant_to(sb, "tool", 1, &grant("\"task:read\", \"task:change\""));
+    let held = grant_to(sb, "tool", 1, vec![grant(&["task:read", "task:change"])]);
     let line = ["edit", oid, "--subject", subject, "--json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     sent["hash"].as_str().unwrap().to_string()

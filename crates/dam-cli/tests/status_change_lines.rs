@@ -54,7 +54,7 @@ fn a_waiting_change_keeps_its_hash_target_sender_and_age_on_the_minus_line() {
         support::guard("a_waiting_change_keeps_its_hash_target_sender_and_age_on_the_minus_line");
     let sb = Sandbox::new();
     let rent = full_oid(&sb, &sb.new_object(&["Pay rent"]));
-    let held = grant_to(&sb, "tool", 1, &grant("\"task:read\", \"task:change\""));
+    let held = grant_to(&sb, "tool", 1, vec![grant(&["task:read", "task:change"])]);
     let line = ["edit", &rent, "--subject", "Pay the rent", "--json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     let hash = &sent["hash"].as_str().unwrap()[..7];

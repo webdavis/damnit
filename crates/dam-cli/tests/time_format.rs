@@ -3,6 +3,7 @@ mod support;
 use serde_json::Value;
 use support::fixture::{self, CALL_MOM, OAT_MILK, OFFSITE, STANDUP, run, short};
 use support::sandbox::Sandbox;
+use support::token_table::TokenTable;
 
 const SMALLEST_EPOCH_SECOND_DAM_COULD_PRINT: i64 = 100_000_000;
 
@@ -177,9 +178,10 @@ fn a_conflict_prints_both_sides_times_as_rfc_3339_or_a_plain_date() {
 fn token_create_and_list_print_their_terms_as_rfc_3339() {
     let sb = Sandbox::new();
     let value = dam_domain::Token::generate(&mut |b: &mut [u8]| b.fill(7)).expose();
-    sb.add_config(&format!(
-        "\n[token.later]\nvalue = \"{value}\"\nnot_before = 2998-01-01T00:00:00+02:00\n"
-    ));
+    sb.add_token(
+        "later",
+        TokenTable::valued(&value).not_before("2998-01-01T00:00:00+02:00"),
+    );
     prints_times(
         &sb,
         &[

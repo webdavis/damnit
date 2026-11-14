@@ -1,7 +1,7 @@
 mod support;
 
 use support::hidden::{Hidden, text};
-use support::tokens::grant_to;
+use support::tokens::{grant, grant_to};
 
 fn without_ages(stdout: &[u8]) -> serde_json::Value {
     let mut status: serde_json::Value = serde_json::from_slice(stdout).unwrap();
@@ -62,7 +62,7 @@ fn another_senders_item_under_pending_read_hides_a_hidden_dependency() {
         &h.sb,
         "reader",
         2,
-        "[[token.reader.grant]]\nallow = [\"pending:read\"]\npaths = [\"work\"]\n",
+        vec![grant(&["pending:read"]).paths(&["work"])],
     );
     let sent = h.holding(&["edit", &h.report, "--subject", "the report"]);
     assert!(sent.status.success(), "{sent:?}");

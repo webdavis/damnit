@@ -1,7 +1,7 @@
 mod support;
 
 use support::hidden::{Hidden, text};
-use support::tokens::grant_to;
+use support::tokens::{grant, grant_to};
 
 const LINES: [&[&str]; 4] = [
     &["status"],
@@ -30,9 +30,7 @@ fn status_shows_a_path_restricted_token_only_the_staged_and_unstaged_rows_it_see
         &h.sb,
         "reader",
         2,
-        "[[token.reader.grant]]\n\
-         allow = [\"task:read\", \"stage:read\", \"working:read\"]\n\
-         paths = [\"work\"]\n",
+        vec![grant(&["task:read", "stage:read", "working:read"]).paths(&["work"])],
     );
     let diary = h.task("diary", "home");
     h.owner(&["add", &diary]);
@@ -62,11 +60,10 @@ fn full_status_under_whole_stage_and_working_reads_hides_a_hidden_dependency() {
         &h.sb,
         "reader",
         2,
-        "[[token.reader.grant]]\n\
-         allow = [\"stage:read\", \"working:read\"]\n\n\
-         [[token.reader.grant]]\n\
-         allow = [\"task:read\"]\n\
-         paths = [\"work\"]\n",
+        vec![
+            grant(&["stage:read", "working:read"]),
+            grant(&["task:read"]).paths(&["work"]),
+        ],
     );
     let diary = h.task("diary", "home");
     h.owner(&["add", &diary]);

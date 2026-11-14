@@ -11,9 +11,8 @@ fn listed_key_id(sb: &Sandbox) -> String {
     answer["tokens"][0]["key_id"].as_str().unwrap().to_string()
 }
 
-fn with_config_mode(sb: &Sandbox, mode: u32) {
-    let path = sb.dir.path().join("config.toml");
-    std::fs::set_permissions(path, std::fs::Permissions::from_mode(mode)).unwrap();
+fn with_secrets_mode(sb: &Sandbox, mode: u32) {
+    std::fs::set_permissions(sb.secrets_path(), std::fs::Permissions::from_mode(mode)).unwrap();
 }
 
 #[test]
@@ -22,7 +21,7 @@ fn token_create_names_the_token_and_key_id_on_stderr_and_prints_the_secret_alone
         "token_create_names_the_token_and_key_id_on_stderr_and_prints_the_secret_alone",
     );
     let sb = Sandbox::new();
-    with_config_mode(&sb, 0o600);
+    with_secrets_mode(&sb, 0o600);
     let (ok, out, err) = sb.dam(&["token", "create", "tool", "--allow", "task:read"]);
     assert!(ok, "{err}");
     let secret = out.strip_suffix('\n').unwrap();
@@ -42,7 +41,7 @@ fn token_create_names_the_token_and_key_id_on_stderr_and_prints_the_secret_alone
 fn token_create_prints_a_mode_warning_before_naming_the_token() {
     let _guard = support::guard("token_create_prints_a_mode_warning_before_naming_the_token");
     let sb = Sandbox::new();
-    with_config_mode(&sb, 0o644);
+    with_secrets_mode(&sb, 0o644);
     let (ok, _, err) = sb.dam(&["token", "create", "tool", "--allow", "task:read"]);
     assert!(ok, "{err}");
     let lines: Vec<&str> = err.lines().collect();

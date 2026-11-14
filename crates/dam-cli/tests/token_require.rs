@@ -2,15 +2,18 @@ mod support;
 
 use support::errors::error_document;
 use support::sandbox::Sandbox;
-use support::tokens::grant_to;
+use support::token_table::TokenTable;
+use support::tokens::{grant, token};
 
 fn requiring_session_and_model(sb: &Sandbox) -> String {
-    grant_to(
-        sb,
+    let held = token(1).expose();
+    sb.add_token(
         "claude",
-        1,
-        "require = [\"session\", \"model\"]\n[[token.claude.grant]]\nallow = [\"task:read\"]\n",
-    )
+        TokenTable::valued(&held)
+            .require(&["session", "model"])
+            .grant(grant(&["task:read"])),
+    );
+    held
 }
 
 #[test]

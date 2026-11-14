@@ -3,19 +3,20 @@ use dam_domain::Token;
 use super::errors::error_document;
 use super::sandbox::Sandbox;
 use super::schema::assert_matches_schema;
+use super::token_table::{Grant, TokenTable};
 
 pub fn token(fill: u8) -> Token {
     Token::generate(&mut |b: &mut [u8]| b.fill(fill))
 }
 
-pub fn grant_to(sb: &Sandbox, name: &str, fill: u8, grants: &str) -> String {
+pub fn grant_to(sb: &Sandbox, name: &str, fill: u8, grants: Vec<Grant>) -> String {
     let held = token(fill).expose();
-    sb.add_config(&format!("[token.{name}]\nvalue = \"{held}\"\n{grants}"));
+    sb.add_token(name, TokenTable::valued(&held).grants(grants));
     held
 }
 
-pub fn grant(allow: &str) -> String {
-    format!("[[token.tool.grant]]\nallow = [{allow}]\n")
+pub fn grant(allow: &[&str]) -> Grant {
+    Grant::allowing(allow)
 }
 
 pub fn answer(out: &std::process::Output, schema_file: &str) -> serde_json::Value {

@@ -14,7 +14,7 @@ mod view;
 
 use std::path::Path;
 
-use dam_adapters::{Interrupt, OsRandom, SystemClock, TomlConfigFile};
+use dam_adapters::{Interrupt, LuaConfigFile, OsRandom, SystemClock};
 use dam_application::{Clock, ConfigFile};
 
 use crate::args::{Cli, Command};
@@ -74,7 +74,10 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         ));
     }
     let config_path = cli.config.unwrap_or_else(dam_adapters::default_config_path);
-    let config_file = TomlConfigFile::new(config_path.clone());
+    if config_path.extension().is_none_or(|e| e != "lua") {
+        return Err(CliError::ConfigNotLua(config_path));
+    }
+    let config_file = LuaConfigFile::new(config_path.clone());
     let presented_token = std::env::var_os(TOKEN_VARIABLE);
     let meta = cli.meta.into_iter().collect();
     gate::refuse_any_token_to_an_owner_only_verb(presented_token.is_some(), &cli.command)?;
@@ -89,7 +92,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         );
     }
     if let Command::Category(_) | Command::Filter(_) = cli.command {
-        let config = config_file.load()?;
+        let config = config_file.load()?.config;
         let now = SystemClock.now();
         let access = caller(
             authenticated(&config, presented_token, now, &meta)?,
@@ -114,7 +117,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     output::print(format, color, &report)
 }
 
-fn create_the_owners_config_when_missing(file: &TomlConfigFile, path: &Path, format: Format) {
+fn create_the_owners_config_when_missing(file: &LuaConfigFile, path: &Path, format: Format) {
     let said = match file.create_if_missing() {
         Ok(false) => return,
         Ok(true) => format!(

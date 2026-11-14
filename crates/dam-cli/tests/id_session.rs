@@ -17,7 +17,7 @@ fn the_same_id_from_another_session_names_another_task() {
         &sb,
         "tool",
         1,
-        &grant("\"task:read\", \"task:create\", \"task:change\""),
+        vec![grant(&["task:read", "task:create", "task:change"])],
     );
     let first = send(&sb, &held, "Fix the build", "a");
     let other = send(&sb, &held, "Fix the build", "b");

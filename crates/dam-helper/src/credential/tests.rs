@@ -10,7 +10,7 @@ fn the_token_is_read_under_the_remotes_own_name() {
     let err = credential("todoist", "api_token", lookup).unwrap_err();
     assert_eq!(
         err,
-        "DAM_TODOIST_API_TOKEN is not set; declare api_token under [remote.todoist]"
+        "DAM_TODOIST_API_TOKEN is not set; declare api_token under remote.todoist in secrets.lua"
     );
 }
 
@@ -26,6 +26,6 @@ fn a_missing_credential_names_its_variable_and_its_config_key() {
     let said = credential("half", "refresh_token", lookup).unwrap_err();
     assert_eq!(
         said,
-        "DAM_HALF_REFRESH_TOKEN is not set; declare refresh_token under [remote.half]"
+        "DAM_HALF_REFRESH_TOKEN is not set; declare refresh_token under remote.half in secrets.lua"
     );
 }

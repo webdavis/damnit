@@ -2,9 +2,7 @@ use std::collections::BTreeMap;
 use std::ffi::OsString;
 use std::path::Path;
 
-use dam_adapters::{
-    Interrupt, OsRandom, ProcessCredentialSource, ProcessLauncher, SqliteStore, SystemClock,
-};
+use dam_adapters::{Interrupt, OsRandom, ProcessLauncher, SqliteStore, SystemClock};
 use dam_application::{
     Access, Clock, Config, ConfigFile, CredentialSource, Dam, HelperLauncher, Randomness, Remotes,
     Store,
@@ -41,7 +39,8 @@ impl Context {
         no_pull: bool,
         interrupt: &Interrupt,
     ) -> Result<Context, CliError> {
-        let config = config_file.load()?;
+        let loaded = config_file.load()?;
+        let config = loaded.config;
         let now = SystemClock.now();
         let holder = authenticated(&config, presented_token, now, meta)?;
         let store = SqliteStore::open(store_path)?;
@@ -57,7 +56,7 @@ impl Context {
             clock: Box::new(SystemClock),
             random: Box::new(OsRandom),
             launcher: Box::new(ProcessLauncher::from_env(interrupt.clone())),
-            credentials: Box::new(ProcessCredentialSource::from_env()),
+            credentials: loaded.credentials,
             editor,
             prompt,
             tz: jiff::tz::TimeZone::system(),

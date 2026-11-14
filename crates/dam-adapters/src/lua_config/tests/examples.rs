@@ -7,6 +7,7 @@ use super::support::config;
 use crate::lua_config::LuaConfigFile;
 use crate::lua_config::evaluate::{ErrorText, evaluate, read_text};
 use crate::lua_config::shape::{list, text};
+use dam_application::ConfigFile;
 
 fn docs() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs")
@@ -60,7 +61,7 @@ fn schema_errors(example: &str, schema_name: &str) -> Vec<String> {
 #[test]
 fn the_example_files_load() {
     let config = LuaConfigFile::new(docs().join("examples/config.lua"))
-        .load_with_credentials()
+        .load()
         .unwrap()
         .config;
     assert_eq!(config.owner.as_deref(), Some("Ada"));

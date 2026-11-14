@@ -3,6 +3,7 @@ mod support;
 use dam_domain::Token;
 use support::errors::error_document;
 use support::sandbox::Sandbox;
+use support::token_table::{Grant, TokenTable};
 
 #[test]
 fn a_token_reads_only_what_its_grants_cover_and_nothing_hints_at_the_rest() {
@@ -10,9 +11,10 @@ fn a_token_reads_only_what_its_grants_cover_and_nothing_hints_at_the_rest() {
         support::guard("a_token_reads_only_what_its_grants_cover_and_nothing_hints_at_the_rest");
     let sb = Sandbox::new();
     let held = Token::generate(&mut |b: &mut [u8]| b.fill(1)).expose();
-    sb.add_config(&format!(
-        "[token.tool]\nvalue = \"{held}\"\n[[token.tool.grant]]\nallow = [\"task:read\"]\npaths = [\"work\"]\n"
-    ));
+    sb.add_token(
+        "tool",
+        TokenTable::valued(&held).grant(Grant::allowing(&["task:read"]).paths(&["work"])),
+    );
     sb.new_object(&["report", "--path", "work"]);
     let hidden = sb.new_object(&["diary", "--path", "home"]);
 
@@ -31,11 +33,19 @@ fn a_token_reads_only_what_its_grants_cover_and_nothing_hints_at_the_rest() {
 
 fn work_only_reader(sb: &Sandbox) -> String {
     let held = Token::generate(&mut |b: &mut [u8]| b.fill(2)).expose();
-    sb.add_config(&format!(
-        "[token.reader]\nvalue = \"{held}\"\n[[token.reader.grant]]\n\
-         allow = [\"task:read\", \"event:read\", \"working:read\", \"stage:read\", \"history:read\"]\n\
-         paths = [\"work\"]\n"
-    ));
+    sb.add_token(
+        "reader",
+        TokenTable::valued(&held).grant(
+            Grant::allowing(&[
+                "task:read",
+                "event:read",
+                "working:read",
+                "stage:read",
+                "history:read",
+            ])
+            .paths(&["work"]),
+        ),
+    );
     held
 }
 
