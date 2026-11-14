@@ -19,19 +19,21 @@ fn rate_limited_push(after_the_first: bool) -> (Sandbox, std::process::Output) {
 }
 
 #[test]
-fn a_rate_limit_after_the_first_answer_reads_as_any_rate_limit_and_keeps_that_answer() {
-    let _guard = support::guard(
-        "a_rate_limit_after_the_first_answer_reads_as_any_rate_limit_and_keeps_that_answer",
-    );
+fn a_rate_limit_after_the_first_answer_adds_the_counts_and_keeps_that_answer() {
+    let _guard =
+        support::guard("a_rate_limit_after_the_first_answer_adds_the_counts_and_keeps_that_answer");
     let (_, refused_whole) = rate_limited_push(false);
     let (sb, stopped_partway) = rate_limited_push(true);
 
     assert_eq!(stopped_partway.status.code(), refused_whole.status.code());
     assert_ne!(stopped_partway.status.code(), Some(0));
     assert_eq!(stopped_partway.stdout, refused_whole.stdout);
-    assert_eq!(stopped_partway.stderr, refused_whole.stderr);
-    let said = String::from_utf8_lossy(&stopped_partway.stderr);
-    assert!(said.contains("retry after 42s"), "{said}");
+    let whole = String::from_utf8_lossy(&refused_whole.stderr);
+    assert_eq!(
+        String::from_utf8_lossy(&stopped_partway.stderr),
+        whole.replace('\n', "; 1 kept, 1 unanswered\n")
+    );
+    assert!(whole.contains("retry after 42s"), "{whole}");
 
     let (ok, out, err) = sb.dam(&["push"]);
     assert!(ok, "{err}");

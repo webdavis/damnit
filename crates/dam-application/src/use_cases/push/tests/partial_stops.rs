@@ -50,7 +50,14 @@ fn a_stop_on_the_first_call_keeps_what_the_helper_answered_before_it() {
         .push(remotes_launched_by(&stopping), None)
         .unwrap_err();
 
-    assert_eq!(err, UseCaseError::Helper(rate_limited()));
+    assert_eq!(
+        err,
+        UseCaseError::PushStopped {
+            by: rate_limited(),
+            kept: 1,
+            unanswered: 2,
+        }
+    );
     assert_eq!(first.borrow()[0].oid, oid(1));
     let mapped = s.store.remote_id(&todoist(), &oid(1)).unwrap();
     assert_eq!(mapped.as_deref(), Some("r1"));

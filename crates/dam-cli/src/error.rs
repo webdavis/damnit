@@ -1,7 +1,7 @@
 use std::fmt;
 
 use dam_adapters::OpenError;
-use dam_application::{ConfigError, Refusal, UseCaseError};
+use dam_application::{ConfigError, HelperError, Refusal, UseCaseError};
 
 use crate::editor::EditorError;
 
@@ -57,7 +57,11 @@ impl CliError {
             | CliError::UseCase(UseCaseError::Refused(Refusal::AmbiguousPrefix { .. }))
             | CliError::UseCase(UseCaseError::NotAnOid(_))
             | CliError::UseCase(UseCaseError::Query(_)) => EXIT_USAGE_AS_CLAP_EXITS,
-            CliError::Cancelled => EXIT_CANCELLED,
+            CliError::Cancelled
+            | CliError::UseCase(UseCaseError::PushStopped {
+                by: HelperError::Cancelled,
+                ..
+            }) => EXIT_CANCELLED,
             CliError::UseCase(UseCaseError::Refused(Refusal::Token(_))) => EXIT_TOKEN_REFUSED,
             CliError::UseCase(UseCaseError::Refused(_)) => EXIT_REFUSED_BY_A_RULE,
             _ => EXIT_FAILED,
@@ -78,7 +82,13 @@ impl CliError {
                 | ConfigError::ReadOnly { .. },
             )
             | CliError::ConfigCheck(ConfigError::Unreadable { .. }) => "store",
-            CliError::UseCase(UseCaseError::Helper(_)) => "helper",
+            CliError::UseCase(UseCaseError::PushStopped {
+                by: HelperError::Cancelled,
+                ..
+            }) => "cancelled",
+            CliError::UseCase(UseCaseError::Helper(_) | UseCaseError::PushStopped { .. }) => {
+                "helper"
+            }
             CliError::UseCase(UseCaseError::Credential(_)) => "credential",
             CliError::Editor(_) => KIND_OF_AN_EDITOR_FAILURE_NO_DOCUMENT_CARRIES,
             CliError::UseCase(UseCaseError::Parse(_))

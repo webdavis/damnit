@@ -22,6 +22,12 @@ while IFS= read -r line; do
       printf '{"objects":[%s],"removed":[],"sync":null}\n' "$objects" ;;
     *'"push"'*)
       printf '%s\n' "$line" >> "$PUSH_LOG"
+      if [ -e "${HANG_NEXT_PUSH:-}" ]; then
+        answer="$(cat "$HANG_NEXT_PUSH")"; rm "$HANG_NEXT_PUSH"
+        first="$(printf '%s' "$line" | jq -c '.mutations[0].oid')"
+        if [ "$answer" = partial ]; then printf '{"early_answer":{"oid":%s,"ok":true,"remote_id":"r1"}}\n' "$first"; fi
+        touch "$HANG_NEXT_PUSH.hung"; exec sleep 30
+      fi
       if [ -e "${RATE_LIMIT_NEXT_PUSH:-}" ]; then
         answer="$(cat "$RATE_LIMIT_NEXT_PUSH")"; rm "$RATE_LIMIT_NEXT_PUSH"
         stop='"fake is rate limiting this account; retry after 42s"'

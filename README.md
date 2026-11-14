@@ -51,7 +51,8 @@ you, and only when you run the command without `DAM_TOKEN`.
 started leaves a notice in `dam status`, and the read still answers. `deadline` (default `"60s"`)
 is the longest the helper may stay silent; past it `dam` kills the helper and exits 1. A pull
 answers at once, so the deadline bounds the whole pull. Ctrl-C kills the helper and exits 3. A push
-cut short keeps what the remote already answered and sends the rest on the next push.
+cut short keeps what the remote already answered, says how many it kept and left unanswered, and
+sends the rest on the next push.
 
     dam pull
 

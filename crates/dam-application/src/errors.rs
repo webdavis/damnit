@@ -75,6 +75,11 @@ pub enum UseCaseError {
     Refused(Refusal),
     Store(StoreError),
     Helper(HelperError),
+    PushStopped {
+        by: HelperError,
+        kept: usize,
+        unanswered: usize,
+    },
     Credential(CredentialError),
     Parse(String),
     Query(QueryError),

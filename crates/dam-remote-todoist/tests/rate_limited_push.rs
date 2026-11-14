@@ -28,7 +28,12 @@ fn what_landed_before_a_rate_limit_is_kept_and_each_task_lands_once() {
             .dam()
             .push(remotes_launched_by(&launcher), None)
             .unwrap_err();
-        let UseCaseError::Helper(HelperError::Remote(why)) = stop else {
+        let UseCaseError::PushStopped {
+            by: HelperError::Remote(why),
+            kept: 1,
+            unanswered: 2,
+        } = stop
+        else {
             panic!("{stop:?}");
         };
         assert!(why.contains("retry after 42s"), "{why}");
