@@ -1,5 +1,5 @@
 use dam_domain::{Date, Object, When};
-use dam_toml::{Place, StrictTable};
+use dam_toml::StrictTable;
 use toml::Table;
 
 const KEYS_A_TASK_TEMPLATE_MAY_CARRY: [&str; 9] = [
@@ -33,7 +33,7 @@ pub(super) fn template_reader<'a>(
         Object::Task(_) => &KEYS_A_TASK_TEMPLATE_MAY_CARRY,
         Object::Event(_) => &KEYS_AN_EVENT_TEMPLATE_MAY_CARRY,
     };
-    StrictTable::new(text, table, Place::Line, known)
+    StrictTable::new(text, table, known)
 }
 
 pub(super) fn when(

@@ -12,7 +12,7 @@ fn an_offset_inside_a_multibyte_character_still_names_a_line() {
 fn a_quoted_key_is_refused_without_a_line_number_rather_than_line_zero() {
     let text = "\"subject\" = 1\n";
     let table = parse_toml(text).unwrap();
-    let reader = StrictTable::new(text, &table, Place::Line, &["subject"]).unwrap();
+    let reader = StrictTable::new(text, &table, &["subject"]).unwrap();
     assert_eq!(
         reader.string("subject").unwrap_err(),
         "subject must be a string"
@@ -23,7 +23,7 @@ fn a_quoted_key_is_refused_without_a_line_number_rather_than_line_zero() {
 fn a_bare_key_is_refused_with_its_line() {
     let text = "body = \"\"\nsubject = 1\n";
     let table = parse_toml(text).unwrap();
-    let reader = StrictTable::new(text, &table, Place::Line, &["body", "subject"]).unwrap();
+    let reader = StrictTable::new(text, &table, &["body", "subject"]).unwrap();
     assert_eq!(
         reader.string("subject").unwrap_err(),
         "line 2: subject must be a string"
