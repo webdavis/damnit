@@ -15,7 +15,8 @@ something `dam` no longer believes.
 
 A retry sends a synthetic update built from the committed view, except where an unpushed commit
 already covers that oid. A coalesced commit change already ends at the committed state, so leaving
-it in place resends exactly what the synthetic one would have.
+it in place resends exactly what the synthetic one would have. An object removed since the failed
+attempt is resent as a removal.
 
 ## Consequence
 
