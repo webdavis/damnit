@@ -12,14 +12,14 @@ use crate::map::{RemoteId, Tree};
 
 pub struct Plan {
     pub commands: Vec<Command>,
-    pub changes: TreeChange,
+    pub changes: Vec<TreeChange>,
     pub refused: Option<String>,
 }
 
 pub enum TreeChange {
-    Nothing,
     Creates(Shape),
     MovesItem { id: String, to: ItemPlace },
+    Renames { renamed: RemoteId, name: String },
     Removes(RemoteId),
 }
 
@@ -106,7 +106,7 @@ fn create_plan(
     }
     Ok(Plan {
         commands,
-        changes: TreeChange::Creates(shape),
+        changes: vec![TreeChange::Creates(shape)],
         refused: None,
     })
 }

@@ -18,7 +18,7 @@ pub fn removal_plan(tree: &Tree, m: &Mutation, remote: RemoteId) -> Result<Plan,
     };
     Ok(Plan {
         commands: vec![command(verb, numbered(m, 0)?, args([("id", id.into())]))],
-        changes: TreeChange::Removes(remote),
+        changes: vec![TreeChange::Removes(remote)],
         refused: None,
     })
 }

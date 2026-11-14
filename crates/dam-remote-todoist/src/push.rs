@@ -77,21 +77,23 @@ fn apply(
         true => None,
         false => Some(send_every_command(api, &plan.commands)?),
     };
+    let mut created = None;
+    for change in plan.changes {
+        match change {
+            TreeChange::Creates(shape) => created = Some(shape),
+            TreeChange::MovesItem { id, to } => {
+                let (section, parent) = (to.section_id.as_deref(), to.parent_id.as_deref());
+                tree.move_item(&id, &to.project_id, section, parent);
+            }
+            TreeChange::Renames { renamed, name } => tree.rename(&renamed, &name),
+            TreeChange::Removes(gone) => tree.remove(&gone),
+        }
+    }
     if let Some(why) = plan.refused {
         return Err(Failure::OnlyThisMutation(why));
     }
-    let shape = match plan.changes {
-        TreeChange::Creates(shape) => shape,
-        TreeChange::MovesItem { id, to } => {
-            let (section, parent) = (to.section_id.as_deref(), to.parent_id.as_deref());
-            tree.move_item(&id, &to.project_id, section, parent);
-            return Ok(m.remote_id.clone());
-        }
-        TreeChange::Removes(gone) => {
-            tree.remove(&gone);
-            return Ok(m.remote_id.clone());
-        }
-        TreeChange::Nothing => return Ok(m.remote_id.clone()),
+    let Some(shape) = created else {
+        return Ok(m.remote_id.clone());
     };
     let object = m.object.as_ref().ok_or(missing_object("create"))?;
     let id = written

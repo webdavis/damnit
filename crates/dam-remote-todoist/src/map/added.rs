@@ -16,6 +16,28 @@ impl AddedThisPush {
         self.section_by_path.retain(|_, kept| kept != id);
         self.item_by_place_and_content.retain(|_, kept| kept != id);
     }
+
+    pub(super) fn moved_from_to(&mut self, was: &str, now: &str) {
+        let moved = |path: String| match path.strip_prefix(was) {
+            Some(rest) => format!("{now}{rest}"),
+            None => path,
+        };
+        self.project_by_path = self
+            .project_by_path
+            .drain()
+            .map(|(p, id)| (moved(p), id))
+            .collect();
+        self.section_by_path = self
+            .section_by_path
+            .drain()
+            .map(|(p, id)| (moved(p), id))
+            .collect();
+        self.item_by_place_and_content = self
+            .item_by_place_and_content
+            .drain()
+            .map(|((place, content), id)| ((moved(place), content), id))
+            .collect();
+    }
 }
 
 impl Tree {
