@@ -1,6 +1,6 @@
 use crate::config::{CredentialSpec, RemoteConfig};
 use crate::ports::RemoteName;
-use crate::remote::{MutationOutcome, PullOutcome, RemoteCapabilities, RemoteMutation};
+use crate::remote::{PullOutcome, PushOutcome, RemoteCapabilities, RemoteMutation};
 use crate::secret::Secret;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -32,8 +32,7 @@ pub enum HelperError {
 pub trait RemoteHelper: std::fmt::Debug {
     fn capabilities(&mut self) -> Result<RemoteCapabilities, HelperError>;
     fn pull(&mut self, since: Option<&str>) -> Result<PullOutcome, HelperError>;
-    fn push(&mut self, mutations: Vec<RemoteMutation>)
-    -> Result<Vec<MutationOutcome>, HelperError>;
+    fn push(&mut self, mutations: Vec<RemoteMutation>) -> Result<PushOutcome, HelperError>;
 }
 
 pub trait HelperLauncher {

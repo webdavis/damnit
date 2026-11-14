@@ -1,5 +1,7 @@
 use dam_domain::{Field, Kind, Object, Oid};
 
+use crate::ports::HelperError;
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RemoteCapabilities {
     pub kinds: Vec<Kind>,
@@ -31,6 +33,12 @@ pub struct RemoteMutation {
 pub struct MutationOutcome {
     pub oid: Oid,
     pub verdict: MutationVerdict,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct PushOutcome {
+    pub outcomes: Vec<MutationOutcome>,
+    pub stopped_by: Option<HelperError>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

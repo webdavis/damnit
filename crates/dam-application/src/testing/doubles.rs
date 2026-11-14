@@ -7,7 +7,7 @@ use crate::config::{CredentialSpec, RemoteConfig};
 use crate::ports::{
     Clock, CredentialError, CredentialSource, HelperError, HelperLauncher, Randomness, RemoteHelper,
 };
-use crate::remote::{MutationOutcome, PullOutcome, RemoteCapabilities, RemoteMutation};
+use crate::remote::{PullOutcome, PushOutcome, RemoteCapabilities, RemoteMutation};
 use crate::secret::Secret;
 
 pub fn oid(byte: u8) -> Oid {
@@ -51,7 +51,7 @@ impl Clock for FixedClock {
     }
 }
 
-type PushAnswer = Box<dyn Fn(&[RemoteMutation]) -> Result<Vec<MutationOutcome>, HelperError>>;
+type PushAnswer = Box<dyn Fn(&[RemoteMutation]) -> Result<PushOutcome, HelperError>>;
 type LaunchedWith = Rc<RefCell<Vec<Vec<(String, Secret)>>>>;
 
 pub struct ScriptedHelper {
@@ -78,13 +78,10 @@ impl RemoteHelper for ScriptedHelper {
             .push(since.map(|s| s.to_string()));
         self.pull_answer.clone()
     }
-    fn push(
-        &mut self,
-        mutations: Vec<RemoteMutation>,
-    ) -> Result<Vec<MutationOutcome>, HelperError> {
-        let outcomes = (self.push_answer)(&mutations)?;
+    fn push(&mut self, mutations: Vec<RemoteMutation>) -> Result<PushOutcome, HelperError> {
+        let answer = (self.push_answer)(&mutations)?;
         self.pushed.borrow_mut().extend(mutations);
-        Ok(outcomes)
+        Ok(answer)
     }
 }
 
