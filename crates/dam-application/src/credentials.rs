@@ -1,6 +1,6 @@
 use crate::config::RemoteConfig;
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::CredentialSource;
+use crate::ports::{ComputeFailure, CredentialError, CredentialSource};
 use crate::secret::Secret;
 
 pub fn resolve_credentials(
@@ -21,6 +21,25 @@ pub fn resolve_credentials(
         out.push((name.clone(), source.resolve(spec)?));
     }
     Ok(out)
+}
+
+impl UseCaseError {
+    pub(crate) fn withholding_what_credential_code_raised(self) -> UseCaseError {
+        match self {
+            UseCaseError::Credential(CredentialError::ComputeFailed {
+                remote,
+                name,
+                at,
+                why: ComputeFailure::Raised { .. },
+            }) => UseCaseError::Credential(CredentialError::ComputeFailed {
+                remote,
+                name,
+                at,
+                why: ComputeFailure::Raised { message: None },
+            }),
+            other => other,
+        }
+    }
 }
 
 #[cfg(test)]

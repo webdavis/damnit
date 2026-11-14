@@ -1,7 +1,7 @@
 use std::fmt;
 
 use dam_application::{
-    CredentialError, HelperError, SHORTEST_OID_PREFIX, StoreError, UseCaseError,
+    ComputeFailure, CredentialError, HelperError, SHORTEST_OID_PREFIX, StoreError, UseCaseError,
 };
 
 use super::refusal_text::RefusalText;
@@ -72,8 +72,27 @@ impl fmt::Display for UseCaseText<'_> {
             UseCaseError::Credential(CredentialError::Missing(n)) => {
                 write!(f, "credential {n} has no source")
             }
-            UseCaseError::Credential(CredentialError::ComputeFailed { remote, name, why }) => {
-                write!(f, "remote {}: computing {name} failed: {why}", remote.0)
+            UseCaseError::Credential(CredentialError::ComputeFailed {
+                remote,
+                name,
+                at,
+                why,
+            }) => {
+                write!(f, "remote {}: computing {name} failed at {at}: ", remote.0)?;
+                match why {
+                    ComputeFailure::Raised { message: Some(m) } => f.write_str(m),
+                    ComputeFailure::Raised { message: None } => write!(
+                        f,
+                        "its function raised an error, which the owner sees by running dam pull {}",
+                        remote.0
+                    ),
+                    ComputeFailure::ReturnedNonUtf8 => {
+                        f.write_str("its function returned a string that is not valid UTF-8")
+                    }
+                    ComputeFailure::ReturnedNotAString { returned } => {
+                        write!(f, "its function returned {returned}, not a string")
+                    }
+                }
             }
             UseCaseError::Parse(s) => write!(f, "{s}"),
             UseCaseError::Query(e) => write!(f, "{e}"),

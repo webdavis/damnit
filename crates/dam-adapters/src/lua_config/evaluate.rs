@@ -64,11 +64,7 @@ fn naming_the_whole_path(path: &Path, short_name: &str, error: &mlua::Error) -> 
     located_by_the_whole_path(path, short_name, &message).unwrap_or(message)
 }
 
-pub(super) fn located_by_the_whole_path(
-    path: &Path,
-    short_name: &str,
-    message: &str,
-) -> Option<String> {
+fn located_by_the_whole_path(path: &Path, short_name: &str, message: &str) -> Option<String> {
     let line_and_reason = message.strip_prefix(short_name)?;
     line_and_reason
         .starts_with(':')
@@ -83,15 +79,21 @@ pub(super) fn described(value: &Value) -> String {
     }
 }
 
+pub(super) fn line_and_reason<'a>(
+    short_name: &str,
+    message: &'a str,
+) -> Option<(&'a str, &'a str)> {
+    let (line, reason) = message
+        .strip_prefix(short_name)?
+        .strip_prefix(':')?
+        .split_once(':')?;
+    (!line.is_empty() && line.bytes().all(|b| b.is_ascii_digit()))
+        .then(|| (line, reason.trim_start()))
+}
+
 fn only_where_it_stopped(path: &Path, short_name: &str, error: &mlua::Error) -> String {
     let message = lua_message(error);
-    let line = message
-        .strip_prefix(short_name)
-        .and_then(|rest| rest.strip_prefix(':'))
-        .and_then(|rest| rest.split_once(':'))
-        .map(|(line, _)| line)
-        .filter(|line| !line.is_empty() && line.bytes().all(|b| b.is_ascii_digit()));
-    match line {
+    match line_and_reason(short_name, &message).map(|(line, _)| line) {
         Some(line) => format!("{}:{line}: loading stopped at an error", path.display()),
         None => format!("{}: loading stopped at an error", path.display()),
     }
