@@ -1,77 +1,7 @@
 use super::Base;
-use crate::vocabulary::vocabulary;
 use crate::{Oid, When};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum EventStatus {
-    Confirmed,
-    Tentative,
-    Cancelled,
-}
-
-vocabulary!(EventStatus {
-    Confirmed => "confirmed",
-    Tentative => "tentative",
-    Cancelled => "cancelled",
-});
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum Transparency {
-    Busy,
-    Free,
-}
-
-vocabulary!(Transparency {
-    Busy => "busy",
-    Free => "free",
-});
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum Visibility {
-    Default,
-    Public,
-    Private,
-    Confidential,
-}
-
-vocabulary!(Visibility {
-    Default => "default",
-    Public => "public",
-    Private => "private",
-    Confidential => "confidential",
-});
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum EventType {
-    Default,
-    FocusTime,
-    OutOfOffice,
-    WorkingLocation,
-    Birthday,
-}
-
-vocabulary!(EventType {
-    Default => "default",
-    FocusTime => "focus_time",
-    OutOfOffice => "out_of_office",
-    WorkingLocation => "working_location",
-    Birthday => "birthday",
-});
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum ResponseStatus {
-    NeedsAction,
-    Accepted,
-    Declined,
-    Tentative,
-}
-
-vocabulary!(ResponseStatus {
-    NeedsAction => "needs_action",
-    Accepted => "accepted",
-    Declined => "declined",
-    Tentative => "tentative",
-});
+pub use vocabulary::{EventStatus, EventType, ResponseStatus, Transparency, Visibility};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Attendee {
@@ -152,6 +82,8 @@ impl Event {
                 .any(|a| a.is_self && a.response == ResponseStatus::Declined)
     }
 }
+
+mod vocabulary;
 
 #[cfg(test)]
 mod tests;
