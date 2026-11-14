@@ -36,7 +36,7 @@ impl Removals {
         let held_under = self
             .upstream
             .iter()
-            .filter(|(_, path)| path.is_within(folder))
+            .filter(|(_, held)| held.path.is_within(folder))
             .map(|(oid, _)| oid);
         let landing_under = unsent
             .landings
@@ -49,10 +49,21 @@ impl Removals {
         }
         Some(
             match under.into_iter().find(|oid| !unsent.oids.contains(*oid)) {
-                Some(stuck) => Blocker::Stuck(self.why_held(stuck)),
+                Some(stuck) => Blocker::Stuck(match self.namesake(&mutation.oid, folder) {
+                    Some(namesake) => same_name(stuck, namesake),
+                    None => self.why_held(stuck),
+                }),
                 None => Blocker::StillToBeSent,
             },
         )
+    }
+
+    fn namesake(&self, removed: &Oid, folder: &Path) -> Option<&Oid> {
+        self.upstream
+            .iter()
+            .filter(|(oid, _)| *oid != removed && !self.folders.contains_key(*oid))
+            .find(|(_, held)| held.owned_folder().as_ref() == Some(folder))
+            .map(|(oid, _)| oid)
     }
 
     fn why_held(&self, stuck: &Oid) -> String {
@@ -66,4 +77,12 @@ impl Removals {
             )
         }
     }
+}
+
+fn same_name(stuck: &Oid, namesake: &Oid) -> String {
+    let (stuck, namesake) = (stuck.short(), namesake.short());
+    format!(
+        "{namesake} has the same name in the same place, and dam cannot tell which of the two \
+         holds {stuck} upstream; rename {namesake}, then push"
+    )
 }
