@@ -3,18 +3,17 @@ mod days;
 mod history;
 mod ids;
 mod items;
+mod remote_tracking;
 mod reports;
 mod unit_of_work;
 mod working;
 
 pub use accepted_kinds::accepted_kinds_repository_contract;
 pub use days::day_repository_contract;
-pub use history::{
-    commit_clears_the_stage_contract, commit_repository_contract,
-    remote_tracking_repository_contract,
-};
+pub use history::{commit_clears_the_stage_contract, commit_repository_contract};
 pub use ids::id_repository_contract;
 pub use items::item_repository_contract;
+pub use remote_tracking::remote_tracking_repository_contract;
 pub use reports::{conflict_repository_contract, notice_repository_contract};
 pub use unit_of_work::transactional_contract;
 pub use working::{object_repository_contract, stage_repository_contract};
