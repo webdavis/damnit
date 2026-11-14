@@ -48,7 +48,7 @@ impl Dam<'_> {
                 Err(e @ UseCaseError::Helper(HelperError::Cancelled)) => return Err(e),
                 Err(e) => self.store.add_notice(&Notice::PullFailed {
                     remote: remote.name.clone(),
-                    why: say(&e),
+                    why: say(&e.withholding_what_credential_code_raised()),
                 })?,
             }
         }

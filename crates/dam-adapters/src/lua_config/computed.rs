@@ -1,9 +1,11 @@
 use std::path::PathBuf;
 
-use dam_application::{CredentialError, CredentialSource, CredentialSpec, RemoteName, Secret};
+use dam_application::{
+    ComputeFailure, CredentialError, CredentialSource, CredentialSpec, RemoteName, Secret,
+};
 use mlua::{Function, Lua, Table, Value};
 
-use super::evaluate::{located_by_the_whole_path, lua_message, short_name_lua_never_truncates};
+use super::evaluate::{described, line_and_reason, lua_message, short_name_lua_never_truncates};
 
 const SECRETS: &str = "secrets";
 
@@ -28,35 +30,36 @@ impl ConfiguredCredentials {
         let function = self
             .function(&remote.0, name)
             .map_err(|_| CredentialError::Missing(name.to_string()))?;
-        let at = format!(
-            "the function at {}:{}",
-            self.path.display(),
-            function.info().line_defined.unwrap_or_default()
-        );
-        let failed = |why: String| CredentialError::ComputeFailed {
+        let defined = function.info().line_defined.unwrap_or_default().to_string();
+        let failed = |line: &str, why: ComputeFailure| CredentialError::ComputeFailed {
             remote: remote.clone(),
             name: name.to_string(),
+            at: format!("{}:{line}", self.path.display()),
             why,
         };
         let value: Value = function.call(()).map_err(|e| {
             let message = lua_message(&e);
             let short_name = short_name_lua_never_truncates(&self.path);
+            let (line, reason) =
+                line_and_reason(&short_name, &message).unwrap_or((&defined, &message));
             failed(
-                located_by_the_whole_path(&self.path, &short_name, &message)
-                    .unwrap_or_else(|| format!("{at} raised {message}")),
+                line,
+                ComputeFailure::Raised {
+                    message: Some(reason.to_string()),
+                },
             )
         })?;
         match value {
             Value::String(text) => match text.to_str() {
                 Ok(text) => Ok(Secret::from(&*text)),
-                Err(_) => Err(failed(format!(
-                    "{at} returned a string that is not valid UTF-8"
-                ))),
+                Err(_) => Err(failed(&defined, ComputeFailure::ReturnedNonUtf8)),
             },
-            other => Err(failed(format!(
-                "{at} returned {}, not a string",
-                other.type_name()
-            ))),
+            other => Err(failed(
+                &defined,
+                ComputeFailure::ReturnedNotAString {
+                    returned: described(&other),
+                },
+            )),
         }
     }
 

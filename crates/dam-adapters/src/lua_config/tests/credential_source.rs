@@ -1,4 +1,4 @@
-use dam_application::{CredentialError, CredentialSpec, RemoteName};
+use dam_application::{ComputeFailure, CredentialError, CredentialSpec, RemoteName};
 
 use super::support::{Folder, ONE_REMOTE, config, marking_credential, secrets};
 
@@ -23,18 +23,26 @@ fn computed(folder: &Folder) -> Result<String, CredentialError> {
         .map(|secret| secret.expose().to_string())
 }
 
-fn failure(function: &str) -> (String, String) {
+fn failure(function: &str) -> ComputeFailure {
     let folder = Folder::under_a_long_folder_name()
         .with_config(ONE_REMOTE)
         .with_secrets(&credential(function));
-    let at = format!("{}:4", folder.path("secrets.lua").display());
     match computed(&folder).unwrap_err() {
-        CredentialError::ComputeFailed { remote, name, why } => {
+        CredentialError::ComputeFailed {
+            remote,
+            name,
+            at,
+            why,
+        } => {
             assert_eq!(
-                (remote, name.as_str()),
-                (RemoteName("todoist".into()), "api_token")
+                (remote, name.as_str(), at),
+                (
+                    RemoteName("todoist".into()),
+                    "api_token",
+                    format!("{}:4", folder.path("secrets.lua").display())
+                )
             );
-            (at, why)
+            why
         }
         other => panic!("{other:?}"),
     }
@@ -71,28 +79,33 @@ fn each_load_answers_with_the_functions_it_read() {
 }
 
 #[test]
-fn a_function_that_raises_names_the_whole_path_and_line_once() {
-    let (at, why) = failure("function() error('the vault is locked') end");
-    assert_eq!(why, format!("{at}: the vault is locked"));
+fn a_function_that_raises_keeps_its_message_apart_from_the_whole_path_and_line() {
+    assert_eq!(
+        failure("function() error('the vault is locked') end"),
+        ComputeFailure::Raised {
+            message: Some("the vault is locked".into())
+        }
+    );
 }
 
 #[test]
-fn a_function_that_returns_no_string_names_the_whole_path_and_line_and_never_the_value() {
-    let (at, why) = failure("function() return 31337 end");
+fn a_function_that_returns_no_string_names_the_kind_and_never_the_value() {
+    let returned = |function| match failure(function) {
+        ComputeFailure::ReturnedNotAString { returned } => returned,
+        other => panic!("{other:?}"),
+    };
+    assert_eq!(returned("function() return 31337 end"), "an integer");
     assert_eq!(
-        why,
-        format!("the function at {at} returned integer, not a string")
+        returned("function() return os.getenv('DAM_NO_SUCH_VARIABLE_ZZ') end"),
+        "nil"
     );
-    let (_, why) = failure("function() return os.getenv('DAM_NO_SUCH_VARIABLE_ZZ') end");
-    assert!(why.contains("returned nil"), "{why}");
 }
 
 #[test]
 fn a_function_that_returns_text_that_is_not_utf8_says_so() {
-    let (at, why) = failure("function() return '\\255' end");
     assert_eq!(
-        why,
-        format!("the function at {at} returned a string that is not valid UTF-8")
+        failure("function() return '\\255' end"),
+        ComputeFailure::ReturnedNonUtf8
     );
 }
 

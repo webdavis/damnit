@@ -94,7 +94,10 @@ fn no_credential_failure_reveals_a_value() {
         UseCaseError::from(CredentialError::ComputeFailed {
             remote: dam_application::RemoteName("todoist".into()),
             name: "api_token".into(),
-            why: "the vault is locked".into(),
+            at: "secrets.lua:4".into(),
+            why: dam_application::ComputeFailure::Raised {
+                message: Some("the vault is locked".into()),
+            },
         }),
     ];
     for error in errors {

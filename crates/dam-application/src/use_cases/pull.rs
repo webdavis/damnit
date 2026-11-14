@@ -39,7 +39,7 @@ impl Dam<'_> {
     ) -> Result<Vec<PullReport>, UseCaseError> {
         let mut reports = Vec::new();
         for target in self.remotes_permitting(Permission::RemotePull, remote)? {
-            let (mut helper, caps) = connect(remotes, self.store, target)?;
+            let (mut helper, caps) = connect(remotes, self.store, self.access, target)?;
             let since = self.store.sync_token(&target.name)?;
             let response = helper.pull(since.as_deref())?;
             reports.push(self.apply_pulled(target, &caps, response)?);

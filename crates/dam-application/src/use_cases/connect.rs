@@ -1,3 +1,4 @@
+use crate::access::Access;
 use crate::config::RemoteConfig;
 use crate::credentials::resolve_credentials;
 use crate::errors::{Refusal, UseCaseError};
@@ -8,6 +9,7 @@ use crate::service::Remotes;
 pub(crate) fn connect(
     remotes: Remotes<'_>,
     accepted_kinds: &dyn AcceptedKindsRepository,
+    caller: &dyn Access,
     remote: &RemoteConfig,
 ) -> Result<(Box<dyn RemoteHelper>, RemoteCapabilities), UseCaseError> {
     let configured: Vec<String> = remote
@@ -15,7 +17,13 @@ pub(crate) fn connect(
         .iter()
         .map(|spec| spec.name().to_string())
         .collect();
-    let resolved = resolve_credentials(remotes.credentials, remote, &configured)?;
+    let resolved =
+        resolve_credentials(remotes.credentials, remote, &configured).map_err(|e| match caller
+            .token()
+        {
+            Some(_) => e.withholding_what_credential_code_raised(),
+            None => e,
+        })?;
     let mut helper = remotes.launcher.launch(remote, &resolved)?;
     let caps = helper.capabilities()?;
     if let Some(name) = declared_by_the_helper_but_not_configured(&caps, &configured) {

@@ -50,8 +50,16 @@ pub enum CredentialError {
     ComputeFailed {
         remote: RemoteName,
         name: String,
-        why: String,
+        at: String,
+        why: ComputeFailure,
     },
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum ComputeFailure {
+    Raised { message: Option<String> },
+    ReturnedNonUtf8,
+    ReturnedNotAString { returned: String },
 }
 
 pub trait CredentialSource {

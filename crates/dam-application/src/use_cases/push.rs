@@ -34,7 +34,7 @@ impl Dam<'_> {
         let targets = self.remotes_permitting(Permission::RemotePush, remote)?;
         let mut reports = Vec::with_capacity(targets.len());
         for target in targets {
-            let (mut helper, caps) = connect(remotes, self.store, target)?;
+            let (mut helper, caps) = connect(remotes, self.store, self.access, target)?;
             reports.push(self.push_one(helper.as_mut(), &caps, target)?);
         }
         Ok(reports)
