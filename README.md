@@ -405,9 +405,9 @@ failure with rule `ambiguous_prefix`. `oids` names the objects the message names
 names them.
 
 Standard error carries that one document and nothing else, so parse the whole stream; a run that
-succeeds writes nothing there. The exception is an argument clap rejects before `dam` runs, such as
-a subcommand that does not exist: that prints clap's own usage text and exits 2, whatever the format
-flag says. Without those flags you get the plain `dam: <message>` line instead.
+succeeds writes nothing there. A `usage` error also carries `usage`, which says what was wrong with
+the command line. Without those flags you get the plain `dam: <message>` line, or clap's usage text
+for a command line it rejects.
 
 ## Exit codes
 

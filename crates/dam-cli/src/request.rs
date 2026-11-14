@@ -1,4 +1,6 @@
 mod argv;
+mod misuse;
+mod plain;
 mod refusal;
 
 use std::ffi::OsString;
@@ -37,7 +39,7 @@ pub(crate) fn parse(line: Vec<OsString>) -> Result<Cli, Refused> {
         let source = given.get_one::<std::path::PathBuf>("request")?.clone();
         Some((given, source))
     }) else {
-        return Ok(Cli::parse_from(line));
+        return plain::parse(line);
     };
     let format = Format::of(given.get_flag("json"), given.get_flag("toon"));
     with_request(line, &given, &source).map_err(|error| Refused { format, error })

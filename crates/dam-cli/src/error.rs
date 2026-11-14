@@ -6,11 +6,13 @@ use dam_application::{ConfigError, Refusal, StoreError, UseCaseError};
 use crate::editor::EditorError;
 
 mod item_text;
+mod misuse;
 mod refusal_oids;
 mod refusal_text;
 mod token_text;
 mod use_case_text;
 
+pub(crate) use misuse::{Misuse, Problem};
 use refusal_oids::refusal_oids;
 pub(crate) use use_case_text::UseCaseText;
 
@@ -21,6 +23,7 @@ pub(crate) enum CliError {
     Config(ConfigError),
     Open(OpenError),
     Usage(String),
+    CommandLine(Misuse),
     Cancelled,
     Io(String),
     Internal(String),
@@ -32,12 +35,14 @@ const EXIT_CANCELLED: i32 = 3;
 const EXIT_REFUSED_BY_A_RULE: i32 = 4;
 const EXIT_TOKEN_REFUSED: i32 = 5;
 
+const KIND_USAGE: &str = "usage";
 const KIND_OF_AN_EDITOR_FAILURE_NO_DOCUMENT_CARRIES: &str = "editor";
 
 impl CliError {
     pub(crate) fn exit_code(&self) -> i32 {
         match self {
             CliError::Usage(_)
+            | CliError::CommandLine(_)
             | CliError::UseCase(UseCaseError::Refused(Refusal::AmbiguousPrefix { .. }))
             | CliError::UseCase(UseCaseError::NotAnOid(_))
             | CliError::UseCase(UseCaseError::Query(_)) => EXIT_USAGE_AS_CLAP_EXITS,
@@ -51,7 +56,7 @@ impl CliError {
     pub(crate) fn kind(&self) -> &'static str {
         match self {
             CliError::UseCase(UseCaseError::Refused(Refusal::AmbiguousPrefix { .. }))
-            | CliError::UseCase(UseCaseError::NotAnOid(_)) => "usage",
+            | CliError::UseCase(UseCaseError::NotAnOid(_)) => KIND_USAGE,
             CliError::UseCase(UseCaseError::Refused(_)) => "refused",
             CliError::UseCase(UseCaseError::Store(_))
             | CliError::Open(_)
@@ -63,7 +68,7 @@ impl CliError {
             CliError::UseCase(UseCaseError::Parse(_))
             | CliError::UseCase(UseCaseError::Query(_))
             | CliError::Config(_) => "parse",
-            CliError::Usage(_) => "usage",
+            CliError::Usage(_) | CliError::CommandLine(_) => KIND_USAGE,
             CliError::Cancelled => "cancelled",
             CliError::Internal(_) => "internal",
         }
@@ -84,14 +89,16 @@ impl CliError {
     }
 
     pub(crate) fn document(&self) -> serde_json::Value {
-        serde_json::json!({
-            "error": {
-                "kind": self.kind(),
-                "rule": self.rule(),
-                "message": self.to_string(),
-                "oids": self.oids_in_the_order_the_message_names_them(),
-            }
-        })
+        let mut error = serde_json::json!({
+            "kind": self.kind(),
+            "rule": self.rule(),
+            "message": self.to_string(),
+            "oids": self.oids_in_the_order_the_message_names_them(),
+        });
+        if let Some(usage) = misuse::usage_part(self) {
+            error["usage"] = usage;
+        }
+        serde_json::json!({ "error": error })
     }
 }
 
@@ -105,6 +112,7 @@ impl fmt::Display for CliError {
             CliError::Usage(text) | CliError::Io(text) | CliError::Internal(text) => {
                 f.write_str(text)
             }
+            CliError::CommandLine(misuse) => f.write_str(&misuse.message),
             CliError::Cancelled => f.write_str("cancelled"),
         }
     }
