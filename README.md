@@ -47,6 +47,10 @@ then the value, with `(default)` after a value dam supplies. A remote's credenti
 `remote.<name>.credential` as only `set` or `function`, and a token only its grants. A setting
 with no value and no default shows `not set`. It never quotes `secrets.lua`.
 `docs/schemas/config-list.schema.json` is the schema of its `--json` answer.
+`dam config get <key>` prints the rows of one setting, or of every setting in one part, by the key
+`dam config list` shows, such as `remote.todoist.stale` or `remote.todoist`, and never quotes
+`secrets.lua` either. A name may hold a dot, and a key that can be read two
+ways is refused with both readings.
 
 `dam config print-default` prints the starter `config.lua` a first run writes, and writes no file.
 

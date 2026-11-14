@@ -19,6 +19,10 @@ fn no_secret_reaches_any_stream() {
         &["config", "list"][..],
         &["config", "list", "--json"],
         &["config", "list", "--toon"],
+        &["config", "get", "remote.todoist"],
+        &["config", "get", "remote.todoist", "--json"],
+        &["config", "get", "remote.todoist.credential", "--json"],
+        &["config", "get", "token.tool", "--json"],
     ] {
         let out = sb.output(line);
         assert!(out.status.success(), "{line:?}: {out:?}");
@@ -63,6 +67,9 @@ fn what_a_raising_secrets_lua_says_is_never_quoted() {
         (&["config", "print-default"], 0),
         (&["config", "print-default", "--json"], 0),
         (&["config", "print-default", "--toon"], 0),
+        (&["config", "get", "owner"], 1),
+        (&["config", "get", "owner", "--json"], 1),
+        (&["config", "get", "owner", "--toon"], 1),
     ] {
         let out = sb.output(line);
         assert_eq!(out.status.code(), Some(exit), "{line:?}: {out:?}");

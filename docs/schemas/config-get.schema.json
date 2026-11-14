@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/config-get.schema.json",
+  "title": "dam config get answer",
+  "description": "What dam config get prints with --json or --toon: the setting or part the key names, in the same shape it has inside the dam config list answer.",
+  "$ref": "config-list.schema.json#/$defs/setting"
+}

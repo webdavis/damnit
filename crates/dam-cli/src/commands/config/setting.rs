@@ -47,6 +47,28 @@ impl Setting {
         Setting::Part(Part(entries))
     }
 
+    pub(super) fn readings(&self, key: &str) -> Vec<(Vec<&str>, &Setting)> {
+        let Setting::Part(Part(entries)) = self else {
+            return Vec::new();
+        };
+        entries
+            .iter()
+            .flat_map(|(name, setting)| {
+                let inside = match key.strip_prefix(name.as_str()) {
+                    Some("") => vec![(Vec::new(), setting)],
+                    Some(rest) => rest
+                        .strip_prefix('.')
+                        .map_or_else(Vec::new, |rest| setting.readings(rest)),
+                    None => Vec::new(),
+                };
+                inside.into_iter().map(move |(mut path, setting)| {
+                    path.insert(0, name.as_str());
+                    (path, setting)
+                })
+            })
+            .collect()
+    }
+
     pub(super) fn rows(&self, key: &str) -> Vec<(String, String)> {
         match self {
             Setting::Leaf { value, default } => {

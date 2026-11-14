@@ -14,6 +14,16 @@ pub(crate) enum ConfigCommand {
     )]
     List,
     #[command(
+        about = "Print one setting, or every setting in one part, by its key",
+        after_help = "Examples:\n  dam config get remote.todoist.stale\n  dam config get remote.todoist\n  dam config get remote.todoist --json"
+    )]
+    Get {
+        #[arg(
+            help = "Name the setting by the key dam config list shows, such as remote.todoist.stale"
+        )]
+        key: String,
+    },
+    #[command(
         about = "Print the starter config.lua a first run writes, without writing a file",
         after_help = "Examples:\n  dam config print-default\n  dam config print-default > config.lua"
     )]

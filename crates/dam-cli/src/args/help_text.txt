@@ -127,6 +127,12 @@ dam config list: about = List where the config files are and every setting dam i
 dam config list: after_help = Examples:
   dam config list
   dam config list --json
+dam config get: about = Print one setting, or every setting in one part, by its key
+dam config get: after_help = Examples:
+  dam config get remote.todoist.stale
+  dam config get remote.todoist
+  dam config get remote.todoist --json
+dam config get key: help = Name the setting by the key dam config list shows, such as remote.todoist.stale
 dam config print-default: about = Print the starter config.lua a first run writes, without writing a file
 dam config print-default: after_help = Examples:
   dam config print-default

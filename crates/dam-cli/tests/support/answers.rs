@@ -141,6 +141,13 @@ pub fn answers(command: &str) -> Option<Vec<serde_json::Value>> {
         "token list" => vec![json_of(&with_token(), &["token", "list"])],
         "doctor" => vec![json_of(&with_token(), &["doctor"])],
         "config list" => vec![json_of(&small_config(), &["config", "list"])],
+        "config get" => {
+            let sb = small_config();
+            vec![
+                json_of(&sb, &["config", "get", "owner"]),
+                json_of(&sb, &["config", "get", "remote"]),
+            ]
+        }
         "config validate" => vec![json_of(&with_token(), &["config", "validate"])],
         "config print-default" => vec![json_of(&Sandbox::new(), &["config", "print-default"])],
         "token revoke" => vec![json_of(&with_token(), &["token", "revoke", "tool"])],
