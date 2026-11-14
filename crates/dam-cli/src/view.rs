@@ -72,7 +72,7 @@ pub(crate) fn report(view: &impl View) -> Result<Report, CliError> {
         data: serde_json::to_value(view).map_err(|e| CliError::Internal(e.to_string()))?,
         cut: lines.iter().map(|(_, cut, _)| *cut).collect(),
         tints: lines.iter().map(|(.., tint)| *tint).collect(),
-        stderr: view
+        standard_error_lines: view
             .warnings()
             .iter()
             .map(|w| format!("warning: {w}"))
