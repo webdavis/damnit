@@ -1,60 +1,11 @@
 use dam_application::{RemoteName, RemoteTrackingRepository, StoreError};
 use dam_domain::{Object, Oid, Timestamp};
-use rusqlite::{Connection, OptionalExtension, params};
+use rusqlite::{OptionalExtension, params};
 
 use super::SqliteStore;
 use super::codec::{object_from_json, object_to_json};
 use super::objects::sql;
-
-#[derive(Clone, Copy)]
-enum Stamp {
-    Pull,
-    Push,
-}
-
-impl Stamp {
-    fn select(self) -> &'static str {
-        match self {
-            Stamp::Pull => "SELECT at FROM pulls WHERE remote = ?1",
-            Stamp::Push => "SELECT at FROM pushes WHERE remote = ?1",
-        }
-    }
-
-    fn upsert(self) -> &'static str {
-        match self {
-            Stamp::Pull => {
-                "INSERT INTO pulls (remote, at) VALUES (?1, ?2) \
-                 ON CONFLICT(remote) DO UPDATE SET at = excluded.at"
-            }
-            Stamp::Push => {
-                "INSERT INTO pushes (remote, at) VALUES (?1, ?2) \
-                 ON CONFLICT(remote) DO UPDATE SET at = excluded.at"
-            }
-        }
-    }
-
-    fn read(self, conn: &Connection, remote: &RemoteName) -> Result<Option<Timestamp>, StoreError> {
-        conn.query_row(self.select(), params![remote.0], |r| r.get::<_, String>(0))
-            .optional()
-            .map_err(sql)?
-            .map(|t| {
-                t.parse::<Timestamp>()
-                    .map_err(|e| StoreError::Failed(e.to_string()))
-            })
-            .transpose()
-    }
-
-    fn write(
-        self,
-        conn: &Connection,
-        remote: &RemoteName,
-        at: Timestamp,
-    ) -> Result<(), StoreError> {
-        conn.execute(self.upsert(), params![remote.0, at.to_string()])
-            .map(|_| ())
-            .map_err(sql)
-    }
-}
+use stamp::Stamp;
 
 impl RemoteTrackingRepository for SqliteStore {
     fn remote_id(&self, remote: &RemoteName, oid: &Oid) -> Result<Option<String>, StoreError> {
@@ -190,6 +141,8 @@ impl RemoteTrackingRepository for SqliteStore {
         Stamp::Push.write(&self.conn, remote, at)
     }
 }
+
+mod stamp;
 
 #[cfg(test)]
 mod tests;
