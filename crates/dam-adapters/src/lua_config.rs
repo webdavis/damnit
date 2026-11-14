@@ -1,3 +1,4 @@
+mod computed;
 mod credentials;
 mod evaluate;
 mod file;
@@ -8,7 +9,8 @@ mod shape;
 mod strict;
 mod token;
 
-pub use file::LuaConfigFile;
+pub use computed::ConfiguredCredentials;
+pub use file::{LoadedConfig, LuaConfigFile};
 
 #[cfg(test)]
 mod tests;
