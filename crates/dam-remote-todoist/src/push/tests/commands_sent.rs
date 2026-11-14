@@ -128,7 +128,7 @@ fn a_depth_one_create_becomes_a_section_when_its_child_arrives_later_in_the_same
 }
 
 #[test]
-fn clearing_done_becomes_the_uncomplete_command() {
+fn clearing_done_on_a_completed_task_becomes_the_uncomplete_command() {
     let api = FakeTodoist::new(sync_body());
     let response = push(
         &api,
@@ -136,7 +136,7 @@ fn clearing_done_becomes_the_uncomplete_command() {
             mutation(
                 "update",
                 2,
-                Some("i:i1"),
+                Some("i:i9"),
                 Some(task(&"2".repeat(40), "Work/", "milk", false)),
             ),
             &["done"],
@@ -146,6 +146,6 @@ fn clearing_done_becomes_the_uncomplete_command() {
     .unwrap();
     assert!(response.results[0].ok(), "{:?}", response.results[0].why());
     let recorded = api.recorded.borrow();
-    assert_eq!(recorded.command("item_uncomplete")["args"]["id"], "i1");
+    assert_eq!(recorded.command("item_uncomplete")["args"]["id"], "i9");
     assert!(!recorded.types().contains(&"item_close"));
 }
