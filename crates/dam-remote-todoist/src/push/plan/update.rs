@@ -43,7 +43,7 @@ pub fn update_plan(
             if changed("subject") {
                 commands.push("project_update", renamed(&id, object))?;
             }
-            if changed("done") {
+            if changed("done") && (done || !tree.shows_project_unarchived(&id)) {
                 let verb = if done {
                     "project_archive"
                 } else {
@@ -68,7 +68,7 @@ pub fn update_plan(
                 item.insert("id".into(), id.clone().into());
                 commands.push("item_update", item)?;
             }
-            if changed("done") {
+            if changed("done") && (done || !tree.shows_item_open(&id)) {
                 let verb = if done {
                     "item_close"
                 } else {
