@@ -1,4 +1,5 @@
-use dam_domain::Oid;
+use dam_application::{Named, Reopened};
+use dam_domain::{ItemHash, Oid};
 
 use self::removals::AddedRemovals;
 use crate::args::{AddArgs, ResetArgs};
@@ -33,17 +34,25 @@ impl View for Staged<'_> {
 struct Unstaged<'a> {
     #[serde(serialize_with = "displays")]
     unstaged: &'a [Oid],
+    #[serde(serialize_with = "displays", skip_serializing_if = "<[_]>::is_empty")]
+    waiting: &'a [ItemHash],
 }
 
 impl View for Unstaged<'_> {
     fn human(&self) -> Human {
-        Human::Lines(vec![match self.unstaged {
-            [] => "unstaged everything".to_string(),
-            oids => format!(
-                "unstaged {}",
-                oids.iter().map(Oid::short).collect::<Vec<_>>().join(", ")
-            ),
-        }])
+        let shorts = |shorts: Vec<&str>| shorts.join(", ");
+        let mut lines = Vec::new();
+        if !self.unstaged.is_empty() || self.waiting.is_empty() {
+            lines.push(match self.unstaged {
+                [] => "unstaged everything".to_string(),
+                oids => format!("unstaged {}", shorts(oids.iter().map(Oid::short).collect())),
+            });
+        }
+        if !self.waiting.is_empty() {
+            let hashes = self.waiting.iter().map(ItemHash::short).collect();
+            lines.push(format!("waiting again {}", shorts(hashes)));
+        }
+        Human::Lines(lines)
     }
 }
 
@@ -69,13 +78,33 @@ pub(crate) fn run_add(ctx: &Context, args: AddArgs) -> Result<Report, CliError> 
 }
 
 pub(crate) fn run_reset(ctx: &Context, args: ResetArgs) -> Result<Report, CliError> {
-    let oids = args
+    let named = args
         .oids
         .iter()
-        .map(|t| ctx.dam().resolve_object(t))
-        .collect::<Result<Vec<Oid>, _>>()?;
-    ctx.dam().reset(&oids)?;
-    report(&Unstaged { unstaged: &oids })
+        .map(|t| ctx.dam().resolve_resettable(t))
+        .collect::<Result<Vec<Named>, _>>()?;
+    let mut oids = Vec::new();
+    let mut hashes = Vec::new();
+    for name in named {
+        match name {
+            Named::Object(oid) => oids.push(oid),
+            Named::Item(hash) => hashes.push(hash),
+        }
+    }
+    if !oids.is_empty() || hashes.is_empty() {
+        ctx.dam().reset(&oids)?;
+    }
+    let mut waiting = Vec::new();
+    for hash in &hashes {
+        match ctx.dam().reopen(hash)? {
+            Reopened::Unstaged(oid) => oids.push(oid),
+            Reopened::Waiting(hash) => waiting.push(hash),
+        }
+    }
+    report(&Unstaged {
+        unstaged: &oids,
+        waiting: &waiting,
+    })
 }
 
 mod removals;

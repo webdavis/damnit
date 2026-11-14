@@ -361,12 +361,13 @@ takes every item that applies. An item that changes a field you edited and have 
 the add; settle it with `dam resolve <hash> --ours|--theirs`. An item that would make a dependency
 cycle, or completes a task with open children or dependencies, is refused the way your own `edit`
 or `done` would be. `dam reset` sends an added item back to waiting and keeps your own edits.
-`dam rm <hash>` declines it, and the same change sent again is refused. A token may `dam rm` its
-own waiting item. A token's `dam rm <oid>` on one of your tasks needs `task:remove` and waits as a
-removal item. A token's `dam rm` by hash, oid or `--id` answers `withdrawn`, `waiting`, `declined`
-or `nothing`. Adding a removal item does what your `dam rm` does: children move up and other tasks
-stop depending on it. Those changes are staged as yours, and `dam status` counts them first. If you
-have removed the task yourself, `dam add` settles the removal item and stages nothing.
+`dam rm <hash>` declines it, and the same change sent again is refused until `dam reset <hash>` puts
+the item back to waiting. A token may `dam rm` its own waiting item. A token's `dam rm <oid>` on one
+of your tasks needs `task:remove` and waits as a removal item. A token's `dam rm` by hash, oid or
+`--id` answers `withdrawn`, `waiting`, `declined` or `nothing`. Adding a removal item does what your
+`dam rm` does: children move up and other tasks stop depending on it. Those changes are staged as
+yours, and `dam status` counts them first. If you have removed the task yourself, `dam add` settles
+the removal item and stages nothing.
 
 Your own rows in `status` and `log` read `you` to you and `owner` to a token.
 

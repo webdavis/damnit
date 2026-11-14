@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/reset.schema.json",
   "title": "dam reset answer",
-  "description": "What dam reset prints with --json or --toon: the objects it unstaged, or an empty list when it unstaged everything.",
+  "description": "What dam reset prints with --json or --toon: the objects it unstaged, or an empty list when it unstaged everything; waiting names the declined items it put back to waiting, and then an empty unstaged means nothing was unstaged.",
   "type": "object",
   "required": [
     "unstaged"
@@ -10,6 +10,9 @@
   "additionalProperties": false,
   "properties": {
     "unstaged": {
+      "$ref": "object.schema.json#/$defs/oids"
+    },
+    "waiting": {
       "$ref": "object.schema.json#/$defs/oids"
     }
   }

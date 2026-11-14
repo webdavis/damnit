@@ -14,7 +14,9 @@ pub(crate) struct AddArgs {
 
 #[derive(Args, Debug)]
 pub(crate) struct ResetArgs {
-    #[arg(help = "Unstage these objects, by oid or prefix. Default: everything staged")]
+    #[arg(
+        help = "Unstage these objects, or put these declined items back to waiting, by oid, hash or prefix. Default: everything staged"
+    )]
     pub(crate) oids: Vec<String>,
 }
 
