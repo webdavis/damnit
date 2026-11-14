@@ -136,3 +136,47 @@ fn a_task_under_a_container_this_push_did_not_create_still_finds_it_by_name() {
         );
     }
 }
+
+fn refiled_naming(container: &str, path: &str) -> Mutation {
+    let mut m = with_fields(
+        mutation(
+            "update",
+            9,
+            Some("i:c1"),
+            Some(task(&"9".repeat(40), path, "c", false)),
+        ),
+        &["path"],
+    );
+    m.container_remote_id = Some(container.into());
+    m
+}
+
+#[test]
+fn a_refiled_task_lands_under_the_namesake_task_the_mutation_names() {
+    let upstream = held(
+        vec![project("p1", "Work")],
+        vec![section("s1", "Now", "p1")],
+        vec![
+            item("r1", "P", None),
+            item("r2", "P", None),
+            item("c1", "c", Some("r1")),
+        ],
+    );
+    let mutations = [refiled_naming("i:r2", "Work/Now/P/")];
+    for executed in sent_whichever_order_the_tree_holds_them(&upstream, &mutations) {
+        assert_eq!(args_of(&executed, "item_move", "c1")["parent_id"], "r2");
+    }
+}
+
+#[test]
+fn a_refiled_task_lands_in_the_namesake_section_the_mutation_names() {
+    let upstream = held(
+        vec![project("p1", "Work")],
+        vec![section("s1", "P", "p1"), section("s2", "P", "p1")],
+        vec![item("c1", "c", None)],
+    );
+    let mutations = [refiled_naming("s:s2", "Work/P/")];
+    for executed in sent_whichever_order_the_tree_holds_them(&upstream, &mutations) {
+        assert_eq!(args_of(&executed, "item_move", "c1")["section_id"], "s2");
+    }
+}

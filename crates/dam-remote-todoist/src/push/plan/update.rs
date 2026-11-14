@@ -4,7 +4,7 @@ use super::{Failure, Plan, TreeChange, numbered};
 use crate::map::{RemoteId, Tree};
 use crate::push::carried::{Carries, PROJECT, SECTION, fields_the_container_cannot_carry};
 use crate::push::commands::{Args, Command, ItemWrite, args, command, item_args};
-use crate::push::shape::{ItemPlace, Shape, shape_for};
+use crate::push::shape::{ItemPlace, Shape, place_inside, shape_for};
 
 struct Commands<'m> {
     m: &'m Mutation,
@@ -55,7 +55,7 @@ pub fn update_plan(
         }
         RemoteId::Item(id) => {
             if changed("path") {
-                let to = item_place(tree, object)?;
+                let to = item_place(tree, m, object)?;
                 commands.push("item_move", most_specific_container_move_args(&id, &to))?;
                 changes = TreeChange::MovesItem { id: id.clone(), to };
             }
@@ -96,7 +96,13 @@ fn renamed(id: &str, object: &WireObject) -> Args {
     args([("id", id.into()), ("name", object.subject.clone().into())])
 }
 
-fn item_place(tree: &Tree, object: &WireObject) -> Result<ItemPlace, Failure> {
+fn item_place(tree: &Tree, m: &Mutation, object: &WireObject) -> Result<ItemPlace, Failure> {
+    if let Some(named) = &m.container_remote_id {
+        let container: RemoteId = named.parse().map_err(|e| {
+            Failure::OnlyThisMutation(format!("an unusable Todoist container id: {e}"))
+        })?;
+        return place_inside(tree, &container).map_err(Failure::OnlyThisMutation);
+    }
     match shape_for(tree, object, &[]).map_err(Failure::OnlyThisMutation)? {
         Shape::Item(place) => Ok(place),
         Shape::Project { .. } | Shape::Section { .. } => Err(Failure::OnlyThisMutation(

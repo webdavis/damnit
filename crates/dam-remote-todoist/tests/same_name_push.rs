@@ -1,27 +1,12 @@
 mod support;
 
-use std::os::unix::fs::PermissionsExt;
-
-use dam_adapters::{Interrupt, ProcessLauncher};
 use dam_application::RemoteTrackingRepository;
 use dam_application::testing::{Scenario, config, oid, remotes_launched_by, task_in, todoist};
 use dam_domain::{Completion, Object, Path};
 use dam_helper::testing;
 use serde_json::json;
+use support::real_helper::{FRESH_HELPER_PROCESSES_TRIED, the_real_helper_against};
 use support::stateful_todoist::{Held, serve};
-
-const FRESH_HELPER_PROCESSES_TRIED: usize = 8;
-
-fn the_real_helper_against(base: &str, dir: &std::path::Path) -> ProcessLauncher {
-    let wrapper = dir.join("dam-remote-todoist");
-    let script = format!(
-        "#!/bin/sh\nDAM_TODOIST_BASE_URL={base} exec {} \"$@\"\n",
-        env!("CARGO_BIN_EXE_dam-remote-todoist")
-    );
-    std::fs::write(&wrapper, script).unwrap();
-    std::fs::set_permissions(&wrapper, std::fs::Permissions::from_mode(0o755)).unwrap();
-    ProcessLauncher::with_search_path(dir.as_os_str(), Interrupt::default())
-}
 
 fn old_p_held_upstream_with_nothing_under_it() -> Held {
     Held::new(
