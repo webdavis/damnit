@@ -21,11 +21,11 @@ pub use errors::{Refusal, UseCaseError};
 pub use ports::{
     AcceptedKindsRepository, AnswerRepository, Attempt, AttemptRepository, Attempts, ByHand, Clock,
     CommitRepository, ComputeFailure, ConfigError, ConfigFile, Conflict, ConflictRepository,
-    CredentialError, CredentialSource, DayRepository, Declared, EditFault, EditedTable, Expected,
-    HelperError, HelperLauncher, IdRepository, ItemRepository, LoadedConfig, Misread, MissingTask,
-    Notice, NoticeRepository, ObjectRepository, OriginRepository, Place, Randomness, RemoteHelper,
-    RemoteName, RemoteNameError, RemoteTrackingRepository, SecretsTightened, StageRepository,
-    Store, StoreError, Transactional, Uneditable,
+    CredentialError, CredentialSource, DayRepository, Declared, DroppedBecause, EditFault,
+    EditedTable, Expected, HelperError, HelperLauncher, IdRepository, ItemRepository, LoadedConfig,
+    Misread, MissingTask, Notice, NoticeRepository, ObjectRepository, OriginRepository, Place,
+    Randomness, RemoteHelper, RemoteName, RemoteNameError, RemoteTrackingRepository,
+    SecretsTightened, StageRepository, Store, StoreError, Transactional, Uneditable,
 };
 pub use remote::{
     IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, PushOutcome,

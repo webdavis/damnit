@@ -1,5 +1,7 @@
-use dam_application::{MissingTask, Notice, RejectedObject, RemoteName, StoreError};
-use dam_domain::{Kind, Oid};
+use dam_application::{
+    DroppedBecause, MissingTask, Notice, RejectedObject, RemoteName, StoreError,
+};
+use dam_domain::{Kind, Oid, Path};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -37,6 +39,13 @@ enum NoticeRow {
     MissingUpstream {
         remote: String,
         tasks: Vec<MissingTaskRow>,
+    },
+    UnansweredCreateDropped {
+        remote: String,
+        oid: String,
+        subject: String,
+        path: String,
+        because: String,
     },
 }
 
@@ -94,6 +103,19 @@ pub(in crate::sqlite) fn notice_to_json(n: &Notice) -> Result<String, StoreError
                     subject: t.subject.clone(),
                 })
                 .collect(),
+        },
+        Notice::UnansweredCreateDropped {
+            remote,
+            oid,
+            subject,
+            path,
+            because,
+        } => NoticeRow::UnansweredCreateDropped {
+            remote: remote.0.clone(),
+            oid: oid.to_string(),
+            subject: subject.clone(),
+            path: path.to_string(),
+            because: dropped_because_name(*because).into(),
         },
     };
     serde_json::to_string(&row).map_err(|e| StoreError::Failed(format!("stored notice: {e}")))
@@ -169,5 +191,33 @@ pub(in crate::sqlite) fn notice_from_json(s: &str) -> Result<Notice, StoreError>
                 })
                 .collect::<Result<_, StoreError>>()?,
         },
+        NoticeRow::UnansweredCreateDropped {
+            remote,
+            oid: o,
+            subject,
+            path,
+            because,
+        } => Notice::UnansweredCreateDropped {
+            remote: RemoteName(remote),
+            oid: oid(&o)?,
+            subject,
+            path: Path::parse(&path)
+                .map_err(|e| StoreError::Failed(format!("stored notice: {e}")))?,
+            because: dropped_because(&because)?,
+        },
     })
+}
+
+fn dropped_because_name(because: DroppedBecause) -> &'static str {
+    match because {
+        DroppedBecause::Removed => "removed",
+        DroppedBecause::NoLongerSent => "no_longer_sent",
+    }
+}
+
+fn dropped_because(name: &str) -> Result<DroppedBecause, StoreError> {
+    [DroppedBecause::Removed, DroppedBecause::NoLongerSent]
+        .into_iter()
+        .find(|b| dropped_because_name(*b) == name)
+        .ok_or_else(|| StoreError::Failed(format!("stored notice: dropped because {name:?}")))
 }

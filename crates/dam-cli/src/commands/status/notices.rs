@@ -1,5 +1,5 @@
-use dam_application::Notice;
-use dam_domain::Oid;
+use dam_application::{DroppedBecause, Notice};
+use dam_domain::{Oid, Path};
 use serde::Serialize;
 
 use crate::view::display;
@@ -43,6 +43,15 @@ pub(super) enum NoticeRow<'a> {
     MissingUpstream {
         remote: &'a str,
         tasks: Vec<MissingTaskRow<'a>>,
+    },
+    UnansweredCreateDropped {
+        remote: &'a str,
+        #[serde(serialize_with = "display")]
+        oid: &'a Oid,
+        subject: &'a str,
+        #[serde(serialize_with = "display")]
+        path: &'a Path,
+        because: &'static str,
     },
 }
 
@@ -102,6 +111,22 @@ impl<'a> NoticeRow<'a> {
                         subject: &t.subject,
                     })
                     .collect(),
+            },
+            Notice::UnansweredCreateDropped {
+                remote,
+                oid,
+                subject,
+                path,
+                because,
+            } => NoticeRow::UnansweredCreateDropped {
+                remote: &remote.0,
+                oid,
+                subject,
+                path,
+                because: match because {
+                    DroppedBecause::Removed => "removed",
+                    DroppedBecause::NoLongerSent => "no_longer_sent",
+                },
             },
         }
     }

@@ -1,4 +1,4 @@
-use dam_domain::{Kind, Oid};
+use dam_domain::{Kind, Oid, Path};
 
 use super::store::{RemoteName, StoreError};
 use crate::remote::RejectedObject;
@@ -37,6 +37,19 @@ pub enum Notice {
         remote: RemoteName,
         tasks: Vec<MissingTask>,
     },
+    UnansweredCreateDropped {
+        remote: RemoteName,
+        oid: Oid,
+        subject: String,
+        path: Path,
+        because: DroppedBecause,
+    },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DroppedBecause {
+    Removed,
+    NoLongerSent,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

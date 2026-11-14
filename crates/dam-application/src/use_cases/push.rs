@@ -86,6 +86,7 @@ impl Dam<'_> {
         earlier_retries: &[Oid],
     ) -> Result<Sent, UseCaseError> {
         let record = self.store.attempts(&remote.name)?;
+        let dropped = creates_no_longer_sent(self.store, remote, caps, unpushed, &record)?;
         let removals = Removals::new(self.store, &remote.name, caps, &changes)?;
         let refiles = Refiles::new(self.store, &remote.name, caps, &changes)?;
         let Plan {
@@ -98,6 +99,7 @@ impl Dam<'_> {
         };
         let mut sent = send_in_waves(helper, removals, mutations, &record)?;
         sent.skipped = skipped;
+        sent.settlement.dropped = dropped;
         if !sent.stopped_before_any_answer {
             atomically(self.store, || {
                 self.settle_push(
@@ -115,6 +117,7 @@ impl Dam<'_> {
 
 mod attempting;
 mod attempts;
+mod dropped;
 mod idempotency;
 mod mutations;
 mod owed;
@@ -127,6 +130,7 @@ mod waves;
 
 use attempting::attempting;
 use attempts::record_before_the_call;
+use dropped::creates_no_longer_sent;
 use mutations::{Plan, plan};
 use owed::{OwedChanges, changes_to_send, follow_ups};
 use refiles::Refiles;

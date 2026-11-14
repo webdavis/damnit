@@ -1,5 +1,5 @@
 use super::*;
-use dam_application::{MissingTask, Notice, RejectedObject, RemoteName};
+use dam_application::{DroppedBecause, MissingTask, Notice, RejectedObject, RemoteName};
 use dam_domain::{Kind, Object, Oid, Task};
 
 fn oid(b: u8) -> Oid {
@@ -86,6 +86,20 @@ fn every_notice_variant_round_trips() {
                 oid: oid(5),
                 subject: "milk".into(),
             }],
+        },
+        Notice::UnansweredCreateDropped {
+            remote: RemoteName("t".into()),
+            oid: oid(6),
+            subject: "Ada".into(),
+            path: dam_domain::Path::parse("Work/").unwrap(),
+            because: DroppedBecause::Removed,
+        },
+        Notice::UnansweredCreateDropped {
+            remote: RemoteName("t".into()),
+            oid: oid(7),
+            subject: "Ada".into(),
+            path: dam_domain::Path::parse("Work/").unwrap(),
+            because: DroppedBecause::NoLongerSent,
         },
     ];
     for n in notices {
