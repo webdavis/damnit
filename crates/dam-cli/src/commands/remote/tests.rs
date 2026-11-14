@@ -48,15 +48,18 @@ fn remote_add_refuses_a_name_outside_the_bare_key_set_and_leaves_the_config_as_i
 }
 
 #[test]
-fn remote_add_refuses_a_duplicate_as_a_rule() {
+fn remote_add_refuses_a_name_the_config_file_holds_as_a_rule() {
     let file = FakeConfigFile::default();
-    let mut ctx = context_writing_to(&file);
-    ctx.config.remotes.push(remote("fake"));
-    let err = run_remote(&ctx, add("fake", "fake::")).unwrap_err();
+    let ctx = context_writing_to(&file);
+    run_remote(&ctx, add("fake", "fake::")).unwrap();
+    let err = run_remote(&ctx, add("fake", "other::")).unwrap_err();
     assert_eq!(err.exit_code(), 4);
     assert_eq!(err.to_string(), "remote fake already exists");
     assert_eq!(err.document()["error"]["rule"], "remote_exists");
-    assert_eq!(file.added(), vec![]);
+    assert_eq!(
+        file.added(),
+        vec![("fake".to_string(), "fake::".to_string())]
+    );
 }
 
 #[test]

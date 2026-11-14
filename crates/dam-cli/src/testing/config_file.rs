@@ -40,6 +40,12 @@ impl ConfigFile for FakeConfigFile {
         name: &RemoteName,
         url: &str,
     ) -> Result<Option<SecretsTightened>, ConfigError> {
+        if self.added.borrow().iter().any(|(held, _)| held == &name.0) {
+            return Err(ConfigError::AlreadyHeld {
+                table: EditedTable::Remotes,
+                entry: name.0.clone(),
+            });
+        }
         self.added
             .borrow_mut()
             .push((name.0.clone(), url.to_string()));

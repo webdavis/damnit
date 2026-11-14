@@ -1,6 +1,6 @@
 mod listing;
 
-use dam_application::{Refusal, RemoteName};
+use dam_application::{ConfigError, Refusal, RemoteName};
 
 use crate::args::{RemoteArgs, RemoteCommand};
 use crate::context::Context;
@@ -30,10 +30,13 @@ pub(crate) fn run_remote(ctx: &Context, args: RemoteArgs) -> Result<Report, CliE
     match args.command {
         RemoteCommand::Add { name, url } => {
             let name = RemoteName::parse(&name).map_err(|e| CliError::Usage(e.to_string()))?;
-            if ctx.config.remote(&name.0).is_some() {
-                return Err(Refusal::RemoteExists(name.0).into());
-            }
-            let warning = ctx.config_file.add_remote(&name, &url)?;
+            let warning = ctx
+                .config_file
+                .add_remote(&name, &url)
+                .map_err(|e| match e {
+                    ConfigError::AlreadyHeld { .. } => Refusal::RemoteExists(name.0.clone()).into(),
+                    other => CliError::Config(other),
+                })?;
             report(&RemoteAdded {
                 name: &name.0,
                 url: &url,
