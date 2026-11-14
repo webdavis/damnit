@@ -113,7 +113,11 @@ impl Sandbox {
     }
 
     pub fn add_token_written_as(&self, name: &str, lua_table: &str) {
-        self.change_config(|files| files.tokens.push(entry(name, lua_table)));
+        let named = entry(name, "");
+        self.change_config(|files| {
+            files.tokens.retain(|held| !held.starts_with(&named));
+            files.tokens.push(entry(name, lua_table));
+        });
     }
 
     pub fn config_path(&self) -> PathBuf {

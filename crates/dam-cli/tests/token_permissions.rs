@@ -36,7 +36,6 @@ fn every_write_verb_is_refused_to_a_token_and_the_store_is_untouched() {
     let oid = sb.new_object(&["milk"]);
     for line in [
         vec!["mv", &oid, "work"],
-        vec!["rm", &oid],
         vec!["add", "-A"],
         vec!["reset"],
         vec!["restore", &oid],

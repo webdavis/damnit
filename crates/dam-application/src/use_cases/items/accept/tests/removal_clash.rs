@@ -30,7 +30,7 @@ fn adding_a_removal_of_a_task_the_owner_edited_and_has_not_saved_stops_the_add()
 
     assert_eq!(
         s.dam().add(&[Named::Item(item.hash.clone())]),
-        Err(ItemRefusal::Clash {
+        Err(ItemRefusal::RemovesAChangedTask {
             hash: item.hash.clone(),
             target: oid(1),
             fields: vec![Field::Subject],

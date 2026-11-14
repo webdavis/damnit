@@ -56,7 +56,10 @@ fn item_oids(refusal: &ItemRefusal) -> Vec<String> {
         | ItemRefusal::TargetStaged { hash, target }
         | ItemRefusal::EditedSinceAdded { hash, target }
         | ItemRefusal::SubjectNamesNoFolder { hash, target }
-        | ItemRefusal::Clash { hash, target, .. } => vec![hash.to_string(), target.to_string()],
+        | ItemRefusal::Clash { hash, target, .. }
+        | ItemRefusal::RemovesAChangedTask { hash, target, .. } => {
+            vec![hash.to_string(), target.to_string()]
+        }
         ItemRefusal::Cycle { hash, target, path } => [hash.oid(), target]
             .into_iter()
             .chain(path)

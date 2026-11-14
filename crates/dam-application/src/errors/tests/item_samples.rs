@@ -34,6 +34,11 @@ pub(super) fn item_samples() -> Vec<ItemRefusal> {
             target: oid(2),
             fields: vec![dam_domain::Field::Subject],
         },
+        ItemRefusal::RemovesAChangedTask {
+            hash: hash(),
+            target: oid(2),
+            fields: vec![dam_domain::Field::Subject],
+        },
         ItemRefusal::Cycle {
             hash: hash(),
             target: oid(2),

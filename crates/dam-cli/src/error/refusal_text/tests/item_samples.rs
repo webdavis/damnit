@@ -62,6 +62,14 @@ pub(super) fn item_refusals_with_their_text() -> Vec<(Refusal, &'static str)> {
             "0101010 changes subject, due of 0202020, which you changed too; run dam resolve 0101010 --ours|--theirs",
         ),
         (
+            ItemRefusal::RemovesAChangedTask {
+                hash: hash(),
+                target: oid(2),
+                fields: vec![Field::Subject, Field::Done],
+            },
+            "0101010 removes 0202020, whose subject, done you changed; run dam resolve 0101010 --ours|--theirs",
+        ),
+        (
             ItemRefusal::Cycle {
                 hash: hash(),
                 target: oid(2),

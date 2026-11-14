@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/removal.schema.json",
+  "title": "dam rm answer for a token",
+  "description": "What dam rm prints with --json or --toon when a token removes a task the owner added. waiting: a removal item waits for the owner; a repeat names the same item. declined: the owner declined that removal and it is not sent again.",
+  "type": "object",
+  "required": ["answer", "item", "oid"],
+  "additionalProperties": false,
+  "properties": {
+    "answer": { "enum": ["waiting", "declined"] },
+    "item": { "$ref": "#/$defs/id", "description": "The removal item." },
+    "oid": { "$ref": "#/$defs/id", "description": "The task." }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+  }
+}

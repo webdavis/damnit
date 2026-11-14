@@ -1,4 +1,4 @@
-use dam_domain::{Object, Oid};
+use dam_domain::{Author, ItemHash, Object, Oid, Permission};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
@@ -7,6 +7,7 @@ use crate::use_cases::atomically::atomically;
 use crate::use_cases::load::load;
 use crate::use_cases::subtree::{children, move_into};
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct RemovePlan {
     pub oid: Oid,
     pub moved_up: Vec<Oid>,
@@ -14,7 +15,28 @@ pub struct RemovePlan {
     pub attached: Vec<Oid>,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum Removal {
+    Removed(RemovePlan),
+    Waiting(ItemAndTask),
+    Declined(ItemAndTask),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ItemAndTask {
+    pub item: ItemHash,
+    pub oid: Oid,
+}
+
 impl Dam<'_> {
+    pub fn remove_or_send(&self, oid: &Oid) -> Result<Removal, UseCaseError> {
+        let Author::Token(author) = self.access.author() else {
+            return Ok(Removal::Removed(self.remove(oid)?));
+        };
+        let object = self.load_permitted(oid, Permission::remove)?;
+        self.send_removal(author, object)
+    }
+
     pub fn plan_remove(&self, oid: &Oid) -> Result<RemovePlan, UseCaseError> {
         plan_for(self.store, &load(self.store, oid)?)
     }
@@ -61,6 +83,8 @@ fn plan_for(objects: &dyn ObjectRepository, object: &Object) -> Result<RemovePla
         attached,
     })
 }
+
+mod by_token;
 
 #[cfg(test)]
 mod tests;

@@ -60,7 +60,7 @@ impl Dam<'_> {
         {
             let fields = fields_the_owner_moved(before, &committed, &working);
             if !fields.is_empty() {
-                return Err(ItemRefusal::Clash {
+                return Err(ItemRefusal::RemovesAChangedTask {
                     hash: item.hash.clone(),
                     target: item.target().clone(),
                     fields,

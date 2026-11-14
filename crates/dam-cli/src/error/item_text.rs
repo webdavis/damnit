@@ -64,6 +64,22 @@ impl fmt::Display for ItemText<'_> {
                 target.short(),
                 hash.short()
             ),
+            ItemRefusal::RemovesAChangedTask {
+                hash,
+                target,
+                fields,
+            } => write!(
+                f,
+                "{} removes {}, whose {} you changed; run dam resolve {} --ours|--theirs",
+                hash.short(),
+                target.short(),
+                fields
+                    .iter()
+                    .map(|f| f.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                hash.short()
+            ),
             ItemRefusal::Cycle { hash, target, path } => write!(
                 f,
                 "{} makes {} depend on what leads back to it, a cycle through {}; decline it with dam rm {}",
