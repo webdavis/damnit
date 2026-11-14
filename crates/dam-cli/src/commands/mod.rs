@@ -3,6 +3,7 @@ mod authorship;
 mod caller_id;
 pub(crate) mod catalogue;
 mod commit;
+pub(crate) mod config;
 mod day;
 pub(crate) mod doctor;
 mod done;
@@ -64,7 +65,11 @@ pub(crate) fn dispatch_a_verb_that_opens_the_store(
         Command::Push(a) => sync::run_push(ctx, a),
         Command::Pull(a) => sync::run_pull(ctx, a),
         Command::Resolve(a) => sync::run_resolve(ctx, a),
-        Command::Category(_) | Command::Filter(_) | Command::Token(_) | Command::Doctor => {
+        Command::Category(_)
+        | Command::Filter(_)
+        | Command::Token(_)
+        | Command::Config(_)
+        | Command::Doctor => {
             unreachable!("answered before the store")
         }
     }

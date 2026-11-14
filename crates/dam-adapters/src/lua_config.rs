@@ -12,6 +12,7 @@ mod strict;
 mod token;
 mod write;
 
+pub use create::STARTER_CONFIG;
 pub use file::LuaConfigFile;
 
 #[cfg(test)]
