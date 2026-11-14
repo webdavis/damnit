@@ -97,4 +97,16 @@ fn rm_that_fails_between_two_children_moves_neither() {
     store.assert_unchanged_when_any_write_fails(|| dam.remove(&oid(1)).map(drop));
 }
 
+#[test]
+fn removing_one_of_two_namesakes_moves_up_every_child_in_the_folder_they_share() {
+    let s = Scenario::default();
+    s.filed(task_in(1, "P", "work"))
+        .filed(task_in(2, "P", "work"))
+        .filed(task_in(3, "c", "work/P"));
+    let removed = s.dam().remove(&oid(1)).unwrap();
+    assert_eq!(removed.moved_up, vec![oid(3)]);
+    assert_eq!(s.path_of(&oid(3)), "work/");
+    assert_eq!(s.path_of(&oid(2)), "work/");
+}
+
 mod take_back;
