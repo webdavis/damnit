@@ -14,6 +14,7 @@ pub fn refuse(mutations: &[Mutation]) -> PushResponse {
                 },
             })
             .collect(),
+        stopped: None,
     }
 }
 

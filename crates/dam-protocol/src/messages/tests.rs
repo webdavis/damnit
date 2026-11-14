@@ -130,6 +130,7 @@ fn push_round_trips_the_fixtures() {
                 remote_id: Some("r1".into()),
             },
         }],
+        stopped: None,
     };
     let answer = Reply::Answered(res);
     assert_eq!(
@@ -151,7 +152,13 @@ fn a_push_answer_without_results_is_refused_rather_than_read_as_no_answers() {
 #[test]
 fn a_push_response_with_an_unknown_field_still_deserializes_as_push() {
     let r: Reply<PushResponse> = serde_json::from_str(r#"{"results":[],"cursor":"abc"}"#).unwrap();
-    assert_eq!(r, Reply::Answered(PushResponse { results: vec![] }));
+    assert_eq!(
+        r,
+        Reply::Answered(PushResponse {
+            results: vec![],
+            stopped: None
+        })
+    );
 }
 
 #[test]
