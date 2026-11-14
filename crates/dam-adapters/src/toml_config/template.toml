@@ -45,7 +45,6 @@ schema = 1
 
 # A token lets a tool run dam as itself: it sets DAM_TOKEN to the value.
 # `dam token create` makes one, `dam token list` shows them, and `dam token revoke` removes one.
-# `dam token generate` prints a new value and writes nothing, for a config written from a template.
 # not_before and expires bound when the token works, and via names where it may arrive from:
 # local, mcp, or both. via is ["local"] by default.
 # require names the details each request must state with --meta KEY=VALUE, such as session and

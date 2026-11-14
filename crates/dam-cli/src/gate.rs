@@ -41,7 +41,6 @@ pub(crate) fn need(command: &Command) -> Need {
         Command::Resolve(_) => Need::OwnerOnly("resolve"),
         Command::Day(_) => Need::OwnerOnly("day"),
         Command::Token(a) => match a.command {
-            TokenCommand::Generate => Need::OwnerOnly("token generate"),
             TokenCommand::Create(_) => Need::OwnerOnly("token create"),
             TokenCommand::List => Need::OwnerOnly("token list"),
             TokenCommand::Revoke { .. } => Need::OwnerOnly("token revoke"),

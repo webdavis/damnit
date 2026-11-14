@@ -78,7 +78,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     let presented_token = std::env::var_os(TOKEN_VARIABLE);
     let meta = cli.meta.into_iter().collect();
     gate::refuse_any_token_to_an_owner_only_verb(presented_token.is_some(), &cli.command)?;
-    if presented_token.is_none() && !commands::token::writes_nothing(&cli.command) {
+    if presented_token.is_none() {
         create_the_owners_config_when_missing(&config_file, &config_path, format);
     }
     if let Command::Token(args) = cli.command {
