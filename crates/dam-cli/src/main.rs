@@ -90,8 +90,8 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     if presented_token.is_none() {
         create_the_owners_config_when_missing(&config_file, &config_path, format);
     }
-    if let Command::Config(_) = cli.command {
-        return output::print(format, color, &commands::config::check(&config_file)?);
+    if let Command::Doctor = cli.command {
+        return output::print(format, color, &commands::doctor::run(&config_file)?);
     }
     if let Command::Token(args) = cli.command {
         return output::print(

@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/webdavis/damnit/docs/schemas/config-check.schema.json",
-  "title": "dam config check answer",
-  "description": "What dam config check prints on standard output with --json or --toon when config.lua and secrets.lua both read in full. A file that does not read gives the error document instead.",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/doctor.schema.json",
+  "title": "dam doctor answer",
+  "description": "What dam doctor prints on standard output with --json or --toon when config.lua and secrets.lua both read in full. A file that does not read gives the error document instead.",
   "type": "object",
   "required": ["config", "secrets", "warnings"],
   "additionalProperties": false,

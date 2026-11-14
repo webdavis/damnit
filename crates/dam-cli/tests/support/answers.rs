@@ -138,7 +138,7 @@ pub fn answers(command: &str) -> Option<Vec<serde_json::Value>> {
             &["token", "create", "tool", "--allow", "task:read"],
         )],
         "token list" => vec![json_of(&with_token(), &["token", "list"])],
-        "config check" => vec![json_of(&with_token(), &["config", "check"])],
+        "doctor" => vec![json_of(&with_token(), &["doctor"])],
         "token revoke" => vec![json_of(&with_token(), &["token", "revoke", "tool"])],
         _ => return None,
     })

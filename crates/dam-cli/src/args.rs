@@ -1,4 +1,3 @@
-mod config;
 mod dispositions;
 mod editing;
 mod global_flags;
@@ -13,7 +12,6 @@ mod writing;
 
 use clap::Subcommand;
 
-pub(crate) use config::{ConfigArgs, ConfigCommand};
 pub(crate) use editing::EditArgs;
 pub(crate) use global_flags::Cli;
 pub(crate) use new::NewArgs;
@@ -78,8 +76,10 @@ pub(crate) enum Command {
     Resolve(ResolveArgs),
     #[command(about = "Manage the tokens tools and agents run dam with")]
     Token(TokenArgs),
-    #[command(about = "Check the config files")]
-    Config(ConfigArgs),
+    #[command(
+        about = "Read config.lua and secrets.lua in full and print where they are; an error's message may show a value from the file"
+    )]
+    Doctor,
 }
 
 #[cfg(test)]

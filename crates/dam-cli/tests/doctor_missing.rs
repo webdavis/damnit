@@ -7,12 +7,12 @@ use support::sandbox::Sandbox;
 use support::schema::assert_matches_schema;
 
 fn checked(sb: &Sandbox) -> (String, serde_json::Value) {
-    let (ok, text, err) = sb.dam(&["config", "check"]);
+    let (ok, text, err) = sb.dam(&["doctor"]);
     assert!(ok, "{err}");
-    let out = sb.output(&["config", "check", "--json"]);
+    let out = sb.output(&["doctor", "--json"]);
     assert!(out.status.success(), "{out:?}");
     let answer: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
-    assert_matches_schema(&answer, "config-check.schema.json");
+    assert_matches_schema(&answer, "doctor.schema.json");
     (text, answer)
 }
 

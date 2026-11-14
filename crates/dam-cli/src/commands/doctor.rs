@@ -31,7 +31,7 @@ impl View for ConfigChecked {
     }
 }
 
-pub(crate) fn check(file: &LuaConfigFile) -> Result<Report, CliError> {
+pub(crate) fn run(file: &LuaConfigFile) -> Result<Report, CliError> {
     let config = file.check().map_err(CliError::ConfigCheck)?;
     report(&ConfigChecked {
         config: found(file.config_path()),

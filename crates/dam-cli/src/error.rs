@@ -125,7 +125,7 @@ impl fmt::Display for CliError {
             | CliError::ConfigCheck(e) => {
                 write!(f, "{}", ConfigText(e))
             }
-            CliError::Config(e) => write!(f, "{}; run dam config check", ConfigText(e)),
+            CliError::Config(e) => write!(f, "{}; run dam doctor", ConfigText(e)),
             CliError::Open(e) => write!(f, "{e}"),
             CliError::Usage(text) | CliError::Io(text) | CliError::Internal(text) => {
                 f.write_str(text)

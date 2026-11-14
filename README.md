@@ -42,10 +42,10 @@ and never a secret. `secrets.lua` holds each remote's credentials and the tokens
 A credential is a string, or a function dam calls only when the remote is used. Any key dam does
 not know fails with exit 1. `docs/examples/` holds one of each file.
 
-`dam config check` reads both files in full and prints their paths and any token warnings, or the
+`dam doctor` reads both files in full and prints their paths and any token warnings, or the
 error. It prints `no secrets.lua` for a missing file. Its error may quote `secrets.lua`. Elsewhere only a credential function's own error reaches
 you, and only when you run the command without `DAM_TOKEN`.
-`docs/schemas/config-check.schema.json` is the schema of its `--json` answer.
+`docs/schemas/doctor.schema.json` is the schema of its `--json` answer.
 
 `stale` makes reads pull first when the last pull is older than that. A failed pull that a read
 started leaves a notice in `dam status`, and the read still answers. `deadline` (default `"60s"`)
