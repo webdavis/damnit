@@ -31,7 +31,9 @@ pub use remote::{
 };
 pub use secret::Secret;
 pub use service::{Dam, Remotes};
-pub use tokens::{NewToken, Standing, TokenConfig, TokenName, TokenTerms, Tokens};
+pub use tokens::{
+    NewToken, Standing, TokenConfig, TokenName, TokenTerms, Tokens, disable_shared_values,
+};
 pub use use_cases::agenda::{Scheduled, Window};
 pub use use_cases::complete::{CompletePlan, Completed};
 pub use use_cases::edit::{EditFields, apply};

@@ -1,7 +1,7 @@
 mod grant;
 mod terms;
 
-use dam_application::{Standing, TokenConfig, Tokens};
+use dam_application::{Standing, TokenConfig, Tokens, disable_shared_values};
 use dam_domain::Token;
 use dam_toml::StrictTable;
 use toml::Value;
@@ -44,26 +44,6 @@ pub(super) fn parse_tokens(root: &StrictTable) -> Tokens {
         entries: disable_shared_values(entries),
         warnings,
     }
-}
-
-fn disable_shared_values(mut entries: Vec<TokenConfig>) -> Vec<TokenConfig> {
-    let sharers: Vec<Vec<String>> = entries
-        .iter()
-        .map(|entry| {
-            entries
-                .iter()
-                .filter(|other| other.name != entry.name && other.value == entry.value)
-                .map(|other| format!("token {}", other.name))
-                .collect()
-        })
-        .collect();
-    for (entry, others) in entries.iter_mut().zip(sharers) {
-        if !others.is_empty() {
-            let why = format!("it holds the same value as {}", others.join(", "));
-            entry.standing = Standing::Disabled(why);
-        }
-    }
-    entries
 }
 
 fn newer_schema(schema: Option<&Value>) -> Option<String> {

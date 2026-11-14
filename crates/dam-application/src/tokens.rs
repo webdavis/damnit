@@ -16,6 +16,26 @@ pub struct TokenConfig {
     pub standing: Standing,
 }
 
+pub fn disable_shared_values(mut entries: Vec<TokenConfig>) -> Vec<TokenConfig> {
+    let sharers: Vec<Vec<String>> = entries
+        .iter()
+        .map(|entry| {
+            entries
+                .iter()
+                .filter(|other| other.name != entry.name && other.value == entry.value)
+                .map(|other| format!("token {}", other.name))
+                .collect()
+        })
+        .collect();
+    for (entry, others) in entries.iter_mut().zip(sharers) {
+        if !others.is_empty() {
+            let why = format!("it holds the same value as {}", others.join(", "));
+            entry.standing = Standing::Disabled(why);
+        }
+    }
+    entries
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Standing {
     Usable(TokenTerms),
