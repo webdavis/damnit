@@ -1,5 +1,3 @@
-mod add_remote;
-mod add_token;
 mod edit;
 mod edited_files;
 mod insert;
@@ -8,7 +6,10 @@ mod locate;
 mod lua_text;
 mod remote_entry;
 mod remove;
-mod remove_token;
 mod replace;
 mod section;
 mod token_entry;
+
+pub(super) use edit::Change;
+pub(super) use remote_entry::remote_entry;
+pub(super) use token_entry::token_entry;

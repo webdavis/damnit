@@ -61,7 +61,7 @@ fn an_error_names_the_whole_path_however_long_the_folder_name() {
     let path = folder.join("config.lua");
     std::fs::write(&path, "return {\n  owner = = 1,\n}\n").unwrap();
     let why = LuaConfigFile::new(path.clone())
-        .load()
+        .load_with_credentials()
         .map(|loaded| loaded.config)
         .unwrap_err()
         .to_string();

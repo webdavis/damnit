@@ -1,3 +1,5 @@
+use dam_application::ConfigFile;
+
 use super::support::{bare_token, secrets};
 
 const WRITTEN_BY_HAND: &str = "-- kept as written\nreturn {\n  schema = 1,\n  remote = {\n    \

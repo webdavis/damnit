@@ -24,7 +24,7 @@ impl LuaConfigFile {
         LuaConfigFile { config }
     }
 
-    pub fn load(&self) -> Result<LoadedConfig, ConfigError> {
+    pub fn load_with_credentials(&self) -> Result<LoadedConfig, ConfigError> {
         let mut config = self.settings_in(read_text(&self.config)?.as_deref())?;
         let lua = Lua::new();
         let path = self.secrets_path();

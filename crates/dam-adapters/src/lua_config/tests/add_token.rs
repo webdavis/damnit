@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 use std::os::unix::fs::PermissionsExt;
 
-use dam_application::{NewToken, Standing};
+use dam_application::{ConfigFile, NewToken, Standing};
 use dam_domain::{Channel, Grant, Path, Permission};
 
 use super::support::{Folder, bare_token, secrets};

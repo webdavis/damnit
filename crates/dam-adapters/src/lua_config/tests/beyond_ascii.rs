@@ -1,4 +1,4 @@
-use dam_application::RemoteName;
+use dam_application::{ConfigFile, RemoteName};
 
 use super::support::{bare_token, config, secrets};
 

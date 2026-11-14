@@ -60,7 +60,7 @@ fn schema_errors(example: &str, schema_name: &str) -> Vec<String> {
 #[test]
 fn the_example_files_load() {
     let config = LuaConfigFile::new(docs().join("examples/config.lua"))
-        .load()
+        .load_with_credentials()
         .unwrap()
         .config;
     assert_eq!(config.owner.as_deref(), Some("Ada"));
