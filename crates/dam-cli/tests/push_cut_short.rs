@@ -4,12 +4,12 @@ use support::config_files::Remote;
 use support::errors::error_document;
 use support::sandbox::Sandbox;
 
-const A_SECOND_IS_THE_SHORTEST_DEADLINE_THE_CONFIG_TAKES: &str =
-    "a push cut short by the deadline waits out the shortest deadline the config takes, 1s";
+const THE_DEADLINE_IS_LONG_ENOUGH_FOR_A_BUSY_MACHINE: &str =
+    "a push cut short by the deadline waits out a deadline a busy machine answers within, 2s";
 
-fn two_committed_tasks_on_a_one_second_deadline() -> Sandbox {
+fn two_committed_tasks_on_a_two_second_deadline() -> Sandbox {
     let sb = Sandbox::new();
-    sb.add_remote("fake", Remote::fake().deadline("1s"));
+    sb.add_remote("fake", Remote::fake().deadline("2s"));
     for subject in ["buy oat milk", "call Ada"] {
         sb.new_object(&[subject]);
         assert!(sb.dam(&["add", "-A"]).0);
@@ -32,8 +32,8 @@ fn a_push_the_deadline_cuts_short_says_how_much_it_kept_and_resends_only_the_res
     let _guard = support::guard(
         "a_push_the_deadline_cuts_short_says_how_much_it_kept_and_resends_only_the_rest",
     )
-    .allow_slow(A_SECOND_IS_THE_SHORTEST_DEADLINE_THE_CONFIG_TAKES);
-    let sb = two_committed_tasks_on_a_one_second_deadline();
+    .allow_slow(THE_DEADLINE_IS_LONG_ENOUGH_FOR_A_BUSY_MACHINE);
+    let sb = two_committed_tasks_on_a_two_second_deadline();
     sb.hang_the_next_push(true);
 
     let out = sb.output(&["push"]);
@@ -42,7 +42,7 @@ fn a_push_the_deadline_cuts_short_says_how_much_it_kept_and_resends_only_the_res
     assert_eq!(String::from_utf8_lossy(&out.stdout), "");
     assert_eq!(
         String::from_utf8_lossy(&out.stderr),
-        "dam: helper fake gave no answer within 1s; 1 kept, 1 unanswered\n"
+        "dam: helper fake gave no answer within 2s; 1 kept, 1 unanswered\n"
     );
     only_the_second_is_sent_again(&sb);
 }
@@ -51,8 +51,8 @@ fn a_push_the_deadline_cuts_short_says_how_much_it_kept_and_resends_only_the_res
 fn a_push_the_deadline_cuts_short_before_any_answer_prints_as_it_always_did() {
     let _guard =
         support::guard("a_push_the_deadline_cuts_short_before_any_answer_prints_as_it_always_did")
-            .allow_slow(A_SECOND_IS_THE_SHORTEST_DEADLINE_THE_CONFIG_TAKES);
-    let sb = two_committed_tasks_on_a_one_second_deadline();
+            .allow_slow(THE_DEADLINE_IS_LONG_ENOUGH_FOR_A_BUSY_MACHINE);
+    let sb = two_committed_tasks_on_a_two_second_deadline();
     sb.hang_the_next_push(false);
 
     let out = sb.output(&["push"]);
@@ -60,7 +60,7 @@ fn a_push_the_deadline_cuts_short_before_any_answer_prints_as_it_always_did() {
     assert_eq!(out.status.code(), Some(1));
     assert_eq!(
         String::from_utf8_lossy(&out.stderr),
-        "dam: helper fake gave no answer within 1s\n"
+        "dam: helper fake gave no answer within 2s\n"
     );
     assert_eq!(sb.pushes().len(), 1);
 }
@@ -69,8 +69,8 @@ fn a_push_the_deadline_cuts_short_before_any_answer_prints_as_it_always_did() {
 fn the_json_error_of_a_cut_short_push_carries_the_counts_in_its_message() {
     let _guard =
         support::guard("the_json_error_of_a_cut_short_push_carries_the_counts_in_its_message")
-            .allow_slow(A_SECOND_IS_THE_SHORTEST_DEADLINE_THE_CONFIG_TAKES);
-    let sb = two_committed_tasks_on_a_one_second_deadline();
+            .allow_slow(THE_DEADLINE_IS_LONG_ENOUGH_FOR_A_BUSY_MACHINE);
+    let sb = two_committed_tasks_on_a_two_second_deadline();
     sb.hang_the_next_push(true);
 
     let out = sb.output(&["push", "--json"]);
@@ -81,7 +81,7 @@ fn the_json_error_of_a_cut_short_push_carries_the_counts_in_its_message() {
         serde_json::json!({"error": {
             "kind": "helper",
             "rule": null,
-            "message": "helper fake gave no answer within 1s; 1 kept, 1 unanswered",
+            "message": "helper fake gave no answer within 2s; 1 kept, 1 unanswered",
             "oids": [],
         }})
     );
@@ -92,7 +92,7 @@ fn a_push_cancelled_after_the_first_answer_says_how_much_it_kept_and_resends_onl
     let _guard = support::guard(
         "a_push_cancelled_after_the_first_answer_says_how_much_it_kept_and_resends_only_the_rest",
     );
-    let sb = two_committed_tasks_on_a_one_second_deadline();
+    let sb = two_committed_tasks_on_a_two_second_deadline();
     sb.add_remote("fake", Remote::fake().deadline("30s"));
     sb.hang_the_next_push(true);
 
