@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 use std::path::PathBuf;
 
-use dam_application::ConfigError;
+use dam_application::{ByHand, ConfigError, EditFault, EditedTable, SecretsTightened};
 
 use super::insert::Indent;
 use super::replace::{Holds, replace};
@@ -20,8 +20,7 @@ pub(in crate::lua_config) enum Change<'a, R> {
 pub(in crate::lua_config) struct EditedFile<'a, R> {
     pub(super) path: PathBuf,
     pub(super) holds: Holds,
-    pub(super) file: &'static str,
-    pub(super) table: &'static str,
+    pub(super) table: EditedTable,
     pub(super) missing: &'static str,
     pub(super) config: &'a LuaConfigFile,
     pub(super) read: fn(&LuaConfigFile, Option<&str>) -> Result<R, ConfigError>,
@@ -32,9 +31,9 @@ impl<R> EditedFile<'_, R> {
     pub(in crate::lua_config) fn edit(
         &self,
         name: &str,
-        by_hand: String,
+        by_hand: ByHand,
         change: Change<'_, R>,
-    ) -> Result<Option<String>, ConfigError> {
+    ) -> Result<Option<SecretsTightened>, ConfigError> {
         replace(&self.path, self.holds, |current| {
             self.edited(name, by_hand, &change, current)
         })
@@ -43,7 +42,7 @@ impl<R> EditedFile<'_, R> {
     pub(in crate::lua_config) fn can_edit(
         &self,
         name: &str,
-        by_hand: String,
+        by_hand: ByHand,
         change: Change<'_, R>,
     ) -> Result<(), ConfigError> {
         let current = read_text(&self.path)?;
@@ -54,12 +53,11 @@ impl<R> EditedFile<'_, R> {
     fn edited(
         &self,
         name: &str,
-        by_hand: String,
+        by_hand: ByHand,
         change: &Change<'_, R>,
         current: Option<&str>,
     ) -> Result<String, ConfigError> {
         let section = Section {
-            file: self.file,
             table: self.table,
             entry: name,
             by_hand,
@@ -92,18 +90,16 @@ impl<R> EditedFile<'_, R> {
         after: &R,
     ) -> Result<(), ConfigError> {
         let names = (self.names)(after);
-        let (table, name) = (self.table, section.entry);
-        let wrong = match change {
-            Change::Add { as_written, .. } if !as_written(after) => {
-                format!("would not hold {table} {name}")
-            }
-            Change::Remove if names.contains(name) => format!("would still hold {table} {name}"),
-            _ if &names != expected => format!("would not keep every other {table}"),
+        let fault = match change {
+            Change::Add { as_written, .. } if !as_written(after) => EditFault::WouldNotHoldTheEntry,
+            Change::Remove if names.contains(section.entry) => EditFault::WouldStillHoldTheEntry,
+            _ if &names != expected => EditFault::WouldNotKeepTheOthers,
             _ => return Ok(()),
         };
-        Err(ConfigError::Invalid(format!(
-            "the new {} {wrong}",
-            self.file
-        )))
+        Err(ConfigError::EditWouldBreak {
+            table: self.table,
+            entry: section.entry.to_string(),
+            fault,
+        })
     }
 }

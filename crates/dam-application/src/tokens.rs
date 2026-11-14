@@ -1,12 +1,16 @@
+mod fault;
+
 use std::collections::BTreeSet;
 
 use dam_domain::{Channel, Grant, Timestamp, Token};
+
+pub use fault::{TokenFault, TokenWarning};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Tokens {
     pub names: Vec<String>,
     pub entries: Vec<TokenConfig>,
-    pub warnings: Vec<String>,
+    pub warnings: Vec<TokenWarning>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -23,14 +27,13 @@ pub fn disable_shared_values(mut entries: Vec<TokenConfig>) -> Vec<TokenConfig> 
             entries
                 .iter()
                 .filter(|other| other.name != entry.name && other.value == entry.value)
-                .map(|other| format!("token {}", other.name))
+                .map(|other| other.name.clone())
                 .collect()
         })
         .collect();
-    for (entry, others) in entries.iter_mut().zip(sharers) {
-        if !others.is_empty() {
-            let why = format!("it holds the same value as {}", others.join(", "));
-            entry.standing = Standing::Disabled(why);
+    for (entry, with) in entries.iter_mut().zip(sharers) {
+        if !with.is_empty() {
+            entry.standing = Standing::Disabled(TokenFault::SharesValue { with });
         }
     }
     entries
@@ -39,7 +42,7 @@ pub fn disable_shared_values(mut entries: Vec<TokenConfig>) -> Vec<TokenConfig> 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Standing {
     Usable(TokenTerms),
-    Disabled(String),
+    Disabled(TokenFault),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

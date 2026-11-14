@@ -1,8 +1,10 @@
 use std::os::unix::fs::PermissionsExt;
 
-use dam_application::{ConfigFile, RemoteName};
+use dam_application::{
+    ByHand, ConfigError, ConfigFile, EditedTable, Misread, RemoteName, Uneditable,
+};
 
-use super::support::{Folder, config};
+use super::support::{Folder, config, held_already, in_table};
 
 fn todoist() -> RemoteName {
     RemoteName::parse("todoist").unwrap()
@@ -102,27 +104,36 @@ fn a_remote_the_file_already_holds_is_refused_by_name_and_the_file_is_kept() {
         .file()
         .add_remote(&todoist(), "todoist::")
         .unwrap_err();
-    assert_eq!(
-        why.to_string(),
-        "config: config.lua already holds remote todoist"
-    );
+    assert_eq!(why, held_already(EditedTable::Remotes, "todoist"));
     assert_eq!(folder.text("config.lua"), before);
 }
 
 #[test]
 fn a_table_built_in_code_is_refused_with_the_entry_to_write_by_hand() {
-    for before in [
-        "local t = { remote = {} }\nreturn t\n",
-        "local function remotes() return {} end\nreturn { remote = remotes() }\n",
+    for (before, why) in [
+        (
+            "local t = { remote = {} }\nreturn t\n",
+            Uneditable::ReturnsBuiltInCode,
+        ),
+        (
+            "local function remotes() return {} end\nreturn { remote = remotes() }\n",
+            Uneditable::TableBuiltInCode,
+        ),
     ] {
         let folder = config(before);
-        let why = folder
-            .file()
-            .add_remote(&todoist(), "todoist::")
-            .unwrap_err();
-        let why = why.to_string();
-        assert!(why.contains("built in code"), "{why}");
-        assert!(why.contains("todoist = { url = \"todoist::\" }"), "{why}");
+        assert_eq!(
+            folder
+                .file()
+                .add_remote(&todoist(), "todoist::")
+                .unwrap_err(),
+            ConfigError::CannotEdit {
+                table: EditedTable::Remotes,
+                why,
+                by_hand: ByHand::AddRemote {
+                    entry: "todoist = { url = \"todoist::\" }".into()
+                },
+            }
+        );
         assert_eq!(folder.text("config.lua"), before);
     }
 }
@@ -131,10 +142,13 @@ fn a_table_built_in_code_is_refused_with_the_entry_to_write_by_hand() {
 fn a_remote_the_reader_would_refuse_is_never_written() {
     let before = "return {}\n";
     let folder = config(before);
-    let why = folder.file().add_remote(&todoist(), "::").unwrap_err();
-    assert!(
-        why.to_string().contains("must look like <helper>::"),
-        "{why}"
+    assert_eq!(
+        folder.file().add_remote(&todoist(), "::").unwrap_err(),
+        Misread::NotAHelperUrl {
+            url: "::".into(),
+            at: in_table("remote.todoist", "config.lua"),
+        }
+        .into()
     );
     assert_eq!(folder.text("config.lua"), before);
 }
@@ -176,6 +190,9 @@ fn a_config_lua_that_is_not_lua_is_refused_with_the_line_the_reader_names() {
         .file()
         .add_remote(&todoist(), "todoist::")
         .unwrap_err();
-    assert!(why.to_string().contains("config.lua:2:"), "{why}");
+    assert!(
+        matches!(&why, ConfigError::StoppedLoading { path, line: Some(2), .. } if path == &folder.path("config.lua")),
+        "{why:?}"
+    );
     assert_eq!(folder.text("config.lua"), before);
 }

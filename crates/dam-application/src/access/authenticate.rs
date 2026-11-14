@@ -3,14 +3,14 @@ use std::collections::BTreeMap;
 use dam_domain::{Channel, Grants, Timestamp, Token, TokenError};
 
 use super::Holder;
-use crate::tokens::{Standing, TokenConfig, Tokens};
+use crate::tokens::{Standing, TokenConfig, TokenFault, Tokens};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TokenRefusal {
     Malformed,
     UnknownVersion(String),
     Unknown,
-    Disabled { name: String, why: String },
+    Disabled { name: String, why: TokenFault },
     NotYetValid { name: String },
     Expired { name: String },
     ChannelNotAllowed { name: String, channel: Channel },

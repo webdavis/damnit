@@ -1,4 +1,4 @@
-use dam_application::{Config, Tokens};
+use dam_application::{Config, EditedTable, Tokens};
 
 use super::edit::EditedFile;
 use super::replace::Holds;
@@ -9,8 +9,7 @@ impl LuaConfigFile {
         EditedFile {
             path: self.config_path().to_path_buf(),
             holds: Holds::Settings,
-            file: "config.lua",
-            table: "remote",
+            table: EditedTable::Remotes,
             missing: "return {\n}\n",
             config: self,
             read: LuaConfigFile::settings_in,
@@ -28,8 +27,7 @@ impl LuaConfigFile {
         EditedFile {
             path: self.secrets_path(),
             holds: Holds::Secrets,
-            file: "secrets.lua",
-            table: "token",
+            table: EditedTable::Tokens,
             missing: "return {\n  schema = 1,\n}\n",
             config: self,
             read: LuaConfigFile::tokens_in,

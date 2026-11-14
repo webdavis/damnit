@@ -16,7 +16,10 @@ pub(super) fn read_text(path: &Path) -> Result<Option<String>, ConfigError> {
         Ok(text) if text.trim().is_empty() => Ok(None),
         Ok(text) => Ok(Some(text)),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(e) => Err(ConfigError::Io(format!("{}: {e}", path.display()))),
+        Err(e) => Err(ConfigError::Unreadable {
+            path: path.to_path_buf(),
+            why: e.to_string(),
+        }),
     }
 }
 
@@ -35,40 +38,43 @@ pub(super) fn evaluate(
         .set_name(format!("@{short_name}"))
         .set_mode(ChunkMode::Text)
         .eval()
-        .map_err(|e| {
-            let message = naming_the_whole_path(path, &short_name, &e);
-            ConfigError::Unloadable(match (&e, error_text) {
-                (_, ErrorText::QuotesTheFile) => message,
-                (mlua::Error::SyntaxError { .. }, _) => without_the_text_lua_stopped_at(message),
-                (_, ErrorText::QuotesWhatItsCodeRaised) => message,
-                _ => only_where_it_stopped(path, &short_name, &e),
-            })
-        })?;
+        .map_err(|e| stopped_loading(path, &short_name, &e, error_text))?;
     match value {
         Value::Table(table) => Ok(Some(table)),
-        other => Err(ConfigError::Invalid(format!(
-            "{} must return a table, and it returned {}",
-            path.display(),
-            described(&other)
-        ))),
+        other => Err(ConfigError::NotATable {
+            path: path.to_path_buf(),
+            returned: described(&other),
+        }),
+    }
+}
+
+fn stopped_loading(
+    path: &Path,
+    short_name: &str,
+    error: &mlua::Error,
+    error_text: ErrorText,
+) -> ConfigError {
+    let message = lua_message(error);
+    let (line, reason) = match line_and_reason(short_name, &message) {
+        Some((line, reason)) => (line.parse().ok(), reason.to_string()),
+        None => (None, message.clone()),
+    };
+    let reason = match (error, error_text) {
+        (_, ErrorText::QuotesTheFile) => Some(reason),
+        (mlua::Error::SyntaxError { .. }, _) => Some(without_the_text_lua_stopped_at(reason)),
+        (_, ErrorText::QuotesWhatItsCodeRaised) => Some(reason),
+        _ => None,
+    };
+    ConfigError::StoppedLoading {
+        path: path.to_path_buf(),
+        line,
+        reason,
     }
 }
 
 pub(super) fn short_name_lua_never_truncates(path: &Path) -> String {
     path.file_name()
         .map_or_else(String::new, |name| name.to_string_lossy().into_owned())
-}
-
-fn naming_the_whole_path(path: &Path, short_name: &str, error: &mlua::Error) -> String {
-    let message = lua_message(error);
-    located_by_the_whole_path(path, short_name, &message).unwrap_or(message)
-}
-
-fn located_by_the_whole_path(path: &Path, short_name: &str, message: &str) -> Option<String> {
-    let line_and_reason = message.strip_prefix(short_name)?;
-    line_and_reason
-        .starts_with(':')
-        .then(|| format!("{}{line_and_reason}", path.display()))
 }
 
 pub(super) fn described(value: &Value) -> String {
@@ -89,14 +95,6 @@ pub(super) fn line_and_reason<'a>(
         .split_once(':')?;
     (!line.is_empty() && line.bytes().all(|b| b.is_ascii_digit()))
         .then(|| (line, reason.trim_start()))
-}
-
-fn only_where_it_stopped(path: &Path, short_name: &str, error: &mlua::Error) -> String {
-    let message = lua_message(error);
-    match line_and_reason(short_name, &message).map(|(line, _)| line) {
-        Some(line) => format!("{}:{line}: loading stopped at an error", path.display()),
-        None => format!("{}: loading stopped at an error", path.display()),
-    }
 }
 
 fn without_the_text_lua_stopped_at(message: String) -> String {

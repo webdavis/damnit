@@ -1,10 +1,24 @@
-use dam_application::Standing;
+use dam_application::{Expected, Misread, Standing, TokenFault, TokenWarning};
 
-use super::support::{secrets, token, tokens, value};
+use super::support::{in_table, secrets, token, tokens, value};
 
 #[test]
 fn a_schema_other_than_one_disables_every_token_and_the_rest_still_reads() {
-    for schema in ["2", "'one'", "1.5"] {
+    for (schema, fault) in [
+        ("2", TokenFault::NewerSchema { found: 2, reads: 1 }),
+        (
+            "'one'",
+            TokenFault::SchemaNotWhole {
+                found: "\"one\"".into(),
+            },
+        ),
+        (
+            "1.5",
+            TokenFault::SchemaNotWhole {
+                found: "1.5".into(),
+            },
+        ),
+    ] {
         let text = format!(
             "return {{ schema = {schema}, remote = {{ todoist = {{ api_token = 'abc' }} }}, \
              token = {{ a = {{ value = {:?} }}, b = {{ value = {:?} }} }} }}",
@@ -15,10 +29,7 @@ fn a_schema_other_than_one_disables_every_token_and_the_rest_still_reads() {
         assert_eq!(config.remote("todoist").unwrap().credentials.len(), 1);
         assert_eq!(config.tokens.entries.len(), 2);
         for entry in &config.tokens.entries {
-            let Standing::Disabled(why) = &entry.standing else {
-                panic!("{entry:?} is usable");
-            };
-            assert!(why.contains("schema"), "{why}");
+            assert_eq!(entry.standing, Standing::Disabled(fault.clone()));
         }
     }
 }
@@ -29,10 +40,17 @@ fn a_token_without_a_readable_value_is_left_out_with_a_warning() {
         "return { token = { a = { via = { 'local' } }, b = { value = 'hunter2' }, c = { value = 7 } } }",
     );
     assert!(entries.is_empty());
-    assert_eq!(warnings.len(), 3, "{warnings:?}");
-    assert!(
-        warnings.iter().all(|w| !w.contains("hunter2")),
-        "{warnings:?}"
+    let ignored = |name: &str, why| TokenWarning::Ignored {
+        name: name.into(),
+        why,
+    };
+    assert_eq!(
+        warnings,
+        [
+            ignored("a", TokenFault::NoValue),
+            ignored("b", TokenFault::ValueNotAToken),
+            ignored("c", TokenFault::ValueNotText),
+        ]
     );
 }
 
@@ -53,8 +71,18 @@ fn a_token_that_is_not_a_table_is_ignored_by_name_and_the_others_load() {
     ));
     let names: Vec<_> = entries.iter().map(|entry| entry.name.as_str()).collect();
     assert_eq!(names, ["b"]);
-    assert_eq!(warnings.len(), 1, "{warnings:?}");
-    assert!(warnings[0].contains("token a"), "{warnings:?}");
+    assert_eq!(
+        warnings,
+        [TokenWarning::Ignored {
+            name: "a".into(),
+            why: Misread::WrongType {
+                key: "a".into(),
+                at: in_table("token", "secrets.lua"),
+                expected: Expected::Table,
+            }
+            .into(),
+        }]
+    );
 }
 
 #[test]
@@ -64,12 +92,11 @@ fn a_schema_that_is_not_a_whole_number_says_so() {
         value(1)
     );
     let (entries, _) = tokens(&text);
-    let Standing::Disabled(why) = &entries[0].standing else {
-        panic!("{:?} is usable", entries[0]);
-    };
     assert_eq!(
-        why,
-        "schema in secrets.lua must be a whole number, and it is 1.0"
+        entries[0].standing,
+        Standing::Disabled(TokenFault::SchemaNotWhole {
+            found: "1.0".into(),
+        })
     );
 }
 
@@ -93,10 +120,10 @@ fn a_token_with_limits_is_disabled_since_limits_are_not_enforced_yet() {
         value(1),
         value(2)
     ));
-    let Standing::Disabled(why) = &entries[0].standing else {
-        panic!("{:?} is usable", entries[0]);
-    };
-    assert!(why.contains("limits are not enforced yet"), "{why}");
+    assert_eq!(
+        entries[0].standing,
+        Standing::Disabled(TokenFault::LimitsNotEnforced)
+    );
     assert!(matches!(entries[1].standing, Standing::Usable(_)));
 }
 
@@ -110,11 +137,12 @@ fn tokens_sharing_one_value_are_all_disabled_by_name_and_the_value_is_never_name
     ));
     let standing = |name: &str| &entries.iter().find(|e| e.name == name).unwrap().standing;
     for (name, other) in [("a", "c"), ("c", "a")] {
-        let Standing::Disabled(why) = standing(name) else {
-            panic!("token {name} is usable");
-        };
-        assert!(why.contains(&format!("token {other}")), "{why}");
-        assert!(!why.contains(&value(1)[8..]), "{why}");
+        assert_eq!(
+            standing(name),
+            &Standing::Disabled(TokenFault::SharesValue {
+                with: vec![other.to_string()],
+            })
+        );
     }
     assert!(matches!(standing("b"), Standing::Usable(_)));
 }

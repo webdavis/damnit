@@ -1,4 +1,4 @@
-use dam_application::ConfigFile;
+use dam_application::{ConfigError, ConfigFile};
 
 use super::support::{bare_token, secrets};
 
@@ -48,9 +48,11 @@ fn a_refusal_while_checking_secrets_lua_never_quotes_its_text() {
             file.add_token(&bare_token("other")).unwrap_err(),
             file.remove_token("tool").unwrap_err(),
         ] {
-            let why = why.to_string();
-            assert!(why.contains("secrets.lua"), "{why}");
-            assert!(!why.contains("sekret"), "{why}");
+            let ConfigError::StoppedLoading { path, reason, .. } = &why else {
+                panic!("{why:?}");
+            };
+            assert_eq!(path, &folder.path("secrets.lua"));
+            assert!(!format!("{reason:?}").contains("sekret"), "{why:?}");
         }
         assert_eq!(folder.text("secrets.lua"), before);
     }

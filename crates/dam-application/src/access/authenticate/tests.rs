@@ -88,12 +88,16 @@ fn a_well_formed_token_no_config_entry_holds_is_unknown() {
 
 #[test]
 fn a_disabled_token_is_refused_with_its_reason() {
-    let tokens = one("tool", token(1), Standing::Disabled("unknown key x".into()));
+    let tokens = one(
+        "tool",
+        token(1),
+        Standing::Disabled(TokenFault::LimitsNotEnforced),
+    );
     assert_eq!(
         local(&tokens, &token(1).expose()),
         Err(TokenRefusal::Disabled {
             name: "tool".into(),
-            why: "unknown key x".into()
+            why: TokenFault::LimitsNotEnforced
         })
     );
 }
@@ -158,7 +162,7 @@ fn every_refusal_has_its_own_rule_name() {
         TokenRefusal::Unknown,
         TokenRefusal::Disabled {
             name: "a".into(),
-            why: "b".into(),
+            why: TokenFault::NoValue,
         },
         TokenRefusal::NotYetValid { name: "a".into() },
         TokenRefusal::Expired { name: "a".into() },

@@ -5,16 +5,24 @@ use dam_application::{ConfigError, Refusal, UseCaseError};
 
 use crate::editor::EditorError;
 
+mod config_text;
 mod conversions;
+mod edit_text;
 mod item_text;
+mod misread_text;
 mod misuse;
 mod refusal_oids;
 mod refusal_text;
+mod secrets_tightened_text;
+mod token_fault_text;
 mod token_text;
 mod use_case_text;
 
+use config_text::ConfigText;
 pub(crate) use misuse::{Misuse, Problem};
 use refusal_oids::refusal_oids;
+pub(crate) use secrets_tightened_text::SecretsTightenedText;
+pub(crate) use token_fault_text::{TokenFaultText, TokenWarningText};
 pub(crate) use use_case_text::UseCaseText;
 
 #[derive(Debug)]
@@ -23,7 +31,6 @@ pub(crate) enum CliError {
     Editor(EditorError),
     Config(ConfigError),
     ConfigCheck(ConfigError),
-    ConfigNotLua(std::path::PathBuf),
     Open(OpenError),
     Usage(String),
     CommandLine(Misuse),
@@ -64,16 +71,15 @@ impl CliError {
             CliError::UseCase(UseCaseError::Store(_))
             | CliError::Open(_)
             | CliError::Io(_)
-            | CliError::Config(ConfigError::Io(_))
-            | CliError::ConfigCheck(ConfigError::Io(_)) => "store",
+            | CliError::Config(ConfigError::Unreadable { .. })
+            | CliError::ConfigCheck(ConfigError::Unreadable { .. }) => "store",
             CliError::UseCase(UseCaseError::Helper(_)) => "helper",
             CliError::UseCase(UseCaseError::Credential(_)) => "credential",
             CliError::Editor(_) => KIND_OF_AN_EDITOR_FAILURE_NO_DOCUMENT_CARRIES,
             CliError::UseCase(UseCaseError::Parse(_))
             | CliError::UseCase(UseCaseError::Query(_))
             | CliError::Config(_)
-            | CliError::ConfigCheck(_)
-            | CliError::ConfigNotLua(_) => "parse",
+            | CliError::ConfigCheck(_) => "parse",
             CliError::Usage(_) | CliError::CommandLine(_) => KIND_USAGE,
             CliError::Cancelled => "cancelled",
             CliError::Internal(_) => "internal",
@@ -113,13 +119,10 @@ impl fmt::Display for CliError {
         match self {
             CliError::UseCase(e) => write!(f, "{}", UseCaseText(e)),
             CliError::Editor(e) => write!(f, "editor: {}", e.0),
-            CliError::Config(e) => write!(f, "{e}; run dam config check"),
-            CliError::ConfigCheck(e) => write!(f, "{e}"),
-            CliError::ConfigNotLua(path) => write!(
-                f,
-                "config: {} does not end in .lua; the config is config.lua now",
-                path.display()
-            ),
+            CliError::Config(e @ ConfigError::NotLua(_)) | CliError::ConfigCheck(e) => {
+                write!(f, "{}", ConfigText(e))
+            }
+            CliError::Config(e) => write!(f, "{}; run dam config check", ConfigText(e)),
             CliError::Open(e) => write!(f, "{e}"),
             CliError::Usage(text) | CliError::Io(text) | CliError::Internal(text) => {
                 f.write_str(text)

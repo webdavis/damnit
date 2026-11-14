@@ -1,4 +1,4 @@
-use dam_application::{ConfigFile, RemoteName};
+use dam_application::{ConfigError, ConfigFile, RemoteName};
 
 use super::support::{Folder, bare_token};
 
@@ -58,28 +58,28 @@ fn a_blank_secrets_lua_reads_and_is_written_like_a_missing_one() {
 #[test]
 fn a_config_lua_of_only_comments_is_refused_by_the_reader_and_the_writer() {
     let folder = Folder::new().with_config(COMMENTS);
-    let read = folder.refusal();
-    assert!(
-        read.contains("config.lua") && read.contains("must return a table"),
-        "{read}"
-    );
+    let returns_nil = ConfigError::NotATable {
+        path: folder.path("config.lua"),
+        returned: "nil".into(),
+    };
+    assert_eq!(folder.refusal(), returns_nil);
     let why = folder
         .file()
         .add_remote(&todoist(), "todoist::")
         .unwrap_err();
-    assert!(why.to_string().contains("config.lua"), "{why}");
+    assert_eq!(why, returns_nil);
     assert_eq!(folder.text("config.lua"), COMMENTS);
 }
 
 #[test]
 fn a_secrets_lua_of_only_comments_is_refused_by_the_reader_and_the_writer() {
     let folder = Folder::new().with_secrets(COMMENTS);
-    let read = folder.refusal();
-    assert!(
-        read.contains("secrets.lua") && read.contains("must return a table"),
-        "{read}"
-    );
+    let returns_nil = ConfigError::NotATable {
+        path: folder.path("secrets.lua"),
+        returned: "nil".into(),
+    };
+    assert_eq!(folder.refusal(), returns_nil);
     let why = folder.file().add_token(&bare_token("tool")).unwrap_err();
-    assert!(why.to_string().contains("secrets.lua"), "{why}");
+    assert_eq!(why, returns_nil);
     assert_eq!(folder.text("secrets.lua"), COMMENTS);
 }

@@ -3,6 +3,8 @@ use std::fmt;
 use dam_application::TokenRefusal;
 use dam_domain::Channel;
 
+use super::TokenFaultText;
+
 pub(super) struct TokenText<'a>(pub(super) &'a TokenRefusal);
 
 impl fmt::Display for TokenText<'_> {
@@ -16,7 +18,9 @@ impl fmt::Display for TokenText<'_> {
             TokenRefusal::Unknown => {
                 f.write_str("DAM_TOKEN holds a token that no token.<name> in secrets.lua lists")
             }
-            TokenRefusal::Disabled { name, why } => write!(f, "token {name} is disabled: {why}"),
+            TokenRefusal::Disabled { name, why } => {
+                write!(f, "token {name} is disabled: {}", TokenFaultText(why))
+            }
             TokenRefusal::NotYetValid { name } => {
                 write!(f, "token {name} is not valid yet; see its not_before")
             }

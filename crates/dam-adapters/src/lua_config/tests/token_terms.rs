@@ -1,6 +1,7 @@
-use dam_domain::{Channel, Path, Permission};
+use dam_application::{Expected, Misread, TokenFault, TokenWarning};
+use dam_domain::{Channel, Path, PathError, Permission};
 
-use super::support::{only_disabled_reason, only_terms, token, tokens, value};
+use super::support::{in_table, only_disabled_reason, only_terms, token, tokens, value};
 
 #[test]
 fn a_token_table_reads_its_value_conditions_and_grants() {
@@ -53,8 +54,13 @@ fn require_names_the_request_details_the_token_must_send() {
 fn an_unknown_permission_is_skipped_with_a_warning_naming_it() {
     let text = token("grant = { { allow = { 'task:read', 'task:teleport' } } }");
     let (_, warnings) = tokens(&text);
-    assert_eq!(warnings.len(), 1);
-    assert!(warnings[0].contains("task:teleport") && warnings[0].contains("tool"));
+    assert_eq!(
+        warnings,
+        [TokenWarning::UnknownPermission {
+            name: "tool".into(),
+            word: "task:teleport".into(),
+        }]
+    );
     assert_eq!(
         only_terms(&text).grants[0].allow,
         [Permission::TaskRead].into()
@@ -63,39 +69,83 @@ fn an_unknown_permission_is_skipped_with_a_warning_naming_it() {
 
 #[test]
 fn a_reserved_permission_disables_the_token_and_names_it() {
-    let why = only_disabled_reason(&token(
-        "grant = { { allow = { 'task:read', 'config:change' } } }",
-    ));
-    assert!(why.contains("config:change"), "{why}");
+    assert_eq!(
+        only_disabled_reason(&token(
+            "grant = { { allow = { 'task:read', 'config:change' } } }",
+        )),
+        TokenFault::Reserved("config:change".into())
+    );
 }
 
 #[test]
 fn an_unknown_key_in_a_token_or_grant_disables_the_token_and_names_the_key() {
-    let in_token = only_disabled_reason(&token("except_paths = { 'home' }"));
-    assert!(
-        in_token.contains("except_paths") && in_token.contains("token.tool of secrets.lua"),
-        "{in_token}"
+    assert_eq!(
+        only_disabled_reason(&token("except_paths = { 'home' }")),
+        Misread::UnknownKey {
+            key: "except_paths".into(),
+            at: in_table("token.tool", "secrets.lua"),
+        }
+        .into()
     );
-    let in_grant = only_disabled_reason(&token("grant = { { allow = {}, weekdays = { 'mon' } } }"));
-    assert!(
-        in_grant.contains("weekdays") && in_grant.contains("token.tool.grant"),
-        "{in_grant}"
+    assert_eq!(
+        only_disabled_reason(&token("grant = { { allow = {}, weekdays = { 'mon' } } }")),
+        Misread::UnknownKey {
+            key: "weekdays".into(),
+            at: in_table("token.tool.grant", "secrets.lua"),
+        }
+        .into()
     );
 }
 
 #[test]
 fn a_malformed_condition_or_restriction_disables_the_token() {
-    for body in [
-        "expires = '2027-05-11T00:00:00'",
-        "expires = 20270511",
-        "via = 'local'",
-        "limits = 5",
-        "grant = { { paths = { 'work' } } }",
-        "grant = { { allow = {}, paths = { 'a//b' } } }",
-        "grant = { { allow = {}, own = 'yes' } }",
-        "grant = { allow = {} }",
+    let wrong = |key: &str, table: &str, expected| Misread::WrongType {
+        key: key.into(),
+        at: in_table(table, "secrets.lua"),
+        expected,
+    };
+    for (body, misread) in [
+        (
+            "expires = '2027-05-11T00:00:00'",
+            wrong("expires", "token.tool", Expected::DateTime),
+        ),
+        (
+            "expires = 20270511",
+            wrong("expires", "token.tool", Expected::DateTime),
+        ),
+        (
+            "via = 'local'",
+            wrong("via", "token.tool", Expected::ListOfTexts),
+        ),
+        (
+            "limits = 5",
+            wrong("limits", "token.tool", Expected::TableOfWholeNumbers),
+        ),
+        (
+            "grant = { { paths = { 'work' } } }",
+            Misread::Missing {
+                key: "allow".into(),
+                at: in_table("token.tool.grant", "secrets.lua"),
+            },
+        ),
+        (
+            "grant = { { allow = {}, paths = { 'a//b' } } }",
+            Misread::NotAPath {
+                text: "a//b".into(),
+                at: in_table("token.tool.grant", "secrets.lua"),
+                why: PathError::EmptySegment,
+            },
+        ),
+        (
+            "grant = { { allow = {}, own = 'yes' } }",
+            wrong("own", "token.tool.grant", Expected::TrueOrFalse),
+        ),
+        (
+            "grant = { allow = {} }",
+            wrong("grant", "token.tool", Expected::ListOfTables),
+        ),
     ] {
-        only_disabled_reason(&token(body));
+        assert_eq!(only_disabled_reason(&token(body)), misread.into(), "{body}");
     }
 }
 
@@ -103,5 +153,11 @@ fn a_malformed_condition_or_restriction_disables_the_token() {
 fn an_unknown_channel_is_skipped_with_a_warning() {
     let text = token("via = { 'local', 'carrier-pigeon' }");
     assert_eq!(only_terms(&text).via, [Channel::Local].into());
-    assert!(tokens(&text).1[0].contains("carrier-pigeon"));
+    assert_eq!(
+        tokens(&text).1,
+        [TokenWarning::UnknownChannel {
+            name: "tool".into(),
+            word: "carrier-pigeon".into(),
+        }]
+    );
 }

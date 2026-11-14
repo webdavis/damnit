@@ -1,10 +1,12 @@
 use std::collections::BTreeSet;
 use std::os::unix::fs::PermissionsExt;
 
-use dam_application::{ConfigFile, NewToken, Standing};
+use dam_application::{
+    ByHand, ConfigError, ConfigFile, EditedTable, NewToken, SecretsTightened, Standing, Uneditable,
+};
 use dam_domain::{Channel, Grant, Path, Permission};
 
-use super::support::{Folder, bare_token, secrets};
+use super::support::{Folder, bare_token, held_already, secrets};
 
 fn full_token() -> NewToken {
     NewToken {
@@ -90,25 +92,33 @@ fn a_token_the_file_already_holds_is_refused_by_name_and_the_file_is_kept() {
     folder.file().add_token(&bare_token("tool")).unwrap();
     let before = folder.text("secrets.lua");
     let why = folder.file().add_token(&full_token()).unwrap_err();
-    assert_eq!(
-        why.to_string(),
-        "config: secrets.lua already holds token tool"
-    );
+    assert_eq!(why, held_already(EditedTable::Tokens, "tool"));
     assert_eq!(folder.text("secrets.lua"), before);
 }
 
 #[test]
 fn a_table_built_in_code_is_refused_without_the_token_value() {
-    for before in [
-        "local t = { schema = 1 }\nreturn t\n",
-        "local function tokens() return {} end\nreturn { token = tokens() }\n",
+    for (before, why) in [
+        (
+            "local t = { schema = 1 }\nreturn t\n",
+            Uneditable::ReturnsBuiltInCode,
+        ),
+        (
+            "local function tokens() return {} end\nreturn { token = tokens() }\n",
+            Uneditable::TableBuiltInCode,
+        ),
     ] {
         let folder = secrets(before);
-        let token = full_token();
-        let why = folder.file().add_token(&token).unwrap_err().to_string();
-        assert!(why.contains("built in code"), "{why}");
-        assert!(why.contains("token tool"), "{why}");
-        assert!(!why.contains(&token.value.expose()), "{why}");
+        assert_eq!(
+            folder.file().add_token(&full_token()).unwrap_err(),
+            ConfigError::CannotEdit {
+                table: EditedTable::Tokens,
+                why,
+                by_hand: ByHand::AddToken {
+                    name: "tool".into()
+                },
+            }
+        );
         assert_eq!(folder.text("secrets.lua"), before);
     }
 }
@@ -119,11 +129,6 @@ fn a_secrets_lua_others_could_read_is_written_private_with_a_warning() {
     let path = folder.path("secrets.lua");
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
     let said = folder.file().add_token(&bare_token("tool")).unwrap();
-    let said = said.expect("a widened secrets.lua is warned about");
-    assert!(
-        said.contains("644") && said.contains("secrets.lua"),
-        "{said}"
-    );
-    assert!(!said.contains(path.to_str().unwrap()), "{said}");
+    assert_eq!(said, Some(SecretsTightened { was: 0o644 }));
     assert_eq!(mode_of(&path), 0o600);
 }

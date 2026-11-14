@@ -4,7 +4,7 @@ use dam_application::{Refusal, RemoteName};
 
 use crate::args::{RemoteArgs, RemoteCommand};
 use crate::context::Context;
-use crate::error::{CliError, UseCaseText};
+use crate::error::{CliError, SecretsTightenedText, UseCaseText};
 use crate::output::Report;
 use crate::view::{Human, View, report};
 use serde::Serialize;
@@ -37,7 +37,7 @@ pub(crate) fn run_remote(ctx: &Context, args: RemoteArgs) -> Result<Report, CliE
             report(&RemoteAdded {
                 name: &name.0,
                 url: &url,
-                warnings: Vec::from_iter(warning),
+                warnings: Vec::from_iter(warning.map(|w| SecretsTightenedText(&w).to_string())),
             })
         }
         RemoteCommand::List => listing::run(ctx),

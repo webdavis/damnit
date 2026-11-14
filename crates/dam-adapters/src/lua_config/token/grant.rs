@@ -1,5 +1,6 @@
 use std::collections::BTreeSet;
 
+use dam_application::{Misread, TokenFault, TokenWarning};
 use dam_domain::{Grant, Path, Permission, PermissionName};
 
 use crate::lua_config::strict::StrictMap;
@@ -9,8 +10,8 @@ const GRANT_KEYS: [&str; 5] = ["allow", "paths", "labels", "own", "remotes"];
 pub(super) fn read_grants(
     name: &str,
     token: &StrictMap,
-    warnings: &mut Vec<String>,
-) -> Result<Vec<Grant>, String> {
+    warnings: &mut Vec<TokenWarning>,
+) -> Result<Vec<Grant>, TokenFault> {
     token
         .maps_listed("grant")?
         .unwrap_or_default()
@@ -22,10 +23,14 @@ pub(super) fn read_grants(
         .collect()
 }
 
-fn read_grant(name: &str, grant: &StrictMap, warnings: &mut Vec<String>) -> Result<Grant, String> {
+fn read_grant(
+    name: &str,
+    grant: &StrictMap,
+    warnings: &mut Vec<TokenWarning>,
+) -> Result<Grant, TokenFault> {
     let names = grant
         .strings("allow")?
-        .ok_or_else(|| grant.refuse("allow is missing"))?;
+        .ok_or_else(|| grant.missing("allow"))?;
     Ok(Grant {
         allow: permissions(name, &names, warnings)?,
         paths: paths(grant)?,
@@ -38,8 +43,8 @@ fn read_grant(name: &str, grant: &StrictMap, warnings: &mut Vec<String>) -> Resu
 fn permissions(
     name: &str,
     names: &[String],
-    warnings: &mut Vec<String>,
-) -> Result<BTreeSet<Permission>, String> {
+    warnings: &mut Vec<TokenWarning>,
+) -> Result<BTreeSet<Permission>, TokenFault> {
     let mut allow = BTreeSet::new();
     for word in names {
         match PermissionName::classify(word) {
@@ -47,26 +52,31 @@ fn permissions(
                 allow.insert(permission);
             }
             PermissionName::Reserved => {
-                return Err(format!("{word} is reserved and cannot be granted"));
+                return Err(TokenFault::Reserved(word.clone()));
             }
             PermissionName::Unknown => {
-                warnings.push(format!(
-                    "token {name}: unknown permission {word:?} is skipped"
-                ));
+                warnings.push(TokenWarning::UnknownPermission {
+                    name: name.to_string(),
+                    word: word.clone(),
+                });
             }
         }
     }
     Ok(allow)
 }
 
-fn paths(grant: &StrictMap) -> Result<Option<Vec<Path>>, String> {
+fn paths(grant: &StrictMap) -> Result<Option<Vec<Path>>, Misread> {
     grant
         .strings("paths")?
         .map(|texts| {
             texts
                 .iter()
-                .map(|p| {
-                    Path::parse(p).map_err(|e| grant.refuse(format_args!("path {p:?}: {e:?}")))
+                .map(|text| {
+                    Path::parse(text).map_err(|why| Misread::NotAPath {
+                        text: text.clone(),
+                        at: grant.place(),
+                        why,
+                    })
                 })
                 .collect()
         })

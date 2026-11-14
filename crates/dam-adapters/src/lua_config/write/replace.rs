@@ -3,7 +3,7 @@ use std::io::{ErrorKind, Write};
 use std::os::unix::fs::{DirBuilderExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 
-use dam_application::ConfigError;
+use dam_application::{ConfigError, SecretsTightened};
 
 use crate::lua_config::evaluate::read_text;
 
@@ -20,8 +20,12 @@ pub(super) fn replace(
     path: &Path,
     holds: Holds,
     change: impl FnOnce(Option<&str>) -> Result<String, ConfigError>,
-) -> Result<Option<String>, ConfigError> {
+) -> Result<Option<SecretsTightened>, ConfigError> {
     let path = &resolved(path)?;
+    let io_error = |error: std::io::Error| ConfigError::Unreadable {
+        path: path.clone(),
+        why: error.to_string(),
+    };
     let dir = folder_of(path);
     DirBuilder::new()
         .recursive(true)
@@ -50,9 +54,7 @@ pub(super) fn replace(
     file.persist(path).map_err(|e| io_error(e.error))?;
     folder.sync_all().map_err(io_error)?;
     Ok(match (holds, mode_before) {
-        (Holds::Secrets, Some(mode)) if mode & 0o077 != 0 => Some(format!(
-            "secrets.lua was mode {mode:o}; dam wrote it 600, since it holds secrets"
-        )),
+        (Holds::Secrets, Some(mode)) if mode & 0o077 != 0 => Some(SecretsTightened { was: mode }),
         _ => None,
     })
 }
@@ -68,10 +70,9 @@ fn resolved(path: &Path) -> Result<PathBuf, ConfigError> {
     match std::fs::canonicalize(path) {
         Ok(target) => Ok(target),
         Err(e) if e.kind() == ErrorKind::NotFound => Ok(path.to_path_buf()),
-        Err(e) => Err(io_error(e)),
+        Err(e) => Err(ConfigError::Unreadable {
+            path: path.to_path_buf(),
+            why: e.to_string(),
+        }),
     }
-}
-
-fn io_error(error: std::io::Error) -> ConfigError {
-    ConfigError::Io(error.to_string())
 }

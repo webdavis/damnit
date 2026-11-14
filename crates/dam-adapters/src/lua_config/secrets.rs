@@ -24,10 +24,9 @@ impl Secrets {
                 .remotes
                 .iter_mut()
                 .find(|r| r.name.0 == name)
-                .ok_or_else(|| {
-                    ConfigError::Invalid(format!(
-                        "remote {name} in secrets.lua is not declared in {config_name}"
-                    ))
+                .ok_or_else(|| ConfigError::UndeclaredRemote {
+                    remote: name.clone(),
+                    config: config_name.to_string(),
                 })?;
             remote.credentials = specs;
         }

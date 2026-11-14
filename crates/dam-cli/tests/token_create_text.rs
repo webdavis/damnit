@@ -46,7 +46,10 @@ fn token_create_prints_a_mode_warning_before_naming_the_token() {
     assert!(ok, "{err}");
     let lines: Vec<&str> = err.lines().collect();
     assert_eq!(lines.len(), 3, "{err}");
-    assert!(lines[0].starts_with("warning: "), "{err}");
+    assert_eq!(
+        lines[0],
+        "warning: secrets.lua was mode 644; dam wrote it 600, since it holds secrets"
+    );
     assert!(
         lines[1].starts_with("dam: created token tool, key id "),
         "{err}"

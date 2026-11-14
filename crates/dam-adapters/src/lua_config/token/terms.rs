@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use dam_application::TokenTerms;
+use dam_application::{Expected, Misread, TokenFault, TokenTerms, TokenWarning};
 use dam_domain::{Channel, Timestamp};
 use mlua::Value;
 
@@ -21,8 +21,8 @@ const TOKEN_KEYS: [&str; 7] = [
 pub(super) fn read_terms(
     name: &str,
     token: &StrictMap,
-    warnings: &mut Vec<String>,
-) -> Result<TokenTerms, String> {
+    warnings: &mut Vec<TokenWarning>,
+) -> Result<TokenTerms, TokenFault> {
     token.only(&TOKEN_KEYS)?;
     no_limits(token)?;
     Ok(TokenTerms {
@@ -34,21 +34,21 @@ pub(super) fn read_terms(
     })
 }
 
-fn instant(token: &StrictMap, key: &str) -> Result<Option<Timestamp>, String> {
+fn instant(token: &StrictMap, key: &str) -> Result<Option<Timestamp>, Misread> {
     let Some(value) = token.get(key) else {
         return Ok(None);
     };
     text(value)
         .and_then(|at| at.parse::<Timestamp>().ok())
         .map(Some)
-        .ok_or_else(|| token.refuse(format_args!("{key} must be an RFC 3339 date-time")))
+        .ok_or_else(|| token.wrong(key, Expected::DateTime))
 }
 
 fn channels(
     name: &str,
     token: &StrictMap,
-    warnings: &mut Vec<String>,
-) -> Result<BTreeSet<Channel>, String> {
+    warnings: &mut Vec<TokenWarning>,
+) -> Result<BTreeSet<Channel>, Misread> {
     let Some(words) = token.strings("via")? else {
         return Ok([Channel::Local].into());
     };
@@ -57,18 +57,21 @@ fn channels(
         .filter_map(|word| {
             let channel = Channel::parse(word);
             if channel.is_none() {
-                warnings.push(format!("token {name}: unknown channel {word:?} is skipped"));
+                warnings.push(TokenWarning::UnknownChannel {
+                    name: name.to_string(),
+                    word: word.clone(),
+                });
             }
             channel
         })
         .collect())
 }
 
-fn no_limits(token: &StrictMap) -> Result<(), String> {
+fn no_limits(token: &StrictMap) -> Result<(), TokenFault> {
     match token.get("limits") {
         None => Ok(()),
         Some(Value::Table(table)) if table.is_empty() => Ok(()),
-        Some(Value::Table(_)) => Err("its limits are not enforced yet".to_string()),
-        Some(_) => Err(token.refuse("limits must be a table of whole numbers")),
+        Some(Value::Table(_)) => Err(TokenFault::LimitsNotEnforced),
+        Some(_) => Err(token.wrong("limits", Expected::TableOfWholeNumbers).into()),
     }
 }
