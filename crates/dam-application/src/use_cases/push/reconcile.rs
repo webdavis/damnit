@@ -4,6 +4,8 @@ use dam_domain::{CommitId, CommitRecord, Object, Oid};
 
 use crate::remote::{MutationOp, MutationOutcome, MutationVerdict, RemoteMutation};
 
+const NO_ANSWER: &str = "no answer from helper";
+
 #[derive(Debug, Default, PartialEq, Eq)]
 pub(super) struct Settlement {
     pub(super) map: Vec<(Oid, String)>,
@@ -54,7 +56,13 @@ impl Settlement {
                 }
             }
             MutationVerdict::Refused { why } => self.failed.push((oid, why)),
+            MutationVerdict::Unanswered { why } => self.unanswered(oid, why),
         }
+    }
+
+    fn unanswered(&mut self, oid: Oid, why: String) {
+        self.failed.push((oid.clone(), why));
+        self.unanswered.insert(oid);
     }
 }
 
@@ -71,11 +79,7 @@ pub(super) fn reconcile(sent: &[RemoteMutation], outcomes: Vec<MutationOutcome>)
         settlement.settle(mutation, outcome.verdict);
     }
     for mutation in sent.iter().filter(|m| !answered.contains(&m.oid)) {
-        let oid = mutation.oid.clone();
-        settlement
-            .failed
-            .push((oid.clone(), "no answer from helper".to_string()));
-        settlement.unanswered.insert(oid);
+        settlement.unanswered(mutation.oid.clone(), NO_ANSWER.to_string());
     }
     settlement
 }

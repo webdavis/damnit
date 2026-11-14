@@ -108,6 +108,7 @@ pub fn outcomes_from_wire(results: Vec<MutationResult>) -> Vec<MutationOutcome> 
                 verdict: match r.verdict {
                     Verdict::Accepted { remote_id } => MutationVerdict::Accepted { remote_id },
                     Verdict::Refused { why } => MutationVerdict::Refused { why },
+                    Verdict::Unanswered { why } => MutationVerdict::Unanswered { why },
                 },
             })
         })
@@ -128,3 +129,6 @@ mod rejection_tests;
 
 #[cfg(test)]
 mod vocabulary_tests;
+
+#[cfg(test)]
+mod verdict_tests;
