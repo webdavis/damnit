@@ -1,10 +1,10 @@
 use dam_application::{
-    Config, ConfigError, ConfigFile, LoadedConfig, NewToken, RemoteName, Tokens,
+    Config, ConfigError, ConfigFile, LoadedConfig, NewToken, RemoteName, TokenName, Tokens,
 };
 
 use super::evaluate::ErrorText;
 use super::file::LuaConfigFile;
-use super::write::{Change, remote_entry, token_entry};
+use super::write::{Change, bare_token_entry, remote_entry, token_entry};
 
 impl ConfigFile for LuaConfigFile {
     fn load(&self) -> Result<LoadedConfig, ConfigError> {
@@ -24,12 +24,19 @@ impl ConfigFile for LuaConfigFile {
         self.settings_file().edit(name, by_hand, change)
     }
 
+    fn can_add_token(&self, name: &TokenName) -> Result<(), ConfigError> {
+        let name = name.as_str();
+        let change = Change::Add {
+            entry: &|_| bare_token_entry(name),
+            as_written: &|tokens: &Tokens| tokens.names.iter().any(|held| held == name),
+        };
+        self.secrets_file()
+            .can_edit(name, adding_token_by_hand(name), change)
+    }
+
     fn add_token(&self, token: &NewToken) -> Result<Option<String>, ConfigError> {
         let name = token.name.as_str();
-        let by_hand = format!(
-            "Write the table out in full and run the command again, \
-             or add token {name} to its token table by hand."
-        );
+        let by_hand = adding_token_by_hand(name);
         let change = Change::Add {
             entry: &|indent| token_entry(token, indent),
             as_written: &|tokens: &Tokens| {
@@ -46,4 +53,11 @@ impl ConfigFile for LuaConfigFile {
         let by_hand = format!("Remove token {name} from it by hand.");
         self.secrets_file().edit(name, by_hand, Change::Remove)
     }
+}
+
+fn adding_token_by_hand(name: &str) -> String {
+    format!(
+        "Write the table out in full and run the command again, \
+         or add token {name} to its token table by hand."
+    )
 }

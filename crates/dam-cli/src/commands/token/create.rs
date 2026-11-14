@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use dam_application::{Config, ConfigFile, NewToken, Randomness, Refusal, TokenName};
+use dam_application::{ConfigError, ConfigFile, NewToken, Randomness, Refusal, TokenName};
 use dam_domain::{Channel, Grant, Path, Permission, PermissionName, Timestamp, Token};
 use serde::Serialize;
 
@@ -41,14 +41,14 @@ impl View for TokenCreated {
 
 pub(super) fn run(
     file: &dyn ConfigFile,
-    config: &Config,
     random: &dyn Randomness,
     args: CreateArgs,
 ) -> Result<Report, CliError> {
     let name = TokenName::parse(&args.name).map_err(CliError::Usage)?;
-    if config.tokens.names.iter().any(|n| n == name.as_str()) {
-        return Err(Refusal::TokenExists(args.name).into());
-    }
+    file.can_add_token(&name).map_err(|e| match e {
+        ConfigError::AlreadyHeld(_) => Refusal::TokenExists(args.name.clone()).into(),
+        other => CliError::Config(other),
+    })?;
     let token = NewToken {
         name,
         value: Token::generate(&mut |b: &mut [u8]| random.fill(b)),
@@ -117,3 +117,6 @@ fn instant(text: &str) -> Result<Timestamp, CliError> {
         ))
     })
 }
+
+#[cfg(test)]
+mod tests;

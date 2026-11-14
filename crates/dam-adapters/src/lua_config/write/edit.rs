@@ -7,6 +7,7 @@ use super::insert::Indent;
 use super::replace::{Holds, replace};
 use super::section::Section;
 use crate::lua_config::LuaConfigFile;
+use crate::lua_config::evaluate::read_text;
 
 pub(in crate::lua_config) enum Change<'a, R> {
     Add {
@@ -34,32 +35,53 @@ impl<R> EditedFile<'_, R> {
         by_hand: String,
         change: Change<'_, R>,
     ) -> Result<Option<String>, ConfigError> {
+        replace(&self.path, self.holds, |current| {
+            self.edited(name, by_hand, &change, current)
+        })
+    }
+
+    pub(in crate::lua_config) fn can_edit(
+        &self,
+        name: &str,
+        by_hand: String,
+        change: Change<'_, R>,
+    ) -> Result<(), ConfigError> {
+        let current = read_text(&self.path)?;
+        self.edited(name, by_hand, &change, current.as_deref())
+            .map(|_| ())
+    }
+
+    fn edited(
+        &self,
+        name: &str,
+        by_hand: String,
+        change: &Change<'_, R>,
+        current: Option<&str>,
+    ) -> Result<String, ConfigError> {
         let section = Section {
             file: self.file,
             table: self.table,
             entry: name,
             by_hand,
         };
-        replace(&self.path, self.holds, |current| {
-            let mut names = (self.names)(&(self.read)(self.config, current)?);
-            let text = current.unwrap_or(self.missing);
-            let edited = match &change {
-                Change::Add { .. } if names.contains(name) => Err(section.held_already()),
-                Change::Add { entry, .. } => section.add(text, entry),
-                Change::Remove => section.remove(text, names.contains(name)),
-            }?;
-            match &change {
-                Change::Add { .. } => names.insert(name.to_string()),
-                Change::Remove => names.remove(name),
-            };
-            self.check(
-                &section,
-                &change,
-                &names,
-                &(self.read)(self.config, Some(&edited))?,
-            )?;
-            Ok(edited)
-        })
+        let mut names = (self.names)(&(self.read)(self.config, current)?);
+        let text = current.unwrap_or(self.missing);
+        let edited = match change {
+            Change::Add { .. } if names.contains(name) => Err(section.held_already()),
+            Change::Add { entry, .. } => section.add(text, entry),
+            Change::Remove => section.remove(text, names.contains(name)),
+        }?;
+        match change {
+            Change::Add { .. } => names.insert(name.to_string()),
+            Change::Remove => names.remove(name),
+        };
+        self.check(
+            &section,
+            change,
+            &names,
+            &(self.read)(self.config, Some(&edited))?,
+        )?;
+        Ok(edited)
     }
 
     fn check(

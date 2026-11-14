@@ -56,7 +56,7 @@ impl Section<'_> {
     }
 
     pub(super) fn held_already(&self) -> ConfigError {
-        ConfigError::Invalid(format!(
+        ConfigError::AlreadyHeld(format!(
             "{} already holds {} {}",
             self.file, self.table, self.entry
         ))

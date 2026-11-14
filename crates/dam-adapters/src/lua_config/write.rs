@@ -13,4 +13,4 @@ mod token_entry;
 pub(super) use edit::Change;
 pub(super) use remote_entry::remote_entry;
 pub(super) use replace::folder_of;
-pub(super) use token_entry::token_entry;
+pub(super) use token_entry::{bare_token_entry, token_entry};
