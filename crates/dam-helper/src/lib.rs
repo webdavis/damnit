@@ -10,7 +10,7 @@ pub mod testing;
 
 pub use base_url::{base_url, loopback_base};
 pub use credential::credential;
-pub use http::{Answer, agent, read, read_answer};
+pub use http::{Answer, agent, call_failed, read, read_answer};
 pub use remote::Remote;
 pub use secret::Secret;
 pub use serve::serve;

@@ -1,45 +1,18 @@
 mod carried;
 mod commands;
 mod created;
+mod failure;
 mod plan;
 mod shape;
 
 use dam_protocol::{Mutation, MutationResult, PushResponse, Verdict};
 
-use crate::api::{ApiError, NotAccepted, SyncWrite, TodoistSync};
+use crate::api::{ApiError, SyncWrite, TodoistSync};
 use crate::map::Tree;
 use commands::Command;
 use created::add_created_to_tree;
+use failure::{Failure, every_command_accepted, no_id_named_for};
 use plan::{TreeChange, missing_object, plan_for, resend_stable_temp_id};
-
-enum Failure {
-    OnlyThisMutation(String),
-    Unanswered,
-    StopsThePush(ApiError),
-}
-
-const FIRST_SERVER_ERROR: u16 = 500;
-
-impl From<ApiError> for Failure {
-    fn from(e: ApiError) -> Failure {
-        match e {
-            rate @ ApiError::RateLimited { .. } => Failure::StopsThePush(rate),
-            ApiError::Http { status, .. } if status < FIRST_SERVER_ERROR => {
-                Failure::OnlyThisMutation(e.to_string())
-            }
-            ApiError::Http { .. }
-            | ApiError::Transport { .. }
-            | ApiError::Decode { .. }
-            | ApiError::TooLarge { .. } => Failure::Unanswered,
-        }
-    }
-}
-
-impl From<String> for Failure {
-    fn from(why: String) -> Failure {
-        Failure::OnlyThisMutation(why)
-    }
-}
 
 pub fn push(api: &impl TodoistSync, mutations: Vec<Mutation>) -> Result<PushResponse, ApiError> {
     let sync = api.read_all()?;
@@ -56,7 +29,13 @@ pub fn push(api: &impl TodoistSync, mutations: Vec<Mutation>) -> Result<PushResp
                 oid: m.oid.clone(),
                 verdict: Verdict::Refused { why },
             }),
-            Err(Failure::Unanswered) => break,
+            Err(Failure::Unanswered(why)) => {
+                results.push(MutationResult {
+                    oid: m.oid.clone(),
+                    verdict: Verdict::Unanswered { why },
+                });
+                break;
+            }
             Err(Failure::StopsThePush(e)) => return Err(e),
         }
     }
@@ -102,7 +81,7 @@ fn apply(
     let id = written
         .as_ref()
         .and_then(|w| w.issued_id_by_temp_id.get(resend_stable_temp_id(m)))
-        .ok_or(Failure::Unanswered)?
+        .ok_or_else(|| no_id_named_for(&shape))?
         .clone();
     Ok(Some(add_created_to_tree(tree, object, shape, id)))
 }
@@ -114,21 +93,8 @@ fn send_every_command(api: &impl TodoistSync, commands: &[Command]) -> Result<Sy
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| Failure::OnlyThisMutation(e.to_string()))?;
     let written = api.write(&encoded)?;
-    let not_accepted: Vec<NotAccepted> = commands
-        .iter()
-        .filter_map(|sent| written.accepted(&sent.uuid).err())
-        .collect();
-    let todoist_refused_every_command = not_accepted.len() == commands.len()
-        && not_accepted
-            .iter()
-            .all(|n| matches!(n, NotAccepted::Refused(_)));
-    match not_accepted.into_iter().next() {
-        None => Ok(written),
-        Some(NotAccepted::Refused(why)) if todoist_refused_every_command => {
-            Err(Failure::OnlyThisMutation(why))
-        }
-        Some(_) => Err(Failure::Unanswered),
-    }
+    every_command_accepted(commands, &written)?;
+    Ok(written)
 }
 
 #[cfg(test)]

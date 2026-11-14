@@ -1,3 +1,5 @@
+use dam_protocol::Verdict;
+
 use super::fixtures::{mutation, sync_body, sync_body_with_two_projects, task, with_fields};
 use crate::api::fake::FakeTodoist;
 use crate::push::push;
@@ -34,7 +36,7 @@ fn a_resent_mutation_repeats_its_uuids_and_creates_nothing_twice() {
         "the resend repeated the uuid rather than minting one"
     );
     assert!(
-        two.results.is_empty(),
+        matches!(two.results[0].verdict, Verdict::Unanswered { .. }),
         "a resend dam cannot learn an id from stays unanswered: {:?}",
         two.results
     );
@@ -95,6 +97,10 @@ fn a_mutation_todoist_did_only_part_of_stays_unanswered() {
         Some(task(&"1".repeat(40), "Work/", "eggs", true)),
     )];
     let response = push(&api, mutations).unwrap();
-    assert!(response.results.is_empty(), "{:?}", response.results);
+    assert!(
+        matches!(response.results[0].verdict, Verdict::Unanswered { .. }),
+        "{:?}",
+        response.results
+    );
     assert_eq!(api.recorded.borrow().types(), vec!["item_add"]);
 }

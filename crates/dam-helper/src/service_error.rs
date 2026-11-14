@@ -17,6 +17,14 @@ pub enum ServiceError {
         retry_after: Option<Duration>,
         body: String,
     },
+    Unreachable {
+        service: &'static str,
+        why: String,
+    },
+    TimedOut {
+        service: &'static str,
+        after: Duration,
+    },
     Transport {
         service: &'static str,
         why: String,
@@ -79,6 +87,12 @@ impl fmt::Display for ServiceError {
                 f,
                 "{service} is rate limiting this account and named no retry time: {body}"
             ),
+            ServiceError::Unreachable { service, why } => {
+                write!(f, "{service} could not be reached: {why}")
+            }
+            ServiceError::TimedOut { service, after } => {
+                write!(f, "{service} did not answer within {}s", after.as_secs())
+            }
             ServiceError::Transport { service, why } => write!(f, "reaching {service}: {why}"),
             ServiceError::Decode { service, why } => write!(f, "reading {service}'s answer: {why}"),
             ServiceError::TooLarge { service, limit } => write!(
