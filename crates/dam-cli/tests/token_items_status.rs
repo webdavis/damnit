@@ -16,7 +16,7 @@ fn status_as(sb: &Sandbox, held: Option<&str>) -> serde_json::Value {
 
 fn dentist_from_tool() -> (Sandbox, String, serde_json::Value) {
     let sb = Sandbox::new();
-    let held = grant_to(&sb, "tool", 1, &grant("\"task:create\""));
+    let held = grant_to(&sb, "tool", 1, vec![grant(&["task:create"])]);
     let line = ["new", "Call the dentist", "--path", "inbox", "--json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     (sb, held, sent)
@@ -59,22 +59,12 @@ fn a_token_sees_its_own_items_and_another_senders_only_with_pending_read() {
     let own = status_as(&sb, Some(&tool));
     assert_eq!(own["waiting"][0]["hash"], sent["hash"]);
     assert_eq!(own["unstaged"], serde_json::json!([]));
-    let codex = grant_to(
-        &sb,
-        "codex",
-        2,
-        "[[token.codex.grant]]\nallow = [\"task:create\"]\n",
-    );
+    let codex = grant_to(&sb, "codex", 2, vec![grant(&["task:create"])]);
     assert_eq!(
         status_as(&sb, Some(&codex))["waiting"],
         serde_json::json!([])
     );
-    let claude = grant_to(
-        &sb,
-        "claude",
-        3,
-        "[[token.claude.grant]]\nallow = [\"pending:read\"]\n",
-    );
+    let claude = grant_to(&sb, "claude", 3, vec![grant(&["pending:read"])]);
     assert_eq!(
         status_as(&sb, Some(&claude))["waiting"][0]["hash"],
         sent["hash"]

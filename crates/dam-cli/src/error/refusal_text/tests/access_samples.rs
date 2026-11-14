@@ -14,14 +14,14 @@ pub(super) fn access_refusals_with_their_text() -> Vec<(Refusal, &'static str)> 
         ),
         (
             TokenRefusal::Unknown,
-            "DAM_TOKEN holds a token that no [token.<name>] in the config lists",
+            "DAM_TOKEN holds a token that no token.<name> in secrets.lua lists",
         ),
         (
             TokenRefusal::Disabled {
                 name: name(),
-                why: "unknown key weekdays in [token.tool.grant]".into(),
+                why: "unknown key weekdays in token.tool.grant of secrets.lua".into(),
             },
-            "token tool is disabled: unknown key weekdays in [token.tool.grant]",
+            "token tool is disabled: unknown key weekdays in token.tool.grant of secrets.lua",
         ),
         (
             TokenRefusal::NotYetValid { name: name() },

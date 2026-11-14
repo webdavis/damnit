@@ -1,15 +1,13 @@
 mod support;
 
+use support::config_files::Remote;
 use support::sandbox::Sandbox;
 
 #[test]
 fn no_pull_answers_a_read_from_the_store_alone() {
     let _guard = support::guard("no_pull_answers_a_read_from_the_store_alone");
     let sb = Sandbox::new();
-    let config = sb.dir.path().join("config.toml");
-    let mut text = std::fs::read_to_string(&config).unwrap();
-    text.push_str("stale = \"15m\"\n");
-    std::fs::write(&config, text).unwrap();
+    sb.add_remote("fake", Remote::fake().stale("15m"));
 
     let (ok, out, err) = sb.dam(&["ls", "--json", "--no-pull"]);
     assert!(ok, "{err}");

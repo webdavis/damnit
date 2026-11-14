@@ -10,8 +10,8 @@ const CREATES: usize = 20;
 fn creates_run_at_once_each_keep_their_token() {
     let _guard = support::guard("creates_run_at_once_each_keep_their_token");
     let sb = Sandbox::new();
-    let config = sb.dir.path().join("config.toml");
-    std::fs::set_permissions(&config, std::fs::Permissions::from_mode(0o600)).unwrap();
+    let secrets = sb.secrets_path();
+    std::fs::set_permissions(&secrets, std::fs::Permissions::from_mode(0o600)).unwrap();
     let names: Vec<String> = (0..CREATES).map(|i| format!("c{i}")).collect();
     let running: Vec<_> = names
         .iter()
@@ -28,9 +28,9 @@ fn creates_run_at_once_each_keep_their_token() {
                 .to_string()
         })
         .collect();
-    let config = std::fs::read_to_string(&config).unwrap();
+    let secrets = std::fs::read_to_string(&secrets).unwrap();
     for (name, value) in names.iter().zip(&values) {
-        assert!(config.contains(&format!("[token.{name}]")), "{config}");
+        assert!(secrets.contains(&format!("{name} = {{")), "{secrets}");
         let out = sb.output_holding(value, &["ls", "--json", "--no-pull"]);
         assert!(out.status.success(), "{name}: {out:?}");
     }

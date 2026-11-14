@@ -22,7 +22,7 @@ fn retitled_by_tool_and_made_to_wait_on_keys_by_the_owner() -> Rent {
     let keys = sb.new_object(&["Find the keys"]);
     owner(&sb, &["add", "-A"], "add.schema.json");
     owner(&sb, &["commit", "-m", "seed"], "commit.schema.json");
-    let held = grant_to(&sb, "tool", 1, &grant("\"task:read\", \"task:change\""));
+    let held = grant_to(&sb, "tool", 1, vec![grant(&["task:read", "task:change"])]);
     let line = ["edit", &rent, "--subject", "Pay the rent", "--json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     let (ok, _, err) = sb.dam(&["edit", &rent, "--depends", &keys]);

@@ -13,7 +13,7 @@ fn the_owners_commits_read_you_to_the_owner_and_owner_to_a_token() {
     assert!(ok, "{err}");
     let (ok, _, err) = sb.dam(&["commit", "-m", "seed"]);
     assert!(ok, "{err}");
-    let held = grant_to(&sb, "tool", 1, &grant("\"history:read\""));
+    let held = grant_to(&sb, "tool", 1, vec![grant(&["history:read"])]);
     assert!(
         text(&sb.output(&["log"]).stdout)
             .trim_end()

@@ -14,7 +14,7 @@ impl fmt::Display for TokenText<'_> {
                 "DAM_TOKEN holds a {version} token, which this dam does not read"
             ),
             TokenRefusal::Unknown => {
-                f.write_str("DAM_TOKEN holds a token that no [token.<name>] in the config lists")
+                f.write_str("DAM_TOKEN holds a token that no token.<name> in secrets.lua lists")
             }
             TokenRefusal::Disabled { name, why } => write!(f, "token {name} is disabled: {why}"),
             TokenRefusal::NotYetValid { name } => {

@@ -11,7 +11,9 @@ fn status_warns_about_each_skipped_token_setting_and_each_disabled_token() {
     ctx.config.tokens.entries = vec![TokenConfig {
         name: "claude".into(),
         value: Token::generate(&mut |b: &mut [u8]| b.fill(1)),
-        standing: Standing::Disabled("unknown key weekdays in [token.claude.grant]".into()),
+        standing: Standing::Disabled(
+            "unknown key weekdays in token.claude.grant of secrets.lua".into(),
+        ),
     }];
     let report = super::run_status(&ctx, StatusArgs { full: false }).unwrap();
     let warnings = report.data["warnings"].as_array().unwrap();
@@ -22,6 +24,6 @@ fn status_warns_about_each_skipped_token_setting_and_each_disabled_token() {
             .contains("warning: token tool: unknown permission")
     );
     assert!(report.human.contains(
-        "warning: token claude is disabled: unknown key weekdays in [token.claude.grant]"
+        "warning: token claude is disabled: unknown key weekdays in token.claude.grant of secrets.lua"
     ));
 }

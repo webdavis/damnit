@@ -4,14 +4,17 @@ use dam_domain::Token;
 use support::errors::error_document;
 use support::sandbox::Sandbox;
 use support::schema::assert_matches_schema;
+use support::token_table::{Grant, TokenTable};
 
 fn token(fill: u8) -> String {
     Token::generate(&mut |b: &mut [u8]| b.fill(fill)).expose()
 }
 
-fn sandbox_with(token_tables: &str) -> Sandbox {
+fn sandbox_with(tokens: Vec<(&str, TokenTable)>) -> Sandbox {
     let sb = Sandbox::new();
-    sb.add_config(token_tables);
+    for (name, table) in tokens {
+        sb.add_token(name, table);
+    }
     sb
 }
 
@@ -37,7 +40,7 @@ fn rule(document: &serde_json::Value) -> &str {
 #[test]
 fn without_dam_token_the_caller_is_the_owner() {
     let _guard = support::guard("without_dam_token_the_caller_is_the_owner");
-    let sb = sandbox_with(&format!("[token.tool]\nvalue = \"{}\"\n", token(1)));
+    let sb = sandbox_with(vec![("tool", TokenTable::valued(&token(1)))]);
     let (ok, _, err) = sb.dam(&["ls", "--json", "--no-pull"]);
     assert!(ok, "{err}");
 }
@@ -45,7 +48,7 @@ fn without_dam_token_the_caller_is_the_owner() {
 #[test]
 fn a_token_that_is_not_well_formed_is_refused_as_malformed() {
     let _guard = support::guard("a_token_that_is_not_well_formed_is_refused_as_malformed");
-    let sb = sandbox_with("");
+    let sb = sandbox_with(vec![]);
     for presented in [
         "",
         "hunter2-secret",
@@ -62,7 +65,7 @@ fn a_token_that_is_not_well_formed_is_refused_as_malformed() {
 #[test]
 fn a_well_formed_token_the_config_does_not_list_is_unknown() {
     let _guard = support::guard("a_well_formed_token_the_config_does_not_list_is_unknown");
-    let sb = sandbox_with(&format!("[token.tool]\nvalue = \"{}\"\n", token(1)));
+    let sb = sandbox_with(vec![("tool", TokenTable::valued(&token(1)))]);
     let document = refused(&sb, &token(2), &["ls", "--json", "--no-pull"]);
     assert_eq!(rule(&document), "unknown_token");
 }
@@ -71,16 +74,21 @@ fn a_well_formed_token_the_config_does_not_list_is_unknown() {
 fn disabled_expired_early_and_wrong_channel_tokens_each_name_their_rule() {
     let _guard =
         support::guard("disabled_expired_early_and_wrong_channel_tokens_each_name_their_rule");
-    let sb = sandbox_with(&format!(
-        "[token.a]\nvalue = \"{}\"\nweekdays = [\"mon\"]\n\
-         [token.b]\nvalue = \"{}\"\nexpires = 2000-01-01T00:00:00Z\n\
-         [token.c]\nvalue = \"{}\"\nnot_before = 2999-01-01T00:00:00Z\n\
-         [token.d]\nvalue = \"{}\"\nvia = [\"mcp\"]\n",
-        token(1),
-        token(2),
-        token(3),
-        token(4)
-    ));
+    let sb = sandbox_with(vec![
+        (
+            "b",
+            TokenTable::valued(&token(2)).expires("2000-01-01T00:00:00Z"),
+        ),
+        (
+            "c",
+            TokenTable::valued(&token(3)).not_before("2999-01-01T00:00:00Z"),
+        ),
+        ("d", TokenTable::valued(&token(4)).via(&["mcp"])),
+    ]);
+    sb.add_token_written_as(
+        "a",
+        &format!("{{ value = {:?}, weekdays = {{ \"mon\" }} }}", token(1)),
+    );
     let cases = [
         (token(1), "disabled_token"),
         (token(2), "expired_token"),
@@ -103,7 +111,7 @@ fn disabled_expired_early_and_wrong_channel_tokens_each_name_their_rule() {
 #[test]
 fn reading_the_config_alone_still_checks_the_token() {
     let _guard = support::guard("reading_the_config_alone_still_checks_the_token");
-    let sb = sandbox_with("");
+    let sb = sandbox_with(vec![]);
     let document = refused(&sb, &token(2), &["category", "list", "--json"]);
     assert_eq!(rule(&document), "unknown_token");
 }
@@ -111,11 +119,12 @@ fn reading_the_config_alone_still_checks_the_token() {
 #[test]
 fn a_token_that_requires_request_details_is_refused_naming_them() {
     let _guard = support::guard("a_token_that_requires_request_details_is_refused_naming_them");
-    let sb = sandbox_with(&format!(
-        "[token.claude]\nvalue = \"{}\"\nrequire = [\"session\", \"model\"]\n\
-         [[token.claude.grant]]\nallow = [\"task:read\"]\n",
-        token(1)
-    ));
+    let sb = sandbox_with(vec![(
+        "claude",
+        TokenTable::valued(&token(1))
+            .require(&["session", "model"])
+            .grant(Grant::allowing(&["task:read"])),
+    )]);
     let document = refused(&sb, &token(1), &["ls", "--json", "--no-pull"]);
     assert_eq!(rule(&document), "missing_details");
     let message = document["error"]["message"].as_str().unwrap();

@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use dam_application::{Config, ConfigError, Tokens};
+use dam_application::{Config, ConfigError, LoadedConfig, Tokens};
 use mlua::Lua;
 
 use super::computed::ConfiguredCredentials;
@@ -14,17 +14,12 @@ pub struct LuaConfigFile {
     config: PathBuf,
 }
 
-pub struct LoadedConfig {
-    pub config: Config,
-    pub credentials: ConfiguredCredentials,
-}
-
 impl LuaConfigFile {
     pub fn new(config: PathBuf) -> LuaConfigFile {
         LuaConfigFile { config }
     }
 
-    pub fn load_with_credentials(&self) -> Result<LoadedConfig, ConfigError> {
+    pub(super) fn read_both(&self) -> Result<LoadedConfig, ConfigError> {
         let mut config = self.settings_in(read_text(&self.config)?.as_deref())?;
         let lua = Lua::new();
         let path = self.secrets_path();
@@ -38,7 +33,7 @@ impl LuaConfigFile {
             .map_err(|e| ConfigError::Invalid(lua_message(&e)))?;
         Ok(LoadedConfig {
             config,
-            credentials,
+            credentials: Box::new(credentials),
         })
     }
 

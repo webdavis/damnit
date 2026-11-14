@@ -53,7 +53,7 @@ pub(crate) struct Cli {
         env = "DAM_CONFIG",
         hide_env_values = true,
         value_name = "FILE",
-        help = "Read the config from FILE. Default: ${XDG_CONFIG_HOME:-~/.config}/dam/config.toml"
+        help = "Read the config from FILE; secrets.lua beside it holds the secrets. Default: ${XDG_CONFIG_HOME:-~/.config}/dam/config.lua"
     )]
     pub(crate) config: Option<PathBuf>,
     #[arg(
@@ -132,9 +132,9 @@ pub(crate) enum Command {
     Reminders(RemindersArgs),
     #[command(about = "Read and record the day's plan, proposals, decisions and task states")]
     Day(DayArgs),
-    #[command(about = "Read the label categories the config declares")]
+    #[command(about = "Read the label categories config.lua declares")]
     Category(CategoryArgs),
-    #[command(about = "Read the saved filters the config declares")]
+    #[command(about = "Read the saved filters config.lua declares")]
     Filter(FilterArgs),
     #[command(about = "Manage remotes")]
     Remote(RemoteArgs),

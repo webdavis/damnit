@@ -3,6 +3,7 @@ mod support;
 use std::process::Stdio;
 
 use serde_json::Value;
+use support::config_files::Remote;
 use support::page_examples::{Example, examples};
 use support::sandbox::Sandbox;
 
@@ -12,9 +13,10 @@ fn page() -> String {
 }
 
 fn token_value(sb: &Sandbox, name: &str) -> String {
-    let config = std::fs::read_to_string(sb.dir.path().join("config.toml")).unwrap();
-    let table: toml::Table = toml::from_str(&config).unwrap();
-    table["token"][name]["value"].as_str().unwrap().to_string()
+    let secrets = std::fs::read_to_string(sb.secrets_path()).unwrap();
+    let (_, table) = secrets.split_once(&format!("{name} = {{")).unwrap();
+    let (_, value) = table.split_once("value = \"").unwrap();
+    value.split('"').next().unwrap().to_string()
 }
 
 fn filled(example: &Example, answer: Option<&Value>) -> String {
@@ -44,7 +46,7 @@ fn every_example_on_the_agents_page_exits_as_the_page_says() {
     let _guard = support::guard("every_example_on_the_agents_page_exits_as_the_page_says")
         .allow_slow("it runs every example the page shows, one dam process each");
     let sb = Sandbox::new();
-    sb.add_config("[remote.calendar]\nurl = \"fake::\"\n");
+    sb.add_remote("calendar", Remote::at("fake::"));
     let examples = examples(&page());
     assert!(examples.len() >= 15, "found {} examples", examples.len());
     let mut answer = None;

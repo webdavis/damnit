@@ -27,7 +27,7 @@ fn a_tokens_edit_answers_changed_and_the_owners_task_is_untouched() {
     let _guard = support::guard("a_tokens_edit_answers_changed_and_the_owners_task_is_untouched");
     let sb = Sandbox::new();
     let oid = committed_task(&sb, "Pay rent");
-    let held = grant_to(&sb, "tool", 1, &grant("\"task:read\", \"task:change\""));
+    let held = grant_to(&sb, "tool", 1, vec![grant(&["task:read", "task:change"])]);
     let line = ["edit", &oid[..7], "--subject", "Pay the rent", "--json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     assert_eq!(sent["answer"], "changed");
@@ -43,7 +43,7 @@ fn a_tokens_done_answers_changed_and_force_stays_the_owners() {
     let _guard = support::guard("a_tokens_done_answers_changed_and_force_stays_the_owners");
     let sb = Sandbox::new();
     let oid = committed_task(&sb, "Pay rent");
-    let held = grant_to(&sb, "tool", 1, &grant("\"task:complete\""));
+    let held = grant_to(&sb, "tool", 1, vec![grant(&["task:complete"])]);
     let out = sb.output_holding(&held, &["done", &oid]);
     assert!(out.status.success(), "{out:?}");
     let text = String::from_utf8_lossy(&out.stdout);

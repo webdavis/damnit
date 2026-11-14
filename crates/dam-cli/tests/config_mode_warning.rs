@@ -5,13 +5,15 @@ use std::os::unix::fs::PermissionsExt;
 use support::sandbox::Sandbox;
 
 fn loosened(sb: &Sandbox) {
-    let path = sb.dir.path().join("config.toml");
-    std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o644)).unwrap();
+    std::fs::set_permissions(sb.secrets_path(), std::fs::Permissions::from_mode(0o644)).unwrap();
 }
 
 fn mode_of(sb: &Sandbox) -> u32 {
-    let path = sb.dir.path().join("config.toml");
-    std::fs::metadata(path).unwrap().permissions().mode() & 0o777
+    std::fs::metadata(sb.secrets_path())
+        .unwrap()
+        .permissions()
+        .mode()
+        & 0o777
 }
 
 fn holding_a_token(sb: &Sandbox) {
@@ -79,16 +81,17 @@ fn token_revoke_json_keeps_its_warnings() {
 }
 
 #[test]
-fn remote_add_warns_on_stderr() {
-    let _guard = support::guard("remote_add_warns_on_stderr");
+fn remote_add_keeps_the_mode_of_the_config_that_holds_no_secret() {
+    let _guard = support::guard("remote_add_keeps_the_mode_of_the_config_that_holds_no_secret");
     let sb = Sandbox::new();
-    let out = assert_warned_on_stderr_only(&sb, &["remote", "add", "second", "fake::"]);
-    assert_eq!(out, "added second (fake::)");
-}
-
-#[test]
-fn remote_add_json_keeps_its_warnings() {
-    let _guard = support::guard("remote_add_json_keeps_its_warnings");
-    let sb = Sandbox::new();
-    assert_json_keeps_warnings_and_stderr_empty(&sb, &["remote", "add", "second", "fake::"]);
+    std::fs::set_permissions(sb.config_path(), std::fs::Permissions::from_mode(0o644)).unwrap();
+    let (ok, out, err) = sb.dam(&["remote", "add", "second", "fake::"]);
+    assert!(ok, "{err}");
+    assert_eq!(out, "added second (fake::)\n");
+    assert!(err.is_empty(), "{err}");
+    let mode = std::fs::metadata(sb.config_path())
+        .unwrap()
+        .permissions()
+        .mode();
+    assert_eq!(mode & 0o777, 0o644);
 }

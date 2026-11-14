@@ -1,13 +1,10 @@
 use super::hidden::Hidden;
 use super::sandbox::Sandbox;
-use super::tokens::{answer, grant_to};
+use super::token_table::Grant;
+use super::tokens::{answer, grant, grant_to};
 
-pub fn own_grant(extra: &str) -> String {
-    format!(
-        "[[token.tool.grant]]\n\
-         allow = [\"task:read\", \"task:change\", \"task:create\", \"task:complete\"]\n\
-         own = true\n{extra}"
-    )
+pub fn own_grant() -> Grant {
+    grant(&["task:read", "task:change", "task:create", "task:complete"]).own()
 }
 
 pub fn send(sb: &Sandbox, held: &str, args: &[&str]) -> serde_json::Value {
@@ -30,9 +27,9 @@ pub fn made_by(sb: &Sandbox, held: &str, subject: &str, path: &str) -> String {
     hash
 }
 
-pub fn own_hidden(extra: &str) -> Hidden {
+pub fn own_hidden(grant: Grant) -> Hidden {
     let sb = Sandbox::new();
-    let held = grant_to(&sb, "tool", 1, &own_grant(extra));
+    let held = grant_to(&sb, "tool", 1, vec![grant]);
     let report = made_by(&sb, &held, "report", "work");
     Hidden { sb, held, report }
 }

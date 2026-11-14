@@ -7,7 +7,7 @@ use std::process::Output;
 use support::sandbox::Sandbox;
 
 fn fresh_config(sb: &Sandbox) -> PathBuf {
-    sb.dir.path().join("fresh").join("dam").join("config.toml")
+    sb.dir.path().join("fresh").join("dam").join("config.lua")
 }
 
 fn run(sb: &Sandbox, config: &Path, args: &[&str]) -> Output {
@@ -35,12 +35,12 @@ fn the_first_run_creates_the_config_readable_by_its_owner_alone() {
     );
     let text = std::fs::read_to_string(&config).unwrap();
     for section in [
-        "[done]",
-        "[remote.",
-        "[category.",
-        "[filter.",
+        "done = ",
+        "remote = ",
+        "category = ",
+        "filter = ",
         "schema",
-        "[token.",
+        "token = ",
     ] {
         assert!(
             text.contains(section),
@@ -82,14 +82,14 @@ fn an_existing_config_is_never_rewritten() {
     let sb = Sandbox::new();
     let config = fresh_config(&sb);
     run(&sb, &config, &["ls"]);
-    std::fs::write(&config, "[filter.mine]\nquery = \"p1\"\n").unwrap();
+    std::fs::write(&config, "return { filter = { mine = { query = 'p1' } } }\n").unwrap();
     std::fs::set_permissions(&config, std::fs::Permissions::from_mode(0o640)).unwrap();
     let out = run(&sb, &config, &["ls"]);
     assert!(out.status.success(), "{out:?}");
     assert!(out.stderr.is_empty(), "{out:?}");
     assert_eq!(
         std::fs::read_to_string(&config).unwrap(),
-        "[filter.mine]\nquery = \"p1\"\n"
+        "return { filter = { mine = { query = 'p1' } } }\n"
     );
     assert_eq!(mode(&config), 0o640);
 }

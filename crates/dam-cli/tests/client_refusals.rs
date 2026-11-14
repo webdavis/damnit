@@ -63,9 +63,11 @@ fn every_failure_class_names_itself_under_json() {
         .unwrap();
     assert_eq!(kind_of(&unopenable), "store");
 
+    let a_folder = sb.dir.path().join("folder.lua");
+    std::fs::create_dir(&a_folder).unwrap();
     let unreadable_config = sb
         .command(&["ls", "--json"])
-        .env("DAM_CONFIG", sb.dir.path())
+        .env("DAM_CONFIG", &a_folder)
         .output()
         .unwrap();
     assert_eq!(kind_of(&unreadable_config), "store");
@@ -77,15 +79,12 @@ fn every_failure_class_names_itself_under_json() {
         .unwrap();
     assert_eq!(kind_of(&no_helper), "helper");
 
-    let unset = sb.dir.path().join("no-credential.toml");
-    std::fs::write(
-        &unset,
-        "[remote.fake]\nurl = \"fake::\"\ncredentials = [\"api_token\"]\napi_token_env = \"DAM_TEST_UNSET_TOKEN\"\n",
-    )
-    .unwrap();
+    sb.write_secrets_lua(
+        "return { schema = 1, remote = { fake = { \
+         api_token = function() return os.getenv('DAM_TEST_UNSET_TOKEN') end } } }\n",
+    );
     let no_credential = sb
         .command(&["push", "--json"])
-        .env("DAM_CONFIG", &unset)
         .env_remove("DAM_TEST_UNSET_TOKEN")
         .output()
         .unwrap();

@@ -1,7 +1,9 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use dam_application::{Config, ConfigError, ConfigFile, NewToken, RemoteName};
+use dam_application::{Config, ConfigError, ConfigFile, LoadedConfig, NewToken, RemoteName};
+
+use super::MissingCredentials;
 
 #[derive(Clone, Default)]
 pub(crate) struct FakeConfigFile {
@@ -13,8 +15,11 @@ impl FakeConfigFile {
     }
 }
 impl ConfigFile for FakeConfigFile {
-    fn load(&self) -> Result<Config, ConfigError> {
-        Ok(Config::default())
+    fn load(&self) -> Result<LoadedConfig, ConfigError> {
+        Ok(LoadedConfig {
+            config: Config::default(),
+            credentials: Box::new(MissingCredentials),
+        })
     }
     fn add_remote(&self, name: &RemoteName, url: &str) -> Result<Option<String>, ConfigError> {
         self.added

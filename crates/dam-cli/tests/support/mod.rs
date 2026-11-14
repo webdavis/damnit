@@ -2,16 +2,19 @@
 
 pub mod answers;
 pub mod commands;
+pub mod config_files;
 pub mod errors;
 pub mod fixture;
 pub mod golden;
 pub mod help_flags;
+pub mod helper_scripts;
 pub mod hidden;
 pub mod own;
 pub mod page_examples;
 pub mod request;
 pub mod sandbox;
 pub mod schema;
+pub mod token_table;
 pub mod tokens;
 pub mod upstream;
 

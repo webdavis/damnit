@@ -9,7 +9,7 @@ mod origins;
 mod repositories;
 mod store;
 
-pub use config_file::{ConfigError, ConfigFile};
+pub use config_file::{ConfigError, ConfigFile, LoadedConfig};
 pub use days::DayRepository;
 pub use environment::{Clock, Randomness};
 pub use helper::{CredentialError, CredentialSource, HelperError, HelperLauncher, RemoteHelper};

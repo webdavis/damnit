@@ -1,11 +1,13 @@
-use dam_application::{Config, ConfigError, ConfigFile, NewToken, RemoteName, Tokens};
+use dam_application::{
+    Config, ConfigError, ConfigFile, LoadedConfig, NewToken, RemoteName, Tokens,
+};
 
 use super::file::LuaConfigFile;
 use super::write::{Change, remote_entry, token_entry};
 
 impl ConfigFile for LuaConfigFile {
-    fn load(&self) -> Result<Config, ConfigError> {
-        self.load_with_credentials().map(|loaded| loaded.config)
+    fn load(&self) -> Result<LoadedConfig, ConfigError> {
+        self.read_both()
     }
 
     fn add_remote(&self, name: &RemoteName, url: &str) -> Result<Option<String>, ConfigError> {

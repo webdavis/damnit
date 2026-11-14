@@ -1,18 +1,18 @@
 mod support;
 
 use serde_json::Value;
+use support::config_files::Remote;
 use support::hidden::Hidden;
 use support::own::{listed, made_by, own_grant};
 use support::sandbox::Sandbox;
-use support::tokens::{answer, grant_to};
+use support::tokens::{answer, grant, grant_to};
 
 const UPSTREAM: &str = "from upstream";
 
 fn pulled_during_an_own_tokens_read() -> Hidden {
     let sb = Sandbox::new();
-    sb.add_config("stale = \"15m\"\n");
-    let pull = "[[token.tool.grant]]\nallow = [\"remote:pull\"]\n";
-    let held = grant_to(&sb, "tool", 1, &format!("{}{pull}", own_grant("")));
+    sb.add_remote("fake", Remote::fake().stale("15m"));
+    let held = grant_to(&sb, "tool", 1, vec![own_grant(), grant(&["remote:pull"])]);
     let out = sb.output_holding(&held, &["ls", "--json"]);
     assert!(out.status.success(), "{out:?}");
     let report = owners_listing(&sb, "mine")

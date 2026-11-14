@@ -11,7 +11,9 @@ pub fn credential(
     lookup(&variable)
         .filter(|value| !value.is_empty())
         .map(Secret::from)
-        .ok_or_else(|| format!("{variable} is not set; declare {name} under [remote.{remote}]"))
+        .ok_or_else(|| {
+            format!("{variable} is not set; declare {name} under remote.{remote} in secrets.lua")
+        })
 }
 
 #[cfg(test)]

@@ -1,5 +1,6 @@
 mod support;
 
+use support::config_files::Remote;
 use support::errors::error_document;
 use support::sandbox::Sandbox;
 
@@ -75,14 +76,12 @@ fn agenda_no_pull_runs_no_credential_command_and_no_helper() {
     let sb = Sandbox::new();
     let resolved = sb.dir.path().join("credential-command-ran");
     let launched = sb.dir.path().join("token.txt");
-    std::fs::write(
-        sb.dir.path().join("config.toml"),
-        format!(
-            "[remote.fake]\nurl = \"fake::\"\napi_token_command = [\"sh\", \"-c\", \"touch '{}'; echo tok-123\"]\nstale = \"1s\"\n",
-            resolved.display()
-        ),
-    )
-    .unwrap();
+    sb.add_remote("fake", Remote::at("fake::").stale("1s"));
+    sb.write_secrets_lua(&format!(
+        "return {{ schema = 1, remote = {{ fake = {{ api_token = function() \
+         io.open({:?}, 'w'):close() return 'tok-123' end }} }} }}\n",
+        resolved.display().to_string()
+    ));
 
     let mistyped = sb.output(&["agenda", "--from", "someday", "--json"]);
     assert_eq!(mistyped.status.code(), Some(2));

@@ -1,7 +1,7 @@
 mod support;
 
 use support::sandbox::Sandbox;
-use support::tokens::{answer, grant_to, refused};
+use support::tokens::{answer, grant, grant_to, refused};
 
 fn send(sb: &Sandbox, held: &str, id: &str) -> serde_json::Value {
     let line = [
@@ -44,7 +44,7 @@ fn a_repeat_for_a_task_moved_out_of_the_grant_answers_as_for_a_removed_one() {
         &sb,
         "tool",
         1,
-        "[[token.tool.grant]]\nallow = [\"task:read\", \"task:create\", \"task:change\"]\npaths = [\"work\"]\n",
+        vec![grant(&["task:read", "task:create", "task:change"]).paths(&["work"])],
     );
     let hidden = taken(&sb, &held, "hidden");
     let removed = taken(&sb, &held, "removed");
@@ -67,7 +67,7 @@ fn moved_plan(with_hidden_child: bool) -> std::process::Output {
         &sb,
         "tool",
         1,
-        "[[token.tool.grant]]\nallow = [\"task:read\", \"task:create\", \"task:change\", \"task:move\"]\nlabels = [\"tool\"]\n",
+        vec![grant(&["task:read", "task:create", "task:change", "task:move"]).labels(&["tool"])],
     );
     let line = ["new", "Plan", "--id", "plan", "--label", "tool", "--json"];
     let oid = answer(&sb.output_holding(&held, &line), "sent.schema.json")["oid"]

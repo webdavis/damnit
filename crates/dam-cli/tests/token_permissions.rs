@@ -4,17 +4,18 @@ use dam_domain::Token;
 use support::errors::error_document;
 use support::sandbox::Sandbox;
 use support::schema::assert_matches_schema;
+use support::token_table::{Grant, TokenTable};
 
 fn token(fill: u8) -> String {
     Token::generate(&mut |b: &mut [u8]| b.fill(fill)).expose()
 }
 
-fn sandbox_granting(allow: &str) -> (Sandbox, String) {
+fn sandbox_granting(allow: &[&str]) -> (Sandbox, String) {
     let sb = Sandbox::new();
-    sb.add_config(&format!(
-        "[token.tool]\nvalue = \"{}\"\n[[token.tool.grant]]\nallow = [{allow}]\n",
-        token(1)
-    ));
+    sb.add_token(
+        "tool",
+        TokenTable::valued(&token(1)).grant(Grant::allowing(allow)),
+    );
     (sb, token(1))
 }
 
@@ -31,7 +32,7 @@ fn rule_of(out: &std::process::Output) -> String {
 fn every_write_verb_is_refused_to_a_token_and_the_store_is_untouched() {
     let _guard =
         support::guard("every_write_verb_is_refused_to_a_token_and_the_store_is_untouched");
-    let (sb, held) = sandbox_granting("\"task:read\", \"task:create\", \"task:change\"");
+    let (sb, held) = sandbox_granting(&["task:read", "task:create", "task:change"]);
     let oid = sb.new_object(&["milk"]);
     for line in [
         vec!["mv", &oid, "work"],
@@ -56,7 +57,7 @@ fn every_write_verb_is_refused_to_a_token_and_the_store_is_untouched() {
 #[test]
 fn a_read_the_token_does_not_hold_is_refused_and_one_it_holds_runs() {
     let _guard = support::guard("a_read_the_token_does_not_hold_is_refused_and_one_it_holds_runs");
-    let (sb, held) = sandbox_granting("\"config:read\"");
+    let (sb, held) = sandbox_granting(&["config:read"]);
     let out = sb.output_holding(&held, &["log", "--json"]);
     assert_eq!(rule_of(&out), "not_permitted");
     assert!(
@@ -74,9 +75,11 @@ fn a_token_reaches_only_the_remotes_its_grant_names() {
     let _guard = support::guard("a_token_reaches_only_the_remotes_its_grant_names");
     let sb = Sandbox::new();
     let held = token(1);
-    sb.add_config(&format!(
-        "[token.tool]\nvalue = \"{held}\"\n[[token.tool.grant]]\nallow = [\"remote:pull\", \"remote:push\"]\nremotes = [\"elsewhere\"]\n"
-    ));
+    sb.add_token(
+        "tool",
+        TokenTable::valued(&held)
+            .grant(Grant::allowing(&["remote:pull", "remote:push"]).remotes(&["elsewhere"])),
+    );
     for verb in ["pull", "push"] {
         for named in ["fake", "nope"] {
             let out = sb.output_holding(&held, &[verb, named, "--json"]);

@@ -1,9 +1,13 @@
+use std::cell::RefCell;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process::Command;
 
+use super::config_files::ConfigFiles;
+
 pub struct Sandbox {
     pub dir: tempfile::TempDir,
+    pub(super) files: RefCell<ConfigFiles>,
 }
 
 impl Sandbox {
@@ -18,12 +22,12 @@ impl Sandbox {
         )
         .unwrap();
         std::fs::set_permissions(&helper, std::fs::Permissions::from_mode(0o755)).unwrap();
-        std::fs::write(
-            dir.path().join("config.toml"),
-            "[remote.fake]\nurl = \"fake::\"\ncredentials = [\"api_token\"]\napi_token = \"tok-123\"\n",
-        )
-        .unwrap();
-        Sandbox { dir }
+        let sandbox = Sandbox {
+            dir,
+            files: RefCell::new(ConfigFiles::with_the_fake_remote()),
+        };
+        sandbox.write_config_files();
+        sandbox
     }
 
     pub fn command(&self, args: &[&str]) -> Command {
@@ -51,7 +55,7 @@ impl Sandbox {
         command
             .current_dir(self.dir.path())
             .env("PATH", path)
-            .env("DAM_CONFIG", self.dir.path().join("config.toml"))
+            .env("DAM_CONFIG", self.config_path())
             .env("DAM_STORE", self.dir.path().join("dam.db"))
             .env("FAKE_TOKEN_FILE", self.dir.path().join("token.txt"))
             .env("PUSH_LOG", self.dir.path().join("pushes.jsonl"))
@@ -66,13 +70,6 @@ impl Sandbox {
             .env_remove("NO_COLOR")
             .env_remove("CLICOLOR_FORCE");
         command
-    }
-
-    pub fn add_config(&self, text: &str) {
-        let path = self.dir.path().join("config.toml");
-        let mut config = std::fs::read_to_string(&path).unwrap();
-        config.push_str(text);
-        std::fs::write(path, config).unwrap();
     }
 
     pub fn output_holding(&self, token: &str, args: &[&str]) -> std::process::Output {
@@ -138,60 +135,5 @@ impl Sandbox {
         let mut bytes = std::fs::read(&db).unwrap();
         bytes.extend(std::fs::read(db.with_extension("db-wal")).unwrap_or_default());
         String::from_utf8_lossy(&bytes).into_owned()
-    }
-
-    pub fn install_helper_pulling(&self, task_json: &str) {
-        self.install_helper_answering_pull(&format!(
-            r#"{{"objects":[{task_json}],"removed":[],"sync":null}}"#
-        ));
-    }
-
-    pub fn install_helper_answering_pull(&self, answer: &str) {
-        let script = format!(
-            r#"#!/bin/sh
-set -eu
-while IFS= read -r line; do
-  case "$line" in
-    *'"capabilities"'*) printf '{{"protocol":1,"kinds":["task"],"fields":["subject","due"],"credentials":["api_token"],"incremental":false}}\n' ;;
-    *'"pull"'*) printf '%s\n' '{answer}' ;;
-    *'"push"'*)
-      printf '%s\n' "$line" >> "$PUSH_LOG"
-      oid="$(printf '%s' "$line" | grep -o '"oid":"[0-9a-f]*"' | head -1 | cut -d'"' -f4)"
-      printf '{{"results":[{{"oid":"%s","ok":true,"remote_id":"up-1","why":null}}]}}\n' "$oid" ;;
-    *) printf '{{"error":"unknown request"}}\n' ;;
-  esac
-done
-"#
-        );
-        let helper = self.dir.path().join("bin/dam-remote-fake");
-        std::fs::write(&helper, script).unwrap();
-        std::fs::set_permissions(&helper, std::fs::Permissions::from_mode(0o755)).unwrap();
-    }
-
-    pub fn install_silent_helper(&self) {
-        let helper = self.dir.path().join("bin/dam-remote-fake");
-        std::fs::write(&helper, "#!/bin/sh\nwhile :; do sleep 0.05; done\n").unwrap();
-        std::fs::set_permissions(&helper, std::fs::Permissions::from_mode(0o755)).unwrap();
-    }
-
-    pub fn no_helper_left_within(&self, margin: std::time::Duration) -> bool {
-        let give_up_at = std::time::Instant::now() + margin;
-        while self.helper_running() {
-            if std::time::Instant::now() >= give_up_at {
-                return false;
-            }
-            std::thread::sleep(std::time::Duration::from_millis(10));
-        }
-        true
-    }
-
-    pub fn helper_running(&self) -> bool {
-        Command::new("pgrep")
-            .arg("-f")
-            .arg(self.dir.path().join("bin/dam-remote-fake"))
-            .output()
-            .unwrap()
-            .status
-            .success()
     }
 }

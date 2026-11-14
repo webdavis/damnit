@@ -38,8 +38,7 @@ fn resolve_prints_the_golden_document() {
 #[test]
 fn remote_add_prints_the_golden_document() {
     let sb = fixture::seeded();
-    let config = sb.dir.path().join("config.toml");
-    std::fs::set_permissions(&config, std::fs::Permissions::from_mode(0o644)).unwrap();
+    std::fs::set_permissions(sb.config_path(), std::fs::Permissions::from_mode(0o644)).unwrap();
     let args = ["--json", "remote", "add", "calendar", "gcal::primary"];
     assert_golden_output(&sb, &args, "remote_add.json");
 }

@@ -1,4 +1,4 @@
-use dam_application::{CredentialError, CredentialSource, CredentialSpec, RemoteName};
+use dam_application::{CredentialError, CredentialSpec, RemoteName};
 
 use super::support::{Folder, ONE_REMOTE, config, marking_credential, secrets};
 

@@ -4,9 +4,10 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
 use serde_json::{Value, json};
+use support::config_files::Remote;
 use support::sandbox::Sandbox;
 use support::schema::assert_matches_schema;
-use support::tokens::grant_to;
+use support::tokens::{grant, grant_to};
 
 const WINDOW: [&str; 6] = [
     "agenda",
@@ -26,9 +27,7 @@ fn pulled_from_the_calendar() -> Sandbox {
     )
     .unwrap();
     std::fs::set_permissions(&helper, std::fs::Permissions::from_mode(0o755)).unwrap();
-    sb.add_config(
-        "[remote.cal]\nurl = \"cal::\"\ncredentials = [\"api_token\"]\napi_token = \"tok-cal\"\n",
-    );
+    sb.add_remote("cal", Remote::at("cal::").api_token("tok-cal"));
     let (ok, _, err) = sb.dam(&["pull", "cal"]);
     assert!(ok, "{err}");
     sb
@@ -111,7 +110,7 @@ fn a_token_sees_no_meeting_or_attendee_outside_its_grants() {
         &sb,
         "reader",
         3,
-        "[[token.reader.grant]]\nallow = [\"task:read\", \"event:read\", \"working:read\"]\npaths = [\"work\"]\n",
+        vec![grant(&["task:read", "event:read", "working:read"]).paths(&["work"])],
     );
     let mut args = WINDOW.to_vec();
     args.push("--json");

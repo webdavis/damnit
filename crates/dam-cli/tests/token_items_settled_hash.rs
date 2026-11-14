@@ -2,7 +2,7 @@ mod support;
 
 use support::hidden::{Hidden, full_oid};
 use support::sandbox::Sandbox;
-use support::tokens::{answer, grant_to};
+use support::tokens::{answer, grant, grant_to};
 
 fn committed_task_from_tool() -> Hidden {
     let sb = Sandbox::new();
@@ -10,7 +10,7 @@ fn committed_task_from_tool() -> Hidden {
         &sb,
         "tool",
         1,
-        "[[token.tool.grant]]\nallow = [\"task:read\", \"task:create\"]\npaths = [\"work\"]\n",
+        vec![grant(&["task:read", "task:create"]).paths(&["work"])],
     );
     let line = ["new", "Call the dentist", "--path", "work", "--json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");

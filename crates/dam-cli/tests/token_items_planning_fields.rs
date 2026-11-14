@@ -23,7 +23,7 @@ fn a_tokens_estimate_waits_as_an_item_the_owner_adds() {
     let _guard = support::guard("a_tokens_estimate_waits_as_an_item_the_owner_adds");
     let sb = Sandbox::new();
     let oid = committed_task(&sb, "File taxes");
-    let held = grant_to(&sb, "tool", 1, &grant("\"task:read\", \"task:change\""));
+    let held = grant_to(&sb, "tool", 1, vec![grant(&["task:read", "task:change"])]);
     let line = ["edit", &oid, "--estimate", "30", "--json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     assert_eq!(sent["answer"], "changed");
@@ -42,7 +42,7 @@ fn a_token_cannot_mark_a_task_as_the_owners_focus() {
     let _guard = support::guard("a_token_cannot_mark_a_task_as_the_owners_focus");
     let sb = Sandbox::new();
     let oid = committed_task(&sb, "File taxes");
-    let held = grant_to(&sb, "tool", 1, &grant("\"task:read\", \"task:change\""));
+    let held = grant_to(&sb, "tool", 1, vec![grant(&["task:read", "task:change"])]);
     let out = sb.output_holding(&held, &["edit", &oid, "--focus", "today", "--json"]);
     assert_eq!(refused(&out), "not_open_to_tokens");
     let (ok, status, err) = sb.dam(&["status", "--json"]);

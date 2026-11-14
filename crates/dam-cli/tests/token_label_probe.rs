@@ -5,12 +5,12 @@ use support::tokens::{grant, grant_to};
 
 fn with_effort_and_a_work_token() -> (Sandbox, String) {
     let sb = Sandbox::new();
-    sb.add_config("[category.effort]\nvalues = [\"light\", \"deep\"]\nexclusive = true\n");
+    sb.add_category("effort", &["light", "deep"], true);
     let held = grant_to(
         &sb,
         "tool",
         1,
-        &format!("{}paths = [\"work\"]\n", grant("\"task:create\"")),
+        vec![grant(&["task:create"]).paths(&["work"])],
     );
     (sb, held)
 }

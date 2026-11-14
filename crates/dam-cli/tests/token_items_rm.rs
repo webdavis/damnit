@@ -7,7 +7,7 @@ const DENTIST: [&str; 3] = ["new", "Call the dentist", "--json"];
 
 fn dentist_from_tool() -> (Sandbox, String, String) {
     let sb = Sandbox::new();
-    let held = grant_to(&sb, "tool", 1, &grant("\"task:create\""));
+    let held = grant_to(&sb, "tool", 1, vec![grant(&["task:create"])]);
     let sent = answer(&sb.output_holding(&held, &DENTIST), "sent.schema.json");
     let hash = sent["hash"].as_str().unwrap().to_string();
     (sb, held, hash)
@@ -40,12 +40,7 @@ fn the_owner_declines_an_item_and_the_same_task_sent_again_is_refused() {
 fn a_token_withdraws_its_own_item_and_cannot_remove_another_senders() {
     let _guard = support::guard("a_token_withdraws_its_own_item_and_cannot_remove_another_senders");
     let (sb, held, hash) = dentist_from_tool();
-    let claude = grant_to(
-        &sb,
-        "claude",
-        2,
-        "[[token.claude.grant]]\nallow = [\"pending:read\"]\n",
-    );
+    let claude = grant_to(&sb, "claude", 2, vec![grant(&["pending:read"])]);
     assert_eq!(
         refused(&sb.output_holding(&claude, &["rm", &hash, "--json"])),
         "not_your_item"

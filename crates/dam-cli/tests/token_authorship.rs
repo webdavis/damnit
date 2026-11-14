@@ -2,6 +2,7 @@ mod support;
 
 use dam_domain::Token;
 use support::sandbox::Sandbox;
+use support::token_table::{Grant, TokenTable};
 
 fn token(fill: u8) -> Token {
     Token::generate(&mut |b: &mut [u8]| b.fill(fill))
@@ -12,10 +13,10 @@ fn a_pull_a_token_runs_is_recorded_as_the_owners_change() {
     let _guard = support::guard("a_pull_a_token_runs_is_recorded_as_the_owners_change");
     let sb = Sandbox::new();
     let held = token(1);
-    sb.add_config(&format!(
-        "[token.tool]\nvalue = \"{}\"\n[[token.tool.grant]]\nallow = [\"remote:pull\"]\n",
-        held.expose()
-    ));
+    sb.add_token(
+        "tool",
+        TokenTable::valued(&held.expose()).grant(Grant::allowing(&["remote:pull"])),
+    );
     let out = sb.output_holding(&held.expose(), &["pull", "fake", "--json"]);
     assert!(out.status.success(), "{out:?}");
     let (ok, log, err) = sb.dam(&["log", "--json"]);

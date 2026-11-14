@@ -3,6 +3,7 @@ mod support;
 use dam_domain::Token;
 use support::sandbox::Sandbox;
 use support::schema::assert_matches_schema;
+use support::token_table::{Grant, TokenTable};
 
 fn token(fill: u8) -> Token {
     Token::generate(&mut |b: &mut [u8]| b.fill(fill))
@@ -10,16 +11,25 @@ fn token(fill: u8) -> Token {
 
 fn sandbox_with_four_tokens() -> Sandbox {
     let sb = Sandbox::new();
-    sb.add_config(&format!(
-        "[token.tool]\nvalue = \"{}\"\nexpires = 2999-01-01T00:00:00Z\nvia = [\"local\", \"mcp\"]\n\
-         [[token.tool.grant]]\nallow = [\"task:read\"]\npaths = [\"work\"]\n\
-         [token.old]\nvalue = \"{}\"\nexpires = 2000-01-01T00:00:00Z\n\
-         [token.odd]\nvalue = \"{}\"\nweekdays = [\"mon\"]\n\
-         [token.bare]\n",
-        token(1).expose(),
-        token(2).expose(),
-        token(3).expose()
-    ));
+    sb.add_token(
+        "tool",
+        TokenTable::valued(&token(1).expose())
+            .expires("2999-01-01T00:00:00Z")
+            .via(&["local", "mcp"])
+            .grant(Grant::allowing(&["task:read"]).paths(&["work"])),
+    );
+    sb.add_token(
+        "old",
+        TokenTable::valued(&token(2).expose()).expires("2000-01-01T00:00:00Z"),
+    );
+    sb.add_token_written_as(
+        "odd",
+        &format!(
+            "{{ value = {:?}, weekdays = {{ \"mon\" }} }}",
+            token(3).expose()
+        ),
+    );
+    sb.add_token("bare", TokenTable::without_value());
     sb
 }
 
@@ -101,11 +111,12 @@ fn a_token_that_requires_details_lists_as_active_with_what_it_requires() {
     let _guard =
         support::guard("a_token_that_requires_details_lists_as_active_with_what_it_requires");
     let sb = Sandbox::new();
-    sb.add_config(&format!(
-        "\n[token.asks]\nvalue = \"{}\"\nrequire = [\"ticket\"]\n\
-         [[token.asks.grant]]\nallow = [\"task:read\"]\n",
-        token(4).expose()
-    ));
+    sb.add_token(
+        "asks",
+        TokenTable::valued(&token(4).expose())
+            .require(&["ticket"])
+            .grant(Grant::allowing(&["task:read"])),
+    );
     let (ok, out, err) = sb.dam(&["token", "list", "--json"]);
     assert!(ok, "{err}");
     let answer: serde_json::Value = serde_json::from_str(&out).unwrap();

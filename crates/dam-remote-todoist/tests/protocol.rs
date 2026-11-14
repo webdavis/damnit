@@ -91,7 +91,7 @@ fn a_remote_under_another_name_reads_its_own_token_and_not_todoists() {
         pull_error(helper(home.path(), &["work", ""]).env("DAM_TODOIST_API_TOKEN", "tok"));
     assert_eq!(
         missing,
-        "DAM_WORK_API_TOKEN is not set; declare api_token under [remote.work]"
+        "DAM_WORK_API_TOKEN is not set; declare api_token under remote.work in secrets.lua"
     );
     let read = pull_error(
         helper(home.path(), &["work", ""])

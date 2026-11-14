@@ -9,7 +9,7 @@ fn tool() -> (Sandbox, String) {
         &sb,
         "tool",
         1,
-        &grant("\"task:read\", \"task:create\", \"task:change\""),
+        vec![grant(&["task:read", "task:create", "task:change"])],
     );
     (sb, held)
 }
@@ -85,12 +85,7 @@ fn a_repeat_after_the_owner_took_the_task_leaves_the_owners_unsaved_edit_alone()
 fn two_tokens_with_the_same_id_make_two_tasks() {
     let _guard = support::guard("two_tokens_with_the_same_id_make_two_tasks");
     let (sb, held) = tool();
-    let claude = grant_to(
-        &sb,
-        "claude",
-        2,
-        "[[token.claude.grant]]\nallow = [\"task:create\"]\n",
-    );
+    let claude = grant_to(&sb, "claude", 2, vec![grant(&["task:create"])]);
     let from_tool = send(&sb, &held, &["Call dentist", "--id", "dentist"]);
     let from_claude = send(&sb, &claude, &["Call dentist", "--id", "dentist"]);
     assert_eq!(from_claude["answer"], "new");
@@ -130,7 +125,12 @@ fn a_repeat_of_a_task_as_an_event_is_refused() {
         &sb,
         "tool",
         1,
-        &grant("\"task:create\", \"task:change\", \"event:create\", \"event:change\""),
+        vec![grant(&[
+            "task:create",
+            "task:change",
+            "event:create",
+            "event:change",
+        ])],
     );
     send(&sb, &held, &["Call dentist", "--id", "dentist"]);
     let line = [
@@ -156,7 +156,7 @@ fn a_repeat_that_moves_the_task_is_refused_as_mv_is() {
         &sb,
         "claude",
         2,
-        "[[token.claude.grant]]\nallow = [\"task:create\", \"task:change\", \"task:move\"]\n",
+        vec![grant(&["task:create", "task:change", "task:move"])],
     );
     send(&sb, &mover, &["Call dentist", "--id", "dentist"]);
     let line = [
