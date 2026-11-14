@@ -1,6 +1,6 @@
 use dam_protocol::WireObject;
 
-use crate::map::Tree;
+use crate::map::{RemoteId, Tree};
 
 #[derive(Debug)]
 pub enum Shape {
@@ -39,6 +39,21 @@ pub fn shape_for(
         ));
     }
     task_under_parent_tasks_by_content(tree, &segments, project_path, project_id)
+}
+
+pub fn place_inside(tree: &Tree, container: &RemoteId) -> Result<ItemPlace, String> {
+    let (project_id, section_id) = tree
+        .project_and_section_of(container)
+        .ok_or_else(|| format!("no Todoist container {container} to file the task in"))?;
+    let parent_id = match container {
+        RemoteId::Item(id) => Some(id.clone()),
+        RemoteId::Section(_) | RemoteId::Project(_) => None,
+    };
+    Ok(ItemPlace {
+        project_id,
+        section_id,
+        parent_id,
+    })
 }
 
 fn section_if_anything_lives_or_lands_under_it(

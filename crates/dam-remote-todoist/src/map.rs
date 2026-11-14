@@ -107,6 +107,7 @@ impl Tree {
 }
 
 mod added;
+mod by_id;
 mod by_path;
 mod changes;
 mod holdings;
