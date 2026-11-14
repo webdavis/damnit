@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 
 use dam_application::{
-    CredentialError, CredentialSource, CredentialSpec, HelperError, HelperLauncher,
+    CredentialError, CredentialSource, CredentialSpec, Declared, HelperError, HelperLauncher,
     MutationOutcome, MutationVerdict, PullOutcome, PushOutcome, RemoteCapabilities, RemoteConfig,
     RemoteHelper, RemoteMutation, Secret,
 };
@@ -53,6 +53,10 @@ impl RemoteHelper for EchoHelper {
             outcomes,
             stopped_by: None,
         })
+    }
+    fn declared_on_the_wire(&self, mutation: &RemoteMutation) -> Result<Declared, HelperError> {
+        dam_adapters::declared_on_the_wire(mutation)
+            .map_err(|e| HelperError::Protocol(e.to_string()))
     }
 }
 

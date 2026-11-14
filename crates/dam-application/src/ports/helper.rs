@@ -1,5 +1,5 @@
 use crate::config::{CredentialSpec, RemoteConfig};
-use crate::ports::RemoteName;
+use crate::ports::{Declared, RemoteName};
 use crate::remote::{PullOutcome, PushOutcome, RemoteCapabilities, RemoteMutation};
 use crate::secret::Secret;
 
@@ -33,6 +33,7 @@ pub trait RemoteHelper: std::fmt::Debug {
     fn capabilities(&mut self) -> Result<RemoteCapabilities, HelperError>;
     fn pull(&mut self, since: Option<&str>) -> Result<PullOutcome, HelperError>;
     fn push(&mut self, mutations: Vec<RemoteMutation>) -> Result<PushOutcome, HelperError>;
+    fn declared_on_the_wire(&self, mutation: &RemoteMutation) -> Result<Declared, HelperError>;
 }
 
 pub trait HelperLauncher {

@@ -2,14 +2,15 @@ use std::sync::mpsc::RecvTimeoutError;
 use std::time::Instant;
 
 use dam_application::{
-    HelperError, PullOutcome, PushOutcome, RemoteCapabilities, RemoteHelper, RemoteMutation,
+    Declared, HelperError, PullOutcome, PushOutcome, RemoteCapabilities, RemoteHelper,
+    RemoteMutation,
 };
 use dam_protocol::{Capabilities, PullResponse, Reply, Request, write_line};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
 use super::{ProcessHelper, RECHECK_INTERVAL};
-use crate::wire::{capabilities_from_wire, mutation_to_wire, pull_from_wire};
+use crate::wire::{capabilities_from_wire, declared_on_the_wire, mutation_to_wire, pull_from_wire};
 
 impl ProcessHelper {
     fn call<T: DeserializeOwned>(&mut self, request: &Request) -> Result<T, HelperError> {
@@ -93,5 +94,9 @@ impl RemoteHelper for ProcessHelper {
             early_answers: true,
         })?;
         Ok(self.read_answers_as_they_come())
+    }
+
+    fn declared_on_the_wire(&self, mutation: &RemoteMutation) -> Result<Declared, HelperError> {
+        declared_on_the_wire(mutation).map_err(|e| HelperError::Protocol(e.to_string()))
     }
 }

@@ -1,11 +1,12 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use dam_domain::{Date, Field, Kind, Oid, Timestamp};
+use dam_domain::{Date, Field, Kind, Oid, Timestamp, carrying_only};
 
 use crate::config::{CredentialSpec, RemoteConfig};
 use crate::ports::{
-    Clock, CredentialError, CredentialSource, HelperError, HelperLauncher, Randomness, RemoteHelper,
+    Clock, CredentialError, CredentialSource, Declared, HelperError, HelperLauncher, Randomness,
+    RemoteHelper,
 };
 use crate::remote::{PullOutcome, PushOutcome, RemoteCapabilities, RemoteMutation};
 use crate::secret::Secret;
@@ -82,6 +83,19 @@ impl RemoteHelper for ScriptedHelper {
         let answer = (self.push_answer)(&mutations)?;
         self.pushed.borrow_mut().extend(mutations);
         Ok(answer)
+    }
+    fn declared_on_the_wire(&self, mutation: &RemoteMutation) -> Result<Declared, HelperError> {
+        Ok(mutation
+            .fields
+            .iter()
+            .map(|field| {
+                let value = mutation
+                    .object
+                    .as_ref()
+                    .map(|o| carrying_only(o, &[*field]));
+                (*field, format!("{value:?}"))
+            })
+            .collect())
     }
 }
 

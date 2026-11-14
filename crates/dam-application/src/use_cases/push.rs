@@ -1,9 +1,9 @@
-use dam_domain::{CommitRecord, Oid, Permission, Subject};
+use dam_domain::{Oid, Permission, Subject};
 
 use crate::config::RemoteConfig;
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{Notice, RemoteHelper, RemoteName};
-use crate::remote::RemoteCapabilities;
+use crate::ports::{RemoteHelper, RemoteName};
+use crate::remote::{RemoteCapabilities, RemoteMutation};
 use crate::service::{Dam, Remotes};
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::connect::connect;
@@ -51,9 +51,13 @@ impl Dam<'_> {
         let removals = Removals::new(self.store, &remote.name, caps, &changes)?;
         let refiles = Refiles::new(self.store, &remote.name, caps, &changes)?;
         let Plan { mutations, skipped } = plan(self.store, caps, remote, changes, &refiles)?;
-        let sent = send_in_waves(helper, removals, mutations)?;
+        let attempting = attempting(helper, &mutations)?;
+        let record = |ready: &[RemoteMutation]| {
+            record_before_the_call(self.store, &remote.name, ready, &attempting)
+        };
+        let sent = send_in_waves(helper, removals, mutations, &record)?;
         atomically(self.store, || {
-            self.settle_push(remote, &unpushed, &sent.settlement)
+            self.settle_push(remote, &unpushed, &sent.settlement, &attempting)
         })?;
         if let Some(by) = sent.stopped_by {
             return Err(UseCaseError::PushStopped {
@@ -71,52 +75,20 @@ impl Dam<'_> {
             skipped,
         })
     }
-
-    fn settle_push(
-        &self,
-        remote: &RemoteConfig,
-        unpushed: &[CommitRecord],
-        settlement: &Settlement,
-    ) -> Result<(), UseCaseError> {
-        let store = self.store;
-        for (oid, id) in &settlement.map {
-            store.map_remote_id(&remote.name, oid, id)?;
-        }
-        for oid in &settlement.clear {
-            store.clear_remote_mapping(&remote.name, oid)?;
-        }
-        for after in &settlement.snapshot {
-            store.set_remote_snapshot(&remote.name, after)?;
-        }
-        for (oid, why) in &settlement.failed {
-            store.add_notice(&Notice::PushFailed {
-                remote: remote.name.clone(),
-                oid: oid.clone(),
-                why: why.clone(),
-            })?;
-        }
-        for (oid, _) in &settlement.heard {
-            store.count_answer(&remote.name, oid)?;
-        }
-        store.set_push_retries(&remote.name, &settlement.retries())?;
-        for id in settlement.pushed(unpushed) {
-            store.mark_pushed(&remote.name, id)?;
-        }
-        store.set_last_push(&remote.name, self.clock.now())?;
-        Ok(())
-    }
 }
 
+mod attempts;
 mod idempotency;
 mod mutations;
 mod reconcile;
 mod refiles;
 mod removals;
 mod sending_order;
+mod settle;
 mod waves;
 
+use attempts::{attempting, record_before_the_call};
 use mutations::{Plan, changes_to_send, plan};
-use reconcile::Settlement;
 use refiles::Refiles;
 use removals::Removals;
 use waves::send_in_waves;
