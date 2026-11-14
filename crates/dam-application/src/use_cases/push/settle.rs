@@ -4,7 +4,8 @@ use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
 use crate::ports::Notice;
 use crate::service::Dam;
-use crate::use_cases::push::attempts::{Attempting, settle_attempts};
+use crate::use_cases::push::attempting::Attempting;
+use crate::use_cases::push::attempts::settle_attempts;
 use crate::use_cases::push::reconcile::Settlement;
 
 impl Dam<'_> {

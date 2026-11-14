@@ -5,7 +5,7 @@ use dam_domain::{Base, Change, Object, Oid, Path};
 use crate::errors::UseCaseError;
 use crate::ports::{RemoteName, Store};
 use crate::remote::{RemoteCapabilities, RemoteMutation};
-use crate::use_cases::push::mutations::OwedChanges;
+use crate::use_cases::push::owed::OwedChanges;
 use crate::use_cases::push::reconcile::Settlement;
 use blocker::{Blocker, Unsent};
 
@@ -39,8 +39,8 @@ impl Removals {
         let mut folders = BTreeMap::new();
         let removed = changes
             .iter()
-            .filter(|(_, (change, _))| matches!(change, Change::Delete { .. }));
-        for (oid, (change, _)) in removed {
+            .filter(|(_, change)| matches!(change, Change::Delete { .. }));
+        for (oid, change) in removed {
             let held_at = store.remote_snapshot(remote, oid)?;
             let held_at = held_at.as_ref().or(change.before());
             if let Some(folder) = held_at.and_then(|o| o.base().owned_folder()) {

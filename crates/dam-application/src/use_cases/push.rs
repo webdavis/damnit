@@ -50,8 +50,11 @@ impl Dam<'_> {
         let changes = changes_to_send(self.store, remote, &unpushed)?;
         let removals = Removals::new(self.store, &remote.name, caps, &changes)?;
         let refiles = Refiles::new(self.store, &remote.name, caps, &changes)?;
-        let Plan { mutations, skipped } = plan(self.store, caps, remote, changes, &refiles)?;
-        let attempting = attempting(helper, &mutations)?;
+        let Plan {
+            mut mutations,
+            skipped,
+        } = plan(self.store, caps, remote, changes, &refiles)?;
+        let attempting = attempting(self.store, helper, &remote.name, &mut mutations)?;
         let record = |ready: &[RemoteMutation]| {
             record_before_the_call(self.store, &remote.name, ready, &attempting)
         };
@@ -77,9 +80,11 @@ impl Dam<'_> {
     }
 }
 
+mod attempting;
 mod attempts;
 mod idempotency;
 mod mutations;
+mod owed;
 mod reconcile;
 mod refiles;
 mod removals;
@@ -87,8 +92,10 @@ mod sending_order;
 mod settle;
 mod waves;
 
-use attempts::{attempting, record_before_the_call};
-use mutations::{Plan, changes_to_send, plan};
+use attempting::attempting;
+use attempts::record_before_the_call;
+use mutations::{Plan, plan};
+use owed::changes_to_send;
 use refiles::Refiles;
 use removals::Removals;
 use waves::send_in_waves;

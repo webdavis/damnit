@@ -155,8 +155,10 @@ written only when true, and its absence reads as false.
 ## Delivery
 
 Delivery is at least once. `dam` sends an unanswered mutation again with the same
-`idempotency_key`, a value derived from the commit and the object, and keeps its commit unpushed
-until then. A helper answers `ok: false` only when the remote did nothing. When the remote did part
+`idempotency_key`, and keeps its commit unpushed until then. A create's key comes from the object
+and the count of answers the remote gave about it, so an edit before the resend keeps it. An
+update's or delete's key also takes what it sends and its place among the object's writes that
+have no answer yet, so a write that differs from the last one gets a key of its own. A helper answers `ok: false` only when the remote did nothing. When the remote did part
 of the work, or may have done it without saying so, as after a timeout, a lost connection or a
 server error, the helper answers `unanswered: true` with a reason a person can act on. `dam` shows
 that reason in the push failed notice. A mutation left out of the results is unanswered too, and
