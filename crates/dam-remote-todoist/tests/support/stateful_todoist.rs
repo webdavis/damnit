@@ -4,9 +4,10 @@ use std::sync::{Arc, Mutex};
 use dam_helper::testing::{self, Loopback, Reply, Seen};
 use serde_json::{Value, json};
 
-mod rate_limit;
+mod cut_short;
 pub mod undocumented;
 
+use cut_short::Cut;
 use undocumented::Undocumented;
 
 #[derive(Clone, Copy)]
@@ -26,7 +27,7 @@ pub struct Held {
     issued_id_by_temp_id: HashMap<String, String>,
     fault_after_the_next_write: Option<Fault>,
     refused_once: Option<&'static str>,
-    writes_before_a_rate_limit: Option<u32>,
+    cut_short_after: Option<(u32, Cut)>,
     undocumented: Undocumented,
 }
 
@@ -182,8 +183,9 @@ pub fn serve(held: Held) -> (Loopback, Arc<Mutex<Held>>) {
         let Some(commands) = seen.form().get("commands").cloned() else {
             return Some(Reply::json(200, held.read()));
         };
-        if let Some(limited) = held.rate_limits_this_write() {
-            return Some(limited);
+        if let Some(cut) = held.cuts_this_write_short() {
+            drop(held);
+            return cut.answer();
         }
         let answer = held.write(&serde_json::from_str::<Vec<Value>>(&commands).unwrap());
         match held.fault_after_the_next_write.take() {
