@@ -56,7 +56,7 @@ fn a_request_todoist_turned_away_fails_only_its_own_mutation() {
 }
 
 #[test]
-fn a_write_with_no_answer_is_unanswered_and_ends_the_call() {
+fn a_write_with_no_answer_is_unanswered_and_the_rest_is_still_sent() {
     let no_answers = [
         ApiError::transport(SERVICE, "timeout: global"),
         ApiError::transport(SERVICE, "connection closed before the answer"),
@@ -72,17 +72,22 @@ fn a_write_with_no_answer_is_unanswered_and_ends_the_call() {
         let api = FakeTodoist::new(sync_body()).failing_write(2, no_answer);
         let response = push(&api, three_subject_updates()).unwrap();
         let answered: Vec<_> = response.results.iter().map(|r| r.oid.clone()).collect();
-        assert_eq!(answered, vec!["1".repeat(40), "2".repeat(40)], "{shown}");
+        assert_eq!(
+            answered,
+            vec!["1".repeat(40), "2".repeat(40), "3".repeat(40)],
+            "{shown}"
+        );
         assert!(response.results[0].ok(), "{shown}");
         assert!(
             matches!(response.results[1].verdict, Verdict::Unanswered { .. }),
             "{shown}"
         );
-        assert_eq!(
-            api.recorded.borrow().writes,
-            2,
-            "{shown}: nothing sent after"
+        assert!(
+            response.results[2].ok(),
+            "{shown}: {:?}",
+            response.results[2]
         );
+        assert_eq!(api.recorded.borrow().writes, 3, "{shown}");
     }
 }
 

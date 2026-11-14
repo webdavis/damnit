@@ -4,6 +4,10 @@ use std::sync::{Arc, Mutex};
 use dam_helper::testing::{self, Loopback, Reply, Seen};
 use serde_json::{Value, json};
 
+pub mod undocumented;
+
+use undocumented::Undocumented;
+
 #[derive(Clone, Copy)]
 pub enum Fault {
     HangUp,
@@ -21,6 +25,7 @@ pub struct Held {
     issued_id_by_temp_id: HashMap<String, String>,
     fault_after_the_next_write: Option<Fault>,
     refused_once: Option<&'static str>,
+    undocumented: Undocumented,
 }
 
 impl Held {
@@ -35,6 +40,11 @@ impl Held {
 
     pub fn applying_the_next_write_then(mut self, fault: Fault) -> Held {
         self.fault_after_the_next_write = Some(fault);
+        self
+    }
+
+    pub fn behaving(mut self, undocumented: Undocumented) -> Held {
+        self.undocumented = undocumented;
         self
     }
 
@@ -58,12 +68,14 @@ impl Held {
     fn write(&mut self, commands: &[Value]) -> Value {
         let mut verdicts = serde_json::Map::new();
         let mut issued_ids = serde_json::Map::new();
+        let mut issued_by_this_write = HashSet::new();
         for c in commands {
             let uuid = c["uuid"].as_str().unwrap().to_string();
             self.uuids_received.push(uuid.clone());
             let kind = c["type"].as_str().unwrap_or_default();
             if self.executed.contains(&uuid) {
-                if let Some(temp_id) = c["temp_id"].as_str()
+                if self.undocumented.replays_the_temp_id_of_a_skipped_command
+                    && let Some(temp_id) = c["temp_id"].as_str()
                     && let Some(id) = self.issued_id_by_temp_id.get(temp_id)
                 {
                     issued_ids.insert(temp_id.into(), id.clone().into());
@@ -76,7 +88,11 @@ impl Held {
                 verdicts.insert(uuid, json!({"error_code": 20, "error": "refused once"}));
                 continue;
             }
-            let args = &self.resolved(&c["args"]);
+            let Some(args) = &self.resolved(&c["args"], &issued_by_this_write) else {
+                let refused = json!({"error_code": 15, "error": "Invalid temporary id"});
+                verdicts.insert(uuid, refused);
+                continue;
+            };
             match kind {
                 "item_add" => {
                     self.issued += 1;
@@ -84,6 +100,7 @@ impl Held {
                     let temp_id = c["temp_id"].as_str().unwrap().to_string();
                     self.issued_id_by_temp_id
                         .insert(temp_id.clone(), id.clone());
+                    issued_by_this_write.insert(temp_id.clone());
                     issued_ids.insert(temp_id, id.clone().into());
                     self.items.push(json!({"id": id, "content": args["content"], "project_id": args["project_id"], "section_id": args["section_id"], "parent_id": args["parent_id"], "priority": 1, "checked": false, "is_deleted": false}));
                 }
@@ -100,21 +117,6 @@ impl Held {
             verdicts.insert(uuid, "ok".into());
         }
         json!({"sync_status": verdicts, "temp_id_mapping": issued_ids})
-    }
-
-    fn resolved(&self, args: &Value) -> Value {
-        let mut args = args.clone();
-        if let Some(fields) = args.as_object_mut() {
-            for value in fields.values_mut() {
-                if let Some(id) = value
-                    .as_str()
-                    .and_then(|v| self.issued_id_by_temp_id.get(v))
-                {
-                    *value = id.clone().into();
-                }
-            }
-        }
-        args
     }
 
     fn close(&mut self, id: &str) {
@@ -158,6 +160,16 @@ impl Held {
         }
         self.items.retain(|i| i["id"] != id);
     }
+}
+
+pub fn work_held_upstream() -> Held {
+    Held::new(
+        vec![
+            json!({"id": "work", "name": "Work", "parent_id": null, "is_deleted": false, "is_archived": false, "inbox_project": false}),
+        ],
+        vec![],
+        vec![],
+    )
 }
 
 pub fn serve(held: Held) -> (Loopback, Arc<Mutex<Held>>) {
