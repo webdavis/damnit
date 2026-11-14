@@ -12,6 +12,7 @@ mod remove_token;
 mod secrets_file;
 mod secrets_kept;
 mod support;
+mod template;
 mod token_tables;
 mod token_terms;
 mod written_values;
