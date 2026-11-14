@@ -34,8 +34,9 @@ fn a_resent_mutation_repeats_its_uuids_and_creates_nothing_twice() {
         "the resend repeated the uuid rather than minting one"
     );
     assert!(
-        !two.results[0].ok(),
-        "a resend dam cannot learn an id from is not reported as pushed"
+        two.results.is_empty(),
+        "a resend dam cannot learn an id from stays unanswered: {:?}",
+        two.results
     );
 }
 
@@ -85,7 +86,7 @@ fn a_refused_command_fails_only_its_own_mutation() {
 }
 
 #[test]
-fn a_mutation_is_pushed_only_when_every_one_of_its_commands_is_accepted() {
+fn a_mutation_todoist_did_only_part_of_stays_unanswered() {
     let api = FakeTodoist::new(sync_body()).refusing("item_close");
     let mutations = vec![mutation(
         "create",
@@ -94,7 +95,6 @@ fn a_mutation_is_pushed_only_when_every_one_of_its_commands_is_accepted() {
         Some(task(&"1".repeat(40), "Work/", "eggs", true)),
     )];
     let response = push(&api, mutations).unwrap();
-    assert!(!response.results[0].ok());
-    assert_eq!(response.results[0].why(), Some("refused by the test"));
+    assert!(response.results.is_empty(), "{:?}", response.results);
     assert_eq!(api.recorded.borrow().types(), vec!["item_add"]);
 }
