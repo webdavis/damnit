@@ -1,15 +1,7 @@
 use crate::error::CliError;
 
 pub(super) fn named(error: &clap::Error, command: &clap::Command) -> CliError {
-    let rendered = error.render().to_string();
-    let said = rendered
-        .split("\n\n")
-        .next()
-        .unwrap_or_default()
-        .trim_start_matches("error: ")
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join(" ");
+    let said = super::misuse::sentence(error);
     let mut shown: Vec<(String, &str)> = command
         .get_arguments()
         .map(|arg| (arg.to_string(), arg.get_id().as_str()))

@@ -26,11 +26,36 @@
         "oids": {
           "type": "array",
           "items": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
-        }
-      }
+        },
+        "usage": { "$ref": "#/$defs/usage" }
+      },
+      "if": { "properties": { "kind": { "const": "usage" } } },
+      "then": { "required": ["usage"] },
+      "else": { "not": { "required": ["usage"] } }
     }
   },
   "$defs": {
+    "usage": {
+      "description": "What was wrong with the command line. word is the subcommand or flag at fault, as dam names it, and is null when there is none.",
+      "type": "object",
+      "required": ["problem", "word"],
+      "additionalProperties": false,
+      "properties": {
+        "problem": {
+          "enum": [
+            "unknown_subcommand",
+            "unknown_flag",
+            "unexpected_argument",
+            "missing_value",
+            "bad_value",
+            "missing_argument",
+            "conflict",
+            "other"
+          ]
+        },
+        "word": { "type": ["string", "null"] }
+      }
+    },
     "rule": {
       "enum": [
         "blocked",

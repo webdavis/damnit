@@ -190,6 +190,18 @@ output:
 retry: a repeat answers `duplicate`. The schema is `docs/schemas/error.schema.json`, and it lists
 every rule.
 
+A `usage` error also carries `usage`, which says what was wrong with the command line:
+
+```json
+{"error": {"kind": "usage", "rule": null, "message": "unexpected argument '--bogus' found",
+ "oids": [], "usage": {"problem": "unknown_flag", "word": "--bogus"}}}
+```
+
+`problem` is `unknown_subcommand`, `unknown_flag`, `unexpected_argument`, `missing_value`,
+`bad_value`, `missing_argument`, `conflict` or `other`. `word` is the subcommand or flag at fault, or
+null. A `dam` older than your tool answers `unknown_flag` or `unknown_subcommand` with the word your
+tool passed. A `dam` from before this document answers exit 2 with plain text and no document.
+
 ## Schemas
 
 Every schema is in `docs/schemas/`. A command's answer is `<command>.schema.json`, such as
