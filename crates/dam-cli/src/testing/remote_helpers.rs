@@ -2,8 +2,8 @@ use std::cell::RefCell;
 
 use dam_application::{
     CredentialError, CredentialSource, CredentialSpec, HelperError, HelperLauncher,
-    MutationOutcome, MutationVerdict, PullOutcome, RemoteCapabilities, RemoteConfig, RemoteHelper,
-    RemoteMutation, Secret,
+    MutationOutcome, MutationVerdict, PullOutcome, PushOutcome, RemoteCapabilities, RemoteConfig,
+    RemoteHelper, RemoteMutation, Secret,
 };
 use dam_domain::{Field, Kind};
 
@@ -39,11 +39,8 @@ impl RemoteHelper for EchoHelper {
     fn pull(&mut self, _: Option<&str>) -> Result<PullOutcome, HelperError> {
         Ok(std::mem::take(&mut self.pulled))
     }
-    fn push(
-        &mut self,
-        mutations: Vec<RemoteMutation>,
-    ) -> Result<Vec<MutationOutcome>, HelperError> {
-        Ok(mutations
+    fn push(&mut self, mutations: Vec<RemoteMutation>) -> Result<PushOutcome, HelperError> {
+        let outcomes = mutations
             .iter()
             .map(|m| MutationOutcome {
                 oid: m.oid.clone(),
@@ -51,7 +48,11 @@ impl RemoteHelper for EchoHelper {
                     remote_id: Some(format!("r-{}", &m.oid.as_str()[..4])),
                 },
             })
-            .collect())
+            .collect();
+        Ok(PushOutcome {
+            outcomes,
+            stopped_by: None,
+        })
     }
 }
 

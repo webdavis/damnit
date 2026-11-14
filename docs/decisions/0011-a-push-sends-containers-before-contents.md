@@ -31,9 +31,9 @@ removed only after everything that was under it has moved out or been removed. T
 the path, so it is the same for every remote and every retry. Idempotency keys depend only on the
 commit and the oid, so reordering does not change them.
 
-A push can still stop between two requests. Each request is settled on its own, so the next push
-sends only what is still owed, in the same order. When the helper stops a later wave, as on a rate
-limit, the earlier waves are still settled and nothing of the later wave counts as sent.
+A push can still stop between two requests or partway through one. Each request is settled on its
+own, so the next push sends only what is still owed, in the same order. When the helper stops, as
+on a rate limit, every answer it gave before the stop is settled and the rest counts as unanswered.
 
 Where the code says it: `crates/dam-application/src/use_cases/push/sending_order.rs` and
 `crates/dam-application/src/use_cases/push/removals.rs`.

@@ -64,6 +64,10 @@ impl Sandbox {
                 "FAIL_FIRST_OF_NEXT_PUSH",
                 self.dir.path().join("fail-first-of-next-push"),
             )
+            .env(
+                "RATE_LIMIT_NEXT_PUSH",
+                self.dir.path().join("rate-limit-next-push"),
+            )
             .env("HOME", self.dir.path())
             .env("XDG_CONFIG_HOME", self.dir.path().join("config"))
             .env("XDG_DATA_HOME", self.dir.path().join("data"))
@@ -128,6 +132,11 @@ impl Sandbox {
 
     pub fn fail_the_first_mutation_of_the_next_push(&self) {
         std::fs::write(self.dir.path().join("fail-first-of-next-push"), "").unwrap();
+    }
+
+    pub fn rate_limit_the_next_push(&self, after_the_first: bool) {
+        let answer = if after_the_first { "partial" } else { "error" };
+        std::fs::write(self.dir.path().join("rate-limit-next-push"), answer).unwrap();
     }
 
     pub fn pushes(&self) -> Vec<serde_json::Value> {

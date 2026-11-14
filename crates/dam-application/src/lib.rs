@@ -28,8 +28,8 @@ pub use ports::{
     Uneditable,
 };
 pub use remote::{
-    IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, RejectedObject,
-    RemoteCapabilities, RemoteMutation,
+    IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, PushOutcome,
+    RejectedObject, RemoteCapabilities, RemoteMutation,
 };
 pub use secret::Secret;
 pub use service::{Dam, Remotes};

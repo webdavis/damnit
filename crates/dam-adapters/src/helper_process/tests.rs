@@ -55,7 +55,7 @@ fn credentials_arrive_as_environment_and_calls_round_trip() {
         "the credential reached the child as an environment variable"
     );
     assert!(helper.pull(None).unwrap().objects.is_empty());
-    let pushed = helper.push(vec![]).unwrap();
+    let pushed = helper.push(vec![]).unwrap().outcomes;
     assert_eq!(
         pushed[0].verdict,
         dam_application::MutationVerdict::Accepted {

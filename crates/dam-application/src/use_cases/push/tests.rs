@@ -9,6 +9,7 @@ mod landings;
 mod last_push;
 mod namesakes;
 mod order;
+mod partial_stops;
 mod read_only;
 mod reconcile;
 mod refile_holds;

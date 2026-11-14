@@ -5,7 +5,7 @@ use dam_domain::{Field, Kind};
 
 use crate::ports::HelperError;
 use crate::remote::{
-    MutationOutcome, MutationVerdict, PullOutcome, RemoteCapabilities, RemoteMutation,
+    MutationOutcome, MutationVerdict, PullOutcome, PushOutcome, RemoteCapabilities, RemoteMutation,
 };
 use crate::testing::{ScriptedHelper, ScriptedLauncher, task_caps};
 
@@ -16,7 +16,7 @@ impl ScriptedHelper {
         ScriptedHelper {
             caps: task_caps(),
             pull_answer: pull,
-            push_answer: Box::new(|_| Ok(vec![])),
+            push_answer: Box::new(|_| Ok(PushOutcome::default())),
             pushed: Pushed::default(),
             pulled_since: Rc::default(),
         }
@@ -66,7 +66,12 @@ fn pushing_with(
         let answer = answer.clone();
         ScriptedHelper {
             caps: caps.clone(),
-            push_answer: Box::new(move |ms| Ok(answer(ms))),
+            push_answer: Box::new(move |ms| {
+                Ok(PushOutcome {
+                    outcomes: answer(ms),
+                    stopped_by: None,
+                })
+            }),
             pushed: seen.clone(),
             ..ScriptedHelper::answering(Ok(PullOutcome::default()))
         }

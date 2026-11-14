@@ -2,14 +2,14 @@ use std::sync::mpsc::RecvTimeoutError;
 use std::time::Instant;
 
 use dam_application::{
-    HelperError, MutationOutcome, PullOutcome, RemoteCapabilities, RemoteHelper, RemoteMutation,
+    HelperError, PullOutcome, PushOutcome, RemoteCapabilities, RemoteHelper, RemoteMutation,
 };
 use dam_protocol::{Capabilities, PullResponse, PushResponse, Reply, Request, write_line};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
 use super::{ProcessHelper, RECHECK_INTERVAL};
-use crate::wire::{capabilities_from_wire, mutation_to_wire, outcomes_from_wire, pull_from_wire};
+use crate::wire::{capabilities_from_wire, mutation_to_wire, pull_from_wire, push_from_wire};
 
 impl ProcessHelper {
     fn call<T: DeserializeOwned>(&mut self, request: &Request) -> Result<T, HelperError> {
@@ -81,12 +81,9 @@ impl RemoteHelper for ProcessHelper {
         Ok(pull_from_wire(pulled))
     }
 
-    fn push(
-        &mut self,
-        mutations: Vec<RemoteMutation>,
-    ) -> Result<Vec<MutationOutcome>, HelperError> {
+    fn push(&mut self, mutations: Vec<RemoteMutation>) -> Result<PushOutcome, HelperError> {
         let mutations = mutations.into_iter().map(mutation_to_wire).collect();
         let pushed: PushResponse = self.call(&Request::Push { mutations })?;
-        Ok(outcomes_from_wire(pushed.results))
+        Ok(push_from_wire(pushed))
     }
 }

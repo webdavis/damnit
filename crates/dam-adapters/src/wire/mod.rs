@@ -2,11 +2,11 @@ mod decode;
 mod encode;
 
 use dam_application::{
-    IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, RejectedObject,
-    RemoteCapabilities, RemoteMutation,
+    HelperError, IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome,
+    PushOutcome, RejectedObject, RemoteCapabilities, RemoteMutation,
 };
 use dam_domain::{Field, Kind, Object, Oid};
-use dam_protocol::{Capabilities, Mutation, MutationResult, PullResponse, Verdict, WireObject};
+use dam_protocol::{Capabilities, Mutation, PullResponse, PushResponse, Verdict, WireObject};
 
 pub use decode::from_wire;
 pub use encode::{event_to_wire, to_wire};
@@ -99,8 +99,9 @@ fn without_local_fields(object: &Object) -> WireObject {
     wire
 }
 
-pub fn outcomes_from_wire(results: Vec<MutationResult>) -> Vec<MutationOutcome> {
-    results
+pub fn push_from_wire(response: PushResponse) -> PushOutcome {
+    let outcomes = response
+        .results
         .into_iter()
         .filter_map(|r| {
             Some(MutationOutcome {
@@ -112,7 +113,11 @@ pub fn outcomes_from_wire(results: Vec<MutationResult>) -> Vec<MutationOutcome> 
                 },
             })
         })
-        .collect()
+        .collect();
+    PushOutcome {
+        outcomes,
+        stopped_by: response.stopped.map(HelperError::Remote),
+    }
 }
 
 #[cfg(test)]

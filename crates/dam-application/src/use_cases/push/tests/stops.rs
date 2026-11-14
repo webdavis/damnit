@@ -4,7 +4,7 @@ use std::rc::Rc;
 use super::order::{BOTH_OID_ORDERS, held_upstream, sent};
 use crate::errors::UseCaseError;
 use crate::ports::HelperError;
-use crate::remote::{MutationOp, MutationOutcome, MutationVerdict};
+use crate::remote::{MutationOp, MutationOutcome, MutationVerdict, PushOutcome};
 use crate::testing::prelude::*;
 use crate::testing::{
     Pushed, ScriptedHelper, ScriptedLauncher, oid, remotes_launched_by, task_in, todoist,
@@ -28,13 +28,16 @@ fn accepting_one_call_then_rate_limited() -> (ScriptedLauncher, Pushed) {
                 if calls.get() > 1 {
                     return Err(rate_limited());
                 }
-                Ok(ms
-                    .iter()
-                    .map(|m| MutationOutcome {
-                        oid: m.oid.clone(),
-                        verdict: MutationVerdict::Accepted { remote_id: None },
-                    })
-                    .collect())
+                Ok(PushOutcome {
+                    outcomes: ms
+                        .iter()
+                        .map(|m| MutationOutcome {
+                            oid: m.oid.clone(),
+                            verdict: MutationVerdict::Accepted { remote_id: None },
+                        })
+                        .collect(),
+                    stopped_by: None,
+                })
             }),
             pushed: seen.clone(),
             ..ScriptedHelper::answering(Ok(Default::default()))

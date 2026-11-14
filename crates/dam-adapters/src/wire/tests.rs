@@ -144,10 +144,14 @@ fn a_push_result_naming_no_valid_oid_is_dropped_since_no_change_can_own_it() {
             remote_id: Some(remote_id.into()),
         },
     };
-    let outcomes = outcomes_from_wire(vec![
-        result("nothex".into(), "r0"),
-        result(oid(2).to_string(), "r2"),
-    ]);
+    let outcomes = push_from_wire(dam_protocol::PushResponse {
+        results: vec![
+            result("nothex".into(), "r0"),
+            result(oid(2).to_string(), "r2"),
+        ],
+        stopped: None,
+    })
+    .outcomes;
     assert_eq!(outcomes.len(), 1);
     assert_eq!(outcomes[0].oid, oid(2));
     assert_eq!(
@@ -155,5 +159,25 @@ fn a_push_result_naming_no_valid_oid_is_dropped_since_no_change_can_own_it() {
         dam_application::MutationVerdict::Accepted {
             remote_id: Some("r2".into())
         }
+    );
+}
+
+#[test]
+fn a_push_answer_that_stopped_keeps_its_results_and_stops_with_the_reason() {
+    let pushed = push_from_wire(dam_protocol::PushResponse {
+        results: vec![dam_protocol::MutationResult {
+            oid: oid(1).to_string(),
+            verdict: Verdict::Accepted {
+                remote_id: Some("r1".into()),
+            },
+        }],
+        stopped: Some("todoist is rate limiting this account; retry after 42s".into()),
+    });
+    assert_eq!(pushed.outcomes.len(), 1);
+    assert_eq!(
+        pushed.stopped_by,
+        Some(dam_application::HelperError::Remote(
+            "todoist is rate limiting this account; retry after 42s".into()
+        ))
     );
 }
