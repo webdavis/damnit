@@ -3,7 +3,7 @@ use std::fmt;
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Path(String);
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PathError {
     EmptySegment,
     BadCharacter(char),

@@ -1,6 +1,6 @@
-use dam_application::{ConfigFile, RemoteName};
+use dam_application::{ByHand, ConfigError, ConfigFile, EditFault, EditedTable, RemoteName};
 
-use super::support::{Folder, bare_token, config, secrets, value};
+use super::support::{Folder, bare_token, config, held_already, secrets, value};
 
 fn todoist() -> RemoteName {
     RemoteName::parse("todoist").unwrap()
@@ -12,10 +12,7 @@ fn a_token_under_a_key_written_another_way_is_held_already() {
         let before = format!("return {{ token = {{ {key} = {{ value = \"x\" }} }} }}\n");
         let folder = secrets(&before);
         let why = folder.file().add_token(&bare_token("tool")).unwrap_err();
-        assert_eq!(
-            why.to_string(),
-            "config: secrets.lua already holds token tool"
-        );
+        assert_eq!(why, held_already(EditedTable::Tokens, "tool"));
         assert_eq!(folder.text("secrets.lua"), before);
     }
 }
@@ -28,10 +25,7 @@ fn a_remote_under_a_key_written_another_way_is_held_already() {
         .file()
         .add_remote(&todoist(), "todoist::")
         .unwrap_err();
-    assert_eq!(
-        why.to_string(),
-        "config: config.lua already holds remote todoist"
-    );
+    assert_eq!(why, held_already(EditedTable::Remotes, "todoist"));
     assert_eq!(folder.text("config.lua"), before);
 }
 
@@ -41,9 +35,14 @@ fn a_token_under_a_key_written_another_way_is_left_for_a_hand_edit() {
     let folder = secrets(before);
     let why = folder.file().remove_token("tool").unwrap_err();
     assert_eq!(
-        why.to_string(),
-        "config: secrets.lua holds token tool under a key dam cannot edit. \
-         Remove token tool from it by hand."
+        why,
+        ConfigError::HeldUnderUneditableKey {
+            table: EditedTable::Tokens,
+            entry: "tool".into(),
+            by_hand: ByHand::RemoveToken {
+                name: "tool".into()
+            },
+        }
     );
     assert_eq!(folder.text("secrets.lua"), before);
 }
@@ -57,8 +56,12 @@ fn a_token_edit_that_would_hide_the_tokens_held_is_refused_and_the_file_kept() {
     let folder = secrets(&before);
     let why = folder.file().add_token(&bare_token("tool")).unwrap_err();
     assert_eq!(
-        why.to_string(),
-        "config: the new secrets.lua would not keep every other token"
+        why,
+        would_break(
+            EditedTable::Tokens,
+            "tool",
+            EditFault::WouldNotKeepTheOthers
+        )
     );
     assert_eq!(folder.text("secrets.lua"), before);
 }
@@ -72,8 +75,12 @@ fn a_remote_edit_that_would_hide_the_remotes_held_is_refused_and_the_file_kept()
         .add_remote(&todoist(), "todoist::")
         .unwrap_err();
     assert_eq!(
-        why.to_string(),
-        "config: the new config.lua would not keep every other remote"
+        why,
+        would_break(
+            EditedTable::Remotes,
+            "todoist",
+            EditFault::WouldNotKeepTheOthers
+        )
     );
     assert_eq!(folder.text("config.lua"), before);
 }
@@ -85,8 +92,12 @@ fn a_removal_that_would_leave_the_token_held_is_refused_and_the_file_kept() {
     let folder = secrets(before);
     let why = folder.file().remove_token("tool").unwrap_err();
     assert_eq!(
-        why.to_string(),
-        "config: the new secrets.lua would still hold token tool"
+        why,
+        would_break(
+            EditedTable::Tokens,
+            "tool",
+            EditFault::WouldStillHoldTheEntry
+        )
     );
     assert_eq!(folder.text("secrets.lua"), before);
 }
@@ -106,4 +117,12 @@ fn adding_a_remote_reads_config_lua_alone() {
     let folder = Folder::new().with_secrets("return { remote = = 1 }\n");
     folder.file().add_remote(&todoist(), "todoist::").unwrap();
     assert!(folder.text("config.lua").contains("todoist::"));
+}
+
+fn would_break(table: EditedTable, entry: &str, fault: EditFault) -> ConfigError {
+    ConfigError::EditWouldBreak {
+        table,
+        entry: entry.into(),
+        fault,
+    }
 }

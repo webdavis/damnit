@@ -1,6 +1,8 @@
 use std::collections::BTreeSet;
 
-use dam_application::{ConfigFile, NewToken, TokenName};
+use dam_application::{
+    ByHand, ConfigError, ConfigFile, EditedTable, NewToken, TokenName, Uneditable,
+};
 use dam_domain::{Grant, Permission, Token};
 
 use super::support::{Folder, secrets};
@@ -85,7 +87,7 @@ fn a_token_the_file_does_not_hold_is_refused_by_name_and_the_file_is_kept() {
     let before = "return { token = { laptop = { value = \"x\" } } }\n";
     let folder = secrets(before);
     let why = folder.file().remove_token("tool").unwrap_err();
-    assert_eq!(why.to_string(), "config: secrets.lua holds no token tool");
+    assert_eq!(why, not_held());
     assert_eq!(folder.text("secrets.lua"), before);
 }
 
@@ -93,7 +95,7 @@ fn a_token_the_file_does_not_hold_is_refused_by_name_and_the_file_is_kept() {
 fn without_secrets_lua_there_is_no_token_to_remove_and_no_file_is_made() {
     let folder = Folder::new();
     let why = folder.file().remove_token("tool").unwrap_err();
-    assert_eq!(why.to_string(), "config: secrets.lua holds no token tool");
+    assert_eq!(why, not_held());
     assert!(!folder.path("secrets.lua").exists());
 }
 
@@ -101,11 +103,15 @@ fn without_secrets_lua_there_is_no_token_to_remove_and_no_file_is_made() {
 fn a_token_table_built_in_code_is_refused_and_the_file_is_kept() {
     let before = "local function tokens() return {} end\nreturn { token = tokens() }\n";
     let folder = secrets(before);
-    let why = folder.file().remove_token("tool").unwrap_err().to_string();
     assert_eq!(
-        why,
-        "config: the token table in secrets.lua is built in code, and dam edits only a table \
-         written out in full. Remove token tool from it by hand."
+        folder.file().remove_token("tool").unwrap_err(),
+        ConfigError::CannotEdit {
+            table: EditedTable::Tokens,
+            why: Uneditable::TableBuiltInCode,
+            by_hand: ByHand::RemoveToken {
+                name: "tool".into()
+            },
+        }
     );
     assert_eq!(folder.text("secrets.lua"), before);
 }
@@ -163,5 +169,12 @@ fn a_token_table_the_writer_made_or_emptied_may_stay_changed() {
         folder.file().add_token(&new_token("tool")).unwrap();
         folder.file().remove_token("tool").unwrap();
         assert_eq!(folder.text("secrets.lua"), after);
+    }
+}
+
+fn not_held() -> ConfigError {
+    ConfigError::NotHeld {
+        table: EditedTable::Tokens,
+        entry: "tool".into(),
     }
 }

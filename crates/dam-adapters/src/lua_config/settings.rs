@@ -9,9 +9,10 @@ const SECRETS: [&str; 2] = ["token", "schema"];
 
 pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
     if let Some(key) = SECRETS.iter().find(|key| root.get(key).is_some()) {
-        return Err(ConfigError::Invalid(
-            root.refuse(format_args!("{key} belongs in secrets.lua")),
-        ));
+        return Err(ConfigError::BelongsInSecrets {
+            key: key.to_string(),
+            at: root.place(),
+        });
     }
     root.only(&SETTINGS)?;
     let done_interactive = match root.map("done")? {
@@ -31,8 +32,7 @@ pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
         .iter()
         .map(|(name, category)| read_category(name, category))
         .collect::<Result<Vec<_>, _>>()?;
-    let categories = Categories::new(categories)
-        .map_err(|e| ConfigError::Invalid(format!("category: {e:?}")))?;
+    let categories = Categories::new(categories).map_err(ConfigError::BadCategories)?;
     let filters = root
         .maps_in("filter")?
         .iter()
@@ -52,7 +52,7 @@ fn read_filter(name: &str, filter: &StrictMap) -> Result<FilterConfig, ConfigErr
     filter.only(&["query"])?;
     let query = filter
         .string("query")?
-        .ok_or_else(|| ConfigError::Invalid(filter.refuse("query is missing")))?;
+        .ok_or_else(|| filter.missing("query"))?;
     Ok(FilterConfig {
         name: name.to_string(),
         query,
@@ -63,7 +63,7 @@ fn read_category(name: &str, category: &StrictMap) -> Result<Category, ConfigErr
     category.only(&["values", "exclusive"])?;
     let values = category
         .strings("values")?
-        .ok_or_else(|| ConfigError::Invalid(category.refuse("values is missing")))?;
+        .ok_or_else(|| category.missing("values"))?;
     Ok(Category {
         name: name.to_string(),
         values,

@@ -1,18 +1,14 @@
-use dam_application::{ConfigFile, TokenName};
+use dam_application::{ByHand, ConfigError, ConfigFile, EditedTable, TokenName, Uneditable};
 
-use super::support::{Folder, secrets};
+use super::support::{Folder, held_already, secrets};
 
 fn tool() -> TokenName {
     TokenName::parse("tool").unwrap()
 }
 
-fn refusal(folder: &Folder) -> String {
+fn refusal(folder: &Folder) -> ConfigError {
     let before = folder.text("secrets.lua");
-    let why = folder
-        .file()
-        .can_add_token(&tool())
-        .unwrap_err()
-        .to_string();
+    let why = folder.file().can_add_token(&tool()).unwrap_err();
     assert_eq!(folder.text("secrets.lua"), before);
     why
 }
@@ -37,17 +33,30 @@ fn without_secrets_lua_the_token_can_be_added_and_no_file_is_made() {
 #[test]
 fn a_token_table_built_in_code_cannot_take_the_token() {
     let folder = secrets("local tokens = {}\nreturn { token = tokens }\n");
-    assert!(refusal(&folder).contains("built in code"));
+    assert_eq!(
+        refusal(&folder),
+        ConfigError::CannotEdit {
+            table: EditedTable::Tokens,
+            why: Uneditable::TableBuiltInCode,
+            by_hand: ByHand::AddToken {
+                name: "tool".into()
+            },
+        }
+    );
 }
 
 #[test]
 fn a_name_the_file_holds_cannot_be_added_again() {
     let folder = secrets("return { token = { tool = { value = 'a' }, tool = { value = 'b' } } }\n");
-    assert!(refusal(&folder).contains("already holds token tool"));
+    assert_eq!(refusal(&folder), held_already(EditedTable::Tokens, "tool"));
 }
 
 #[test]
 fn a_secrets_lua_that_does_not_load_cannot_take_the_token() {
     let folder = secrets("return { token = {\n");
-    assert!(refusal(&folder).contains("secrets.lua:"));
+    let refusal = refusal(&folder);
+    assert!(
+        matches!(&refusal, ConfigError::StoppedLoading { path, .. } if path == &folder.path("secrets.lua")),
+        "{refusal:?}"
+    );
 }

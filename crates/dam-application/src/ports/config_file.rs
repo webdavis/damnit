@@ -1,8 +1,17 @@
-use std::fmt;
+mod error;
+mod misread;
 
 use crate::config::Config;
 use crate::ports::{CredentialSource, RemoteName};
 use crate::tokens::{NewToken, TokenName};
+
+pub use error::{ByHand, ConfigError, EditFault, EditedTable, Uneditable};
+pub use misread::{Expected, Misread, Place};
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct SecretsTightened {
+    pub was: u32,
+}
 
 pub struct LoadedConfig {
     pub config: Config,
@@ -11,35 +20,12 @@ pub struct LoadedConfig {
 
 pub trait ConfigFile {
     fn load(&self) -> Result<LoadedConfig, ConfigError>;
-    fn add_remote(&self, name: &RemoteName, url: &str) -> Result<Option<String>, ConfigError>;
+    fn add_remote(
+        &self,
+        name: &RemoteName,
+        url: &str,
+    ) -> Result<Option<SecretsTightened>, ConfigError>;
     fn can_add_token(&self, name: &TokenName) -> Result<(), ConfigError>;
-    fn add_token(&self, token: &NewToken) -> Result<Option<String>, ConfigError>;
-    fn remove_token(&self, name: &str) -> Result<Option<String>, ConfigError>;
-}
-
-#[derive(Debug)]
-pub enum ConfigError {
-    Io(String),
-    Unloadable(String),
-    Invalid(String),
-    AlreadyHeld(String),
-}
-
-impl fmt::Display for ConfigError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ConfigError::Io(s) => write!(f, "reading config: {s}"),
-            ConfigError::Unloadable(s) | ConfigError::Invalid(s) | ConfigError::AlreadyHeld(s) => {
-                write!(f, "config: {s}")
-            }
-        }
-    }
-}
-
-impl std::error::Error for ConfigError {}
-
-impl From<String> for ConfigError {
-    fn from(refusal: String) -> ConfigError {
-        ConfigError::Invalid(refusal)
-    }
+    fn add_token(&self, token: &NewToken) -> Result<Option<SecretsTightened>, ConfigError>;
+    fn remove_token(&self, name: &str) -> Result<Option<SecretsTightened>, ConfigError>;
 }

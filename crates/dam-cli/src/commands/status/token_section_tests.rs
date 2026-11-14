@@ -1,6 +1,6 @@
 use crate::args::StatusArgs;
 use crate::testing::{context, holding};
-use dam_application::{Conflict, RemoteName};
+use dam_application::{Conflict, RemoteName, TokenWarning};
 use dam_domain::Permission::{ConfigRead, ConflictRead, StageRead, WorkingRead};
 use dam_domain::{Object, Oid, Task};
 
@@ -15,7 +15,10 @@ fn a_conflict_and_a_warning() -> crate::context::Context {
             theirs: task,
         })
         .unwrap();
-    ctx.config.tokens.warnings = vec!["token x: unknown permission \"a:b\" is skipped".into()];
+    ctx.config.tokens.warnings = vec![TokenWarning::UnknownPermission {
+        name: "x".into(),
+        word: "a:b".into(),
+    }];
     ctx
 }
 

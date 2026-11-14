@@ -72,14 +72,15 @@ fn a_failure_naming_no_object_carries_an_empty_list() {
 
 #[test]
 fn a_config_file_that_cannot_be_read_is_a_store_failure_and_a_bad_one_a_parse_failure() {
-    assert_eq!(
-        CliError::Config(ConfigError::Io("x".into())).kind(),
-        "store"
-    );
-    assert_eq!(
-        CliError::Config(ConfigError::Invalid("x".into())).kind(),
-        "parse"
-    );
+    let unreadable = ConfigError::Unreadable {
+        path: "config.lua".into(),
+        why: "x".into(),
+    };
+    assert_eq!(CliError::Config(unreadable).kind(), "store");
+    let misnamed = ConfigError::NotNamedSettings {
+        file: "config.lua".into(),
+    };
+    assert_eq!(CliError::Config(misnamed).kind(), "parse");
 }
 
 #[test]

@@ -19,11 +19,13 @@ pub use dam_domain::{
 };
 pub use errors::{Refusal, UseCaseError};
 pub use ports::{
-    AcceptedKindsRepository, Clock, CommitRepository, ComputeFailure, ConfigError, ConfigFile,
-    Conflict, ConflictRepository, CredentialError, CredentialSource, DayRepository, HelperError,
-    HelperLauncher, IdRepository, ItemRepository, LoadedConfig, MissingTask, Notice,
-    NoticeRepository, ObjectRepository, OriginRepository, Randomness, RemoteHelper, RemoteName,
-    RemoteNameError, RemoteTrackingRepository, StageRepository, Store, StoreError, Transactional,
+    AcceptedKindsRepository, ByHand, Clock, CommitRepository, ComputeFailure, ConfigError,
+    ConfigFile, Conflict, ConflictRepository, CredentialError, CredentialSource, DayRepository,
+    EditFault, EditedTable, Expected, HelperError, HelperLauncher, IdRepository, ItemRepository,
+    LoadedConfig, Misread, MissingTask, Notice, NoticeRepository, ObjectRepository,
+    OriginRepository, Place, Randomness, RemoteHelper, RemoteName, RemoteNameError,
+    RemoteTrackingRepository, SecretsTightened, StageRepository, Store, StoreError, Transactional,
+    Uneditable,
 };
 pub use remote::{
     IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, RejectedObject,
@@ -32,7 +34,8 @@ pub use remote::{
 pub use secret::Secret;
 pub use service::{Dam, Remotes};
 pub use tokens::{
-    NewToken, Standing, TokenConfig, TokenName, TokenTerms, Tokens, disable_shared_values,
+    NewToken, Standing, TokenConfig, TokenFault, TokenName, TokenTerms, TokenWarning, Tokens,
+    disable_shared_values,
 };
 pub use use_cases::agenda::{Scheduled, Window};
 pub use use_cases::complete::{CompletePlan, Completed};

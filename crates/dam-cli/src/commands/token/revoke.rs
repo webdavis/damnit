@@ -1,7 +1,7 @@
 use dam_application::{Config, ConfigFile, Refusal};
 use serde::Serialize;
 
-use crate::error::CliError;
+use crate::error::{CliError, SecretsTightenedText};
 use crate::output::Report;
 use crate::view::{Human, View, report};
 
@@ -32,6 +32,6 @@ pub(super) fn run(
     let warning = file.remove_token(&name)?;
     report(&TokenRevoked {
         name,
-        warnings: Vec::from_iter(warning),
+        warnings: Vec::from_iter(warning.map(|w| SecretsTightenedText(&w).to_string())),
     })
 }

@@ -1,5 +1,6 @@
 use dam_application::{
-    Config, ConfigError, ConfigFile, LoadedConfig, NewToken, RemoteName, TokenName, Tokens,
+    ByHand, Config, ConfigError, ConfigFile, LoadedConfig, NewToken, RemoteName, SecretsTightened,
+    TokenName, Tokens,
 };
 
 use super::evaluate::ErrorText;
@@ -11,10 +12,16 @@ impl ConfigFile for LuaConfigFile {
         self.read_both(ErrorText::NeverQuotesTheFile)
     }
 
-    fn add_remote(&self, name: &RemoteName, url: &str) -> Result<Option<String>, ConfigError> {
+    fn add_remote(
+        &self,
+        name: &RemoteName,
+        url: &str,
+    ) -> Result<Option<SecretsTightened>, ConfigError> {
         let name = name.0.as_str();
         let entry = remote_entry(name, url);
-        let by_hand = format!("Add the remote to its remote table by hand: {entry}");
+        let by_hand = ByHand::AddRemote {
+            entry: entry.clone(),
+        };
         let change = Change::Add {
             entry: &|_| entry.clone(),
             as_written: &|config: &Config| {
@@ -34,7 +41,7 @@ impl ConfigFile for LuaConfigFile {
             .can_edit(name, adding_token_by_hand(name), change)
     }
 
-    fn add_token(&self, token: &NewToken) -> Result<Option<String>, ConfigError> {
+    fn add_token(&self, token: &NewToken) -> Result<Option<SecretsTightened>, ConfigError> {
         let name = token.name.as_str();
         let by_hand = adding_token_by_hand(name);
         let change = Change::Add {
@@ -49,15 +56,16 @@ impl ConfigFile for LuaConfigFile {
         self.secrets_file().edit(name, by_hand, change)
     }
 
-    fn remove_token(&self, name: &str) -> Result<Option<String>, ConfigError> {
-        let by_hand = format!("Remove token {name} from it by hand.");
+    fn remove_token(&self, name: &str) -> Result<Option<SecretsTightened>, ConfigError> {
+        let by_hand = ByHand::RemoveToken {
+            name: name.to_string(),
+        };
         self.secrets_file().edit(name, by_hand, Change::Remove)
     }
 }
 
-fn adding_token_by_hand(name: &str) -> String {
-    format!(
-        "Write the table out in full and run the command again, \
-         or add token {name} to its token table by hand."
-    )
+fn adding_token_by_hand(name: &str) -> ByHand {
+    ByHand::AddToken {
+        name: name.to_string(),
+    }
 }

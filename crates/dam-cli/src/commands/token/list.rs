@@ -3,7 +3,7 @@ use dam_domain::Timestamp;
 use serde::Serialize;
 
 use super::grant_view::GrantView;
-use crate::error::CliError;
+use crate::error::{CliError, TokenFaultText, TokenWarningText};
 use crate::layout::table;
 use crate::output::Report;
 use crate::view::{Human, Line, View, report};
@@ -30,7 +30,7 @@ struct TokenRow {
 impl TokenRow {
     fn of(entry: &TokenConfig, now: Timestamp) -> TokenRow {
         let (standing, why, terms) = match &entry.standing {
-            Standing::Disabled(why) => ("disabled", Some(why.clone()), None),
+            Standing::Disabled(why) => ("disabled", Some(TokenFaultText(why).to_string()), None),
             Standing::Usable(t) if t.expires.is_some_and(|at| now >= at) => {
                 ("expired", None, Some(t))
             }
@@ -105,6 +105,11 @@ pub(super) fn run(config: &Config, now: Timestamp) -> Result<Report, CliError> {
             .iter()
             .map(|entry| TokenRow::of(entry, now))
             .collect(),
-        warnings: config.tokens.warnings.clone(),
+        warnings: config
+            .tokens
+            .warnings
+            .iter()
+            .map(|warning| TokenWarningText(warning).to_string())
+            .collect(),
     })
 }

@@ -1,7 +1,7 @@
 use crate::args::StatusArgs;
 use crate::output::fitted;
 use crate::testing::context;
-use dam_application::{Conflict, Notice, RemoteName};
+use dam_application::{Conflict, Notice, RemoteName, TokenWarning};
 use dam_domain::{Object, Oid, Task};
 
 const WIDTH: usize = 20;
@@ -13,8 +13,10 @@ fn oid(b: u8) -> Oid {
 #[test]
 fn status_cuts_its_rows_and_prints_warnings_and_notices_whole() {
     let mut ctx = context();
-    ctx.config.tokens.warnings =
-        vec!["token tool: unknown permission \"task:fly\" is skipped".into()];
+    ctx.config.tokens.warnings = vec![TokenWarning::UnknownPermission {
+        name: "tool".into(),
+        word: "task:fly".into(),
+    }];
     ctx.store
         .put(&Object::Task(Task::new(
             oid(1),

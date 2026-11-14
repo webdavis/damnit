@@ -6,7 +6,7 @@ use serde::Serialize;
 
 use super::grant_view::GrantView;
 use crate::args::CreateArgs;
-use crate::error::CliError;
+use crate::error::{CliError, SecretsTightenedText};
 use crate::output::Report;
 use crate::view::{Human, View, report};
 
@@ -46,7 +46,7 @@ pub(super) fn run(
 ) -> Result<Report, CliError> {
     let name = TokenName::parse(&args.name).map_err(CliError::Usage)?;
     file.can_add_token(&name).map_err(|e| match e {
-        ConfigError::AlreadyHeld(_) => Refusal::TokenExists(args.name.clone()).into(),
+        ConfigError::AlreadyHeld { .. } => Refusal::TokenExists(args.name.clone()).into(),
         other => CliError::Config(other),
     })?;
     let token = NewToken {
@@ -85,7 +85,7 @@ pub(super) fn run(
             .collect(),
         require: token.require,
         grants: vec![GrantView::of(&token.grant)],
-        warnings: Vec::from_iter(warning),
+        warnings: Vec::from_iter(warning.map(|w| SecretsTightenedText(&w).to_string())),
     })
 }
 

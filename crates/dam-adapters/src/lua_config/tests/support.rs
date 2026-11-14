@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use std::collections::BTreeSet;
 
 use dam_application::{
-    Config, ConfigError, ConfigFile, LoadedConfig, NewToken, Standing, TokenConfig, TokenName,
-    TokenTerms,
+    Config, ConfigError, ConfigFile, EditedTable, LoadedConfig, NewToken, Place, Standing,
+    TokenConfig, TokenFault, TokenName, TokenTerms, TokenWarning,
 };
 use dam_domain::{Grant, Permission, Token};
 use tempfile::TempDir;
@@ -66,8 +66,8 @@ impl Folder {
         self.file().load().map(|loaded| loaded.config)
     }
 
-    pub(super) fn refusal(&self) -> String {
-        self.load().unwrap_err().to_string()
+    pub(super) fn refusal(&self) -> ConfigError {
+        self.load().unwrap_err()
     }
 }
 
@@ -85,7 +85,7 @@ pub(super) fn value(fill: u8) -> String {
     Token::generate(&mut |b: &mut [u8]| b.fill(fill)).expose()
 }
 
-pub(super) fn tokens(text: &str) -> (Vec<TokenConfig>, Vec<String>) {
+pub(super) fn tokens(text: &str) -> (Vec<TokenConfig>, Vec<TokenWarning>) {
     let tokens = secrets(text).load().unwrap().tokens;
     (tokens.entries, tokens.warnings)
 }
@@ -109,7 +109,7 @@ pub(super) fn only_terms(text: &str) -> TokenTerms {
     }
 }
 
-pub(super) fn only_disabled_reason(text: &str) -> String {
+pub(super) fn only_disabled_reason(text: &str) -> TokenFault {
     match &tokens(text).0[..] {
         [
             TokenConfig {
@@ -142,5 +142,26 @@ pub(super) fn bare_token(name: &str) -> NewToken {
             own: false,
             remotes: None,
         },
+    }
+}
+
+pub(super) fn top_of(file: &str) -> Place {
+    Place {
+        file: file.to_string(),
+        table: None,
+    }
+}
+
+pub(super) fn in_table(table: &str, file: &str) -> Place {
+    Place {
+        file: file.to_string(),
+        table: Some(table.to_string()),
+    }
+}
+
+pub(super) fn held_already(table: EditedTable, entry: &str) -> ConfigError {
+    ConfigError::AlreadyHeld {
+        table,
+        entry: entry.to_string(),
     }
 }

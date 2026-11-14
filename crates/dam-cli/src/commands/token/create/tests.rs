@@ -26,7 +26,7 @@ fn fills_made_by(random: &FixedRandom) -> u8 {
 
 #[test]
 fn a_file_that_cannot_take_the_token_is_refused_before_one_is_made() {
-    let file = FakeConfigFile::refusing_tokens("secrets.lua returns a table built in code");
+    let file = FakeConfigFile::refusing_tokens();
     let random = FixedRandom::new(1);
     let refused = super::run(&file, &random, tool_reading_tasks());
     let message = refused.err().map(|e| e.to_string()).unwrap_or_default();

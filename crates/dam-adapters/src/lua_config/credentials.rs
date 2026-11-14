@@ -1,4 +1,4 @@
-use dam_application::{ConfigError, CredentialSpec, RemoteName, Secret};
+use dam_application::{CredentialSpec, Expected, Misread, RemoteName, Secret};
 use mlua::Value;
 
 use super::shape::text;
@@ -7,7 +7,7 @@ use super::strict::StrictMap;
 pub(super) fn read_credentials(
     remote: &str,
     credentials: &StrictMap,
-) -> Result<Vec<CredentialSpec>, ConfigError> {
+) -> Result<Vec<CredentialSpec>, Misread> {
     credentials
         .entries()
         .map(|(name, value)| match value {
@@ -20,11 +20,7 @@ pub(super) fn read_credentials(
                     name: name.to_string(),
                     value: Secret::from(literal.as_str()),
                 })
-                .ok_or_else(|| {
-                    ConfigError::Invalid(
-                        credentials.refuse(format_args!("{name} must be a string or a function")),
-                    )
-                }),
+                .ok_or_else(|| credentials.wrong(name, Expected::TextOrFunction)),
         })
         .collect()
 }

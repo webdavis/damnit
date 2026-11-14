@@ -9,7 +9,10 @@ mod origins;
 mod repositories;
 mod store;
 
-pub use config_file::{ConfigError, ConfigFile, LoadedConfig};
+pub use config_file::{
+    ByHand, ConfigError, ConfigFile, EditFault, EditedTable, Expected, LoadedConfig, Misread,
+    Place, SecretsTightened, Uneditable,
+};
 pub use days::DayRepository;
 pub use environment::{Clock, Randomness};
 pub use helper::{

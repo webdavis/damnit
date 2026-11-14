@@ -15,7 +15,7 @@ mod view;
 use std::path::Path;
 
 use dam_adapters::{Interrupt, LuaConfigFile, OsRandom, SystemClock};
-use dam_application::{Clock, ConfigFile};
+use dam_application::{Clock, ConfigError, ConfigFile};
 
 use crate::args::{Cli, Command};
 use crate::caller::{authenticated, caller};
@@ -75,7 +75,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     }
     let config_path = cli.config.unwrap_or_else(dam_adapters::default_config_path);
     if config_path.extension().is_none_or(|e| e != "lua") {
-        return Err(CliError::ConfigNotLua(config_path));
+        return Err(ConfigError::NotLua(config_path).into());
     }
     let config_file = LuaConfigFile::new(config_path.clone());
     let presented_token = std::env::var_os(TOKEN_VARIABLE);

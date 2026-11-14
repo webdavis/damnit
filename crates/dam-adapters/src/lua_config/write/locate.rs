@@ -1,5 +1,6 @@
 use std::ops::Range;
 
+use dam_application::Uneditable;
 use full_moon::LuaVersion;
 use full_moon::ast::{Expression, Field, LastStmt, TableConstructor};
 use full_moon::node::Node;
@@ -22,23 +23,16 @@ pub(super) struct Located {
     pub(super) section: Option<TableLayout>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum Unwritable {
-    NotLua,
-    RootBuiltInCode,
-    SectionBuiltInCode,
-}
-
-pub(super) fn locate(text: &str, section: &str) -> Result<Located, Unwritable> {
+pub(super) fn locate(text: &str, section: &str) -> Result<Located, Uneditable> {
     let ast = full_moon::parse_fallible(text, LuaVersion::lua54())
         .into_result()
-        .map_err(|_| Unwritable::NotLua)?;
+        .map_err(|_| Uneditable::NotEditable)?;
     let root = match ast.nodes().last_stmt() {
         Some(LastStmt::Return(r)) if r.returns().len() == 1 => r.returns().iter().next(),
         _ => None,
     };
     let Some(Expression::TableConstructor(root)) = root else {
-        return Err(Unwritable::RootBuiltInCode);
+        return Err(Uneditable::ReturnsBuiltInCode);
     };
     let value = root.fields().iter().filter_map(|field| match field {
         Field::NameKey { key, value, .. } if name_of(key).as_deref() == Some(section) => {
@@ -52,7 +46,7 @@ pub(super) fn locate(text: &str, section: &str) -> Result<Located, Unwritable> {
     let section = match value.last().map(|v| &**v) {
         None => None,
         Some(Expression::TableConstructor(constructor)) => Some(table(constructor)),
-        Some(_) => return Err(Unwritable::SectionBuiltInCode),
+        Some(_) => return Err(Uneditable::TableBuiltInCode),
     };
     Ok(Located {
         root: table(root),

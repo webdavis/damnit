@@ -1,4 +1,4 @@
-use dam_application::{Refusal, TokenRefusal};
+use dam_application::{Misread, Place, Refusal, TokenRefusal};
 use dam_domain::{Channel, Permission};
 
 pub(super) fn access_refusals_with_their_text() -> Vec<(Refusal, &'static str)> {
@@ -19,7 +19,14 @@ pub(super) fn access_refusals_with_their_text() -> Vec<(Refusal, &'static str)> 
         (
             TokenRefusal::Disabled {
                 name: name(),
-                why: "unknown key weekdays in token.tool.grant of secrets.lua".into(),
+                why: Misread::UnknownKey {
+                    key: "weekdays".into(),
+                    at: Place {
+                        file: "secrets.lua".into(),
+                        table: Some("token.tool.grant".into()),
+                    },
+                }
+                .into(),
             },
             "token tool is disabled: unknown key weekdays in token.tool.grant of secrets.lua",
         ),
