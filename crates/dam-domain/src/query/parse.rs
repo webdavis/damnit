@@ -1,82 +1,9 @@
-use std::fmt;
-
 use super::Expr;
 use super::term::term;
 use crate::Categories;
+use lex::{Tok, lex};
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum QueryError {
-    Empty,
-    Unexpected(String),
-    MissingOperator(String),
-    EndsEarly,
-    BadValue { key: String, value: String },
-    Unclosed,
-    TooDeep,
-    UnknownCategory(String),
-    NotAValue { category: String, value: String },
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-enum Tok {
-    And,
-    Or,
-    Not,
-    Open,
-    Close,
-    Word(String),
-}
-
-impl fmt::Display for Tok {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Tok::And => f.write_str("&"),
-            Tok::Or => f.write_str("|"),
-            Tok::Not => f.write_str("!"),
-            Tok::Open => f.write_str("("),
-            Tok::Close => f.write_str(")"),
-            Tok::Word(w) => f.write_str(w),
-        }
-    }
-}
-
-fn lex(text: &str) -> Vec<Tok> {
-    let mut out = Vec::new();
-    let mut word = String::new();
-    let flush = |word: &mut String, out: &mut Vec<Tok>| {
-        if !word.is_empty() {
-            out.push(Tok::Word(std::mem::take(word)));
-        }
-    };
-    for c in text.chars() {
-        match c {
-            '&' => {
-                flush(&mut word, &mut out);
-                out.push(Tok::And)
-            }
-            '|' => {
-                flush(&mut word, &mut out);
-                out.push(Tok::Or)
-            }
-            '!' => {
-                flush(&mut word, &mut out);
-                out.push(Tok::Not)
-            }
-            '(' => {
-                flush(&mut word, &mut out);
-                out.push(Tok::Open)
-            }
-            ')' => {
-                flush(&mut word, &mut out);
-                out.push(Tok::Close)
-            }
-            c if c.is_whitespace() => flush(&mut word, &mut out),
-            c => word.push(c),
-        }
-    }
-    flush(&mut word, &mut out);
-    out
-}
+pub use error::QueryError;
 
 const MAX_RECURSIVE_DESCENT_DEPTH: usize = 64;
 
@@ -174,25 +101,5 @@ impl Parser<'_> {
     }
 }
 
-impl fmt::Display for QueryError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            QueryError::Empty => f.write_str("the query is empty"),
-            QueryError::Unexpected(t) => write!(f, "unexpected {t} in query"),
-            QueryError::MissingOperator(t) => write!(f, "expected & or | before {t}"),
-            QueryError::EndsEarly => f.write_str("the query ends where a term was expected"),
-            QueryError::BadValue { key, value } => write!(f, "{key}: cannot read {value:?}"),
-            QueryError::Unclosed => f.write_str("a ( has no matching )"),
-            QueryError::TooDeep => write!(
-                f,
-                "the query nests deeper than {MAX_RECURSIVE_DESCENT_DEPTH}"
-            ),
-            QueryError::UnknownCategory(n) => write!(f, "{n:?} is not a declared category"),
-            QueryError::NotAValue { category, value } => {
-                write!(f, "{value} is not a value of category {category}")
-            }
-        }
-    }
-}
-
-impl std::error::Error for QueryError {}
+mod error;
+mod lex;
