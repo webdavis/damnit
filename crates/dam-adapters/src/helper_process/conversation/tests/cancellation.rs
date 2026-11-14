@@ -69,3 +69,42 @@ fn an_interrupt_is_noticed_while_answers_keep_coming() {
         .unwrap();
     assert_eq!(pushed.stopped_by, Some(HelperError::Cancelled));
 }
+
+const ONE_ANSWER_THEN_ONE_THAT_CANNOT_BE_READ_THEN_SILENCE: &str = "#!/bin/sh
+read -r line
+printf '{\"early_answer\":{\"oid\":\"$OID\",\"ok\":true,\"remote_id\":\"r1\"}}\\n'
+printf '{\"early_answer\":{\"oid\":7}}\\n'
+while :; do sleep 0.05; done
+";
+
+#[test]
+fn an_early_answer_that_cannot_be_read_ends_the_helper_and_keeps_what_came_before() {
+    let dir = tempfile::tempdir().unwrap();
+    let launcher = install_listening_to(
+        dir.path(),
+        ONE_ANSWER_THEN_ONE_THAT_CANNOT_BE_READ_THEN_SILENCE,
+        &Interrupt::default(),
+    );
+    let mut helper = launcher.spawn(&remote(), &[]).unwrap();
+    let pushed = helper
+        .push(vec![RemoteMutation {
+            op: MutationOp::Delete,
+            oid: Oid::parse(&"1".repeat(40)).unwrap(),
+            idempotency_key: "k1".into(),
+            remote_id: Some("r1".into()),
+            container_remote_id: None,
+            object: None,
+            fields: vec![],
+        }])
+        .unwrap();
+    assert_eq!(pushed.outcomes.len(), 1);
+    assert!(
+        matches!(pushed.stopped_by, Some(HelperError::Protocol(_))),
+        "{:?}",
+        pushed.stopped_by
+    );
+    assert!(
+        helper.child.try_wait().unwrap().is_some(),
+        "the helper was left running"
+    );
+}
