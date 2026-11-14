@@ -19,10 +19,18 @@ impl Tree {
         section_id: Option<&str>,
         parent_id: Option<&str>,
     ) {
+        let moved = RemoteId::Item(id.to_string());
+        let was = self.path_inside(&moved);
         if let Some(item) = self.items.get_mut(id) {
             item.project_id = project_id.to_string();
             item.section_id = section_id.map(str::to_string);
             item.parent_id = parent_id.map(str::to_string);
+        }
+        if let Some(place) = self.items.get(id).and_then(|i| self.item_path(i)) {
+            self.added_this_push.item_now_at(id, place);
+        }
+        if let (Some(was), Some(now)) = (was, self.path_inside(&moved)) {
+            self.added_this_push.moved_from_to(&was, &now);
         }
     }
 

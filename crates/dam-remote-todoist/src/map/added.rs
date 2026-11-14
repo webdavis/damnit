@@ -17,6 +17,21 @@ impl AddedThisPush {
         self.item_by_place_and_content.retain(|_, kept| kept != id);
     }
 
+    pub(super) fn item_now_at(&mut self, id: &str, place: String) {
+        let Some((was, content)) = self
+            .item_by_place_and_content
+            .iter()
+            .find(|(_, kept)| kept.as_str() == id)
+            .map(|(key, _)| key.clone())
+        else {
+            return;
+        };
+        self.item_by_place_and_content
+            .remove(&(was, content.clone()));
+        self.item_by_place_and_content
+            .insert((place, content), id.to_string());
+    }
+
     pub(super) fn moved_from_to(&mut self, was: &str, now: &str) {
         let moved = |path: String| match path.strip_prefix(was) {
             Some(rest) => format!("{now}{rest}"),
