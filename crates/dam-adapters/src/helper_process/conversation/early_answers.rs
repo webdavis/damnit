@@ -30,6 +30,9 @@ impl ProcessHelper {
                 Err(stop) => break stop,
             }
         };
+        if !self.killed {
+            self.kill_and_reap();
+        }
         PushOutcome {
             stopped_by: Some(stop),
             ..push_from_wire(PushResponse {
