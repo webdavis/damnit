@@ -45,14 +45,20 @@ impl Folder {
         self.root.join(name)
     }
 
+    pub(super) fn text(&self, name: &str) -> String {
+        std::fs::read_to_string(self.path(name)).unwrap()
+    }
+
+    pub(super) fn file(&self) -> LuaConfigFile {
+        LuaConfigFile::new(self.path("config.lua"))
+    }
+
     pub(super) fn loaded(&self) -> LoadedConfig {
-        LuaConfigFile::new(self.path("config.lua")).load().unwrap()
+        self.file().load().unwrap()
     }
 
     pub(super) fn load(&self) -> Result<Config, ConfigError> {
-        LuaConfigFile::new(self.path("config.lua"))
-            .load()
-            .map(|loaded| loaded.config)
+        self.file().load().map(|loaded| loaded.config)
     }
 
     pub(super) fn refusal(&self) -> String {

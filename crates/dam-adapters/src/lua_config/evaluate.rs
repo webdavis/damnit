@@ -10,15 +10,23 @@ pub(super) enum ErrorText {
     NeverQuotesTheFile,
 }
 
+pub(super) fn read_text(path: &Path) -> Result<Option<String>, ConfigError> {
+    match std::fs::read_to_string(path) {
+        Ok(text) if text.trim().is_empty() => Ok(None),
+        Ok(text) => Ok(Some(text)),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(e) => Err(ConfigError::Io(format!("{}: {e}", path.display()))),
+    }
+}
+
 pub(super) fn evaluate(
     lua: &Lua,
     path: &Path,
+    text: Option<&str>,
     error_text: ErrorText,
 ) -> Result<Option<Table>, ConfigError> {
-    let text = match std::fs::read_to_string(path) {
-        Ok(text) => text,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
-        Err(e) => return Err(ConfigError::Io(format!("{}: {e}", path.display()))),
+    let Some(text) = text else {
+        return Ok(None);
     };
     let short_name = short_name_lua_never_truncates(path);
     let value: Value = lua

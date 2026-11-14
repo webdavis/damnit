@@ -8,6 +8,7 @@ mod settings;
 mod shape;
 mod strict;
 mod token;
+mod write;
 
 pub use computed::ConfiguredCredentials;
 pub use file::{LoadedConfig, LuaConfigFile};

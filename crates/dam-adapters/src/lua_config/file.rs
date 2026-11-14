@@ -4,7 +4,7 @@ use dam_application::{Config, ConfigError};
 use mlua::Lua;
 
 use super::computed::ConfiguredCredentials;
-use super::evaluate::{ErrorText, evaluate, lua_message};
+use super::evaluate::{ErrorText, evaluate, lua_message, read_text};
 use super::secrets::read_secrets;
 use super::settings::read_settings;
 use super::strict::StrictMap;
@@ -24,17 +24,14 @@ impl LuaConfigFile {
     }
 
     pub fn load(&self) -> Result<LoadedConfig, ConfigError> {
-        let config_name = file_name(&self.config);
-        let mut config = match evaluate(&Lua::new(), &self.config, ErrorText::QuotesTheFile)? {
-            Some(table) => read_settings(&StrictMap::root(&config_name, &table)?)?,
-            None => Config::default(),
-        };
+        let mut config = self.settings_in(read_text(&self.config)?.as_deref())?;
         let lua = Lua::new();
-        let path = self.config.with_file_name("secrets.lua");
-        let secrets = evaluate(&lua, &path, ErrorText::NeverQuotesTheFile)?;
+        let path = self.secrets_path();
+        let text = read_text(&path)?;
+        let secrets = evaluate(&lua, &path, text.as_deref(), ErrorText::NeverQuotesTheFile)?;
         if let Some(table) = &secrets {
             read_secrets(&StrictMap::root("secrets.lua", table)?)?
-                .complete(&mut config, &config_name)?;
+                .complete(&mut config, &file_name(&self.config))?;
         }
         let credentials = ConfiguredCredentials::keep(lua, path, secrets)
             .map_err(|e| ConfigError::Invalid(lua_message(&e)))?;
@@ -42,6 +39,22 @@ impl LuaConfigFile {
             config,
             credentials,
         })
+    }
+
+    pub(super) fn config_path(&self) -> &Path {
+        &self.config
+    }
+
+    pub(super) fn secrets_path(&self) -> PathBuf {
+        self.config.with_file_name("secrets.lua")
+    }
+
+    pub(super) fn settings_in(&self, text: Option<&str>) -> Result<Config, ConfigError> {
+        let lua = Lua::new();
+        match evaluate(&lua, &self.config, text, ErrorText::QuotesTheFile)? {
+            Some(table) => read_settings(&StrictMap::root(&file_name(&self.config), &table)?),
+            None => Ok(Config::default()),
+        }
     }
 }
 

@@ -1,7 +1,13 @@
+mod add_remote;
+mod beyond_ascii;
 mod config_file;
 mod credential_source;
+mod edit_checks;
+mod edit_files;
 mod examples;
+mod file_text;
 mod secrets_file;
 mod support;
 mod token_tables;
 mod token_terms;
+mod written_values;

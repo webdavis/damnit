@@ -8,6 +8,7 @@ repository.workspace = true
 [dependencies]
 libc.workspace = true
 mlua.workspace = true
+full_moon.workspace = true
 dam-domain = { path = "../dam-domain" }
 dam-application = { path = "../dam-application" }
 dam-protocol = { path = "../dam-protocol" }

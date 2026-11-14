@@ -5,7 +5,7 @@ use serde_json::{Map, Value as Json};
 
 use super::support::config;
 use crate::lua_config::LuaConfigFile;
-use crate::lua_config::evaluate::{ErrorText, evaluate};
+use crate::lua_config::evaluate::{ErrorText, evaluate, read_text};
 use crate::lua_config::shape::{list, text};
 
 fn docs() -> PathBuf {
@@ -38,9 +38,11 @@ fn schema(name: &str) -> Json {
 
 fn schema_errors(example: &str, schema_name: &str) -> Vec<String> {
     let lua = Lua::new();
+    let path = docs().join("examples").join(example);
     let table = evaluate(
         &lua,
-        &docs().join("examples").join(example),
+        &path,
+        read_text(&path).unwrap().as_deref(),
         ErrorText::QuotesTheFile,
     )
     .unwrap()
