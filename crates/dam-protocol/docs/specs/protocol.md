@@ -86,9 +86,12 @@ One push result:
 | Field | Meaning |
 |---|---|
 | `oid` | the mutation this answers |
-| `ok` | whether the remote did it |
+| `ok` | whether the remote did it, left out when `unanswered` is true |
+| `unanswered` | true when the helper cannot tell whether the remote did it |
 | `remote_id` | the remote's identity for the object, after a create |
-| `why` | the reason, when `ok` is false |
+| `why` | the reason, when `ok` is false or `unanswered` is true |
+
+A result with neither `ok` nor `unanswered` is a protocol error.
 
 ## Capabilities
 
@@ -137,9 +140,9 @@ written only when true, and its absence reads as false.
 
 Delivery is at least once. `dam` sends an unanswered mutation again with the same
 `idempotency_key`, a value derived from the commit and the object, and keeps its commit unpushed
-until then. A helper answers `ok: false` only when the remote did nothing. When the remote did
-part of the work, or may have done it without saying so, as after a timeout, a lost connection or a
-server error, the helper leaves that mutation out of its results, and may leave out the mutations
-after it too. A helper that turns one mutation
-into several remote commands numbers them in the key's last character, which `dam` leaves free.
-Against a remote with no such key, a resend can duplicate.
+until then. A helper answers `ok: false` only when the remote did nothing. When the remote did part
+of the work, or may have done it without saying so, as after a timeout, a lost connection or a
+server error, the helper answers `unanswered: true` with a reason a person can act on. `dam` shows
+that reason in the push failed notice. A mutation left out of the results is unanswered too, and
+its notice says "no answer from helper". A helper that turns one mutation into several remote
+commands numbers them in the key's last character, which `dam` leaves free. Against a remote with no such key, a resend can duplicate.
