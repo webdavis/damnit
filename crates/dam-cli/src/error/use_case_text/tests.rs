@@ -91,13 +91,10 @@ fn no_credential_failure_reveals_a_value() {
             name: "api_token".into(),
         }),
         UseCaseError::from(CredentialError::Missing("api_token".into())),
-        UseCaseError::from(CredentialError::CommandFailed {
+        UseCaseError::from(CredentialError::ComputeFailed {
+            remote: dam_application::RemoteName("todoist".into()),
             name: "api_token".into(),
             why: "the vault is locked".into(),
-        }),
-        UseCaseError::from(CredentialError::EnvUnset {
-            name: "api_token".into(),
-            var: "DAM_TODOIST_API_TOKEN".into(),
         }),
     ];
     for error in errors {

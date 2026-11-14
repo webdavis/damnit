@@ -74,7 +74,6 @@ impl CredentialSource for ConfiguredCredentials {
         match spec {
             CredentialSpec::Literal { value, .. } => Ok(value.clone()),
             CredentialSpec::Computed { remote, name } => self.compute(remote, name),
-            other => Err(CredentialError::Missing(other.name().to_string())),
         }
     }
 }

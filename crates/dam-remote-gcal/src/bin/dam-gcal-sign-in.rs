@@ -8,7 +8,8 @@ const USAGE: &str = "usage: dam-gcal-sign-in --client-id <id>
   security find-generic-password -w -s 'Google dam client' | dam-gcal-sign-in --client-id <id>";
 
 const KEEP_IT: &str = "Store the refresh token printed on standard output in your vault now: it is \
-shown once and written nowhere. The gcal remote's refresh_token_command reads it from there.";
+shown once and written nowhere. A refresh_token function under remote.gcal in secrets.lua can read \
+it from there.";
 
 const LOST: &str = "the refresh token could not be written to standard output, and it is kept \
 nowhere else; sign in again";

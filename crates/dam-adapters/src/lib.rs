@@ -1,6 +1,5 @@
 mod cancel;
 mod clock;
-mod credentials;
 mod day_doc;
 mod helper_process;
 mod lua_config;
@@ -12,7 +11,6 @@ mod wire;
 
 pub use cancel::{Interrupt, catch_interrupts};
 pub use clock::SystemClock;
-pub use credentials::ProcessCredentialSource;
 pub use dam_protocol::{WireAttendee, WireConference, WirePerson};
 pub use day_doc::{DayDoc, TaskStateDoc, day_from_doc, day_to_doc};
 pub use helper_process::ProcessLauncher;

@@ -47,14 +47,6 @@ pub trait HelperLauncher {
 #[derive(Debug, PartialEq, Eq)]
 pub enum CredentialError {
     Missing(String),
-    CommandFailed {
-        name: String,
-        why: String,
-    },
-    EnvUnset {
-        name: String,
-        var: String,
-    },
     ComputeFailed {
         remote: RemoteName,
         name: String,

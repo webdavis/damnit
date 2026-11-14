@@ -53,14 +53,6 @@ fn nothing_on_the_credential_path_reveals_the_value() {
             name: "api_token".into(),
         }),
         UseCaseError::from(CredentialError::Missing("api_token".into())),
-        UseCaseError::from(CredentialError::CommandFailed {
-            name: "api_token".into(),
-            why: "the vault is locked".into(),
-        }),
-        UseCaseError::from(CredentialError::EnvUnset {
-            name: "api_token".into(),
-            var: "DAM_TODOIST_API_TOKEN".into(),
-        }),
     ];
     for e in errors {
         assert!(!format!("{e:?}").contains(TOKEN));

@@ -130,7 +130,7 @@ fn refusals_by_object_rules() -> Vec<(Refusal, &'static str)> {
                 remote: "todoist".into(),
                 name: "api_token".into(),
             },
-            "remote \"todoist\" needs api_token; set api_token, api_token_command or api_token_env in its config",
+            "remote \"todoist\" needs api_token; set remote.todoist.api_token in secrets.lua",
         ),
         (
             Refusal::StaleRemote {

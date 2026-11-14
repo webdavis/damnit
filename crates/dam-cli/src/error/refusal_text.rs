@@ -103,7 +103,7 @@ impl fmt::Display for RefusalText<'_> {
             Refusal::MissingCredential { remote, name } => {
                 write!(
                     f,
-                    "remote {remote:?} needs {name}; set {name}, {name}_command or {name}_env in its config"
+                    "remote {remote:?} needs {name}; set remote.{remote}.{name} in secrets.lua"
                 )
             }
             Refusal::StaleRemote {

@@ -77,7 +77,7 @@ fn a_config_file_that_cannot_be_read_is_a_store_failure_and_a_bad_one_a_parse_fa
         "store"
     );
     assert_eq!(
-        CliError::Config(ConfigError::Syntax("x".into())).kind(),
+        CliError::Config(ConfigError::Invalid("x".into())).kind(),
         "parse"
     );
 }
