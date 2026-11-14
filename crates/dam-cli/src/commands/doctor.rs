@@ -9,13 +9,13 @@ use crate::output::Report;
 use crate::view::{Human, View, report};
 
 #[derive(Serialize)]
-struct ConfigChecked {
+struct Diagnosis {
     config: Option<String>,
     secrets: Option<String>,
     warnings: Vec<String>,
 }
 
-impl View for ConfigChecked {
+impl View for Diagnosis {
     fn human(&self) -> Human {
         let or_none = |path: &Option<String>, name: &str| {
             path.clone().unwrap_or_else(|| format!("no {name}"))
@@ -32,8 +32,8 @@ impl View for ConfigChecked {
 }
 
 pub(crate) fn run(file: &LuaConfigFile) -> Result<Report, CliError> {
-    let config = file.check().map_err(CliError::ConfigCheck)?;
-    report(&ConfigChecked {
+    let config = file.check().map_err(CliError::Doctor)?;
+    report(&Diagnosis {
         config: found(file.config_path()),
         secrets: found(&file.secrets_path()),
         warnings: token_warnings(&config.tokens).collect(),
