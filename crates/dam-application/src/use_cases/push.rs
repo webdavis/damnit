@@ -92,6 +92,7 @@ impl Dam<'_> {
         let Plan {
             mut mutations,
             skipped,
+            unused,
         } = plan(self.store, helper, caps, remote, changes, &refiles, &record)?;
         let attempting = attempting(self.store, helper, &remote.name, &record, &mut mutations)?;
         let record = |ready: &[RemoteMutation]| {
@@ -100,6 +101,7 @@ impl Dam<'_> {
         let mut sent = send_in_waves(helper, removals, mutations, &record)?;
         sent.skipped = skipped;
         sent.settlement.dropped = dropped;
+        sent.settlement.dropped.unused.extend(unused);
         if !sent.stopped_before_any_answer {
             atomically(self.store, || {
                 self.settle_push(

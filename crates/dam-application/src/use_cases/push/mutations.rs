@@ -1,10 +1,10 @@
 use std::collections::BTreeSet;
 
-use dam_domain::{Change, Field, Object, changed_fields};
+use dam_domain::{Change, Field, Object, Oid, changed_fields};
 
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
-use crate::ports::{Attempts, RemoteHelper, RemoteTrackingRepository};
+use crate::ports::{Attempt, Attempts, RemoteHelper, RemoteTrackingRepository};
 use crate::remote::{MutationOp, RemoteCapabilities, RemoteMutation};
 use crate::use_cases::push::attempting::differing;
 use crate::use_cases::push::owed::OwedChanges;
@@ -14,6 +14,7 @@ use crate::use_cases::push::sending_order::turn;
 pub(super) struct Plan {
     pub(super) mutations: Vec<RemoteMutation>,
     pub(super) skipped: usize,
+    pub(super) unused: Vec<Oid>,
 }
 
 pub(super) fn plan(
@@ -28,6 +29,7 @@ pub(super) fn plan(
     let mut plan = Plan {
         mutations: Vec::new(),
         skipped: 0,
+        unused: Vec::new(),
     };
     refiles.owe(&mut changes);
     let mut owed: Vec<Change> = changes.into_values().collect();
@@ -38,10 +40,33 @@ pub(super) fn plan(
         let differing = differing(helper, caps, change.after(), earlier)?;
         match mutation_for(remote_tracking, caps, remote, &change, refiled, &differing)? {
             Some(mutation) => plan.mutations.push(mutation),
+            None if nothing_will_use(remote_tracking, caps, remote, &change, earlier)? => {
+                plan.unused.push(change.oid().clone());
+            }
             None => plan.skipped += 1,
         }
     }
     Ok(plan)
+}
+
+fn nothing_will_use(
+    remote_tracking: &dyn RemoteTrackingRepository,
+    caps: &RemoteCapabilities,
+    remote: &RemoteConfig,
+    unsent: &Change,
+    earlier: &[Attempt],
+) -> Result<bool, UseCaseError> {
+    if earlier.is_empty()
+        || remote_tracking
+            .remote_id(&remote.name, unsent.oid())?
+            .is_none()
+    {
+        return Ok(false);
+    }
+    let holds_a_delete = earlier.iter().any(|a| a.op == MutationOp::Delete);
+    Ok(unsent
+        .after()
+        .is_none_or(|now| goes_to(remote, caps, now) && !holds_a_delete))
 }
 
 fn mutation_for(
