@@ -4,6 +4,7 @@ mod conflict_count;
 mod deletes;
 mod keys;
 mod last_push;
+mod order;
 mod read_only;
 mod reconcile;
 mod refusals;
