@@ -33,7 +33,11 @@ pub fn update_plan(
         RemoteId::Item(_) => None,
     };
     let mut commands = Commands { m, sent: vec![] };
-    let mut changes = TreeChange::Nothing;
+    let mut changes = vec![];
+    let rename = changed("subject").then(|| TreeChange::Renames {
+        renamed: remote.clone(),
+        name: object.subject.clone(),
+    });
     match remote {
         RemoteId::Project(id) => {
             if changed("subject") {
@@ -57,7 +61,7 @@ pub fn update_plan(
             if changed("path") {
                 let to = item_place(tree, m, object)?;
                 commands.push("item_move", most_specific_container_move_args(&id, &to))?;
-                changes = TreeChange::MovesItem { id: id.clone(), to };
+                changes.push(TreeChange::MovesItem { id: id.clone(), to });
             }
             let mut item = item_args(object, ItemWrite::Update { changed: &m.fields });
             if !item.is_empty() {
@@ -74,6 +78,7 @@ pub fn update_plan(
             }
         }
     }
+    changes.extend(rename);
     Ok(Plan {
         commands: commands.sent,
         changes,

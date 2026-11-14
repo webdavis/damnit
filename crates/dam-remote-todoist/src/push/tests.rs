@@ -8,5 +8,6 @@ mod idempotency;
 mod moves;
 mod reasons;
 mod refusals;
+mod renames;
 mod retries;
 mod same_name_containers;
