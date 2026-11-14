@@ -64,6 +64,7 @@ fn accepted() -> Vec<(&'static str, Value)> {
         ),
         ("mv", json!({"oid": "1111", "path": "work/"})),
         ("rm", json!({"oid": "1111"})),
+        ("rm", json!({"id": "build", "meta": {"session": "a"}})),
         (
             "token-create",
             json!({"name": "tool", "allow": ["task:read"], "via": ["mcp"]}),
@@ -87,6 +88,8 @@ fn refused() -> Vec<(&'static str, Value)> {
         ("edit", json!({"oid": "1111", "editor": true})),
         ("done", json!({"oid": "1111", "children": "up"})),
         ("mv", json!({"oid": "1111"})),
+        ("rm", json!({"oid": "1111", "id": "build"})),
+        ("rm", json!({})),
         ("token-create", json!({"name": "tool", "allow": []})),
         (
             "token-create",
@@ -156,5 +159,6 @@ fn dam_takes_by_request_what_each_request_schema_accepts_and_refuses_the_rest() 
         .collect();
     published.sort();
     taken.sort();
+    taken.dedup();
     assert_eq!(taken, published);
 }

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/rm.schema.json",
   "title": "dam rm answer",
-  "description": "What dam rm prints with --json or --toon: the removed object and what it touched; given an item's hash, the settled item; for a token's removal of a task the owner added, the answer.",
+  "description": "What dam rm prints with --json or --toon: the removed object and what it touched; for the owner given an item's hash, the declined item; for a token, by oid, hash or --id, and for dam rm --id, the answer.",
   "oneOf": [
     {
       "type": "object",

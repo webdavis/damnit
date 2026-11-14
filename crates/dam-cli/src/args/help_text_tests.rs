@@ -60,6 +60,7 @@ dam mv oid: help = Pick the object by oid, or by a prefix of 4 or more hex chara
 dam mv path: help = Move it under PATH, such as work/clients/
 dam rm: about = Remove an object from the working layer
 dam rm oid: help = Pick the object by oid, or by a prefix of 4 or more hex characters
+dam rm id: help = Take back the task or event you gave this id with dam new --id in the same session
 dam add: about = Stage changes
 dam add oids: help = Stage the changes to these objects, by oid or prefix
 dam add all: help = Stage every change

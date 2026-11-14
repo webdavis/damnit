@@ -39,7 +39,12 @@ pub(super) fn misuse(error: &clap::Error, line: &[OsString]) -> Option<Misuse> {
         ErrorKind::MissingRequiredArgument | ErrorKind::MissingSubcommand => {
             (Problem::MissingArgument, flag())
         }
-        ErrorKind::ArgumentConflict => (Problem::Conflict, flag()),
+        ErrorKind::ArgumentConflict => (
+            Problem::Conflict,
+            flag().or_else(|| {
+                words(ContextKind::PriorArg).find_map(|arg| flag_shown_as(&command, arg))
+            }),
+        ),
         _ => (Problem::Other, None),
     };
     Some(Misuse {

@@ -40,11 +40,16 @@ impl View for Removed<'_> {
 }
 
 pub(crate) fn run(ctx: &Context, args: RmArgs) -> Result<Report, CliError> {
-    let oid = match ctx.dam().resolve_named(&args.oid)? {
-        Named::Object(oid) => oid,
-        Named::Item(hash) => return report(&Settled::new(&ctx.dam().dismiss(&hash)?)),
+    let Some(named) = args.oid else {
+        let id = args
+            .id
+            .ok_or_else(|| CliError::Usage("rm takes an oid or --id".into()))?;
+        return report_removal(&ctx.dam().remove_by_id(&id)?);
     };
-    let removal = ctx.dam().remove_or_send(&oid)?;
+    let removal = match ctx.dam().resolve_named(&named)? {
+        Named::Object(oid) => ctx.dam().remove_or_send(&oid)?,
+        Named::Item(hash) => ctx.dam().remove_item(&hash)?,
+    };
     report_removal(&removal)
 }
 
@@ -56,8 +61,11 @@ fn report_removal(removal: &Removal) -> Result<Report, CliError> {
             dependents: &plan.dependents,
             attached: &plan.attached,
         }),
+        Removal::ItemDeclined(item) => report(&Settled::new(item)),
+        Removal::Withdrawn(about) => report(&Answer::about("withdrawn", about)),
         Removal::Waiting(about) => report(&Answer::about("waiting", about)),
         Removal::Declined(about) => report(&Answer::about("declined", about)),
+        Removal::Nothing => report(&Answer::nothing()),
     }
 }
 

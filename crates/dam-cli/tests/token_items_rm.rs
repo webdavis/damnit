@@ -49,7 +49,7 @@ fn a_token_withdraws_its_own_item_and_cannot_remove_another_senders() {
     assert!(out.status.success(), "{out:?}");
     assert_eq!(
         String::from_utf8_lossy(&out.stdout).trim(),
-        format!("withdrawn  {}  Call the dentist  tool", &hash[..7])
+        format!("withdrawn  {}", &hash[..7])
     );
     let again = answer(&sb.output_holding(&held, &DENTIST), "sent.schema.json");
     assert_eq!(again["answer"], "new");

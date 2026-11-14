@@ -12,13 +12,13 @@ The owner makes the token and prints it once. A tool that only sends tasks needs
 dam token create tool --allow task:create --paths inbox --require session
 ```
 
-An agent that manages its own tasks also needs `task:read`, `task:change` and `task:complete`,
-and `event:read` for `dam agenda`.
+An agent that manages its own tasks also needs `task:read`, `task:change`, `task:complete` and
+`task:remove`, and `event:read` for `dam agenda`.
 `--own` narrows the grant to what the token made: tasks it sent that the owner added, and its own
 waiting items. It never stops a `dam new`.
 
 ```sh example
-dam token create agent --allow task:read --allow task:create --allow task:change --allow task:complete --allow event:read --paths work --own
+dam token create agent --allow task:read --allow task:create --allow task:change --allow task:complete --allow task:remove --allow event:read --paths work --own
 ```
 
 `--paths` limits the token to objects under that path, so each task the token sends needs a
@@ -138,10 +138,45 @@ dam done <oid>
 ```
 
 `dam rm <oid>` on a task the owner has added sends a removal item. It needs `task:remove`. The task
-stays until the owner adds or declines the removal.
+stays until the owner adds or declines the removal. Both answer as the next section shows.
 
 A token cannot run `dam mv`, `dam done --force`, or `dam edit --focus`. Each exits 4, rule
 `not_open_to_tokens`.
+
+## Taking your task back
+
+`dam rm --id <id>` takes back the task you sent with `dam new --id <id>`. Pass the same
+`--meta session=...` you passed to `dam new`; another session's id names another task.
+
+```sh example as=agent
+dam rm --id flaky-login --json
+```
+
+```json
+{"answer": "waiting", "item": "e4f5a6b7...", "oid": "a1b2c3d4..."}
+```
+
+| `answer` | What happened | `item`, `oid` |
+|---|---|---|
+| `withdrawn` | Your item was still waiting. It is gone. | The item, the task. For a new task they are the same hash. |
+| `waiting` | The owner had added the task. A removal item waits for the owner to add or decline. A repeat names the same item. | The removal item, the task |
+| `declined` | The owner declined that removal. The task stays, and the removal is not sent again. | The removal item, the task |
+| `nothing` | Nothing of yours is under that id: never sent, already withdrawn, removed, outside your grants, or your item was declined before the owner added it. | Null, null |
+
+Every answer exits 0, so a repeat is safe:
+
+```sh example as=agent
+dam rm --id never-sent
+```
+
+Sending a removal needs `task:remove`, or `event:remove` for an event. Without it, `dam rm` exits
+4, rule `not_permitted`. Withdrawing a waiting item needs only the token.
+
+`dam rm <hash>` and `dam rm <oid>` give the same answers, with one difference: an oid or prefix
+outside your grants exits 4, rule `no_such_object`, as a missing one does. Text mode prints one
+line, such as `waiting  e4f5a6b  a1b2c3d`, or `withdrawn  a1b2c3d` when the item and the task are
+the same hash. In a request document the key is `id`. The schema is
+`docs/schemas/removal.schema.json`.
 
 ## Reading
 

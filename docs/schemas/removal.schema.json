@@ -2,15 +2,31 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/removal.schema.json",
   "title": "dam rm answer for a token",
-  "description": "What dam rm prints with --json or --toon when a token removes a task the owner added. waiting: a removal item waits for the owner; a repeat names the same item. declined: the owner declined that removal and it is not sent again.",
+  "description": "What dam rm prints with --json or --toon when a token takes a task or event back by --id, oid or hash, and when dam rm --id finds nothing. withdrawn: the item it sent was still waiting and is gone; for a new item, oid equals item. waiting: a removal item waits for the owner; a repeat names the same item. declined: the owner declined that removal and it is not sent again. nothing: nothing of the caller's is there under that id.",
   "type": "object",
   "required": ["answer", "item", "oid"],
   "additionalProperties": false,
   "properties": {
-    "answer": { "enum": ["waiting", "declined"] },
-    "item": { "$ref": "#/$defs/id", "description": "The removal item." },
-    "oid": { "$ref": "#/$defs/id", "description": "The task." }
+    "answer": { "enum": ["withdrawn", "waiting", "declined", "nothing"] },
+    "item": true,
+    "oid": true
   },
+  "oneOf": [
+    {
+      "properties": {
+        "answer": { "enum": ["withdrawn", "waiting", "declined"] },
+        "item": { "$ref": "#/$defs/id", "description": "The item withdrawn, or the removal item." },
+        "oid": { "$ref": "#/$defs/id", "description": "The task or event. Equals item for a withdrawn new item." }
+      }
+    },
+    {
+      "properties": {
+        "answer": { "const": "nothing" },
+        "item": { "type": "null" },
+        "oid": { "type": "null" }
+      }
+    }
+  ],
   "$defs": {
     "id": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
   }

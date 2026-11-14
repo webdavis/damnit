@@ -1,8 +1,8 @@
 use clap::Args;
-use dam_domain::{ChildDisposition, DependencyDisposition, Path};
+use dam_domain::{CallerId, ChildDisposition, DependencyDisposition, Path};
 
 use super::dispositions::{child_disposition, dependency_disposition};
-use super::values::path_arg;
+use super::values::{caller_id_arg, path_arg};
 
 #[derive(Args, Debug)]
 pub(crate) struct DoneArgs {
@@ -48,7 +48,14 @@ pub(crate) struct MvArgs {
 }
 
 #[derive(Args, Debug)]
+#[group(required = true, multiple = false)]
 pub(crate) struct RmArgs {
     #[arg(help = "Pick the object by oid, or by a prefix of 4 or more hex characters")]
-    pub(crate) oid: String,
+    pub(crate) oid: Option<String>,
+    #[arg(
+        long,
+        value_parser = caller_id_arg,
+        help = "Take back the task or event you gave this id with dam new --id in the same session"
+    )]
+    pub(crate) id: Option<CallerId>,
 }

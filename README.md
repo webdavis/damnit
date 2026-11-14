@@ -363,7 +363,8 @@ cycle, or completes a task with open children or dependencies, is refused the wa
 or `done` would be. `dam reset` sends an added item back to waiting and keeps your own edits.
 `dam rm <hash>` declines it, and the same change sent again is refused. A token may `dam rm` its
 own waiting item. A token's `dam rm <oid>` on one of your tasks needs `task:remove` and waits as a
-removal item.
+removal item. A token's `dam rm` by hash, oid or `--id` answers `withdrawn`, `waiting`, `declined`
+or `nothing`.
 
 Your own rows in `status` and `log` read `you` to you and `owner` to a token.
 
@@ -383,6 +384,9 @@ task: it waits as a change item, and only the fields that differ from the tool's
 Your own repeat with a new `--path` or subject carries the task's children, as `dam mv` and
 `dam edit` do. A token's repeat cannot change `--path`. Each token's ids, and your own, are kept
 apart, and so are each session's when the request passes `--meta session=...`.
+`dam rm --id <text>` takes the task back by the same id. A waiting item is withdrawn; a task you
+added gets a removal item. It answers `withdrawn`, `waiting`, `declined` or `nothing`, each with
+exit 0. Your own `dam rm --id` removes your task, or answers `nothing`.
 
 A token cannot run `mv`, `add`, `reset`, `restore`, `commit`, `remote add`, `resolve`, `day`,
 `config` or `token`, or set `--focus`. A read pulls a stale remote only when the token holds
