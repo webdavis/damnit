@@ -49,6 +49,7 @@ fn item_oids(refusal: &ItemRefusal) -> Vec<String> {
     match refusal {
         ItemRefusal::Declined(hash)
         | ItemRefusal::NotAnObject(hash)
+        | ItemRefusal::AlreadyCommitted(hash)
         | ItemRefusal::NotYours(hash)
         | ItemRefusal::NotWaiting { hash, .. } => vec![hash.to_string()],
         ItemRefusal::TargetGone { hash, target }

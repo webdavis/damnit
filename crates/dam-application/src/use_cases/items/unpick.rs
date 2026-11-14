@@ -39,7 +39,7 @@ impl Dam<'_> {
         Ok(())
     }
 
-    fn added_item_staged_at(&self, oid: &Oid) -> Result<Option<Item>, UseCaseError> {
+    pub(super) fn added_item_staged_at(&self, oid: &Oid) -> Result<Option<Item>, UseCaseError> {
         let Some(author) = self
             .store
             .staged()?

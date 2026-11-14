@@ -17,6 +17,9 @@ impl Dam<'_> {
         let named = self.resolve_named(text);
         match &named {
             Ok(Named::Item(_)) | Err(UseCaseError::NotAnOid(_)) => return named,
+            Ok(Named::Object(oid)) if self.is_a_committed_new_item(oid)? => {
+                return Ok(Named::Item(ItemHash::new(oid.clone())));
+            }
             Ok(Named::Object(oid)) if self.store.committed(oid)?.is_some() => return named,
             Ok(Named::Object(oid)) if self.store.get(oid)?.is_some() => return named,
             _ => {}
@@ -39,6 +42,15 @@ impl Dam<'_> {
         }
     }
 
+    fn is_a_committed_new_item(&self, oid: &Oid) -> Result<bool, UseCaseError> {
+        let added = self
+            .store
+            .item(&ItemHash::new(oid.clone()))?
+            .is_some_and(|item| matches!(item.outcome, Outcome::Added(_)) && self.sees_item(&item));
+        let staged = self.store.staged()?.iter().any(|s| s.change.oid() == oid);
+        Ok(added && !staged)
+    }
+
     pub fn reopen(&self, hash: &ItemHash) -> Result<Reopened, UseCaseError> {
         atomically(self.store, || {
             let item = self
@@ -51,6 +63,12 @@ impl Dam<'_> {
                     Ok(Reopened::Waiting(item.hash))
                 }
                 Outcome::Added(_) => {
+                    let still_staged = self
+                        .added_item_staged_at(item.target())?
+                        .is_some_and(|staged| staged.hash == item.hash);
+                    if !still_staged {
+                        return Err(ItemRefusal::AlreadyCommitted(item.hash).into());
+                    }
                     self.reset(std::slice::from_ref(item.target()))?;
                     Ok(Reopened::Unstaged(item.target().clone()))
                 }
@@ -64,3 +82,6 @@ impl Dam<'_> {
         })
     }
 }
+
+#[cfg(test)]
+mod tests;
