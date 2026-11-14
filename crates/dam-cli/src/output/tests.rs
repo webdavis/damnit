@@ -39,7 +39,7 @@ fn toon_renders_a_list_as_a_table() {
             data,
             cut: Vec::new(),
             tints: Vec::new(),
-            stderr: Vec::new(),
+            standard_error_lines: Vec::new(),
         },
     )
     .unwrap();
@@ -53,7 +53,7 @@ fn json_renders_the_data_and_human_renders_the_text() {
         data: serde_json::json!({"a": 1}),
         cut: Vec::new(),
         tints: Vec::new(),
-        stderr: Vec::new(),
+        standard_error_lines: Vec::new(),
     };
     assert_eq!(render(Format::Human, &report).unwrap(), "hi");
     assert_eq!(render(Format::Json, &report).unwrap(), "{\n  \"a\": 1\n}");
