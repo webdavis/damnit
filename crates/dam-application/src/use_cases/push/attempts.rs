@@ -43,10 +43,18 @@ pub(super) fn settle_attempts(
             Heard::Accepted if owes_a_follow_up(attempts, &sent.attempt) => {}
             Heard::Accepted => attempts.clear(),
             Heard::Refused => attempts.retain(|a| a.key != sent.attempt.key),
+            Heard::Unasked if sent.repeats_the_last => {}
+            Heard::Unasked => drop_the_last(attempts, &sent.attempt),
         }
         store.set_attempts(remote, oid, attempts)?;
     }
     Ok(())
+}
+
+fn drop_the_last(attempts: &mut Vec<Attempt>, added: &Attempt) {
+    if let Some(at) = attempts.iter().rposition(|a| a == added) {
+        attempts.remove(at);
+    }
 }
 
 fn owes_a_follow_up(attempts: &[Attempt], accepted: &Attempt) -> bool {

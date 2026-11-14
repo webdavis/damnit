@@ -53,6 +53,7 @@ fn accepted(_: &RemoteMutation) -> Option<MutationVerdict> {
 fn refused(_: &RemoteMutation) -> Option<MutationVerdict> {
     Some(MutationVerdict::Refused {
         why: "not now".into(),
+        unasked: false,
     })
 }
 
