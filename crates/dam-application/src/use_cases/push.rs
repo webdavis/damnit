@@ -47,10 +47,12 @@ impl Dam<'_> {
         remote: &RemoteConfig,
     ) -> Result<PushReport, UseCaseError> {
         let unpushed = self.store.unpushed(&remote.name)?;
-        let changes = changes_to_send(self.store, remote, &unpushed)?;
+        let doubt = self.store.fields_in_doubt(&remote.name)?;
+        let changes = changes_to_send(self.store, remote, &unpushed, &doubt)?;
         let removals = Removals::new(self.store, &remote.name, caps, &changes)?;
         let refiles = Refiles::new(self.store, &remote.name, caps, &changes)?;
-        let Plan { mutations, skipped } = plan(self.store, caps, remote, changes, &refiles)?;
+        let Plan { mutations, skipped } =
+            plan(self.store, caps, remote, changes, &refiles, &doubt)?;
         let sent = send_in_waves(helper, removals, mutations)?;
         atomically(self.store, || {
             self.settle_push(remote, &unpushed, &sent.settlement)
@@ -98,6 +100,7 @@ impl Dam<'_> {
         for oid in &settlement.answered {
             store.count_answer(&remote.name, oid)?;
         }
+        settle_doubt(store, &remote.name, settlement)?;
         store.set_push_retries(&remote.name, &settlement.retries())?;
         for id in settlement.pushed(unpushed) {
             store.mark_pushed(&remote.name, id)?;
@@ -107,6 +110,7 @@ impl Dam<'_> {
     }
 }
 
+mod doubt;
 mod idempotency;
 mod mutations;
 mod owed;
@@ -116,6 +120,7 @@ mod removals;
 mod sending_order;
 mod waves;
 
+use doubt::settle_doubt;
 use mutations::{Plan, plan};
 use owed::changes_to_send;
 use reconcile::Settlement;

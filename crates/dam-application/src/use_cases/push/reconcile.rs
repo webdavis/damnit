@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use dam_domain::{CommitId, CommitRecord, Object, Oid};
+use dam_domain::{CommitId, CommitRecord, Field, Object, Oid};
 
 use crate::remote::{MutationOp, MutationOutcome, MutationVerdict, RemoteMutation};
 
@@ -14,6 +14,8 @@ pub(super) struct Settlement {
     pub(super) failed: Vec<(Oid, String)>,
     pub(super) unanswered: BTreeSet<Oid>,
     pub(super) answered: Vec<Oid>,
+    pub(super) doubted: Vec<(Oid, Vec<Field>)>,
+    pub(super) confirmed: Vec<(Oid, Vec<Field>)>,
 }
 
 impl Settlement {
@@ -28,6 +30,8 @@ impl Settlement {
         self.failed.extend(later.failed);
         self.unanswered.extend(later.unanswered);
         self.answered.extend(later.answered);
+        self.doubted.extend(later.doubted);
+        self.confirmed.extend(later.confirmed);
     }
 
     pub(super) fn pushed<'a>(
@@ -51,6 +55,9 @@ impl Settlement {
         }
         match verdict {
             MutationVerdict::Accepted { remote_id } => {
+                if mutation.op == MutationOp::Update {
+                    self.confirmed.push((oid.clone(), mutation.fields.clone()));
+                }
                 if let Some(id) = remote_id {
                     self.map.push((oid.clone(), id));
                 }
@@ -61,12 +68,14 @@ impl Settlement {
                 }
             }
             MutationVerdict::Refused { why } => self.failed.push((oid, why)),
-            MutationVerdict::Unanswered { why } => self.unanswered(oid, why),
+            MutationVerdict::Unanswered { why } => self.unanswered(mutation, why),
         }
     }
 
-    fn unanswered(&mut self, oid: Oid, why: String) {
+    fn unanswered(&mut self, mutation: &RemoteMutation, why: String) {
+        let oid = mutation.oid.clone();
         self.failed.push((oid.clone(), why));
+        self.doubted.push((oid.clone(), mutation.fields.clone()));
         self.unanswered.insert(oid);
     }
 }
@@ -84,7 +93,7 @@ pub(super) fn reconcile(sent: &[RemoteMutation], outcomes: Vec<MutationOutcome>)
         settlement.settle(mutation, outcome.verdict);
     }
     for mutation in sent.iter().filter(|m| !answered.contains(&m.oid)) {
-        settlement.unanswered(mutation.oid.clone(), NO_ANSWER.to_string());
+        settlement.unanswered(mutation, NO_ANSWER.to_string());
     }
     settlement
 }

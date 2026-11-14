@@ -1,6 +1,7 @@
 mod answers;
 mod config_file;
 mod days;
+mod doubt;
 mod environment;
 mod helper;
 mod ids;
@@ -16,6 +17,7 @@ pub use config_file::{
     Place, SecretsTightened, Uneditable,
 };
 pub use days::DayRepository;
+pub use doubt::{DoubtRepository, FieldsInDoubt};
 pub use environment::{Clock, Randomness};
 pub use helper::{
     ComputeFailure, CredentialError, CredentialSource, HelperError, HelperLauncher, RemoteHelper,

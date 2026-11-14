@@ -1,6 +1,7 @@
 mod accepted_kinds;
 mod answers;
 mod days;
+mod doubt;
 mod history;
 mod ids;
 mod items;
@@ -12,6 +13,7 @@ mod working;
 pub use accepted_kinds::accepted_kinds_repository_contract;
 pub use answers::answer_repository_contract;
 pub use days::day_repository_contract;
+pub use doubt::doubt_repository_contract;
 pub use history::{commit_clears_the_stage_contract, commit_repository_contract};
 pub use ids::id_repository_contract;
 pub use items::item_repository_contract;

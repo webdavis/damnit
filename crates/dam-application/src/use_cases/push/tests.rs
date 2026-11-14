@@ -4,6 +4,7 @@ mod answers;
 mod conflict_count;
 mod cut_short;
 mod deletes;
+mod doubt;
 mod empty_containers;
 mod holds;
 mod keys;

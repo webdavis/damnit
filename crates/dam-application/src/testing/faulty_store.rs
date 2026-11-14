@@ -7,6 +7,7 @@ use crate::ports::{ObjectRepository, StoreError, Transactional};
 use crate::testing::MemoryStore;
 
 mod answers;
+mod doubt;
 mod history;
 mod ids;
 mod items;

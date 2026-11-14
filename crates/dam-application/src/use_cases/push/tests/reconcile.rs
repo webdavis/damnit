@@ -87,6 +87,7 @@ fn an_unanswered_mutation_fails_with_no_answer_from_the_helper() {
             failed: vec![(oid(2), "no answer from helper".into())],
             unanswered: BTreeSet::from([oid(2)]),
             answered: vec![oid(1)],
+            doubted: vec![(oid(2), vec![])],
             ..Settlement::default()
         }
     );

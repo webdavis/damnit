@@ -72,3 +72,8 @@ fn it_keeps_the_id_repository_contract() {
 fn it_keeps_the_answer_repository_contract() {
     contract::answer_repository_contract(&store());
 }
+
+#[test]
+fn it_keeps_the_doubt_repository_contract() {
+    contract::doubt_repository_contract(&store());
+}

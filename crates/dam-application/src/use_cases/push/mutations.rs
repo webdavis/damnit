@@ -1,8 +1,10 @@
+use std::collections::BTreeSet;
+
 use dam_domain::{Change, Field, changed_fields};
 
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
-use crate::ports::Store;
+use crate::ports::{FieldsInDoubt, Store};
 use crate::remote::{MutationOp, RemoteCapabilities, RemoteMutation};
 use crate::use_cases::push::idempotency::key;
 use crate::use_cases::push::owed::OwedChanges;
@@ -20,6 +22,7 @@ pub(super) fn plan(
     remote: &RemoteConfig,
     mut changes: OwedChanges,
     refiles: &Refiles,
+    doubt: &FieldsInDoubt,
 ) -> Result<Plan, UseCaseError> {
     let mut plan = Plan {
         mutations: Vec::new(),
@@ -30,7 +33,8 @@ pub(super) fn plan(
     owed.sort_by_key(turn);
     for change in owed {
         let refiled = refiles.refiled(store, &remote.name, change.oid())?;
-        match mutation_for(store, caps, remote, &change, refiled)? {
+        let in_doubt = doubt.get(change.oid()).cloned().unwrap_or_default();
+        match mutation_for(store, caps, remote, &change, refiled, &in_doubt)? {
             Some(mut mutation) => {
                 let answers = store.answers(&remote.name, &mutation.oid)?;
                 mutation.idempotency_key = key(answers, &mutation);
@@ -48,6 +52,7 @@ fn mutation_for(
     remote: &RemoteConfig,
     change: &Change,
     refiled: Option<Refiled>,
+    in_doubt: &BTreeSet<Field>,
 ) -> Result<Option<RemoteMutation>, UseCaseError> {
     let object = change.object();
     if !caps.kinds.contains(&object.kind()) {
@@ -68,7 +73,11 @@ fn mutation_for(
             let changed = changed_fields(before, after);
             let declared: Vec<Field> = Field::ALL
                 .into_iter()
-                .filter(|f| changed.contains(f) || (refiled.is_some() && *f == Field::Path))
+                .filter(|f| {
+                    changed.contains(f)
+                        || in_doubt.contains(f)
+                        || (refiled.is_some() && *f == Field::Path)
+                })
                 .filter(|f| caps.fields.contains(f))
                 .collect();
             if declared.is_empty() {

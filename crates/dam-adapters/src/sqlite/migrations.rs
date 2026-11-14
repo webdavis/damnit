@@ -1,6 +1,6 @@
 use rusqlite::Connection;
 
-pub(super) const VERSION: u32 = 11;
+pub(super) const VERSION: u32 = 12;
 
 const V1: &str = r#"
 CREATE TABLE objects (oid TEXT PRIMARY KEY, kind TEXT NOT NULL, path TEXT NOT NULL, json TEXT NOT NULL);
@@ -82,6 +82,10 @@ const V11: &str = r#"
 CREATE TABLE answers (remote TEXT NOT NULL, oid TEXT NOT NULL, count INTEGER NOT NULL, PRIMARY KEY (remote, oid));
 "#;
 
+const V12: &str = r#"
+CREATE TABLE fields_in_doubt (remote TEXT NOT NULL, oid TEXT NOT NULL, field TEXT NOT NULL, PRIMARY KEY (remote, oid, field));
+"#;
+
 pub(super) fn migrate_above_user_version_in_one_transaction(
     conn: &mut Connection,
 ) -> Result<(), rusqlite::Error> {
@@ -123,6 +127,9 @@ pub(super) fn migrate_above_user_version_in_one_transaction(
     if current < 11 {
         tx.execute_batch(V11)?;
     }
+    if current < 12 {
+        tx.execute_batch(V12)?;
+    }
     tx.pragma_update(None, "user_version", VERSION)?;
     tx.commit()
 }
@@ -138,3 +145,6 @@ mod pulled_author_tests;
 
 #[cfg(test)]
 mod answer_count_tests;
+
+#[cfg(test)]
+mod doubt_tests;

@@ -6,6 +6,7 @@ mod commits;
 mod conflicts;
 mod days;
 mod details_json;
+mod doubt;
 mod file;
 mod ids;
 mod items;
