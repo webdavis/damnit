@@ -13,6 +13,7 @@ pub(in crate::lua_config) enum Change<'a, R> {
         entry: &'a dyn Fn(&Indent) -> String,
         as_written: &'a dyn Fn(&R) -> bool,
     },
+    Remove,
 }
 
 pub(in crate::lua_config) struct EditedFile<'a, R> {
@@ -45,8 +46,12 @@ impl<R> EditedFile<'_, R> {
             let edited = match &change {
                 Change::Add { .. } if names.contains(name) => Err(section.held_already()),
                 Change::Add { entry, .. } => section.add(text, entry),
+                Change::Remove => section.remove(text, names.contains(name)),
             }?;
-            names.insert(name.to_string());
+            match &change {
+                Change::Add { .. } => names.insert(name.to_string()),
+                Change::Remove => names.remove(name),
+            };
             self.check(
                 &section,
                 &change,
@@ -70,6 +75,7 @@ impl<R> EditedFile<'_, R> {
             Change::Add { as_written, .. } if !as_written(after) => {
                 format!("would not hold {table} {name}")
             }
+            Change::Remove if names.contains(name) => format!("would still hold {table} {name}"),
             _ if &names != expected => format!("would not keep every other {table}"),
             _ => return Ok(()),
         };

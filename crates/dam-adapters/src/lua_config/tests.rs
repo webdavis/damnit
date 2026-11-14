@@ -7,6 +7,7 @@ mod edit_checks;
 mod edit_files;
 mod examples;
 mod file_text;
+mod remove_token;
 mod secrets_file;
 mod secrets_kept;
 mod support;

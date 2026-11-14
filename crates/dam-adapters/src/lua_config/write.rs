@@ -7,6 +7,8 @@ mod lines;
 mod locate;
 mod lua_text;
 mod remote_entry;
+mod remove;
+mod remove_token;
 mod replace;
 mod section;
 mod token_entry;

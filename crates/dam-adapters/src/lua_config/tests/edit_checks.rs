@@ -36,6 +36,19 @@ fn a_remote_under_a_key_written_another_way_is_held_already() {
 }
 
 #[test]
+fn a_token_under_a_key_written_another_way_is_left_for_a_hand_edit() {
+    let before = "return { token = { [\"to\\x6fl\"] = { value = \"x\" } } }\n";
+    let folder = secrets(before);
+    let why = folder.file().remove_token("tool").unwrap_err();
+    assert_eq!(
+        why.to_string(),
+        "config: secrets.lua holds token tool under a key dam cannot edit. \
+         Remove token tool from it by hand."
+    );
+    assert_eq!(folder.text("secrets.lua"), before);
+}
+
+#[test]
 fn a_token_edit_that_would_hide_the_tokens_held_is_refused_and_the_file_kept() {
     let before = format!(
         "return {{ [\"tok\" .. \"en\"] = {{ laptop = {{ value = {:?} }} }} }}\n",
@@ -63,6 +76,29 @@ fn a_remote_edit_that_would_hide_the_remotes_held_is_refused_and_the_file_kept()
         "config: the new config.lua would not keep every other remote"
     );
     assert_eq!(folder.text("config.lua"), before);
+}
+
+#[test]
+fn a_removal_that_would_leave_the_token_held_is_refused_and_the_file_kept() {
+    let before =
+        "return { token = { tool = { value = \"x\" }, [\"to\\x6fl\"] = { value = \"y\" } } }\n";
+    let folder = secrets(before);
+    let why = folder.file().remove_token("tool").unwrap_err();
+    assert_eq!(
+        why.to_string(),
+        "config: the new secrets.lua would still hold token tool"
+    );
+    assert_eq!(folder.text("secrets.lua"), before);
+}
+
+#[test]
+fn a_token_edit_reads_secrets_lua_alone() {
+    let folder = Folder::new()
+        .with_config("return {\n  owner = = 1,\n}\n")
+        .with_secrets("return { remote = { work = { api_token = 5 } } }\n");
+    folder.file().add_token(&bare_token("tool")).unwrap();
+    folder.file().remove_token("tool").unwrap();
+    assert!(!folder.text("secrets.lua").contains("tool"));
 }
 
 #[test]
