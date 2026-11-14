@@ -25,19 +25,31 @@ fn adding_a_token_keeps_a_function_credential_and_comments_byte_for_byte() {
 }
 
 #[test]
+fn removing_a_token_keeps_a_function_credential_and_comments_byte_for_byte() {
+    let folder = secrets(&WRITTEN_BY_HAND.replace(
+        "  token = {\n",
+        "  token = {\n    tool = { value = \"x\" }, -- made by dam\n",
+    ));
+    folder.file().remove_token("tool").unwrap();
+    assert_eq!(folder.text("secrets.lua"), WRITTEN_BY_HAND);
+}
+
+#[test]
 fn a_refusal_while_checking_secrets_lua_never_quotes_its_text() {
     for before in [
-        "error(\"sekret-1234\")\nreturn { token = {} }\n",
+        "error(\"sekret-1234\")\nreturn { token = { tool = {} } }\n",
         "return {\n  remote = { todoist = { api_token = \"sekret-1234\" sekret } },\n}\n",
     ] {
         let folder = secrets(before);
-        let why = folder
-            .file()
-            .add_token(&bare_token("tool"))
-            .unwrap_err()
-            .to_string();
-        assert!(why.contains("secrets.lua"), "{why}");
-        assert!(!why.contains("sekret"), "{why}");
+        let file = folder.file();
+        for why in [
+            file.add_token(&bare_token("other")).unwrap_err(),
+            file.remove_token("tool").unwrap_err(),
+        ] {
+            let why = why.to_string();
+            assert!(why.contains("secrets.lua"), "{why}");
+            assert!(!why.contains("sekret"), "{why}");
+        }
         assert_eq!(folder.text("secrets.lua"), before);
     }
 }

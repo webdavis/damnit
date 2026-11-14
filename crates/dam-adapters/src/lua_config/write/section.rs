@@ -4,6 +4,7 @@ use super::insert::{Indent, insert};
 use super::lines::{indent_of_line, starts_its_line};
 use super::locate::{Located, TableLayout, Unwritable, locate};
 use super::lua_text::table_key;
+use super::remove::remove;
 
 pub(super) struct Section<'a> {
     pub(super) file: &'a str,
@@ -32,6 +33,25 @@ impl Section<'_> {
                     inner.leading, indent.leading
                 )
             })),
+        }
+    }
+
+    pub(super) fn remove(&self, text: &str, held: bool) -> Result<String, ConfigError> {
+        let located = self.locate(text)?;
+        let written = located
+            .section
+            .as_ref()
+            .and_then(|table| Some((table, self.position(table)?)));
+        let (file, table, entry) = (self.file, self.table, self.entry);
+        match written {
+            Some((layout, index)) => Ok(remove(text, layout, index)),
+            None if held => Err(ConfigError::Invalid(format!(
+                "{file} holds {table} {entry} under a key dam cannot edit. {}",
+                self.by_hand
+            ))),
+            None => Err(ConfigError::Invalid(format!(
+                "{file} holds no {table} {entry}"
+            ))),
         }
     }
 

@@ -21,6 +21,17 @@ fn a_config_lua_with_crlf_line_endings_keeps_them() {
 }
 
 #[test]
+fn a_secrets_lua_with_crlf_line_endings_keeps_them() {
+    let before = "return {\r\n  token = {\r\n    laptop = { value = \"x\" },\r\n  },\r\n}\r\n";
+    let folder = Folder::new().with_secrets(before);
+    folder.file().add_token(&bare_token("tool")).unwrap();
+    let text = folder.text("secrets.lua");
+    assert!(only_crlf(&text), "{text:?}");
+    folder.file().remove_token("tool").unwrap();
+    assert_eq!(folder.text("secrets.lua"), before);
+}
+
+#[test]
 fn a_blank_config_lua_reads_and_is_written_like_a_missing_one() {
     let missing = Folder::new();
     missing.file().add_remote(&todoist(), "todoist::").unwrap();
