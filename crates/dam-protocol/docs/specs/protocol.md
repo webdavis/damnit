@@ -136,6 +136,9 @@ written only when true, and its absence reads as false.
 ## Delivery
 
 Delivery is at least once. `dam` sends an unanswered mutation again with the same
-`idempotency_key`, a value derived from the commit and the object. A helper that turns one mutation
+`idempotency_key`, a value derived from the commit and the object, and keeps its commit unpushed
+until then. A helper answers `ok: false` only when the remote did nothing. When the remote may
+have done the work without saying so, as after a timeout, a lost connection or a server error, the
+helper leaves that mutation out of its results, and may leave out the mutations after it too. A helper that turns one mutation
 into several remote commands numbers them in the key's last character, which `dam` leaves free.
 Against a remote with no such key, a resend can duplicate.

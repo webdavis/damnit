@@ -52,6 +52,12 @@ pub fn serve(replies_in_order_by_method_and_path: HashMap<&'static str, Vec<Repl
 }
 
 pub fn serve_with(mut responder: impl FnMut(&Seen) -> Reply + Send + 'static) -> Loopback {
+    serve_or_hang_up(move |request| Some(responder(request)))
+}
+
+pub fn serve_or_hang_up(
+    mut responder: impl FnMut(&Seen) -> Option<Reply> + Send + 'static,
+) -> Loopback {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap_or_else(|e| panic!("bind: {e}"));
     let base = format!(
         "http://{}",
@@ -69,7 +75,9 @@ pub fn serve_with(mut responder: impl FnMut(&Seen) -> Reply + Send + 'static) ->
             if let Ok(mut l) = log.lock() {
                 l.push(request.clone());
             }
-            answer(reader.get_mut(), &responder(&request));
+            if let Some(reply) = responder(&request) {
+                answer(reader.get_mut(), &reply);
+            }
         }
     });
     Loopback { base, seen }
