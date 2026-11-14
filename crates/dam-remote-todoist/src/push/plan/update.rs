@@ -1,10 +1,10 @@
 use dam_protocol::{Mutation, WireObject};
 
-use super::{Failure, Plan, numbered};
+use super::{Failure, Plan, TreeChange, numbered};
 use crate::map::{RemoteId, Tree};
 use crate::push::carried::{Carries, PROJECT, SECTION, fields_the_container_cannot_carry};
 use crate::push::commands::{Args, Command, ItemWrite, args, command, item_args};
-use crate::push::shape::{Shape, shape_for};
+use crate::push::shape::{ItemPlace, Shape, shape_for};
 
 struct Commands<'m> {
     m: &'m Mutation,
@@ -33,6 +33,7 @@ pub fn update_plan(
         RemoteId::Item(_) => None,
     };
     let mut commands = Commands { m, sent: vec![] };
+    let mut changes = TreeChange::Nothing;
     match remote {
         RemoteId::Project(id) => {
             if changed("subject") {
@@ -54,10 +55,9 @@ pub fn update_plan(
         }
         RemoteId::Item(id) => {
             if changed("path") {
-                commands.push(
-                    "item_move",
-                    most_specific_container_move_args(tree, &id, object)?,
-                )?;
+                let to = item_place(tree, object)?;
+                commands.push("item_move", most_specific_container_move_args(&id, &to))?;
+                changes = TreeChange::MovesItem { id: id.clone(), to };
             }
             let mut item = item_args(object, ItemWrite::Update { changed: &m.fields });
             if !item.is_empty() {
@@ -76,7 +76,7 @@ pub fn update_plan(
     }
     Ok(Plan {
         commands: commands.sent,
-        creates: None,
+        changes,
         refused,
     })
 }
@@ -96,23 +96,20 @@ fn renamed(id: &str, object: &WireObject) -> Args {
     args([("id", id.into()), ("name", object.subject.clone().into())])
 }
 
-fn most_specific_container_move_args(
-    tree: &Tree,
-    id: &str,
-    object: &WireObject,
-) -> Result<Args, Failure> {
+fn item_place(tree: &Tree, object: &WireObject) -> Result<ItemPlace, Failure> {
     match shape_for(tree, object, &[]).map_err(Failure::OnlyThisMutation)? {
-        Shape::Item {
-            project_id,
-            section_id,
-            parent_id,
-        } => Ok(match (parent_id, section_id) {
-            (Some(p), _) => args([("id", id.into()), ("parent_id", p.into())]),
-            (None, Some(s)) => args([("id", id.into()), ("section_id", s.into())]),
-            (None, None) => args([("id", id.into()), ("project_id", project_id.into())]),
-        }),
+        Shape::Item(place) => Ok(place),
         Shape::Project { .. } | Shape::Section { .. } => Err(Failure::OnlyThisMutation(
             "a path change would move the task out of task position".into(),
         )),
     }
+}
+
+fn most_specific_container_move_args(id: &str, to: &ItemPlace) -> Args {
+    let (key, container) = match (&to.parent_id, &to.section_id) {
+        (Some(p), _) => ("parent_id", p),
+        (None, Some(s)) => ("section_id", s),
+        (None, None) => ("project_id", &to.project_id),
+    };
+    args([("id", id.into()), (key, container.clone().into())])
 }

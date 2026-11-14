@@ -10,7 +10,7 @@ use crate::api::{ApiError, SyncWrite, TodoistSync};
 use crate::map::Tree;
 use commands::Command;
 use created::add_created_to_tree;
-use plan::{missing_object, plan_for, resend_stable_temp_id};
+use plan::{TreeChange, missing_object, plan_for, resend_stable_temp_id};
 
 enum Failure {
     OnlyThisMutation(String),
@@ -75,8 +75,18 @@ fn apply(
     if let Some(why) = plan.refused {
         return Err(Failure::OnlyThisMutation(why));
     }
-    let Some(shape) = plan.creates else {
-        return Ok(m.remote_id.clone());
+    let shape = match plan.changes {
+        TreeChange::Creates(shape) => shape,
+        TreeChange::MovesItem { id, to } => {
+            let (section, parent) = (to.section_id.as_deref(), to.parent_id.as_deref());
+            tree.move_item(&id, &to.project_id, section, parent);
+            return Ok(m.remote_id.clone());
+        }
+        TreeChange::Removes(gone) => {
+            tree.remove(&gone);
+            return Ok(m.remote_id.clone());
+        }
+        TreeChange::Nothing => return Ok(m.remote_id.clone()),
     };
     let object = m.object.as_ref().ok_or(missing_object("create"))?;
     let id = written

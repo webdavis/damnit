@@ -76,10 +76,10 @@ fn depth_one_is_a_task_unless_something_lives_or_lands_under_it_then_a_section()
     let t = tree();
     assert!(matches!(
         shape_for(&t, &object("Work/", "Later"), &[]).unwrap(),
-        Shape::Item {
+        Shape::Item(ItemPlace {
             section_id: None,
             ..
-        }
+        })
     ));
     assert!(matches!(
         shape_for(&t, &object("Work/", "Later"), &["Work/Later/".into()]).unwrap(),
@@ -95,11 +95,11 @@ fn depth_one_is_a_task_unless_something_lives_or_lands_under_it_then_a_section()
 fn deeper_segments_name_a_section_then_parent_tasks_by_content() {
     let t = tree();
     match shape_for(&t, &object("Work/Now/", "eggs"), &[]).unwrap() {
-        Shape::Item {
+        Shape::Item(ItemPlace {
             project_id,
             section_id,
             parent_id,
-        } => {
+        }) => {
             assert_eq!(project_id, "p1");
             assert_eq!(section_id.as_deref(), Some("s1"));
             assert!(parent_id.is_none());
@@ -107,7 +107,7 @@ fn deeper_segments_name_a_section_then_parent_tasks_by_content() {
         other => panic!("{other:?}"),
     }
     match shape_for(&t, &object("Work/Now/milk/", "oat"), &[]).unwrap() {
-        Shape::Item { parent_id, .. } => assert_eq!(parent_id.as_deref(), Some("i1")),
+        Shape::Item(ItemPlace { parent_id, .. }) => assert_eq!(parent_id.as_deref(), Some("i1")),
         other => panic!("{other:?}"),
     }
 }

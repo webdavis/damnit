@@ -1,4 +1,4 @@
-use super::fixtures::{mutation, sync_body, task, with_fields};
+use super::fixtures::{mutation, sync_body, sync_body_with_two_projects, task, with_fields};
 use crate::api::fake::FakeTodoist;
 use crate::push::push;
 
@@ -56,7 +56,7 @@ fn the_commands_of_one_mutation_have_distinct_uuids() {
 
 #[test]
 fn a_refused_command_fails_only_its_own_mutation() {
-    let api = FakeTodoist::new(sync_body()).refusing("item_update");
+    let api = FakeTodoist::new(sync_body_with_two_projects()).refusing("item_update");
     let mutations = vec![
         mutation(
             "create",
@@ -73,7 +73,7 @@ fn a_refused_command_fails_only_its_own_mutation() {
             ),
             &["subject"],
         ),
-        mutation("delete", 3, Some("p:p1"), None),
+        mutation("delete", 3, Some("p:p2"), None),
     ];
     let response = push(&api, mutations).unwrap();
     assert!(response.results[0].ok());

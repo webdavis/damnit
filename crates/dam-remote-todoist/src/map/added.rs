@@ -10,6 +10,14 @@ pub(super) struct AddedThisPush {
     pub(super) item_by_place_and_content: HashMap<(String, String), String>,
 }
 
+impl AddedThisPush {
+    pub(super) fn forget(&mut self, id: &str) {
+        self.project_by_path.retain(|_, kept| kept != id);
+        self.section_by_path.retain(|_, kept| kept != id);
+        self.item_by_place_and_content.retain(|_, kept| kept != id);
+    }
+}
+
 impl Tree {
     pub fn add_project(&mut self, p: Project) {
         let id = p.id.clone();

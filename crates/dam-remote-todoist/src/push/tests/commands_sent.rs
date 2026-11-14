@@ -1,10 +1,12 @@
-use super::fixtures::{mutation, sync_body, task, task_with_dates_cleared, with_fields};
+use super::fixtures::{
+    mutation, sync_body, sync_body_with_two_projects, task, task_with_dates_cleared, with_fields,
+};
 use crate::api::fake::FakeTodoist;
 use crate::push::push;
 
 #[test]
 fn creates_updates_and_deletes_become_the_right_commands() {
-    let api = FakeTodoist::new(sync_body());
+    let api = FakeTodoist::new(sync_body_with_two_projects());
     let mutations = vec![
         mutation(
             "create",
@@ -21,7 +23,7 @@ fn creates_updates_and_deletes_become_the_right_commands() {
             ),
             &["done", "subject"],
         ),
-        mutation("delete", 3, Some("p:p1"), None),
+        mutation("delete", 3, Some("p:p2"), None),
         mutation(
             "create",
             4,

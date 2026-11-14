@@ -4,17 +4,16 @@ use crate::map::Tree;
 
 #[derive(Debug)]
 pub enum Shape {
-    Project {
-        parent_id: Option<String>,
-    },
-    Section {
-        project_id: String,
-    },
-    Item {
-        project_id: String,
-        section_id: Option<String>,
-        parent_id: Option<String>,
-    },
+    Project { parent_id: Option<String> },
+    Section { project_id: String },
+    Item(ItemPlace),
+}
+
+#[derive(Debug)]
+pub struct ItemPlace {
+    pub project_id: String,
+    pub section_id: Option<String>,
+    pub parent_id: Option<String>,
 }
 
 pub fn shape_for(
@@ -52,11 +51,11 @@ fn section_if_anything_lives_or_lands_under_it(
     if tree.has_children_at(&own) || containers_filled_this_push.contains(&own) {
         return Shape::Section { project_id };
     }
-    Shape::Item {
+    Shape::Item(ItemPlace {
         project_id,
         section_id: None,
         parent_id: None,
-    }
+    })
 }
 
 fn task_under_parent_tasks_by_content(
@@ -81,11 +80,11 @@ fn task_under_parent_tasks_by_content(
         parent_id = Some(id.to_string());
         walked = format!("{walked}{segment}/");
     }
-    Ok(Shape::Item {
+    Ok(Shape::Item(ItemPlace {
         project_id,
         section_id,
         parent_id,
-    })
+    }))
 }
 
 #[cfg(test)]

@@ -1,3 +1,4 @@
+mod removal;
 mod update;
 
 use dam_protocol::{Mutation, WireObject};
@@ -6,13 +7,20 @@ use super::Failure;
 use super::commands::{
     Command, ItemWrite, args, command, creating_command, item_args, repeatable_command_uuid,
 };
-use super::shape::{Shape, shape_for};
+use super::shape::{ItemPlace, Shape, shape_for};
 use crate::map::{RemoteId, Tree};
 
 pub struct Plan {
     pub commands: Vec<Command>,
-    pub creates: Option<Shape>,
+    pub changes: TreeChange,
     pub refused: Option<String>,
+}
+
+pub enum TreeChange {
+    Nothing,
+    Creates(Shape),
+    MovesItem { id: String, to: ItemPlace },
+    Removes(RemoteId),
 }
 
 pub fn resend_stable_temp_id(m: &Mutation) -> &str {
@@ -25,14 +33,7 @@ pub fn plan_for(
     containers_filled_this_push: &[String],
 ) -> Result<Plan, Failure> {
     match m.op.as_str() {
-        "delete" => {
-            let (verb, id) = delete_verb(addressed(m, "delete")?);
-            Ok(Plan {
-                commands: vec![command(verb, numbered(m, 0)?, args([("id", id.into())]))],
-                creates: None,
-                refused: None,
-            })
-        }
+        "delete" => removal::removal_plan(tree, m, addressed(m, "delete")?),
         "create" => {
             let object = m.object.as_ref().ok_or(missing_object("create"))?;
             create_plan(tree, m, object, containers_filled_this_push)
@@ -80,11 +81,11 @@ fn create_plan(
                 ]),
             ));
         }
-        Shape::Item {
+        Shape::Item(ItemPlace {
             project_id,
             section_id,
             parent_id,
-        } => {
+        }) => {
             let mut item = item_args(object, ItemWrite::Create);
             item.insert("project_id".into(), project_id.clone().into());
             if let Some(s) = section_id {
@@ -105,7 +106,7 @@ fn create_plan(
     }
     Ok(Plan {
         commands,
-        creates: Some(shape),
+        changes: TreeChange::Creates(shape),
         refused: None,
     })
 }
@@ -125,12 +126,4 @@ fn addressed(m: &Mutation, op: &str) -> Result<RemoteId, Failure> {
         .ok_or_else(|| Failure::OnlyThisMutation(format!("{op} without a Todoist id")))?;
     text.parse()
         .map_err(|e| Failure::OnlyThisMutation(format!("{op} with an unusable Todoist id: {e}")))
-}
-
-fn delete_verb(remote: RemoteId) -> (&'static str, String) {
-    match remote {
-        RemoteId::Project(id) => ("project_delete", id),
-        RemoteId::Section(id) => ("section_delete", id),
-        RemoteId::Item(id) => ("item_delete", id),
-    }
 }
