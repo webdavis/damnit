@@ -4,7 +4,9 @@ use std::rc::Rc;
 use dam_domain::{Field, Kind};
 
 use crate::ports::HelperError;
-use crate::remote::{MutationOutcome, MutationVerdict, PullOutcome, RemoteMutation};
+use crate::remote::{
+    MutationOutcome, MutationVerdict, PullOutcome, RemoteCapabilities, RemoteMutation,
+};
 use crate::testing::{ScriptedHelper, ScriptedLauncher, task_caps};
 
 pub type Pushed = Rc<RefCell<Vec<RemoteMutation>>>;
@@ -41,11 +43,29 @@ pub fn pulling(outcome: PullOutcome) -> ScriptedLauncher {
 pub fn pushing(
     answer: impl Fn(&[RemoteMutation]) -> Vec<MutationOutcome> + Clone + 'static,
 ) -> (ScriptedLauncher, Pushed) {
+    pushing_with(task_caps(), answer)
+}
+
+pub fn pushing_to_a_remote_that_removes_only_empty_containers(
+    answer: impl Fn(&[RemoteMutation]) -> Vec<MutationOutcome> + Clone + 'static,
+) -> (ScriptedLauncher, Pushed) {
+    let caps = RemoteCapabilities {
+        removes_only_empty_containers: true,
+        ..task_caps()
+    };
+    pushing_with(caps, answer)
+}
+
+fn pushing_with(
+    caps: RemoteCapabilities,
+    answer: impl Fn(&[RemoteMutation]) -> Vec<MutationOutcome> + Clone + 'static,
+) -> (ScriptedLauncher, Pushed) {
     let pushed = Pushed::default();
     let seen = pushed.clone();
     let launcher = ScriptedLauncher::launching(move || {
         let answer = answer.clone();
         ScriptedHelper {
+            caps: caps.clone(),
             push_answer: Box::new(move |ms| Ok(answer(ms))),
             pushed: seen.clone(),
             ..ScriptedHelper::answering(Ok(PullOutcome::default()))

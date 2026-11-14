@@ -133,6 +133,7 @@ fn every_field_a_mutation_names_reads_back_from_a_helpers_capabilities() {
         fields: mutation.fields,
         credentials: vec![],
         incremental: false,
+        removes_only_empty_containers: false,
     });
     assert_eq!(caps.fields, Field::ALL);
 }

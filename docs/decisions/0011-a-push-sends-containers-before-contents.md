@@ -20,7 +20,9 @@ remote holds each object from its remote snapshot, so a push sends in waves: eac
 change whose blockers the remote has accepted, then the next wave reads the outcomes. A delete whose
 blocker was refused, held or never sent fails with a reason naming that object and goes on the retry
 list. An object moved outside the remote's `path` is never sent, so it holds the delete until the
-person moves it back inside.
+person moves it back inside. A delete also waits while this push still has a create or a move that
+files an object under the deleted object, and once that lands it holds the delete like any other.
+Decision 0012 covers a delete held only because two objects share a folder.
 
 ## Consequence
 
