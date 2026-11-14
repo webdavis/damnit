@@ -6,6 +6,7 @@ mod early_answers;
 mod failures;
 mod fixtures;
 mod idempotency;
+mod moved_containers;
 mod moves;
 mod reasons;
 mod refusals;
