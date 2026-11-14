@@ -55,6 +55,7 @@ impl Dam<'_> {
             store.set_attempts(&remote.name, &base.oid, &[])?;
         }
         for oid in &settlement.dropped.unused {
+            store.count_answer(&remote.name, oid)?;
             store.set_attempts(&remote.name, oid, &[])?;
         }
         let mut retries = earlier_retries.to_vec();
