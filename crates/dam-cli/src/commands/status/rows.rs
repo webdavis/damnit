@@ -1,17 +1,19 @@
 use std::collections::BTreeSet;
 
-use dam_application::{Access, Conflict};
+use dam_application::Access;
 use dam_domain::{
     Change, Field, Object, Oid, Timestamp, TokenAuthor, When, changed_fields, touched_fields,
 };
 use serde::Serialize;
 
-use crate::view::{Line, display, optional_display, optional_wire, wire};
+use crate::view::{display, optional_display, optional_wire};
 
+mod conflict;
 mod details;
 mod lines;
 mod values;
 
+pub(super) use conflict::ConflictRow;
 pub(crate) use details::{DetailsView, visible};
 
 fn what_changed(change: &Change, oid: &str) -> String {
@@ -135,41 +137,6 @@ pub(crate) fn the_owner_to(reader: &dyn Access) -> &'static str {
     match reader.token() {
         Some(_) => "owner",
         None => "you",
-    }
-}
-
-#[derive(Serialize)]
-pub(super) struct ConflictRow<'a> {
-    #[serde(serialize_with = "display")]
-    oid: &'a Oid,
-    remote: &'a str,
-    #[serde(serialize_with = "wire")]
-    ours: &'a Object,
-    #[serde(serialize_with = "wire")]
-    theirs: &'a Object,
-}
-
-impl<'a> ConflictRow<'a> {
-    pub(super) fn new(c: &'a Conflict) -> ConflictRow<'a> {
-        ConflictRow {
-            oid: &c.oid,
-            remote: &c.remote.0,
-            ours: &c.ours,
-            theirs: &c.theirs,
-        }
-    }
-
-    pub(super) fn lines(&self) -> [Line; 2] {
-        let oid = self.oid.short();
-        [
-            Line::Row(format!(
-                "  {oid}  {}  ours: {:?}  theirs: {:?}",
-                self.remote,
-                self.ours.base().subject,
-                self.theirs.base().subject,
-            )),
-            Line::Whole(format!("    dam resolve {oid} --ours|--theirs")),
-        ]
     }
 }
 
