@@ -41,11 +41,16 @@ fn piped_output_holds_no_color() {
 fn forced_color_paints_the_same_layout() {
     let _guard = support::guard("forced_color_paints_the_same_layout");
     let sb = small_config();
-    let plain = sb.output(&["config", "list"]);
-    let painted = forced(&sb, &["config", "list"], &[]);
-    assert!(painted.status.success(), "{painted:?}");
-    assert!(painted.stdout.contains(&ESCAPE));
-    assert_eq!(without_escapes(&painted.stdout), plain.stdout);
+    for line in [
+        &["config", "list"][..],
+        &["config", "get", "remote.todoist"],
+    ] {
+        let plain = sb.output(line);
+        let painted = forced(&sb, line, &[]);
+        assert!(painted.status.success(), "{painted:?}");
+        assert!(painted.stdout.contains(&ESCAPE), "{line:?}");
+        assert_eq!(without_escapes(&painted.stdout), plain.stdout, "{line:?}");
+    }
 }
 
 #[test]
@@ -65,9 +70,14 @@ fn no_color_and_the_flag_each_win_over_forced_color() {
 fn machine_answers_hold_no_color_when_it_is_forced() {
     let _guard = support::guard("machine_answers_hold_no_color_when_it_is_forced");
     let sb = small_config();
-    for format in ["--json", "--toon"] {
-        let out = forced(&sb, &["config", "list", format], &[]);
+    for line in [
+        &["config", "list", "--json"][..],
+        &["config", "list", "--toon"],
+        &["config", "get", "owner", "--json"],
+        &["config", "get", "owner", "--toon"],
+    ] {
+        let out = forced(&sb, line, &[]);
         assert!(out.status.success(), "{out:?}");
-        assert!(!out.stdout.contains(&ESCAPE), "{format}");
+        assert!(!out.stdout.contains(&ESCAPE), "{line:?}");
     }
 }

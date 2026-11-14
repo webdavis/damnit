@@ -47,6 +47,7 @@ pub(crate) fn need(command: &Command) -> Need {
         },
         Command::Config(a) => match a.command {
             ConfigCommand::List => Need::OwnerOnly("config list"),
+            ConfigCommand::Get { .. } => Need::OwnerOnly("config get"),
             ConfigCommand::PrintDefault => Need::OwnerOnly("config print-default"),
             ConfigCommand::Validate => Need::OwnerOnly("config validate"),
         },
