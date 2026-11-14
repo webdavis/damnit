@@ -1,27 +1,39 @@
+use std::path::PathBuf;
+
 use dam_application::{Config, ConfigError, Standing, TokenConfig, TokenTerms};
 use dam_domain::Token;
 use tempfile::TempDir;
 
-use crate::lua_config::LuaConfigFile;
+use crate::lua_config::{LoadedConfig, LuaConfigFile};
 
 pub(super) struct Folder {
-    dir: TempDir,
+    _dir: TempDir,
+    root: PathBuf,
 }
 
 impl Folder {
     pub(super) fn new() -> Folder {
-        Folder {
-            dir: tempfile::tempdir().unwrap(),
-        }
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().to_path_buf();
+        Folder { _dir: dir, root }
+    }
+
+    pub(super) fn under_a_long_folder_name() -> Folder {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir
+            .path()
+            .join("a-folder-name-longer-than-lua-keeps".repeat(3));
+        std::fs::create_dir(&root).unwrap();
+        Folder { _dir: dir, root }
     }
 
     pub(super) fn with_config(self, text: &str) -> Folder {
-        std::fs::write(self.dir.path().join("config.lua"), text).unwrap();
+        std::fs::write(self.path("config.lua"), text).unwrap();
         self
     }
 
     pub(super) fn with_secrets(self, text: &str) -> Folder {
-        std::fs::write(self.dir.path().join("secrets.lua"), text).unwrap();
+        std::fs::write(self.path("secrets.lua"), text).unwrap();
         self
     }
 
@@ -30,15 +42,17 @@ impl Folder {
     }
 
     pub(super) fn path(&self, name: &str) -> std::path::PathBuf {
-        self.dir.path().join(name)
+        self.root.join(name)
     }
 
-    pub(super) fn file(&self) -> LuaConfigFile {
-        LuaConfigFile::new(self.dir.path().join("config.lua"))
+    pub(super) fn loaded(&self) -> LoadedConfig {
+        LuaConfigFile::new(self.path("config.lua")).load().unwrap()
     }
 
     pub(super) fn load(&self) -> Result<Config, ConfigError> {
-        self.file().load()
+        LuaConfigFile::new(self.path("config.lua"))
+            .load()
+            .map(|loaded| loaded.config)
     }
 
     pub(super) fn refusal(&self) -> String {
@@ -50,8 +64,10 @@ pub(super) fn config(text: &str) -> Folder {
     Folder::new().with_config(text)
 }
 
+pub(super) const ONE_REMOTE: &str = "return { remote = { todoist = { url = 'todoist::' } } }";
+
 pub(super) fn secrets(text: &str) -> Folder {
-    config("return { remote = { todoist = { url = 'todoist::' } } }").with_secrets(text)
+    config(ONE_REMOTE).with_secrets(text)
 }
 
 pub(super) fn value(fill: u8) -> String {

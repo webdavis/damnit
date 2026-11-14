@@ -62,6 +62,7 @@ fn an_error_names_the_whole_path_however_long_the_folder_name() {
     std::fs::write(&path, "return {\n  owner = = 1,\n}\n").unwrap();
     let why = LuaConfigFile::new(path.clone())
         .load()
+        .map(|loaded| loaded.config)
         .unwrap_err()
         .to_string();
     assert!(why.contains(&format!("{}:2:", path.display())), "{why}");

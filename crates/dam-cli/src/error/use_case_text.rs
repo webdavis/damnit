@@ -78,6 +78,9 @@ impl fmt::Display for UseCaseText<'_> {
             UseCaseError::Credential(CredentialError::EnvUnset { name, var }) => {
                 write!(f, "{name}: the variable {var} is not set")
             }
+            UseCaseError::Credential(CredentialError::ComputeFailed { remote, name, why }) => {
+                write!(f, "remote {}: computing {name} failed: {why}", remote.0)
+            }
             UseCaseError::Parse(s) => write!(f, "{s}"),
             UseCaseError::Query(e) => write!(f, "{e}"),
             UseCaseError::NotAnOid(text) => write!(

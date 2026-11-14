@@ -1,4 +1,5 @@
 use crate::config::{CredentialSpec, RemoteConfig};
+use crate::ports::RemoteName;
 use crate::remote::{MutationOutcome, PullOutcome, RemoteCapabilities, RemoteMutation};
 use crate::secret::Secret;
 
@@ -46,8 +47,19 @@ pub trait HelperLauncher {
 #[derive(Debug, PartialEq, Eq)]
 pub enum CredentialError {
     Missing(String),
-    CommandFailed { name: String, why: String },
-    EnvUnset { name: String, var: String },
+    CommandFailed {
+        name: String,
+        why: String,
+    },
+    EnvUnset {
+        name: String,
+        var: String,
+    },
+    ComputeFailed {
+        remote: RemoteName,
+        name: String,
+        why: String,
+    },
 }
 
 pub trait CredentialSource {

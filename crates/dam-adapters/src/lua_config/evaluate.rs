@@ -44,19 +44,25 @@ pub(super) fn evaluate(
     }
 }
 
-fn short_name_lua_never_truncates(path: &Path) -> String {
+pub(super) fn short_name_lua_never_truncates(path: &Path) -> String {
     path.file_name()
         .map_or_else(String::new, |name| name.to_string_lossy().into_owned())
 }
 
 fn naming_the_whole_path(path: &Path, short_name: &str, error: &mlua::Error) -> String {
     let message = lua_message(error);
-    match message.strip_prefix(short_name) {
-        Some(line_and_reason) if line_and_reason.starts_with(':') => {
-            format!("{}{line_and_reason}", path.display())
-        }
-        _ => message,
-    }
+    located_by_the_whole_path(path, short_name, &message).unwrap_or(message)
+}
+
+pub(super) fn located_by_the_whole_path(
+    path: &Path,
+    short_name: &str,
+    message: &str,
+) -> Option<String> {
+    let line_and_reason = message.strip_prefix(short_name)?;
+    line_and_reason
+        .starts_with(':')
+        .then(|| format!("{}{line_and_reason}", path.display()))
 }
 
 fn only_where_it_stopped(path: &Path, short_name: &str, error: &mlua::Error) -> String {

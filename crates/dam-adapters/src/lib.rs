@@ -16,7 +16,7 @@ pub use credentials::ProcessCredentialSource;
 pub use dam_protocol::{WireAttendee, WireConference, WirePerson};
 pub use day_doc::{DayDoc, TaskStateDoc, day_from_doc, day_to_doc};
 pub use helper_process::ProcessLauncher;
-pub use lua_config::LuaConfigFile;
+pub use lua_config::{ConfiguredCredentials, LoadedConfig, LuaConfigFile};
 pub use process_details::process_details;
 pub use random::OsRandom;
 pub use sqlite::{OpenError, SqliteStore};
