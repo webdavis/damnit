@@ -6,7 +6,7 @@ pub enum Failure {
     OnlyThisMutation(String),
     Unanswered(String),
     Unreachable(String),
-    StopsThePush(ApiError),
+    StopsThePush(String),
 }
 
 const FIRST_SERVER_ERROR: u16 = 500;
@@ -14,7 +14,7 @@ const FIRST_SERVER_ERROR: u16 = 500;
 impl From<ApiError> for Failure {
     fn from(e: ApiError) -> Failure {
         match e {
-            rate @ ApiError::RateLimited { .. } => Failure::StopsThePush(rate),
+            rate @ ApiError::RateLimited { .. } => Failure::StopsThePush(rate.to_string()),
             ApiError::Http { status, .. } if status < FIRST_SERVER_ERROR => {
                 Failure::OnlyThisMutation(e.to_string())
             }
