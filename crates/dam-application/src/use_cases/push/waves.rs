@@ -9,7 +9,19 @@ pub(super) struct Sent {
     pub(super) mutations: usize,
     pub(super) answered: usize,
     pub(super) held: usize,
+    pub(super) skipped: usize,
     pub(super) stopped_by: Option<HelperError>,
+}
+
+impl Sent {
+    pub(super) fn absorb(&mut self, later: Sent) {
+        self.settlement.absorb(later.settlement);
+        self.mutations += later.mutations;
+        self.answered += later.answered;
+        self.held += later.held;
+        self.skipped += later.skipped;
+        self.stopped_by = later.stopped_by;
+    }
 }
 
 pub(super) fn send_in_waves(
@@ -44,7 +56,7 @@ pub(super) fn send_in_waves(
         removals.record(&wave.ready, &settled);
         sent.settlement.absorb(settled);
         if let Some(stop) = answer.stopped_by {
-            sent.settlement.absorb(reconcile(&pending, vec![]));
+            sent.settlement.absorb(Settlement::never_sent(&pending));
             sent.stopped_by = Some(stop);
             break;
         }

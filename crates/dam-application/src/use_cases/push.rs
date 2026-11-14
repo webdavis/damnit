@@ -2,7 +2,7 @@ use dam_domain::{CommitRecord, Oid, Permission, Subject};
 
 use crate::config::RemoteConfig;
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{Notice, RemoteHelper, RemoteName};
+use crate::ports::{RemoteHelper, RemoteName};
 use crate::remote::RemoteCapabilities;
 use crate::service::{Dam, Remotes};
 use crate::use_cases::atomically::atomically;
@@ -47,16 +47,15 @@ impl Dam<'_> {
         remote: &RemoteConfig,
     ) -> Result<PushReport, UseCaseError> {
         let unpushed = self.store.unpushed(&remote.name)?;
-        let doubt = self.store.fields_in_doubt(&remote.name)?;
-        let changes = changes_to_send(self.store, remote, &unpushed, &doubt)?;
-        let removals = Removals::new(self.store, &remote.name, caps, &changes)?;
-        let refiles = Refiles::new(self.store, &remote.name, caps, &changes)?;
-        let Plan { mutations, skipped } =
-            plan(self.store, caps, remote, changes, &refiles, &doubt)?;
-        let sent = send_in_waves(helper, removals, mutations)?;
-        atomically(self.store, || {
-            self.settle_push(remote, &unpushed, &sent.settlement)
-        })?;
+        let changes = changes_to_send(self.store, remote, &unpushed)?;
+        let mut sent = self.push_round(helper, caps, remote, &unpushed, changes, &[])?;
+        let created = &sent.settlement.created;
+        let follow_ups = follow_ups(self.store, &remote.name, created)?;
+        if sent.stopped_by.is_none() && !follow_ups.is_empty() {
+            let earlier_retries = sent.settlement.retries();
+            let later = self.push_round(helper, caps, remote, &[], follow_ups, &earlier_retries)?;
+            sent.absorb(later);
+        }
         if let Some(by) = sent.stopped_by {
             return Err(UseCaseError::PushStopped {
                 by,
@@ -70,43 +69,30 @@ impl Dam<'_> {
             sent: sent.mutations,
             succeeded: sent.mutations.saturating_sub(refused),
             failed: sent.settlement.failed,
-            skipped,
+            skipped: sent.skipped,
         })
     }
 
-    fn settle_push(
+    fn push_round(
         &self,
+        helper: &mut dyn RemoteHelper,
+        caps: &RemoteCapabilities,
         remote: &RemoteConfig,
         unpushed: &[CommitRecord],
-        settlement: &Settlement,
-    ) -> Result<(), UseCaseError> {
-        let store = self.store;
-        for (oid, id) in &settlement.map {
-            store.map_remote_id(&remote.name, oid, id)?;
-        }
-        for oid in &settlement.clear {
-            store.clear_remote_mapping(&remote.name, oid)?;
-        }
-        for after in &settlement.snapshot {
-            store.set_remote_snapshot(&remote.name, after)?;
-        }
-        for (oid, why) in &settlement.failed {
-            store.add_notice(&Notice::PushFailed {
-                remote: remote.name.clone(),
-                oid: oid.clone(),
-                why: why.clone(),
-            })?;
-        }
-        for oid in &settlement.answered {
-            store.count_answer(&remote.name, oid)?;
-        }
-        settle_doubt(store, &remote.name, settlement)?;
-        store.set_push_retries(&remote.name, &settlement.retries())?;
-        for id in settlement.pushed(unpushed) {
-            store.mark_pushed(&remote.name, id)?;
-        }
-        store.set_last_push(&remote.name, self.clock.now())?;
-        Ok(())
+        changes: OwedChanges,
+        earlier_retries: &[Oid],
+    ) -> Result<Sent, UseCaseError> {
+        let doubt = self.store.fields_in_doubt(&remote.name)?;
+        let removals = Removals::new(self.store, &remote.name, caps, &changes)?;
+        let refiles = Refiles::new(self.store, &remote.name, caps, &changes)?;
+        let Plan { mutations, skipped } =
+            plan(self.store, caps, remote, changes, &refiles, &doubt)?;
+        let mut sent = send_in_waves(helper, removals, mutations)?;
+        sent.skipped = skipped;
+        atomically(self.store, || {
+            self.settle_push(remote, unpushed, &sent.settlement, earlier_retries)
+        })?;
+        Ok(sent)
     }
 }
 
@@ -118,15 +104,14 @@ mod reconcile;
 mod refiles;
 mod removals;
 mod sending_order;
+mod settle;
 mod waves;
 
-use doubt::settle_doubt;
 use mutations::{Plan, plan};
-use owed::changes_to_send;
-use reconcile::Settlement;
+use owed::{OwedChanges, changes_to_send, follow_ups};
 use refiles::Refiles;
 use removals::Removals;
-use waves::send_in_waves;
+use waves::{Sent, send_in_waves};
 
 #[cfg(test)]
 mod tests;

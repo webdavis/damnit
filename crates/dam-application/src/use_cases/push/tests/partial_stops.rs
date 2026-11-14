@@ -1,6 +1,6 @@
 use crate::errors::UseCaseError;
 use crate::ports::HelperError;
-use crate::remote::{MutationOutcome, MutationVerdict, PushOutcome};
+use crate::remote::{MutationOp, MutationOutcome, MutationVerdict, PushOutcome};
 use crate::testing::prelude::*;
 use crate::testing::{
     Pushed, Scenario, ScriptedHelper, ScriptedLauncher, accepting_all, oid, pushing,
@@ -82,6 +82,7 @@ fn a_stop_on_the_first_call_keeps_what_the_helper_answered_before_it() {
     let resent: Vec<_> = second
         .borrow()
         .iter()
+        .filter(|m| m.op == MutationOp::Create)
         .map(|m| (m.oid.clone(), m.idempotency_key.clone()))
         .collect();
     let first_keys: Vec<_> = first.borrow()[1..]

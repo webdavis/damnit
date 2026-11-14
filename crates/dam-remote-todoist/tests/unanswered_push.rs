@@ -36,8 +36,11 @@ fn one_round(fault: Fault) {
     let upstream = upstream.lock().unwrap();
     assert_eq!(upstream.item("Ada").len(), 1, "{:?}", upstream.items);
     let received = &upstream.uuids_received;
-    assert_eq!(received.len(), 2, "{received:?}");
     assert_eq!(received[0], received[1], "the resend minted a fresh uuid");
+    assert!(
+        !received[2..].contains(&received[0]),
+        "the update that follows a create in doubt has uuids of its own: {received:?}"
+    );
     assert!(s.store.remote_id(&todoist(), &oid(1)).unwrap().is_some());
     assert!(s.store.unpushed(&todoist()).unwrap().is_empty());
 }

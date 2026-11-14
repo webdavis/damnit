@@ -5,6 +5,7 @@ use dam_helper::testing::{self, Loopback, Reply, Seen};
 use serde_json::{Value, json};
 
 mod cut_short;
+mod item_commands;
 pub mod undocumented;
 
 use cut_short::Cut;
@@ -49,6 +50,10 @@ impl Held {
     pub fn behaving(mut self, undocumented: Undocumented) -> Held {
         self.undocumented = undocumented;
         self
+    }
+
+    pub fn fail_after_the_next_write(&mut self, fault: Fault) {
+        self.fault_after_the_next_write = Some(fault);
     }
 
     pub fn refusing_once(mut self, command_type: &'static str) -> Held {
@@ -108,8 +113,10 @@ impl Held {
                     self.items.push(json!({"id": id, "content": args["content"], "project_id": args["project_id"], "section_id": args["section_id"], "parent_id": args["parent_id"], "priority": 1, "checked": false, "is_deleted": false}));
                 }
                 "item_close" => self.close(args["id"].as_str().unwrap()),
+                "item_uncomplete" => self.reopen(args["id"].as_str().unwrap()),
                 "item_delete" => self.delete_with_everything_under(args["id"].as_str().unwrap()),
                 "item_move" => self.move_item(args),
+                "item_update" => self.update(args),
                 other => {
                     let refused = json!({"error": format!("this fake does not model {other}")});
                     verdicts.insert(uuid, refused);
@@ -120,48 +127,6 @@ impl Held {
             verdicts.insert(uuid, "ok".into());
         }
         json!({"sync_status": verdicts, "temp_id_mapping": issued_ids})
-    }
-
-    fn close(&mut self, id: &str) {
-        let closed = self.items.iter_mut().find(|i| i["id"] == id).unwrap();
-        closed["checked"] = true.into();
-    }
-
-    fn move_item(&mut self, args: &Value) {
-        let (project, section, parent) = if let Some(parent) = args["parent_id"].as_str() {
-            let under = self.items.iter().find(|i| i["id"] == parent).unwrap();
-            (
-                under["project_id"].clone(),
-                under["section_id"].clone(),
-                parent.into(),
-            )
-        } else if let Some(section) = args["section_id"].as_str() {
-            let within = self.sections.iter().find(|s| s["id"] == section).unwrap();
-            (within["project_id"].clone(), section.into(), Value::Null)
-        } else {
-            (args["project_id"].clone(), Value::Null, Value::Null)
-        };
-        let moved = self
-            .items
-            .iter_mut()
-            .find(|i| i["id"] == args["id"])
-            .unwrap();
-        moved["project_id"] = project;
-        moved["section_id"] = section;
-        moved["parent_id"] = parent;
-    }
-
-    fn delete_with_everything_under(&mut self, id: &str) {
-        let under: Vec<String> = self
-            .items
-            .iter()
-            .filter(|i| i["parent_id"] == id)
-            .filter_map(|i| i["id"].as_str().map(str::to_string))
-            .collect();
-        for child in under {
-            self.delete_with_everything_under(&child);
-        }
-        self.items.retain(|i| i["id"] != id);
     }
 }
 

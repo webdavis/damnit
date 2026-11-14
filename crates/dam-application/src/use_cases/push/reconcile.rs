@@ -16,6 +16,7 @@ pub(super) struct Settlement {
     pub(super) answered: Vec<Oid>,
     pub(super) doubted: Vec<(Oid, Vec<Field>)>,
     pub(super) confirmed: Vec<(Oid, Vec<Field>)>,
+    pub(super) created: Vec<Oid>,
 }
 
 impl Settlement {
@@ -32,6 +33,7 @@ impl Settlement {
         self.answered.extend(later.answered);
         self.doubted.extend(later.doubted);
         self.confirmed.extend(later.confirmed);
+        self.created.extend(later.created);
     }
 
     pub(super) fn pushed<'a>(
@@ -55,8 +57,12 @@ impl Settlement {
         }
         match verdict {
             MutationVerdict::Accepted { remote_id } => {
-                if mutation.op == MutationOp::Update {
-                    self.confirmed.push((oid.clone(), mutation.fields.clone()));
+                match mutation.op {
+                    MutationOp::Create => self.created.push(oid.clone()),
+                    MutationOp::Update => {
+                        self.confirmed.push((oid.clone(), mutation.fields.clone()))
+                    }
+                    MutationOp::Delete => {}
                 }
                 if let Some(id) = remote_id {
                     self.map.push((oid.clone(), id));
@@ -72,11 +78,23 @@ impl Settlement {
         }
     }
 
+    pub(super) fn never_sent(pending: &[RemoteMutation]) -> Settlement {
+        let mut settlement = Settlement::default();
+        for mutation in pending {
+            settlement.owed_again(&mutation.oid, NO_ANSWER.to_string());
+        }
+        settlement
+    }
+
     fn unanswered(&mut self, mutation: &RemoteMutation, why: String) {
-        let oid = mutation.oid.clone();
+        self.owed_again(&mutation.oid, why);
+        self.doubted
+            .push((mutation.oid.clone(), mutation.fields.clone()));
+    }
+
+    fn owed_again(&mut self, oid: &Oid, why: String) {
         self.failed.push((oid.clone(), why));
-        self.doubted.push((oid.clone(), mutation.fields.clone()));
-        self.unanswered.insert(oid);
+        self.unanswered.insert(oid.clone());
     }
 }
 

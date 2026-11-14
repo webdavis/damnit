@@ -18,13 +18,22 @@ fn two_committed_tasks_on_a_one_second_deadline() -> Sandbox {
     sb
 }
 
-fn only_the_second_is_sent_again(sb: &Sandbox) {
+fn only_the_second_is_sent_again_and_followed_up(sb: &Sandbox) {
     let (ok, out, err) = sb.dam(&["push"]);
     assert!(ok, "{err}");
-    assert!(out.contains("fake: 1 sent, 1 ok"), "{out}");
-    let resent = sb.pushes().pop().unwrap();
+    assert!(out.contains("fake: 2 sent, 2 ok"), "{out}");
+    let pushes = sb.pushes();
+    let [first, .., resent, follow_up] = pushes.as_slice() else {
+        panic!("{pushes:?}");
+    };
     assert_eq!(resent["mutations"].as_array().unwrap().len(), 1);
-    assert_eq!(resent["mutations"][0], sb.pushes()[0]["mutations"][1]);
+    assert_eq!(resent["mutations"][0], first["mutations"][1]);
+    let update = &follow_up["mutations"][0];
+    assert_eq!(
+        update["op"], "update",
+        "the create left in doubt is followed up"
+    );
+    assert_eq!(update["oid"], resent["mutations"][0]["oid"]);
 }
 
 #[test]
@@ -44,7 +53,7 @@ fn a_push_the_deadline_cuts_short_says_how_much_it_kept_and_resends_only_the_res
         String::from_utf8_lossy(&out.stderr),
         "dam: helper fake gave no answer within 1s; 1 kept, 1 unanswered\n"
     );
-    only_the_second_is_sent_again(&sb);
+    only_the_second_is_sent_again_and_followed_up(&sb);
 }
 
 #[test]
@@ -111,5 +120,5 @@ fn a_push_cancelled_after_the_first_answer_says_how_much_it_kept_and_resends_onl
         String::from_utf8_lossy(&out.stderr),
         "dam: cancelled; 1 kept, 1 unanswered\n"
     );
-    only_the_second_is_sent_again(&sb);
+    only_the_second_is_sent_again_and_followed_up(&sb);
 }

@@ -4,7 +4,7 @@ use dam_domain::{Change, CommitRecord, Oid};
 
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
-use crate::ports::{FieldsInDoubt, Store};
+use crate::ports::{FieldsInDoubt, RemoteName, Store};
 
 pub(super) type OwedChanges = BTreeMap<Oid, Change>;
 
@@ -12,11 +12,23 @@ pub(super) fn changes_to_send(
     store: &dyn Store,
     remote: &RemoteConfig,
     unpushed: &[CommitRecord],
-    doubt: &FieldsInDoubt,
 ) -> Result<OwedChanges, UseCaseError> {
     let mut changes = net_changes(unpushed);
     declare_each_retry_since_the_remote_snapshot(store, remote, &mut changes)?;
-    owe_a_write_for_each_object_in_doubt(store, doubt, &mut changes)?;
+    let doubt = store.fields_in_doubt(&remote.name)?;
+    owe_a_write_for_each_object_in_doubt(store, &doubt, &mut changes)?;
+    Ok(changes)
+}
+
+pub(super) fn follow_ups(
+    store: &dyn Store,
+    remote: &RemoteName,
+    created: &[Oid],
+) -> Result<OwedChanges, UseCaseError> {
+    let mut created_in_doubt = store.fields_in_doubt(remote)?;
+    created_in_doubt.retain(|oid, _| created.contains(oid));
+    let mut changes = OwedChanges::new();
+    owe_a_write_for_each_object_in_doubt(store, &created_in_doubt, &mut changes)?;
     Ok(changes)
 }
 
