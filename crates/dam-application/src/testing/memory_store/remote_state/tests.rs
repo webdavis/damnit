@@ -48,3 +48,8 @@ fn it_keeps_the_transactional_contract() {
     let store = MemoryStore::new();
     contract::transactional_contract(&store);
 }
+
+#[test]
+fn it_keeps_the_answer_repository_contract() {
+    contract::answer_repository_contract(&MemoryStore::new());
+}
