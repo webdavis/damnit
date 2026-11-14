@@ -142,3 +142,31 @@ fn a_token_caller_creates_nothing() {
     assert!(!config.exists());
     assert!(!config.parent().unwrap().exists());
 }
+
+#[test]
+fn a_config_the_first_run_cannot_create_is_named_with_the_systems_reason() {
+    let _guard =
+        support::guard("a_config_the_first_run_cannot_create_is_named_with_the_systems_reason");
+    let sb = Sandbox::new();
+    let config = fresh_config(&sb);
+    let folder = config.parent().unwrap();
+    std::fs::create_dir_all(folder).unwrap();
+    std::fs::set_permissions(folder, std::fs::Permissions::from_mode(0o500)).unwrap();
+    if std::fs::write(folder.join("probe"), "").is_ok() {
+        eprintln!("skipped: this user writes into a folder marked read-only");
+        return;
+    }
+    let out = run(&sb, &config, &["ls"]);
+    std::fs::set_permissions(folder, std::fs::Permissions::from_mode(0o700)).unwrap();
+    let stderr = String::from_utf8(out.stderr).unwrap();
+    let said = format!("dam: could not create {}: ", config.display());
+    let reason = stderr
+        .lines()
+        .find_map(|line| line.strip_prefix(&said))
+        .unwrap_or_else(|| panic!("{stderr}"));
+    assert!(
+        reason.to_lowercase().contains("permission denied"),
+        "{stderr}"
+    );
+    assert!(!reason.contains(".tmp"), "{stderr}");
+}

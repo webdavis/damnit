@@ -11,6 +11,7 @@ impl fmt::Display for ConfigText<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let heading = match self.0 {
             ConfigError::Unreadable { .. } => "reading config",
+            ConfigError::Unwritable { .. } => "writing config",
             _ => "config",
         };
         write!(f, "{heading}: ")?;
@@ -20,7 +21,9 @@ impl fmt::Display for ConfigText<'_> {
                 "{} does not end in .lua; the config is config.lua now",
                 path.display()
             ),
-            ConfigError::Unreadable { path, why } => write!(f, "{}: {why}", path.display()),
+            ConfigError::Unreadable { path, why } | ConfigError::Unwritable { path, why } => {
+                write!(f, "{}: {why}", path.display())
+            }
             ConfigError::StoppedLoading { path, line, reason } => {
                 write!(f, "{}", path.display())?;
                 if let Some(line) = line {

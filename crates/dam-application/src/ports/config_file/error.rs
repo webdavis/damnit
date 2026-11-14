@@ -12,6 +12,10 @@ pub enum ConfigError {
         path: PathBuf,
         why: String,
     },
+    Unwritable {
+        path: PathBuf,
+        why: String,
+    },
     StoppedLoading {
         path: PathBuf,
         line: Option<u32>,

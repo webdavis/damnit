@@ -32,6 +32,13 @@ fn a_file_dam_cannot_read_or_load_is_named_with_its_path() {
         "reading config: /home/ada/.config/dam/config.lua: Permission denied (os error 13)"
     );
     assert_eq!(
+        text(ConfigError::Unwritable {
+            path: path(),
+            why: "permission denied".into(),
+        }),
+        "writing config: /home/ada/.config/dam/config.lua: permission denied"
+    );
+    assert_eq!(
         text(ConfigError::StoppedLoading {
             path: path(),
             line: Some(2),

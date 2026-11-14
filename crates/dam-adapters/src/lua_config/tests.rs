@@ -17,4 +17,5 @@ mod support;
 mod template;
 mod token_tables;
 mod token_terms;
+mod write_failures;
 mod written_values;

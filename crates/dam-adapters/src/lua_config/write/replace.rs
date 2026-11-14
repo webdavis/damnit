@@ -21,11 +21,11 @@ pub(super) fn replace(
     holds: Holds,
     change: impl FnOnce(Option<&str>) -> Result<String, ConfigError>,
 ) -> Result<Option<SecretsTightened>, ConfigError> {
-    let path = &resolved(path)?;
-    let io_error = |error: std::io::Error| ConfigError::Unreadable {
-        path: path.clone(),
-        why: error.to_string(),
+    let io_error = |error: std::io::Error| ConfigError::Unwritable {
+        path: path.to_path_buf(),
+        why: system_reason(&error),
     };
+    let path = &resolved(path)?;
     let dir = folder_of(path);
     DirBuilder::new()
         .recursive(true)
@@ -57,6 +57,13 @@ pub(super) fn replace(
         (Holds::Secrets, Some(mode)) if mode & 0o077 != 0 => Some(SecretsTightened { was: mode }),
         _ => None,
     })
+}
+
+fn system_reason(error: &std::io::Error) -> String {
+    match error.raw_os_error() {
+        Some(code) => std::io::Error::from_raw_os_error(code).to_string(),
+        None => error.kind().to_string(),
+    }
 }
 
 pub(in crate::lua_config) fn folder_of(path: &Path) -> PathBuf {
