@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use dam_domain::{Change, Field, changed_fields};
+use dam_domain::{Change, Field, Object, changed_fields};
 
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
@@ -52,13 +52,7 @@ fn mutation_for(
     refiled: Option<Refiled>,
     differing: &BTreeSet<Field>,
 ) -> Result<Option<RemoteMutation>, UseCaseError> {
-    let object = change.object();
-    if !caps.kinds.contains(&object.kind()) {
-        return Ok(None);
-    }
-    if let Some(scope) = &remote.path
-        && !object.base().path.is_within(scope)
-    {
+    if !goes_to(remote, caps, change.object()) {
         return Ok(None);
     }
     let remote_id = remote_tracking.remote_id(&remote.name, change.oid())?;
@@ -96,4 +90,12 @@ fn mutation_for(
         object: change.after().cloned(),
         fields,
     }))
+}
+
+pub(super) fn goes_to(remote: &RemoteConfig, caps: &RemoteCapabilities, object: &Object) -> bool {
+    let within_its_path = remote
+        .path
+        .as_ref()
+        .is_none_or(|scope| object.base().path.is_within(scope));
+    caps.kinds.contains(&object.kind()) && within_its_path
 }

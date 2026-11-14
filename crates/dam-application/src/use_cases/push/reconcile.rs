@@ -3,6 +3,7 @@ use std::collections::BTreeSet;
 use dam_domain::{CommitId, CommitRecord, Object, Oid};
 
 use crate::remote::{MutationOp, MutationOutcome, MutationVerdict, RemoteMutation};
+use crate::use_cases::push::dropped::Dropped;
 
 const NO_ANSWER: &str = "no answer from helper";
 
@@ -15,6 +16,7 @@ pub(super) struct Settlement {
     pub(super) unanswered: BTreeSet<Oid>,
     pub(super) heard: Vec<(Oid, Heard)>,
     pub(super) created: Vec<Oid>,
+    pub(super) dropped: Dropped,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -37,6 +39,7 @@ impl Settlement {
         self.unanswered.extend(later.unanswered);
         self.heard.extend(later.heard);
         self.created.extend(later.created);
+        self.dropped.absorb(later.dropped);
     }
 
     pub(super) fn pushed<'a>(

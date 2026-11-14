@@ -24,7 +24,7 @@ pub use helper::{
 };
 pub use ids::IdRepository;
 pub use items::ItemRepository;
-pub use notices::{MissingTask, Notice, NoticeRepository};
+pub use notices::{DroppedBecause, MissingTask, Notice, NoticeRepository};
 pub use origins::OriginRepository;
 pub use repositories::Store;
 pub use store::{

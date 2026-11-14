@@ -54,6 +54,22 @@ impl NoticeRow<'_> {
                 "{remote} no longer lists {}; dam done <oid> if finished there, dam rm <oid> if deleted",
                 counted(tasks.len(), "open task", "open tasks")
             ),
+            NoticeRow::UnansweredCreateDropped {
+                remote,
+                subject,
+                path,
+                because,
+                ..
+            } => {
+                let since = match *because {
+                    "removed" => "it was then removed here",
+                    _ => "it no longer goes there",
+                };
+                format!(
+                    "the create of {subject:?} in {path} got no answer from {remote}, and {since}; \
+                     {remote} may hold a copy to remove by hand"
+                )
+            }
             NoticeRow::KindChanged { oid, ours, theirs } => format!(
                 "{} is {} {ours} here and {} {theirs} upstream",
                 oid.short(),

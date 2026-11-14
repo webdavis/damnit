@@ -42,6 +42,21 @@ impl Dam<'_> {
             store.count_answer(&remote.name, oid)?;
         }
         settle_attempts(store, &remote.name, &settlement.heard, attempting)?;
+        for (object, because) in &settlement.dropped.creates {
+            let base = object.base();
+            store.add_notice(&Notice::UnansweredCreateDropped {
+                remote: remote.name.clone(),
+                oid: base.oid.clone(),
+                subject: base.subject.clone(),
+                path: base.path.clone(),
+                because: *because,
+            })?;
+            store.count_answer(&remote.name, &base.oid)?;
+            store.set_attempts(&remote.name, &base.oid, &[])?;
+        }
+        for oid in &settlement.dropped.unused {
+            store.set_attempts(&remote.name, oid, &[])?;
+        }
         let mut retries = earlier_retries.to_vec();
         retries.extend(settlement.retries());
         store.set_push_retries(&remote.name, &retries)?;
