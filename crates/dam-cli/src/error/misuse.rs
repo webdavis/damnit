@@ -25,7 +25,7 @@ pub(crate) struct Misuse {
 pub(super) fn usage_part(error: &CliError) -> Option<serde_json::Value> {
     let (problem, word) = match error {
         CliError::CommandLine(misuse) => (misuse.problem, misuse.word.as_deref()),
-        _ if error.kind() == super::KIND_USAGE => (Problem::Other, None),
+        CliError::Usage(_) => (Problem::Other, None),
         _ => return None,
     };
     Some(serde_json::json!({ "problem": problem, "word": word }))
