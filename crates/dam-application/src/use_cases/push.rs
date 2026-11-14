@@ -48,7 +48,7 @@ impl Dam<'_> {
     ) -> Result<PushReport, UseCaseError> {
         let unpushed = self.store.unpushed(&remote.name)?;
         let changes = changes_to_send(self.store, remote, &unpushed)?;
-        let removals = Removals::new(self.store, &remote.name, &changes)?;
+        let removals = Removals::new(self.store, &remote.name, caps, &changes)?;
         let Plan { mutations, skipped } = plan(self.store, caps, remote, changes)?;
         let sent = send_in_waves(helper, removals, mutations)?;
         atomically(self.store, || {

@@ -130,5 +130,6 @@ pub fn task_caps() -> RemoteCapabilities {
         ],
         credentials: vec!["api_token".into()],
         incremental: true,
+        removes_only_empty_containers: false,
     }
 }

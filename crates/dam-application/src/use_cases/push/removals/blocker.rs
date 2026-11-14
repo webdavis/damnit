@@ -3,6 +3,7 @@ use std::collections::BTreeSet;
 use dam_domain::{Oid, Path};
 
 use super::Removals;
+use super::release::Unreleased;
 use crate::remote::{MutationOp, RemoteMutation};
 
 pub(super) enum Blocker {
@@ -47,15 +48,36 @@ impl Removals {
         if under.is_empty() {
             return None;
         }
-        Some(
-            match under.into_iter().find(|oid| !unsent.oids.contains(*oid)) {
-                Some(stuck) => Blocker::Stuck(match self.namesake(&mutation.oid, folder) {
-                    Some(namesake) => same_name(stuck, namesake),
-                    None => self.why_held(stuck),
-                }),
-                None => Blocker::StillToBeSent,
-            },
-        )
+        let still_to_be_sent = under.iter().any(|oid| unsent.oids.contains(*oid));
+        let Some(stuck) = under.into_iter().find(|oid| !unsent.oids.contains(*oid)) else {
+            return Some(Blocker::StillToBeSent);
+        };
+        match self.namesake(&mutation.oid, folder) {
+            Some(_) if self.remote_removes_only_empty_containers && still_to_be_sent => {
+                Some(Blocker::StillToBeSent)
+            }
+            Some(namesake) if self.remote_removes_only_empty_containers => {
+                let stuck: Vec<&Oid> = self.stuck_under(folder, unsent).collect();
+                let unreleased = stuck.into_iter().find_map(|o| self.unreleased(o, folder))?;
+                Some(Blocker::Stuck(match unreleased {
+                    Unreleased::LeftUnplaced(o) => same_name(o, namesake),
+                    Unreleased::MovedWithoutTellingUpstream(o) => self.why_held(o),
+                }))
+            }
+            Some(namesake) => Some(Blocker::Stuck(same_name(stuck, namesake))),
+            None => Some(Blocker::Stuck(self.why_held(stuck))),
+        }
+    }
+
+    fn stuck_under<'a>(
+        &'a self,
+        folder: &'a Path,
+        unsent: &'a Unsent,
+    ) -> impl Iterator<Item = &'a Oid> {
+        self.upstream
+            .iter()
+            .filter(move |(oid, held)| held.path.is_within(folder) && !unsent.oids.contains(*oid))
+            .map(|(oid, _)| oid)
     }
 
     fn namesake(&self, removed: &Oid, folder: &Path) -> Option<&Oid> {
@@ -66,7 +88,7 @@ impl Removals {
             .map(|(oid, _)| oid)
     }
 
-    fn why_held(&self, stuck: &Oid) -> String {
+    pub(super) fn why_held(&self, stuck: &Oid) -> String {
         let short = stuck.short();
         if self.tried.contains(stuck) {
             format!("waits on {short} leaving it upstream, which this push did not do")

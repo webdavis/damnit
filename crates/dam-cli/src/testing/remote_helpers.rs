@@ -33,6 +33,7 @@ impl RemoteHelper for EchoHelper {
             ],
             credentials: vec![],
             incremental: false,
+            removes_only_empty_containers: false,
         })
     }
     fn pull(&mut self, _: Option<&str>) -> Result<PullOutcome, HelperError> {

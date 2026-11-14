@@ -56,7 +56,7 @@ a failure. Any other response must carry one of the answer's required keys.
 
 | Response | Requires one of | Fields |
 |---|---|---|
-| capabilities | `protocol` | `protocol`, `kinds`, `fields`, `credentials`, `incremental` |
+| capabilities | `protocol` | `protocol`, `kinds`, `fields`, `credentials`, `incremental`, `removes_only_empty_containers` |
 | pull | `objects`, `rejected`, `removed`, `cancelled`, `sync` | the same five, and `complete` |
 | push | `results` | `results`, one entry per mutation |
 | error | `error` | `error`, the reason as text |
@@ -104,6 +104,10 @@ an underscore.
 
 `incremental` says whether the helper honors `since`. A helper that does returns a token in `sync`.
 One that does not returns null, and `dam` diffs the full set itself.
+
+`removes_only_empty_containers` says whether the helper refuses to remove an object while the remote
+still holds anything under it. Leaving it out declares false. `dam` sends such a helper a removal it
+would otherwise hold only because another object with the same name in the same place stays.
 
 ## Objects
 

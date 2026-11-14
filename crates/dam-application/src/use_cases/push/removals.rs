@@ -1,10 +1,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use dam_domain::{Base, Change, Oid, Path};
+use dam_domain::{Base, Change, Object, Oid, Path};
 
 use crate::errors::UseCaseError;
 use crate::ports::{RemoteName, Store};
-use crate::remote::RemoteMutation;
+use crate::remote::{RemoteCapabilities, RemoteMutation};
 use crate::use_cases::push::mutations::OwedChanges;
 use crate::use_cases::push::reconcile::Settlement;
 use blocker::{Blocker, Unsent};
@@ -13,7 +13,10 @@ use blocker::{Blocker, Unsent};
 pub(super) struct Removals {
     folders: BTreeMap<Oid, Path>,
     upstream: BTreeMap<Oid, Base>,
+    local: BTreeMap<Oid, Path>,
+    placed: BTreeSet<Oid>,
     tried: BTreeSet<Oid>,
+    remote_removes_only_empty_containers: bool,
 }
 
 #[derive(Default)]
@@ -30,6 +33,7 @@ impl Removals {
     pub(super) fn new(
         store: &dyn Store,
         remote: &RemoteName,
+        caps: &RemoteCapabilities,
         changes: &OwedChanges,
     ) -> Result<Removals, UseCaseError> {
         let mut folders = BTreeMap::new();
@@ -44,10 +48,14 @@ impl Removals {
             }
         }
         let mut upstream = BTreeMap::new();
+        let mut local = BTreeMap::new();
         if !folders.is_empty() {
-            let local = store.all()?.into_iter().map(|o| o.oid().clone());
-            let known: BTreeSet<Oid> = local.chain(changes.keys().cloned()).collect();
+            let kept = store.all()?.into_iter().map(|o| o.oid().clone());
+            let known: BTreeSet<Oid> = kept.chain(changes.keys().cloned()).collect();
             for oid in known {
+                if let Some(committed) = store.committed(&oid)? {
+                    local.insert(oid.clone(), committed.base().path.clone());
+                }
                 if let Some(held) = store.remote_snapshot(remote, &oid)? {
                     upstream.insert(oid, held.base().clone());
                 }
@@ -56,7 +64,10 @@ impl Removals {
         Ok(Removals {
             folders,
             upstream,
+            local,
+            placed: BTreeSet::new(),
             tried: BTreeSet::new(),
+            remote_removes_only_empty_containers: caps.removes_only_empty_containers,
         })
     }
 
@@ -84,6 +95,12 @@ impl Removals {
 
     pub(super) fn record(&mut self, sent: &[RemoteMutation], settled: &Settlement) {
         self.tried.extend(sent.iter().map(|m| m.oid.clone()));
+        let accepted: BTreeSet<&Oid> = settled.snapshot.iter().map(Object::oid).collect();
+        let placed_by_this_push = sent
+            .iter()
+            .filter(|m| accepted.contains(&m.oid) && release::places(m))
+            .map(|m| m.oid.clone());
+        self.placed.extend(placed_by_this_push);
         for placed in &settled.snapshot {
             self.upstream
                 .insert(placed.oid().clone(), placed.base().clone());
@@ -95,6 +112,7 @@ impl Removals {
 }
 
 mod blocker;
+mod release;
 
 #[cfg(test)]
 mod tests;

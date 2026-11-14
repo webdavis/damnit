@@ -29,6 +29,7 @@ pub fn capabilities() -> Capabilities {
             "refresh_token".into(),
         ],
         incremental: true,
+        removes_only_empty_containers: false,
     }
 }
 

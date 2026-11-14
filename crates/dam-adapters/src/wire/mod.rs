@@ -23,6 +23,7 @@ pub fn capabilities_from_wire(caps: &Capabilities) -> RemoteCapabilities {
         fields: caps.fields.iter().filter_map(|f| Field::parse(f)).collect(),
         credentials: caps.credentials.clone(),
         incremental: caps.incremental,
+        removes_only_empty_containers: caps.removes_only_empty_containers,
     }
 }
 

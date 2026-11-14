@@ -127,11 +127,13 @@ fn a_kind_or_field_this_dam_does_not_know_is_dropped_rather_than_refused() {
         fields: vec!["subject".into(), "mood".into()],
         credentials: vec!["api_token".into()],
         incremental: true,
+        removes_only_empty_containers: true,
     });
     assert_eq!(caps.kinds, vec![dam_domain::Kind::Task]);
     assert_eq!(caps.fields, vec![dam_domain::Field::Subject]);
     assert_eq!(caps.credentials, vec!["api_token".to_string()]);
     assert!(caps.incremental);
+    assert!(caps.removes_only_empty_containers);
 }
 
 #[test]

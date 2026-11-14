@@ -5,7 +5,8 @@ use crate::ports::Notice;
 use crate::remote::MutationOp;
 use crate::testing::prelude::*;
 use crate::testing::{
-    Pushed, Scenario, accepting_all, oid, pushing, remotes_launched_by, task_in, todoist,
+    Pushed, Scenario, accepting_all, oid, pushing,
+    pushing_to_a_remote_that_removes_only_empty_containers, remotes_launched_by, task_in, todoist,
 };
 use crate::use_cases::edit::EditFields;
 
@@ -41,7 +42,7 @@ fn sent_with_paths(pushed: &Pushed) -> Vec<(Oid, MutationOp, String)> {
         .collect()
 }
 
-fn why_held(s: &Scenario, held: &Oid) -> String {
+pub(super) fn why_held(s: &Scenario, held: &Oid) -> String {
     assert!(s.store.push_retries(&todoist()).unwrap().contains(held));
     assert!(s.store.remote_id(&todoist(), held).unwrap().is_some());
     s.store
@@ -89,6 +90,31 @@ fn a_parent_replaced_by_a_namesake_is_held_until_the_namesake_is_renamed() {
                 (oid(old), Delete, String::new()),
             ]
         );
+        assert!(s.store.push_retries(&todoist()).unwrap().is_empty());
+        assert!(s.store.remote_id(&todoist(), &oid(old)).unwrap().is_none());
+    }
+}
+
+#[test]
+fn a_remote_that_removes_only_empty_containers_gets_the_old_parent_removal_after_the_child() {
+    for (old, new, child) in OLD_NEW_AND_CHILD_IN_EVERY_OID_ORDER {
+        let s = a_parent_replaced_by_a_namesake_with_a_child(old, new, child);
+        let (l, pushed) =
+            pushing_to_a_remote_that_removes_only_empty_containers(accepting_all(Some("i:new")));
+        let report = s
+            .dam()
+            .push(remotes_launched_by(&l), None)
+            .unwrap()
+            .remove(0);
+        assert_eq!(
+            sent_with_paths(&pushed),
+            vec![
+                (oid(new), Create, "Home/".to_string()),
+                (oid(child), Create, "Home/P/".to_string()),
+                (oid(old), Delete, String::new()),
+            ]
+        );
+        assert!(report.failed.is_empty(), "{:?}", report.failed);
         assert!(s.store.push_retries(&todoist()).unwrap().is_empty());
         assert!(s.store.remote_id(&todoist(), &oid(old)).unwrap().is_none());
     }

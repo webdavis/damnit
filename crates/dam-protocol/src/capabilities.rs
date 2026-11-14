@@ -13,6 +13,8 @@ pub struct Capabilities {
     pub credentials: Vec<String>,
     #[serde(default)]
     pub incremental: bool,
+    #[serde(default)]
+    pub removes_only_empty_containers: bool,
 }
 
 impl Capabilities {

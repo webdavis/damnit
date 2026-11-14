@@ -20,6 +20,7 @@ pub fn capabilities() -> Capabilities {
         .collect(),
         credentials: vec!["api_token".into()],
         incremental: true,
+        removes_only_empty_containers: true,
     }
 }
 

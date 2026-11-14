@@ -24,5 +24,12 @@ fn caps(protocol: u32) -> Capabilities {
         fields: vec![],
         credentials: vec![],
         incremental: false,
+        removes_only_empty_containers: false,
     }
+}
+
+#[test]
+fn a_helper_that_does_not_say_it_removes_only_empty_containers_does_not() {
+    let caps: Capabilities = serde_json::from_str(r#"{"protocol":1}"#).unwrap();
+    assert!(!caps.removes_only_empty_containers);
 }

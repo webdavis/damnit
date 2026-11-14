@@ -74,6 +74,7 @@ fn capabilities_response_matches_the_fixture() {
         .collect(),
         credentials: vec!["api_token".into()],
         incremental: true,
+        removes_only_empty_containers: true,
     };
     let answer = Reply::Answered(caps);
     assert_eq!(
