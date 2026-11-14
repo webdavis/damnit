@@ -26,6 +26,7 @@ struct Inner {
     last_pulls: BTreeMap<RemoteName, Timestamp>,
     last_pushes: BTreeMap<RemoteName, Timestamp>,
     accepted_kinds: BTreeMap<RemoteName, Vec<Kind>>,
+    answers: BTreeMap<(RemoteName, Oid), u64>,
     days: BTreeMap<dam_domain::Date, dam_domain::Day>,
     items: Vec<Item>,
     ids: BTreeMap<IdKey, Oid>,
@@ -114,6 +115,7 @@ impl StageRepository for MemoryStore {
 }
 
 mod accepted_kinds;
+mod answers;
 mod commits;
 mod days;
 mod ids;
