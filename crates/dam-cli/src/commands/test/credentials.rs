@@ -14,6 +14,7 @@ pub(super) fn test(config_file: &LuaConfigFile, launcher: &dyn HelperLauncher) -
     let LoadedConfig {
         config,
         credentials,
+        ..
     } = match loaded {
         Ok(loaded) => loaded,
         Err(error) => {

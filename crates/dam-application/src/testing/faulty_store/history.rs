@@ -30,6 +30,10 @@ impl CommitRepository for FaultyStore {
         self.inner.commit(record)
     }
     fn log(&self) -> Result<Vec<CommitRecord>, StoreError> {
+        self.log_reads.set(self.log_reads.get() + 1);
+        if self.log_unreadable.get() {
+            return Err(StoreError::Failed("the log could not be read".into()));
+        }
         self.inner.log()
     }
     fn unpushed(&self, remote: &RemoteName) -> Result<Vec<CommitRecord>, StoreError> {

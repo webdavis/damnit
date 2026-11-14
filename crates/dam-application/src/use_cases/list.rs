@@ -8,13 +8,14 @@ use crate::service::Dam;
 impl Dam<'_> {
     pub fn list(&self, query: Option<&str>) -> Result<Vec<Object>, UseCaseError> {
         let config = self.config;
-        let expr = match query {
-            None => None,
-            Some(q) => {
-                let text = config.filter(q).map(|f| f.query.as_str()).unwrap_or(q);
-                Some(parse_query(text, &config.categories).map_err(query_error)?)
-            }
+        let filter = query.and_then(|q| config.filter(q));
+        let text = match filter {
+            Some(filter) => filter.rule.query(),
+            None => query,
         };
+        let expr = text
+            .map(|text| parse_query(text, &config.categories).map_err(query_error))
+            .transpose()?;
         let (today, zone) = (self.clock.today(), self.clock.zone());
         let seen = self
             .store
@@ -28,7 +29,10 @@ impl Dam<'_> {
             .filter(|o| expr.as_ref().is_none_or(|e| matches(e, o, today, &zone)))
             .collect();
         out.sort_by(|a, b| order(a, b, today));
-        Ok(out)
+        match filter.filter(|f| f.rule.runs_a_function()) {
+            Some(filter) => self.kept_by_function(&filter.name, out),
+            None => Ok(out),
+        }
     }
 }
 
@@ -75,8 +79,17 @@ fn order(a: &Object, b: &Object, today: Date) -> Ordering {
     .then_with(|| a.base().subject.cmp(&b.base().subject))
 }
 
+mod by_function;
+mod log_by_object;
+
 #[cfg(test)]
 mod access_tests;
+
+#[cfg(test)]
+mod function_tests;
+
+#[cfg(test)]
+mod history_reads_tests;
 
 #[cfg(test)]
 mod tests;

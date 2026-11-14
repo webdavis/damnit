@@ -3,6 +3,7 @@ mod attempts;
 mod config_file;
 mod days;
 mod environment;
+mod filter_functions;
 mod helper;
 mod ids;
 mod items;
@@ -19,6 +20,7 @@ pub use config_file::{
 };
 pub use days::DayRepository;
 pub use environment::{Clock, Randomness};
+pub use filter_functions::{FilterFailure, FilterFault, FilterFunctions, Histories, History};
 pub use helper::{
     ComputeFailure, CredentialError, CredentialSource, HelperError, HelperLauncher, RemoteHelper,
 };

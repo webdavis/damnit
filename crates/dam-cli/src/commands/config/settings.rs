@@ -1,6 +1,7 @@
 use dam_application::{Config, CredentialSpec, FilterConfig, RemoteConfig};
 use dam_domain::Category;
 
+use super::match_function::MatchFunction;
 use super::setting::{Credential, Setting, Value};
 use super::token_settings::token;
 
@@ -82,7 +83,16 @@ fn category(category: &Category, written: bool) -> (String, Setting) {
 }
 
 fn filter(filter: &FilterConfig) -> (String, Setting) {
-    named(&filter.name, vec![text("query", &filter.query)])
+    let mut fields: Vec<_> = filter
+        .rule
+        .query()
+        .map(|q| text("query", q))
+        .into_iter()
+        .collect();
+    if filter.rule.runs_a_function() {
+        fields.push(("match".to_string(), Setting::Function(MatchFunction)));
+    }
+    named(&filter.name, fields)
 }
 
 fn named(name: &str, fields: Vec<(String, Setting)>) -> (String, Setting) {

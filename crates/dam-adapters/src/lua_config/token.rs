@@ -1,5 +1,5 @@
-mod grant;
-mod terms;
+pub(super) mod grant;
+pub(super) mod terms;
 
 use dam_application::{
     Standing, TokenConfig, TokenFault, TokenWarning, Tokens, disable_shared_values,

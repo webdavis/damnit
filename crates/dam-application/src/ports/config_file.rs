@@ -2,7 +2,7 @@ mod error;
 mod misread;
 
 use crate::config::Config;
-use crate::ports::{CredentialSource, RemoteName};
+use crate::ports::{CredentialSource, FilterFunctions, RemoteName};
 use crate::tokens::{NewToken, TokenName};
 
 pub use error::{ByHand, ConfigError, EditFault, EditedTable, Uneditable};
@@ -16,6 +16,7 @@ pub struct SecretsTightened {
 pub struct LoadedConfig {
     pub config: Config,
     pub credentials: Box<dyn CredentialSource>,
+    pub filter_functions: Box<dyn FilterFunctions>,
 }
 
 pub trait ConfigFile {

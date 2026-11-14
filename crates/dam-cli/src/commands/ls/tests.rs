@@ -1,6 +1,6 @@
 use crate::args::{AuthorKind, LsArgs};
 use crate::testing::context;
-use dam_application::FilterConfig;
+use dam_application::{FilterConfig, FilterRule};
 use dam_domain::{Categories, Category, Object, Oid, Task, When};
 use jiff::civil::date;
 
@@ -18,7 +18,7 @@ fn ls_filters_by_query_and_by_saved_filter() {
         .unwrap();
     ctx.config.filters.push(FilterConfig {
         name: "now".into(),
-        query: "due:today".into(),
+        rule: FilterRule::Query("due:today".into()),
     });
     assert_eq!(
         super::run_ls(

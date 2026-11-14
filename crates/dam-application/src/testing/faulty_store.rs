@@ -19,6 +19,8 @@ pub struct FaultyStore {
     writes_before_failing: Cell<usize>,
     inside_a_unit_of_work: Cell<bool>,
     last_pull_unreadable: Cell<bool>,
+    log_unreadable: Cell<bool>,
+    log_reads: Cell<usize>,
     unreadable: RefCell<Option<Oid>>,
 }
 
@@ -29,6 +31,8 @@ impl FaultyStore {
             writes_before_failing: Cell::new(usize::MAX),
             inside_a_unit_of_work: Cell::new(false),
             last_pull_unreadable: Cell::new(false),
+            log_unreadable: Cell::new(false),
+            log_reads: Cell::new(0),
             unreadable: RefCell::new(None),
         }
     }
@@ -39,6 +43,14 @@ impl FaultyStore {
 
     pub fn fail_reading_the_last_pull(&self) {
         self.last_pull_unreadable.set(true);
+    }
+
+    pub fn fail_reading_the_log(&self) {
+        self.log_unreadable.set(true);
+    }
+
+    pub fn log_reads(&self) -> usize {
+        self.log_reads.get()
     }
 
     pub fn fail_reading(&self, oid: &Oid) {

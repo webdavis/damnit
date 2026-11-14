@@ -13,7 +13,7 @@
       "additionalProperties": false,
       "properties": {
         "kind": {
-          "enum": ["refused", "store", "helper", "credential", "editor", "parse", "usage", "cancelled", "internal"]
+          "enum": ["refused", "store", "helper", "credential", "filter", "editor", "parse", "usage", "cancelled", "internal"]
         },
         "rule": {
           "anyOf": [

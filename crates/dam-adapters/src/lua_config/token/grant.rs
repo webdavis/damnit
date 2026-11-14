@@ -5,7 +5,7 @@ use dam_domain::{Grant, Path, Permission, PermissionName};
 
 use crate::lua_config::strict::StrictMap;
 
-const GRANT_KEYS: [&str; 5] = ["allow", "paths", "labels", "own", "remotes"];
+pub(crate) const GRANT_KEYS: [&str; 5] = ["allow", "paths", "labels", "own", "remotes"];
 
 pub(super) fn read_grants(
     name: &str,

@@ -95,3 +95,6 @@ impl View for CommitDoc<'_> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod history_tests;

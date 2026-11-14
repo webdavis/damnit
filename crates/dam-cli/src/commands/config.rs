@@ -1,5 +1,6 @@
 mod get;
 mod listing;
+mod match_function;
 mod print_default;
 mod setting;
 mod settings;

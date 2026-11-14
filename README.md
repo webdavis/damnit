@@ -45,7 +45,8 @@ What `config.lua` prints goes to standard error, so it never mixes with a comman
 
 `dam config list` prints where the two files are and every setting dam is using, one row each: the
 key, then the value, with `(default)` after a value dam supplies. A remote's credential shows under
-`remote.<name>.credential` as only `hidden`, or `hidden (function)` for one dam calls. A token shows
+`remote.<name>.credential` as only `hidden`, or `hidden (function)` for one dam calls.
+A filter's `match` shows as `function`, never its source. A token shows
 each of its settings by the key `secrets.lua` uses, never its value, or `disabled`. A setting with
 no value and no default shows `not set`.
 `docs/schemas/config-list.schema.json` is the schema of its `--json` answer.
@@ -464,8 +465,8 @@ output:
               "a9db854060d1943ef9eb9f6d7a8ac0b1ace45d77"]}}
 
 `docs/schemas/error.schema.json` is the JSON Schema of this document.
-`kind` is one of `refused`, `store`, `helper`, `credential`, `editor`, `parse`, `usage`,
-`cancelled` and `internal`, the last meaning a bug in `dam` itself.
+`kind` is one of `refused`, `store`, `helper`, `credential`, `filter`, `editor`, `parse`,
+`usage`, `cancelled` and `internal`, the last meaning a bug in `dam` itself.
 `rule` names which rule a refusal broke, such as `blocked`, `no_such_object` or
 `nothing_to_commit`, and is null for every other kind except an ambiguous oid prefix, a `usage`
 failure with rule `ambiguous_prefix`. `oids` names the objects the message names, in the order it

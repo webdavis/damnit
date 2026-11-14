@@ -4,6 +4,7 @@ use dam_application::{
     ComputeFailure, CredentialError, HelperError, SHORTEST_OID_PREFIX, StoreError, UseCaseError,
 };
 
+use super::filter_text::FilterText;
 use super::refusal_text::RefusalText;
 
 pub(crate) struct UseCaseText<'a>(pub(crate) &'a UseCaseError);
@@ -106,6 +107,7 @@ impl fmt::Display for UseCaseText<'_> {
                     }
                 }
             }
+            UseCaseError::Filter(e) => write!(f, "{}", FilterText(e)),
             UseCaseError::Parse(s) => write!(f, "{s}"),
             UseCaseError::Query(e) => write!(f, "{e}"),
             UseCaseError::NotAnOid(text) => write!(

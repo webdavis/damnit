@@ -39,7 +39,10 @@ fn config_lua_reads_its_owner_remotes_categories_and_filters() {
     let effort = config.categories.category_of_name("effort").unwrap();
     assert_eq!(effort.values, ["light", "admin", "deep"]);
     assert!(effort.exclusive);
-    assert_eq!(config.filter("today").unwrap().query, "due:today | overdue");
+    assert_eq!(
+        config.filter("today").unwrap().rule.query(),
+        Some("due:today | overdue")
+    );
 }
 
 #[test]

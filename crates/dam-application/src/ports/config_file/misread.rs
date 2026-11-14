@@ -15,6 +15,7 @@ pub enum Expected {
     Table,
     TableOfNamedEntries,
     TextOrFunction,
+    Function,
     DateTime,
     TableOfWholeNumbers,
 }

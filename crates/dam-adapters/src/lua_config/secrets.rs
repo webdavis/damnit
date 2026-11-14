@@ -6,7 +6,7 @@ use super::credentials::read_credentials;
 use super::strict::StrictMap;
 use super::token::read_tokens;
 
-const SECRETS: [&str; 3] = ["schema", "remote", "token"];
+pub(crate) const SECRETS: [&str; 3] = ["schema", "remote", "token"];
 
 pub(super) struct Secrets {
     credentials: BTreeMap<String, Vec<CredentialSpec>>,
