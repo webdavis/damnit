@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/config.schema.json",
+  "title": "dam config.lua",
+  "description": "The table config.lua returns. A Lua list is an array here and a table of named entries is an object. It never holds a secret: credentials, tokens and schema belong in secrets.lua, and an unknown key is refused by name.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "owner": { "type": "string" },
+    "done": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": { "interactive": { "type": "boolean" } }
+    },
+    "remote": { "type": "object", "additionalProperties": { "$ref": "#/$defs/remote" } },
+    "category": { "type": "object", "additionalProperties": { "$ref": "#/$defs/category" } },
+    "filter": { "type": "object", "additionalProperties": { "$ref": "#/$defs/filter" } }
+  },
+  "$defs": {
+    "remote": {
+      "description": "A remote's settings. Its credentials go under the same name in secrets.lua.",
+      "type": "object",
+      "required": ["url"],
+      "additionalProperties": false,
+      "properties": {
+        "url": { "type": "string", "pattern": "^[A-Za-z0-9_-]+::" },
+        "stale": { "$ref": "#/$defs/duration" },
+        "deadline": { "$ref": "#/$defs/duration" },
+        "path": { "type": "string" }
+      }
+    },
+    "duration": { "type": "string", "pattern": "^[0-9]+[smh]$" },
+    "category": {
+      "type": "object",
+      "required": ["values"],
+      "additionalProperties": false,
+      "properties": {
+        "values": { "type": "array", "items": { "type": "string" } },
+        "exclusive": { "type": "boolean" }
+      }
+    },
+    "filter": {
+      "type": "object",
+      "required": ["query"],
+      "additionalProperties": false,
+      "properties": { "query": { "type": "string" } }
+    }
+  }
+}
