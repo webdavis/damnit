@@ -6,7 +6,7 @@ use crate::ports::Notice;
 use crate::service::Dam;
 use crate::use_cases::push::attempting::Attempting;
 use crate::use_cases::push::attempts::settle_attempts;
-use crate::use_cases::push::reconcile::Settlement;
+use crate::use_cases::push::reconcile::{Heard, Settlement};
 
 impl Dam<'_> {
     pub(super) fn settle_push(
@@ -34,7 +34,11 @@ impl Dam<'_> {
                 why: why.clone(),
             })?;
         }
-        for (oid, _) in &settlement.heard {
+        let answers = settlement
+            .heard
+            .iter()
+            .filter(|(_, h)| *h != Heard::Unasked);
+        for (oid, _) in answers {
             store.count_answer(&remote.name, oid)?;
         }
         settle_attempts(store, &remote.name, &settlement.heard, attempting)?;

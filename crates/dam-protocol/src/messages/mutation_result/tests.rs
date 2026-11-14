@@ -19,7 +19,8 @@ fn a_refusal_without_a_reason_says_the_remote_gave_none() {
     assert_eq!(
         read(r#"{"oid":"o1","ok":false}"#).verdict,
         Verdict::Refused {
-            why: "the remote gave no reason".into()
+            why: "the remote gave no reason".into(),
+            unasked: false,
         }
     );
 }
@@ -30,6 +31,7 @@ fn a_refusal_is_written_as_ok_false_with_its_reason() {
         oid: "o1".into(),
         verdict: Verdict::Refused {
             why: "read-only".into(),
+            unasked: false,
         },
     };
     assert_eq!(
@@ -102,4 +104,32 @@ fn push_with_an_unanswered_result_round_trips_the_fixture() {
         }
     );
     assert_eq!(serde_json::to_string(&answer).unwrap(), text);
+}
+
+#[test]
+fn a_refusal_without_the_unasked_mark_reads_as_one_the_remote_gave() {
+    assert_eq!(
+        read(r#"{"oid":"o1","ok":false,"why":"read-only"}"#).verdict,
+        Verdict::Refused {
+            why: "read-only".into(),
+            unasked: false,
+        }
+    );
+}
+
+#[test]
+fn a_refusal_the_remote_was_never_asked_about_round_trips_with_its_mark() {
+    let refused = MutationResult {
+        oid: "o1".into(),
+        verdict: Verdict::Refused {
+            why: "no project named work".into(),
+            unasked: true,
+        },
+    };
+    let text = serde_json::to_string(&refused).unwrap();
+    assert_eq!(
+        text,
+        r#"{"oid":"o1","ok":false,"unasked":true,"why":"no project named work"}"#
+    );
+    assert_eq!(read(&text), refused);
 }

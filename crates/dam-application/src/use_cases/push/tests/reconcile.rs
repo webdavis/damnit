@@ -28,7 +28,10 @@ fn accepted(byte: u8, remote_id: &str) -> MutationOutcome {
 fn refused(byte: u8, why: &str) -> MutationOutcome {
     MutationOutcome {
         oid: oid(byte),
-        verdict: MutationVerdict::Refused { why: why.into() },
+        verdict: MutationVerdict::Refused {
+            why: why.into(),
+            unasked: false,
+        },
     }
 }
 

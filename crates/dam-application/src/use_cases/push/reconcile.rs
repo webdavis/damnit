@@ -21,6 +21,7 @@ pub(super) struct Settlement {
 pub(super) enum Heard {
     Accepted,
     Refused,
+    Unasked,
 }
 
 impl Settlement {
@@ -69,8 +70,13 @@ impl Settlement {
                     (_, None) => {}
                 }
             }
-            MutationVerdict::Refused { why } => {
-                self.heard.push((oid.clone(), Heard::Refused));
+            MutationVerdict::Refused { why, unasked } => {
+                let heard = if unasked {
+                    Heard::Unasked
+                } else {
+                    Heard::Refused
+                };
+                self.heard.push((oid.clone(), heard));
                 self.failed.push((oid, why));
             }
             MutationVerdict::Unanswered { why } => self.unanswered(oid, why),

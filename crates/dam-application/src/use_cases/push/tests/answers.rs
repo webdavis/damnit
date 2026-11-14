@@ -64,7 +64,10 @@ fn duplicate_and_unsent_results_are_ignored() {
     s.committed(task(1));
     let refused = |byte: u8, why: &str| MutationOutcome {
         oid: oid(byte),
-        verdict: MutationVerdict::Refused { why: why.into() },
+        verdict: MutationVerdict::Refused {
+            why: why.into(),
+            unasked: false,
+        },
     };
     let (l, _) = pushing(move |_| {
         vec![

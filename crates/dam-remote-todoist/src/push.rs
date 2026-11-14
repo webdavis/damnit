@@ -32,7 +32,13 @@ pub fn push(
             Some(why) => Verdict::Unanswered { why },
             None => match apply(api, &mut tree, m, &containers_filled) {
                 Ok(remote_id) => Verdict::Accepted { remote_id },
-                Err(Failure::OnlyThisMutation(why)) => Verdict::Refused { why },
+                Err(Failure::RefusedWithoutAVerdict(why)) => {
+                    Verdict::Refused { why, unasked: true }
+                }
+                Err(Failure::RefusedAfterAVerdict(why)) => Verdict::Refused {
+                    why,
+                    unasked: false,
+                },
                 Err(Failure::Unanswered(why)) => Verdict::Unanswered { why },
                 Err(Failure::Unreachable(why)) => {
                     off_limits.end_the_call(&why);
@@ -90,7 +96,10 @@ fn apply(
         }
     }
     if let Some(why) = plan.refused {
-        return Err(Failure::OnlyThisMutation(why));
+        return Err(match written {
+            Some(_) => Failure::RefusedAfterAVerdict(why),
+            None => Failure::RefusedWithoutAVerdict(why),
+        });
     }
     let Some(shape) = created else {
         return Ok(m.remote_id.clone());
@@ -109,7 +118,7 @@ fn send_every_command(api: &impl TodoistSync, commands: &[Command]) -> Result<Sy
         .iter()
         .map(serde_json::to_value)
         .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| Failure::OnlyThisMutation(e.to_string()))?;
+        .map_err(|e| Failure::RefusedWithoutAVerdict(e.to_string()))?;
     let written = api.write(&encoded)?;
     every_command_accepted(commands, &written)?;
     Ok(written)

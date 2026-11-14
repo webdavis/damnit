@@ -44,7 +44,7 @@ pub struct PushOutcome {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MutationVerdict {
     Accepted { remote_id: Option<String> },
-    Refused { why: String },
+    Refused { why: String, unasked: bool },
     Unanswered { why: String },
 }
 

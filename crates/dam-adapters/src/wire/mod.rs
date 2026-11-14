@@ -110,7 +110,7 @@ pub fn push_from_wire(response: PushResponse) -> PushOutcome {
                 oid: Oid::parse(&r.oid).ok()?,
                 verdict: match r.verdict {
                     Verdict::Accepted { remote_id } => MutationVerdict::Accepted { remote_id },
-                    Verdict::Refused { why } => MutationVerdict::Refused { why },
+                    Verdict::Refused { why, unasked } => MutationVerdict::Refused { why, unasked },
                     Verdict::Unanswered { why } => MutationVerdict::Unanswered { why },
                 },
             })

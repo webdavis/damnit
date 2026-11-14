@@ -20,6 +20,7 @@ fn refusing(refused: Oid) -> impl Fn(&[RemoteMutation]) -> Vec<MutationOutcome> 
                 verdict: if m.oid == refused {
                     MutationVerdict::Refused {
                         why: "temporary failure".into(),
+                        unasked: false,
                     }
                 } else {
                     MutationVerdict::Accepted { remote_id: None }
