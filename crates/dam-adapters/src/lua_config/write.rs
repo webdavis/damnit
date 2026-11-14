@@ -1,4 +1,5 @@
 mod add_remote;
+mod add_token;
 mod edit;
 mod edited_files;
 mod insert;
@@ -8,3 +9,4 @@ mod lua_text;
 mod remote_entry;
 mod replace;
 mod section;
+mod token_entry;

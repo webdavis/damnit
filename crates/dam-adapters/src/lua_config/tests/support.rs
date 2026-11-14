@@ -1,7 +1,11 @@
 use std::path::PathBuf;
 
-use dam_application::{Config, ConfigError, Standing, TokenConfig, TokenTerms};
-use dam_domain::Token;
+use std::collections::BTreeSet;
+
+use dam_application::{
+    Config, ConfigError, NewToken, Standing, TokenConfig, TokenName, TokenTerms,
+};
+use dam_domain::{Grant, Permission, Token};
 use tempfile::TempDir;
 
 use crate::lua_config::{LoadedConfig, LuaConfigFile};
@@ -121,4 +125,21 @@ pub(super) fn marking_credential(marker: &std::path::Path) -> String {
         "return {{ remote = {{ todoist = {{ api_token = function() \
            io.open({marker:?}, 'w'):close() return 'abc' end }} }} }}"
     )
+}
+
+pub(super) fn bare_token(name: &str) -> NewToken {
+    NewToken {
+        name: TokenName::parse(name).unwrap(),
+        value: Token::generate(&mut |b: &mut [u8]| b.fill(7)),
+        expires: None,
+        via: None,
+        require: Vec::new(),
+        grant: Grant {
+            allow: BTreeSet::from([Permission::TaskRead]),
+            paths: None,
+            labels: None,
+            own: false,
+            remotes: None,
+        },
+    }
 }

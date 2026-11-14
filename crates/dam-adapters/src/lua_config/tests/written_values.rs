@@ -1,6 +1,6 @@
 use dam_application::RemoteName;
 
-use super::support::Folder;
+use super::support::{Folder, bare_token};
 
 #[test]
 fn any_url_reads_back_as_written() {
@@ -22,4 +22,16 @@ fn any_url_reads_back_as_written() {
             .unwrap();
         assert_eq!(folder.load().unwrap().remote("todoist").unwrap().url, url);
     }
+}
+
+#[test]
+fn any_token_name_reads_back_as_written() {
+    for name in ["tool", "_tool_2", "my-tool", "2fa", "end", "local"] {
+        let folder = Folder::new();
+        folder.file().add_token(&bare_token(name)).unwrap();
+        assert_eq!(folder.load().unwrap().tokens.names, [name]);
+    }
+    let folder = Folder::new();
+    folder.file().add_token(&bare_token("my-tool")).unwrap();
+    assert!(folder.text("secrets.lua").contains("[\"my-tool\"] = {"));
 }

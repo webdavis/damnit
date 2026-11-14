@@ -11,10 +11,17 @@ use crate::lua_config::evaluate::read_text;
 const OWNER_ONLY: u32 = 0o600;
 const DEFAULT_MODE: u32 = 0o666;
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum Holds {
+    Settings,
+    Secrets,
+}
+
 pub(super) fn replace(
     path: &Path,
+    holds: Holds,
     change: impl FnOnce(Option<&str>) -> Result<String, ConfigError>,
-) -> Result<(), ConfigError> {
+) -> Result<Option<String>, ConfigError> {
     let path = &resolved(path)?;
     let dir = folder_of(path);
     DirBuilder::new()
@@ -35,10 +42,13 @@ pub(super) fn replace(
         .ok()
         .map(|meta| meta.permissions().mode() & 0o777);
     let mut file = tempfile::Builder::new()
-        .permissions(Permissions::from_mode(mode_before.unwrap_or(DEFAULT_MODE)))
+        .permissions(Permissions::from_mode(match holds {
+            Holds::Secrets => OWNER_ONLY,
+            Holds::Settings => mode_before.unwrap_or(DEFAULT_MODE),
+        }))
         .tempfile_in(&dir)
         .map_err(io_error)?;
-    if let Some(mode) = mode_before {
+    if let (Holds::Settings, Some(mode)) = (holds, mode_before) {
         let exact = Permissions::from_mode(mode);
         file.as_file().set_permissions(exact).map_err(io_error)?;
     }
@@ -48,7 +58,12 @@ pub(super) fn replace(
     File::open(&dir)
         .and_then(|folder| folder.sync_all())
         .map_err(io_error)?;
-    Ok(())
+    Ok(match (holds, mode_before) {
+        (Holds::Secrets, Some(mode)) if mode & 0o077 != 0 => Some(format!(
+            "secrets.lua was mode {mode:o}; dam wrote it 600, since it holds secrets"
+        )),
+        _ => None,
+    })
 }
 
 pub(in crate::lua_config) fn folder_of(path: &Path) -> PathBuf {

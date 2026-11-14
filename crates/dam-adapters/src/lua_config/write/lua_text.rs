@@ -28,6 +28,14 @@ pub(super) fn table_key(name: &str) -> String {
     }
 }
 
+pub(super) fn list_literal<S: AsRef<str>>(items: impl IntoIterator<Item = S>) -> String {
+    let items: Vec<String> = items
+        .into_iter()
+        .map(|s| string_literal(s.as_ref()))
+        .collect();
+    format!("{{ {} }}", items.join(", "))
+}
+
 fn is_bare_name(name: &str) -> bool {
     let mut chars = name.chars();
     chars

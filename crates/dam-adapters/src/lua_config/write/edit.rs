@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use dam_application::ConfigError;
 
 use super::insert::Indent;
-use super::replace::replace;
+use super::replace::{Holds, replace};
 use super::section::Section;
 use crate::lua_config::LuaConfigFile;
 
@@ -17,6 +17,7 @@ pub(in crate::lua_config) enum Change<'a, R> {
 
 pub(in crate::lua_config) struct EditedFile<'a, R> {
     pub(super) path: PathBuf,
+    pub(super) holds: Holds,
     pub(super) file: &'static str,
     pub(super) table: &'static str,
     pub(super) missing: &'static str,
@@ -38,7 +39,7 @@ impl<R> EditedFile<'_, R> {
             entry: name,
             by_hand,
         };
-        replace(&self.path, |current| {
+        replace(&self.path, self.holds, |current| {
             let mut names = (self.names)(&(self.read)(self.config, current)?);
             let text = current.unwrap_or(self.missing);
             let edited = match &change {
@@ -54,7 +55,6 @@ impl<R> EditedFile<'_, R> {
             )?;
             Ok(edited)
         })
-        .map(|()| None)
     }
 
     fn check(
