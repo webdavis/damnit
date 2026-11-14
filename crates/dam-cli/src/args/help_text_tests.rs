@@ -124,6 +124,8 @@ dam token create require: help = Refuse a request that does not pass --meta KEY=
 dam token list: about = List the config's tokens with their grants and standing, never their values
 dam token revoke: about = Remove a token's tables from the config
 dam token revoke name: help = Name the token to remove
+dam config: about = Check the config files
+dam config check: about = Read config.lua and secrets.lua in full and print where they are; an error's message may show a value from the file
 ";
 
 fn every_help_text(command: &clap::Command, path: &str, out: &mut String) {

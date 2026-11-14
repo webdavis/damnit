@@ -22,6 +22,7 @@ pub(crate) enum CliError {
     UseCase(UseCaseError),
     Editor(EditorError),
     Config(ConfigError),
+    ConfigCheck(ConfigError),
     ConfigNotLua(std::path::PathBuf),
     Open(OpenError),
     Usage(String),
@@ -63,13 +64,15 @@ impl CliError {
             CliError::UseCase(UseCaseError::Store(_))
             | CliError::Open(_)
             | CliError::Io(_)
-            | CliError::Config(ConfigError::Io(_)) => "store",
+            | CliError::Config(ConfigError::Io(_))
+            | CliError::ConfigCheck(ConfigError::Io(_)) => "store",
             CliError::UseCase(UseCaseError::Helper(_)) => "helper",
             CliError::UseCase(UseCaseError::Credential(_)) => "credential",
             CliError::Editor(_) => KIND_OF_AN_EDITOR_FAILURE_NO_DOCUMENT_CARRIES,
             CliError::UseCase(UseCaseError::Parse(_))
             | CliError::UseCase(UseCaseError::Query(_))
             | CliError::Config(_)
+            | CliError::ConfigCheck(_)
             | CliError::ConfigNotLua(_) => "parse",
             CliError::Usage(_) | CliError::CommandLine(_) => KIND_USAGE,
             CliError::Cancelled => "cancelled",
@@ -110,7 +113,8 @@ impl fmt::Display for CliError {
         match self {
             CliError::UseCase(e) => write!(f, "{}", UseCaseText(e)),
             CliError::Editor(e) => write!(f, "editor: {}", e.0),
-            CliError::Config(e) => write!(f, "{e}"),
+            CliError::Config(e) => write!(f, "{e}; run dam config check"),
+            CliError::ConfigCheck(e) => write!(f, "{e}"),
             CliError::ConfigNotLua(path) => write!(
                 f,
                 "config: {} does not end in .lua; the config is config.lua now",

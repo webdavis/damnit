@@ -1,3 +1,4 @@
+mod config;
 mod dispositions;
 mod editing;
 mod new;
@@ -13,6 +14,7 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
+pub(crate) use config::{ConfigArgs, ConfigCommand};
 pub(crate) use editing::EditArgs;
 pub(crate) use new::NewArgs;
 pub(crate) use planning::{DayArgs, DayCommand, RemindersArgs};
@@ -146,6 +148,8 @@ pub(crate) enum Command {
     Resolve(ResolveArgs),
     #[command(about = "Manage the tokens tools and agents run dam with")]
     Token(TokenArgs),
+    #[command(about = "Check the config files")]
+    Config(ConfigArgs),
 }
 
 #[cfg(test)]

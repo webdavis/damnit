@@ -2,12 +2,13 @@ use dam_application::{
     Config, ConfigError, ConfigFile, LoadedConfig, NewToken, RemoteName, Tokens,
 };
 
+use super::evaluate::ErrorText;
 use super::file::LuaConfigFile;
 use super::write::{Change, remote_entry, token_entry};
 
 impl ConfigFile for LuaConfigFile {
     fn load(&self) -> Result<LoadedConfig, ConfigError> {
-        self.read_both()
+        self.read_both(ErrorText::NeverQuotesTheFile)
     }
 
     fn add_remote(&self, name: &RemoteName, url: &str) -> Result<Option<String>, ConfigError> {
