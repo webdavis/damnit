@@ -10,6 +10,7 @@ fn create(byte: u8) -> RemoteMutation {
         oid: oid(byte),
         idempotency_key: format!("k{byte}"),
         remote_id: None,
+        container_remote_id: None,
         object: Some(task(byte)),
         fields: vec![],
     }
@@ -92,6 +93,7 @@ fn an_accepted_delete_clears_the_mapping_instead_of_snapshotting() {
     let delete = RemoteMutation {
         op: MutationOp::Delete,
         remote_id: Some("r1".into()),
+        container_remote_id: None,
         object: None,
         ..create(1)
     };

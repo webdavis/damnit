@@ -10,6 +10,7 @@ fn removal(of: u8) -> RemoteMutation {
         op: MutationOp::Delete,
         idempotency_key: String::new(),
         remote_id: None,
+        container_remote_id: None,
         object: None,
         fields: vec![],
     }

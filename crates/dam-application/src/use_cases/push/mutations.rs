@@ -7,7 +7,7 @@ use crate::errors::UseCaseError;
 use crate::ports::{RemoteTrackingRepository, Store};
 use crate::remote::{MutationOp, RemoteCapabilities, RemoteMutation};
 use crate::use_cases::push::idempotency::{Origin, key};
-use crate::use_cases::push::refiles::Refiles;
+use crate::use_cases::push::refiles::{Refiled, Refiles};
 use crate::use_cases::push::sending_order::turn;
 
 pub(super) fn changes_to_send(
@@ -80,7 +80,7 @@ pub(super) fn plan(
     let mut owed: Vec<_> = changes.into_values().collect();
     owed.sort_by_key(|(change, _)| turn(change));
     for (change, origin) in owed {
-        let refiled = refiles.contains(change.oid());
+        let refiled = refiles.refiled(remote_tracking, &remote.name, change.oid())?;
         match mutation_for(
             remote_tracking,
             caps,
@@ -102,7 +102,7 @@ fn mutation_for(
     remote: &RemoteConfig,
     change: &Change,
     origin: Option<&CommitId>,
-    refiled: bool,
+    refiled: Option<Refiled>,
 ) -> Result<Option<RemoteMutation>, UseCaseError> {
     let object = change.object();
     if !caps.kinds.contains(&object.kind()) {
@@ -123,7 +123,7 @@ fn mutation_for(
             let changed = changed_fields(before, after);
             let declared: Vec<Field> = Field::ALL
                 .into_iter()
-                .filter(|f| changed.contains(f) || (refiled && *f == Field::Path))
+                .filter(|f| changed.contains(f) || (refiled.is_some() && *f == Field::Path))
                 .filter(|f| caps.fields.contains(f))
                 .collect();
             if declared.is_empty() {
@@ -140,11 +140,8 @@ fn mutation_for(
         oid: change.oid().clone(),
         idempotency_key: key(origin.map_or(Origin::Retry, Origin::Commit), change.oid()),
         remote_id,
-        object: if op == MutationOp::Delete {
-            None
-        } else {
-            change.after().cloned()
-        },
+        container_remote_id: refiled.and_then(|r| r.container_remote_id),
+        object: change.after().cloned(),
         fields,
     }))
 }

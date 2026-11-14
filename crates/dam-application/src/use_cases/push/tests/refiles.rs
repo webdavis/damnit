@@ -141,3 +141,38 @@ fn a_child_removed_with_the_old_parent_is_not_refiled() {
         vec![(oid(new), Create), (oid(child), Delete), (oid(old), Delete)]
     );
 }
+
+fn containers_named(pushed: &Pushed) -> Vec<(Oid, Option<String>)> {
+    pushed
+        .borrow()
+        .iter()
+        .map(|m| (m.oid.clone(), m.container_remote_id.clone()))
+        .collect()
+}
+
+#[test]
+fn a_refile_names_the_namesake_the_remote_already_holds() {
+    for (removed, staying, child) in OLD_NEW_AND_CHILD_IN_SEVERAL_OID_ORDERS {
+        let s = held_upstream(&[
+            task_in(removed, "P", "Home/"),
+            task_in(staying, "P", "Home/"),
+            task_in(child, "c", "Home/P/"),
+        ]);
+        s.deleted(&oid(removed));
+        assert_eq!(
+            containers_named(&pushed_to_a_remote_that_removes_only_empty_containers(&s)),
+            vec![(oid(child), Some("i:1".into())), (oid(removed), None)]
+        );
+    }
+}
+
+#[test]
+fn a_refile_under_a_namesake_this_push_creates_names_no_container() {
+    let (old, new, child) = (1, 2, 3);
+    let s = a_parent_replaced_by_a_namesake_over_a_child_it_held(old, new, child);
+    let named = containers_named(&pushed_to_a_remote_that_removes_only_empty_containers(&s));
+    assert!(
+        named.iter().all(|(_, container)| container.is_none()),
+        "{named:?}"
+    );
+}
