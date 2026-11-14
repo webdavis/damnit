@@ -14,14 +14,23 @@ use plan::{TreeChange, missing_object, plan_for, resend_stable_temp_id};
 
 enum Failure {
     OnlyThisMutation(String),
+    Unanswered,
     StopsThePush(ApiError),
 }
+
+const FIRST_SERVER_ERROR: u16 = 500;
 
 impl From<ApiError> for Failure {
     fn from(e: ApiError) -> Failure {
         match e {
             rate @ ApiError::RateLimited { .. } => Failure::StopsThePush(rate),
-            other => Failure::OnlyThisMutation(other.to_string()),
+            ApiError::Http { status, .. } if status < FIRST_SERVER_ERROR => {
+                Failure::OnlyThisMutation(e.to_string())
+            }
+            ApiError::Http { .. }
+            | ApiError::Transport { .. }
+            | ApiError::Decode { .. }
+            | ApiError::TooLarge { .. } => Failure::Unanswered,
         }
     }
 }
@@ -47,6 +56,7 @@ pub fn push(api: &impl TodoistSync, mutations: Vec<Mutation>) -> Result<PushResp
                 oid: m.oid.clone(),
                 verdict: Verdict::Refused { why },
             }),
+            Err(Failure::Unanswered) => break,
             Err(Failure::StopsThePush(e)) => return Err(e),
         }
     }

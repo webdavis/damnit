@@ -1,13 +1,25 @@
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
 use dam_helper::testing::{self, Loopback, Reply, Seen};
 use serde_json::{Value, json};
 
+#[derive(Clone, Copy)]
+pub enum Fault {
+    HangUp,
+    ServerError,
+}
+
+#[derive(Default)]
 pub struct Held {
     pub projects: Vec<Value>,
     pub sections: Vec<Value>,
     pub items: Vec<Value>,
+    pub uuids_received: Vec<String>,
     issued: u32,
+    executed: HashSet<String>,
+    issued_id_by_temp_id: HashMap<String, String>,
+    fault_after_the_next_write: Option<Fault>,
 }
 
 impl Held {
@@ -16,8 +28,13 @@ impl Held {
             projects,
             sections,
             items,
-            issued: 0,
+            ..Held::default()
         }
+    }
+
+    pub fn applying_the_next_write_then(mut self, fault: Fault) -> Held {
+        self.fault_after_the_next_write = Some(fault);
+        self
     }
 
     pub fn item(&self, content: &str) -> Vec<&Value> {
@@ -36,23 +53,39 @@ impl Held {
         let mut verdicts = serde_json::Map::new();
         let mut issued_ids = serde_json::Map::new();
         for c in commands {
+            let uuid = c["uuid"].as_str().unwrap().to_string();
+            self.uuids_received.push(uuid.clone());
+            let kind = c["type"].as_str().unwrap_or_default();
+            if self.executed.contains(&uuid) {
+                if let Some(temp_id) = c["temp_id"].as_str()
+                    && let Some(id) = self.issued_id_by_temp_id.get(temp_id)
+                {
+                    issued_ids.insert(temp_id.into(), id.clone().into());
+                }
+                verdicts.insert(uuid, "ok".into());
+                continue;
+            }
             let args = &c["args"];
-            match c["type"].as_str().unwrap_or_default() {
+            match kind {
                 "item_add" => {
                     self.issued += 1;
                     let id = format!("n{}", self.issued);
-                    issued_ids.insert(c["temp_id"].as_str().unwrap().into(), id.clone().into());
+                    let temp_id = c["temp_id"].as_str().unwrap().to_string();
+                    self.issued_id_by_temp_id
+                        .insert(temp_id.clone(), id.clone());
+                    issued_ids.insert(temp_id, id.clone().into());
                     self.items.push(json!({"id": id, "content": args["content"], "project_id": args["project_id"], "section_id": args["section_id"], "parent_id": args["parent_id"], "priority": 1, "checked": false, "is_deleted": false}));
                 }
                 "item_delete" => self.delete_with_everything_under(args["id"].as_str().unwrap()),
                 "item_move" => self.move_item(args),
                 other => {
                     let refused = json!({"error": format!("this fake does not model {other}")});
-                    verdicts.insert(c["uuid"].as_str().unwrap().into(), refused);
+                    verdicts.insert(uuid, refused);
                     continue;
                 }
             }
-            verdicts.insert(c["uuid"].as_str().unwrap().into(), "ok".into());
+            self.executed.insert(uuid.clone());
+            verdicts.insert(uuid, "ok".into());
         }
         json!({"sync_status": verdicts, "temp_id_mapping": issued_ids})
     }
@@ -98,14 +131,16 @@ impl Held {
 pub fn serve(held: Held) -> (Loopback, Arc<Mutex<Held>>) {
     let state = Arc::new(Mutex::new(held));
     let shared = state.clone();
-    let server = testing::serve_with(move |seen: &Seen| {
+    let server = testing::serve_or_hang_up(move |seen: &Seen| {
         let mut held = shared.lock().unwrap();
-        match seen.form().get("commands") {
-            Some(commands) => Reply::json(
-                200,
-                held.write(&serde_json::from_str::<Vec<Value>>(commands).unwrap()),
-            ),
-            None => Reply::json(200, held.read()),
+        let Some(commands) = seen.form().get("commands").cloned() else {
+            return Some(Reply::json(200, held.read()));
+        };
+        let answer = held.write(&serde_json::from_str::<Vec<Value>>(&commands).unwrap());
+        match held.fault_after_the_next_write.take() {
+            None => Some(Reply::json(200, answer)),
+            Some(Fault::HangUp) => None,
+            Some(Fault::ServerError) => Some(Reply::json(502, json!({"error": "Bad gateway"}))),
         }
     });
     (server, state)

@@ -1,6 +1,10 @@
+use dam_protocol::Mutation;
+
 use super::fixtures::{mutation, sync_body, task, with_fields};
 use crate::api::ApiError;
 use crate::api::fake::{FakeTodoist, answered, rate_limited};
+
+const SERVICE: &str = "Todoist";
 use crate::push::push;
 
 #[test]
@@ -24,46 +28,58 @@ fn a_failure_reading_the_tree_stops_the_push_before_any_mutation() {
     );
 }
 
+fn three_subject_updates() -> Vec<Mutation> {
+    [(1, "milk"), (2, "oat"), (3, "soy")]
+        .into_iter()
+        .map(|(n, subject)| {
+            let oid = format!("{n}").repeat(40);
+            let object = task(&oid, "Work/", subject, false);
+            with_fields(
+                mutation("update", n, Some("i:i1"), Some(object)),
+                &["subject"],
+            )
+        })
+        .collect()
+}
+
 #[test]
-fn a_failure_part_way_through_belongs_to_its_own_mutation() {
-    let api = FakeTodoist::new(sync_body()).failing_write(2, answered(500, "upstream is down"));
-    let mutations = vec![
-        with_fields(
-            mutation(
-                "update",
-                1,
-                Some("i:i1"),
-                Some(task(&"1".repeat(40), "Work/", "milk", false)),
-            ),
-            &["subject"],
-        ),
-        with_fields(
-            mutation(
-                "update",
-                2,
-                Some("i:i1"),
-                Some(task(&"2".repeat(40), "Work/", "oat", false)),
-            ),
-            &["subject"],
-        ),
-        with_fields(
-            mutation(
-                "update",
-                3,
-                Some("i:i1"),
-                Some(task(&"3".repeat(40), "Work/", "soy", false)),
-            ),
-            &["subject"],
-        ),
-    ];
-    let response = push(&api, mutations).unwrap();
+fn a_request_todoist_turned_away_fails_only_its_own_mutation() {
+    let api = FakeTodoist::new(sync_body()).failing_write(2, answered(400, "bad request"));
+    let response = push(&api, three_subject_updates()).unwrap();
     assert!(response.results[0].ok());
     assert!(!response.results[1].ok());
-    assert!(response.results[1].why().unwrap().contains("500"));
+    assert!(response.results[1].why().unwrap().contains("400"));
     assert!(
         response.results[2].ok(),
-        "the batch goes on after one mutation's failure"
+        "the batch goes on after one mutation's refusal"
     );
+}
+
+#[test]
+fn a_write_with_no_answer_leaves_its_mutation_and_the_rest_unanswered() {
+    let no_answers = [
+        ApiError::transport(SERVICE, "timeout: global"),
+        ApiError::transport(SERVICE, "connection closed before the answer"),
+        answered(502, "bad gateway"),
+        ApiError::decode(SERVICE, "expected value at line 1 column 1"),
+        ApiError::TooLarge {
+            service: SERVICE,
+            limit: 1,
+        },
+    ];
+    for no_answer in no_answers {
+        let shown = no_answer.to_string();
+        let api = FakeTodoist::new(sync_body()).failing_write(2, no_answer);
+        let response = push(&api, three_subject_updates()).unwrap();
+        let answered: Vec<_> = response.results.iter().map(|r| r.oid.clone()).collect();
+        assert_eq!(answered, vec!["1".repeat(40)], "{shown}");
+        assert!(response.results[0].ok(), "{shown}");
+        assert_eq!(
+            api.recorded.borrow().writes,
+            2,
+            "{shown}: nothing sent after"
+        );
+    }
 }
 
 #[test]
