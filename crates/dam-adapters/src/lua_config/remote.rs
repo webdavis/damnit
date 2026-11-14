@@ -40,7 +40,7 @@ pub(super) fn read_remote(name: &str, remote: &StrictMap) -> Result<RemoteConfig
         helper,
         url,
         credentials: Vec::new(),
-        stale: duration(remote, "stale")?.map(|d| d.value),
+        stale: duration(remote, "stale")?,
         deadline: duration(remote, "deadline")?,
         path,
     })

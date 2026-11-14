@@ -1,9 +1,7 @@
-use std::time::Duration;
-
 use dam_domain::Permission::{RemotePull, RemotePush};
 use dam_domain::{Grant, Object, Task};
 
-use crate::config::RemoteConfig;
+use crate::config::{ConfiguredDuration, RemoteConfig};
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{HelperError, RemoteName};
 use crate::remote::{IncomingObject, PullOutcome};
@@ -13,7 +11,7 @@ use crate::testing::{Scenario, allowed, answering, config, holder, oid, remotes_
 
 fn todoist_and_gcal_both_stale() -> Scenario {
     let mut config = config();
-    config.remotes[0].stale = Some(Duration::from_secs(60));
+    config.remotes[0].stale = ConfiguredDuration::parse("60s");
     config.remotes.push(RemoteConfig {
         name: RemoteName("gcal".into()),
         url: "gcal::".into(),

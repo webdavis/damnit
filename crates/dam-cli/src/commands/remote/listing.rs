@@ -21,7 +21,7 @@ pub(super) fn run(ctx: &Context) -> Result<Report, CliError> {
                 helper: &r.helper,
                 url: &r.url,
                 path: r.path.as_ref().map(|p| p.as_str()),
-                stale_seconds: r.stale.map(|s| s.as_secs()),
+                stale_seconds: r.stale.as_ref().map(|s| s.value.as_secs()),
                 last_pull: ctx.store.last_pull(&r.name)?,
                 last_push: ctx.store.last_push(&r.name)?,
             })

@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use dam_domain::Path;
 
 use super::{ConfiguredDuration, CredentialSpec};
@@ -11,7 +9,7 @@ pub struct RemoteConfig {
     pub helper: String,
     pub url: String,
     pub credentials: Vec<CredentialSpec>,
-    pub stale: Option<Duration>,
+    pub stale: Option<ConfiguredDuration>,
     pub deadline: Option<ConfiguredDuration>,
     pub path: Option<Path>,
 }

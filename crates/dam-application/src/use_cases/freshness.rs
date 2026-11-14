@@ -33,7 +33,7 @@ impl Dam<'_> {
         say: fn(&UseCaseError) -> String,
     ) -> Result<(), UseCaseError> {
         for remote in &self.config.remotes {
-            let Some(window) = remote.stale else {
+            let Some(window) = remote.stale.as_ref().map(|s| s.value) else {
                 continue;
             };
             if !self.may_reach(Permission::RemotePull, remote) {
