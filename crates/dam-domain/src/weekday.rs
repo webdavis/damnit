@@ -32,47 +32,4 @@ pub(crate) fn week_start(date: Date) -> Date {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_day_reads_by_short_name_full_name_and_any_case() {
-        for text in ["thu", "thursday", "Thursday", "THU"] {
-            assert_eq!(parse_weekday(text), Some(Weekday::Thursday), "{text}");
-        }
-    }
-
-    #[test]
-    fn a_word_that_names_no_day_is_none() {
-        for text in ["", "thur", "tues", "someday", "1"] {
-            assert_eq!(parse_weekday(text), None, "{text}");
-        }
-    }
-
-    #[test]
-    fn every_day_writes_back_as_a_name_that_reads_again() {
-        for day in [
-            Weekday::Monday,
-            Weekday::Tuesday,
-            Weekday::Wednesday,
-            Weekday::Thursday,
-            Weekday::Friday,
-            Weekday::Saturday,
-            Weekday::Sunday,
-        ] {
-            assert_eq!(parse_weekday(weekday_text(day)), Some(day));
-        }
-    }
-
-    #[test]
-    fn a_weekday_name_reads_the_same_in_a_recurrence_rule_and_a_date_word() {
-        let friday = jiff::civil::date(2026, 9, 18);
-        let tz = jiff::tz::TimeZone::UTC;
-        for text in ["mon", "monday", "Monday", "MON"] {
-            let rule = crate::Rule::parse(&format!("every week on {text}")).unwrap();
-            assert_eq!(rule.to_text(), "every week on mon", "{text}");
-            let when = crate::When::parse_human(text, friday, &tz).unwrap();
-            assert_eq!(when.date().weekday(), Weekday::Monday, "{text}");
-        }
-    }
-}
+mod tests;
