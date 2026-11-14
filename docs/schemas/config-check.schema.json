@@ -7,8 +7,8 @@
   "required": ["config", "secrets", "warnings"],
   "additionalProperties": false,
   "properties": {
-    "config": { "type": "string", "description": "The path of config.lua." },
-    "secrets": { "type": "string", "description": "The path of secrets.lua, beside config.lua." },
+    "config": { "type": ["string", "null"], "description": "The path of config.lua, or null when there is none." },
+    "secrets": { "type": ["string", "null"], "description": "The path of secrets.lua, beside config.lua, or null when there is none." },
     "warnings": { "type": "array", "items": { "type": "string" }, "description": "What dam says about the token tables: tokens left out or disabled, and why." }
   }
 }
