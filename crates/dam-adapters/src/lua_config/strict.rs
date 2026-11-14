@@ -2,6 +2,8 @@ use std::fmt::Display;
 
 use mlua::{Table, Value};
 
+use super::shape::{list, map_entries, text};
+
 pub(super) struct StrictMap {
     file: String,
     place: Option<String>,
@@ -79,7 +81,27 @@ impl StrictMap {
             .collect()
     }
 
-    fn child(&self, key: &str, value: &Value) -> Result<StrictMap, String> {
+    pub(super) fn maps_listed(&self, key: &str) -> Result<Option<Vec<StrictMap>>, String> {
+        let Some(value) = self.get(key) else {
+            return Ok(None);
+        };
+        let wrong = || self.refuse(format_args!("{key} must be a list of tables"));
+        let items = list(value).ok_or_else(wrong)?;
+        let place = self.place_of(key);
+        items
+            .iter()
+            .map(|item| match item {
+                Value::Table(table) => {
+                    map_entries(table).map(|entries| self.at(place.clone(), entries))
+                }
+                _ => None,
+            })
+            .collect::<Option<Vec<_>>>()
+            .map(Some)
+            .ok_or_else(wrong)
+    }
+
+    pub(super) fn child(&self, key: &str, value: &Value) -> Result<StrictMap, String> {
         match value {
             Value::Table(table) => map_entries(table)
                 .map(|entries| self.at(self.place_of(key), entries))
@@ -102,32 +124,4 @@ impl StrictMap {
             Some(place) => format!("{place}.{key}"),
         }
     }
-}
-
-pub(super) fn text(value: &Value) -> Option<String> {
-    match value {
-        Value::String(s) => s.to_str().ok().map(|s| s.to_string()),
-        _ => None,
-    }
-}
-
-pub(super) fn list(value: &Value) -> Option<Vec<Value>> {
-    let Value::Table(t) = value else { return None };
-    let items = t
-        .sequence_values::<Value>()
-        .collect::<mlua::Result<Vec<_>>>()
-        .ok()?;
-    (t.pairs::<Value, Value>().count() == items.len()).then_some(items)
-}
-
-fn map_entries(table: &Table) -> Option<Vec<(String, Value)>> {
-    let mut entries = table
-        .pairs::<Value, Value>()
-        .map(|pair| {
-            let (key, value) = pair.ok()?;
-            Some((text(&key)?, value))
-        })
-        .collect::<Option<Vec<_>>>()?;
-    entries.sort_by(|a, b| a.0.cmp(&b.0));
-    Some(entries)
 }
