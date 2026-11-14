@@ -1,5 +1,4 @@
 mod create;
-mod generate;
 mod grant_view;
 mod list;
 mod revoke;
@@ -7,7 +6,7 @@ mod revoke;
 use dam_application::{ConfigFile, Randomness};
 use dam_domain::Timestamp;
 
-use crate::args::{Command, TokenArgs, TokenCommand};
+use crate::args::{TokenArgs, TokenCommand};
 use crate::error::CliError;
 use crate::output::Report;
 
@@ -17,19 +16,10 @@ pub(crate) fn run(
     now: Timestamp,
     args: TokenArgs,
 ) -> Result<Report, CliError> {
+    let config = file.load()?;
     match args.command {
-        TokenCommand::Generate => generate::run(random),
-        TokenCommand::Create(a) => create::run(file, &file.load()?, random, a),
-        TokenCommand::List => list::run(&file.load()?, now),
-        TokenCommand::Revoke { name } => revoke::run(file, &file.load()?, name),
+        TokenCommand::Create(a) => create::run(file, &config, random, a),
+        TokenCommand::List => list::run(&config, now),
+        TokenCommand::Revoke { name } => revoke::run(file, &config, name),
     }
-}
-
-pub(crate) fn writes_nothing(command: &Command) -> bool {
-    matches!(
-        command,
-        Command::Token(TokenArgs {
-            command: TokenCommand::Generate
-        })
-    )
 }

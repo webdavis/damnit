@@ -23,8 +23,8 @@ dam token create agent --allow task:read --allow task:create --allow task:change
 
 `--paths` limits the token to objects under that path, so each task the token sends needs a
 `--path` under it. The README's Tokens section lists every permission and grant key.
-When a template renders the config, the owner runs `dam token generate`, which prints a token and
-writes nothing, and the template writes the token's table.
+When a template renders the config, the template writes the token's table with the value
+`dam token create` printed.
 
 ## Sending a task
 

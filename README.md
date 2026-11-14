@@ -372,9 +372,9 @@ every token. `dam status` warns about each.
 ## Tokens in a config your dotfiles manage
 
 `dam token create`, `dam token revoke` and `dam remote add` edit the config file in place. When a
-template renders your config, change the template instead, or the next render undoes the edit.
+template renders your config, put each edit in the template too, or the next render undoes it.
 
-1. Run `dam token generate`. It prints a new token and writes nothing.
+1. Run `dam token create tool --allow task:read`. It prints the token once.
 2. Save the token in your password manager.
 3. Have your template write the token's table with that value:
 
@@ -385,8 +385,6 @@ template renders your config, change the template instead, or the next render un
        allow = ["task:read"]
 
 4. Give the tool the same value as `DAM_TOKEN`.
-
-`dam token generate --json` also prints the token's `key_id`, the one `dam token list` shows.
 
 ## Errors
 

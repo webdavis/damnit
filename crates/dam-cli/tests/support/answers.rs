@@ -133,7 +133,6 @@ pub fn answers(command: &str) -> Option<Vec<serde_json::Value>> {
         "push" => vec![json_of(&fixture::committed(), &["push"])],
         "pull" => vec![json_of(&fixture::committed(), &["pull"])],
         "resolve" => vec![json_of(&in_conflict(), &["resolve", &milk, "--theirs"])],
-        "token generate" => vec![json_of(&Sandbox::new(), &["token", "generate"])],
         "token create" => vec![json_of(
             &Sandbox::new(),
             &["token", "create", "vpt", "--allow", "task:read"],
