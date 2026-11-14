@@ -12,7 +12,7 @@ fn the_owner_cannot_add_a_tokens_completion_of_a_task_that_since_waits_on_an_ope
     let sb = Sandbox::new();
     let rent = sb.new_object(&["Pay rent"]);
     let keys = sb.new_object(&["Find the keys"]);
-    let held = grant_to(&sb, "vpt", 1, &grant("\"task:read\", \"task:complete\""));
+    let held = grant_to(&sb, "tool", 1, &grant("\"task:read\", \"task:complete\""));
     let sent = answer(
         &sb.output_holding(&held, &["done", &rent, "--json"]),
         "sent.schema.json",

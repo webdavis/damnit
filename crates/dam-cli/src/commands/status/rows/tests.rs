@@ -159,7 +159,7 @@ fn an_open_task_row_carries_a_null_completion_time() {
 #[test]
 fn a_change_a_token_made_names_the_token_its_key_and_its_channel() {
     let author = dam_domain::Author::Token(dam_domain::TokenAuthor {
-        name: "vpt".into(),
+        name: "tool".into(),
         key_id: dam_domain::Token::generate(&mut |b: &mut [u8]| b.fill(1))
             .key_id()
             .clone(),
@@ -168,11 +168,11 @@ fn a_change_a_token_made_names_the_token_its_key_and_its_channel() {
     let change = Change::between(None, Some(task("call the dentist"))).unwrap();
     let row = ChangeRow::new(&change, author.token(), false);
     let json = serde_json::to_value(&row).unwrap();
-    assert_eq!(json["from"], "vpt");
+    assert_eq!(json["from"], "tool");
     assert_eq!(json["key_id"], author.token().unwrap().key_id.as_str());
     assert_eq!(json["channel"], "local");
     assert!(
-        row.line().ends_with("call the dentist  vpt"),
+        row.line().ends_with("call the dentist  tool"),
         "{}",
         row.line()
     );

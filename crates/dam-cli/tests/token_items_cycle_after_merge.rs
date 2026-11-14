@@ -20,7 +20,7 @@ fn taking_a_tokens_side_refuses_a_dependency_the_owner_dropped_that_now_closes_a
     dam(&sb, &["edit", &rent, "--depends", &keys]);
     dam(&sb, &["add", "-A"]);
     dam(&sb, &["commit", "-m", "rent waits on the keys"]);
-    let held = grant_to(&sb, "vpt", 1, &grant("\"task:read\", \"task:change\""));
+    let held = grant_to(&sb, "tool", 1, &grant("\"task:read\", \"task:change\""));
     let line = ["edit", &rent, "--depends", &desk, "--json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     let hash = sent["hash"].as_str().unwrap();

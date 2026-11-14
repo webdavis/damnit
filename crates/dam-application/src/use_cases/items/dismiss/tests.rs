@@ -11,10 +11,10 @@ use crate::use_cases::items::land::Landed;
 use crate::use_cases::items::refusal::ItemRefusal;
 use crate::use_cases::new_object::NewTask;
 
-fn dentist_from_vpt(s: &Scenario) -> ItemHash {
-    let vpt = holder(vec![allowed(&[TaskCreate], None)]);
+fn dentist_from_tool(s: &Scenario) -> ItemHash {
+    let tool = holder(vec![allowed(&[TaskCreate], None)]);
     let dam = Dam {
-        access: &vpt,
+        access: &tool,
         ..s.dam()
     };
     let task = NewTask {
@@ -36,7 +36,7 @@ fn dentist_from_vpt(s: &Scenario) -> ItemHash {
 #[test]
 fn the_owner_declines_an_item_and_it_is_never_offered_again() {
     let s = Scenario::default().drawing_from(7);
-    let hash = dentist_from_vpt(&s);
+    let hash = dentist_from_tool(&s);
     let declined = s.dam().dismiss(&hash).unwrap();
     assert!(matches!(declined.outcome, Outcome::Declined(_)));
     assert!(s.dam().waiting_items().unwrap().is_empty());
@@ -53,7 +53,7 @@ fn the_owner_declines_an_item_and_it_is_never_offered_again() {
 #[test]
 fn a_token_withdraws_its_own_item_and_not_another_senders() {
     let s = Scenario::default().drawing_from(7);
-    let hash = dentist_from_vpt(&s);
+    let hash = dentist_from_tool(&s);
     let claude = Holder {
         name: "claude".into(),
         ..holder(vec![allowed(&[PendingRead], None)])
@@ -66,15 +66,15 @@ fn a_token_withdraws_its_own_item_and_not_another_senders() {
         as_claude.dismiss(&hash),
         Err(ItemRefusal::NotYours(hash.clone()).into())
     );
-    let vpt = holder(vec![]);
-    let as_vpt = Dam {
-        access: &vpt,
+    let tool = holder(vec![]);
+    let as_tool = Dam {
+        access: &tool,
         ..s.dam()
     };
-    let withdrawn = as_vpt.dismiss(&hash).unwrap();
+    let withdrawn = as_tool.dismiss(&hash).unwrap();
     assert!(matches!(withdrawn.outcome, Outcome::Withdrawn(_)));
     assert_eq!(
-        as_vpt.remove(hash.oid()).err(),
+        as_tool.remove(hash.oid()).err(),
         Some(UseCaseError::Refused(Refusal::NotOpenToTokens("rm")))
     );
 }

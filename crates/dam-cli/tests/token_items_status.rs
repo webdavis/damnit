@@ -14,9 +14,9 @@ fn status_as(sb: &Sandbox, held: Option<&str>) -> serde_json::Value {
     status
 }
 
-fn dentist_from_vpt() -> (Sandbox, String, serde_json::Value) {
+fn dentist_from_tool() -> (Sandbox, String, serde_json::Value) {
     let sb = Sandbox::new();
-    let held = grant_to(&sb, "vpt", 1, &grant("\"task:create\""));
+    let held = grant_to(&sb, "tool", 1, &grant("\"task:create\""));
     let line = ["new", "Call the dentist", "--path", "inbox", "--json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     (sb, held, sent)
@@ -25,7 +25,7 @@ fn dentist_from_vpt() -> (Sandbox, String, serde_json::Value) {
 #[test]
 fn the_owner_sees_a_tokens_item_beside_their_own_changes() {
     let _guard = support::guard("the_owner_sees_a_tokens_item_beside_their_own_changes");
-    let (sb, _, sent) = dentist_from_vpt();
+    let (sb, _, sent) = dentist_from_tool();
     sb.new_object(&["buy milk"]);
     let status = status_as(&sb, None);
     assert_eq!(status["unstaged"][0]["subject"], "buy milk");
@@ -33,7 +33,7 @@ fn the_owner_sees_a_tokens_item_beside_their_own_changes() {
     let waiting = &status["waiting"][0];
     assert_eq!(waiting["hash"], sent["hash"]);
     assert_eq!(waiting["item"], "new");
-    assert_eq!(waiting["from"], "vpt");
+    assert_eq!(waiting["from"], "tool");
     assert_eq!(waiting["key_id"], sent["key_id"]);
     assert_eq!(waiting["channel"], "local");
     assert_eq!(waiting["created"], sent["created"]);
@@ -44,7 +44,7 @@ fn the_owner_sees_a_tokens_item_beside_their_own_changes() {
     assert!(not_staged[1].ends_with("buy milk  you"), "{text}");
     assert!(
         not_staged[2].starts_with(&format!(
-            "  new      {short}  Call the dentist  inbox/  vpt  "
+            "  new      {short}  Call the dentist  inbox/  tool  "
         )),
         "{text}"
     );
@@ -54,9 +54,9 @@ fn the_owner_sees_a_tokens_item_beside_their_own_changes() {
 fn a_token_sees_its_own_items_and_another_senders_only_with_pending_read() {
     let _guard =
         support::guard("a_token_sees_its_own_items_and_another_senders_only_with_pending_read");
-    let (sb, vpt, sent) = dentist_from_vpt();
+    let (sb, tool, sent) = dentist_from_tool();
     sb.new_object(&["buy milk"]);
-    let own = status_as(&sb, Some(&vpt));
+    let own = status_as(&sb, Some(&tool));
     assert_eq!(own["waiting"][0]["hash"], sent["hash"]);
     assert_eq!(own["unstaged"], serde_json::json!([]));
     let codex = grant_to(

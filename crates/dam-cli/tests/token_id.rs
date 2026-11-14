@@ -3,11 +3,11 @@ mod support;
 use support::sandbox::Sandbox;
 use support::tokens::{answer, grant, grant_to, refused};
 
-fn vpt() -> (Sandbox, String) {
+fn tool() -> (Sandbox, String) {
     let sb = Sandbox::new();
     let held = grant_to(
         &sb,
-        "vpt",
+        "tool",
         1,
         &grant("\"task:read\", \"task:create\", \"task:change\""),
     );
@@ -35,7 +35,7 @@ fn shown(sb: &Sandbox, oid: &str) -> serde_json::Value {
 fn a_repeat_with_the_same_id_is_a_change_item_that_targets_the_waiting_task() {
     let _guard =
         support::guard("a_repeat_with_the_same_id_is_a_change_item_that_targets_the_waiting_task");
-    let (sb, held) = vpt();
+    let (sb, held) = tool();
     let first = send(&sb, &held, &["Call dentist", "--id", "dentist"]);
     assert_eq!(first["answer"], "new");
     assert_eq!(first["id"], "dentist");
@@ -56,7 +56,7 @@ fn a_repeat_after_the_owner_took_the_task_leaves_the_owners_unsaved_edit_alone()
     let _guard = support::guard(
         "a_repeat_after_the_owner_took_the_task_leaves_the_owners_unsaved_edit_alone",
     );
-    let (sb, held) = vpt();
+    let (sb, held) = tool();
     let first = send(&sb, &held, &["Call dentist", "--id", "dentist"]);
     let oid = first["oid"].as_str().unwrap();
     owner(&sb, &["add", &oid[..7]]);
@@ -84,23 +84,23 @@ fn a_repeat_after_the_owner_took_the_task_leaves_the_owners_unsaved_edit_alone()
 #[test]
 fn two_tokens_with_the_same_id_make_two_tasks() {
     let _guard = support::guard("two_tokens_with_the_same_id_make_two_tasks");
-    let (sb, held) = vpt();
+    let (sb, held) = tool();
     let claude = grant_to(
         &sb,
         "claude",
         2,
         "[[token.claude.grant]]\nallow = [\"task:create\"]\n",
     );
-    let from_vpt = send(&sb, &held, &["Call dentist", "--id", "dentist"]);
+    let from_tool = send(&sb, &held, &["Call dentist", "--id", "dentist"]);
     let from_claude = send(&sb, &claude, &["Call dentist", "--id", "dentist"]);
     assert_eq!(from_claude["answer"], "new");
-    assert_ne!(from_claude["oid"], from_vpt["oid"]);
+    assert_ne!(from_claude["oid"], from_tool["oid"]);
 }
 
 #[test]
 fn the_same_subject_under_two_ids_makes_two_items() {
     let _guard = support::guard("the_same_subject_under_two_ids_makes_two_items");
-    let (sb, held) = vpt();
+    let (sb, held) = tool();
     let a = send(&sb, &held, &["Review the PR", "--id", "pr-1"]);
     let b = send(&sb, &held, &["Review the PR", "--id", "pr-2"]);
     assert_eq!(b["answer"], "new");
@@ -112,7 +112,7 @@ fn a_declined_task_sent_again_under_its_id_is_refused_and_a_different_one_is_new
     let _guard = support::guard(
         "a_declined_task_sent_again_under_its_id_is_refused_and_a_different_one_is_new",
     );
-    let (sb, held) = vpt();
+    let (sb, held) = tool();
     let first = send(&sb, &held, &["Call dentist", "--id", "dentist"]);
     owner(&sb, &["rm", first["hash"].as_str().unwrap()]);
     let line = ["new", "Call dentist", "--id", "dentist", "--json"];
@@ -128,7 +128,7 @@ fn a_repeat_of_a_task_as_an_event_is_refused() {
     let sb = Sandbox::new();
     let held = grant_to(
         &sb,
-        "vpt",
+        "tool",
         1,
         &grant("\"task:create\", \"task:change\", \"event:create\", \"event:change\""),
     );

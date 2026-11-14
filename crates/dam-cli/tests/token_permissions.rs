@@ -12,7 +12,7 @@ fn token(fill: u8) -> String {
 fn sandbox_granting(allow: &str) -> (Sandbox, String) {
     let sb = Sandbox::new();
     sb.add_config(&format!(
-        "[token.vpt]\nvalue = \"{}\"\n[[token.vpt.grant]]\nallow = [{allow}]\n",
+        "[token.tool]\nvalue = \"{}\"\n[[token.tool.grant]]\nallow = [{allow}]\n",
         token(1)
     ));
     (sb, token(1))
@@ -75,7 +75,7 @@ fn a_token_reaches_only_the_remotes_its_grant_names() {
     let sb = Sandbox::new();
     let held = token(1);
     sb.add_config(&format!(
-        "[token.vpt]\nvalue = \"{held}\"\n[[token.vpt.grant]]\nallow = [\"remote:pull\", \"remote:push\"]\nremotes = [\"elsewhere\"]\n"
+        "[token.tool]\nvalue = \"{held}\"\n[[token.tool.grant]]\nallow = [\"remote:pull\", \"remote:push\"]\nremotes = [\"elsewhere\"]\n"
     ));
     for verb in ["pull", "push"] {
         for named in ["fake", "nope"] {

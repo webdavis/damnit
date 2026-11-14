@@ -14,7 +14,7 @@ fn oid(b: u8) -> Oid {
 fn status_cuts_its_rows_and_prints_warnings_and_notices_whole() {
     let mut ctx = context();
     ctx.config.tokens.warnings =
-        vec!["token vpt: unknown permission \"task:fly\" is skipped".into()];
+        vec!["token tool: unknown permission \"task:fly\" is skipped".into()];
     ctx.store
         .put(&Object::Task(Task::new(
             oid(1),

@@ -16,7 +16,7 @@ fn seeded_with_rent() -> (Sandbox, String, String) {
     owner(&sb, &["commit", "-m", "seed"], "commit.schema.json");
     let held = grant_to(
         &sb,
-        "vpt",
+        "tool",
         1,
         &grant("\"task:read\", \"task:create\", \"task:change\""),
     );
@@ -59,7 +59,7 @@ fn reset_sends_a_tokens_added_change_back_to_waiting_and_keeps_the_owners_edit()
         .iter()
         .map(|c| &c["from"])
         .collect();
-    assert!(from.contains(&&serde_json::json!("vpt")), "{commit}");
+    assert!(from.contains(&&serde_json::json!("tool")), "{commit}");
 }
 
 #[test]
@@ -79,7 +79,7 @@ fn reset_of_everything_sends_a_tokens_new_object_back_to_waiting() {
 
     owner(&sb, &["add", &dentist[..7]], "add.schema.json");
     let commit = owner(&sb, &["commit", "-m", "dentist"], "commit.schema.json");
-    assert_eq!(commit["changes"][0]["from"], "vpt");
+    assert_eq!(commit["changes"][0]["from"], "tool");
 }
 
 #[test]
@@ -96,6 +96,6 @@ fn reset_refuses_to_drop_the_owners_edit_of_a_tokens_new_object() {
         "item_edited_since_added"
     );
     let status = owner(&sb, &["status"], "status.schema.json");
-    assert_eq!(status["staged"][0]["from"], "vpt");
+    assert_eq!(status["staged"][0]["from"], "tool");
     assert_eq!(status["waiting"], serde_json::json!([]));
 }

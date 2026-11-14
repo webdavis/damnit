@@ -42,9 +42,9 @@ fn a_repeat_for_a_task_moved_out_of_the_grant_answers_as_for_a_removed_one() {
     let sb = Sandbox::new();
     let held = grant_to(
         &sb,
-        "vpt",
+        "tool",
         1,
-        "[[token.vpt.grant]]\nallow = [\"task:read\", \"task:create\", \"task:change\"]\npaths = [\"work\"]\n",
+        "[[token.tool.grant]]\nallow = [\"task:read\", \"task:create\", \"task:change\"]\npaths = [\"work\"]\n",
     );
     let hidden = taken(&sb, &held, "hidden");
     let removed = taken(&sb, &held, "removed");
@@ -65,11 +65,11 @@ fn moved_plan(with_hidden_child: bool) -> std::process::Output {
     let sb = Sandbox::new();
     let held = grant_to(
         &sb,
-        "vpt",
+        "tool",
         1,
-        "[[token.vpt.grant]]\nallow = [\"task:read\", \"task:create\", \"task:change\", \"task:move\"]\nlabels = [\"vpt\"]\n",
+        "[[token.tool.grant]]\nallow = [\"task:read\", \"task:create\", \"task:change\", \"task:move\"]\nlabels = [\"tool\"]\n",
     );
-    let line = ["new", "Plan", "--id", "plan", "--label", "vpt", "--json"];
+    let line = ["new", "Plan", "--id", "plan", "--label", "tool", "--json"];
     let oid = answer(&sb.output_holding(&held, &line), "sent.schema.json")["oid"]
         .as_str()
         .unwrap()

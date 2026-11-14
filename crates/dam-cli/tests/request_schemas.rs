@@ -66,7 +66,7 @@ fn accepted() -> Vec<(&'static str, Value)> {
         ("rm", json!({"oid": "1111"})),
         (
             "token-create",
-            json!({"name": "vpt", "allow": ["task:read"], "via": ["mcp"]}),
+            json!({"name": "tool", "allow": ["task:read"], "via": ["mcp"]}),
         ),
         (
             "day-set",
@@ -87,10 +87,10 @@ fn refused() -> Vec<(&'static str, Value)> {
         ("edit", json!({"oid": "1111", "editor": true})),
         ("done", json!({"oid": "1111", "children": "up"})),
         ("mv", json!({"oid": "1111"})),
-        ("token-create", json!({"name": "vpt", "allow": []})),
+        ("token-create", json!({"name": "tool", "allow": []})),
         (
             "token-create",
-            json!({"name": "vpt", "allow": ["task:read"], "expires": "soon"}),
+            json!({"name": "tool", "allow": ["task:read"], "expires": "soon"}),
         ),
         ("day-set", json!({"plan": []})),
     ]

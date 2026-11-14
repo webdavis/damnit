@@ -34,9 +34,9 @@ fn pay_rent() -> Scenario {
 #[test]
 fn a_tokens_edit_waits_as_a_change_item_and_leaves_the_task_as_it_was() {
     let s = pay_rent();
-    let vpt = holder(vec![allowed(&[TaskChange], None)]);
+    let tool = holder(vec![allowed(&[TaskChange], None)]);
     let dam = Dam {
-        access: &vpt,
+        access: &tool,
         ..s.dam()
     };
     let sent = sent(dam.edit(&oid(1), retitled("pay the rent")).unwrap());
@@ -56,9 +56,9 @@ fn a_tokens_edit_waits_as_a_change_item_and_leaves_the_task_as_it_was() {
 #[test]
 fn a_tokens_done_waits_as_a_change_item_and_the_task_stays_open() {
     let s = pay_rent();
-    let vpt = holder(vec![allowed(&[TaskComplete], None)]);
+    let tool = holder(vec![allowed(&[TaskComplete], None)]);
     let dam = Dam {
-        access: &vpt,
+        access: &tool,
         ..s.dam()
     };
     let (_, landed) = dam.complete(&oid(1), Force::No, Tracked::No).unwrap();
@@ -93,10 +93,10 @@ fn a_tokens_done_waits_as_a_change_item_and_the_task_stays_open() {
 fn a_change_that_leaves_the_grant_after_it_is_refused() {
     let s = Scenario::default().drawing_from(7);
     let mut errand = task_in(1, "buy milk", "home");
-    errand.base.labels = BTreeSet::from(["vpt".to_string()]);
+    errand.base.labels = BTreeSet::from(["tool".to_string()]);
     s.committed(Object::Task(errand));
     let labelled = holder(vec![Grant {
-        labels: Some(BTreeSet::from(["vpt".to_string()])),
+        labels: Some(BTreeSet::from(["tool".to_string()])),
         ..allowed(&[TaskChange], None)
     }]);
     let dam = Dam {
@@ -104,7 +104,7 @@ fn a_change_that_leaves_the_grant_after_it_is_refused() {
         ..s.dam()
     };
     let unlabel = EditFields {
-        remove_labels: vec!["vpt".into()],
+        remove_labels: vec!["tool".into()],
         ..EditFields::default()
     };
     assert_eq!(
@@ -117,9 +117,9 @@ fn a_change_that_leaves_the_grant_after_it_is_refused() {
 #[test]
 fn an_edit_that_changes_nothing_is_refused() {
     let s = pay_rent();
-    let vpt = holder(vec![allowed(&[TaskChange], None)]);
+    let tool = holder(vec![allowed(&[TaskChange], None)]);
     let dam = Dam {
-        access: &vpt,
+        access: &tool,
         ..s.dam()
     };
     assert_eq!(

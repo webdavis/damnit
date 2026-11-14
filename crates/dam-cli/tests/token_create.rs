@@ -30,7 +30,7 @@ fn a_created_token_lets_its_holder_run_what_the_grant_allows() {
     let answer = created(
         &sb,
         &[
-            "vpt",
+            "tool",
             "--allow",
             "task:read",
             "--allow",
@@ -43,7 +43,7 @@ fn a_created_token_lets_its_holder_run_what_the_grant_allows() {
     );
     let value = answer["value"].as_str().unwrap();
     let token = Token::parse(value).unwrap();
-    assert_eq!(answer["name"], "vpt");
+    assert_eq!(answer["name"], "tool");
     assert_eq!(answer["key_id"], token.key_id().as_str());
     assert_eq!(answer["expires"], "2999-05-11T00:00:00Z");
     assert_eq!(answer["via"], serde_json::json!(["local"]));
@@ -93,11 +93,11 @@ fn text_prints_the_token_alone_and_toon_carries_the_json_facts() {
 fn a_taken_name_a_bad_name_and_a_bad_permission_change_nothing() {
     let _guard = support::guard("a_taken_name_a_bad_name_and_a_bad_permission_change_nothing");
     let sb = Sandbox::new();
-    created(&sb, &["vpt", "--allow", "task:read"]);
+    created(&sb, &["tool", "--allow", "task:read"]);
     let before = config_of(&sb);
     let cases: [(&[&str], i32, &str, Option<&str>); 5] = [
         (
-            &["vpt", "--allow", "task:read"],
+            &["tool", "--allow", "task:read"],
             4,
             "refused",
             Some("token_exists"),
@@ -151,7 +151,7 @@ fn own_narrows_the_grant_to_what_the_token_made() {
     let _guard = support::guard("own_narrows_the_grant_to_what_the_token_made");
     let sb = Sandbox::new();
     sb.new_object(&["diary"]);
-    let answer = created(&sb, &["vpt", "--allow", "task:read", "--own"]);
+    let answer = created(&sb, &["tool", "--allow", "task:read", "--own"]);
     assert_eq!(answer["grants"][0]["own"], true);
     assert!(config_of(&sb).contains("own = true\n"));
     let value = answer["value"].as_str().unwrap();

@@ -16,7 +16,7 @@ fn seeded_with_rent() -> (Sandbox, String, String) {
     owner(&sb, &["commit", "-m", "seed"], "commit.schema.json");
     let held = grant_to(
         &sb,
-        "vpt",
+        "tool",
         1,
         &grant("\"task:read\", \"task:create\", \"task:change\""),
     );
@@ -44,14 +44,14 @@ fn the_owner_adds_and_commits_a_tokens_items_and_history_names_the_token() {
         "add.schema.json",
     );
     assert_eq!(added["staged"][0]["oid"], dentist.as_str());
-    assert_eq!(added["staged"][0]["from"], "vpt");
+    assert_eq!(added["staged"][0]["from"], "tool");
     assert_eq!(added["staged"][1]["subject"], "Pay the rent");
     let commit = owner(&sb, &["commit", "-m", "tool work"], "commit.schema.json");
-    assert_eq!(commit["changes"][0]["from"], "vpt");
+    assert_eq!(commit["changes"][0]["from"], "tool");
     assert_eq!(commit["changes"][0]["channel"], "local");
 
     let log = owner(&sb, &["log"], "log.schema.json");
-    assert_eq!(log["commits"][0]["changes"][1]["from"], "vpt");
+    assert_eq!(log["commits"][0]["changes"][1]["from"], "tool");
     assert_eq!(
         log["commits"][1]["changes"][0]["from"],
         serde_json::Value::Null
@@ -61,14 +61,14 @@ fn the_owner_adds_and_commits_a_tokens_items_and_history_names_the_token() {
         text.lines()
             .next()
             .unwrap()
-            .ends_with("2 changes  vpt  tool work"),
+            .ends_with("2 changes  tool  tool work"),
         "{text}"
     );
     let (_, shown, _) = sb.dam(&["show", &dentist]);
     assert!(shown.contains("Call the dentist"), "{shown}");
     let id = commit["id"].as_str().unwrap();
     let (_, shown, _) = sb.dam(&["show", &id[..7]]);
-    assert!(shown.contains("Call the dentist  vpt"), "{shown}");
+    assert!(shown.contains("Call the dentist  tool"), "{shown}");
 }
 
 #[test]
@@ -101,7 +101,7 @@ fn a_change_to_a_field_the_owner_has_not_saved_stops_the_add_and_add_all_leaves_
         .iter()
         .find(|c| c["oid"] == dentist.as_str())
         .unwrap();
-    assert_eq!(staged_dentist["from"], "vpt");
+    assert_eq!(staged_dentist["from"], "tool");
 }
 
 #[test]
@@ -116,6 +116,6 @@ fn resolve_settles_a_clash_with_the_items_values_or_the_owners() {
     assert_eq!(out.trim(), format!("{} resolved with theirs", &rent[..7]));
     let status = owner(&sb, &["status"], "status.schema.json");
     assert_eq!(status["staged"][0]["subject"], "Pay the rent");
-    assert_eq!(status["staged"][0]["from"], "vpt");
+    assert_eq!(status["staged"][0]["from"], "tool");
     assert_eq!(status["waiting"], serde_json::json!([]));
 }

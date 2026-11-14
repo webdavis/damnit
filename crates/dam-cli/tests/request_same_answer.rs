@@ -114,7 +114,7 @@ fn a_token_create_request_makes_the_token_its_flags_do() {
     let mut flags_answer = answered(&by_flags.output(&[
         "token",
         "create",
-        "vpt",
+        "tool",
         "--allow",
         "task:read",
         "--paths",
@@ -126,7 +126,7 @@ fn a_token_create_request_makes_the_token_its_flags_do() {
         "--json",
     ]));
     let by_file = Sandbox::new();
-    let request = json!({"name": "vpt", "allow": ["task:read"], "paths": ["work"],
+    let request = json!({"name": "tool", "allow": ["task:read"], "paths": ["work"],
                          "expires": "2999-05-11T00:00:00Z", "require": ["session"]});
     let mut file_answer = answered(&by_request(&by_file, &["token", "create"], &request));
     for answer in [&mut flags_answer, &mut file_answer] {

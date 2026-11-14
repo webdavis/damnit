@@ -11,8 +11,8 @@ fn token(fill: u8) -> Token {
 fn sandbox_with_four_tokens() -> Sandbox {
     let sb = Sandbox::new();
     sb.add_config(&format!(
-        "[token.vpt]\nvalue = \"{}\"\nexpires = 2999-01-01T00:00:00Z\nvia = [\"local\", \"mcp\"]\n\
-         [[token.vpt.grant]]\nallow = [\"task:read\"]\npaths = [\"work\"]\n\
+        "[token.tool]\nvalue = \"{}\"\nexpires = 2999-01-01T00:00:00Z\nvia = [\"local\", \"mcp\"]\n\
+         [[token.tool.grant]]\nallow = [\"task:read\"]\npaths = [\"work\"]\n\
          [token.old]\nvalue = \"{}\"\nexpires = 2000-01-01T00:00:00Z\n\
          [token.odd]\nvalue = \"{}\"\nweekdays = [\"mon\"]\n\
          [token.bare]\n",
@@ -40,14 +40,14 @@ fn the_list_names_each_token_its_key_id_terms_and_standing() {
             .unwrap()
             .clone()
     };
-    let vpt = named("vpt");
-    assert_eq!(vpt["name"], "vpt");
-    assert_eq!(vpt["key_id"], token(1).key_id().as_str());
-    assert_eq!(vpt["standing"], "active");
-    assert_eq!(vpt["expires"], "2999-01-01T00:00:00Z");
-    assert_eq!(vpt["via"], serde_json::json!(["local", "mcp"]));
-    assert_eq!(vpt["grants"][0]["allow"], serde_json::json!(["task:read"]));
-    assert_eq!(vpt["grants"][0]["paths"], serde_json::json!(["work/"]));
+    let tool = named("tool");
+    assert_eq!(tool["name"], "tool");
+    assert_eq!(tool["key_id"], token(1).key_id().as_str());
+    assert_eq!(tool["standing"], "active");
+    assert_eq!(tool["expires"], "2999-01-01T00:00:00Z");
+    assert_eq!(tool["via"], serde_json::json!(["local", "mcp"]));
+    assert_eq!(tool["grants"][0]["allow"], serde_json::json!(["task:read"]));
+    assert_eq!(tool["grants"][0]["paths"], serde_json::json!(["work/"]));
     assert_eq!(named("old")["standing"], "expired");
     let odd = named("odd");
     assert_eq!(odd["standing"], "disabled");
@@ -72,7 +72,7 @@ fn no_format_prints_a_secret_and_each_carries_the_same_tokens() {
             assert!(out.contains(held.key_id().as_str()), "{format:?}: {out}");
         }
         for fact in [
-            "vpt",
+            "tool",
             "active",
             "expired",
             "disabled",

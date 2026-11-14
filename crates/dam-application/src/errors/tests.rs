@@ -120,9 +120,9 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
             day: jiff::civil::date(2026, 11, 12),
             focused: vec![oid(1), oid(2), oid(3)],
         },
-        Refusal::TokenExists("vpt".into()),
+        Refusal::TokenExists("tool".into()),
         Refusal::NotGrantable("config:change".into()),
-        Refusal::NoSuchToken("vpt".into()),
+        Refusal::NoSuchToken("tool".into()),
     ]
     .into_iter()
     .chain(item_samples().into_iter().map(Refusal::Item))

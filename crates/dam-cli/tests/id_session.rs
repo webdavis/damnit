@@ -15,7 +15,7 @@ fn the_same_id_from_another_session_names_another_task() {
     let sb = Sandbox::new();
     let held = grant_to(
         &sb,
-        "vpt",
+        "tool",
         1,
         &grant("\"task:read\", \"task:create\", \"task:change\""),
     );

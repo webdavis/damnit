@@ -50,16 +50,16 @@ fn local(tokens: &Tokens, presented: &str) -> Result<Holder, TokenRefusal> {
 
 #[test]
 fn a_known_usable_token_names_its_holder_and_carries_its_grants() {
-    let tokens = one("vpt", token(1), Standing::Usable(terms()));
+    let tokens = one("tool", token(1), Standing::Usable(terms()));
     let holder = local(&tokens, &token(1).expose()).unwrap();
-    assert_eq!(holder.name, "vpt");
+    assert_eq!(holder.name, "tool");
     assert_eq!(&holder.grants.holder, token(1).key_id());
     assert_eq!(holder.grants.grants, terms().grants);
 }
 
 #[test]
 fn text_that_is_not_a_well_formed_token_is_malformed() {
-    let tokens = one("vpt", token(1), Standing::Usable(terms()));
+    let tokens = one("tool", token(1), Standing::Usable(terms()));
     let mut tampered = token(1).expose();
     let swapped = if &tampered[10..11] == "a" { "b" } else { "a" };
     tampered.replace_range(10..11, swapped);
@@ -70,7 +70,7 @@ fn text_that_is_not_a_well_formed_token_is_malformed() {
 
 #[test]
 fn a_version_this_dam_does_not_know_is_named() {
-    let tokens = one("vpt", token(1), Standing::Usable(terms()));
+    let tokens = one("tool", token(1), Standing::Usable(terms()));
     assert_eq!(
         local(&tokens, "damk_v9_abc"),
         Err(TokenRefusal::UnknownVersion("v9".into()))
@@ -79,7 +79,7 @@ fn a_version_this_dam_does_not_know_is_named() {
 
 #[test]
 fn a_well_formed_token_no_config_entry_holds_is_unknown() {
-    let tokens = one("vpt", token(1), Standing::Usable(terms()));
+    let tokens = one("tool", token(1), Standing::Usable(terms()));
     assert_eq!(
         local(&tokens, &token(2).expose()),
         Err(TokenRefusal::Unknown)
@@ -88,11 +88,11 @@ fn a_well_formed_token_no_config_entry_holds_is_unknown() {
 
 #[test]
 fn a_disabled_token_is_refused_with_its_reason() {
-    let tokens = one("vpt", token(1), Standing::Disabled("unknown key x".into()));
+    let tokens = one("tool", token(1), Standing::Disabled("unknown key x".into()));
     assert_eq!(
         local(&tokens, &token(1).expose()),
         Err(TokenRefusal::Disabled {
-            name: "vpt".into(),
+            name: "tool".into(),
             why: "unknown key x".into()
         })
     );
@@ -102,14 +102,14 @@ fn a_disabled_token_is_refused_with_its_reason() {
 fn a_token_is_refused_before_not_before_and_from_expires_on() {
     let mut t = terms();
     t.not_before = Some(at("2026-11-11T12:00:01Z"));
-    let early = one("vpt", token(1), Standing::Usable(t));
+    let early = one("tool", token(1), Standing::Usable(t));
     assert!(matches!(
         local(&early, &token(1).expose()),
         Err(TokenRefusal::NotYetValid { .. })
     ));
     let mut t = terms();
     t.expires = Some(at(NOW));
-    let expired = one("vpt", token(1), Standing::Usable(t));
+    let expired = one("tool", token(1), Standing::Usable(t));
     assert!(matches!(
         local(&expired, &token(1).expose()),
         Err(TokenRefusal::Expired { .. })
@@ -119,7 +119,7 @@ fn a_token_is_refused_before_not_before_and_from_expires_on() {
     t.not_before = Some(at(NOW));
     assert!(
         local(
-            &one("vpt", token(1), Standing::Usable(t)),
+            &one("tool", token(1), Standing::Usable(t)),
             &token(1).expose()
         )
         .is_ok()
@@ -130,11 +130,11 @@ fn a_token_is_refused_before_not_before_and_from_expires_on() {
 fn a_token_is_refused_on_a_channel_its_via_leaves_out() {
     let mut t = terms();
     t.via = [Channel::Mcp].into();
-    let tokens = one("vpt", token(1), Standing::Usable(t));
+    let tokens = one("tool", token(1), Standing::Usable(t));
     assert_eq!(
         local(&tokens, &token(1).expose()),
         Err(TokenRefusal::ChannelNotAllowed {
-            name: "vpt".into(),
+            name: "tool".into(),
             channel: Channel::Local
         })
     );

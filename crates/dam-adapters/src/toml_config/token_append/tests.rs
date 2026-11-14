@@ -8,7 +8,7 @@ use crate::toml_config::load_config;
 
 fn new_token() -> NewToken {
     NewToken {
-        name: TokenName::parse("vpt").unwrap(),
+        name: TokenName::parse("tool").unwrap(),
         value: Token::generate(&mut |b: &mut [u8]| b.fill(7)),
         expires: Some("2999-05-11T00:00:00Z".parse().unwrap()),
         via: Some(BTreeSet::from([Channel::Local, Channel::Mcp])),

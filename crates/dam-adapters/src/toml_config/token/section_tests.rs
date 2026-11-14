@@ -36,7 +36,7 @@ fn a_token_without_a_readable_value_is_left_out_with_a_warning() {
 
 #[test]
 fn a_token_section_that_is_not_tables_never_fails_the_config() {
-    for text in ["token = 5", "[token]\nvpt = 5", "schema = \"one\""] {
+    for text in ["token = 5", "[token]\ntool = 5", "schema = \"one\""] {
         let config = parse_config(text).unwrap();
         assert!(config.tokens.entries.is_empty());
     }
@@ -51,7 +51,7 @@ fn a_token_section_that_is_not_tables_never_fails_the_config() {
 
 #[test]
 fn the_config_debug_form_never_holds_a_token_secret() {
-    let config = parse_config(&format!("[token.vpt]\nvalue = \"{}\"\n", value(1))).unwrap();
+    let config = parse_config(&format!("[token.tool]\nvalue = \"{}\"\n", value(1))).unwrap();
     let secret = &value(1)[21..];
     assert!(!format!("{config:?}").contains(secret));
 }

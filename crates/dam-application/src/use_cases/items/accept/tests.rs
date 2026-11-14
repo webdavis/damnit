@@ -18,9 +18,9 @@ fn sent_hash(landed: Landed) -> ItemHash {
 }
 
 fn dentist(s: &Scenario) -> ItemHash {
-    let vpt = holder(vec![allowed(&[TaskCreate], None)]);
+    let tool = holder(vec![allowed(&[TaskCreate], None)]);
     let dam = Dam {
-        access: &vpt,
+        access: &tool,
         ..s.dam()
     };
     sent_hash(
@@ -38,10 +38,10 @@ fn dentist(s: &Scenario) -> ItemHash {
     )
 }
 
-fn retitled_by_vpt(s: &Scenario, subject: &str) -> ItemHash {
-    let vpt = holder(vec![allowed(&[TaskChange], None)]);
+fn retitled_by_tool(s: &Scenario, subject: &str) -> ItemHash {
+    let tool = holder(vec![allowed(&[TaskChange], None)]);
     let dam = Dam {
-        access: &vpt,
+        access: &tool,
         ..s.dam()
     };
     let fields = EditFields {
@@ -65,12 +65,12 @@ fn adding_a_new_item_creates_its_object_under_the_items_hash_and_stages_it_as_th
     let created = s.store.get(hash.oid()).unwrap().unwrap();
     assert_eq!(created.base().subject, "call the dentist");
     assert_eq!(staged[0].change.oid(), hash.oid());
-    assert_eq!(staged[0].author.token().unwrap().name, "vpt");
+    assert_eq!(staged[0].author.token().unwrap().name, "tool");
     assert!(matches!(
         s.store.item(&hash).unwrap().unwrap().outcome,
         Outcome::Added(_)
     ));
-    let record = s.dam().commit("from vpt").unwrap();
+    let record = s.dam().commit("from tool").unwrap();
     assert_eq!(record.changes, staged);
 }
 
@@ -78,7 +78,7 @@ fn adding_a_new_item_creates_its_object_under_the_items_hash_and_stages_it_as_th
 fn a_change_item_takes_only_its_fields_and_leaves_the_owners_other_edit_unstaged() {
     let s = Scenario::default().drawing_from(7);
     s.committed(rent_with("pay rent", ""));
-    let hash = retitled_by_vpt(&s, "pay the rent");
+    let hash = retitled_by_tool(&s, "pay the rent");
     s.working(rent_with("pay rent", "by friday"));
     let staged = s.dam().add(&[Named::Item(hash)]).unwrap();
     let after = staged[0].change.after().unwrap().base();
@@ -96,7 +96,7 @@ fn a_change_item_takes_only_its_fields_and_leaves_the_owners_other_edit_unstaged
 fn a_change_to_a_field_the_owner_edited_and_has_not_saved_stops_the_add() {
     let s = Scenario::default().drawing_from(7);
     s.committed(rent_with("pay rent", ""));
-    let hash = retitled_by_vpt(&s, "pay the rent");
+    let hash = retitled_by_tool(&s, "pay the rent");
     s.working(rent_with("pay rent now", ""));
     assert_eq!(
         s.dam().add(&[Named::Item(hash.clone())]),
@@ -115,7 +115,7 @@ fn a_change_to_a_field_the_owner_edited_and_has_not_saved_stops_the_add() {
 fn add_all_takes_every_item_that_applies_and_leaves_a_clashing_one_waiting() {
     let mut s = Scenario::default().drawing_from(7);
     s.committed(rent_with("pay rent", ""));
-    let clashing = retitled_by_vpt(&s, "pay the rent");
+    let clashing = retitled_by_tool(&s, "pay the rent");
     s.working(rent_with("pay rent now", ""));
     s.fixture.random = FixedRandom::new(8);
     let new = dentist(&s);

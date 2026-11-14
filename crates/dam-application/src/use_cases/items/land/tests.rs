@@ -34,14 +34,14 @@ fn sent(landed: Result<Landed, UseCaseError>) -> Sent {
 #[test]
 fn a_tokens_new_task_waits_as_an_item_and_touches_nothing_of_the_owners() {
     let s = Scenario::default().drawing_from(7);
-    let vpt = holder(vec![allowed(&[TaskCreate], None)]);
+    let tool = holder(vec![allowed(&[TaskCreate], None)]);
     let dam = Dam {
-        access: &vpt,
+        access: &tool,
         ..s.dam()
     };
     let sent = sent(dam.new_task(new_task("call the dentist", "inbox")));
     assert_eq!(sent.answer, Answer::New);
-    assert_eq!(sent.item.author.name, "vpt");
+    assert_eq!(sent.item.author.name, "tool");
     assert_eq!(sent.item.outcome, Outcome::Waiting);
     assert_eq!(sent.item.change.object().base().subject, "call the dentist");
     assert!(s.store.all().unwrap().is_empty());
@@ -52,9 +52,9 @@ fn a_tokens_new_task_waits_as_an_item_and_touches_nothing_of_the_owners() {
 #[test]
 fn the_same_task_sent_again_while_it_waits_is_a_duplicate_and_stores_nothing() {
     let s = Scenario::default().drawing_from(7);
-    let vpt = holder(vec![allowed(&[TaskCreate], None)]);
+    let tool = holder(vec![allowed(&[TaskCreate], None)]);
     let dam = Dam {
-        access: &vpt,
+        access: &tool,
         ..s.dam()
     };
     let first = sent(dam.new_task(new_task("call the dentist", "inbox")));
@@ -67,9 +67,9 @@ fn the_same_task_sent_again_while_it_waits_is_a_duplicate_and_stores_nothing() {
 #[test]
 fn a_task_the_owner_declined_is_refused_when_sent_again() {
     let s = Scenario::default().drawing_from(7);
-    let vpt = holder(vec![allowed(&[TaskCreate], None)]);
+    let tool = holder(vec![allowed(&[TaskCreate], None)]);
     let dam = Dam {
-        access: &vpt,
+        access: &tool,
         ..s.dam()
     };
     let first = sent(dam.new_task(new_task("call the dentist", "inbox")));
