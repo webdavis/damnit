@@ -47,13 +47,11 @@ fn declare_each_retry_since_the_remote_snapshot(
 ) -> Result<(), UseCaseError> {
     for oid in store.push_retries(&remote.name)? {
         let snapshot = store.remote_snapshot(&remote.name, &oid)?;
-        let owed = match changes.remove(&oid) {
-            Some((owed, origin)) => Some((owed.after().cloned(), origin)),
-            None => store.committed(&oid)?.map(|current| (Some(current), None)),
+        let (after, origin) = match changes.remove(&oid) {
+            Some((owed, origin)) => (owed.after().cloned(), origin),
+            None => (store.committed(&oid)?, None),
         };
-        if let Some((after, origin)) = owed
-            && let Some(declared) = Change::between(snapshot, after)
-        {
+        if let Some(declared) = Change::between(snapshot, after) {
             changes.insert(oid, (declared, origin));
         }
     }
