@@ -7,6 +7,7 @@ use crate::editor::EditorError;
 
 mod config_text;
 mod conversions;
+mod document;
 mod edit_text;
 mod item_text;
 mod misread_text;
@@ -102,19 +103,6 @@ impl CliError {
             CliError::UseCase(UseCaseError::Refused(refusal)) => Some(refusal.name()),
             _ => None,
         }
-    }
-
-    pub(crate) fn document(&self) -> serde_json::Value {
-        let mut error = serde_json::json!({
-            "kind": self.kind(),
-            "rule": self.rule(),
-            "message": self.to_string(),
-            "oids": self.oids_in_the_order_the_message_names_them(),
-        });
-        if let Some(usage) = misuse::usage_part(self) {
-            error["usage"] = usage;
-        }
-        serde_json::json!({ "error": error })
     }
 }
 
