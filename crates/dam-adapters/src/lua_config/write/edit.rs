@@ -1,4 +1,5 @@
 use std::collections::BTreeSet;
+use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
 use dam_application::{ByHand, ConfigError, EditFault, EditedTable, SecretsTightened};
@@ -8,6 +9,8 @@ use super::replace::{Holds, replace};
 use super::section::Section;
 use crate::lua_config::LuaConfigFile;
 use crate::lua_config::evaluate::read_text;
+
+const OWNER_WRITES: u32 = 0o200;
 
 pub(in crate::lua_config) enum Change<'a, R> {
     Add {
@@ -34,6 +37,7 @@ impl<R> EditedFile<'_, R> {
         by_hand: ByHand,
         change: Change<'_, R>,
     ) -> Result<Option<SecretsTightened>, ConfigError> {
+        self.writable(&by_hand)?;
         replace(&self.path, self.holds, |current| {
             self.edited(name, by_hand, &change, current)
         })
@@ -45,9 +49,22 @@ impl<R> EditedFile<'_, R> {
         by_hand: ByHand,
         change: Change<'_, R>,
     ) -> Result<(), ConfigError> {
+        self.writable(&by_hand)?;
         let current = read_text(&self.path)?;
         self.edited(name, by_hand, &change, current.as_deref())
             .map(|_| ())
+    }
+
+    fn writable(&self, by_hand: &ByHand) -> Result<(), ConfigError> {
+        match std::fs::metadata(&self.path) {
+            Ok(meta) if meta.permissions().mode() & OWNER_WRITES == 0 => {
+                Err(ConfigError::ReadOnly {
+                    table: self.table,
+                    by_hand: by_hand.clone(),
+                })
+            }
+            _ => Ok(()),
+        }
     }
 
     fn edited(

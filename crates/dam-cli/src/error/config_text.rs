@@ -2,7 +2,7 @@ use std::fmt;
 
 use dam_application::ConfigError;
 
-use super::edit_text::{ByHandText, cannot_edit, named, would_break};
+use super::edit_text::{ByHandClause, ByHandText, cannot_edit, named, would_break};
 use super::misread_text::{MisreadText, PlaceText};
 
 pub(super) struct ConfigText<'a>(pub(super) &'a ConfigError);
@@ -55,6 +55,14 @@ impl fmt::Display for ConfigText<'_> {
                 why,
                 by_hand,
             } => cannot_edit(f, *table, *why, by_hand),
+            ConfigError::ReadOnly { table, by_hand } => {
+                let (file, _) = named(*table);
+                write!(
+                    f,
+                    "{file} is read-only; make it writable, or {}",
+                    ByHandClause(by_hand)
+                )
+            }
             ConfigError::AlreadyHeld { table, entry } => {
                 let (file, table) = named(*table);
                 write!(f, "{file} already holds {table} {entry}")

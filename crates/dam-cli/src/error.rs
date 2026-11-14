@@ -71,7 +71,11 @@ impl CliError {
             CliError::UseCase(UseCaseError::Store(_))
             | CliError::Open(_)
             | CliError::Io(_)
-            | CliError::Config(ConfigError::Unreadable { .. } | ConfigError::Unwritable { .. })
+            | CliError::Config(
+                ConfigError::Unreadable { .. }
+                | ConfigError::Unwritable { .. }
+                | ConfigError::ReadOnly { .. },
+            )
             | CliError::ConfigCheck(ConfigError::Unreadable { .. }) => "store",
             CliError::UseCase(UseCaseError::Helper(_)) => "helper",
             CliError::UseCase(UseCaseError::Credential(_)) => "credential",
@@ -119,7 +123,8 @@ impl fmt::Display for CliError {
         match self {
             CliError::UseCase(e) => write!(f, "{}", UseCaseText(e)),
             CliError::Editor(e) => write!(f, "editor: {}", e.0),
-            CliError::Config(e @ ConfigError::NotLua(_)) | CliError::ConfigCheck(e) => {
+            CliError::Config(e @ (ConfigError::NotLua(_) | ConfigError::ReadOnly { .. }))
+            | CliError::ConfigCheck(e) => {
                 write!(f, "{}", ConfigText(e))
             }
             CliError::Config(e) => write!(f, "{}; run dam config check", ConfigText(e)),
