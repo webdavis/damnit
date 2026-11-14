@@ -58,7 +58,7 @@ fn how_far_this_run_forces(
     }
     match dispositions_answered_on_the_command_line_over_any_config(args) {
         Some(d) => Ok(Force::With(d)),
-        None if args.interactive || ctx.config.done_interactive => {
+        None if args.interactive || ctx.config.done_interactive() => {
             Ok(Force::With(ask(ctx, blockers)?))
         }
         None => Ok(Force::With(Dispositions::default())),

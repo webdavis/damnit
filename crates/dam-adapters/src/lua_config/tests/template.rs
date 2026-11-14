@@ -46,7 +46,7 @@ fn every_example_uncommented_at_once_is_a_working_config() {
     let text: Vec<String> = TEMPLATE.lines().map(uncommented).collect();
     let config = config(&text.join("\n")).load().unwrap();
     assert_eq!(config.owner_name(), "Ada");
-    assert!(config.done_interactive);
+    assert_eq!(config.done_interactive, Some(true));
     let remote = config.remote("todoist").unwrap();
     assert_eq!(remote.url, "todoist::");
     assert!(remote.stale.is_some() && remote.deadline.is_some() && remote.path.is_some());

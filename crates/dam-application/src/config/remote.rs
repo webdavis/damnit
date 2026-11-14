@@ -15,6 +15,8 @@ pub struct RemoteConfig {
 }
 
 impl RemoteConfig {
+    pub const DEFAULT_DEADLINE: &str = "60s";
+
     pub fn address(&self) -> &str {
         self.url.split_once("::").map_or("", |(_, address)| address)
     }

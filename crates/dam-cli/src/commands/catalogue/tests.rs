@@ -5,9 +5,10 @@ use dam_domain::{Categories, Category};
 fn config() -> Config {
     Config {
         owner: None,
-        done_interactive: false,
+        done_interactive: None,
         remotes: vec![],
         categories: Categories::default(),
+        categories_writing_exclusive: Default::default(),
         filters: vec![],
         tokens: Default::default(),
     }

@@ -126,6 +126,10 @@ dam token list: about = List the tokens in secrets.lua with their grants and sta
 dam token revoke: about = Remove a token's table from secrets.lua
 dam token revoke name: help = Name the token to remove
 dam config: about = Show and check the config
+dam config list: about = List where the config files are and every setting dam is using, its own defaults marked, never a secret
+dam config list: after_help = Examples:
+  dam config list
+  dam config list --json
 dam config print-default: about = Print the starter config.lua a first run writes, without writing a file
 dam config print-default: after_help = Examples:
   dam config print-default

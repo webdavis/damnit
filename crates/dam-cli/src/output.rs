@@ -32,6 +32,7 @@ pub(crate) struct Report {
     pub(crate) data: serde_json::Value,
     pub(crate) cut: Vec<bool>,
     pub(crate) tints: Vec<Tint>,
+    pub(crate) colored: Option<String>,
     pub(crate) standard_error_lines: Vec<String>,
 }
 
@@ -55,6 +56,7 @@ pub(crate) fn print_error(format: Format, error: &CliError) {
                 data: error.document(),
                 cut: Vec::new(),
                 tints: Vec::new(),
+                colored: None,
                 standard_error_lines: Vec::new(),
             };
             render(format, &report).unwrap_or_else(|_| format!("dam: {error}"))
@@ -72,7 +74,10 @@ pub(crate) fn print(format: Format, color: bool, report: &Report) -> Result<(), 
         _ => render(format, report)?,
     };
     let text = match format {
-        Format::Human if color => painted(&text, &report.tints),
+        Format::Human if color => match &report.colored {
+            Some(colored) => colored.clone(),
+            None => painted(&text, &report.tints),
+        },
         _ => text,
     };
     if format == Format::Human {

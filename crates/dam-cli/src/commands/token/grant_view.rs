@@ -2,7 +2,7 @@ use dam_domain::Grant;
 use serde::Serialize;
 
 #[derive(Serialize)]
-pub(super) struct GrantView {
+pub(crate) struct GrantView {
     allow: Vec<&'static str>,
     paths: Option<Vec<String>>,
     labels: Option<Vec<String>>,
@@ -11,7 +11,7 @@ pub(super) struct GrantView {
 }
 
 impl GrantView {
-    pub(super) fn of(grant: &Grant) -> GrantView {
+    pub(crate) fn of(grant: &Grant) -> GrantView {
         GrantView {
             allow: grant.allow.iter().map(|p| p.as_str()).collect(),
             paths: grant
@@ -24,7 +24,7 @@ impl GrantView {
         }
     }
 
-    pub(super) fn text(&self) -> String {
+    pub(crate) fn text(&self) -> String {
         let mut text = self.allow.join(", ");
         let narrowing = [
             ("paths", &self.paths),

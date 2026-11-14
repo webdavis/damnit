@@ -9,6 +9,11 @@ pub(crate) struct ConfigArgs {
 #[derive(Subcommand, Debug)]
 pub(crate) enum ConfigCommand {
     #[command(
+        about = "List where the config files are and every setting dam is using, its own defaults marked, never a secret",
+        after_help = "Examples:\n  dam config list\n  dam config list --json"
+    )]
+    List,
+    #[command(
         about = "Print the starter config.lua a first run writes, without writing a file",
         after_help = "Examples:\n  dam config print-default\n  dam config print-default > config.lua"
     )]

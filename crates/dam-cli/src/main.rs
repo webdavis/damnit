@@ -11,6 +11,7 @@ mod output;
 mod paint;
 mod prompt;
 mod request;
+mod style;
 mod view;
 
 use dam_adapters::{Interrupt, LuaConfigFile, OsRandom, SystemClock};

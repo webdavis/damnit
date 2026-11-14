@@ -42,6 +42,12 @@ and never a secret. `secrets.lua` holds each remote's credentials and the tokens
 A credential is a string, or a function dam calls only when the remote is used. Any key dam does
 not know fails with exit 1. `docs/examples/` holds one of each file.
 
+`dam config list` prints where the two files are and every setting dam is using, one row each: the key,
+then the value, with `(default)` after a value dam supplies. A remote's credential shows under
+`remote.<name>.credential` as only `set` or `function`, and a token only its grants. A setting
+with no value and no default shows `not set`. It never quotes `secrets.lua`.
+`docs/schemas/config-list.schema.json` is the schema of its `--json` answer.
+
 `dam config print-default` prints the starter `config.lua` a first run writes, and writes no file.
 
 `dam doctor` reads both files in full and prints their paths and any token warnings, or the

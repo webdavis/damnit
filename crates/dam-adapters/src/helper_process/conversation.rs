@@ -14,10 +14,8 @@ use serde_json::Value;
 use super::stderr_tail::{StderrTail, keep_the_tail_until_end_of_input};
 use crate::Interrupt;
 
-const DEFAULT_ANSWER_DEADLINE: &str = "60s";
-
 fn answer_deadline_when_the_remote_names_none() -> ConfiguredDuration {
-    ConfiguredDuration::parse(DEFAULT_ANSWER_DEADLINE).expect("the default deadline parses")
+    ConfiguredDuration::parse(RemoteConfig::DEFAULT_DEADLINE).expect("the default deadline parses")
 }
 
 const RECHECK_INTERVAL: Duration = Duration::from_millis(25);
