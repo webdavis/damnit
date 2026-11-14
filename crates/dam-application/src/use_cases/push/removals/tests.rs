@@ -2,7 +2,7 @@ use dam_domain::Path;
 
 use super::Removals;
 use crate::remote::{MutationOp, RemoteMutation};
-use crate::testing::oid;
+use crate::testing::{oid, task_in};
 
 fn removal(of: u8) -> RemoteMutation {
     RemoteMutation {
@@ -21,7 +21,9 @@ fn a_wave_with_nothing_to_send_holds_the_removals_that_wait_on_each_other() {
     let mut removals = Removals::default();
     for each in [1, 2] {
         removals.folders.insert(oid(each), shared.clone());
-        removals.upstream.insert(oid(each), shared.clone());
+        removals
+            .upstream
+            .insert(oid(each), task_in(each, "x", "Home/P/").base);
     }
     let wave = removals.wave(vec![removal(1), removal(2)]);
     assert!(wave.ready.is_empty());

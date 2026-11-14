@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use dam_domain::{Change, Oid, Path};
+use dam_domain::{Base, Change, Oid, Path};
 
 use crate::errors::UseCaseError;
 use crate::ports::{RemoteName, Store};
@@ -12,7 +12,7 @@ use blocker::{Blocker, Unsent};
 #[derive(Default)]
 pub(super) struct Removals {
     folders: BTreeMap<Oid, Path>,
-    upstream: BTreeMap<Oid, Path>,
+    upstream: BTreeMap<Oid, Base>,
     tried: BTreeSet<Oid>,
 }
 
@@ -49,7 +49,7 @@ impl Removals {
             let known: BTreeSet<Oid> = local.chain(changes.keys().cloned()).collect();
             for oid in known {
                 if let Some(held) = store.remote_snapshot(remote, &oid)? {
-                    upstream.insert(oid, held.base().path.clone());
+                    upstream.insert(oid, held.base().clone());
                 }
             }
         }
@@ -86,7 +86,7 @@ impl Removals {
         self.tried.extend(sent.iter().map(|m| m.oid.clone()));
         for placed in &settled.snapshot {
             self.upstream
-                .insert(placed.oid().clone(), placed.base().path.clone());
+                .insert(placed.oid().clone(), placed.base().clone());
         }
         for removed in &settled.clear {
             self.upstream.remove(removed);

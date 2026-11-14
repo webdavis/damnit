@@ -6,6 +6,7 @@ mod holds;
 mod keys;
 mod landings;
 mod last_push;
+mod namesakes;
 mod order;
 mod read_only;
 mod reconcile;
