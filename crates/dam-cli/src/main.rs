@@ -4,6 +4,7 @@ mod commands;
 mod context;
 mod editor;
 mod error;
+mod first_run;
 mod gate;
 mod layout;
 mod output;
@@ -11,8 +12,6 @@ mod paint;
 mod prompt;
 mod request;
 mod view;
-
-use std::path::Path;
 
 use dam_adapters::{Interrupt, LuaConfigFile, OsRandom, SystemClock};
 use dam_application::{Clock, ConfigError, ConfigFile, HelperError, UseCaseError};
@@ -88,7 +87,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     let meta = cli.meta.into_iter().collect();
     gate::refuse_any_token_to_an_owner_only_verb(presented_token.is_some(), &cli.command)?;
     if presented_token.is_none() {
-        create_the_owners_config_when_missing(&config_file, &config_path, format);
+        first_run::create_the_owners_config_when_missing(&config_file, &config_path, format);
     }
     if let Command::Doctor = cli.command {
         return output::print(format, color, &commands::doctor::run(&config_file)?);
@@ -124,20 +123,6 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     )?;
     let report = commands::dispatch_a_verb_that_opens_the_store(&ctx, cli.command)?;
     output::print(format, color, &report)
-}
-
-fn create_the_owners_config_when_missing(file: &LuaConfigFile, path: &Path, format: Format) {
-    let said = match file.create_if_missing() {
-        Ok(false) => return,
-        Ok(true) => format!(
-            "dam: created {}, with every setting explained",
-            path.display()
-        ),
-        Err(e) => format!("dam: could not create {}: {e}", path.display()),
-    };
-    if format == Format::Human {
-        eprintln!("{said}");
-    }
 }
 
 #[cfg(test)]
