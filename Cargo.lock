@@ -366,6 +366,9 @@ dependencies = [
 name = "dam-remote-todoist"
 version = "0.1.0"
 dependencies = [
+ "dam-adapters",
+ "dam-application",
+ "dam-domain",
  "dam-helper",
  "dam-protocol",
  "serde",

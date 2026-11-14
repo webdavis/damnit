@@ -21,5 +21,8 @@ serde_json.workspace = true
 ureq.workspace = true
 
 [dev-dependencies]
+dam-adapters = { path = "../dam-adapters" }
+dam-application = { path = "../dam-application", features = ["testing"] }
+dam-domain = { path = "../dam-domain" }
 dam-helper = { path = "../dam-helper", features = ["testing"] }
 tempfile.workspace = true
