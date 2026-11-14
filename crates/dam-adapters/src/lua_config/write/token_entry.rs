@@ -34,6 +34,10 @@ pub(in crate::lua_config) fn token_entry(token: &NewToken, indent: &Indent) -> S
     )
 }
 
+pub(in crate::lua_config) fn bare_token_entry(name: &str) -> String {
+    format!("{} = {{}}", table_key(name))
+}
+
 fn grant(grant: &Grant) -> String {
     let mut limits = vec![format!(
         "allow = {}",

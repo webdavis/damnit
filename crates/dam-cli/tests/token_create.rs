@@ -150,6 +150,11 @@ fn a_taken_name_a_bad_name_and_a_bad_permission_change_nothing() {
         assert_eq!(kind_of(&out), kind, "{args:?}");
         assert_eq!(error_document(&out)["error"]["rule"].as_str(), rule);
     }
+    let taken = sb.output(&["token", "create", "tool", "--allow", "task:read"]);
+    assert_eq!(
+        String::from_utf8_lossy(&taken.stderr),
+        "dam: token tool already exists\n"
+    );
     assert_eq!(secrets_of(&sb), before);
 }
 

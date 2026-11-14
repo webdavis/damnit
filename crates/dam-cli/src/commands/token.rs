@@ -18,7 +18,7 @@ pub(crate) fn run(
 ) -> Result<Report, CliError> {
     let config = file.load()?.config;
     match args.command {
-        TokenCommand::Create(a) => create::run(file, &config, random, a),
+        TokenCommand::Create(a) => create::run(file, random, a),
         TokenCommand::List => list::run(&config, now),
         TokenCommand::Revoke { name } => revoke::run(file, &config, name),
     }

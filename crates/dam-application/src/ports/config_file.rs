@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::config::Config;
 use crate::ports::{CredentialSource, RemoteName};
-use crate::tokens::NewToken;
+use crate::tokens::{NewToken, TokenName};
 
 pub struct LoadedConfig {
     pub config: Config,
@@ -12,6 +12,7 @@ pub struct LoadedConfig {
 pub trait ConfigFile {
     fn load(&self) -> Result<LoadedConfig, ConfigError>;
     fn add_remote(&self, name: &RemoteName, url: &str) -> Result<Option<String>, ConfigError>;
+    fn can_add_token(&self, name: &TokenName) -> Result<(), ConfigError>;
     fn add_token(&self, token: &NewToken) -> Result<Option<String>, ConfigError>;
     fn remove_token(&self, name: &str) -> Result<Option<String>, ConfigError>;
 }
@@ -21,13 +22,16 @@ pub enum ConfigError {
     Io(String),
     Unloadable(String),
     Invalid(String),
+    AlreadyHeld(String),
 }
 
 impl fmt::Display for ConfigError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ConfigError::Io(s) => write!(f, "reading config: {s}"),
-            ConfigError::Unloadable(s) | ConfigError::Invalid(s) => write!(f, "config: {s}"),
+            ConfigError::Unloadable(s) | ConfigError::Invalid(s) | ConfigError::AlreadyHeld(s) => {
+                write!(f, "config: {s}")
+            }
         }
     }
 }

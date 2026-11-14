@@ -1,6 +1,7 @@
 mod add_remote;
 mod add_token;
 mod beyond_ascii;
+mod can_add_token;
 mod config_file;
 mod config_file_port;
 mod credential_source;
