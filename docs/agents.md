@@ -231,7 +231,7 @@ of a whole id. A send with `--id` is safe to
 retry: a repeat answers `duplicate`. The schema is `docs/schemas/error.schema.json`, and it lists
 every rule.
 
-A `usage` error also carries `usage`, which says what was wrong with the command line:
+A mistyped command line also carries `usage`, which says what was wrong with it:
 
 ```json
 {"error": {"kind": "usage", "rule": null, "message": "unexpected argument '--bogus' found",

@@ -164,10 +164,7 @@ fn help_and_version_are_not_errors_under_json() {
 }
 
 #[test]
-fn the_schema_holds_usage_exactly_when_the_kind_is_usage() {
-    let without_usage = json!({"error": {
-        "kind": "usage", "rule": null, "message": "m", "oids": []
-    }});
+fn the_schema_holds_usage_only_on_a_usage_error() {
     let usage_on_a_refusal = json!({"error": {
         "kind": "refused", "rule": "blocked", "message": "m", "oids": [],
         "usage": {"problem": "other", "word": null}
@@ -176,7 +173,7 @@ fn the_schema_holds_usage_exactly_when_the_kind_is_usage() {
         "kind": "usage", "rule": null, "message": "m", "oids": [],
         "usage": {"problem": "typo", "word": null}
     }});
-    for document in [without_usage, usage_on_a_refusal, unknown_problem] {
+    for document in [usage_on_a_refusal, unknown_problem] {
         assert!(
             !schema_errors(&document, "error.schema.json").is_empty(),
             "{document}"
