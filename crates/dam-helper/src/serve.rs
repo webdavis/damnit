@@ -1,6 +1,6 @@
 use std::io::{self, BufRead, Write};
 
-use dam_protocol::{Reply, Request, read_line, write_line};
+use dam_protocol::{EarlyAnswer, Reply, Request, read_line, write_line};
 
 use crate::Remote;
 
@@ -26,7 +26,22 @@ fn answer(out: &mut impl Write, remote: &impl Remote, request: Request) -> io::R
     match request {
         Request::Capabilities => write_line(out, &Reply::Answered(remote.capabilities())),
         Request::Pull { since } => write_line(out, &Reply::from(remote.pull(since.as_deref()))),
-        Request::Push { mutations, .. } => write_line(out, &Reply::from(remote.push(mutations))),
+        Request::Push {
+            mutations,
+            early_answers,
+        } => {
+            let pushed = remote.push(mutations, &mut |result| {
+                if early_answers {
+                    let _ = write_line(
+                        out,
+                        &EarlyAnswer {
+                            early_answer: result.clone(),
+                        },
+                    );
+                }
+            });
+            write_line(out, &Reply::from(pushed))
+        }
     }
 }
 

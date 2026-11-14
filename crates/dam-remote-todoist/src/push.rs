@@ -16,7 +16,11 @@ use failure::{Failure, every_command_accepted, no_id_named_for};
 use off_limits::OffLimits;
 use plan::{TreeChange, missing_object, plan_for, resend_stable_temp_id};
 
-pub fn push(api: &impl TodoistSync, mutations: Vec<Mutation>) -> Result<PushResponse, ApiError> {
+pub fn push(
+    api: &impl TodoistSync,
+    mutations: Vec<Mutation>,
+    answered: &mut dyn FnMut(&MutationResult),
+) -> Result<PushResponse, ApiError> {
     let sync = api.read_all()?;
     let mut tree = Tree::from_sync(&sync);
     let containers_filled = containers_this_push_fills(&mutations);
@@ -44,10 +48,12 @@ pub fn push(api: &impl TodoistSync, mutations: Vec<Mutation>) -> Result<PushResp
         if matches!(verdict, Verdict::Unanswered { .. }) {
             off_limits.unanswered(m);
         }
-        results.push(MutationResult {
+        let result = MutationResult {
             oid: m.oid.clone(),
             verdict,
-        });
+        };
+        answered(&result);
+        results.push(result);
     }
     Ok(PushResponse { results, stopped })
 }

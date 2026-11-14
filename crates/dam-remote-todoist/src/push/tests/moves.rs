@@ -14,7 +14,7 @@ fn a_path_change_moves_the_task_through_the_move_command() {
         ),
         &["path"],
     )];
-    let response = push(&api, mutations).unwrap();
+    let response = push(&api, mutations, &mut |_| {}).unwrap();
     assert!(response.results[0].ok(), "{:?}", response.results[0].why());
     let recorded = api.recorded.borrow();
     assert_eq!(recorded.types(), vec!["item_move"]);
@@ -36,7 +36,7 @@ fn a_path_and_subject_change_moves_first_then_updates_the_content() {
         ),
         &["path", "subject"],
     )];
-    let response = push(&api, mutations).unwrap();
+    let response = push(&api, mutations, &mut |_| {}).unwrap();
     assert!(response.results[0].ok(), "{:?}", response.results[0].why());
     let recorded = api.recorded.borrow();
     assert_eq!(

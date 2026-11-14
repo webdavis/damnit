@@ -46,7 +46,7 @@ fn after_an_unanswered_create_only_what_depends_on_it_is_left_out() {
         create(4, "Work/P/child/", "grandchild"),
         mutation("delete", 1, Some("i:i9"), None),
     ];
-    let response = push(&api, mutations).unwrap();
+    let response = push(&api, mutations, &mut |_| {}).unwrap();
     assert_eq!(response.results.len(), 5, "{:?}", response.results);
     assert_eq!(
         unanswered_why(&response.results[0]),
@@ -70,7 +70,7 @@ fn after_an_unanswered_create_only_what_depends_on_it_is_left_out() {
 fn a_delete_of_an_object_whose_update_is_unanswered_is_left_out() {
     let api = FakeTodoist::new(sync_body()).failing_write(1, timed_out());
     let mutations = vec![rename_milk(1), mutation("delete", 2, Some("i:i1"), None)];
-    let response = push(&api, mutations).unwrap();
+    let response = push(&api, mutations, &mut |_| {}).unwrap();
     assert_eq!(
         unanswered_why(&response.results[1]),
         "waits on Work/oat, which Todoist left unanswered"
@@ -90,7 +90,7 @@ fn a_call_that_cannot_reach_todoist_ends_and_the_rest_says_so() {
         rename_milk(2),
         create(3, "Work/", "Q"),
     ];
-    let response = push(&api, mutations).unwrap();
+    let response = push(&api, mutations, &mut |_| {}).unwrap();
     assert_eq!(response.results.len(), 3);
     for result in &response.results {
         assert_eq!(

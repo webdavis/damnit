@@ -42,7 +42,7 @@ fn sent_whichever_order_the_tree_holds_them(
     (0..HASH_ORDERS_TRIED)
         .map(|_| {
             let api = FakeTodoist::new(upstream.clone());
-            let response = push(&api, mutations.to_vec()).unwrap();
+            let response = push(&api, mutations.to_vec(), &mut |_| {}).unwrap();
             assert!(
                 response.results.iter().all(|r| r.ok()),
                 "{:?}",

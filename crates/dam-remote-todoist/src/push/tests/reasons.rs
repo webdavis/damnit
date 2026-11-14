@@ -62,7 +62,7 @@ fn each_write_with_no_answer_says_what_happened() {
     ];
     for (cause, said) in causes {
         let api = FakeTodoist::new(sync_body()).failing_write(1, cause);
-        let response = push(&api, vec![an_update()]).unwrap();
+        let response = push(&api, vec![an_update()], &mut |_| {}).unwrap();
         assert_eq!(unanswered_why(&response.results[0]), said);
     }
 }
@@ -85,7 +85,7 @@ impl TodoistSync for TodoistThatGivesNoVerdicts {
 
 #[test]
 fn a_command_todoist_gave_no_verdict_for_is_named() {
-    let response = push(&TodoistThatGivesNoVerdicts, vec![an_update()]).unwrap();
+    let response = push(&TodoistThatGivesNoVerdicts, vec![an_update()], &mut |_| {}).unwrap();
     assert_eq!(
         unanswered_why(&response.results[0]),
         "Todoist gave no verdict for item_update"
@@ -95,8 +95,8 @@ fn a_command_todoist_gave_no_verdict_for_is_named() {
 #[test]
 fn a_create_todoist_named_no_id_for_says_so() {
     let api = FakeTodoist::new(sync_body());
-    push(&api, vec![a_create(false)]).unwrap();
-    let resent = push(&api, vec![a_create(false)]).unwrap();
+    push(&api, vec![a_create(false)], &mut |_| {}).unwrap();
+    let resent = push(&api, vec![a_create(false)], &mut |_| {}).unwrap();
     assert_eq!(
         unanswered_why(&resent.results[0]),
         "Todoist accepted the new task but named no id for it"
@@ -106,7 +106,7 @@ fn a_create_todoist_named_no_id_for_says_so() {
 #[test]
 fn a_mutation_todoist_did_only_part_of_names_the_refused_command_and_its_words() {
     let api = FakeTodoist::new(sync_body()).refusing("item_close");
-    let response = push(&api, vec![a_create(true)]).unwrap();
+    let response = push(&api, vec![a_create(true)], &mut |_| {}).unwrap();
     assert_eq!(
         unanswered_why(&response.results[0]),
         "Todoist accepted item_add but refused item_close: refused by the test"

@@ -1,5 +1,5 @@
 use dam_helper::Remote;
-use dam_protocol::{Capabilities, Mutation, PullResponse, PushResponse};
+use dam_protocol::{Capabilities, Mutation, MutationResult, PullResponse, PushResponse};
 
 use crate::api::TodoistApi;
 use crate::{capabilities, pull, push};
@@ -18,8 +18,12 @@ impl Remote for Todoist<'_> {
         pull::pull(&api, since).map_err(|e| e.to_string())
     }
 
-    fn push(&self, mutations: Vec<Mutation>) -> Result<PushResponse, String> {
+    fn push(
+        &self,
+        mutations: Vec<Mutation>,
+        answered: &mut dyn FnMut(&MutationResult),
+    ) -> Result<PushResponse, String> {
         let api = TodoistApi::from_env(self.remote)?;
-        push::push(&api, mutations).map_err(|e| e.to_string())
+        push::push(&api, mutations, answered).map_err(|e| e.to_string())
     }
 }
