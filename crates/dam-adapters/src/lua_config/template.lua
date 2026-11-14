@@ -40,9 +40,9 @@ return {
 
   -- A remote dam pulls from and pushes to, run by the dam-remote-<helper> program on PATH.
   -- url is <helper>::<address>, a helper name being letters, digits, - and _. stale makes reads
-  -- pull first when the last pull is older than that. deadline bounds one helper answer, 60s by
-  -- default. A duration is a whole number then s, m or h. path limits a push to the objects
-  -- under that path.
+  -- pull first when the last pull is older than that. deadline is the longest the helper may stay
+  -- silent, 60s by default. A duration is a whole number then s, m or h. path limits a push to
+  -- the objects under that path.
   --remote = {
     --todoist = { url = "todoist::", stale = "15m", deadline = "60s", path = "work" },
   --},

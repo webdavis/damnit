@@ -4,31 +4,29 @@ use std::time::Instant;
 use dam_application::{
     HelperError, PullOutcome, PushOutcome, RemoteCapabilities, RemoteHelper, RemoteMutation,
 };
-use dam_protocol::{Capabilities, PullResponse, PushResponse, Reply, Request, write_line};
+use dam_protocol::{Capabilities, PullResponse, Reply, Request, write_line};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
 use super::{ProcessHelper, RECHECK_INTERVAL};
-use crate::wire::{capabilities_from_wire, mutation_to_wire, pull_from_wire, push_from_wire};
+use crate::wire::{capabilities_from_wire, mutation_to_wire, pull_from_wire};
 
 impl ProcessHelper {
     fn call<T: DeserializeOwned>(&mut self, request: &Request) -> Result<T, HelperError> {
+        self.send(request)?;
+        reply_from(self.receive_within_the_deadline()?)
+    }
+
+    pub(super) fn send(&mut self, request: &Request) -> Result<(), HelperError> {
         let stdin = self
             .stdin
             .as_mut()
             .ok_or_else(|| HelperError::Io("the helper's input is closed".into()))?;
         let written = write_line(stdin, request);
-        if let Err(e) = written {
-            return Err(self.io_with_the_helpers_complaint(&e.to_string()));
-        }
-        match serde_json::from_value(self.receive_within_the_deadline()?) {
-            Ok(Reply::Answered(answer)) => Ok(answer),
-            Ok(Reply::Failed { error }) => Err(HelperError::Remote(error)),
-            Err(e) => Err(HelperError::Protocol(e.to_string())),
-        }
+        written.map_err(|e| self.io_with_the_helpers_complaint(&e.to_string()))
     }
 
-    fn receive_within_the_deadline(&mut self) -> Result<Value, HelperError> {
+    pub(super) fn receive_within_the_deadline(&mut self) -> Result<Value, HelperError> {
         let started = Instant::now();
         loop {
             match self.answers.recv_timeout(RECHECK_INTERVAL) {
@@ -61,6 +59,14 @@ impl ProcessHelper {
     }
 }
 
+pub(super) fn reply_from<T: DeserializeOwned>(line: Value) -> Result<T, HelperError> {
+    match serde_json::from_value(line) {
+        Ok(Reply::Answered(answer)) => Ok(answer),
+        Ok(Reply::Failed { error }) => Err(HelperError::Remote(error)),
+        Err(e) => Err(HelperError::Protocol(e.to_string())),
+    }
+}
+
 impl RemoteHelper for ProcessHelper {
     fn capabilities(&mut self) -> Result<RemoteCapabilities, HelperError> {
         let caps: Capabilities = self.call(&Request::Capabilities)?;
@@ -82,11 +88,10 @@ impl RemoteHelper for ProcessHelper {
     }
 
     fn push(&mut self, mutations: Vec<RemoteMutation>) -> Result<PushOutcome, HelperError> {
-        let mutations = mutations.into_iter().map(mutation_to_wire).collect();
-        let pushed: PushResponse = self.call(&Request::Push {
-            mutations,
-            early_answers: false,
+        self.send(&Request::Push {
+            mutations: mutations.into_iter().map(mutation_to_wire).collect(),
+            early_answers: true,
         })?;
-        Ok(push_from_wire(pushed))
+        Ok(self.read_answers_as_they_come())
     }
 }
