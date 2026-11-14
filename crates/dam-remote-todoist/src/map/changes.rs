@@ -19,30 +19,37 @@ impl Tree {
         section_id: Option<&str>,
         parent_id: Option<&str>,
     ) {
-        let moved = RemoteId::Item(id.to_string());
-        let was = self.path_inside(&moved);
-        if let Some(item) = self.items.get_mut(id) {
-            item.project_id = project_id.to_string();
-            item.section_id = section_id.map(str::to_string);
-            item.parent_id = parent_id.map(str::to_string);
-        }
-        if let Some(place) = self.items.get(id).and_then(|i| self.item_path(i)) {
-            self.added_this_push.item_now_at(id, place);
-        }
-        if let (Some(was), Some(now)) = (was, self.path_inside(&moved)) {
-            self.added_this_push.moved_from_to(&was, &now);
-        }
+        self.keeping_what_was_added_beneath(&RemoteId::Item(id.to_string()), |tree| {
+            if let Some(item) = tree.items.get_mut(id) {
+                item.project_id = project_id.to_string();
+                item.section_id = section_id.map(str::to_string);
+                item.parent_id = parent_id.map(str::to_string);
+            }
+            if let Some(place) = tree.items.get(id).and_then(|i| tree.item_path(i)) {
+                tree.added_this_push.item_now_at(id, place);
+            }
+        });
     }
 
     pub fn rename(&mut self, renamed: &RemoteId, name: &str) {
-        let was = self.path_inside(renamed);
         let name = name.to_string();
-        match renamed {
-            RemoteId::Project(id) => self.projects.get_mut(id).map(|p| p.name = name),
-            RemoteId::Section(id) => self.sections.get_mut(id).map(|s| s.name = name),
-            RemoteId::Item(id) => self.items.get_mut(id).map(|i| i.content = name),
-        };
-        if let (Some(was), Some(now)) = (was, self.path_inside(renamed)) {
+        self.keeping_what_was_added_beneath(renamed, |tree| {
+            match renamed {
+                RemoteId::Project(id) => tree.projects.get_mut(id).map(|p| p.name = name),
+                RemoteId::Section(id) => tree.sections.get_mut(id).map(|s| s.name = name),
+                RemoteId::Item(id) => tree.items.get_mut(id).map(|i| i.content = name),
+            };
+        });
+    }
+
+    fn keeping_what_was_added_beneath(
+        &mut self,
+        changed: &RemoteId,
+        change: impl FnOnce(&mut Tree),
+    ) {
+        let was = self.path_inside(changed);
+        change(self);
+        if let (Some(was), Some(now)) = (was, self.path_inside(changed)) {
             self.added_this_push.moved_from_to(&was, &now);
         }
     }
