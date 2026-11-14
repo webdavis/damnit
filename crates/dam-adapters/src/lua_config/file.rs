@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use dam_application::{Config, ConfigError};
+use dam_application::{Config, ConfigError, Tokens};
 use mlua::Lua;
 
 use super::computed::ConfiguredCredentials;
@@ -8,6 +8,7 @@ use super::evaluate::{ErrorText, evaluate, lua_message, read_text};
 use super::secrets::read_secrets;
 use super::settings::read_settings;
 use super::strict::StrictMap;
+use super::token::read_tokens;
 
 pub struct LuaConfigFile {
     config: PathBuf,
@@ -54,6 +55,15 @@ impl LuaConfigFile {
         match evaluate(&lua, &self.config, text, ErrorText::QuotesTheFile)? {
             Some(table) => read_settings(&StrictMap::root(&file_name(&self.config), &table)?),
             None => Ok(Config::default()),
+        }
+    }
+
+    pub(super) fn tokens_in(&self, text: Option<&str>) -> Result<Tokens, ConfigError> {
+        let lua = Lua::new();
+        let path = self.secrets_path();
+        match evaluate(&lua, &path, text, ErrorText::NeverQuotesTheFile)? {
+            Some(table) => Ok(read_tokens(&StrictMap::root("secrets.lua", &table)?)),
+            None => Ok(Tokens::default()),
         }
     }
 }

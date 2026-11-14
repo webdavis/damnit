@@ -1,12 +1,14 @@
-use dam_application::Config;
+use dam_application::{Config, Tokens};
 
 use super::edit::EditedFile;
+use super::replace::Holds;
 use crate::lua_config::LuaConfigFile;
 
 impl LuaConfigFile {
     pub(in crate::lua_config) fn settings_file(&self) -> EditedFile<'_, Config> {
         EditedFile {
             path: self.config_path().to_path_buf(),
+            holds: Holds::Settings,
             file: "config.lua",
             table: "remote",
             missing: "return {\n}\n",
@@ -19,6 +21,19 @@ impl LuaConfigFile {
                     .map(|remote| remote.name.0.clone())
                     .collect()
             },
+        }
+    }
+
+    pub(in crate::lua_config) fn secrets_file(&self) -> EditedFile<'_, Tokens> {
+        EditedFile {
+            path: self.secrets_path(),
+            holds: Holds::Secrets,
+            file: "secrets.lua",
+            table: "token",
+            missing: "return {\n  schema = 1,\n}\n",
+            config: self,
+            read: LuaConfigFile::tokens_in,
+            names: |tokens| tokens.names.iter().cloned().collect(),
         }
     }
 }
