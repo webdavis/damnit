@@ -2,8 +2,8 @@ use super::*;
 use crate::args::{RemoteArgs, RemoteCommand};
 use crate::commands::remote::run_remote;
 use crate::testing::context;
-use dam_application::RemoteConfig;
 use dam_application::RemoteName;
+use dam_application::{ConfiguredDuration, RemoteConfig};
 
 #[test]
 fn remote_list_reports_the_last_pull_and_push_as_rfc_3339_a_phrase_or_null() {
@@ -75,7 +75,7 @@ fn a_remote_row_shows_the_stale_window_as_the_config_wrote_it() {
         helper: "t".into(),
         url: "t::".into(),
         credentials: vec![],
-        stale: Some(std::time::Duration::from_secs(900)),
+        stale: ConfiguredDuration::parse("900s"),
         deadline: None,
         path: None,
     });

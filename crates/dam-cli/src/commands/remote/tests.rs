@@ -1,8 +1,7 @@
 use super::*;
 use crate::args::{RemoteArgs, RemoteCommand};
 use crate::testing::{FailingLauncher, FakeConfigFile, context};
-use dam_application::{RemoteConfig, RemoteName};
-use std::time::Duration;
+use dam_application::{ConfiguredDuration, RemoteConfig, RemoteName};
 
 fn add(name: &str, url: &str) -> RemoteArgs {
     RemoteArgs {
@@ -19,7 +18,7 @@ fn remote(name: &str) -> RemoteConfig {
         helper: name.into(),
         url: format!("{name}::"),
         credentials: vec![],
-        stale: Some(Duration::from_secs(60)),
+        stale: ConfiguredDuration::parse("60s"),
         deadline: None,
         path: None,
     }

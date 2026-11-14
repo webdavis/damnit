@@ -1,4 +1,5 @@
 use super::*;
+use crate::config::ConfiguredDuration;
 use crate::ports::{HelperError, Notice, StoreError};
 use crate::remote::{IncomingObject, PullOutcome};
 use crate::testing::prelude::*;
@@ -12,7 +13,10 @@ const MINUTE: Duration = Duration::from_secs(60);
 
 fn stale_after(window: Option<Duration>) -> Scenario {
     let mut config = config();
-    config.remotes[0].stale = window;
+    config.remotes[0].stale = window.map(|w| ConfiguredDuration {
+        value: w,
+        text: format!("{}s", w.as_secs()),
+    });
     Scenario::default().configured(config)
 }
 

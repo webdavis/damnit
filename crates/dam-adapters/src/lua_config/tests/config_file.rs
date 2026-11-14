@@ -28,7 +28,11 @@ fn config_lua_reads_its_owner_remotes_categories_and_filters() {
     assert!(config.done_interactive);
     let remote = config.remote("todoist").unwrap();
     assert_eq!(remote.helper, "todoist");
-    assert_eq!(remote.stale, Some(Duration::from_secs(900)));
+    assert_eq!(remote.stale.as_ref().unwrap().text, "15m");
+    assert_eq!(
+        remote.stale.as_ref().unwrap().value,
+        Duration::from_secs(900)
+    );
     assert_eq!(remote.deadline.as_ref().unwrap().text, "60s");
     assert_eq!(remote.path, Some(Path::parse("work").unwrap()));
     assert!(remote.credentials.is_empty());
