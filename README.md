@@ -49,8 +49,9 @@ you, and only when you run the command without `DAM_TOKEN`.
 
 `stale` makes reads pull first when the last pull is older than that. A failed pull that a read
 started leaves a notice in `dam status`, and the read still answers. `deadline` (default `"60s"`)
-bounds one helper answer; past it `dam` kills the helper and exits 1. Ctrl-C kills the helper,
-leaves the store as it was and exits 3.
+is the longest the helper may stay silent; past it `dam` kills the helper and exits 1. A pull
+answers at once, so the deadline bounds the whole pull. Ctrl-C kills the helper and exits 3. A push
+cut short keeps what the remote already answered and sends the rest on the next push.
 
     dam pull
 
