@@ -221,10 +221,13 @@ output:
 
 ```json
 {"error": {"kind": "refused", "rule": "no_such_object",
- "message": "no object matches \"a1b2c3d4\"", "oids": []}}
+ "message": "no object matches \"a1b2c3d4\"", "oids": [], "prefix": "a1b2c3d4"}}
 ```
 
-`rule` names the rule a refusal broke, and is null for other failures. A send with `--id` is safe to
+`rule` names the rule a refusal broke, and is null for other failures. `prefix` is the id the
+error is about, as the message shows it, on `ambiguous_prefix`, `no_such_object`,
+`no_working_object` and an id that is not an oid: the text you gave, or the first seven characters
+of a whole id. A send with `--id` is safe to
 retry: a repeat answers `duplicate`. The schema is `docs/schemas/error.schema.json`, and it lists
 every rule.
 

@@ -20,6 +20,7 @@ fn usage_part(sb: &Sandbox, args: &[&str]) -> Value {
     let document = usage_document(sb, args);
     assert_eq!(document["error"]["kind"], "usage", "{document}");
     assert_eq!(document["error"]["rule"], Value::Null, "{document}");
+    assert_eq!(document["error"].get("prefix"), None, "{document}");
     document["error"]["usage"].clone()
 }
 
