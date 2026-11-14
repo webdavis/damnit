@@ -112,6 +112,7 @@ mod by_path;
 mod changes;
 mod holdings;
 mod identity;
+mod open;
 mod wire;
 
 pub use identity::{RemoteId, api_priority, dam_priority};
