@@ -5,7 +5,7 @@ mod undone;
 use super::*;
 use crate::testing::prelude::*;
 use crate::testing::{Scenario, event, oid, task};
-use dam_domain::When;
+use dam_domain::{Priority, When};
 use jiff::civil::date;
 
 #[test]
