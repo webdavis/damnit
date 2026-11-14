@@ -117,6 +117,7 @@ fn push_round_trips_the_fixtures() {
         oid: oid(),
         idempotency_key: "0102030a-0b0c-4d0e-8f10-111213141500".into(),
         remote_id: Some("r1".into()),
+        container_remote_id: None,
         object: Some(milk("buy oat milk", true)),
         fields: vec!["subject".into(), "done".into()],
     };
@@ -175,4 +176,18 @@ fn an_attendee_writes_self_only_when_true_and_reads_its_absence_as_false() {
     let read: crate::WireAttendee =
         serde_json::from_str(r#"{"email":"me@x","response":"accepted"}"#).unwrap();
     assert!(!read.is_self);
+}
+
+#[test]
+fn a_mutation_names_the_container_it_files_into_only_when_given_one() {
+    let without: Request = serde_json::from_str(&golden("push.request")).unwrap();
+    let Request::Push { mutations } = without else {
+        panic!("not a push");
+    };
+    assert_eq!(mutations[0].container_remote_id, None);
+    let mut named = mutations[0].clone();
+    named.container_remote_id = Some("i:r2".into());
+    let wire = serde_json::to_value(&named).unwrap();
+    assert_eq!(wire["container_remote_id"], "i:r2");
+    assert_eq!(serde_json::from_value::<Mutation>(wire).unwrap(), named);
 }

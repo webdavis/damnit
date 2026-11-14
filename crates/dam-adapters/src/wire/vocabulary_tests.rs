@@ -124,6 +124,7 @@ fn every_field_a_mutation_names_reads_back_from_a_helpers_capabilities() {
         oid: oid(),
         idempotency_key: "k".into(),
         remote_id: Some("r1".into()),
+        container_remote_id: None,
         object: None,
         fields: Field::ALL.to_vec(),
     });

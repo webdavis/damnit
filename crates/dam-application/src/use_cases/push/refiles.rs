@@ -3,12 +3,21 @@ use std::collections::{BTreeMap, BTreeSet};
 use dam_domain::{Change, Field, Object, Oid};
 
 use crate::errors::UseCaseError;
-use crate::ports::{RemoteName, Store};
+use crate::ports::{RemoteName, RemoteTrackingRepository, Store};
 use crate::remote::RemoteCapabilities;
 use crate::use_cases::push::mutations::OwedChanges;
 
 #[derive(Default)]
-pub(super) struct Refiles(BTreeMap<Oid, Object>);
+pub(super) struct Refiles(BTreeMap<Oid, Refile>);
+
+struct Refile {
+    object: Object,
+    owner: Oid,
+}
+
+pub(super) struct Refiled {
+    pub(super) container_remote_id: Option<String>,
+}
 
 impl Refiles {
     pub(super) fn new(
@@ -46,32 +55,47 @@ impl Refiles {
             }
         }
         for folder in folders_losing_their_owner {
-            let owners = after_the_push
+            let mut owners = after_the_push
                 .iter()
                 .filter(|(after, _)| after.base().owned_folder().as_ref() == Some(&folder));
-            if owners.count() != 1 {
+            let (Some((owner, _)), None) = (owners.next(), owners.next()) else {
                 continue;
-            }
+            };
             let staying_in_the_folder = after_the_push.iter().filter(|(after, held_at)| {
                 held_at.as_ref() == Some(&folder) && after.base().path == folder
             });
             for (after, _) in staying_in_the_folder {
-                refiles.0.insert(after.oid().clone(), after.clone());
+                let refile = Refile {
+                    object: after.clone(),
+                    owner: owner.oid().clone(),
+                };
+                refiles.0.insert(after.oid().clone(), refile);
             }
         }
         Ok(refiles)
     }
 
-    pub(super) fn contains(&self, oid: &Oid) -> bool {
-        self.0.contains_key(oid)
+    pub(super) fn refiled(
+        &self,
+        remote_tracking: &dyn RemoteTrackingRepository,
+        remote: &RemoteName,
+        oid: &Oid,
+    ) -> Result<Option<Refiled>, UseCaseError> {
+        let Some(refile) = self.0.get(oid) else {
+            return Ok(None);
+        };
+        let container_remote_id = remote_tracking.remote_id(remote, &refile.owner)?;
+        Ok(Some(Refiled {
+            container_remote_id,
+        }))
     }
 
     pub(super) fn owe(&self, changes: &mut OwedChanges) {
-        for (oid, object) in &self.0 {
+        for (oid, refile) in &self.0 {
             changes.entry(oid.clone()).or_insert_with(|| {
                 let unchanged = Change::Update {
-                    before: object.clone(),
-                    after: object.clone(),
+                    before: refile.object.clone(),
+                    after: refile.object.clone(),
                 };
                 (unchanged, None)
             });

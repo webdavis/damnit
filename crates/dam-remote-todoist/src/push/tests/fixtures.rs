@@ -36,6 +36,7 @@ pub(crate) fn mutation(
         oid: format!("{n:x}").repeat(40),
         idempotency_key: key_with_its_last_character_free(n),
         remote_id: remote_id.map(str::to_string),
+        container_remote_id: None,
         object,
         fields: vec![],
     }

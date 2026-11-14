@@ -28,6 +28,7 @@ fn a_focus_mark_never_reaches_a_remote() {
         oid: object.oid().clone(),
         idempotency_key: "k".into(),
         remote_id: None,
+        container_remote_id: None,
         object: Some(object),
         fields: vec![Field::Subject],
     });
@@ -50,4 +51,19 @@ fn a_task_names_its_event_attached_and_still_reads_a_row_that_named_it_event() {
     old["task"].as_object_mut().unwrap().remove("attached");
     let old: dam_protocol::WireObject = serde_json::from_value(old).unwrap();
     assert_eq!(from_wire(&old).unwrap(), object);
+}
+
+#[test]
+fn a_mutation_carries_the_container_it_names() {
+    let object = focused_task();
+    let sent = mutation_to_wire(RemoteMutation {
+        op: MutationOp::Update,
+        oid: object.oid().clone(),
+        idempotency_key: "k".into(),
+        remote_id: Some("i:c".into()),
+        container_remote_id: Some("i:r2".into()),
+        object: Some(object),
+        fields: vec![Field::Path],
+    });
+    assert_eq!(sent.container_remote_id.as_deref(), Some("i:r2"));
 }
