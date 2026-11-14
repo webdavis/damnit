@@ -13,4 +13,9 @@ pub(crate) enum ConfigCommand {
         after_help = "Examples:\n  dam config print-default\n  dam config print-default > config.lua"
     )]
     PrintDefault,
+    #[command(
+        about = "Check the config as dam doctor does; an error's message may show a value from the file",
+        after_help = "Examples:\n  dam config validate\n  dam config validate --json"
+    )]
+    Validate,
 }
