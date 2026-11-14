@@ -29,6 +29,10 @@ impl ProcessHelper {
     pub(super) fn receive_within_the_deadline(&mut self) -> Result<Value, HelperError> {
         let started = Instant::now();
         loop {
+            if self.interrupt.requested() {
+                self.kill_and_reap();
+                return Err(HelperError::Cancelled);
+            }
             match self.answers.recv_timeout(RECHECK_INTERVAL) {
                 Ok(Ok(Some(answer))) => return Ok(answer),
                 Ok(Ok(None)) | Err(RecvTimeoutError::Disconnected) => {
@@ -41,10 +45,6 @@ impl ProcessHelper {
                     });
                 }
                 Err(RecvTimeoutError::Timeout) => {
-                    if self.interrupt.requested() {
-                        self.kill_and_reap();
-                        return Err(HelperError::Cancelled);
-                    }
                     if started.elapsed() >= self.deadline.value {
                         self.kill_and_reap();
                         return Err(HelperError::Timeout {
