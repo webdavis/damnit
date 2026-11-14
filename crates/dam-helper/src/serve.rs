@@ -26,7 +26,7 @@ fn answer(out: &mut impl Write, remote: &impl Remote, request: Request) -> io::R
     match request {
         Request::Capabilities => write_line(out, &Reply::Answered(remote.capabilities())),
         Request::Pull { since } => write_line(out, &Reply::from(remote.pull(since.as_deref()))),
-        Request::Push { mutations } => write_line(out, &Reply::from(remote.push(mutations))),
+        Request::Push { mutations, .. } => write_line(out, &Reply::from(remote.push(mutations))),
     }
 }
 

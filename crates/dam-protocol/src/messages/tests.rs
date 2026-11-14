@@ -121,8 +121,11 @@ fn push_round_trips_the_fixtures() {
         object: Some(milk("buy oat milk", true)),
         fields: vec!["subject".into(), "done".into()],
     };
-    let req = Request::Push { mutations: vec![m] };
-    assert_eq!(serde_json::to_string(&req).unwrap(), golden("push.request"));
+    let req = serde_json::to_string(&Request::Push {
+        mutations: vec![m],
+        early_answers: false,
+    });
+    assert_eq!(req.unwrap(), golden("push.request"));
     let res = PushResponse {
         results: vec![MutationResult {
             oid: oid(),
@@ -147,18 +150,6 @@ fn push_round_trips_the_fixtures() {
 fn a_push_answer_without_results_is_refused_rather_than_read_as_no_answers() {
     let err = serde_json::from_str::<Reply<PushResponse>>(r#"{"objects":[]}"#).unwrap_err();
     assert!(err.to_string().contains("results"), "{err}");
-}
-
-#[test]
-fn a_push_response_with_an_unknown_field_still_deserializes_as_push() {
-    let r: Reply<PushResponse> = serde_json::from_str(r#"{"results":[],"cursor":"abc"}"#).unwrap();
-    assert_eq!(
-        r,
-        Reply::Answered(PushResponse {
-            results: vec![],
-            stopped: None
-        })
-    );
 }
 
 #[test]
@@ -188,7 +179,7 @@ fn an_attendee_writes_self_only_when_true_and_reads_its_absence_as_false() {
 #[test]
 fn a_mutation_names_the_container_it_files_into_only_when_given_one() {
     let without: Request = serde_json::from_str(&golden("push.request")).unwrap();
-    let Request::Push { mutations } = without else {
+    let Request::Push { mutations, .. } = without else {
         panic!("not a push");
     };
     assert_eq!(mutations[0].container_remote_id, None);

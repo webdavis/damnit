@@ -32,3 +32,15 @@ fn a_push_response_that_stopped_keeps_its_results_and_the_reason() {
         answer
     );
 }
+
+#[test]
+fn a_push_response_with_an_unknown_field_still_deserializes_as_push() {
+    let r: Reply<PushResponse> = serde_json::from_str(r#"{"results":[],"cursor":"abc"}"#).unwrap();
+    assert_eq!(
+        r,
+        Reply::Answered(PushResponse {
+            results: vec![],
+            stopped: None
+        })
+    );
+}
