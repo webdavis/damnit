@@ -4,8 +4,8 @@ use std::path::Path;
 
 use dam_adapters::{Interrupt, OsRandom, ProcessLauncher, SqliteStore, SystemClock};
 use dam_application::{
-    Access, Clock, Config, ConfigFile, CredentialSource, Dam, HelperLauncher, Randomness, Remotes,
-    Store,
+    Access, Clock, Config, ConfigFile, CredentialSource, Dam, FilterFunctions, HelperLauncher,
+    Randomness, Remotes, Store,
 };
 
 use crate::caller::{authenticated, caller};
@@ -23,6 +23,7 @@ pub(crate) struct Context {
     pub(crate) random: Box<dyn Randomness>,
     pub(crate) launcher: Box<dyn HelperLauncher>,
     pub(crate) credentials: Box<dyn CredentialSource>,
+    pub(crate) filter_functions: Box<dyn FilterFunctions>,
     pub(crate) editor: Option<Box<dyn EditorSession>>,
     pub(crate) prompt: Box<dyn Prompt>,
     pub(crate) tz: jiff::tz::TimeZone,
@@ -57,6 +58,7 @@ impl Context {
             random: Box::new(OsRandom),
             launcher: Box::new(ProcessLauncher::from_env(interrupt.clone())),
             credentials: loaded.credentials,
+            filter_functions: loaded.filter_functions,
             editor,
             prompt,
             tz: jiff::tz::TimeZone::system(),
@@ -71,6 +73,7 @@ impl Context {
             random: self.random.as_ref(),
             config: &self.config,
             access: self.access.as_ref(),
+            filter_functions: self.filter_functions.as_ref(),
         }
     }
 

@@ -3,7 +3,7 @@ use dam_domain::Path;
 
 use super::strict::StrictMap;
 
-const SETTINGS: [&str; 4] = ["url", "stale", "deadline", "path"];
+pub(crate) const SETTINGS: [&str; 4] = ["url", "stale", "deadline", "path"];
 
 pub(super) fn read_remote(name: &str, remote: &StrictMap) -> Result<RemoteConfig, ConfigError> {
     remote.only(&SETTINGS).map_err(|misread| match misread {

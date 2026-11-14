@@ -88,7 +88,7 @@ fn run_filter(config: &Config, command: FilterCommand) -> Result<Report, CliErro
             .iter()
             .map(|f| FilterRow {
                 name: &f.name,
-                query: &f.query,
+                query: f.rule.query().unwrap_or_default(),
             })
             .collect(),
     })

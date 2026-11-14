@@ -40,10 +40,14 @@
       }
     },
     "filter": {
+      "description": "A saved filter: query text, a match function, or both, the query narrowing first.",
       "type": "object",
-      "required": ["query"],
+      "anyOf": [{ "required": ["query"] }, { "required": ["match"] }],
       "additionalProperties": false,
-      "properties": { "query": { "type": "string" } }
+      "properties": {
+        "query": { "type": "string" },
+        "match": { "description": "A Lua function(task, dam) that returns true to keep the object; docs/lua.md describes it." }
+      }
     }
   }
 }

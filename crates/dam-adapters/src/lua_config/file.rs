@@ -1,22 +1,38 @@
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 use dam_application::{Config, ConfigError, LoadedConfig, Tokens};
-use mlua::Lua;
+use mlua::{Lua, Table};
 
 use super::computed::ConfiguredCredentials;
 use super::evaluate::{ErrorText, evaluate, read_text, stopped_at_an_error};
+use super::filter_function::{LuaFilterFunctions, limit_every_thread};
 use super::secrets::read_secrets;
 use super::settings::read_settings;
 use super::strict::StrictMap;
 use super::token::read_tokens;
 
+const FILTER_LIMIT: Duration = Duration::from_secs(5);
+
 pub struct LuaConfigFile {
     config: PathBuf,
+    filter_limit: Duration,
 }
 
 impl LuaConfigFile {
     pub fn new(config: PathBuf) -> LuaConfigFile {
-        LuaConfigFile { config }
+        LuaConfigFile {
+            config,
+            filter_limit: FILTER_LIMIT,
+        }
+    }
+
+    #[cfg(test)]
+    pub(super) fn limiting_filters_to(self, filter_limit: Duration) -> LuaConfigFile {
+        LuaConfigFile {
+            filter_limit,
+            ..self
+        }
     }
 
     pub fn ends_in_lua(&self) -> Result<(), ConfigError> {
@@ -33,7 +49,8 @@ impl LuaConfigFile {
     }
 
     pub(super) fn read_both(&self, secrets_error: ErrorText) -> Result<LoadedConfig, ConfigError> {
-        let mut config = self.settings_in(read_text(&self.config)?.as_deref())?;
+        let (mut config, settings_lua, settings) =
+            self.settings_kept(read_text(&self.config)?.as_deref())?;
         let lua = Lua::new();
         let path = self.secrets_path();
         let text = read_text(&path)?;
@@ -46,9 +63,18 @@ impl LuaConfigFile {
         }
         let credentials = ConfiguredCredentials::keep(lua, path.clone(), secrets)
             .map_err(|_| stopped_at_an_error(&path))?;
+        let filter_functions = LuaFilterFunctions::keep(
+            settings_lua,
+            self.config.clone(),
+            settings,
+            config.owner_name(),
+            self.filter_limit,
+        )
+        .map_err(|_| stopped_at_an_error(&self.config))?;
         Ok(LoadedConfig {
             config,
             credentials: Box::new(credentials),
+            filter_functions: Box::new(filter_functions),
         })
     }
 
@@ -61,11 +87,21 @@ impl LuaConfigFile {
     }
 
     pub(super) fn settings_in(&self, text: Option<&str>) -> Result<Config, ConfigError> {
+        self.settings_kept(text).map(|(config, _, _)| config)
+    }
+
+    fn settings_kept(
+        &self,
+        text: Option<&str>,
+    ) -> Result<(Config, Lua, Option<Table>), ConfigError> {
         let lua = Lua::new();
-        match evaluate(&lua, &self.config, text, ErrorText::QuotesTheFile)? {
-            Some(table) => read_settings(&StrictMap::root(&file_name(&self.config), &table)?),
-            None => Ok(Config::default()),
-        }
+        limit_every_thread(&lua).map_err(|_| stopped_at_an_error(&self.config))?;
+        let table = evaluate(&lua, &self.config, text, ErrorText::QuotesTheFile)?;
+        let config = match &table {
+            Some(table) => read_settings(&StrictMap::root(&file_name(&self.config), table)?)?,
+            None => Config::default(),
+        };
+        Ok((config, lua, table))
     }
 
     pub(super) fn tokens_in(&self, text: Option<&str>) -> Result<Tokens, ConfigError> {

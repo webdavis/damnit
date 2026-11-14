@@ -1,10 +1,13 @@
-use dam_application::{Config, ConfigError, FilterConfig};
+use dam_application::{Config, ConfigError};
 use dam_domain::{Categories, Category};
 
+use super::filter::read_filter;
 use super::remote::read_remote;
 use super::strict::StrictMap;
 
-const SETTINGS: [&str; 5] = ["owner", "done", "remote", "category", "filter"];
+pub(crate) const SETTINGS: [&str; 5] = ["owner", "done", "remote", "category", "filter"];
+pub(crate) const DONE: [&str; 1] = ["interactive"];
+pub(crate) const CATEGORY: [&str; 2] = ["values", "exclusive"];
 const SECRETS: [&str; 2] = ["token", "schema"];
 
 pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
@@ -17,7 +20,7 @@ pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
     root.only(&SETTINGS)?;
     let done_interactive = match root.map("done")? {
         Some(done) => {
-            done.only(&["interactive"])?;
+            done.only(&DONE)?;
             done.bool("interactive")?
         }
         None => None,
@@ -54,19 +57,8 @@ pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
     })
 }
 
-fn read_filter(name: &str, filter: &StrictMap) -> Result<FilterConfig, ConfigError> {
-    filter.only(&["query"])?;
-    let query = filter
-        .string("query")?
-        .ok_or_else(|| filter.missing("query"))?;
-    Ok(FilterConfig {
-        name: name.to_string(),
-        query,
-    })
-}
-
 fn read_category(name: &str, category: &StrictMap) -> Result<Category, ConfigError> {
-    category.only(&["values", "exclusive"])?;
+    category.only(&CATEGORY)?;
     let values = category
         .strings("values")?
         .ok_or_else(|| category.missing("values"))?;

@@ -3,7 +3,7 @@ mod refusal_name;
 use dam_domain::{Blockers, Date, LabelViolation, Oid, Permission, QueryError, Tracked};
 
 use crate::access::TokenRefusal;
-use crate::ports::{CredentialError, HelperError, StoreError};
+use crate::ports::{CredentialError, FilterFailure, HelperError, StoreError};
 use crate::use_cases::items::refusal::ItemRefusal;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -79,9 +79,21 @@ pub enum UseCaseError {
         unanswered: usize,
     },
     Credential(CredentialError),
+    Filter(FilterError),
     Parse(String),
     Query(QueryError),
     NotAnOid(String),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum FilterError {
+    Failed {
+        filter: String,
+        failure: FilterFailure,
+    },
+    Withheld {
+        filter: String,
+    },
 }
 
 impl From<Refusal> for UseCaseError {

@@ -53,8 +53,10 @@ return {
     --effort = { values = { "light", "admin", "deep" }, exclusive = true },
   --},
 
-  -- A saved filter runs by name in place of a query.
+  -- A saved filter runs by name in place of a query. It holds query text, a
+  -- match function that returns true to keep an object, or both.
   --filter = {
     --today = { query = "due:today | overdue" },
+    --undated = { match = function(task, dam) return task.kind == "task" and task.task.due == nil end },
   --},
 }

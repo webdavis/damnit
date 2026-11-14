@@ -1,6 +1,7 @@
 use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
 
+use super::match_function::MatchFunction;
 use crate::commands::token::grant_view::GrantView;
 
 #[derive(Serialize)]
@@ -18,6 +19,7 @@ pub(super) enum Value {
 pub(super) enum Setting {
     Leaf { value: Value, default: bool },
     Hidden(Credential),
+    Function(MatchFunction),
     Part(Part),
 }
 
@@ -102,6 +104,7 @@ impl Setting {
             Setting::Hidden(Credential::Function) => {
                 vec![(key.to_string(), "hidden (function)".to_string())]
             }
+            Setting::Function(_) => vec![(key.to_string(), "function".to_string())],
             Setting::Part(Part(entries)) => entries
                 .iter()
                 .flat_map(|(name, setting)| setting.rows(&joined(key, name)))

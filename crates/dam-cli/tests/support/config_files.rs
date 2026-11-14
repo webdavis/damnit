@@ -119,8 +119,11 @@ impl Sandbox {
     }
 
     pub fn add_filter(&self, name: &str, query: &str) {
-        let table = format!("{{ query = {} }}", text(query));
-        self.change_config(|files| files.filters.push(entry(name, &table)));
+        self.add_filter_written_as(name, &format!("{{ query = {} }}", text(query)));
+    }
+
+    pub fn add_filter_written_as(&self, name: &str, lua_table: &str) {
+        self.change_config(|files| files.filters.push(entry(name, lua_table)));
     }
 
     pub fn add_token(&self, name: &str, token: TokenTable) {

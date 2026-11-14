@@ -9,6 +9,7 @@ mod config_text;
 mod conversions;
 mod document;
 mod edit_text;
+mod filter_text;
 mod given_key;
 mod given_prefix;
 mod item_text;
@@ -92,6 +93,7 @@ impl CliError {
                 "helper"
             }
             CliError::UseCase(UseCaseError::Credential(_)) => "credential",
+            CliError::UseCase(UseCaseError::Filter(_)) => "filter",
             CliError::Editor(_) => KIND_OF_AN_EDITOR_FAILURE_NO_DOCUMENT_CARRIES,
             CliError::UseCase(UseCaseError::Parse(_))
             | CliError::UseCase(UseCaseError::Query(_))

@@ -1,5 +1,5 @@
 use super::*;
-use dam_application::FilterConfig;
+use dam_application::{FilterConfig, FilterRule};
 use dam_domain::{Categories, Category};
 
 fn config() -> Config {
@@ -46,7 +46,7 @@ fn a_filter_line_is_its_name_and_its_query() {
     let mut config = config();
     config.filters = vec![FilterConfig {
         name: "today".into(),
-        query: "due:today | overdue".into(),
+        rule: FilterRule::Query("due:today | overdue".into()),
     }];
     let report = run_filter(&config, FilterCommand::List).unwrap();
     assert_eq!(report.human, "today  due:today | overdue");

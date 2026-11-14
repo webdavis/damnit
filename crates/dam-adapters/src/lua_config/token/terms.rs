@@ -8,7 +8,7 @@ use super::grant::read_grants;
 use crate::lua_config::shape::text;
 use crate::lua_config::strict::StrictMap;
 
-const TOKEN_KEYS: [&str; 7] = [
+pub(crate) const TOKEN_KEYS: [&str; 7] = [
     "value",
     "expires",
     "not_before",

@@ -104,6 +104,9 @@ fn every_kind_the_readme_lists_is_one_dam_reports() {
         CliError::UseCase(UseCaseError::Credential(
             dam_application::CredentialError::Missing("x".into()),
         )),
+        CliError::UseCase(UseCaseError::Filter(
+            dam_application::FilterError::Withheld { filter: "x".into() },
+        )),
         CliError::Editor(EditorError("x".into())),
         CliError::UseCase(UseCaseError::Parse("x".into())),
         CliError::Usage("x".into()),

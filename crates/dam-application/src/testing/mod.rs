@@ -2,6 +2,7 @@ pub mod contract;
 mod debug_form;
 mod doubles;
 mod faulty_store;
+mod filter_functions;
 mod fixture;
 mod holders;
 mod launchers;
@@ -14,6 +15,7 @@ pub use doubles::{
     task_caps,
 };
 pub use faulty_store::FaultyStore;
+pub use filter_functions::FakeFilterFunctions;
 pub use fixture::{Fixture, remotes_launched_by};
 pub use holders::{allowed, holder};
 pub use launchers::{

@@ -12,20 +12,23 @@ mod tokens;
 mod use_cases;
 
 pub use access::{Access, Detailed, Holder, Owner, TokenRefusal, authenticate};
-pub use config::{Config, ConfiguredDuration, CredentialSpec, FilterConfig, RemoteConfig};
+pub use config::{
+    Config, ConfiguredDuration, CredentialSpec, FilterConfig, FilterRule, RemoteConfig,
+};
 pub use credentials::resolve_credentials;
 pub use dam_domain::{
     Blockers, ChildDisposition, DependencyDisposition, Dispositions, Force, Tracked,
 };
-pub use errors::{Refusal, UseCaseError};
+pub use errors::{FilterError, Refusal, UseCaseError};
 pub use ports::{
     AcceptedKindsRepository, AnswerRepository, Attempt, AttemptRepository, Attempts, ByHand, Clock,
     CommitRepository, ComputeFailure, ConfigError, ConfigFile, Conflict, ConflictRepository,
     CredentialError, CredentialSource, DayRepository, Declared, DroppedBecause, EditFault,
-    EditedTable, Expected, HelperError, HelperLauncher, IdRepository, ItemRepository, LoadedConfig,
-    Misread, MissingTask, Notice, NoticeRepository, ObjectRepository, OriginRepository, Place,
-    Randomness, RemoteHelper, RemoteName, RemoteNameError, RemoteTrackingRepository,
-    SecretsTightened, StageRepository, Store, StoreError, Transactional, Uneditable,
+    EditedTable, Expected, FilterFailure, FilterFault, FilterFunctions, HelperError,
+    HelperLauncher, Histories, History, IdRepository, ItemRepository, LoadedConfig, Misread,
+    MissingTask, Notice, NoticeRepository, ObjectRepository, OriginRepository, Place, Randomness,
+    RemoteHelper, RemoteName, RemoteNameError, RemoteTrackingRepository, SecretsTightened,
+    StageRepository, Store, StoreError, Transactional, Uneditable,
 };
 pub use remote::{
     IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, PushOutcome,

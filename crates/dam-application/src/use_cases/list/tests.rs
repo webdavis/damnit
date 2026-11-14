@@ -1,5 +1,5 @@
 use super::*;
-use crate::config::{Config, FilterConfig};
+use crate::config::{Config, FilterConfig, FilterRule};
 use crate::testing::{Scenario, oid};
 use dam_domain::{Categories, Category, Object, Path, Priority, Task, When};
 use jiff::civil::date;
@@ -30,7 +30,7 @@ fn effort_categories_and_a_today_filter() -> Config {
         .unwrap(),
         filters: vec![FilterConfig {
             name: "today".into(),
-            query: "due:today | overdue".into(),
+            rule: FilterRule::Query("due:today | overdue".into()),
         }],
         ..Config::default()
     }
