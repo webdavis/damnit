@@ -1,6 +1,6 @@
 use crate::errors::UseCaseError;
 use crate::ports::HelperError;
-use crate::remote::{MutationOutcome, MutationVerdict, PushOutcome};
+use crate::remote::{MutationOp, MutationOutcome, MutationVerdict, PushOutcome};
 use crate::testing::prelude::*;
 use crate::testing::{
     Scenario, ScriptedHelper, ScriptedLauncher, accepting_all, oid, pushing, remotes_launched_by,
@@ -67,8 +67,16 @@ fn three_cut_short_by(stop: HelperError) {
 
     let (accepting, resent) = pushing(accepting_all(Some("r3")));
     s.dam().push(remotes_launched_by(&accepting), None).unwrap();
-    let resent: Vec<_> = resent.borrow().iter().map(|m| m.oid.clone()).collect();
-    assert_eq!(resent, vec![oid(3)]);
+    let resent: Vec<_> = resent
+        .borrow()
+        .iter()
+        .map(|m| (m.oid.clone(), m.op))
+        .collect();
+    assert_eq!(
+        resent,
+        vec![(oid(3), MutationOp::Create), (oid(3), MutationOp::Update)],
+        "the create left in doubt is followed by an update"
+    );
 }
 
 #[test]

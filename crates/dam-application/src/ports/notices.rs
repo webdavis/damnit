@@ -1,4 +1,4 @@
-use dam_domain::{Kind, Oid};
+use dam_domain::{Kind, Oid, Path};
 
 use super::store::{RemoteName, StoreError};
 use crate::remote::RejectedObject;
@@ -36,6 +36,12 @@ pub enum Notice {
     MissingUpstream {
         remote: RemoteName,
         tasks: Vec<MissingTask>,
+    },
+    CreateInDoubtRemoved {
+        remote: RemoteName,
+        oid: Oid,
+        subject: String,
+        path: Path,
     },
 }
 

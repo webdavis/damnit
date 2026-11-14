@@ -114,7 +114,7 @@ mod fields;
 pub use authored::{Author, Authored, Origin, TokenAuthor};
 pub use details::Details;
 
-pub use fields::{changed_fields, kind_change, merge_fields, touched_fields};
+pub use fields::{carrying_only, changed_fields, kind_change, merge_fields, touched_fields};
 
 #[cfg(test)]
 mod tests;

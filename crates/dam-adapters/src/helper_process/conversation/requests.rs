@@ -9,7 +9,7 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 
 use super::{ProcessHelper, RECHECK_INTERVAL};
-use crate::wire::{capabilities_from_wire, mutation_to_wire, pull_from_wire};
+use crate::wire::{capabilities_from_wire, declared_on_the_wire, mutation_to_wire, pull_from_wire};
 
 impl ProcessHelper {
     fn call<T: DeserializeOwned>(&mut self, request: &Request) -> Result<T, HelperError> {
@@ -93,5 +93,9 @@ impl RemoteHelper for ProcessHelper {
             early_answers: true,
         })?;
         Ok(self.read_answers_as_they_come())
+    }
+
+    fn declared_on_the_wire(&self, mutation: &RemoteMutation) -> String {
+        declared_on_the_wire(mutation)
     }
 }

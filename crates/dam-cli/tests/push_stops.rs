@@ -37,9 +37,17 @@ fn a_rate_limit_after_the_first_answer_adds_the_counts_and_keeps_that_answer() {
 
     let (ok, out, err) = sb.dam(&["push"]);
     assert!(ok, "{err}");
-    assert!(out.contains("fake: 1 sent, 1 ok"), "{out}");
-    let resent = sb.pushes().pop().unwrap();
-    let sent_first = &sb.pushes()[0]["mutations"];
+    assert!(out.contains("fake: 2 sent, 2 ok"), "{out}");
+    let pushes = sb.pushes();
+    let [first, .., resent, follow_up] = pushes.as_slice() else {
+        panic!("{pushes:?}");
+    };
     assert_eq!(resent["mutations"].as_array().unwrap().len(), 1);
-    assert_eq!(resent["mutations"][0], sent_first[1]);
+    assert_eq!(resent["mutations"][0], first["mutations"][1]);
+    let update = &follow_up["mutations"][0];
+    assert_eq!(
+        update["op"], "update",
+        "the create left in doubt is followed up"
+    );
+    assert_eq!(update["oid"], resent["mutations"][0]["oid"]);
 }

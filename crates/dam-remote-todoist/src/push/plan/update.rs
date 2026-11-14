@@ -43,7 +43,7 @@ pub fn update_plan(
             if changed("subject") {
                 commands.push("project_update", renamed(&id, object))?;
             }
-            if changed("done") {
+            if changed("done") && (done || !tree.shows_project_unarchived(&id)) {
                 let verb = if done {
                     "project_archive"
                 } else {
@@ -68,7 +68,7 @@ pub fn update_plan(
                 item.insert("id".into(), id.clone().into());
                 commands.push("item_update", item)?;
             }
-            if changed("done") {
+            if changed("done") && (done || !tree.shows_item_open(&id)) {
                 let verb = if done {
                     "item_close"
                 } else {
@@ -104,13 +104,13 @@ fn renamed(id: &str, object: &WireObject) -> Args {
 fn item_place(tree: &Tree, m: &Mutation, object: &WireObject) -> Result<ItemPlace, Failure> {
     if let Some(named) = &m.container_remote_id {
         let container: RemoteId = named.parse().map_err(|e| {
-            Failure::OnlyThisMutation(format!("an unusable Todoist container id: {e}"))
+            Failure::RefusedWithoutAVerdict(format!("an unusable Todoist container id: {e}"))
         })?;
-        return place_inside(tree, &container).map_err(Failure::OnlyThisMutation);
+        return place_inside(tree, &container).map_err(Failure::RefusedWithoutAVerdict);
     }
-    match shape_for(tree, object, &[]).map_err(Failure::OnlyThisMutation)? {
+    match shape_for(tree, object, &[]).map_err(Failure::RefusedWithoutAVerdict)? {
         Shape::Item(place) => Ok(place),
-        Shape::Project { .. } | Shape::Section { .. } => Err(Failure::OnlyThisMutation(
+        Shape::Project { .. } | Shape::Section { .. } => Err(Failure::RefusedWithoutAVerdict(
             "a path change would move the task out of task position".into(),
         )),
     }

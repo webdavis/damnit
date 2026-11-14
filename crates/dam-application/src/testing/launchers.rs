@@ -97,7 +97,19 @@ pub fn refusing_all(
     why: &str,
 ) -> impl Fn(&[RemoteMutation]) -> Vec<MutationOutcome> + Clone + 'static {
     let why = why.to_string();
-    move |ms| answering_each(ms, MutationVerdict::Refused { why: why.clone() })
+    move |ms| refusing_each(ms, &why, false)
+}
+
+pub fn refusing_all_unasked(
+    why: &str,
+) -> impl Fn(&[RemoteMutation]) -> Vec<MutationOutcome> + Clone + 'static {
+    let why = why.to_string();
+    move |ms| refusing_each(ms, &why, true)
+}
+
+fn refusing_each(ms: &[RemoteMutation], why: &str, unasked: bool) -> Vec<MutationOutcome> {
+    let why = why.to_string();
+    answering_each(ms, MutationVerdict::Refused { why, unasked })
 }
 
 fn answering_each(ms: &[RemoteMutation], verdict: MutationVerdict) -> Vec<MutationOutcome> {

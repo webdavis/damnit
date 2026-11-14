@@ -1,19 +1,31 @@
+use dam_domain::{Field, Object, Oid, Task};
+
 use super::*;
+use crate::remote::{MutationOp, RemoteMutation};
 
-fn parsed_oid(text: &str) -> Oid {
-    Oid::parse(text).unwrap()
+fn object(byte: u8) -> Oid {
+    Oid::generate(&mut |b: &mut [u8]| b.fill(byte))
 }
 
-fn commit(text: &str) -> CommitId {
-    CommitId::parse(text).unwrap()
+fn write(op: MutationOp) -> RemoteMutation {
+    let task = Task::new(object(1), "a");
+    RemoteMutation {
+        op,
+        oid: object(1),
+        idempotency_key: String::new(),
+        remote_id: Some("r1".into()),
+        container_remote_id: None,
+        object: Some(Object::Task(task)),
+        fields: vec![Field::Subject],
+    }
 }
 
-const OBJECT: &str = "abcdef01234567890123456789abcdef01234567";
-const COMMIT: &str = "fedcba98765432100123456789abcdef01234567";
+const SUBJECT_A: &str = r#"[["subject","a"]]"#;
+const SUBJECT_B: &str = r#"[["subject","b"]]"#;
 
 #[test]
 fn a_key_is_uuid_shaped_with_the_last_character_reserved() {
-    let k = key(Origin::Commit(&commit(COMMIT)), &parsed_oid(OBJECT));
+    let k = key(0, &write(MutationOp::Update), SUBJECT_A);
     assert_eq!(k.len(), 36);
     let groups: Vec<&str> = k.split('-').collect();
     assert_eq!(
@@ -25,33 +37,57 @@ fn a_key_is_uuid_shaped_with_the_last_character_reserved() {
 }
 
 #[test]
-fn the_same_change_yields_the_same_key_every_time() {
-    let a = key(Origin::Commit(&commit(COMMIT)), &parsed_oid(OBJECT));
-    let b = key(Origin::Commit(&commit(COMMIT)), &parsed_oid(OBJECT));
-    assert_eq!(a, b);
+fn an_update_s_key_for_a_given_wire_form_is_pinned() {
+    assert_eq!(
+        key(2, &write(MutationOp::Update), SUBJECT_A),
+        "09e4b74f-4a22-803e-827e-b97a627f30b0"
+    );
 }
 
 #[test]
-fn a_different_commit_object_or_origin_yields_a_different_key() {
-    let base = key(Origin::Commit(&commit(COMMIT)), &parsed_oid(OBJECT));
-    let other_commit = key(
-        Origin::Commit(&commit("0000000000000000000000000000000000000000")),
-        &parsed_oid(OBJECT),
+fn the_same_write_after_the_same_answers_yields_the_same_key() {
+    let update = write(MutationOp::Update);
+    assert_eq!(
+        key(3, &update, SUBJECT_A),
+        key(3, &update.clone(), SUBJECT_A)
     );
-    let other_object = key(
-        Origin::Commit(&commit(COMMIT)),
-        &parsed_oid("1111111111111111111111111111111111111111"),
-    );
-    let retry = key(Origin::Retry, &parsed_oid(OBJECT));
-    assert_ne!(base, other_commit);
-    assert_ne!(base, other_object);
-    assert_ne!(base, retry);
-    assert_ne!(
-        retry,
-        key(
-            Origin::Retry,
-            &parsed_oid("1111111111111111111111111111111111111111")
-        )
-    );
-    assert_eq!(retry, key(Origin::Retry, &parsed_oid(OBJECT)));
+}
+
+#[test]
+fn another_answer_object_or_operation_yields_another_key() {
+    let update = write(MutationOp::Update);
+    let elsewhere = RemoteMutation {
+        oid: object(2),
+        ..update.clone()
+    };
+    let delete = RemoteMutation {
+        op: MutationOp::Delete,
+        ..update.clone()
+    };
+    assert_ne!(key(0, &update, SUBJECT_A), key(1, &update, SUBJECT_A));
+    assert_ne!(key(0, &update, SUBJECT_A), key(0, &elsewhere, SUBJECT_A));
+    assert_ne!(key(0, &update, SUBJECT_A), key(0, &delete, SUBJECT_A));
+}
+
+#[test]
+fn an_update_s_key_follows_what_it_puts_on_the_wire_and_its_container() {
+    let update = write(MutationOp::Update);
+    let refiled = RemoteMutation {
+        container_remote_id: Some("p1".into()),
+        ..update.clone()
+    };
+    let more_fields = RemoteMutation {
+        fields: vec![Field::Subject, Field::Body],
+        ..update.clone()
+    };
+    assert_ne!(key(0, &update, SUBJECT_A), key(0, &update, SUBJECT_B));
+    assert_ne!(key(0, &update, SUBJECT_A), key(0, &refiled, SUBJECT_A));
+    assert_eq!(key(0, &update, SUBJECT_A), key(0, &more_fields, SUBJECT_A));
+}
+
+#[test]
+fn a_create_s_key_follows_the_object_and_its_answers_and_not_its_content() {
+    let create = write(MutationOp::Create);
+    assert_eq!(key(0, &create, SUBJECT_A), key(0, &create, SUBJECT_B));
+    assert_ne!(key(0, &create, SUBJECT_A), key(1, &create, SUBJECT_A));
 }

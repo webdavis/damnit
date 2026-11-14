@@ -93,10 +93,14 @@ One push result:
 | `oid` | the mutation this answers |
 | `ok` | whether the remote did it, left out when `unanswered` is true |
 | `unanswered` | true when the helper cannot tell whether the remote did it |
+| `unasked` | true when `ok` is false and the remote gave no verdict on the mutation |
 | `remote_id` | the remote's identity for the object, after a create |
 | `why` | the reason, when `ok` is false or `unanswered` is true |
 
-A result with neither `ok` nor `unanswered` is a protocol error.
+A result with neither `ok` nor `unanswered` is a protocol error. `unasked` is written only when
+true, and its absence reads as a refusal the remote gave. A helper sets it on a refusal it made
+before asking the remote and on a whole request the remote turned away without running it. `dam`
+counts the answers a remote gave about each object, and a refusal marked `unasked` does not count.
 
 ## Early answers
 
@@ -155,8 +159,8 @@ written only when true, and its absence reads as false.
 ## Delivery
 
 Delivery is at least once. `dam` sends an unanswered mutation again with the same
-`idempotency_key`, a value derived from the commit and the object, and keeps its commit unpushed
-until then. A helper answers `ok: false` only when the remote did nothing. When the remote did part
+`idempotency_key`, a value derived from the object, the answers the remote gave about it, and
+what is sent, and keeps its commit unpushed until then. A helper answers `ok: false` only when the remote did nothing. When the remote did part
 of the work, or may have done it without saying so, as after a timeout, a lost connection or a
 server error, the helper answers `unanswered: true` with a reason a person can act on. `dam` shows
 that reason in the push failed notice. A mutation left out of the results is unanswered too, and

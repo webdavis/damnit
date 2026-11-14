@@ -1,3 +1,4 @@
+mod already_open;
 mod carry_on;
 mod commands_sent;
 mod container_removals;
@@ -11,3 +12,4 @@ mod refusals;
 mod renames;
 mod retries;
 mod same_name_containers;
+mod unasked;

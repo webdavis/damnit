@@ -30,7 +30,7 @@ impl MutationResult {
     pub fn why(&self) -> Option<&str> {
         match &self.verdict {
             Verdict::Accepted { .. } => None,
-            Verdict::Refused { why } | Verdict::Unanswered { why } => Some(why),
+            Verdict::Refused { why, .. } | Verdict::Unanswered { why } => Some(why),
         }
     }
 }
@@ -38,7 +38,7 @@ impl MutationResult {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Verdict {
     Accepted { remote_id: Option<String> },
-    Refused { why: String },
+    Refused { why: String, unasked: bool },
     Unanswered { why: String },
 }
 
@@ -49,6 +49,8 @@ struct MutationResultDoc {
     ok: Option<bool>,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     unanswered: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    unasked: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     remote_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -69,7 +71,10 @@ impl TryFrom<MutationResultDoc> for MutationResult {
             (false, Some(true)) => Verdict::Accepted {
                 remote_id: doc.remote_id.clone(),
             },
-            (false, Some(false)) => Verdict::Refused { why: why() },
+            (false, Some(false)) => Verdict::Refused {
+                why: why(),
+                unasked: doc.unasked,
+            },
             (false, None) => return Err(serde_json::Error::custom(NO_VERDICT)),
         };
         Ok(MutationResult {
@@ -89,15 +94,16 @@ impl TryFrom<Value> for MutationResult {
 
 impl From<MutationResult> for MutationResultDoc {
     fn from(result: MutationResult) -> MutationResultDoc {
-        let (ok, unanswered, remote_id, why) = match result.verdict {
-            Verdict::Accepted { remote_id } => (Some(true), false, remote_id, None),
-            Verdict::Refused { why } => (Some(false), false, None, Some(why)),
-            Verdict::Unanswered { why } => (None, true, None, Some(why)),
+        let (ok, unanswered, unasked, remote_id, why) = match result.verdict {
+            Verdict::Accepted { remote_id } => (Some(true), false, false, remote_id, None),
+            Verdict::Refused { why, unasked } => (Some(false), false, unasked, None, Some(why)),
+            Verdict::Unanswered { why } => (None, true, false, None, Some(why)),
         };
         MutationResultDoc {
             oid: result.oid,
             ok,
             unanswered,
+            unasked,
             remote_id,
             why,
         }

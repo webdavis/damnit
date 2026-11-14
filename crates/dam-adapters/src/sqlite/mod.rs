@@ -1,10 +1,12 @@
 mod accepted_kinds;
+mod answers;
 mod authored_rows;
 mod codec;
 mod commits;
 mod conflicts;
 mod days;
 mod details_json;
+mod doubt;
 mod file;
 mod ids;
 mod items;

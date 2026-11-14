@@ -1,9 +1,12 @@
 mod accepted_kinds;
+mod answer_count;
 mod answers;
 mod conflict_count;
 mod cut_short;
 mod deletes;
+mod doubt;
 mod empty_containers;
+mod follow_ups;
 mod holds;
 mod keys;
 mod landings;
@@ -17,10 +20,13 @@ mod refile_holds;
 mod refiles;
 mod refusals;
 mod releases;
+mod removed_in_doubt;
 mod retries;
 mod scope;
 mod stops;
+mod stops_before_any_answer;
 mod unanswered;
+mod unasked_refusals;
 mod verbs;
 
 use crate::remote::MutationOp;

@@ -83,6 +83,13 @@ impl RemoteHelper for ScriptedHelper {
         self.pushed.borrow_mut().extend(mutations);
         Ok(answer)
     }
+    fn declared_on_the_wire(&self, mutation: &RemoteMutation) -> String {
+        let values = mutation
+            .object
+            .as_ref()
+            .map(|o| dam_domain::carrying_only(o, &mutation.fields));
+        format!("{:?} {values:?}", mutation.fields)
+    }
 }
 
 pub struct ScriptedLauncher {

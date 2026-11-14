@@ -19,13 +19,13 @@ pub use dam_domain::{
 };
 pub use errors::{Refusal, UseCaseError};
 pub use ports::{
-    AcceptedKindsRepository, ByHand, Clock, CommitRepository, ComputeFailure, ConfigError,
-    ConfigFile, Conflict, ConflictRepository, CredentialError, CredentialSource, DayRepository,
-    EditFault, EditedTable, Expected, HelperError, HelperLauncher, IdRepository, ItemRepository,
-    LoadedConfig, Misread, MissingTask, Notice, NoticeRepository, ObjectRepository,
-    OriginRepository, Place, Randomness, RemoteHelper, RemoteName, RemoteNameError,
-    RemoteTrackingRepository, SecretsTightened, StageRepository, Store, StoreError, Transactional,
-    Uneditable,
+    AcceptedKindsRepository, AnswerRepository, ByHand, Clock, CommitRepository, ComputeFailure,
+    ConfigError, ConfigFile, Conflict, ConflictRepository, CredentialError, CredentialSource,
+    DayRepository, DoubtRepository, EditFault, EditedTable, Expected, FieldsInDoubt, HelperError,
+    HelperLauncher, IdRepository, ItemRepository, LoadedConfig, Misread, MissingTask, Notice,
+    NoticeRepository, ObjectRepository, OriginRepository, Place, Randomness, RemoteHelper,
+    RemoteName, RemoteNameError, RemoteTrackingRepository, SecretsTightened, StageRepository,
+    Store, StoreError, Transactional, Uneditable,
 };
 pub use remote::{
     IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, PushOutcome,

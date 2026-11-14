@@ -9,14 +9,31 @@ pub(super) struct Sent {
     pub(super) mutations: usize,
     pub(super) answered: usize,
     pub(super) held: usize,
+    pub(super) skipped: usize,
     pub(super) stopped_by: Option<HelperError>,
+}
+
+impl Sent {
+    pub(super) fn absorb(&mut self, later: Sent) {
+        self.settlement.absorb(later.settlement);
+        self.mutations += later.mutations;
+        self.answered += later.answered;
+        self.held += later.held;
+        self.skipped += later.skipped;
+        self.stopped_by = later.stopped_by;
+    }
+}
+
+pub(super) struct Unheard {
+    pub(super) by: HelperError,
+    pub(super) doubt: Settlement,
 }
 
 pub(super) fn send_in_waves(
     helper: &mut dyn RemoteHelper,
     mut removals: Removals,
     mut pending: Vec<RemoteMutation>,
-) -> Result<Sent, HelperError> {
+) -> Result<Sent, Box<Unheard>> {
     let mut sent = Sent::default();
     while !pending.is_empty() {
         let wave = removals.wave(pending);
@@ -32,11 +49,12 @@ pub(super) fn send_in_waves(
                 outcomes: vec![],
                 stopped_by: Some(stop),
             });
-        if let Some(stop) = &answer.stopped_by
-            && sent.mutations == 0
+        if sent.mutations == 0
             && !answered_anything(&answer)
+            && let Some(by) = answer.stopped_by.clone()
         {
-            return Err(stop.clone());
+            let doubt = reconcile(&wave.ready, answer.outcomes);
+            return Err(Box::new(Unheard { by, doubt }));
         }
         sent.mutations += wave.ready.len();
         let settled = reconcile(&wave.ready, answer.outcomes);
@@ -44,7 +62,7 @@ pub(super) fn send_in_waves(
         removals.record(&wave.ready, &settled);
         sent.settlement.absorb(settled);
         if let Some(stop) = answer.stopped_by {
-            sent.settlement.absorb(reconcile(&pending, vec![]));
+            sent.settlement.absorb(Settlement::never_sent(&pending));
             sent.stopped_by = Some(stop);
             break;
         }

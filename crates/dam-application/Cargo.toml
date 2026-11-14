@@ -11,3 +11,4 @@ testing = []
 [dependencies]
 dam-domain = { path = "../dam-domain" }
 jiff.workspace = true
+sha2.workspace = true

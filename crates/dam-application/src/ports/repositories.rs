@@ -1,4 +1,6 @@
+use super::answers::AnswerRepository;
 use super::days::DayRepository;
+use super::doubt::DoubtRepository;
 use super::ids::IdRepository;
 use super::items::ItemRepository;
 use super::notices::NoticeRepository;
@@ -14,6 +16,8 @@ pub trait Store:
     + CommitRepository
     + RemoteTrackingRepository
     + AcceptedKindsRepository
+    + AnswerRepository
+    + DoubtRepository
     + ConflictRepository
     + NoticeRepository
     + DayRepository
@@ -30,6 +34,8 @@ impl<T> Store for T where
         + CommitRepository
         + RemoteTrackingRepository
         + AcceptedKindsRepository
+        + AnswerRepository
+        + DoubtRepository
         + ConflictRepository
         + NoticeRepository
         + DayRepository

@@ -1,3 +1,4 @@
+mod declared;
 mod decode;
 mod encode;
 
@@ -8,6 +9,7 @@ use dam_application::{
 use dam_domain::{Field, Kind, Object, Oid};
 use dam_protocol::{Capabilities, Mutation, PullResponse, PushResponse, Verdict, WireObject};
 
+pub use declared::declared_on_the_wire;
 pub use decode::from_wire;
 pub use encode::{event_to_wire, to_wire};
 
@@ -108,7 +110,7 @@ pub fn push_from_wire(response: PushResponse) -> PushOutcome {
                 oid: Oid::parse(&r.oid).ok()?,
                 verdict: match r.verdict {
                     Verdict::Accepted { remote_id } => MutationVerdict::Accepted { remote_id },
-                    Verdict::Refused { why } => MutationVerdict::Refused { why },
+                    Verdict::Refused { why, unasked } => MutationVerdict::Refused { why, unasked },
                     Verdict::Unanswered { why } => MutationVerdict::Unanswered { why },
                 },
             })
@@ -137,3 +139,6 @@ mod vocabulary_tests;
 
 #[cfg(test)]
 mod verdict_tests;
+
+#[cfg(test)]
+mod declared_tests;
