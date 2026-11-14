@@ -1,4 +1,4 @@
-use dam_domain::{Author, ItemHash, Object, Oid, Permission};
+use dam_domain::{Author, Item, ItemHash, Object, Oid, Permission};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
@@ -18,8 +18,11 @@ pub struct RemovePlan {
 #[derive(Debug, PartialEq, Eq)]
 pub enum Removal {
     Removed(RemovePlan),
+    ItemDeclined(Box<Item>),
+    Withdrawn(ItemAndTask),
     Waiting(ItemAndTask),
     Declined(ItemAndTask),
+    Nothing,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -84,7 +87,9 @@ fn plan_for(objects: &dyn ObjectRepository, object: &Object) -> Result<RemovePla
     })
 }
 
+mod by_id;
 mod by_token;
+mod withdraw;
 
 #[cfg(test)]
 mod tests;

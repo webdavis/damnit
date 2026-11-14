@@ -41,7 +41,7 @@ impl Dam<'_> {
         }
     }
 
-    fn id_key(&self, id: &CallerId) -> IdKey {
+    pub(crate) fn id_key(&self, id: &CallerId) -> IdKey {
         IdKey {
             holder: self.id_holder(),
             session: self

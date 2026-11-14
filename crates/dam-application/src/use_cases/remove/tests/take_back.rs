@@ -64,4 +64,5 @@ pub(super) fn moved_home(s: &Scenario, oid: &Oid) {
     s.store.put(&moved).unwrap();
 }
 
+mod by_id;
 mod by_oid;

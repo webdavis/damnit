@@ -21,6 +21,14 @@ impl<'a> Answer<'a> {
             oid: Some(&about.oid),
         }
     }
+
+    pub(super) fn nothing() -> Answer<'a> {
+        Answer {
+            answer: "nothing",
+            item: None,
+            oid: None,
+        }
+    }
 }
 
 impl View for Answer<'_> {
