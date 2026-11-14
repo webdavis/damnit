@@ -1,6 +1,7 @@
 use super::super::*;
 use crate::testing::prelude::*;
 use crate::testing::{FaultyStore, Scenario, oid, task_in};
+use dam_domain::{ChildDisposition, DependencyDisposition, Dispositions};
 
 fn with(children: ChildDisposition) -> Force {
     Force::With(Dispositions {
