@@ -32,7 +32,7 @@ pub(crate) struct Report {
     pub(crate) data: serde_json::Value,
     pub(crate) cut: Vec<bool>,
     pub(crate) tints: Vec<Tint>,
-    pub(crate) warnings: Vec<String>,
+    pub(crate) stderr: Vec<String>,
 }
 
 pub(crate) fn render(format: Format, report: &Report) -> Result<String, CliError> {
@@ -55,7 +55,7 @@ pub(crate) fn print_error(format: Format, error: &CliError) {
                 data: error.document(),
                 cut: Vec::new(),
                 tints: Vec::new(),
-                warnings: Vec::new(),
+                stderr: Vec::new(),
             };
             render(format, &report).unwrap_or_else(|_| format!("dam: {error}"))
         }
@@ -76,8 +76,8 @@ pub(crate) fn print(format: Format, color: bool, report: &Report) -> Result<(), 
         _ => text,
     };
     if format == Format::Human {
-        for warning in &report.warnings {
-            eprintln!("warning: {warning}");
+        for line in &report.stderr {
+            eprintln!("{line}");
         }
     }
     let mut out = std::io::stdout().lock();
@@ -169,7 +169,7 @@ mod tests {
                 data,
                 cut: Vec::new(),
                 tints: Vec::new(),
-                warnings: Vec::new(),
+                stderr: Vec::new(),
             },
         )
         .unwrap();
@@ -183,7 +183,7 @@ mod tests {
             data: serde_json::json!({"a": 1}),
             cut: Vec::new(),
             tints: Vec::new(),
-            warnings: Vec::new(),
+            stderr: Vec::new(),
         };
         assert_eq!(render(Format::Human, &report).unwrap(), "hi");
         assert_eq!(render(Format::Json, &report).unwrap(), "{\n  \"a\": 1\n}");

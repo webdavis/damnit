@@ -30,6 +30,13 @@ impl View for TokenCreated {
     fn warnings(&self) -> Vec<String> {
         self.warnings.clone()
     }
+
+    fn notices(&self) -> Vec<String> {
+        vec![
+            format!("created token {}, key id {}", self.name, self.key_id),
+            "the secret is shown this once".to_string(),
+        ]
+    }
 }
 
 pub(super) fn run(
