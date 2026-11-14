@@ -1,10 +1,10 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
-use dam_domain::Oid;
+use dam_domain::{Field, Object, Oid};
 
 use crate::errors::UseCaseError;
-use crate::ports::{Attempt, Declared, RemoteHelper, RemoteName, Store};
-use crate::remote::RemoteMutation;
+use crate::ports::{Attempt, Attempts, Declared, HelperError, RemoteHelper, RemoteName, Store};
+use crate::remote::{MutationOp, RemoteCapabilities, RemoteMutation};
 use crate::use_cases::push::idempotency::key;
 
 pub(super) struct Sending {
@@ -18,9 +18,9 @@ pub(super) fn attempting(
     store: &dyn Store,
     helper: &dyn RemoteHelper,
     remote: &RemoteName,
+    record: &Attempts,
     mutations: &mut [RemoteMutation],
 ) -> Result<Attempting, UseCaseError> {
-    let record = store.attempts(remote)?;
     let mut attempting = Attempting::new();
     for mutation in mutations {
         let earlier = record.get(&mutation.oid).map_or(&[][..], Vec::as_slice);
@@ -54,4 +54,30 @@ fn next(answers: u64, earlier: &[Attempt], write: &RemoteMutation, declared: Dec
         },
         repeats_the_last: false,
     }
+}
+
+pub(super) fn differing(
+    helper: &dyn RemoteHelper,
+    caps: &RemoteCapabilities,
+    now: Option<&Object>,
+    earlier: &[Attempt],
+) -> Result<BTreeSet<Field>, HelperError> {
+    let Some(now) = now.filter(|_| !earlier.is_empty()) else {
+        return Ok(BTreeSet::new());
+    };
+    let as_it_stands = helper.declared_on_the_wire(&RemoteMutation {
+        op: MutationOp::Update,
+        oid: now.oid().clone(),
+        idempotency_key: String::new(),
+        remote_id: None,
+        container_remote_id: None,
+        object: Some(now.clone()),
+        fields: caps.fields.clone(),
+    })?;
+    Ok(earlier
+        .iter()
+        .flat_map(|attempt| &attempt.declared)
+        .filter(|(field, sent)| as_it_stands.get(field).is_some_and(|now| now != *sent))
+        .map(|(field, _)| *field)
+        .collect())
 }

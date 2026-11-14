@@ -1,10 +1,10 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use dam_domain::{Change, CommitRecord, Oid};
 
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
-use crate::ports::Store;
+use crate::ports::{Attempts, Store};
 
 pub(super) type OwedChanges = BTreeMap<Oid, Change>;
 
@@ -12,10 +12,34 @@ pub(super) fn changes_to_send(
     store: &dyn Store,
     remote: &RemoteConfig,
     unpushed: &[CommitRecord],
+    record: &Attempts,
 ) -> Result<OwedChanges, UseCaseError> {
     let mut changes = net_changes(unpushed);
-    declare_each_retry_since_the_remote_snapshot(store, remote, &mut changes)?;
+    let mut retried: BTreeSet<Oid> = store.push_retries(&remote.name)?.into_iter().collect();
+    retried.extend(record.keys().cloned());
+    declare_since_the_remote_snapshot(store, remote, retried, &mut changes)?;
+    owe_a_write_for_each_object_attempted(store, record, &mut changes)?;
     Ok(changes)
+}
+
+fn owe_a_write_for_each_object_attempted(
+    store: &dyn Store,
+    record: &Attempts,
+    changes: &mut OwedChanges,
+) -> Result<(), UseCaseError> {
+    for oid in record.keys() {
+        if changes.contains_key(oid) {
+            continue;
+        }
+        if let Some(committed) = store.committed(oid)? {
+            let unchanged = Change::Update {
+                before: committed.clone(),
+                after: committed,
+            };
+            changes.insert(oid.clone(), unchanged);
+        }
+    }
+    Ok(())
 }
 
 fn net_changes(unpushed: &[CommitRecord]) -> OwedChanges {
@@ -34,12 +58,13 @@ fn net_changes(unpushed: &[CommitRecord]) -> OwedChanges {
     changes
 }
 
-fn declare_each_retry_since_the_remote_snapshot(
+fn declare_since_the_remote_snapshot(
     store: &dyn Store,
     remote: &RemoteConfig,
+    retried: BTreeSet<Oid>,
     changes: &mut OwedChanges,
 ) -> Result<(), UseCaseError> {
-    for oid in store.push_retries(&remote.name)? {
+    for oid in retried {
         let snapshot = store.remote_snapshot(&remote.name, &oid)?;
         let after = match changes.remove(&oid) {
             Some(owed) => owed.after().cloned(),

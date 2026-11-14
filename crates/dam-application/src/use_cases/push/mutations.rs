@@ -1,9 +1,12 @@
+use std::collections::BTreeSet;
+
 use dam_domain::{Change, Field, changed_fields};
 
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
-use crate::ports::RemoteTrackingRepository;
+use crate::ports::{Attempts, RemoteHelper, RemoteTrackingRepository};
 use crate::remote::{MutationOp, RemoteCapabilities, RemoteMutation};
+use crate::use_cases::push::attempting::differing;
 use crate::use_cases::push::owed::OwedChanges;
 use crate::use_cases::push::refiles::{Refiled, Refiles};
 use crate::use_cases::push::sending_order::turn;
@@ -15,10 +18,12 @@ pub(super) struct Plan {
 
 pub(super) fn plan(
     remote_tracking: &dyn RemoteTrackingRepository,
+    helper: &dyn RemoteHelper,
     caps: &RemoteCapabilities,
     remote: &RemoteConfig,
     mut changes: OwedChanges,
     refiles: &Refiles,
+    record: &Attempts,
 ) -> Result<Plan, UseCaseError> {
     let mut plan = Plan {
         mutations: Vec::new(),
@@ -29,7 +34,9 @@ pub(super) fn plan(
     owed.sort_by_key(turn);
     for change in owed {
         let refiled = refiles.refiled(remote_tracking, &remote.name, change.oid())?;
-        match mutation_for(remote_tracking, caps, remote, &change, refiled)? {
+        let earlier = record.get(change.oid()).map_or(&[][..], Vec::as_slice);
+        let differing = differing(helper, caps, change.after(), earlier)?;
+        match mutation_for(remote_tracking, caps, remote, &change, refiled, &differing)? {
             Some(mutation) => plan.mutations.push(mutation),
             None => plan.skipped += 1,
         }
@@ -43,6 +50,7 @@ fn mutation_for(
     remote: &RemoteConfig,
     change: &Change,
     refiled: Option<Refiled>,
+    differing: &BTreeSet<Field>,
 ) -> Result<Option<RemoteMutation>, UseCaseError> {
     let object = change.object();
     if !caps.kinds.contains(&object.kind()) {
@@ -63,7 +71,11 @@ fn mutation_for(
             let changed = changed_fields(before, after);
             let declared: Vec<Field> = Field::ALL
                 .into_iter()
-                .filter(|f| changed.contains(f) || (refiled.is_some() && *f == Field::Path))
+                .filter(|f| {
+                    changed.contains(f)
+                        || differing.contains(f)
+                        || (refiled.is_some() && *f == Field::Path)
+                })
                 .filter(|f| caps.fields.contains(f))
                 .collect();
             if declared.is_empty() {
