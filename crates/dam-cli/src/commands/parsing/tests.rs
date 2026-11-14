@@ -1,0 +1,55 @@
+use super::*;
+use crate::testing::context;
+use dam_domain::When;
+use jiff::civil::date;
+
+#[test]
+fn every_date_flag_reads_the_same_words() {
+    let friday_2026_09_18 = context();
+    let ctx = &friday_2026_09_18;
+    for flag in ["due", "start", "end"] {
+        assert_eq!(
+            when_flag(ctx, flag, "next mon").unwrap(),
+            When::Day(date(2026, 9, 21)),
+            "--{flag}"
+        );
+        assert_eq!(
+            when_flag(ctx, flag, "in 2 weeks").unwrap(),
+            When::Day(date(2026, 10, 2)),
+            "--{flag}"
+        );
+    }
+    assert_eq!(deadline_flag(ctx, "next mon").unwrap(), date(2026, 9, 21));
+    assert_eq!(deadline_flag(ctx, "in 2 weeks").unwrap(), date(2026, 10, 2));
+    assert_eq!(deadline_flag(ctx, "2026-11-01").unwrap(), date(2026, 11, 1));
+}
+
+#[test]
+fn a_deadline_already_past_is_read_rather_than_refused() {
+    let ctx = context();
+    assert_eq!(deadline_flag(&ctx, "2020-01-01").unwrap(), date(2020, 1, 1));
+}
+
+#[test]
+fn an_unreadable_word_is_a_usage_refusal_naming_the_forms() {
+    let ctx = context();
+    for error in [
+        when_flag(&ctx, "due", "someday").unwrap_err(),
+        deadline_flag(&ctx, "someday").unwrap_err(),
+    ] {
+        assert_eq!(error.exit_code(), 2);
+        let said = error.to_string();
+        for form in ["today", "next <weekday>", "in <n> days", "YYYY-MM-DD"] {
+            assert!(said.contains(form), "{said}");
+        }
+    }
+}
+
+#[test]
+fn a_deadline_is_a_whole_day_so_a_time_given_to_it_is_dropped() {
+    let ctx = context();
+    assert_eq!(
+        deadline_flag(&ctx, "2026-11-01T09:30").unwrap(),
+        date(2026, 11, 1)
+    );
+}
