@@ -5,3 +5,4 @@ mod idempotency;
 mod moves;
 mod refusals;
 mod retries;
+mod same_name_containers;

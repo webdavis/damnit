@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use dam_protocol::WireObject;
 
 use crate::api::{Item, Project, Section, SyncResponse};
+use added::AddedThisPush;
 
 fn one_path_segment(name: &str, id: &str) -> String {
     let clean = name.replace('/', "-");
@@ -17,6 +18,7 @@ pub struct Tree {
     projects: HashMap<String, Project>,
     sections: HashMap<String, Section>,
     items: HashMap<String, Item>,
+    added_this_push: AddedThisPush,
 }
 
 impl Tree {
@@ -37,6 +39,7 @@ impl Tree {
                 .iter()
                 .map(|i| (i.id.clone(), i.clone()))
                 .collect(),
+            added_this_push: AddedThisPush::default(),
         }
     }
 
@@ -101,20 +104,9 @@ impl Tree {
             RemoteId::Item(id) => self.items.get(id).and_then(|i| item_to_wire(self, i)),
         }
     }
-
-    pub fn add_project(&mut self, p: Project) {
-        self.projects.insert(p.id.clone(), p);
-    }
-
-    pub fn add_section(&mut self, s: Section) {
-        self.sections.insert(s.id.clone(), s);
-    }
-
-    pub fn add_item(&mut self, i: Item) {
-        self.items.insert(i.id.clone(), i);
-    }
 }
 
+mod added;
 mod by_path;
 mod identity;
 mod wire;

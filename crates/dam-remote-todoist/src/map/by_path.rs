@@ -2,6 +2,9 @@ use super::Tree;
 
 impl Tree {
     pub fn project_id_for(&self, path: &str) -> Option<&str> {
+        if let Some(id) = self.added_this_push.project_by_path.get(path) {
+            return Some(id);
+        }
         self.projects
             .values()
             .find(|p| !p.is_deleted && self.project_path(&p.id).as_deref() == Some(path))
@@ -9,6 +12,9 @@ impl Tree {
     }
 
     pub fn section_id_for(&self, path: &str) -> Option<&str> {
+        if let Some(id) = self.added_this_push.section_by_path.get(path) {
+            return Some(id);
+        }
         self.sections
             .values()
             .find(|s| !s.is_deleted && self.section_path(&s.id).as_deref() == Some(path))
@@ -16,6 +22,14 @@ impl Tree {
     }
 
     pub fn item_id_for(&self, path: &str, content: &str) -> Option<&str> {
+        let place_and_content = (path.to_string(), content.to_string());
+        if let Some(id) = self
+            .added_this_push
+            .item_by_place_and_content
+            .get(&place_and_content)
+        {
+            return Some(id);
+        }
         self.items
             .values()
             .find(|i| {
