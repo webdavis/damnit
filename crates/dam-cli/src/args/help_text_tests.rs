@@ -125,6 +125,11 @@ dam token create require: help = Refuse a request that does not pass --meta KEY=
 dam token list: about = List the tokens in secrets.lua with their grants and standing, never their values
 dam token revoke: about = Remove a token's table from secrets.lua
 dam token revoke name: help = Name the token to remove
+dam config: about = Show and check the config
+dam config print-default: about = Print the starter config.lua a first run writes, without writing a file
+dam config print-default: after_help = Examples:
+  dam config print-default
+  dam config print-default > config.lua
 dam doctor: about = Read config.lua and secrets.lua in full and print where they are; an error's message may show a value from the file
 ";
 
@@ -133,6 +138,7 @@ fn every_help_text(command: &clap::Command, path: &str, out: &mut String) {
     let texts = [
         ("about", command.get_about()),
         ("long_about", command.get_long_about()),
+        ("after_help", command.get_after_help()),
     ];
     for (key, text) in texts {
         if let Some(text) = text {

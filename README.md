@@ -42,6 +42,8 @@ and never a secret. `secrets.lua` holds each remote's credentials and the tokens
 A credential is a string, or a function dam calls only when the remote is used. Any key dam does
 not know fails with exit 1. `docs/examples/` holds one of each file.
 
+`dam config print-default` prints the starter `config.lua` a first run writes, and writes no file.
+
 `dam doctor` reads both files in full and prints their paths and any token warnings, or the
 error. It prints `no secrets.lua` for a missing file. Its error may quote `secrets.lua`. Elsewhere only a credential function's own error reaches
 you, and only when you run the command without `DAM_TOKEN`.

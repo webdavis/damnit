@@ -14,7 +14,7 @@ pub use clock::SystemClock;
 pub use dam_protocol::{WireAttendee, WireConference, WirePerson};
 pub use day_doc::{DayDoc, TaskStateDoc, day_from_doc, day_to_doc};
 pub use helper_process::ProcessLauncher;
-pub use lua_config::LuaConfigFile;
+pub use lua_config::{LuaConfigFile, STARTER_CONFIG};
 pub use paths::{default_config_path, default_store_path};
 pub use process_details::process_details;
 pub use random::OsRandom;
