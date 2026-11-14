@@ -51,12 +51,26 @@ impl fmt::Display for ByHandText<'_> {
             ByHand::AddRemote { entry } => {
                 write!(f, "Add the remote to its remote table by hand: {entry}")
             }
-            ByHand::AddToken { name } => write!(
+            by_hand @ ByHand::AddToken { .. } => write!(
                 f,
-                "Write the table out in full and run the command again, \
-                 or add token {name} to its token table by hand."
+                "Write the table out in full and run the command again, or {}.",
+                ByHandClause(by_hand)
             ),
             ByHand::RemoveToken { name } => write!(f, "Remove token {name} from it by hand."),
+        }
+    }
+}
+
+pub(super) struct ByHandClause<'a>(pub(super) &'a ByHand);
+
+impl fmt::Display for ByHandClause<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            ByHand::AddRemote { entry } => {
+                write!(f, "add the remote to its remote table by hand: {entry}")
+            }
+            ByHand::AddToken { name } => write!(f, "add token {name} to its token table by hand"),
+            ByHand::RemoveToken { name } => write!(f, "remove token {name} from it by hand"),
         }
     }
 }

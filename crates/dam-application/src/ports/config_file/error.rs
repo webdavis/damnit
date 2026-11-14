@@ -44,6 +44,10 @@ pub enum ConfigError {
         why: Uneditable,
         by_hand: ByHand,
     },
+    ReadOnly {
+        table: EditedTable,
+        by_hand: ByHand,
+    },
     AlreadyHeld {
         table: EditedTable,
         entry: String,
