@@ -33,6 +33,7 @@ impl CredentialSource for ProcessCredentialSource {
             CredentialSpec::Command { name, argv } => {
                 run_with_the_terminal_so_a_vault_cli_can_prompt(name, argv)
             }
+            CredentialSpec::Computed { name, .. } => Err(CredentialError::Missing(name.clone())),
         }
     }
 }
@@ -152,6 +153,18 @@ mod tests {
             }
             other => panic!("{other:?}"),
         }
+    }
+
+    #[test]
+    fn a_computed_credential_has_no_source_outside_the_config_that_computes_it() {
+        let spec = CredentialSpec::Computed {
+            remote: dam_application::RemoteName("todoist".into()),
+            name: "api_token".into(),
+        };
+        assert_eq!(
+            no_env().resolve(&spec).unwrap_err(),
+            CredentialError::Missing("api_token".into())
+        );
     }
 
     #[test]

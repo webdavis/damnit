@@ -57,6 +57,7 @@ pub enum CredentialSpec {
     Literal { name: String, value: Secret },
     Command { name: String, argv: Vec<String> },
     Env { name: String, var: String },
+    Computed { remote: RemoteName, name: String },
 }
 
 impl CredentialSpec {
@@ -64,7 +65,8 @@ impl CredentialSpec {
         match self {
             CredentialSpec::Literal { name, .. }
             | CredentialSpec::Command { name, .. }
-            | CredentialSpec::Env { name, .. } => name,
+            | CredentialSpec::Env { name, .. }
+            | CredentialSpec::Computed { name, .. } => name,
         }
     }
 }
