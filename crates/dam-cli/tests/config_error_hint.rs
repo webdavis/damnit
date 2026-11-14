@@ -4,7 +4,7 @@ use std::os::unix::fs::PermissionsExt;
 
 use support::sandbox::Sandbox;
 
-const HINT: &str = "run dam config check";
+const HINT: &str = "run dam doctor";
 
 fn said_by(sb: &Sandbox, line: &[&str]) -> String {
     let (ok, out, err) = sb.dam(line);
@@ -40,15 +40,15 @@ fn each_kind_of_config_error() -> Vec<(Sandbox, &'static str)> {
 }
 
 #[test]
-fn every_config_error_points_to_the_check_except_the_check_s_own() {
-    let _guard = support::guard("every_config_error_points_to_the_check_except_the_check_s_own");
+fn every_config_error_points_to_doctor_except_doctor_s_own() {
+    let _guard = support::guard("every_config_error_points_to_doctor_except_doctor_s_own");
     for (sb, why) in each_kind_of_config_error() {
         let err = said_by(&sb, &["ls", "--no-pull"]);
         assert!(err.contains(why), "{err}");
         assert_eq!(err.matches(HINT).count(), 1, "{err}");
         assert!(err.trim_end().ends_with(HINT), "{err}");
 
-        let err = said_by(&sb, &["config", "check"]);
+        let err = said_by(&sb, &["doctor"]);
         assert!(err.contains(why), "{err}");
         assert!(!err.contains(HINT), "{err}");
     }
