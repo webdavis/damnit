@@ -22,6 +22,7 @@ pub fn push(api: &impl TodoistSync, mutations: Vec<Mutation>) -> Result<PushResp
     let containers_filled = containers_this_push_fills(&mutations);
     let mut results = Vec::with_capacity(mutations.len());
     let mut off_limits = OffLimits::default();
+    let mut stopped = None;
     for m in &mutations {
         let verdict = match off_limits.why_left_out(m) {
             Some(why) => Verdict::Unanswered { why },
@@ -33,7 +34,11 @@ pub fn push(api: &impl TodoistSync, mutations: Vec<Mutation>) -> Result<PushResp
                     off_limits.end_the_call(&why);
                     Verdict::Unanswered { why }
                 }
-                Err(Failure::StopsThePush(e)) => return Err(e),
+                Err(Failure::StopsThePush(why)) => {
+                    off_limits.end_the_call(&why);
+                    stopped = Some(why.clone());
+                    Verdict::Unanswered { why }
+                }
             },
         };
         if matches!(verdict, Verdict::Unanswered { .. }) {
@@ -44,10 +49,7 @@ pub fn push(api: &impl TodoistSync, mutations: Vec<Mutation>) -> Result<PushResp
             verdict,
         });
     }
-    Ok(PushResponse {
-        results,
-        stopped: None,
-    })
+    Ok(PushResponse { results, stopped })
 }
 
 fn containers_this_push_fills(mutations: &[Mutation]) -> Vec<String> {

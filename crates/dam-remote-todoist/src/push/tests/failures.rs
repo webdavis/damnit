@@ -92,16 +92,23 @@ fn a_write_with_no_answer_is_unanswered_and_the_rest_is_still_sent() {
 }
 
 #[test]
-fn a_rate_limit_stops_the_push_and_names_the_retry_time() {
-    let api = FakeTodoist::new(sync_body()).failing_write(1, rate_limited(42));
-    let mutations = vec![mutation(
-        "create",
-        1,
-        None,
-        Some(task(&"1".repeat(40), "Work/", "eggs", false)),
-    )];
-    let err = push(&api, mutations).unwrap_err();
-    assert!(matches!(err, ApiError::RateLimited { .. }), "{err:?}");
-    assert_eq!(err.retry_after(), Some(std::time::Duration::from_secs(42)));
-    assert!(err.to_string().contains("42s"), "{err}");
+fn a_rate_limit_hands_back_the_answers_before_it_with_the_stop() {
+    let api = FakeTodoist::new(sync_body()).failing_write(2, rate_limited(42));
+    let response = push(&api, three_subject_updates()).unwrap();
+    let stop = "Todoist is rate limiting this account; retry after 42s";
+    assert_eq!(response.stopped.as_deref(), Some(stop));
+    assert!(response.results[0].ok(), "{:?}", response.results[0]);
+    for after in &response.results[1..] {
+        assert_eq!(
+            after.verdict,
+            Verdict::Unanswered { why: stop.into() },
+            "{}",
+            after.oid
+        );
+    }
+    assert_eq!(
+        api.recorded.borrow().writes,
+        2,
+        "nothing is sent after the stop"
+    );
 }
