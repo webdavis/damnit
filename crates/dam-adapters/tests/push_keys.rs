@@ -94,7 +94,7 @@ fn a_create_resent_after_no_answer_carries_its_first_key_through_an_edit() {
     let first = key_of_one_push(&s, no_answer);
     assert_eq!(key_of_one_push(&s, no_answer), first);
     s.committed(named("edited"));
-    assert_eq!(key_of_one_push(&s, accepted), first);
+    assert_eq!(key_of_one_push(&s, no_answer), first);
     assert_eq!(first.0, MutationOp::Create);
 }
 

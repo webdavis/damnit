@@ -4,7 +4,7 @@ use dam_domain::{Change, CommitRecord, Oid};
 
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
-use crate::ports::{Attempts, Store};
+use crate::ports::{Attempts, RemoteName, Store};
 
 pub(super) type OwedChanges = BTreeMap<Oid, Change>;
 
@@ -19,6 +19,18 @@ pub(super) fn changes_to_send(
     retried.extend(record.keys().cloned());
     declare_since_the_remote_snapshot(store, remote, retried, &mut changes)?;
     owe_a_write_for_each_object_attempted(store, record, &mut changes)?;
+    Ok(changes)
+}
+
+pub(super) fn follow_ups(
+    store: &dyn Store,
+    remote: &RemoteName,
+    created: &[Oid],
+) -> Result<OwedChanges, UseCaseError> {
+    let mut still_attempted = store.attempts(remote)?;
+    still_attempted.retain(|oid, _| created.contains(oid));
+    let mut changes = OwedChanges::new();
+    owe_a_write_for_each_object_attempted(store, &still_attempted, &mut changes)?;
     Ok(changes)
 }
 

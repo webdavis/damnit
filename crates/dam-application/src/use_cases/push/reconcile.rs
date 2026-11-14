@@ -14,6 +14,7 @@ pub(super) struct Settlement {
     pub(super) failed: Vec<(Oid, String)>,
     pub(super) unanswered: BTreeSet<Oid>,
     pub(super) heard: Vec<(Oid, Heard)>,
+    pub(super) created: Vec<Oid>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -34,6 +35,7 @@ impl Settlement {
         self.failed.extend(later.failed);
         self.unanswered.extend(later.unanswered);
         self.heard.extend(later.heard);
+        self.created.extend(later.created);
     }
 
     pub(super) fn pushed<'a>(
@@ -55,6 +57,9 @@ impl Settlement {
         match verdict {
             MutationVerdict::Accepted { remote_id } => {
                 self.heard.push((oid.clone(), Heard::Accepted));
+                if mutation.op == MutationOp::Create {
+                    self.created.push(oid.clone());
+                }
                 if let Some(id) = remote_id {
                     self.map.push((oid.clone(), id));
                 }

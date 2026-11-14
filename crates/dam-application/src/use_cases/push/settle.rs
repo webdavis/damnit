@@ -1,4 +1,4 @@
-use dam_domain::CommitRecord;
+use dam_domain::{CommitRecord, Oid};
 
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
@@ -15,6 +15,7 @@ impl Dam<'_> {
         unpushed: &[CommitRecord],
         settlement: &Settlement,
         attempting: &Attempting,
+        earlier_retries: &[Oid],
     ) -> Result<(), UseCaseError> {
         let store = self.store;
         for (oid, id) in &settlement.map {
@@ -37,7 +38,9 @@ impl Dam<'_> {
             store.count_answer(&remote.name, oid)?;
         }
         settle_attempts(store, &remote.name, &settlement.heard, attempting)?;
-        store.set_push_retries(&remote.name, &settlement.retries())?;
+        let mut retries = earlier_retries.to_vec();
+        retries.extend(settlement.retries());
+        store.set_push_retries(&remote.name, &retries)?;
         for id in settlement.pushed(unpushed) {
             store.mark_pushed(&remote.name, id)?;
         }
