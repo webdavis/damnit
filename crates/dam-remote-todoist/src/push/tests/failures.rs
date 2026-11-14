@@ -1,8 +1,8 @@
-use dam_protocol::Mutation;
+use dam_protocol::{Mutation, Verdict};
 
 use super::fixtures::{mutation, sync_body, task, with_fields};
+use crate::api::ApiError;
 use crate::api::fake::{FakeTodoist, answered, rate_limited};
-use crate::api::{ApiError, SyncResponse, SyncWrite, TodoistSync};
 
 const SERVICE: &str = "Todoist";
 use crate::push::push;
@@ -56,7 +56,7 @@ fn a_request_todoist_turned_away_fails_only_its_own_mutation() {
 }
 
 #[test]
-fn a_write_with_no_answer_leaves_its_mutation_and_the_rest_unanswered() {
+fn a_write_with_no_answer_is_unanswered_and_ends_the_call() {
     let no_answers = [
         ApiError::transport(SERVICE, "timeout: global"),
         ApiError::transport(SERVICE, "connection closed before the answer"),
@@ -72,8 +72,12 @@ fn a_write_with_no_answer_leaves_its_mutation_and_the_rest_unanswered() {
         let api = FakeTodoist::new(sync_body()).failing_write(2, no_answer);
         let response = push(&api, three_subject_updates()).unwrap();
         let answered: Vec<_> = response.results.iter().map(|r| r.oid.clone()).collect();
-        assert_eq!(answered, vec!["1".repeat(40)], "{shown}");
+        assert_eq!(answered, vec!["1".repeat(40), "2".repeat(40)], "{shown}");
         assert!(response.results[0].ok(), "{shown}");
+        assert!(
+            matches!(response.results[1].verdict, Verdict::Unanswered { .. }),
+            "{shown}"
+        );
         assert_eq!(
             api.recorded.borrow().writes,
             2,
@@ -95,26 +99,4 @@ fn a_rate_limit_stops_the_push_and_names_the_retry_time() {
     assert!(matches!(err, ApiError::RateLimited { .. }), "{err:?}");
     assert_eq!(err.retry_after(), Some(std::time::Duration::from_secs(42)));
     assert!(err.to_string().contains("42s"), "{err}");
-}
-
-struct TodoistThatGivesNoVerdicts;
-
-impl TodoistSync for TodoistThatGivesNoVerdicts {
-    fn read_all(&self) -> Result<SyncResponse, ApiError> {
-        serde_json::from_value(sync_body()).map_err(|e| ApiError::decode(SERVICE, e))
-    }
-
-    fn read_changes(&self, _since: &str) -> Result<SyncResponse, ApiError> {
-        self.read_all()
-    }
-
-    fn write(&self, _commands: &[serde_json::Value]) -> Result<SyncWrite, ApiError> {
-        Ok(SyncWrite::default())
-    }
-}
-
-#[test]
-fn a_write_todoist_gave_no_verdict_for_leaves_its_mutation_and_the_rest_unanswered() {
-    let response = push(&TodoistThatGivesNoVerdicts, three_subject_updates()).unwrap();
-    assert!(response.results.is_empty(), "{:?}", response.results);
 }

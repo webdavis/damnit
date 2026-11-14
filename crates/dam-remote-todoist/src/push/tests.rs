@@ -4,6 +4,7 @@ mod failures;
 mod fixtures;
 mod idempotency;
 mod moves;
+mod reasons;
 mod refusals;
 mod retries;
 mod same_name_containers;

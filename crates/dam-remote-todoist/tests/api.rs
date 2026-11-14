@@ -96,11 +96,14 @@ fn an_http_failure_and_a_transport_failure_never_show_the_token() {
     }
     assert!(!http_err.to_string().contains(sentinel));
 
-    let transport_err = TodoistApi::new("http://127.0.0.1:1", sentinel)
+    let unreachable = TodoistApi::new("http://127.0.0.1:1", sentinel)
         .read_all()
         .unwrap_err();
-    assert!(matches!(transport_err, ApiError::Transport { .. }));
-    assert!(!transport_err.to_string().contains(sentinel));
+    assert!(
+        matches!(unreachable, ApiError::Unreachable { .. }),
+        "{unreachable:?}"
+    );
+    assert!(!unreachable.to_string().contains(sentinel));
 }
 
 #[test]

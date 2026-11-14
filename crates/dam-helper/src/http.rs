@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use ureq::Timeout;
+
 use crate::service_error::{ServiceError, one_line};
 
 const CALL_DEADLINE: Duration = Duration::from_secs(30);
@@ -77,13 +79,40 @@ fn read_within(
         .read_to_string()
         .map_err(|e| match e {
             ureq::Error::BodyExceedsLimit(limit) => ServiceError::TooLarge { service, limit },
-            other => ServiceError::transport(service, other),
+            other => call_failed(service, other),
         })?;
     Ok(Answer {
         status,
         retry_after,
         body,
     })
+}
+
+pub fn call_failed(service: &'static str, e: ureq::Error) -> ServiceError {
+    match e {
+        ureq::Error::Timeout(Timeout::Global | Timeout::PerCall) => ServiceError::TimedOut {
+            service,
+            after: CALL_DEADLINE,
+        },
+        e if never_reached(&e) => ServiceError::Unreachable {
+            service,
+            why: e.to_string(),
+        },
+        other => ServiceError::transport(service, other),
+    }
+}
+
+fn never_reached(e: &ureq::Error) -> bool {
+    use std::io::ErrorKind::{ConnectionRefused, HostUnreachable, NetworkDown, NetworkUnreachable};
+    match e {
+        ureq::Error::HostNotFound | ureq::Error::ConnectionFailed => true,
+        ureq::Error::Timeout(Timeout::Resolve | Timeout::Connect) => true,
+        ureq::Error::Io(io) => matches!(
+            io.kind(),
+            ConnectionRefused | HostUnreachable | NetworkUnreachable | NetworkDown
+        ),
+        _ => false,
+    }
 }
 
 #[cfg(test)]

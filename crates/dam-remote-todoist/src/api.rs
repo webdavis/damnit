@@ -3,7 +3,7 @@ mod resources;
 pub use dam_helper::{MAX_ERROR_BODY_CHARS, ServiceError as ApiError};
 pub use resources::{Deadline, Due, Item, NotAccepted, Project, Section, SyncResponse, SyncWrite};
 
-use dam_helper::{Secret, agent, base_url, credential, read_answer};
+use dam_helper::{Secret, agent, base_url, call_failed, credential, read_answer};
 
 pub const PRODUCTION_BASE: &str = "https://api.todoist.com/api/v1";
 
@@ -53,7 +53,7 @@ impl TodoistApi {
             .post(format!("{}{path}", self.base))
             .header("Authorization", &self.authorization())
             .send_json(body)
-            .map_err(|e| ApiError::transport(SERVICE, e))?;
+            .map_err(|e| call_failed(SERVICE, e))?;
         json(response)
     }
 }
@@ -74,7 +74,7 @@ impl TodoistSync for TodoistApi {
             .post(format!("{}/sync", self.base))
             .header("Authorization", &self.authorization())
             .send_form([("commands", encoded.as_str())])
-            .map_err(|e| ApiError::transport(SERVICE, e))?;
+            .map_err(|e| call_failed(SERVICE, e))?;
         let value = json(response)?;
         serde_json::from_value(value).map_err(|e| ApiError::decode(SERVICE, e))
     }
