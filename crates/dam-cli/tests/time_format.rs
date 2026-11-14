@@ -185,7 +185,7 @@ fn token_create_and_list_print_their_terms_as_rfc_3339() {
         &[
             "token",
             "create",
-            "vpt",
+            "tool",
             "--allow",
             "task:read",
             "--expires",

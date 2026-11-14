@@ -15,7 +15,7 @@ pub fn grant_to(sb: &Sandbox, name: &str, fill: u8, grants: &str) -> String {
 }
 
 pub fn grant(allow: &str) -> String {
-    format!("[[token.vpt.grant]]\nallow = [{allow}]\n")
+    format!("[[token.tool.grant]]\nallow = [{allow}]\n")
 }
 
 pub fn answer(out: &std::process::Output, schema_file: &str) -> serde_json::Value {

@@ -16,7 +16,7 @@ fn any_dam_token_is_refused_by_the_token_commands_before_it_is_looked_up() {
     let sb = Sandbox::new();
     let held = token(1);
     sb.add_config(&format!(
-        "[token.vpt]\nvalue = \"{held}\"\n[[token.vpt.grant]]\nallow = [\"config:read\"]\n"
+        "[token.tool]\nvalue = \"{held}\"\n[[token.tool.grant]]\nallow = [\"config:read\"]\n"
     ));
     let config = sb.dir.path().join("config.toml");
     let before = std::fs::read_to_string(&config).unwrap();
@@ -24,7 +24,7 @@ fn any_dam_token_is_refused_by_the_token_commands_before_it_is_looked_up() {
         for line in [
             vec!["token", "create", "x", "--allow", "task:read", "--json"],
             vec!["token", "list", "--json"],
-            vec!["token", "revoke", "vpt", "--json"],
+            vec!["token", "revoke", "tool", "--json"],
         ] {
             let out = sb.output_holding(presented, &line);
             assert_eq!(out.status.code(), Some(4), "{line:?}: {out:?}");

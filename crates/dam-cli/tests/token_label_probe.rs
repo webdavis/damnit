@@ -8,7 +8,7 @@ fn with_effort_and_a_work_token() -> (Sandbox, String) {
     sb.add_config("[category.effort]\nvalues = [\"light\", \"deep\"]\nexclusive = true\n");
     let held = grant_to(
         &sb,
-        "vpt",
+        "tool",
         1,
         &format!("{}paths = [\"work\"]\n", grant("\"task:create\"")),
     );

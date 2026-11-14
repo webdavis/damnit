@@ -44,19 +44,19 @@ fn a_token_table_reads_its_value_conditions_and_grants() {
         r#"
 schema = 1
 
-[token.vpt]
+[token.tool]
 value = "{}"
 expires = 2027-05-11T00:00:00Z
 not_before = 2026-11-11T00:00:00Z
 via = ["local", "mcp"]
 
-[[token.vpt.grant]]
+[[token.tool.grant]]
 allow = ["task:read", "task:create"]
 paths = ["work"]
 labels = ["agent"]
 own = true
 
-[[token.vpt.grant]]
+[[token.tool.grant]]
 allow = ["remote:pull"]
 remotes = ["todoist"]
 "#,
@@ -64,7 +64,7 @@ remotes = ["todoist"]
     );
     let (entries, warnings) = tokens(&text);
     assert!(warnings.is_empty(), "{warnings:?}");
-    assert_eq!(entries[0].name, "vpt");
+    assert_eq!(entries[0].name, "tool");
     assert_eq!(entries[0].value.expose(), value(1));
     let terms = only_terms(&text);
     assert_eq!(terms.expires.unwrap().to_string(), "2027-05-11T00:00:00Z");
@@ -86,7 +86,7 @@ remotes = ["todoist"]
 
 #[test]
 fn a_token_with_no_via_is_local_only() {
-    let terms = only_terms(&format!("[token.vpt]\nvalue = \"{}\"\n", value(1)));
+    let terms = only_terms(&format!("[token.tool]\nvalue = \"{}\"\n", value(1)));
     assert_eq!(terms.via, [Channel::Local].into());
     assert!(terms.grants.is_empty());
 }
@@ -112,12 +112,12 @@ fn require_names_the_request_details_the_token_must_send() {
 #[test]
 fn an_unknown_permission_is_skipped_with_a_warning_naming_it() {
     let text = format!(
-        "[token.vpt]\nvalue = \"{}\"\n[[token.vpt.grant]]\nallow = [\"task:read\", \"task:teleport\"]\n",
+        "[token.tool]\nvalue = \"{}\"\n[[token.tool.grant]]\nallow = [\"task:read\", \"task:teleport\"]\n",
         value(1)
     );
     let (_, warnings) = tokens(&text);
     assert_eq!(warnings.len(), 1);
-    assert!(warnings[0].contains("task:teleport") && warnings[0].contains("vpt"));
+    assert!(warnings[0].contains("task:teleport") && warnings[0].contains("tool"));
     assert_eq!(
         only_terms(&text).grants[0].allow,
         [Permission::TaskRead].into()
@@ -127,7 +127,7 @@ fn an_unknown_permission_is_skipped_with_a_warning_naming_it() {
 #[test]
 fn a_reserved_permission_disables_the_token_and_names_it() {
     let why = only_disabled_reason(&format!(
-        "[token.vpt]\nvalue = \"{}\"\n[[token.vpt.grant]]\nallow = [\"task:read\", \"config:change\"]\n",
+        "[token.tool]\nvalue = \"{}\"\n[[token.tool.grant]]\nallow = [\"task:read\", \"config:change\"]\n",
         value(1)
     ));
     assert!(why.contains("config:change"), "{why}");
@@ -136,15 +136,15 @@ fn a_reserved_permission_disables_the_token_and_names_it() {
 #[test]
 fn an_unknown_key_in_a_token_or_grant_disables_the_token_and_names_the_key() {
     let in_token = only_disabled_reason(&format!(
-        "[token.vpt]\nvalue = \"{}\"\nexcept_paths = [\"home\"]\n",
+        "[token.tool]\nvalue = \"{}\"\nexcept_paths = [\"home\"]\n",
         value(1)
     ));
-    assert!(in_token.contains("except_paths") && in_token.contains("[token.vpt]"));
+    assert!(in_token.contains("except_paths") && in_token.contains("[token.tool]"));
     let in_grant = only_disabled_reason(&format!(
-        "[token.vpt]\nvalue = \"{}\"\n[[token.vpt.grant]]\nallow = []\nweekdays = [\"mon\"]\n",
+        "[token.tool]\nvalue = \"{}\"\n[[token.tool.grant]]\nallow = []\nweekdays = [\"mon\"]\n",
         value(1)
     ));
-    assert!(in_grant.contains("weekdays") && in_grant.contains("[token.vpt.grant]"));
+    assert!(in_grant.contains("weekdays") && in_grant.contains("[token.tool.grant]"));
 }
 
 #[test]
@@ -153,18 +153,18 @@ fn a_malformed_condition_or_restriction_disables_the_token() {
         "expires = 2027-05-11T00:00:00",
         "via = \"local\"",
         "limits = { creates_per_day = -1 }",
-        "[[token.vpt.grant]]\npaths = [\"work\"]",
-        "[[token.vpt.grant]]\nallow = []\npaths = [\"a//b\"]",
-        "[[token.vpt.grant]]\nallow = []\nown = \"yes\"",
+        "[[token.tool.grant]]\npaths = [\"work\"]",
+        "[[token.tool.grant]]\nallow = []\npaths = [\"a//b\"]",
+        "[[token.tool.grant]]\nallow = []\nown = \"yes\"",
     ] {
-        only_disabled_reason(&format!("[token.vpt]\nvalue = \"{}\"\n{body}\n", value(1)));
+        only_disabled_reason(&format!("[token.tool]\nvalue = \"{}\"\n{body}\n", value(1)));
     }
 }
 
 #[test]
 fn an_unknown_channel_is_skipped_with_a_warning() {
     let text = format!(
-        "[token.vpt]\nvalue = \"{}\"\nvia = [\"local\", \"carrier-pigeon\"]\n",
+        "[token.tool]\nvalue = \"{}\"\nvia = [\"local\", \"carrier-pigeon\"]\n",
         value(1)
     );
     assert_eq!(only_terms(&text).via, [Channel::Local].into());

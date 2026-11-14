@@ -19,7 +19,7 @@ fn add_all_leaves_a_rename_that_cannot_name_a_folder_waiting_and_takes_the_rest(
     dam(&sb, &["commit", "-m", "seed"]);
     let held = grant_to(
         &sb,
-        "vpt",
+        "tool",
         1,
         &grant("\"task:read\", \"task:change\", \"task:create\""),
     );

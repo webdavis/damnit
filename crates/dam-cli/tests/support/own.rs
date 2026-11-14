@@ -4,7 +4,7 @@ use super::tokens::{answer, grant_to};
 
 pub fn own_grant(extra: &str) -> String {
     format!(
-        "[[token.vpt.grant]]\n\
+        "[[token.tool.grant]]\n\
          allow = [\"task:read\", \"task:change\", \"task:create\", \"task:complete\"]\n\
          own = true\n{extra}"
     )
@@ -32,7 +32,7 @@ pub fn made_by(sb: &Sandbox, held: &str, subject: &str, path: &str) -> String {
 
 pub fn own_hidden(extra: &str) -> Hidden {
     let sb = Sandbox::new();
-    let held = grant_to(&sb, "vpt", 1, &own_grant(extra));
+    let held = grant_to(&sb, "tool", 1, &own_grant(extra));
     let report = made_by(&sb, &held, "report", "work");
     Hidden { sb, held, report }
 }

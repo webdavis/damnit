@@ -9,7 +9,7 @@ fn a_status_warning_is_in_the_document_a_client_parses() {
     let sb = Sandbox::new();
     let value = Token::generate(&mut |b: &mut [u8]| b.fill(1)).expose();
     sb.add_config(&format!(
-        "[token.vpt]\nvalue = \"{value}\"\n[[token.vpt.grant]]\nallow = [\"task:fly\"]\n"
+        "[token.tool]\nvalue = \"{value}\"\n[[token.tool.grant]]\nallow = [\"task:fly\"]\n"
     ));
     let answer = support::status_json(&sb, &["--json"]);
     let warnings = answer["warnings"].as_array().expect("warnings is a list");

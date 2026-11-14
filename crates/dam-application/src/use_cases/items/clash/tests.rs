@@ -17,9 +17,9 @@ fn rent(subject: &str) -> Object {
 fn clashing_retitle() -> (Scenario, ItemHash) {
     let s = Scenario::default().drawing_from(7);
     s.committed(rent("pay rent"));
-    let vpt = holder(vec![allowed(&[TaskChange], None)]);
+    let tool = holder(vec![allowed(&[TaskChange], None)]);
     let dam = Dam {
-        access: &vpt,
+        access: &tool,
         ..s.dam()
     };
     let fields = EditFields {

@@ -177,7 +177,7 @@ pub(crate) fn machine_context() -> Context {
 
 pub(crate) fn holding(permissions: &[dam_domain::Permission]) -> Box<dam_application::Holder> {
     Box::new(dam_application::Holder {
-        name: "vpt".into(),
+        name: "tool".into(),
         grants: dam_domain::Grants {
             holder: dam_domain::Token::generate(&mut |b: &mut [u8]| b.fill(1))
                 .key_id()

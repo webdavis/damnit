@@ -1,9 +1,9 @@
 use super::*;
 use crate::{Channel, Object, Task, Token};
 
-fn vpt() -> TokenAuthor {
+fn tool() -> TokenAuthor {
     TokenAuthor {
-        name: "vpt".into(),
+        name: "tool".into(),
         key_id: Token::generate(&mut |b: &mut [u8]| b.fill(1))
             .key_id()
             .clone(),
@@ -19,7 +19,7 @@ fn task(byte: u8, subject: &str) -> Object {
 fn a_new_items_hash_is_the_oid_its_task_will_have() {
     let after = task(4, "call the dentist");
     let item = Item::propose(
-        vpt(),
+        tool(),
         Change::Create {
             after: after.clone(),
         },
@@ -37,7 +37,7 @@ fn a_change_item_draws_a_hash_of_its_own_and_targets_the_task() {
     let before = task(4, "call the dentist");
     let after = task(4, "call the dentist today");
     let item = Item::propose(
-        vpt(),
+        tool(),
         Change::Update { before, after },
         Timestamp::UNIX_EPOCH,
         &mut |b| b.fill(9),

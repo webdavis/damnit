@@ -13,7 +13,7 @@ fn a_pull_a_token_runs_is_recorded_as_the_owners_change() {
     let sb = Sandbox::new();
     let held = token(1);
     sb.add_config(&format!(
-        "[token.vpt]\nvalue = \"{}\"\n[[token.vpt.grant]]\nallow = [\"remote:pull\"]\n",
+        "[token.tool]\nvalue = \"{}\"\n[[token.tool.grant]]\nallow = [\"remote:pull\"]\n",
         held.expose()
     ));
     let out = sb.output_holding(&held.expose(), &["pull", "fake", "--json"]);
@@ -28,5 +28,5 @@ fn a_pull_a_token_runs_is_recorded_as_the_owners_change() {
     }
     let (ok, show, _) = sb.dam(&["show", log["commits"][0]["id"].as_str().unwrap()]);
     assert!(ok);
-    assert!(!show.contains("vpt"), "{show}");
+    assert!(!show.contains("tool"), "{show}");
 }

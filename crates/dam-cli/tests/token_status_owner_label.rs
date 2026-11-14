@@ -9,7 +9,7 @@ fn the_owners_rows_read_you_to_the_owner_and_owner_to_a_token() {
     let _guard = support::guard("the_owners_rows_read_you_to_the_owner_and_owner_to_a_token");
     let sb = Sandbox::new();
     sb.new_object(&["buy milk"]);
-    let held = grant_to(&sb, "vpt", 1, &grant("\"task:read\", \"working:read\""));
+    let held = grant_to(&sb, "tool", 1, &grant("\"task:read\", \"working:read\""));
     let row = |out: &std::process::Output| {
         text(&out.stdout)
             .lines()

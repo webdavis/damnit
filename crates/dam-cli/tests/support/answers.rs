@@ -25,7 +25,7 @@ fn fed(sb: &Sandbox, args: &[&str], input: &str) -> serde_json::Value {
 
 fn with_token() -> Sandbox {
     let sb = Sandbox::new();
-    run(&sb, &["token", "create", "vpt", "--allow", "task:read"]);
+    run(&sb, &["token", "create", "tool", "--allow", "task:read"]);
     sb
 }
 
@@ -135,10 +135,10 @@ pub fn answers(command: &str) -> Option<Vec<serde_json::Value>> {
         "resolve" => vec![json_of(&in_conflict(), &["resolve", &milk, "--theirs"])],
         "token create" => vec![json_of(
             &Sandbox::new(),
-            &["token", "create", "vpt", "--allow", "task:read"],
+            &["token", "create", "tool", "--allow", "task:read"],
         )],
         "token list" => vec![json_of(&with_token(), &["token", "list"])],
-        "token revoke" => vec![json_of(&with_token(), &["token", "revoke", "vpt"])],
+        "token revoke" => vec![json_of(&with_token(), &["token", "revoke", "tool"])],
         _ => return None,
     })
 }

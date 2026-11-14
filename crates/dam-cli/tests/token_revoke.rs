@@ -32,14 +32,14 @@ fn revoking_removes_the_token_and_leaves_every_other_byte() {
         token(2)
     );
     let gone = format!(
-        "\n# the planner\n[token.vpt]\nvalue = \"{}\"\n\n[[token.vpt.grant]]\nallow = [\"task:read\"]\n",
+        "\n# the planner\n[token.tool]\nvalue = \"{}\"\n\n[[token.tool.grant]]\nallow = [\"task:read\"]\n",
         token(1)
     );
     let tail = "\n# saved views\n[filter.today]\nquery    = \"due:today\"\n";
     sb.add_config(&format!("{keep}{gone}{tail}"));
     let before = config_of(&sb);
-    let answer = revoked(&sb, "vpt");
-    assert_eq!(answer["name"], "vpt");
+    let answer = revoked(&sb, "tool");
+    assert_eq!(answer["name"], "tool");
     assert_eq!(config_of(&sb), before.replace(&gone, ""));
     let mode = std::fs::metadata(sb.dir.path().join("config.toml"))
         .unwrap()
@@ -59,7 +59,7 @@ fn a_token_dam_cannot_read_can_still_be_revoked() {
     sb.add_config("\n[token.bare]\nexpires = 2000-01-01T00:00:00Z\n");
     revoked(&sb, "bare");
     assert_eq!(config_of(&sb), before);
-    let (ok, out, _) = sb.dam(&["token", "revoke", "vpt"]);
+    let (ok, out, _) = sb.dam(&["token", "revoke", "tool"]);
     assert!(!ok);
     assert!(out.is_empty());
 }
@@ -69,7 +69,7 @@ fn revoking_a_name_no_token_holds_is_refused_and_changes_nothing() {
     let _guard = support::guard("revoking_a_name_no_token_holds_is_refused_and_changes_nothing");
     let sb = Sandbox::new();
     let before = config_of(&sb);
-    let out = sb.output(&["token", "revoke", "vpt", "--json"]);
+    let out = sb.output(&["token", "revoke", "tool", "--json"]);
     assert_eq!(out.status.code(), Some(4), "{out:?}");
     let document = error_document(&out);
     assert_matches_schema(&document, "error.schema.json");

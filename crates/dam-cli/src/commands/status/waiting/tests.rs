@@ -18,7 +18,7 @@ fn dentist_sent_at(created: &str) -> Item {
     task.base.path = Path::parse("inbox").unwrap();
     Item::propose(
         TokenAuthor {
-            name: "vpt".into(),
+            name: "tool".into(),
             key_id: Token::generate(&mut |b: &mut [u8]| b.fill(1))
                 .key_id()
                 .clone(),
@@ -39,13 +39,13 @@ fn a_waiting_item_reads_as_what_it_does_its_hash_path_sender_and_age() {
     let row = ItemRow::new(&item, now, false);
     assert_eq!(
         only(row.lines("you")),
-        "  new      a1a1a1a  Call the dentist  inbox/  vpt  2h"
+        "  new      a1a1a1a  Call the dentist  inbox/  tool  2h"
     );
     let json = serde_json::to_value(&row).unwrap();
     assert_eq!(json["hash"], item.hash.to_string());
     assert_eq!(json["item"], "new");
     assert_eq!(json["oid"], item.hash.to_string());
-    assert_eq!(json["from"], "vpt");
+    assert_eq!(json["from"], "tool");
     assert_eq!(json["channel"], "local");
     assert_eq!(json["created"], "2026-11-11T07:00:00Z");
     assert_eq!(json["age"], 9000);
@@ -55,7 +55,7 @@ fn a_waiting_item_reads_as_what_it_does_its_hash_path_sender_and_age() {
 fn age_reads_in_the_largest_whole_unit() {
     let item = dentist_sent_at("2026-11-11T09:00:00Z");
     let at = |now: &str| only(ItemRow::new(&item, now.parse().unwrap(), false).lines("you"));
-    assert!(at("2026-11-11T09:00:45Z").ends_with("vpt  45s"));
-    assert!(at("2026-11-11T09:05:00Z").ends_with("vpt  5m"));
-    assert!(at("2026-11-14T09:00:00Z").ends_with("vpt  3d"));
+    assert!(at("2026-11-11T09:00:45Z").ends_with("tool  45s"));
+    assert!(at("2026-11-11T09:05:00Z").ends_with("tool  5m"));
+    assert!(at("2026-11-14T09:00:00Z").ends_with("tool  3d"));
 }

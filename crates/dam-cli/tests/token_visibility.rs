@@ -11,7 +11,7 @@ fn a_token_reads_only_what_its_grants_cover_and_nothing_hints_at_the_rest() {
     let sb = Sandbox::new();
     let held = Token::generate(&mut |b: &mut [u8]| b.fill(1)).expose();
     sb.add_config(&format!(
-        "[token.vpt]\nvalue = \"{held}\"\n[[token.vpt.grant]]\nallow = [\"task:read\"]\npaths = [\"work\"]\n"
+        "[token.tool]\nvalue = \"{held}\"\n[[token.tool.grant]]\nallow = [\"task:read\"]\npaths = [\"work\"]\n"
     ));
     sb.new_object(&["report", "--path", "work"]);
     let hidden = sb.new_object(&["diary", "--path", "home"]);

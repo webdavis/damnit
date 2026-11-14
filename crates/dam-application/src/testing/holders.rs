@@ -4,7 +4,7 @@ use crate::access::Holder;
 
 pub fn holder(grants: Vec<Grant>) -> Holder {
     Holder {
-        name: "vpt".into(),
+        name: "tool".into(),
         grants: Grants {
             holder: Token::generate(&mut |b: &mut [u8]| b.fill(1))
                 .key_id()

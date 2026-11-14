@@ -2,7 +2,7 @@ use dam_application::{Refusal, TokenRefusal};
 use dam_domain::{Channel, Permission};
 
 pub(super) fn access_refusals_with_their_text() -> Vec<(Refusal, &'static str)> {
-    let name = || "vpt".to_string();
+    let name = || "tool".to_string();
     [
         (
             TokenRefusal::Malformed,
@@ -19,24 +19,24 @@ pub(super) fn access_refusals_with_their_text() -> Vec<(Refusal, &'static str)> 
         (
             TokenRefusal::Disabled {
                 name: name(),
-                why: "unknown key weekdays in [token.vpt.grant]".into(),
+                why: "unknown key weekdays in [token.tool.grant]".into(),
             },
-            "token vpt is disabled: unknown key weekdays in [token.vpt.grant]",
+            "token tool is disabled: unknown key weekdays in [token.tool.grant]",
         ),
         (
             TokenRefusal::NotYetValid { name: name() },
-            "token vpt is not valid yet; see its not_before",
+            "token tool is not valid yet; see its not_before",
         ),
         (
             TokenRefusal::Expired { name: name() },
-            "token vpt has expired",
+            "token tool has expired",
         ),
         (
             TokenRefusal::ChannelNotAllowed {
                 name: name(),
                 channel: Channel::Local,
             },
-            "token vpt may not be used locally; its via leaves it out",
+            "token tool may not be used locally; its via leaves it out",
         ),
         (
             TokenRefusal::MissingDetails {
@@ -64,13 +64,16 @@ pub(super) fn access_refusals_with_their_text() -> Vec<(Refusal, &'static str)> 
 pub(super) fn token_command_refusals_with_their_text() -> Vec<(Refusal, &'static str)> {
     vec![
         (
-            Refusal::TokenExists("vpt".into()),
-            "token vpt already exists",
+            Refusal::TokenExists("tool".into()),
+            "token tool already exists",
         ),
         (
             Refusal::NotGrantable("config:change".into()),
             "config:change is reserved and cannot be granted",
         ),
-        (Refusal::NoSuchToken("vpt".into()), "no token named \"vpt\""),
+        (
+            Refusal::NoSuchToken("tool".into()),
+            "no token named \"tool\"",
+        ),
     ]
 }

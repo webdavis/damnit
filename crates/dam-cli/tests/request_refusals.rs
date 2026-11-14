@@ -56,12 +56,12 @@ fn each_kind_of_bad_request_is_a_usage_error_naming_its_key() {
         (&["mv"], json!({"oid": "1111"}), "path"),
         (
             &["token", "create"],
-            json!({"name": "vpt", "allow": []}),
+            json!({"name": "tool", "allow": []}),
             "allow",
         ),
         (
             &["token", "create"],
-            json!({"name": "vpt", "allow": ["task:read"], "meta": {}}),
+            json!({"name": "tool", "allow": ["task:read"], "meta": {}}),
             "meta",
         ),
     ];

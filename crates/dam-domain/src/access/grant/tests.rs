@@ -68,11 +68,11 @@ fn paths_match_whole_segments() {
 #[test]
 fn labels_match_when_the_object_carries_any_of_them() {
     let g = holding(vec![Grant {
-        labels: Some(["agent".into(), "vpt".into()].into()),
+        labels: Some(["agent".into(), "tool".into()].into()),
         ..grant(&[Permission::TaskRead])
     }]);
     let read = |o: &Object| g.permits(Permission::TaskRead, &[Subject::Object(o)]);
-    assert!(read(&task("", &["vpt", "home"])));
+    assert!(read(&task("", &["tool", "home"])));
     assert!(!read(&task("", &["home"])));
 }
 

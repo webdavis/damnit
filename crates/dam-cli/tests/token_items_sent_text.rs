@@ -10,7 +10,7 @@ fn a_tokens_text_answer_to_an_edit_names_the_item_and_the_task_it_changes() {
         support::guard("a_tokens_text_answer_to_an_edit_names_the_item_and_the_task_it_changes");
     let sb = Sandbox::new();
     let rent = full_oid(&sb, &sb.new_object(&["Pay rent"]));
-    let held = grant_to(&sb, "vpt", 1, &grant("\"task:read\", \"task:change\""));
+    let held = grant_to(&sb, "tool", 1, &grant("\"task:read\", \"task:change\""));
     let edit = ["edit", &rent, "--subject", "Pay the rent"];
     let said = text(&sb.output_holding(&held, &edit).stdout);
     let json = sb.output_holding(&held, &[&edit[..], &["--json"]].concat());

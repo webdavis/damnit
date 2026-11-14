@@ -11,8 +11,8 @@ const UPSTREAM: &str = "from upstream";
 fn pulled_during_an_own_tokens_read() -> Hidden {
     let sb = Sandbox::new();
     sb.add_config("stale = \"15m\"\n");
-    let pull = "[[token.vpt.grant]]\nallow = [\"remote:pull\"]\n";
-    let held = grant_to(&sb, "vpt", 1, &format!("{}{pull}", own_grant("")));
+    let pull = "[[token.tool.grant]]\nallow = [\"remote:pull\"]\n";
+    let held = grant_to(&sb, "tool", 1, &format!("{}{pull}", own_grant("")));
     let out = sb.output_holding(&held, &["ls", "--json"]);
     assert!(out.status.success(), "{out:?}");
     let report = owners_listing(&sb, "mine")
@@ -94,6 +94,6 @@ fn a_task_a_token_made_stays_its_own_once_pushed_and_pulled_back() {
         .map(|o| format!("{} by {}", o["subject"], o["author"]))
         .collect();
     agents.sort();
-    assert_eq!(agents, ["\"chore\" by \"vpt\""]);
+    assert_eq!(agents, ["\"chore\" by \"tool\""]);
     assert_eq!(listed(&h, &[]), vec![made]);
 }

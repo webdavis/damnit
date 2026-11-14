@@ -3,9 +3,9 @@ use dam_domain::{Change, Channel, Item, ItemHash, Outcome, Timestamp, Token, Tok
 use super::{oid, task};
 use crate::ports::ItemRepository;
 
-fn vpt() -> TokenAuthor {
+fn tool() -> TokenAuthor {
     TokenAuthor {
-        name: "vpt".into(),
+        name: "tool".into(),
         key_id: Token::generate(&mut |b: &mut [u8]| b.fill(3))
             .key_id()
             .clone(),
@@ -18,7 +18,7 @@ pub fn item_repository_contract(items: &dyn ItemRepository) {
     assert_eq!(items.item(&ItemHash::new(oid(1))).unwrap(), None);
 
     let created = Item::propose(
-        vpt(),
+        tool(),
         Change::Create {
             after: task(1, "call the dentist", "inbox"),
         },
@@ -26,7 +26,7 @@ pub fn item_repository_contract(items: &dyn ItemRepository) {
         &mut |b| b.fill(1),
     );
     let changed = Item::propose(
-        vpt(),
+        tool(),
         Change::Update {
             before: task(5, "pay rent", ""),
             after: task(5, "pay rent today", ""),

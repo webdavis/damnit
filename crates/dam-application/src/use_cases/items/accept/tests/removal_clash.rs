@@ -5,16 +5,16 @@ use crate::testing::{Scenario, oid, task_in};
 use crate::use_cases::items::refusal::ItemRefusal;
 use crate::use_cases::prefix::Named;
 
-fn removal_by_vpt(s: &Scenario, before: Object) -> Item {
-    let vpt = TokenAuthor {
-        name: "vpt".into(),
+fn removal_by_tool(s: &Scenario, before: Object) -> Item {
+    let tool = TokenAuthor {
+        name: "tool".into(),
         key_id: Token::generate(&mut |b: &mut [u8]| b.fill(3))
             .key_id()
             .clone(),
         channel: Channel::Local,
     };
     let change = Change::Delete { before };
-    let item = Item::propose(vpt, change, Timestamp::UNIX_EPOCH, &mut |b| b.fill(9));
+    let item = Item::propose(tool, change, Timestamp::UNIX_EPOCH, &mut |b| b.fill(9));
     s.store.put_item(&item).unwrap();
     item
 }
@@ -24,7 +24,7 @@ fn adding_a_removal_of_a_task_the_owner_edited_and_has_not_saved_stops_the_add()
     let s = Scenario::default();
     let rent = Object::Task(task_in(1, "pay rent", "home"));
     s.committed(rent.clone());
-    let item = removal_by_vpt(&s, rent);
+    let item = removal_by_tool(&s, rent);
     let edited = Object::Task(task_in(1, "pay rent by friday", "home"));
     s.working(edited.clone());
 

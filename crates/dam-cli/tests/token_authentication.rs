@@ -37,7 +37,7 @@ fn rule(document: &serde_json::Value) -> &str {
 #[test]
 fn without_dam_token_the_caller_is_the_owner() {
     let _guard = support::guard("without_dam_token_the_caller_is_the_owner");
-    let sb = sandbox_with(&format!("[token.vpt]\nvalue = \"{}\"\n", token(1)));
+    let sb = sandbox_with(&format!("[token.tool]\nvalue = \"{}\"\n", token(1)));
     let (ok, _, err) = sb.dam(&["ls", "--json", "--no-pull"]);
     assert!(ok, "{err}");
 }
@@ -62,7 +62,7 @@ fn a_token_that_is_not_well_formed_is_refused_as_malformed() {
 #[test]
 fn a_well_formed_token_the_config_does_not_list_is_unknown() {
     let _guard = support::guard("a_well_formed_token_the_config_does_not_list_is_unknown");
-    let sb = sandbox_with(&format!("[token.vpt]\nvalue = \"{}\"\n", token(1)));
+    let sb = sandbox_with(&format!("[token.tool]\nvalue = \"{}\"\n", token(1)));
     let document = refused(&sb, &token(2), &["ls", "--json", "--no-pull"]);
     assert_eq!(rule(&document), "unknown_token");
 }

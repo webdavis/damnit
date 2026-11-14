@@ -36,7 +36,7 @@ fn task(byte: u8, subject: &str, path: &str) -> Object {
 
 fn token_author() -> Author {
     Author::Token(TokenAuthor {
-        name: "vpt".into(),
+        name: "tool".into(),
         key_id: Token::generate(&mut |b: &mut [u8]| b.fill(3))
             .key_id()
             .clone(),

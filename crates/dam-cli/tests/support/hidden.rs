@@ -14,9 +14,9 @@ impl Hidden {
         let sb = Sandbox::new();
         let held = grant_to(
             &sb,
-            "vpt",
+            "tool",
             1,
-            "[[token.vpt.grant]]\n\
+            "[[token.tool.grant]]\n\
              allow = [\"task:read\", \"task:change\", \"task:complete\", \"event:read\", \"event:change\"]\n\
              paths = [\"work\"]\n",
         );
