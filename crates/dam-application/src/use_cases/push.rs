@@ -86,7 +86,7 @@ impl Dam<'_> {
         let removals = Removals::new(self.store, &remote.name, caps, &changes)?;
         let refiles = Refiles::new(self.store, &remote.name, caps, &changes)?;
         let Plan { mutations, skipped } =
-            plan(self.store, caps, remote, changes, &refiles, &doubt)?;
+            plan(self.store, helper, caps, remote, changes, &refiles, &doubt)?;
         let mut sent = send_in_waves(helper, removals, mutations)?;
         sent.skipped = skipped;
         atomically(self.store, || {

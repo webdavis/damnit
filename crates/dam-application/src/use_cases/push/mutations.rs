@@ -4,7 +4,7 @@ use dam_domain::{Change, Field, changed_fields};
 
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
-use crate::ports::{FieldsInDoubt, Store};
+use crate::ports::{FieldsInDoubt, RemoteHelper, Store};
 use crate::remote::{MutationOp, RemoteCapabilities, RemoteMutation};
 use crate::use_cases::push::idempotency::key;
 use crate::use_cases::push::owed::OwedChanges;
@@ -18,6 +18,7 @@ pub(super) struct Plan {
 
 pub(super) fn plan(
     store: &dyn Store,
+    helper: &dyn RemoteHelper,
     caps: &RemoteCapabilities,
     remote: &RemoteConfig,
     mut changes: OwedChanges,
@@ -37,7 +38,8 @@ pub(super) fn plan(
         match mutation_for(store, caps, remote, &change, refiled, &in_doubt)? {
             Some(mut mutation) => {
                 let answers = store.answers(&remote.name, &mutation.oid)?;
-                mutation.idempotency_key = key(answers, &mutation);
+                let declared = helper.declared_on_the_wire(&mutation);
+                mutation.idempotency_key = key(answers, &mutation, &declared);
                 plan.mutations.push(mutation);
             }
             None => plan.skipped += 1,

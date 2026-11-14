@@ -54,6 +54,9 @@ impl RemoteHelper for EchoHelper {
             stopped_by: None,
         })
     }
+    fn declared_on_the_wire(&self, mutation: &RemoteMutation) -> String {
+        dam_adapters::declared_on_the_wire(mutation)
+    }
 }
 
 #[derive(Debug)]
