@@ -109,13 +109,15 @@ impl Dam<'_> {
 
 mod idempotency;
 mod mutations;
+mod owed;
 mod reconcile;
 mod refiles;
 mod removals;
 mod sending_order;
 mod waves;
 
-use mutations::{Plan, changes_to_send, plan};
+use mutations::{Plan, plan};
+use owed::changes_to_send;
 use reconcile::Settlement;
 use refiles::Refiles;
 use removals::Removals;

@@ -1,64 +1,13 @@
-use std::collections::BTreeMap;
-
-use dam_domain::{Change, CommitId, Field, Oid, changed_fields};
+use dam_domain::{Change, Field, changed_fields};
 
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
-use crate::ports::{RemoteTrackingRepository, Store};
+use crate::ports::Store;
 use crate::remote::{MutationOp, RemoteCapabilities, RemoteMutation};
-use crate::use_cases::push::idempotency::{Origin, key};
+use crate::use_cases::push::idempotency::key;
+use crate::use_cases::push::owed::OwedChanges;
 use crate::use_cases::push::refiles::{Refiled, Refiles};
 use crate::use_cases::push::sending_order::turn;
-
-pub(super) fn changes_to_send(
-    store: &dyn Store,
-    remote: &RemoteConfig,
-    unpushed: &[dam_domain::CommitRecord],
-) -> Result<OwedChanges, UseCaseError> {
-    let mut changes = net_changes_with_the_commit_of_their_last_change(unpushed);
-    declare_each_retry_since_the_remote_snapshot(store, remote, &mut changes)?;
-    Ok(changes)
-}
-
-pub(super) type OwedChanges = BTreeMap<Oid, (Change, Option<CommitId>)>;
-
-fn net_changes_with_the_commit_of_their_last_change(
-    unpushed: &[dam_domain::CommitRecord],
-) -> OwedChanges {
-    let mut changes = OwedChanges::new();
-    for record in unpushed {
-        for change in record.changes.iter().map(|c| &c.change) {
-            let merged = match changes.remove(change.oid()) {
-                Some((first, _)) => {
-                    Change::between(first.before().cloned(), change.after().cloned())
-                }
-                None => Some(change.clone()),
-            };
-            if let Some(c) = merged {
-                changes.insert(c.oid().clone(), (c, Some(record.id.clone())));
-            }
-        }
-    }
-    changes
-}
-
-fn declare_each_retry_since_the_remote_snapshot(
-    store: &dyn Store,
-    remote: &RemoteConfig,
-    changes: &mut OwedChanges,
-) -> Result<(), UseCaseError> {
-    for oid in store.push_retries(&remote.name)? {
-        let snapshot = store.remote_snapshot(&remote.name, &oid)?;
-        let (after, origin) = match changes.remove(&oid) {
-            Some((owed, origin)) => (owed.after().cloned(), origin),
-            None => (store.committed(&oid)?, None),
-        };
-        if let Some(declared) = Change::between(snapshot, after) {
-            changes.insert(oid, (declared, origin));
-        }
-    }
-    Ok(())
-}
 
 pub(super) struct Plan {
     pub(super) mutations: Vec<RemoteMutation>,
@@ -66,7 +15,7 @@ pub(super) struct Plan {
 }
 
 pub(super) fn plan(
-    remote_tracking: &dyn RemoteTrackingRepository,
+    store: &dyn Store,
     caps: &RemoteCapabilities,
     remote: &RemoteConfig,
     mut changes: OwedChanges,
@@ -77,19 +26,16 @@ pub(super) fn plan(
         skipped: 0,
     };
     refiles.owe(&mut changes);
-    let mut owed: Vec<_> = changes.into_values().collect();
-    owed.sort_by_key(|(change, _)| turn(change));
-    for (change, origin) in owed {
-        let refiled = refiles.refiled(remote_tracking, &remote.name, change.oid())?;
-        match mutation_for(
-            remote_tracking,
-            caps,
-            remote,
-            &change,
-            origin.as_ref(),
-            refiled,
-        )? {
-            Some(mutation) => plan.mutations.push(mutation),
+    let mut owed: Vec<Change> = changes.into_values().collect();
+    owed.sort_by_key(turn);
+    for change in owed {
+        let refiled = refiles.refiled(store, &remote.name, change.oid())?;
+        match mutation_for(store, caps, remote, &change, refiled)? {
+            Some(mut mutation) => {
+                let answers = store.answers(&remote.name, &mutation.oid)?;
+                mutation.idempotency_key = key(answers, &mutation);
+                plan.mutations.push(mutation);
+            }
             None => plan.skipped += 1,
         }
     }
@@ -97,11 +43,10 @@ pub(super) fn plan(
 }
 
 fn mutation_for(
-    remote_tracking: &dyn RemoteTrackingRepository,
+    store: &dyn Store,
     caps: &RemoteCapabilities,
     remote: &RemoteConfig,
     change: &Change,
-    origin: Option<&CommitId>,
     refiled: Option<Refiled>,
 ) -> Result<Option<RemoteMutation>, UseCaseError> {
     let object = change.object();
@@ -113,7 +58,7 @@ fn mutation_for(
     {
         return Ok(None);
     }
-    let remote_id = remote_tracking.remote_id(&remote.name, change.oid())?;
+    let remote_id = store.remote_id(&remote.name, change.oid())?;
     let the_remote_holds_it = remote_id.is_some();
     let (op, fields): (MutationOp, Vec<Field>) = match change {
         Change::Delete { .. } => (MutationOp::Delete, vec![]),
@@ -138,7 +83,7 @@ fn mutation_for(
     Ok(Some(RemoteMutation {
         op,
         oid: change.oid().clone(),
-        idempotency_key: key(origin.map_or(Origin::Retry, Origin::Commit), change.oid()),
+        idempotency_key: String::new(),
         remote_id,
         container_remote_id: refiled.and_then(|r| r.container_remote_id),
         object: change.after().cloned(),

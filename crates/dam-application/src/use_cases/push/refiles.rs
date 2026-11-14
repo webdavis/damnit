@@ -5,7 +5,7 @@ use dam_domain::{Change, Field, Object, Oid};
 use crate::errors::UseCaseError;
 use crate::ports::{RemoteName, RemoteTrackingRepository, Store};
 use crate::remote::RemoteCapabilities;
-use crate::use_cases::push::mutations::OwedChanges;
+use crate::use_cases::push::owed::OwedChanges;
 
 #[derive(Default)]
 pub(super) struct Refiles(BTreeMap<Oid, Refile>);
@@ -31,7 +31,7 @@ impl Refiles {
             return Ok(refiles);
         }
         let mut folders_losing_their_owner = Vec::new();
-        for (oid, (change, _)) in changes {
+        for (oid, change) in changes {
             if let Change::Delete { .. } = change
                 && let Some(held) = store.remote_snapshot(remote, oid)?
                 && let Some(folder) = held.base().owned_folder()
@@ -92,13 +92,12 @@ impl Refiles {
 
     pub(super) fn owe(&self, changes: &mut OwedChanges) {
         for (oid, refile) in &self.0 {
-            changes.entry(oid.clone()).or_insert_with(|| {
-                let unchanged = Change::Update {
+            changes
+                .entry(oid.clone())
+                .or_insert_with(|| Change::Update {
                     before: refile.object.clone(),
                     after: refile.object.clone(),
-                };
-                (unchanged, None)
-            });
+                });
         }
     }
 }
