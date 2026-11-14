@@ -1,7 +1,9 @@
+use dam_application::RemovePlan;
 use dam_domain::{Item, ItemHash, Oid, Timestamp};
 use serde::Serialize;
 
 use super::rows::{ChangeRow, visible};
+use crate::commands::follow_ons::FollowOns;
 use crate::context::Context;
 use crate::view::{Line, display};
 
@@ -17,6 +19,8 @@ pub(super) struct ItemRow<'a> {
     #[serde(serialize_with = "display")]
     created: &'a Timestamp,
     age: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    removes: Option<FollowOns<'a>>,
 }
 
 impl<'a> ItemRow<'a> {
@@ -28,6 +32,14 @@ impl<'a> ItemRow<'a> {
             change: ChangeRow::new(&item.change, Some(&item.author), full),
             created: &item.created,
             age: now.duration_since(item.created).as_secs().max(0),
+            removes: None,
+        }
+    }
+
+    pub(super) fn removing(self, plan: Option<&'a RemovePlan>) -> ItemRow<'a> {
+        ItemRow {
+            removes: plan.map(FollowOns::of),
+            ..self
         }
     }
 
@@ -50,7 +62,11 @@ impl<'a> ItemRow<'a> {
         } else {
             format!("{}  {}", self.hash.short(), target.short())
         };
-        self.change.lines("  ", &id, owner, &[age(self.age)])
+        let mut lines = self.change.lines("  ", &id, owner, &[age(self.age)]);
+        if let Some(counts) = self.removes.as_ref().and_then(FollowOns::counts) {
+            lines.push(Line::Whole(format!("    {counts}")));
+        }
+        lines
     }
 }
 

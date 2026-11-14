@@ -6,13 +6,14 @@ use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{ObjectRepository, Store};
 use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
+use crate::use_cases::items::accept::Added;
 use crate::use_cases::load::no_such_object;
 use crate::use_cases::prefix::Named;
 
 impl Dam<'_> {
-    pub fn add(&self, named: &[Named]) -> Result<Vec<Authored>, UseCaseError> {
+    pub fn add(&self, named: &[Named]) -> Result<Added, UseCaseError> {
         atomically(self.store, || {
-            let mut staged = Vec::new();
+            let mut added = Added::default();
             let mut oids = Vec::new();
             for name in named {
                 match name {
@@ -20,35 +21,35 @@ impl Dam<'_> {
                         refuse_unknown(self.store, oid)?;
                         oids.push(oid.clone());
                     }
-                    Named::Item(hash) => staged.extend(self.accept(hash)?),
+                    Named::Item(hash) => added.extend(self.accept(hash)?),
                 }
             }
-            staged.extend(self.stage_each(&oids)?);
-            Ok(staged)
+            added.staged.extend(self.stage_each(&oids)?);
+            Ok(added)
         })
     }
 
-    pub fn add_all(&self) -> Result<Vec<Authored>, UseCaseError> {
+    pub fn add_all(&self) -> Result<Added, UseCaseError> {
         atomically(self.store, || {
-            let mut staged = self.accept_every_item_that_applies()?;
+            let mut added = self.accept_every_item_that_applies()?;
             let list: Vec<Oid> = working_and_ever_committed_oids(self.store)?
                 .into_iter()
                 .collect();
-            staged.extend(self.stage_each(&list)?);
-            Ok(staged)
+            added.staged.extend(self.stage_each(&list)?);
+            Ok(added)
         })
     }
 
-    fn accept_every_item_that_applies(&self) -> Result<Vec<Authored>, UseCaseError> {
-        let mut staged = Vec::new();
+    fn accept_every_item_that_applies(&self) -> Result<Added, UseCaseError> {
+        let mut added = Added::default();
         for item in self.store.items()?.into_iter().filter(|i| i.is_waiting()) {
             match self.accept(&item.hash) {
-                Ok(accepted) => staged.extend(accepted),
+                Ok(accepted) => added.extend(accepted),
                 Err(UseCaseError::Refused(Refusal::Item(_))) => {}
                 Err(e) => return Err(e),
             }
         }
-        Ok(staged)
+        Ok(added)
     }
 
     pub fn reset(&self, oids: &[Oid]) -> Result<(), UseCaseError> {

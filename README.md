@@ -364,7 +364,8 @@ or `done` would be. `dam reset` sends an added item back to waiting and keeps yo
 `dam rm <hash>` declines it, and the same change sent again is refused. A token may `dam rm` its
 own waiting item. A token's `dam rm <oid>` on one of your tasks needs `task:remove` and waits as a
 removal item. A token's `dam rm` by hash, oid or `--id` answers `withdrawn`, `waiting`, `declined`
-or `nothing`.
+or `nothing`. Adding a removal item does what your `dam rm` does: children move up and other tasks
+stop depending on it. Those changes are staged as yours, and `dam status` counts them first.
 
 Your own rows in `status` and `log` read `you` to you and `owner` to a token.
 

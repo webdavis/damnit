@@ -2,11 +2,26 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/add.schema.json",
   "title": "dam add document",
-  "description": "What dam add prints with --json or --toon: each change it staged. A waiting item it took is staged as the change of the token that sent it.",
+  "description": "What dam add prints with --json or --toon: each change it staged. A waiting item it took is staged as the change of the token that sent it. Adding a removal item also stages, as your own, the changes dam rm makes to other tasks; removed names them.",
   "type": "object",
   "required": ["staged"],
   "additionalProperties": false,
   "properties": {
-    "staged": { "type": "array", "items": { "$ref": "status.schema.json#/$defs/change" } }
+    "staged": { "type": "array", "items": { "$ref": "status.schema.json#/$defs/change" } },
+    "removed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["item", "oid", "descendants", "dependents", "attached"],
+        "additionalProperties": false,
+        "properties": {
+          "item": { "$ref": "status.schema.json#/$defs/id" },
+          "oid": { "$ref": "status.schema.json#/$defs/id" },
+          "descendants": { "$ref": "object.schema.json#/$defs/oids", "description": "Children moved up to its own path." },
+          "dependents": { "$ref": "object.schema.json#/$defs/oids", "description": "Tasks that no longer depend on it." },
+          "attached": { "$ref": "object.schema.json#/$defs/oids", "description": "Tasks still attached to the removed event." }
+        }
+      }
+    }
   }
 }

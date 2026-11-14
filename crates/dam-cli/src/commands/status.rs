@@ -31,7 +31,11 @@ pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliE
         waiting: s
             .waiting
             .iter()
-            .map(|item| ItemRow::new(item, ctx.clock.now(), args.full).told(ctx, item))
+            .map(|item| {
+                ItemRow::new(item, ctx.clock.now(), args.full)
+                    .told(ctx, item)
+                    .removing(s.removal_plans.get(&item.hash))
+            })
             .collect(),
         conflicts: only_if(
             shown(ConflictRead),

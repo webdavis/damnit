@@ -39,7 +39,7 @@ fn adding_a_removal_of_a_task_the_owner_edited_and_has_not_saved_stops_the_add()
     );
     assert_eq!(s.store.get(&oid(1)).unwrap(), Some(edited));
     assert!(s.store.item(&item.hash).unwrap().unwrap().is_waiting());
-    let staged = s.dam().add_all().unwrap();
+    let staged = s.dam().add_all().unwrap().staged;
     assert!(
         staged.iter().all(|a| a.author == Author::Owner),
         "{staged:?}"

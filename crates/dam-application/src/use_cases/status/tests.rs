@@ -88,7 +88,7 @@ fn a_working_delete_not_yet_staged_shows_as_an_unstaged_delete() {
     let unstaged = dam.diff_working().unwrap();
     assert_eq!(unstaged.len(), 1);
     assert_eq!(unstaged[0].op(), Op::Delete);
-    let staged = dam.add_all().unwrap();
+    let staged = dam.add_all().unwrap().staged;
     assert_eq!(staged.len(), 1);
     assert_eq!(staged[0].change.op(), Op::Delete);
 }

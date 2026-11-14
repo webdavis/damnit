@@ -79,7 +79,7 @@
       }
     },
     "waiting": {
-      "description": "An item a token sent, waiting for the owner. oid is the object it makes or changes; dam add <hash> takes it and dam rm <hash> declines it. age is whole seconds since created.",
+      "description": "An item a token sent, waiting for the owner. oid is the object it makes or changes; dam add <hash> takes it and dam rm <hash> declines it. age is whole seconds since created. removes is on a removal item, for the owner only: what adding it changes, as dam rm says.",
       "allOf": [{ "$ref": "#/$defs/change" }],
       "required": ["hash", "item", "created", "age"],
       "properties": {
@@ -89,7 +89,17 @@
         "key_id": { "type": "string" },
         "channel": { "enum": ["local", "mcp"] },
         "created": { "type": "string", "format": "date-time" },
-        "age": { "type": "integer", "minimum": 0 }
+        "age": { "type": "integer", "minimum": 0 },
+        "removes": {
+          "type": "object",
+          "required": ["descendants", "dependents", "attached"],
+          "additionalProperties": false,
+          "properties": {
+            "descendants": { "$ref": "object.schema.json#/$defs/oids" },
+            "dependents": { "$ref": "object.schema.json#/$defs/oids" },
+            "attached": { "$ref": "object.schema.json#/$defs/oids" }
+          }
+        }
       }
     }
   }
