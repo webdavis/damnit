@@ -2,14 +2,16 @@ mod argv;
 mod misuse;
 mod plain;
 mod refusal;
+mod source;
+
+use source::read;
+pub(crate) use source::{decode, read_stdin};
 
 use std::ffi::OsString;
-use std::io::Read;
 use std::path::Path;
 
 use clap::parser::ValueSource;
 use clap::{ArgMatches, CommandFactory, Parser};
-use serde::de::DeserializeOwned;
 use serde_json::{Map, Value};
 
 use crate::args::{Cli, Command, DayArgs, DayCommand};
@@ -131,26 +133,4 @@ fn twice(key: &str) -> CliError {
     CliError::Usage(format!(
         "{key} is in the request and on the command line; give it once"
     ))
-}
-
-fn read(source: &Path) -> Result<String, CliError> {
-    if source == Path::new("-") {
-        return read_stdin();
-    }
-    std::fs::read_to_string(source)
-        .map_err(|e| CliError::Usage(format!("--request: cannot read {}: {e}", source.display())))
-}
-
-pub(crate) fn read_stdin() -> Result<String, CliError> {
-    let mut text = String::new();
-    std::io::stdin().read_to_string(&mut text)?;
-    Ok(text)
-}
-
-pub(crate) fn decode<T: DeserializeOwned>(text: &str) -> Result<T, String> {
-    if text.trim_start().starts_with('{') {
-        serde_json::from_str(text).map_err(|e| e.to_string())
-    } else {
-        toon_format::decode_default(text).map_err(|e| e.to_string())
-    }
 }
