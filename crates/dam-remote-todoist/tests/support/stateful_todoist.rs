@@ -20,6 +20,7 @@ pub struct Held {
     executed: HashSet<String>,
     issued_id_by_temp_id: HashMap<String, String>,
     fault_after_the_next_write: Option<Fault>,
+    refused_once: Option<&'static str>,
 }
 
 impl Held {
@@ -34,6 +35,11 @@ impl Held {
 
     pub fn applying_the_next_write_then(mut self, fault: Fault) -> Held {
         self.fault_after_the_next_write = Some(fault);
+        self
+    }
+
+    pub fn refusing_once(mut self, command_type: &'static str) -> Held {
+        self.refused_once = Some(command_type);
         self
     }
 
@@ -65,7 +71,12 @@ impl Held {
                 verdicts.insert(uuid, "ok".into());
                 continue;
             }
-            let args = &c["args"];
+            if self.refused_once == Some(kind) {
+                self.refused_once = None;
+                verdicts.insert(uuid, json!({"error_code": 20, "error": "refused once"}));
+                continue;
+            }
+            let args = &self.resolved(&c["args"]);
             match kind {
                 "item_add" => {
                     self.issued += 1;
@@ -76,6 +87,7 @@ impl Held {
                     issued_ids.insert(temp_id, id.clone().into());
                     self.items.push(json!({"id": id, "content": args["content"], "project_id": args["project_id"], "section_id": args["section_id"], "parent_id": args["parent_id"], "priority": 1, "checked": false, "is_deleted": false}));
                 }
+                "item_close" => self.close(args["id"].as_str().unwrap()),
                 "item_delete" => self.delete_with_everything_under(args["id"].as_str().unwrap()),
                 "item_move" => self.move_item(args),
                 other => {
@@ -88,6 +100,26 @@ impl Held {
             verdicts.insert(uuid, "ok".into());
         }
         json!({"sync_status": verdicts, "temp_id_mapping": issued_ids})
+    }
+
+    fn resolved(&self, args: &Value) -> Value {
+        let mut args = args.clone();
+        if let Some(fields) = args.as_object_mut() {
+            for value in fields.values_mut() {
+                if let Some(id) = value
+                    .as_str()
+                    .and_then(|v| self.issued_id_by_temp_id.get(v))
+                {
+                    *value = id.clone().into();
+                }
+            }
+        }
+        args
+    }
+
+    fn close(&mut self, id: &str) {
+        let closed = self.items.iter_mut().find(|i| i["id"] == id).unwrap();
+        closed["checked"] = true.into();
     }
 
     fn move_item(&mut self, args: &Value) {

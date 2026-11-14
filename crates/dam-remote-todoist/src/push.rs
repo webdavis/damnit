@@ -102,9 +102,7 @@ fn apply(
     let id = written
         .as_ref()
         .and_then(|w| w.issued_id_by_temp_id.get(resend_stable_temp_id(m)))
-        .ok_or_else(|| {
-            Failure::OnlyThisMutation("Todoist's answer names no id for the new object".to_string())
-        })?
+        .ok_or(Failure::Unanswered)?
         .clone();
     Ok(Some(add_created_to_tree(tree, object, shape, id)))
 }
@@ -116,12 +114,16 @@ fn send_every_command(api: &impl TodoistSync, commands: &[Command]) -> Result<Sy
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| Failure::OnlyThisMutation(e.to_string()))?;
     let written = api.write(&encoded)?;
-    for sent in commands {
-        written
-            .accepted(&sent.uuid)
-            .map_err(Failure::OnlyThisMutation)?;
+    let refusals: Vec<String> = commands
+        .iter()
+        .filter_map(|sent| written.accepted(&sent.uuid).err())
+        .collect();
+    let some_were_done = refusals.len() < commands.len();
+    match refusals.into_iter().next() {
+        None => Ok(written),
+        Some(_) if some_were_done => Err(Failure::Unanswered),
+        Some(why) => Err(Failure::OnlyThisMutation(why)),
     }
-    Ok(written)
 }
 
 #[cfg(test)]
