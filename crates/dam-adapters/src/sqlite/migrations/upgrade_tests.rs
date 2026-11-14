@@ -1,6 +1,6 @@
 use super::*;
 
-const TABLES_ADDED_SINCE_VERSION_TEN: [&str; 1] = ["answers"];
+const TABLES_ADDED_SINCE_VERSION_TEN: [&str; 2] = ["answers", "attempts"];
 
 fn a_version_ten_store_holding_a_remote_id() -> Connection {
     let conn = Connection::open_in_memory().unwrap();

@@ -1,4 +1,5 @@
 mod answers;
+mod attempts;
 mod config_file;
 mod days;
 mod environment;
@@ -11,6 +12,7 @@ mod repositories;
 mod store;
 
 pub use answers::AnswerRepository;
+pub use attempts::{Attempt, AttemptRepository, Attempts, Declared};
 pub use config_file::{
     ByHand, ConfigError, ConfigFile, EditFault, EditedTable, Expected, LoadedConfig, Misread,
     Place, SecretsTightened, Uneditable,

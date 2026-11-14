@@ -19,4 +19,4 @@ pub use paths::{default_config_path, default_store_path};
 pub use process_details::process_details;
 pub use random::OsRandom;
 pub use sqlite::{OpenError, SqliteStore};
-pub use wire::{event_to_wire, to_wire};
+pub use wire::{declared_on_the_wire, event_to_wire, to_wire};

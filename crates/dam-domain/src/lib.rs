@@ -25,7 +25,7 @@ pub use caller_id::{CALLER_ID_CAP, CallerId, CallerIdError, IdHolder, IdKey};
 pub use category::{Categories, Category, CategoryError, LabelViolation};
 pub use change::{
     Author, Authored, Change, CommitId, CommitRecord, Details, Op, Origin, TokenAuthor,
-    changed_fields, kind_change, merge_fields, touched_fields,
+    carrying_only, changed_fields, kind_change, merge_fields, touched_fields,
 };
 pub use completion::{
     Blockers, ChildDisposition, DependencyDisposition, Dispositions, Force, Tracked, cycle_in,

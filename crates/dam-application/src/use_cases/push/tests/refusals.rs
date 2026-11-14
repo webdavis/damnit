@@ -1,5 +1,5 @@
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{Conflict, HelperError};
+use crate::ports::{AttemptRepository, Conflict, HelperError};
 use crate::testing::prelude::*;
 use crate::testing::{
     Scenario, ScriptedHelper, ScriptedLauncher, config, oid, pushing, remotes_launched_by, task,
@@ -63,7 +63,7 @@ fn a_credential_the_config_does_not_supply_is_refused_by_name() {
 }
 
 #[test]
-fn a_helper_that_times_out_leaves_the_store_as_it_was() {
+fn a_helper_that_times_out_changes_nothing_but_the_record_of_the_attempt() {
     let s = Scenario::default();
     s.committed(task(1));
     s.store
@@ -85,5 +85,8 @@ fn a_helper_that_times_out_leaves_the_store_as_it_was() {
     });
     let err = s.dam().push(remotes_launched_by(&l), None).unwrap_err();
     assert_eq!(err, UseCaseError::Helper(timeout));
+    let recorded = s.store.attempts(&todoist()).unwrap();
+    assert_eq!(recorded.keys().collect::<Vec<_>>(), vec![&oid(1)]);
+    s.store.set_attempts(&todoist(), &oid(1), &[]).unwrap();
     assert_eq!(s.store, before);
 }

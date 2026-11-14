@@ -19,6 +19,10 @@ pub fn merge_fields(ours: &Object, theirs: &Object, fields: &[Field]) -> Object 
     out
 }
 
+pub fn carrying_only(object: &Object, fields: &[Field]) -> Object {
+    merge_fields(&with_every_field_at_default(object), object, fields)
+}
+
 pub fn kind_change(ours: &Object, theirs: &Object) -> Option<(Kind, Kind)> {
     let (o, t) = (ours.kind(), theirs.kind());
     (o != t).then_some((o, t))
