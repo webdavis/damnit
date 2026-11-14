@@ -71,7 +71,7 @@ impl CliError {
             CliError::UseCase(UseCaseError::Store(_))
             | CliError::Open(_)
             | CliError::Io(_)
-            | CliError::Config(ConfigError::Unreadable { .. })
+            | CliError::Config(ConfigError::Unreadable { .. } | ConfigError::Unwritable { .. })
             | CliError::ConfigCheck(ConfigError::Unreadable { .. }) => "store",
             CliError::UseCase(UseCaseError::Helper(_)) => "helper",
             CliError::UseCase(UseCaseError::Credential(_)) => "credential",
