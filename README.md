@@ -15,25 +15,36 @@ helper is its own install: `dam-remote-todoist` for Todoist, and `dam-remote-gca
 
 ## First run
 
-The first `dam` run creates `~/.config/dam/config.toml`, or the file `DAM_CONFIG` names, readable
-by you alone, with every setting commented out and explained. dam never rewrites a config that
-exists, and a run with `DAM_TOKEN` set creates nothing.
+The first `dam` run creates `~/.config/dam/config.lua`, or the file `--config` or `DAM_CONFIG`
+names, with every setting commented out and explained. dam never rewrites a config that exists,
+and a run with `DAM_TOKEN` set creates nothing.
 
     dam remote add todoist todoist::
 
-Then give the helper a token, in `~/.config/dam/config.toml` under the table `dam remote add`
-wrote:
+The config is two Lua files in one folder, each returning a table. `config.lua` holds the settings
+and never a secret. `secrets.lua` holds each remote's credentials and the tokens:
 
-    [remote.todoist]
-    url = "todoist::"
-    api_token_command = ["security", "find-generic-password", "-w", "-s", "Todoist API Token"]
-    stale = "15m"
+    -- config.lua
+    return {
+      remote = {
+        todoist = { url = "todoist::", stale = "15m" },
+      },
+    }
 
-A credential takes one of three forms. `api_token` is the value, with `credentials = ["api_token"]`
-in the same table. `api_token_command` is a command that prints it, run with your terminal so a
-vault CLI can prompt. `api_token_env` names a variable. When more than one form is set, the value
-wins over the command and the command over the variable. Any other key in the table fails with
-exit 1.
+    -- secrets.lua
+    return {
+      schema = 1,
+      remote = {
+        todoist = { api_token = function() return os.getenv("TODOIST_API_TOKEN") end },
+      },
+    }
+
+A credential is a string, or a function dam calls only when the remote is used. Any key dam does
+not know fails with exit 1. `docs/examples/` holds one of each file.
+
+`dam config check` reads both files in full and prints their paths and any token warnings, or the
+error. Its error may quote `secrets.lua`; every other command's never does.
+`docs/schemas/config-check.schema.json` is the schema of its `--json` answer.
 
 `stale` makes reads pull first when the last pull is older than that. A failed pull that a read
 started leaves a notice in `dam status`, and the read still answers. `deadline` (default `"60s"`)
@@ -49,9 +60,10 @@ leaves the store as it was and exits 3.
 That installs `dam-remote-gcal`, which dam runs, and `dam-gcal-sign-in`, which you run once.
 
 Google needs an OAuth client of type "Desktop app" with the Google Calendar API enabled on its
-project. Keep its client id and client secret in your vault, then sign in:
+project. Keep its client id and client secret in your password manager, then sign in, piping
+the client secret:
 
-    security find-generic-password -w -s "Google dam client" | dam-gcal-sign-in --client-id <id>
+    printf '%s' "$CLIENT_SECRET" | dam-gcal-sign-in --client-id <id>
 
 The command prints a URL; open it, grant read-only access to your calendar events, and the refresh
 token is printed once on standard output. Store it in your vault. dam asks Google for read-only
@@ -74,11 +86,15 @@ means your primary calendar:
 
     dam remote add gcal gcal::primary
 
-    [remote.gcal]
-    url = "gcal::primary"
-    client_id_command = ["security", "find-generic-password", "-w", "-s", "Google dam client id"]
-    client_secret_command = ["security", "find-generic-password", "-w", "-s", "Google dam client"]
-    refresh_token_command = ["security", "find-generic-password", "-w", "-s", "Google dam refresh"]
+Then its credentials, in `secrets.lua`:
+
+    remote = {
+      gcal = {
+        client_id = function() return os.getenv("GCAL_CLIENT_ID") end,
+        client_secret = function() return os.getenv("GCAL_CLIENT_SECRET") end,
+        refresh_token = function() return os.getenv("GCAL_REFRESH_TOKEN") end,
+      },
+    },
 
 A pull reads the week behind and the ninety days ahead, recurring events as their instances, and
 files each event under a folder named after its calendar's title. The remote is read-only: it
@@ -86,7 +102,7 @@ declares no kinds, so `dam push` sends it nothing, and an event you make or chan
 dam. `path` narrows what a push sends, so it does nothing for this remote.
 
 Pull it on a schedule: run `dam pull gcal` every few minutes from cron, launchd or a systemd timer.
-Its credential commands must run without a terminal. Setting `stale` also keeps it fresh, but then
+Its credential functions must run without a terminal. Setting `stale` also keeps it fresh, but then
 whichever read finds it stale waits on Google first.
 
 ## How Todoist maps
@@ -180,7 +196,7 @@ start of today until now: each one's `at`, its `anchor` (the due time or start) 
 - A task with open children or open dependencies is not done until they are; `--force` overrides,
   `--force --interactive` asks what to do with them, and `--children up|keep|into:<name>` with
   `--depends drop|keep` answers that question on the command line, for a client with no terminal.
-- Labels can be grouped into categories in config; an exclusive category allows one value per
+- Labels can be grouped into categories in `config.lua`; an exclusive category allows one value per
   object.
 - A pull never overwrites work you have not committed, and never deletes on your behalf: an
   upstream removal shows in `dam status` until you `dam rm` it.
@@ -197,7 +213,7 @@ start of today until now: each one's `at`, its `anchor` (the due time or start) 
 
 `|` or, `&` and, `!` not, parentheses group. `@label`, `pN`, `key:value`, where a key is a
 field's JSON key such as `labels:` or `attached:`; any other key is a category and the value must
-be one of its values. Saved filters live under `[filter.<name>]` and run by name.
+be one of its values. Saved filters live under `filter.<name>` in `config.lua` and run by name.
 
 `dam filter list` prints the saved filters and `dam category list` prints the label categories with
 their values and whether each is exclusive:
@@ -277,23 +293,27 @@ Repeat the flag to bound more than one remote.
 
 A tool runs `dam` with a token in `DAM_TOKEN`. Without `DAM_TOKEN` the caller is you.
 [docs/agents.md](docs/agents.md) tells a tool or an agent what to pass. Each token is a table in
-the config file, and its grants say what it may do:
+`secrets.lua`, and its grants say what it may do:
 
-    schema = 1
-
-    [token.tool]
-    value = "damk_v1_..."
-    expires = 2027-05-11T00:00:00Z
-
-    [[token.tool.grant]]
-    allow = ["task:read", "event:read"]
-    paths = ["work"]
+    return {
+      schema = 1,
+      token = {
+        tool = {
+          value = "damk_v1_...",
+          expires = "2027-05-11T00:00:00Z",
+          grant = {
+            { allow = { "task:read", "event:read" }, paths = { "work" } },
+          },
+        },
+      },
+    }
 
 `dam token create tool --allow task:read --allow event:read --paths work` writes such a table with
 one grant and prints the token once. `--labels`, `--own`, `--remotes`, `--expires`, `--via` and
-`--require` set the keys of the same name. `dam token list` shows each token's key id, grants,
-conditions and standing, never its value. `dam token revoke tool` removes its tables and leaves the
-rest of the file as it was. The schemas of their `--json` answers are
+`--require` set the keys of the same name. dam edits only a token table written out in full, and
+refuses before it makes a token when it cannot. `dam token list` shows each token's key id,
+grants, conditions and standing, never its value. `dam token revoke tool` removes its table and
+leaves the rest of the file as it was. The schemas of their `--json` answers are
 `docs/schemas/token-create.schema.json`, `token-list.schema.json` and `token-revoke.schema.json`.
 
 A grant allows only what `allow` lists, and only on objects under one of `paths`, carrying one of
@@ -345,7 +365,7 @@ own waiting item.
 Your own rows in `status` and `log` read `you` to you and `owner` to a token.
 
 Every task and event has an `author`: the name of the token that made it, or yours, set as
-`owner = "Ada"` at the top of the config. A request states its details with a repeatable
+`owner = "Ada"` in `config.lua`. A request states its details with a repeatable
 `--meta key=value`, such as harness, session, model, effort and version; any key is kept as given.
 Each change keeps them with the host, working directory, repo, branch, time and channel. `dam show
 <oid>` prints the author and the details of the change that made it, and `--json` and `--toon` carry
@@ -361,29 +381,22 @@ Your own repeat with a new `--path` or subject carries the task's children, as `
 `dam edit` do. A token's repeat cannot change `--path`. Each token's ids, and your own, are kept
 apart, and so are each session's when the request passes `--meta session=...`.
 
-A token cannot run `mv`, `add`, `reset`, `restore`, `commit`, `remote add`, `resolve`, `day` or
-`token`, `rm` an object, or set `--focus`. A read pulls a stale remote only when the token holds
-`remote:pull` for it.
+A token cannot run `mv`, `add`, `reset`, `restore`, `commit`, `remote add`, `resolve`, `day`,
+`config` or `token`, `rm` an object, or set `--focus`. A read pulls a stale remote only when the
+token holds `remote:pull` for it.
 
 An unknown permission is skipped. An unknown key, or a reserved name such as `config:change`,
 disables the token, and so does sharing a value with another token. A `schema` above 1 disables
 every token. `dam status` warns about each.
 
-## Tokens in a config your dotfiles manage
+## A config your dotfiles manage
 
-`dam token create`, `dam token revoke` and `dam remote add` edit the config file in place. When a
-template renders your config, put each edit in the template too, or the next render undoes it.
+`config.lua` holds no secret, so track or template it like any other file.
 
-1. Run `dam token create tool --allow task:read`. It prints the token once.
-2. Save the token in your password manager.
-3. Have your template write the token's table with that value:
-
-       [token.tool]
-       value = "damk_v1_..."
-
-       [[token.tool.grant]]
-       allow = ["task:read"]
-
+1. Run `dam token create tool --allow task:read`. It writes the token's table to `secrets.lua` and
+   prints the token once.
+2. Keep the token in your password manager.
+3. Track `secrets.lua`, or have your template write it with that value.
 4. Give the tool the same value as `DAM_TOKEN`.
 
 ## Errors

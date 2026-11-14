@@ -23,3 +23,6 @@ refuse-a-newer-one rule the store already has.
 Until then, the strict decoding is what carries the weight: every section of the file refuses an
 unknown key and a value of the wrong type by name, naming the key and its table in one line, so a
 misspelled or retired key, or a misspelled section, is a refusal rather than a silent default.
+
+Decision 0010 makes the config two Lua files, `config.lua` and `secrets.lua`; this rule holds for
+both.

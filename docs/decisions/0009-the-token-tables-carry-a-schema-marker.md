@@ -20,3 +20,5 @@ disables that token, since `dam` cannot enforce a restriction or condition it do
 
 The token tables are read leniently while every other section stays strict: a bad token never stops
 `dam` from running for the owner. `dam status` names each skipped setting and disabled token.
+
+Decision 0010 moves `schema` and the token tables to `secrets.lua`, with the same rules.
