@@ -20,6 +20,11 @@ impl fmt::Display for ItemText<'_> {
                 "{} is a waiting item, not an object; dam add or dam rm it",
                 hash.short()
             ),
+            ItemRefusal::AlreadyCommitted(hash) => write!(
+                f,
+                "{} was added and committed; dam reset undoes only what is staged",
+                hash.short()
+            ),
             ItemRefusal::NotYours(hash) => write!(
                 f,
                 "{} was sent by another token; a token may remove only its own items",

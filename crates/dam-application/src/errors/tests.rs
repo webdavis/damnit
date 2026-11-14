@@ -6,7 +6,7 @@ use crate::testing::oid;
 mod item_samples;
 use item_samples::item_samples;
 
-const HAND_COUNTED_RULES: usize = 46;
+const HAND_COUNTED_RULES: usize = 47;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -56,6 +56,7 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::Item(ItemRefusal::EditedSinceAdded { .. }) => 43,
         Refusal::Item(ItemRefusal::SubjectNamesNoFolder { .. }) => 44,
         Refusal::Item(ItemRefusal::RemovesAChangedTask { .. }) => 45,
+        Refusal::Item(ItemRefusal::AlreadyCommitted(_)) => 46,
     }
 }
 

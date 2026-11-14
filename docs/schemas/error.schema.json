@@ -102,6 +102,7 @@
         "item_blocked",
         "not_your_item",
         "item_edited_since_added",
+        "item_already_committed",
         "item_subject_names_no_folder"
       ]
     },
