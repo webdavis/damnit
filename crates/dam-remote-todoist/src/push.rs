@@ -6,7 +6,7 @@ mod shape;
 
 use dam_protocol::{Mutation, MutationResult, PushResponse, Verdict};
 
-use crate::api::{ApiError, SyncWrite, TodoistSync};
+use crate::api::{ApiError, NotAccepted, SyncWrite, TodoistSync};
 use crate::map::Tree;
 use commands::Command;
 use created::add_created_to_tree;
@@ -114,15 +114,20 @@ fn send_every_command(api: &impl TodoistSync, commands: &[Command]) -> Result<Sy
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| Failure::OnlyThisMutation(e.to_string()))?;
     let written = api.write(&encoded)?;
-    let refusals: Vec<String> = commands
+    let not_accepted: Vec<NotAccepted> = commands
         .iter()
         .filter_map(|sent| written.accepted(&sent.uuid).err())
         .collect();
-    let some_were_done = refusals.len() < commands.len();
-    match refusals.into_iter().next() {
+    let todoist_refused_every_command = not_accepted.len() == commands.len()
+        && not_accepted
+            .iter()
+            .all(|n| matches!(n, NotAccepted::Refused(_)));
+    match not_accepted.into_iter().next() {
         None => Ok(written),
-        Some(_) if some_were_done => Err(Failure::Unanswered),
-        Some(why) => Err(Failure::OnlyThisMutation(why)),
+        Some(NotAccepted::Refused(why)) if todoist_refused_every_command => {
+            Err(Failure::OnlyThisMutation(why))
+        }
+        Some(_) => Err(Failure::Unanswered),
     }
 }
 

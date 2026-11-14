@@ -1,7 +1,7 @@
 use dam_helper::testing;
 use std::collections::HashMap;
 
-use dam_remote_todoist::api::{ApiError, TodoistApi, TodoistSync};
+use dam_remote_todoist::api::{ApiError, NotAccepted, TodoistApi, TodoistSync};
 
 #[test]
 fn read_all_sends_the_token_and_decodes_the_three_resources() {
@@ -59,8 +59,11 @@ fn a_write_sends_its_commands_as_a_form_field_and_reads_each_verdict() {
         .unwrap();
     assert_eq!(written.issued_id_by_temp_id.get("t-1").unwrap(), "i9");
     assert_eq!(written.accepted("u-0"), Ok(()));
-    assert_eq!(written.accepted("u-1"), Err("task not found".to_string()));
-    assert!(written.accepted("u-2").is_err(), "no verdict is no success");
+    assert_eq!(
+        written.accepted("u-1"),
+        Err(NotAccepted::Refused("task not found".to_string()))
+    );
+    assert_eq!(written.accepted("u-2"), Err(NotAccepted::NoVerdict));
 
     let seen = server.seen.lock().unwrap();
     assert_eq!(seen[0].authorization.as_deref(), Some("Bearer tok"));

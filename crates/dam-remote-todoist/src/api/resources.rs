@@ -118,18 +118,25 @@ pub struct SyncWrite {
 
 const ACCEPTED_VERDICT: &str = "ok";
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum NotAccepted {
+    Refused(String),
+    NoVerdict,
+}
+
 impl SyncWrite {
-    pub fn accepted(&self, uuid: &str) -> Result<(), String> {
+    pub fn accepted(&self, uuid: &str) -> Result<(), NotAccepted> {
+        let refused = |why: &str| Err(NotAccepted::Refused(one_line(why)));
         match self.verdict_by_uuid.get(uuid) {
             Some(serde_json::Value::String(word)) if word == ACCEPTED_VERDICT => Ok(()),
-            Some(serde_json::Value::Object(error)) => Err(one_line(
+            Some(serde_json::Value::Object(error)) => refused(
                 error
                     .get("error")
                     .and_then(serde_json::Value::as_str)
                     .unwrap_or(&serde_json::Value::Object(error.clone()).to_string()),
-            )),
-            Some(other) => Err(one_line(&other.to_string())),
-            None => Err(format!("Todoist gave no verdict for command {uuid}")),
+            ),
+            Some(other) => refused(&other.to_string()),
+            None => Err(NotAccepted::NoVerdict),
         }
     }
 }
