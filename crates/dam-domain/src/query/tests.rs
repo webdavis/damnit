@@ -69,11 +69,11 @@ fn this_week_is_monday_to_sunday_of_today() {
 #[test]
 fn path_is_a_prefix_match_and_labels_and_priority_and_subject() {
     let mut t = Task::new(oid(2), "Buy oat milk");
-    t.base.path = Path::parse("webdavis/dotfiles").unwrap();
+    t.base.path = Path::parse("work/dotfiles").unwrap();
     t.base.labels.insert("deep".into());
     t.priority = Priority::HIGHEST;
     let o = Object::Task(t);
-    assert!(hit("path:webdavis/", &o));
+    assert!(hit("path:work/", &o));
     assert!(!hit("path:other/", &o));
     assert!(hit("@deep", &o) && hit("label:deep", &o) && hit("effort:deep", &o));
     assert!(hit("p1", &o) && hit("priority:1", &o) && !hit("p2", &o));
