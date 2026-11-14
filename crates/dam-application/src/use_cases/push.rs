@@ -47,14 +47,15 @@ impl Dam<'_> {
         remote: &RemoteConfig,
     ) -> Result<PushReport, UseCaseError> {
         let unpushed = self.store.unpushed(&remote.name)?;
-        let changes = changes_to_send(self.store, remote, &unpushed)?;
+        let record = self.store.attempts(&remote.name)?;
+        let changes = changes_to_send(self.store, remote, &unpushed, &record)?;
         let removals = Removals::new(self.store, &remote.name, caps, &changes)?;
         let refiles = Refiles::new(self.store, &remote.name, caps, &changes)?;
         let Plan {
             mut mutations,
             skipped,
-        } = plan(self.store, caps, remote, changes, &refiles)?;
-        let attempting = attempting(self.store, helper, &remote.name, &mut mutations)?;
+        } = plan(self.store, helper, caps, remote, changes, &refiles, &record)?;
+        let attempting = attempting(self.store, helper, &remote.name, &record, &mut mutations)?;
         let record = |ready: &[RemoteMutation]| {
             record_before_the_call(self.store, &remote.name, ready, &attempting)
         };
