@@ -1,5 +1,5 @@
 use crate::errors::UseCaseError;
-use crate::ports::HelperError;
+use crate::ports::{DoubtRepository, HelperError};
 use crate::remote::{MutationOp, MutationOutcome, MutationVerdict, PushOutcome};
 use crate::testing::prelude::*;
 use crate::testing::{
@@ -97,7 +97,7 @@ fn a_stop_on_the_first_call_keeps_what_the_helper_answered_before_it() {
 }
 
 #[test]
-fn a_stop_before_any_verdict_stores_nothing() {
+fn a_stop_the_helper_reports_before_any_verdict_stores_only_the_doubt() {
     let s = Scenario::default();
     s.committed(task(1)).committed(task(2));
     let (stopping, _) = stopping_after(MutationVerdict::Unanswered {
@@ -113,4 +113,6 @@ fn a_stop_before_any_verdict_stores_nothing() {
     assert!(s.store.notices().unwrap().is_empty());
     assert_eq!(s.store.last_push(&todoist()).unwrap(), None);
     assert_eq!(s.store.unpushed(&todoist()).unwrap().len(), 2);
+    let in_doubt = s.store.fields_in_doubt(&todoist()).unwrap();
+    assert_eq!(in_doubt.keys().collect::<Vec<_>>(), vec![&oid(1), &oid(2)]);
 }

@@ -67,6 +67,7 @@ fn a_push_the_deadline_cuts_short_before_any_answer_prints_as_it_always_did() {
     let out = sb.output(&["push"]);
 
     assert_eq!(out.status.code(), Some(1));
+    assert_eq!(String::from_utf8_lossy(&out.stdout), "");
     assert_eq!(
         String::from_utf8_lossy(&out.stderr),
         "dam: helper fake gave no answer within 1s\n"

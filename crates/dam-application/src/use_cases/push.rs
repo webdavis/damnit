@@ -88,7 +88,16 @@ impl Dam<'_> {
         let removed = creates_in_doubt_removed(self.store, &remote.name, unpushed, &doubt)?;
         let Plan { mutations, skipped } =
             plan(self.store, helper, caps, remote, changes, &refiles, &doubt)?;
-        let mut sent = send_in_waves(helper, removals, mutations)?;
+        let mut sent = match send_in_waves(helper, removals, mutations) {
+            Ok(sent) => sent,
+            Err(unheard) => {
+                let Unheard { by, doubt } = *unheard;
+                atomically(self.store, || {
+                    settle_doubt(self.store, &remote.name, &doubt)
+                })?;
+                return Err(by.into());
+            }
+        };
         sent.skipped = skipped;
         sent.settlement.forget_creates_in_doubt(removed);
         atomically(self.store, || {
@@ -110,12 +119,13 @@ mod sending_order;
 mod settle;
 mod waves;
 
+use doubt::settle_doubt;
 use mutations::{Plan, plan};
 use owed::{OwedChanges, changes_to_send, follow_ups};
 use refiles::Refiles;
 use removals::Removals;
 use removed_in_doubt::creates_in_doubt_removed;
-use waves::{Sent, send_in_waves};
+use waves::{Sent, Unheard, send_in_waves};
 
 #[cfg(test)]
 mod tests;
