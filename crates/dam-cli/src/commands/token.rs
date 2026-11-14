@@ -1,5 +1,5 @@
 mod create;
-mod grant_view;
+pub(crate) mod grant_view;
 mod list;
 mod revoke;
 

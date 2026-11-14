@@ -25,7 +25,7 @@ return {
 fn config_lua_reads_its_owner_remotes_categories_and_filters() {
     let config = config(EXAMPLE).load().unwrap();
     assert_eq!(config.owner.as_deref(), Some("Ada"));
-    assert!(config.done_interactive);
+    assert_eq!(config.done_interactive, Some(true));
     let remote = config.remote("todoist").unwrap();
     assert_eq!(remote.helper, "todoist");
     assert_eq!(remote.stale.as_ref().unwrap().text, "15m");

@@ -2,6 +2,7 @@ use std::io::Write;
 
 use super::fixture::{self, CALL_MOM, OAT_MILK, STANDUP, run, short};
 use super::sandbox::Sandbox;
+use super::small_config::small_config;
 
 fn json_of(sb: &Sandbox, args: &[&str]) -> serde_json::Value {
     let out = sb.output(&[args, &["--json"]].concat());
@@ -139,6 +140,7 @@ pub fn answers(command: &str) -> Option<Vec<serde_json::Value>> {
         )],
         "token list" => vec![json_of(&with_token(), &["token", "list"])],
         "doctor" => vec![json_of(&with_token(), &["doctor"])],
+        "config list" => vec![json_of(&small_config(), &["config", "list"])],
         "config validate" => vec![json_of(&with_token(), &["config", "validate"])],
         "config print-default" => vec![json_of(&Sandbox::new(), &["config", "print-default"])],
         "token revoke" => vec![json_of(&with_token(), &["token", "revoke", "tool"])],

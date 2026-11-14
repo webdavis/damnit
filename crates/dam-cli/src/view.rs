@@ -7,6 +7,7 @@ use crate::error::CliError;
 use crate::layout::table;
 use crate::output::Report;
 use crate::paint::Tint;
+use crate::style::Paint;
 
 pub(crate) use objects::{ObjectList, ObjectRow};
 pub(crate) use serialize::{display, displays, document, optional_display, optional_wire, wire};
@@ -15,6 +16,10 @@ pub(crate) enum Human {
     Table(Vec<Vec<String>>),
     Lines(Vec<String>),
     Mixed(Vec<Line>),
+    Styled {
+        plain: Vec<String>,
+        colored: Vec<String>,
+    },
 }
 
 pub(crate) enum Line {
@@ -25,6 +30,13 @@ pub(crate) enum Line {
 }
 
 impl Human {
+    pub(crate) fn styled(lines: impl Fn(Paint) -> Vec<String>) -> Human {
+        Human::Styled {
+            plain: lines(Paint::Plain),
+            colored: lines(Paint::Color),
+        }
+    }
+
     pub(crate) fn list(rows: Vec<Vec<String>>, empty: &str) -> Human {
         if rows.is_empty() {
             Human::Lines(vec![empty.to_string()])
@@ -47,12 +59,19 @@ pub(crate) trait View: Serialize {
 }
 
 pub(crate) fn report(view: &impl View) -> Result<Report, CliError> {
-    let lines: Vec<(String, bool, Tint)> = match view.human() {
+    let human = view.human();
+    let colored = match &human {
+        Human::Styled { colored, .. } => Some(colored.join("\n")),
+        _ => None,
+    };
+    let lines: Vec<(String, bool, Tint)> = match human {
         Human::Table(rows) => table(&rows)
             .into_iter()
             .map(|l| (l, true, Tint::Plain))
             .collect(),
-        Human::Lines(lines) => lines.into_iter().map(|l| (l, false, Tint::Plain)).collect(),
+        Human::Lines(lines) | Human::Styled { plain: lines, .. } => {
+            lines.into_iter().map(|l| (l, false, Tint::Plain)).collect()
+        }
         Human::Mixed(lines) => lines
             .into_iter()
             .map(|line| match line {
@@ -72,6 +91,7 @@ pub(crate) fn report(view: &impl View) -> Result<Report, CliError> {
         data: serde_json::to_value(view).map_err(|e| CliError::Internal(e.to_string()))?,
         cut: lines.iter().map(|(_, cut, _)| *cut).collect(),
         tints: lines.iter().map(|(.., tint)| *tint).collect(),
+        colored,
         standard_error_lines: view
             .warnings()
             .iter()

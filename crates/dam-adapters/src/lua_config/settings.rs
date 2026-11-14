@@ -18,20 +18,25 @@ pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
     let done_interactive = match root.map("done")? {
         Some(done) => {
             done.only(&["interactive"])?;
-            done.bool("interactive")?.unwrap_or(false)
+            done.bool("interactive")?
         }
-        None => false,
+        None => None,
     };
     let remotes = root
         .maps_in("remote")?
         .iter()
         .map(|(name, remote)| read_remote(name, remote))
         .collect::<Result<Vec<_>, _>>()?;
-    let categories = root
-        .maps_in("category")?
+    let category_tables = root.maps_in("category")?;
+    let categories = category_tables
         .iter()
         .map(|(name, category)| read_category(name, category))
         .collect::<Result<Vec<_>, _>>()?;
+    let categories_writing_exclusive = category_tables
+        .iter()
+        .filter(|(_, category)| category.get("exclusive").is_some())
+        .map(|(name, _)| name.clone())
+        .collect();
     let categories = Categories::new(categories).map_err(ConfigError::BadCategories)?;
     let filters = root
         .maps_in("filter")?
@@ -43,6 +48,7 @@ pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
         done_interactive,
         remotes,
         categories,
+        categories_writing_exclusive,
         filters,
         tokens: Default::default(),
     })

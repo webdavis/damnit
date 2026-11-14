@@ -40,6 +40,6 @@ pub(crate) fn run(file: &LuaConfigFile) -> Result<Report, CliError> {
     })
 }
 
-fn found(path: &Path) -> Option<String> {
+pub(super) fn found(path: &Path) -> Option<String> {
     path.exists().then(|| path.display().to_string())
 }

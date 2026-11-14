@@ -21,9 +21,10 @@ pub(crate) fn context() -> Context {
         store: Box::new(MemoryStore::new()),
         config: Config {
             owner: None,
-            done_interactive: false,
+            done_interactive: None,
             remotes: vec![],
             categories: Categories::new(vec![]).unwrap_or_else(|_| unreachable!()),
+            categories_writing_exclusive: Default::default(),
             filters: vec![],
             tokens: Default::default(),
         },

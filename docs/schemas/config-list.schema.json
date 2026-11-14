@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/config-list.schema.json",
+  "title": "dam config list answer",
+  "description": "What dam config list prints on standard output with --json or --toon: where the two files are and every setting dam is using. A secret is never shown. A file that does not read gives the error document instead.",
+  "type": "object",
+  "required": ["config", "secrets", "settings"],
+  "additionalProperties": false,
+  "properties": {
+    "config": { "type": ["string", "null"], "description": "The path of config.lua, or null when there is none." },
+    "secrets": { "type": ["string", "null"], "description": "The path of secrets.lua, beside config.lua, or null when there is none." },
+    "settings": { "$ref": "#/$defs/part" }
+  },
+  "$defs": {
+    "setting": {
+      "description": "One setting, or a part holding settings by name, as dam config get prints it with --json. A leaf is the object whose default is a boolean; any other object is a part, and a part may hold settings named value or default.",
+      "type": "object",
+      "if": { "required": ["default"], "properties": { "default": { "type": "boolean" } } },
+      "then": { "$ref": "#/$defs/leaf" },
+      "else": { "$ref": "#/$defs/part" }
+    },
+    "part": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/setting" }
+    },
+    "leaf": {
+      "type": "object",
+      "required": ["value", "default"],
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "description": "The value. A credential's value is never shown: it reads set, or function for one dam calls when the remote is used. A token reads its grants in short, or disabled. It is null for a setting dam knows that the file leaves without a value and that has no default.",
+          "type": ["string", "boolean", "array", "null"],
+          "items": { "type": "string" }
+        },
+        "default": { "type": "boolean", "description": "True when the file does not set it: dam then uses its own default, or nothing when value is null." }
+      }
+    }
+  }
+}

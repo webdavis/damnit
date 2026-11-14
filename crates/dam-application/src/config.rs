@@ -3,6 +3,8 @@ mod duration;
 mod filter;
 mod remote;
 
+use std::collections::BTreeSet;
+
 use dam_domain::Categories;
 
 use crate::errors::Refusal;
@@ -16,9 +18,10 @@ pub use remote::RemoteConfig;
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Config {
     pub owner: Option<String>,
-    pub done_interactive: bool,
+    pub done_interactive: Option<bool>,
     pub remotes: Vec<RemoteConfig>,
     pub categories: Categories,
+    pub categories_writing_exclusive: BTreeSet<String>,
     pub filters: Vec<FilterConfig>,
     pub tokens: Tokens,
 }
@@ -26,6 +29,10 @@ pub struct Config {
 impl Config {
     pub fn owner_name(&self) -> &str {
         self.owner.as_deref().unwrap_or("owner")
+    }
+
+    pub fn done_interactive(&self) -> bool {
+        self.done_interactive.unwrap_or(false)
     }
 
     pub fn remote(&self, name: &str) -> Option<&RemoteConfig> {

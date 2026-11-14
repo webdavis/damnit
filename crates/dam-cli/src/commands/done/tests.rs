@@ -107,7 +107,7 @@ fn interactive_asks_and_moves_children_up() {
 #[test]
 fn config_interactive_applies_to_a_plain_force() {
     let mut ctx = context();
-    ctx.config.done_interactive = true;
+    ctx.config.done_interactive = Some(true);
     parent_and_child(&ctx);
     ctx.prompt = Box::new(ScriptedPrompt {
         choices: RefCell::new(vec![MOVE_THEM_UP_ONE_LEVEL]),
@@ -159,7 +159,7 @@ fn dispositions_complete_a_blocked_parent_without_a_terminal() {
 #[test]
 fn a_disposition_flag_asks_nothing_even_when_config_says_interactive() {
     let mut ctx = context();
-    ctx.config.done_interactive = true;
+    ctx.config.done_interactive = Some(true);
     parent_and_child(&ctx);
     ctx.prompt = Box::new(a_prompt_with_no_answers_so_any_question_cancels());
     run(
