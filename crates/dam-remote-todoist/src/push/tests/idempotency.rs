@@ -15,9 +15,9 @@ fn a_resent_mutation_repeats_its_uuids_and_creates_nothing_twice() {
     )];
     let again = first.clone();
 
-    let one = push(&api, first).unwrap();
+    let one = push(&api, first, &mut |_| {}).unwrap();
     assert!(one.results[0].ok());
-    let two = push(&api, again).unwrap();
+    let two = push(&api, again, &mut |_| {}).unwrap();
 
     let recorded = api.recorded.borrow();
     assert_eq!(
@@ -51,7 +51,7 @@ fn the_commands_of_one_mutation_have_distinct_uuids() {
         None,
         Some(task(&"1".repeat(40), "Work/", "eggs", true)),
     )];
-    assert!(push(&api, mutations).unwrap().results[0].ok());
+    assert!(push(&api, mutations, &mut |_| {}).unwrap().results[0].ok());
     let recorded = api.recorded.borrow();
     assert_eq!(recorded.types(), vec!["item_add", "item_close"]);
     assert_eq!(recorded.uuids_seen.len(), 2);
@@ -78,7 +78,7 @@ fn a_refused_command_fails_only_its_own_mutation() {
         ),
         mutation("delete", 3, Some("p:p2"), None),
     ];
-    let response = push(&api, mutations).unwrap();
+    let response = push(&api, mutations, &mut |_| {}).unwrap();
     assert!(response.results[0].ok());
     assert!(!response.results[1].ok());
     assert_eq!(response.results[1].why(), Some("refused by the test"));
@@ -96,7 +96,7 @@ fn a_mutation_todoist_did_only_part_of_stays_unanswered() {
         None,
         Some(task(&"1".repeat(40), "Work/", "eggs", true)),
     )];
-    let response = push(&api, mutations).unwrap();
+    let response = push(&api, mutations, &mut |_| {}).unwrap();
     assert!(
         matches!(response.results[0].verdict, Verdict::Unanswered { .. }),
         "{:?}",

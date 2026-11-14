@@ -25,7 +25,7 @@ fn a_project_path_change_and_a_section_done_change_are_refused_and_send_nothing(
             &["done"],
         ),
     ];
-    let response = push(&api, mutations).unwrap();
+    let response = push(&api, mutations, &mut |_| {}).unwrap();
     assert_eq!(response.results.len(), 2);
     assert!(!response.results[0].ok());
     assert_eq!(
@@ -54,7 +54,7 @@ fn a_rename_with_a_path_change_sends_the_rename_and_is_refused_for_the_path_only
         ),
         &["subject", "path"],
     )];
-    let response = push(&api, mutations).unwrap();
+    let response = push(&api, mutations, &mut |_| {}).unwrap();
     assert!(!response.results[0].ok());
     assert_eq!(
         response.results[0].why(),
@@ -85,7 +85,7 @@ fn a_hostile_remote_id_is_refused_and_never_reaches_a_command() {
             &["subject"],
         ),
     ];
-    let response = push(&api, mutations).unwrap();
+    let response = push(&api, mutations, &mut |_| {}).unwrap();
     for result in &response.results {
         assert!(!result.ok(), "{result:?}");
         assert!(

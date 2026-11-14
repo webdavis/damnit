@@ -1,5 +1,5 @@
 use dam_helper::Remote;
-use dam_protocol::{Capabilities, Mutation, PullResponse, PushResponse};
+use dam_protocol::{Capabilities, Mutation, MutationResult, PullResponse, PushResponse};
 
 use crate::access::access_token;
 use crate::address::calendars;
@@ -32,7 +32,11 @@ impl Remote for Gcal<'_> {
         .map_err(|e| e.to_string())
     }
 
-    fn push(&self, mutations: Vec<Mutation>) -> Result<PushResponse, String> {
+    fn push(
+        &self,
+        mutations: Vec<Mutation>,
+        _answered: &mut dyn FnMut(&MutationResult),
+    ) -> Result<PushResponse, String> {
         Ok(push::refuse(&mutations))
     }
 }

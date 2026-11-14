@@ -54,7 +54,7 @@ fn a_retry_declaring_every_field_with_only_the_name_differing_is_ok() {
         ),
         &EVERY_FIELD,
     )];
-    let response = push(&api, mutations).unwrap();
+    let response = push(&api, mutations, &mut |_| {}).unwrap();
     assert!(response.results[0].ok(), "{:?}", response.results[0].why());
     assert_eq!(
         api.recorded.borrow().command("project_update")["args"],
@@ -74,7 +74,7 @@ fn a_path_change_among_every_declared_field_is_refused_for_the_path_only_until_r
         ),
         &EVERY_FIELD,
     );
-    let response = push(&api, vec![moved]).unwrap();
+    let response = push(&api, vec![moved], &mut |_| {}).unwrap();
     assert!(!response.results[0].ok());
     assert_eq!(
         response.results[0].why(),
@@ -91,7 +91,7 @@ fn a_path_change_among_every_declared_field_is_refused_for_the_path_only_until_r
         ),
         &EVERY_FIELD,
     );
-    let response = push(&api, vec![reverted]).unwrap();
+    let response = push(&api, vec![reverted], &mut |_| {}).unwrap();
     assert!(response.results[0].ok(), "{:?}", response.results[0].why());
 }
 
@@ -115,7 +115,7 @@ fn an_uncarried_field_counts_as_changed_only_when_it_differs_from_the_pulled_val
             &EVERY_FIELD,
         ),
     ];
-    let response = push(&api, mutations).unwrap();
+    let response = push(&api, mutations, &mut |_| {}).unwrap();
     assert!(response.results[0].ok(), "{:?}", response.results[0].why());
     assert!(!response.results[1].ok());
     assert_eq!(

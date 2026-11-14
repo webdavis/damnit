@@ -1,6 +1,6 @@
 use std::io;
 
-use dam_protocol::{Capabilities, Mutation, PullResponse, PushResponse};
+use dam_protocol::{Capabilities, Mutation, MutationResult, PullResponse, PushResponse};
 
 use super::serve;
 use crate::Remote;
@@ -14,7 +14,11 @@ impl Remote for NeverAsked {
     fn pull(&self, _since: Option<&str>) -> Result<PullResponse, String> {
         unreachable!("no request was read")
     }
-    fn push(&self, _mutations: Vec<Mutation>) -> Result<PushResponse, String> {
+    fn push(
+        &self,
+        _mutations: Vec<Mutation>,
+        _answered: &mut dyn FnMut(&MutationResult),
+    ) -> Result<PushResponse, String> {
         unreachable!("no request was read")
     }
 }
@@ -48,3 +52,5 @@ fn a_non_decode_read_error_ends_the_loop_without_spinning_forever() {
         .expect("the loop to return promptly on a non-decode read error instead of spinning");
     assert!(out.is_empty());
 }
+
+mod early_answers;

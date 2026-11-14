@@ -49,7 +49,7 @@ fn creates_updates_and_deletes_become_the_right_commands() {
             &["deadline"],
         ),
     ];
-    let response = push(&api, mutations).unwrap();
+    let response = push(&api, mutations, &mut |_| {}).unwrap();
     assert_eq!(response.results.len(), 6);
     assert!(response.results[0].ok());
     assert_eq!(response.results[0].remote_id(), Some("i:new1"));
@@ -115,7 +115,7 @@ fn a_depth_one_create_becomes_a_section_when_its_child_arrives_later_in_the_same
             Some(task(&"2".repeat(40), "Work/Later/", "first step", false)),
         ),
     ];
-    let response = push(&api, mutations).unwrap();
+    let response = push(&api, mutations, &mut |_| {}).unwrap();
     assert!(
         response.results.iter().all(|r| r.ok()),
         "{:?}",
@@ -141,6 +141,7 @@ fn clearing_done_becomes_the_uncomplete_command() {
             ),
             &["done"],
         )],
+        &mut |_| {},
     )
     .unwrap();
     assert!(response.results[0].ok(), "{:?}", response.results[0].why());

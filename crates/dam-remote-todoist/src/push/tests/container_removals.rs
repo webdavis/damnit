@@ -30,7 +30,7 @@ fn removal(n: u8, remote_id: &str) -> Mutation {
 
 fn refused_without_a_command(held: serde_json::Value, remote_id: &str, holds: &str) {
     let api = FakeTodoist::new(held);
-    let response = push(&api, vec![removal(1, remote_id)]).unwrap();
+    let response = push(&api, vec![removal(1, remote_id)], &mut |_| {}).unwrap();
     let why = response.results[0].why().unwrap_or_default().to_string();
     assert!(!response.results[0].ok(), "{remote_id} was removed");
     assert!(why.contains(holds), "{why}");
@@ -102,7 +102,7 @@ fn a_container_emptied_earlier_in_the_same_call_is_removed() {
         removal(4, "p:p1"),
     ];
     let api = FakeTodoist::new(held);
-    let response = push(&api, mutations).unwrap();
+    let response = push(&api, mutations, &mut |_| {}).unwrap();
     assert!(
         response.results.iter().all(|r| r.ok()),
         "{:?}",
@@ -129,7 +129,7 @@ fn a_container_that_gets_a_task_earlier_in_the_same_call_is_not_removed() {
         Some(task(&"1".repeat(40), "p1/", "kid", false)),
     );
     let api = FakeTodoist::new(held);
-    let response = push(&api, vec![created, removal(2, "p:p1")]).unwrap();
+    let response = push(&api, vec![created, removal(2, "p:p1")], &mut |_| {}).unwrap();
     assert!(response.results[0].ok());
     assert!(
         response.results[1]

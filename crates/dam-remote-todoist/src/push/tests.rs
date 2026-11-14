@@ -1,6 +1,7 @@
 mod carry_on;
 mod commands_sent;
 mod container_removals;
+mod early_answers;
 mod failures;
 mod fixtures;
 mod idempotency;
