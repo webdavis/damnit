@@ -103,6 +103,7 @@ impl Dam<'_> {
 mod idempotency;
 mod mutations;
 mod reconcile;
+mod sending_order;
 
 use mutations::{Plan, changes_to_send, plan};
 use reconcile::{Settlement, reconcile};

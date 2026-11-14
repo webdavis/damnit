@@ -7,6 +7,7 @@ use crate::errors::UseCaseError;
 use crate::ports::{RemoteTrackingRepository, Store};
 use crate::remote::{MutationOp, RemoteCapabilities, RemoteMutation};
 use crate::use_cases::push::idempotency::{Origin, key};
+use crate::use_cases::push::sending_order::turn;
 
 pub(super) fn changes_to_send(
     store: &dyn Store,
@@ -73,7 +74,9 @@ pub(super) fn plan(
         mutations: Vec::new(),
         skipped: 0,
     };
-    for (change, origin) in changes.into_values() {
+    let mut owed: Vec<_> = changes.into_values().collect();
+    owed.sort_by_key(|(change, _)| turn(change));
+    for (change, origin) in owed {
         match mutation_for(remote_tracking, caps, remote, &change, origin.as_ref())? {
             Some(mutation) => plan.mutations.push(mutation),
             None => plan.skipped += 1,
