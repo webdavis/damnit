@@ -3,7 +3,7 @@ use dam_domain::{Author, Authored, Change, Item, ItemHash, Object, Outcome};
 use super::refusal::ItemRefusal;
 use crate::errors::UseCaseError;
 use crate::service::Dam;
-use crate::use_cases::remove::RemovePlan;
+use crate::use_cases::remove::{ItemAndTask, RemovePlan};
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Added {
@@ -21,6 +21,7 @@ impl Added {
 #[derive(Debug, PartialEq, Eq)]
 pub enum AddedRemoval {
     Removed { item: ItemHash, plan: RemovePlan },
+    AlreadyGone(ItemAndTask),
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]

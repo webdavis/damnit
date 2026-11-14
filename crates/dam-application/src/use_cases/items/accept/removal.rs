@@ -4,7 +4,7 @@ use super::{Added, AddedRemoval, OnClash};
 use crate::errors::UseCaseError;
 use crate::service::Dam;
 use crate::use_cases::items::refusal::ItemRefusal;
-use crate::use_cases::remove::carry_out;
+use crate::use_cases::remove::{ItemAndTask, carry_out};
 
 impl Dam<'_> {
     pub(super) fn take_removal(
@@ -13,14 +13,18 @@ impl Dam<'_> {
         before: &Object,
         on_clash: OnClash,
     ) -> Result<Added, UseCaseError> {
+        let Some(working) = self.store.get(item.target())? else {
+            self.store
+                .settle(&item.hash, Outcome::Added(self.clock.now()))?;
+            return Ok(Added {
+                staged: Vec::new(),
+                removals: vec![AddedRemoval::AlreadyGone(ItemAndTask {
+                    item: item.hash.clone(),
+                    oid: item.target().clone(),
+                })],
+            });
+        };
         let committed = self.committed_target(item)?;
-        let working = self
-            .store
-            .get(item.target())?
-            .ok_or_else(|| ItemRefusal::TargetGone {
-                hash: item.hash.clone(),
-                target: item.target().clone(),
-            })?;
         let fields = fields_the_owner_moved(before, &committed, &working);
         if on_clash == OnClash::Stop && !fields.is_empty() {
             return Err(ItemRefusal::RemovesAChangedTask {
