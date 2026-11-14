@@ -40,6 +40,7 @@ pub use tokens::{
 pub use use_cases::agenda::{Scheduled, Window};
 pub use use_cases::complete::{CompletePlan, Completed};
 pub use use_cases::edit::{EditFields, apply};
+pub use use_cases::items::accept::{Added, AddedRemoval};
 pub use use_cases::items::land::{Answer, Landed, Sent};
 pub use use_cases::items::refusal::ItemRefusal;
 pub use use_cases::new_object::{NewEvent, NewTask};

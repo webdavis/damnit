@@ -1,5 +1,6 @@
 use dam_domain::Oid;
 
+use self::removals::AddedRemovals;
 use crate::args::{AddArgs, ResetArgs};
 use crate::commands::status::ChangeRow;
 use crate::context::Context;
@@ -11,12 +12,18 @@ use serde::Serialize;
 #[derive(Serialize)]
 struct Staged<'a> {
     staged: Vec<ChangeRow<'a>>,
+    #[serde(flatten)]
+    removals: AddedRemovals<'a>,
 }
 
 impl View for Staged<'_> {
     fn human(&self) -> Human {
+        let staged = self.staged.iter().map(ChangeRow::line);
         Human::list(
-            self.staged.iter().map(|c| vec![c.line()]).collect(),
+            staged
+                .chain(self.removals.lines())
+                .map(|line| vec![line])
+                .collect(),
             "nothing to stage",
         )
     }
@@ -41,7 +48,7 @@ impl View for Unstaged<'_> {
 }
 
 pub(crate) fn run_add(ctx: &Context, args: AddArgs) -> Result<Report, CliError> {
-    let changes = if args.all {
+    let added = if args.all {
         ctx.dam().add_all()?
     } else {
         let named = args
@@ -52,10 +59,12 @@ pub(crate) fn run_add(ctx: &Context, args: AddArgs) -> Result<Report, CliError> 
         ctx.dam().add(&named)?
     };
     report(&Staged {
-        staged: changes
+        staged: added
+            .staged
             .iter()
             .map(|c| ChangeRow::authored(ctx, c, false))
             .collect(),
+        removals: AddedRemovals::new(&added.removals),
     })
 }
 
@@ -68,6 +77,8 @@ pub(crate) fn run_reset(ctx: &Context, args: ResetArgs) -> Result<Report, CliErr
     ctx.dam().reset(&oids)?;
     report(&Unstaged { unstaged: &oids })
 }
+
+mod removals;
 
 #[cfg(test)]
 mod tests;

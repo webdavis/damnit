@@ -49,24 +49,34 @@ impl Dam<'_> {
             return Err(Refusal::NotOpenToTokens("rm").into());
         }
         atomically(self.store, || {
-            let object = load(self.store, oid)?;
-            let plan = plan_for(self.store, &object)?;
-            for child in &plan.moved_up {
-                move_into(self.store, child, &object.base().path)?;
-            }
-            for dependent in &plan.dependents {
-                if let Some(mut d) = self.store.get(dependent)? {
-                    d.base_mut().depends.retain(|x| x != oid);
-                    self.store.put(&d)?;
-                }
-            }
-            self.store.delete(oid)?;
-            Ok(plan)
+            carry_out(self.store, &load(self.store, oid)?)
         })
     }
 }
 
-fn plan_for(objects: &dyn ObjectRepository, object: &Object) -> Result<RemovePlan, UseCaseError> {
+pub(crate) fn carry_out(
+    objects: &dyn ObjectRepository,
+    object: &Object,
+) -> Result<RemovePlan, UseCaseError> {
+    let oid = object.oid();
+    let plan = plan_for(objects, object)?;
+    for child in &plan.moved_up {
+        move_into(objects, child, &object.base().path)?;
+    }
+    for dependent in &plan.dependents {
+        if let Some(mut d) = objects.get(dependent)? {
+            d.base_mut().depends.retain(|x| x != oid);
+            objects.put(&d)?;
+        }
+    }
+    objects.delete(oid)?;
+    Ok(plan)
+}
+
+pub(crate) fn plan_for(
+    objects: &dyn ObjectRepository,
+    object: &Object,
+) -> Result<RemovePlan, UseCaseError> {
     let oid = object.oid();
     let moved_up = children(objects, object.base())?
         .iter()
@@ -89,6 +99,7 @@ fn plan_for(objects: &dyn ObjectRepository, object: &Object) -> Result<RemovePla
 
 mod by_id;
 mod by_token;
+mod waiting;
 mod withdraw;
 
 #[cfg(test)]

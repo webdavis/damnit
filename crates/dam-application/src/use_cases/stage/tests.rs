@@ -9,7 +9,7 @@ use dam_domain::{Object, Op, Task};
 fn add_stages_a_create_for_a_new_working_object() {
     let s = Scenario::default();
     s.working(task(1));
-    let staged = s.dam().add(&[Named::Object(oid(1))]).unwrap();
+    let staged = s.dam().add(&[Named::Object(oid(1))]).unwrap().staged;
     assert_eq!(staged.len(), 1);
     assert_eq!(staged[0].change.op(), Op::Create);
     assert_eq!(s.store.staged().unwrap().len(), 1);
@@ -19,7 +19,13 @@ fn add_stages_a_create_for_a_new_working_object() {
 fn add_skips_an_unchanged_object() {
     let s = Scenario::default();
     s.committed(task(1));
-    assert!(s.dam().add(&[Named::Object(oid(1))]).unwrap().is_empty());
+    assert!(
+        s.dam()
+            .add(&[Named::Object(oid(1))])
+            .unwrap()
+            .staged
+            .is_empty()
+    );
 }
 
 #[test]
@@ -30,7 +36,7 @@ fn add_unstages_an_object_edited_back_to_its_committed_state() {
     let dam = s.dam();
     dam.add(&[Named::Object(oid(1))]).unwrap();
     s.working(task(1));
-    assert!(dam.add(&[Named::Object(oid(1))]).unwrap().is_empty());
+    assert!(dam.add(&[Named::Object(oid(1))]).unwrap().staged.is_empty());
     assert!(s.store.staged().unwrap().is_empty());
 }
 
@@ -39,7 +45,7 @@ fn add_all_includes_deletes_of_committed_objects_gone_from_working() {
     let s = Scenario::default();
     s.committed(task(1));
     s.store.delete(&oid(1)).unwrap();
-    let staged = s.dam().add_all().unwrap();
+    let staged = s.dam().add_all().unwrap().staged;
     assert_eq!(staged[0].change.op(), Op::Delete);
 }
 
@@ -47,7 +53,7 @@ fn add_all_includes_deletes_of_committed_objects_gone_from_working() {
 fn add_all_after_a_committed_removal_stages_nothing() {
     let s = Scenario::default();
     s.committed(task(1)).deleted(&oid(1));
-    assert!(s.dam().add_all().unwrap().is_empty());
+    assert!(s.dam().add_all().unwrap().staged.is_empty());
     assert!(s.store.staged().unwrap().is_empty());
 }
 

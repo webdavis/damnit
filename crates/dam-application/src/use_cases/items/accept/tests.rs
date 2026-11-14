@@ -61,7 +61,7 @@ fn rent_with(subject: &str, body: &str) -> Object {
 fn adding_a_new_item_creates_its_object_under_the_items_hash_and_stages_it_as_the_tokens() {
     let s = Scenario::default().drawing_from(7);
     let hash = dentist(&s);
-    let staged = s.dam().add(&[Named::Item(hash.clone())]).unwrap();
+    let staged = s.dam().add(&[Named::Item(hash.clone())]).unwrap().staged;
     let created = s.store.get(hash.oid()).unwrap().unwrap();
     assert_eq!(created.base().subject, "call the dentist");
     assert_eq!(staged[0].change.oid(), hash.oid());
@@ -80,7 +80,7 @@ fn a_change_item_takes_only_its_fields_and_leaves_the_owners_other_edit_unstaged
     s.committed(rent_with("pay rent", ""));
     let hash = retitled_by_tool(&s, "pay the rent");
     s.working(rent_with("pay rent", "by friday"));
-    let staged = s.dam().add(&[Named::Item(hash)]).unwrap();
+    let staged = s.dam().add(&[Named::Item(hash)]).unwrap().staged;
     let after = staged[0].change.after().unwrap().base();
     assert_eq!(
         (after.subject.as_str(), after.body.as_str()),
@@ -119,7 +119,7 @@ fn add_all_takes_every_item_that_applies_and_leaves_a_clashing_one_waiting() {
     s.working(rent_with("pay rent now", ""));
     s.fixture.random = FixedRandom::new(8);
     let new = dentist(&s);
-    let staged = s.dam().add_all().unwrap();
+    let staged = s.dam().add_all().unwrap().staged;
     let oids: Vec<_> = staged.iter().map(|a| a.change.oid().clone()).collect();
     assert_eq!(oids, vec![new.oid().clone(), oid(1)]);
     assert_eq!(staged[1].author, Author::Owner);
@@ -155,3 +155,4 @@ fn a_prefix_names_a_waiting_item_and_an_object_verb_refuses_it() {
 
 mod blocked_after_merge;
 mod removal_clash;
+mod removal_follow_ons;

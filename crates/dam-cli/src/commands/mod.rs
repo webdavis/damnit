@@ -7,6 +7,7 @@ pub(crate) mod config;
 mod day;
 mod done;
 mod edit;
+mod follow_ons;
 mod ls;
 mod mv;
 mod new;

@@ -1,16 +1,18 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use dam_domain::{Authored, Change, CommitId, Item, Kind, Object, Oid, Permission};
+use dam_domain::{Authored, Change, CommitId, Item, ItemHash, Kind, Object, Oid, Permission};
 
 use crate::errors::UseCaseError;
 use crate::ports::{CommitRepository, Conflict, Notice, RemoteName, Store};
 use crate::service::Dam;
+use crate::use_cases::remove::RemovePlan;
 use crate::use_cases::stage::working_and_ever_committed_oids;
 
 pub struct Status {
     pub staged: Vec<Authored>,
     pub unstaged: Vec<Change>,
     pub waiting: Vec<Item>,
+    pub removal_plans: BTreeMap<ItemHash, RemovePlan>,
     pub conflicts: Vec<Conflict>,
     pub notices: Vec<Notice>,
     pub unpushed: Vec<Unpushed>,
@@ -29,10 +31,12 @@ impl Dam<'_> {
             let accepted = self.store.accepted_kinds(remote)?;
             unpushed.push(unpushed_for(self.store, remote, accepted.as_deref())?);
         }
+        let waiting = self.waiting_items()?;
         Ok(Status {
             staged: self.seen_staged()?,
             unstaged: self.diff_working()?,
-            waiting: self.waiting_items()?,
+            removal_plans: self.plans_of_waiting_removals(&waiting)?,
+            waiting,
             conflicts: self.store.conflicts()?,
             notices: self.store.notices()?,
             unpushed,

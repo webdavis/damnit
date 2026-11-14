@@ -1,6 +1,4 @@
-use dam_domain::{
-    Change, Item, Object, changed_fields, clashing_fields, fields_the_owner_moved, merge_fields,
-};
+use dam_domain::{Change, Item, Object, changed_fields, clashing_fields, merge_fields};
 
 use super::OnClash;
 use crate::errors::UseCaseError;
@@ -46,29 +44,5 @@ impl Dam<'_> {
         replace_carrying_folder(self.store, &working, &merged)?;
         let staged = merge_fields(&committed, after, &fields);
         Ok(Change::between(Some(committed), Some(staged)))
-    }
-
-    pub(super) fn apply_removal(
-        &self,
-        item: &Item,
-        before: &Object,
-        on_clash: OnClash,
-    ) -> Result<Option<Change>, UseCaseError> {
-        let committed = self.committed_target(item)?;
-        if on_clash == OnClash::Stop
-            && let Some(working) = self.store.get(item.target())?
-        {
-            let fields = fields_the_owner_moved(before, &committed, &working);
-            if !fields.is_empty() {
-                return Err(ItemRefusal::RemovesAChangedTask {
-                    hash: item.hash.clone(),
-                    target: item.target().clone(),
-                    fields,
-                }
-                .into());
-            }
-        }
-        self.store.delete(item.target())?;
-        Ok(Some(Change::Delete { before: committed }))
     }
 }
