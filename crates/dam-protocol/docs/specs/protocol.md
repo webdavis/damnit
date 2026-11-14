@@ -36,7 +36,7 @@ length limit.
 |---|---|
 | `{"cmd": "capabilities"}` | none |
 | `{"cmd": "pull", "since": <string or null>}` | `since` is the opaque token from a previous pull |
-| `{"cmd": "push", "mutations": [...]}` | see the mutation table |
+| `{"cmd": "push", "mutations": [...], "early_answers": true}` | see the mutation table; `early_answers` is optional |
 
 One mutation:
 
@@ -97,6 +97,17 @@ One push result:
 | `why` | the reason, when `ok` is false or `unanswered` is true |
 
 A result with neither `ok` nor `unanswered` is a protocol error.
+
+## Early answers
+
+A push request with `"early_answers": true` asks the helper to write each mutation's result as
+soon as it has it, one line each, as `{"early_answer": <one push result>}`. The helper then writes
+the push response as usual, complete. A request without the field, or with false, gets no early
+answers. A helper that does not know the field ignores it and answers once. When the call ends
+before the push response, because the helper stays silent past the remote's `deadline`, the person
+presses Ctrl-C, or the helper exits, `dam` keeps the early answers it read and sends the rest again
+on the next push. When the push response arrives, it is the answer and the early answers are
+dropped.
 
 ## Capabilities
 

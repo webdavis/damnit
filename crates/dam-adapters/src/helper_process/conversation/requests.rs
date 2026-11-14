@@ -83,7 +83,10 @@ impl RemoteHelper for ProcessHelper {
 
     fn push(&mut self, mutations: Vec<RemoteMutation>) -> Result<PushOutcome, HelperError> {
         let mutations = mutations.into_iter().map(mutation_to_wire).collect();
-        let pushed: PushResponse = self.call(&Request::Push { mutations })?;
+        let pushed: PushResponse = self.call(&Request::Push {
+            mutations,
+            early_answers: false,
+        })?;
         Ok(push_from_wire(pushed))
     }
 }

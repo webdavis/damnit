@@ -6,8 +6,14 @@ use crate::wire::WireObject;
 #[serde(tag = "cmd", rename_all = "lowercase")]
 pub enum Request {
     Capabilities,
-    Pull { since: Option<String> },
-    Push { mutations: Vec<Mutation> },
+    Pull {
+        since: Option<String>,
+    },
+    Push {
+        mutations: Vec<Mutation>,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        early_answers: bool,
+    },
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
