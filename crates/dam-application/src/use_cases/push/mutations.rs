@@ -7,6 +7,7 @@ use crate::errors::UseCaseError;
 use crate::ports::{RemoteTrackingRepository, Store};
 use crate::remote::{MutationOp, RemoteCapabilities, RemoteMutation};
 use crate::use_cases::push::idempotency::{Origin, key};
+use crate::use_cases::push::refiles::Refiles;
 use crate::use_cases::push::sending_order::turn;
 
 pub(super) fn changes_to_send(
@@ -68,16 +69,26 @@ pub(super) fn plan(
     remote_tracking: &dyn RemoteTrackingRepository,
     caps: &RemoteCapabilities,
     remote: &RemoteConfig,
-    changes: OwedChanges,
+    mut changes: OwedChanges,
+    refiles: &Refiles,
 ) -> Result<Plan, UseCaseError> {
     let mut plan = Plan {
         mutations: Vec::new(),
         skipped: 0,
     };
+    refiles.owe(&mut changes);
     let mut owed: Vec<_> = changes.into_values().collect();
     owed.sort_by_key(|(change, _)| turn(change));
     for (change, origin) in owed {
-        match mutation_for(remote_tracking, caps, remote, &change, origin.as_ref())? {
+        let refiled = refiles.contains(change.oid());
+        match mutation_for(
+            remote_tracking,
+            caps,
+            remote,
+            &change,
+            origin.as_ref(),
+            refiled,
+        )? {
             Some(mutation) => plan.mutations.push(mutation),
             None => plan.skipped += 1,
         }
@@ -91,6 +102,7 @@ fn mutation_for(
     remote: &RemoteConfig,
     change: &Change,
     origin: Option<&CommitId>,
+    refiled: bool,
 ) -> Result<Option<RemoteMutation>, UseCaseError> {
     let object = change.object();
     if !caps.kinds.contains(&object.kind()) {
@@ -108,8 +120,10 @@ fn mutation_for(
         _ if !the_remote_holds_it => (MutationOp::Create, caps.fields.clone()),
         Change::Create { .. } => (MutationOp::Update, caps.fields.clone()),
         Change::Update { before, after } => {
-            let declared: Vec<Field> = changed_fields(before, after)
+            let changed = changed_fields(before, after);
+            let declared: Vec<Field> = Field::ALL
                 .into_iter()
+                .filter(|f| changed.contains(f) || (refiled && *f == Field::Path))
                 .filter(|f| caps.fields.contains(f))
                 .collect();
             if declared.is_empty() {

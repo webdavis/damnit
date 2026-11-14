@@ -49,7 +49,8 @@ impl Dam<'_> {
         let unpushed = self.store.unpushed(&remote.name)?;
         let changes = changes_to_send(self.store, remote, &unpushed)?;
         let removals = Removals::new(self.store, &remote.name, caps, &changes)?;
-        let Plan { mutations, skipped } = plan(self.store, caps, remote, changes)?;
+        let refiles = Refiles::new(self.store, &remote.name, caps, &changes)?;
+        let Plan { mutations, skipped } = plan(self.store, caps, remote, changes, &refiles)?;
         let sent = send_in_waves(helper, removals, mutations)?;
         atomically(self.store, || {
             self.settle_push(remote, &unpushed, &sent.settlement)
@@ -102,12 +103,14 @@ impl Dam<'_> {
 mod idempotency;
 mod mutations;
 mod reconcile;
+mod refiles;
 mod removals;
 mod sending_order;
 mod waves;
 
 use mutations::{Plan, changes_to_send, plan};
 use reconcile::Settlement;
+use refiles::Refiles;
 use removals::Removals;
 use waves::send_in_waves;
 

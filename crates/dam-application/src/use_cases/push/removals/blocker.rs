@@ -14,6 +14,7 @@ pub(super) enum Blocker {
 pub(super) struct Unsent {
     oids: BTreeSet<Oid>,
     landings: Vec<(Oid, Path)>,
+    owned_folders: Vec<Path>,
 }
 
 impl Unsent {
@@ -23,6 +24,10 @@ impl Unsent {
             landings: pending
                 .iter()
                 .filter_map(|m| Some((m.oid.clone(), m.object.as_ref()?.base().path.clone())))
+                .collect(),
+            owned_folders: pending
+                .iter()
+                .filter_map(|m| m.object.as_ref()?.base().owned_folder())
                 .collect(),
         }
     }
@@ -52,6 +57,9 @@ impl Removals {
         let Some(stuck) = under.into_iter().find(|oid| !unsent.oids.contains(*oid)) else {
             return Some(Blocker::StillToBeSent);
         };
+        if unsent.owned_folders.contains(folder) {
+            return Some(Blocker::StillToBeSent);
+        }
         match self.namesake(&mutation.oid, folder) {
             Some(_) if self.remote_removes_only_empty_containers && still_to_be_sent => {
                 Some(Blocker::StillToBeSent)
