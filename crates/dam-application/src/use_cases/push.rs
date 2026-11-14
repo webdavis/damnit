@@ -48,22 +48,21 @@ impl Dam<'_> {
     ) -> Result<PushReport, UseCaseError> {
         let unpushed = self.store.unpushed(&remote.name)?;
         let changes = changes_to_send(self.store, remote, &unpushed)?;
+        let removals = Removals::new(self.store, &remote.name, &changes)?;
         let Plan { mutations, skipped } = plan(self.store, caps, remote, changes)?;
-        let outcomes = if mutations.is_empty() {
-            vec![]
-        } else {
-            helper.push(mutations.clone())?
-        };
-        let settlement = reconcile(&mutations, outcomes);
+        let sent = send_in_waves(helper, removals, mutations)?;
         atomically(self.store, || {
-            self.settle_push(remote, &unpushed, &settlement)
+            self.settle_push(remote, &unpushed, &sent.settlement)
         })?;
-        let sent = mutations.len();
+        if let Some(stop) = sent.stopped_by {
+            return Err(stop.into());
+        }
+        let refused = sent.settlement.failed.len() - sent.held;
         Ok(PushReport {
             remote: remote.name.clone(),
-            sent,
-            succeeded: sent.saturating_sub(settlement.failed.len()),
-            failed: settlement.failed,
+            sent: sent.mutations,
+            succeeded: sent.mutations.saturating_sub(refused),
+            failed: sent.settlement.failed,
             skipped,
         })
     }
@@ -103,10 +102,14 @@ impl Dam<'_> {
 mod idempotency;
 mod mutations;
 mod reconcile;
+mod removals;
 mod sending_order;
+mod waves;
 
 use mutations::{Plan, changes_to_send, plan};
-use reconcile::{Settlement, reconcile};
+use reconcile::Settlement;
+use removals::Removals;
+use waves::send_in_waves;
 
 #[cfg(test)]
 mod tests;

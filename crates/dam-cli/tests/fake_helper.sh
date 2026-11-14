@@ -22,8 +22,11 @@ while IFS= read -r line; do
       printf '{"objects":[%s],"removed":[],"sync":null}\n' "$objects" ;;
     *'"push"'*)
       printf '%s\n' "$line" >> "$PUSH_LOG"
-      if [ -e "$FAIL_NEXT_PUSH" ]; then rm "$FAIL_NEXT_PUSH"; ok=false; why='"temporary failure"'; else ok=true; why=null; remember "$line"; fi
-      printf '{"results":[' ; printf '%s' "$line" | tr ',' '\n' | grep -o '"oid":"[0-9a-f]*"' | sort -u | awk -v ok="$ok" -v why="$why" 'NR>1{printf ","}{printf "{%s,\"ok\":%s,\"remote_id\":\"r%d\",\"why\":%s}", $0, ok, NR, why}' ; printf ']}\n' ;;
+      refused=none
+      if [ -e "$FAIL_NEXT_PUSH" ]; then rm "$FAIL_NEXT_PUSH"; ok=false; why='"temporary failure"'
+      elif [ -e "${FAIL_FIRST_OF_NEXT_PUSH:-}" ]; then rm "$FAIL_FIRST_OF_NEXT_PUSH"; ok=true; why=null; refused="$(printf '%s' "$line" | jq -r '.mutations[0].oid')"
+      else ok=true; why=null; remember "$line"; fi
+      printf '{"results":[' ; printf '%s' "$line" | tr ',' '\n' | grep -o '"oid":"[0-9a-f]*"' | sort -u | awk -v ok="$ok" -v why="$why" -v refused="\"oid\":\"$refused\"" 'NR>1{printf ","}{o=ok; w=why; if ($0 == refused) {o="false"; w="\"temporary failure\""} printf "{%s,\"ok\":%s,\"remote_id\":\"r%d\",\"why\":%s}", $0, o, NR, w}' ; printf ']}\n' ;;
     *) printf '{"error":"unknown request"}\n' ;;
   esac
 done

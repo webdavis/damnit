@@ -7,9 +7,9 @@ use crate::testing::{
 
 use MutationOp::{Create, Delete, Update};
 
-const BOTH_OID_ORDERS: [(u8, u8); 2] = [(1, 2), (2, 1)];
+pub(super) const BOTH_OID_ORDERS: [(u8, u8); 2] = [(1, 2), (2, 1)];
 
-fn held_upstream(tasks: &[Task]) -> Scenario {
+pub(super) fn held_upstream(tasks: &[Task]) -> Scenario {
     let s = Scenario::default();
     for (i, t) in tasks.iter().enumerate() {
         s.committed(Object::Task(t.clone()))
@@ -19,7 +19,7 @@ fn held_upstream(tasks: &[Task]) -> Scenario {
     s
 }
 
-fn sent(s: &Scenario) -> Vec<(Oid, MutationOp)> {
+pub(super) fn sent(s: &Scenario) -> Vec<(Oid, MutationOp)> {
     let (l, pushed) = pushing(accepting_all(Some("i:new")));
     s.dam().push(remotes_launched_by(&l), None).unwrap();
     pushed
@@ -159,7 +159,7 @@ fn a_retry_of_a_refused_push_resends_the_move_before_the_removal() {
             .iter()
             .map(|m| (m.oid.clone(), m.op))
             .collect();
-        assert_eq!(first, vec![(oid(child), Update), (oid(parent), Delete)]);
-        assert_eq!(sent(&s), first);
+        assert_eq!(first, vec![(oid(child), Update)]);
+        assert_eq!(sent(&s), vec![(oid(child), Update), (oid(parent), Delete)]);
     }
 }

@@ -19,7 +19,7 @@ pub(super) fn changes_to_send(
     Ok(changes)
 }
 
-type OwedChanges = BTreeMap<Oid, (Change, Option<CommitId>)>;
+pub(super) type OwedChanges = BTreeMap<Oid, (Change, Option<CommitId>)>;
 
 fn net_changes_with_the_commit_of_their_last_change(
     unpushed: &[dam_domain::CommitRecord],

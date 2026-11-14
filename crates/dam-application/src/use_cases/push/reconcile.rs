@@ -18,6 +18,14 @@ impl Settlement {
         self.failed.iter().map(|(oid, _)| oid.clone()).collect()
     }
 
+    pub(super) fn absorb(&mut self, later: Settlement) {
+        self.map.extend(later.map);
+        self.clear.extend(later.clear);
+        self.snapshot.extend(later.snapshot);
+        self.failed.extend(later.failed);
+        self.unanswered.extend(later.unanswered);
+    }
+
     pub(super) fn pushed<'a>(
         &'a self,
         unpushed: &'a [CommitRecord],
