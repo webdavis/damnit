@@ -108,6 +108,8 @@ impl Tree {
 
 mod added;
 mod by_path;
+mod changes;
+mod holdings;
 mod identity;
 mod wire;
 

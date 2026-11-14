@@ -1,6 +1,6 @@
 use dam_protocol::WireObject;
 
-use super::shape::Shape;
+use super::shape::{ItemPlace, Shape};
 use crate::api::{Item, Project, Section};
 use crate::map::{RemoteId, Tree, api_priority};
 
@@ -31,11 +31,11 @@ pub(super) fn add_created_to_tree(
             });
             RemoteId::Section(id).to_string()
         }
-        Shape::Item {
+        Shape::Item(ItemPlace {
             project_id,
             section_id,
             parent_id,
-        } => {
+        }) => {
             let task = object.task.as_ref();
             tree.add_item(Item {
                 id: id.clone(),

@@ -1,4 +1,5 @@
 mod commands_sent;
+mod container_removals;
 mod failures;
 mod fixtures;
 mod idempotency;
