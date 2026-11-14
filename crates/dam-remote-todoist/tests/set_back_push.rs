@@ -1,0 +1,49 @@
+mod support;
+
+use dam_application::testing::{Scenario, remotes_launched_by, task_in};
+use dam_domain::Object;
+use dam_helper::testing;
+use support::real_helper::the_real_helper_against;
+use support::stateful_todoist::{Fault, serve, work_held_upstream};
+
+fn ada(subject: &str) -> Object {
+    Object::Task(task_in(1, subject, "Work/"))
+}
+
+#[test]
+fn a_subject_set_back_after_two_lost_answers_lands() {
+    let _guard = testing::guard("a_subject_set_back_after_two_lost_answers_lands")
+        .allow_slow("launches the real helper process four times");
+    let s = Scenario::default();
+    s.committed(ada("Ada"));
+    let (server, upstream) = serve(work_held_upstream());
+    let dir = tempfile::tempdir().unwrap();
+    let launcher = the_real_helper_against(&server.base, dir.path());
+    s.dam().push(remotes_launched_by(&launcher), None).unwrap();
+    for subject in ["Ada and tool", "Ada at work"] {
+        upstream
+            .lock()
+            .unwrap()
+            .fail_after_the_next_write(Fault::HangUp);
+        s.committed(ada(subject));
+        s.dam().push(remotes_launched_by(&launcher), None).unwrap();
+    }
+    assert_eq!(upstream.lock().unwrap().item("Ada at work").len(), 1);
+
+    s.committed(ada("Ada and tool"));
+    let report = s
+        .dam()
+        .push(remotes_launched_by(&launcher), None)
+        .unwrap()
+        .remove(0);
+
+    assert!(report.failed.is_empty(), "{:?}", report.failed);
+    let upstream = upstream.lock().unwrap();
+    assert_eq!(upstream.items.len(), 1, "{:?}", upstream.items);
+    assert_eq!(
+        upstream.item("Ada and tool").len(),
+        1,
+        "{:?}",
+        upstream.items
+    );
+}

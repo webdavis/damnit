@@ -7,7 +7,6 @@ mod cut_short;
 mod deletes;
 mod empty_containers;
 mod holds;
-mod keys;
 mod landings;
 mod last_push;
 mod namesakes;

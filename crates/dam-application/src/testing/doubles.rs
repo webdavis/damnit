@@ -1,7 +1,7 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use dam_domain::{Date, Field, Kind, Oid, Timestamp, carrying_only};
+use dam_domain::{Date, Field, Kind, Oid, Timestamp};
 
 use crate::config::{CredentialSpec, RemoteConfig};
 use crate::ports::{
@@ -55,8 +55,11 @@ impl Clock for FixedClock {
 type PushAnswer = Box<dyn Fn(&[RemoteMutation]) -> Result<PushOutcome, HelperError>>;
 type LaunchedWith = Rc<RefCell<Vec<Vec<(String, Secret)>>>>;
 
+pub type DeclaredForm = fn(&RemoteMutation) -> Result<Declared, HelperError>;
+
 pub struct ScriptedHelper {
     pub caps: RemoteCapabilities,
+    pub declare: DeclaredForm,
     pub pull_answer: Result<PullOutcome, HelperError>,
     pub push_answer: PushAnswer,
     pub pushed: Rc<RefCell<Vec<RemoteMutation>>>,
@@ -85,17 +88,7 @@ impl RemoteHelper for ScriptedHelper {
         Ok(answer)
     }
     fn declared_on_the_wire(&self, mutation: &RemoteMutation) -> Result<Declared, HelperError> {
-        Ok(mutation
-            .fields
-            .iter()
-            .map(|field| {
-                let value = mutation
-                    .object
-                    .as_ref()
-                    .map(|o| carrying_only(o, &[*field]));
-                (*field, format!("{value:?}"))
-            })
-            .collect())
+        (self.declare)(mutation)
     }
 }
 

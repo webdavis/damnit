@@ -1,4 +1,5 @@
 pub mod contract;
+mod debug_form;
 mod doubles;
 mod faulty_store;
 mod fixture;
@@ -7,8 +8,10 @@ mod launchers;
 mod memory_store;
 mod scenario;
 
+pub use debug_form::each_field_in_its_debug_form;
 pub use doubles::{
-    EchoCredentials, FixedClock, FixedRandom, ScriptedHelper, ScriptedLauncher, oid, task_caps,
+    DeclaredForm, EchoCredentials, FixedClock, FixedRandom, ScriptedHelper, ScriptedLauncher, oid,
+    task_caps,
 };
 pub use faulty_store::FaultyStore;
 pub use fixture::{Fixture, remotes_launched_by};

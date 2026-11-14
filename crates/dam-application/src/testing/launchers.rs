@@ -7,7 +7,7 @@ use crate::ports::HelperError;
 use crate::remote::{
     MutationOutcome, MutationVerdict, PullOutcome, PushOutcome, RemoteCapabilities, RemoteMutation,
 };
-use crate::testing::{ScriptedHelper, ScriptedLauncher, task_caps};
+use crate::testing::{ScriptedHelper, ScriptedLauncher, each_field_in_its_debug_form, task_caps};
 
 pub type Pushed = Rc<RefCell<Vec<RemoteMutation>>>;
 
@@ -15,6 +15,7 @@ impl ScriptedHelper {
     pub fn answering(pull: Result<PullOutcome, HelperError>) -> ScriptedHelper {
         ScriptedHelper {
             caps: task_caps(),
+            declare: each_field_in_its_debug_form,
             pull_answer: pull,
             push_answer: Box::new(|_| Ok(PushOutcome::default())),
             pushed: Pushed::default(),
