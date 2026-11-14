@@ -1,7 +1,7 @@
 use dam_application::{Access, Refusal};
 use dam_domain::{Permission, Subject};
 
-use crate::args::{Command, RemoteCommand, TokenCommand};
+use crate::args::{Command, ConfigCommand, RemoteCommand, TokenCommand};
 
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum Need {
@@ -44,6 +44,9 @@ pub(crate) fn need(command: &Command) -> Need {
             TokenCommand::Create(_) => Need::OwnerOnly("token create"),
             TokenCommand::List => Need::OwnerOnly("token list"),
             TokenCommand::Revoke { .. } => Need::OwnerOnly("token revoke"),
+        },
+        Command::Config(a) => match a.command {
+            ConfigCommand::Check => Need::OwnerOnly("config check"),
         },
     }
 }

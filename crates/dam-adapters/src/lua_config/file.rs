@@ -19,12 +19,17 @@ impl LuaConfigFile {
         LuaConfigFile { config }
     }
 
-    pub(super) fn read_both(&self) -> Result<LoadedConfig, ConfigError> {
+    pub fn check(&self) -> Result<Config, ConfigError> {
+        self.read_both(ErrorText::QuotesWhatItsCodeRaised)
+            .map(|loaded| loaded.config)
+    }
+
+    pub(super) fn read_both(&self, secrets_error: ErrorText) -> Result<LoadedConfig, ConfigError> {
         let mut config = self.settings_in(read_text(&self.config)?.as_deref())?;
         let lua = Lua::new();
         let path = self.secrets_path();
         let text = read_text(&path)?;
-        let secrets = evaluate(&lua, &path, text.as_deref(), ErrorText::NeverQuotesTheFile)?;
+        let secrets = evaluate(&lua, &path, text.as_deref(), secrets_error)?;
         if let Some(table) = &secrets {
             read_secrets(&StrictMap::root("secrets.lua", table)?)?
                 .complete(&mut config, &file_name(&self.config))?;
@@ -37,11 +42,11 @@ impl LuaConfigFile {
         })
     }
 
-    pub(super) fn config_path(&self) -> &Path {
+    pub fn config_path(&self) -> &Path {
         &self.config
     }
 
-    pub(super) fn secrets_path(&self) -> PathBuf {
+    pub fn secrets_path(&self) -> PathBuf {
         self.config.with_file_name("secrets.lua")
     }
 

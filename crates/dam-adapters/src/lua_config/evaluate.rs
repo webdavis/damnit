@@ -7,6 +7,7 @@ use mlua::{Lua, Table, Value};
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(super) enum ErrorText {
     QuotesTheFile,
+    QuotesWhatItsCodeRaised,
     NeverQuotesTheFile,
 }
 
@@ -36,18 +37,19 @@ pub(super) fn evaluate(
         .eval()
         .map_err(|e| {
             let message = naming_the_whole_path(path, &short_name, &e);
-            ConfigError::Invalid(match (&e, error_text) {
+            ConfigError::Unloadable(match (&e, error_text) {
                 (_, ErrorText::QuotesTheFile) => message,
                 (mlua::Error::SyntaxError { .. }, _) => without_the_text_lua_stopped_at(message),
+                (_, ErrorText::QuotesWhatItsCodeRaised) => message,
                 _ => only_where_it_stopped(path, &short_name, &e),
             })
         })?;
     match value {
         Value::Table(table) => Ok(Some(table)),
         other => Err(ConfigError::Invalid(format!(
-            "{} must return a table, and it returned a {}",
+            "{} must return a table, and it returned {}",
             path.display(),
-            other.type_name()
+            described(&other)
         ))),
     }
 }
@@ -71,6 +73,14 @@ pub(super) fn located_by_the_whole_path(
     line_and_reason
         .starts_with(':')
         .then(|| format!("{}{line_and_reason}", path.display()))
+}
+
+pub(super) fn described(value: &Value) -> String {
+    match value.type_name() {
+        "nil" => "nil".to_string(),
+        name if name.starts_with(['a', 'e', 'i', 'o', 'u']) => format!("an {name}"),
+        name => format!("a {name}"),
+    }
 }
 
 fn only_where_it_stopped(path: &Path, short_name: &str, error: &mlua::Error) -> String {

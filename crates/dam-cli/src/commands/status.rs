@@ -1,7 +1,7 @@
-use dam_application::Standing;
 use dam_domain::Permission::{ConfigRead, ConflictRead, RemoteRead};
 use dam_domain::{Authored, Change};
 
+use super::token_warnings::token_warnings;
 use crate::args::{DiffArgs, StatusArgs};
 use crate::context::Context;
 use crate::error::CliError;
@@ -24,7 +24,7 @@ pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliE
     let remotes: Vec<_> = ctx.config.remotes.iter().map(|r| r.name.clone()).collect();
     let s = ctx.dam().status(&remotes)?;
     let shown = |permission| may(ctx.access.as_ref(), permission);
-    let warnings = token_warnings(ctx);
+    let warnings = token_warnings(&ctx.config.tokens).map(|w| format!("warning: {w}"));
     report(&StatusView {
         staged: authored_rows(ctx, &s.staged, args.full).collect(),
         unstaged: owner_rows(ctx, &s.unstaged, args.full).collect(),
@@ -82,16 +82,6 @@ fn owner_rows<'a>(
     changes
         .iter()
         .map(move |c| ChangeRow::new(c, None, full).sent(owner, None))
-}
-
-fn token_warnings(ctx: &Context) -> impl Iterator<Item = String> + '_ {
-    let tokens = &ctx.config.tokens;
-    let skipped = tokens.warnings.iter().map(|w| format!("warning: {w}"));
-    let disabled = tokens.entries.iter().filter_map(|t| match &t.standing {
-        Standing::Disabled(why) => Some(format!("warning: token {} is disabled: {why}", t.name)),
-        Standing::Usable(_) => None,
-    });
-    skipped.chain(disabled)
 }
 
 #[cfg(test)]

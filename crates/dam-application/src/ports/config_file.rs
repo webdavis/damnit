@@ -19,6 +19,7 @@ pub trait ConfigFile {
 #[derive(Debug)]
 pub enum ConfigError {
     Io(String),
+    Unloadable(String),
     Invalid(String),
 }
 
@@ -26,7 +27,7 @@ impl fmt::Display for ConfigError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ConfigError::Io(s) => write!(f, "reading config: {s}"),
-            ConfigError::Invalid(s) => write!(f, "config: {s}"),
+            ConfigError::Unloadable(s) | ConfigError::Invalid(s) => write!(f, "config: {s}"),
         }
     }
 }
