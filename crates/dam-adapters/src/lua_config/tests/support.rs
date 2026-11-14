@@ -58,11 +58,13 @@ impl Folder {
     }
 
     pub(super) fn loaded(&self) -> LoadedConfig {
-        self.file().load().unwrap()
+        self.file().load_with_credentials().unwrap()
     }
 
     pub(super) fn load(&self) -> Result<Config, ConfigError> {
-        self.file().load().map(|loaded| loaded.config)
+        self.file()
+            .load_with_credentials()
+            .map(|loaded| loaded.config)
     }
 
     pub(super) fn refusal(&self) -> String {

@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use dam_application::{NewToken, TokenName};
+use dam_application::{ConfigFile, NewToken, TokenName};
 use dam_domain::{Grant, Permission, Token};
 
 use super::support::{Folder, secrets};
