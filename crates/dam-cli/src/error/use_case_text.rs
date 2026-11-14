@@ -72,12 +72,6 @@ impl fmt::Display for UseCaseText<'_> {
             UseCaseError::Credential(CredentialError::Missing(n)) => {
                 write!(f, "credential {n} has no source")
             }
-            UseCaseError::Credential(CredentialError::CommandFailed { name, why }) => {
-                write!(f, "the command for {name} failed: {why}")
-            }
-            UseCaseError::Credential(CredentialError::EnvUnset { name, var }) => {
-                write!(f, "{name}: the variable {var} is not set")
-            }
             UseCaseError::Credential(CredentialError::ComputeFailed { remote, name, why }) => {
                 write!(f, "remote {}: computing {name} failed: {why}", remote.0)
             }

@@ -19,7 +19,6 @@ pub trait ConfigFile {
 #[derive(Debug)]
 pub enum ConfigError {
     Io(String),
-    Syntax(String),
     Invalid(String),
 }
 
@@ -27,7 +26,6 @@ impl fmt::Display for ConfigError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ConfigError::Io(s) => write!(f, "reading config: {s}"),
-            ConfigError::Syntax(s) => write!(f, "config is not TOML: {s}"),
             ConfigError::Invalid(s) => write!(f, "config: {s}"),
         }
     }

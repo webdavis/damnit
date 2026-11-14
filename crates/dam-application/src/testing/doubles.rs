@@ -109,8 +109,6 @@ impl CredentialSource for EchoCredentials {
     fn resolve(&self, spec: &CredentialSpec) -> Result<Secret, CredentialError> {
         Ok(match spec {
             CredentialSpec::Literal { value, .. } => value.clone(),
-            CredentialSpec::Command { argv, .. } => argv.join(" ").into(),
-            CredentialSpec::Env { var, .. } => format!("${var}").into(),
             CredentialSpec::Computed { remote, name } => format!("{}.{name}", remote.0).into(),
         })
     }
