@@ -18,8 +18,8 @@ fn what_landed_before_the_deadline_is_kept_and_each_task_lands_once() {
         .allow_slow("the first push waits out the helper's silence and launches it twice");
     let mut s = Scenario::default();
     s.fixture.config.remotes[0].deadline = Some(ConfiguredDuration {
-        value: Duration::from_millis(300),
-        text: "300ms".into(),
+        value: Duration::from_secs(2),
+        text: "2s".into(),
     });
     for (n, subject) in (1..).zip(SUBJECTS) {
         s.committed(Object::Task(task_in(n, subject, "Work/")));

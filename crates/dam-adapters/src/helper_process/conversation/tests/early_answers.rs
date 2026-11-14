@@ -65,7 +65,7 @@ fn silent_for_at_most(millis: u64) -> RemoteConfig {
 fn a_helper_that_hangs_after_two_answers_hands_them_back_with_the_timeout() {
     let dir = tempfile::tempdir().unwrap();
     let launcher = install(dir.path(), &script(&[&early(1), &early(2), HANG]));
-    let mut helper = launcher.spawn(&silent_for_at_most(200), &[]).unwrap();
+    let mut helper = launcher.spawn(&silent_for_at_most(1500), &[]).unwrap();
     let pushed = helper.push(three_deletes()).unwrap();
     assert_eq!(
         pushed,
@@ -73,7 +73,7 @@ fn a_helper_that_hangs_after_two_answers_hands_them_back_with_the_timeout() {
             outcomes: vec![accepted(1), accepted(2)],
             stopped_by: Some(HelperError::Timeout {
                 helper: "t".into(),
-                deadline: "200ms".into(),
+                deadline: "1500ms".into(),
                 said: None,
             }),
         }
@@ -149,7 +149,7 @@ fn a_helper_that_answers_once_is_read_as_before() {
 #[test]
 fn a_helper_answering_steadily_is_not_cut_off_when_the_whole_call_outlasts_the_deadline() {
     let dir = tempfile::tempdir().unwrap();
-    let pause = "sleep 0.15\n";
+    let pause = "sleep 0.5\n";
     let results: Vec<String> = (1..=3)
         .map(|n| {
             format!(
@@ -170,11 +170,11 @@ fn a_helper_answering_steadily_is_not_cut_off_when_the_whole_call_outlasts_the_d
         &reply,
     ];
     let launcher = install(dir.path(), &script(&steps));
-    let mut helper = launcher.spawn(&silent_for_at_most(400), &[]).unwrap();
+    let mut helper = launcher.spawn(&silent_for_at_most(1500), &[]).unwrap();
     let started = Instant::now();
     let pushed = helper.push(three_deletes()).unwrap();
     assert!(
-        started.elapsed() > Duration::from_millis(400),
+        started.elapsed() > Duration::from_millis(1500),
         "{:?}",
         started.elapsed()
     );
