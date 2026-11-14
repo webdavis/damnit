@@ -47,7 +47,7 @@ pub use use_cases::prefix::{Named, SHORTEST_OID_PREFIX};
 pub use use_cases::pull::PullReport;
 pub use use_cases::push::PushReport;
 pub use use_cases::reminders::DueReminder;
-pub use use_cases::remove::RemovePlan;
+pub use use_cases::remove::{ItemAndTask, Removal, RemovePlan};
 pub use use_cases::resolve::Side;
 pub use use_cases::restore::Restored;
 pub use use_cases::status::{Status, Unpushed};

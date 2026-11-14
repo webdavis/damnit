@@ -1,8 +1,9 @@
 use dam_domain::Oid;
 use serde::Serialize;
 
-use dam_application::Named;
+use dam_application::{Named, Removal};
 
+use self::answer::Answer;
 use crate::args::RmArgs;
 use crate::commands::settled::Settled;
 use crate::context::Context;
@@ -43,14 +44,24 @@ pub(crate) fn run(ctx: &Context, args: RmArgs) -> Result<Report, CliError> {
         Named::Object(oid) => oid,
         Named::Item(hash) => return report(&Settled::new(&ctx.dam().dismiss(&hash)?)),
     };
-    let plan = ctx.dam().remove(&oid)?;
-    report(&Removed {
-        oid: &oid,
-        descendants: &plan.moved_up,
-        dependents: &plan.dependents,
-        attached: &plan.attached,
-    })
+    let removal = ctx.dam().remove_or_send(&oid)?;
+    report_removal(&removal)
 }
+
+fn report_removal(removal: &Removal) -> Result<Report, CliError> {
+    match removal {
+        Removal::Removed(plan) => report(&Removed {
+            oid: &plan.oid,
+            descendants: &plan.moved_up,
+            dependents: &plan.dependents,
+            attached: &plan.attached,
+        }),
+        Removal::Waiting(about) => report(&Answer::about("waiting", about)),
+        Removal::Declined(about) => report(&Answer::about("declined", about)),
+    }
+}
+
+mod answer;
 
 #[cfg(test)]
 mod tests;

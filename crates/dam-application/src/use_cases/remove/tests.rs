@@ -96,3 +96,5 @@ fn rm_that_fails_between_two_children_moves_neither() {
     let dam = s.fixture.dam(&store);
     store.assert_unchanged_when_any_write_fails(|| dam.remove(&oid(1)).map(drop));
 }
+
+mod take_back;

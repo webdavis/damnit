@@ -27,6 +27,11 @@ pub enum ItemRefusal {
         target: Oid,
         fields: Vec<Field>,
     },
+    RemovesAChangedTask {
+        hash: ItemHash,
+        target: Oid,
+        fields: Vec<Field>,
+    },
     Cycle {
         hash: ItemHash,
         target: Oid,
@@ -59,6 +64,7 @@ impl ItemRefusal {
             ItemRefusal::TargetNotCommitted { .. } => "target_not_committed",
             ItemRefusal::TargetStaged { .. } => "target_staged",
             ItemRefusal::Clash { .. } => "item_clash",
+            ItemRefusal::RemovesAChangedTask { .. } => "item_removes_a_changed_task",
             ItemRefusal::Cycle { .. } => "item_cycle",
             ItemRefusal::Blocked { .. } => "item_blocked",
             ItemRefusal::EditedSinceAdded { .. } => "item_edited_since_added",

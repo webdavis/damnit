@@ -335,6 +335,7 @@ The permissions are `task:` and `event:` `read`, `create`, `change`, `move` and 
 |---|---|
 | `ls`, `show`, `agenda`, `reminders` | `task:read` or `event:read`; objects outside every grant are left out, oids included |
 | `new`, `edit`, `done` | `task:create` or `event:create`, `task:change` or `event:change`, `task:complete` |
+| `rm` | nothing for its own waiting item; `task:remove` or `event:remove` to send a removal |
 | `status` | nothing for its own items; `stage:read`, `working:read`, `pending:read` and `conflict:read` for the rest, each row only for objects a grant covers |
 | `diff` | `working:read` and `stage:read` |
 | `log`, `show <commit>` | `history:read` |
@@ -361,7 +362,8 @@ the add; settle it with `dam resolve <hash> --ours|--theirs`. An item that would
 cycle, or completes a task with open children or dependencies, is refused the way your own `edit`
 or `done` would be. `dam reset` sends an added item back to waiting and keeps your own edits.
 `dam rm <hash>` declines it, and the same change sent again is refused. A token may `dam rm` its
-own waiting item.
+own waiting item. A token's `dam rm <oid>` on one of your tasks needs `task:remove` and waits as a
+removal item.
 
 Your own rows in `status` and `log` read `you` to you and `owner` to a token.
 
@@ -383,8 +385,8 @@ Your own repeat with a new `--path` or subject carries the task's children, as `
 apart, and so are each session's when the request passes `--meta session=...`.
 
 A token cannot run `mv`, `add`, `reset`, `restore`, `commit`, `remote add`, `resolve`, `day`,
-`config` or `token`, `rm` an object, or set `--focus`. A read pulls a stale remote only when the
-token holds `remote:pull` for it.
+`config` or `token`, or set `--focus`. A read pulls a stale remote only when the token holds
+`remote:pull` for it.
 
 An unknown permission is skipped. An unknown key, or a reserved name such as `config:change`,
 disables the token, and so does sharing a value with another token. A `schema` above 1 disables

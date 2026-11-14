@@ -137,8 +137,11 @@ dam rm <hash>
 dam done <oid>
 ```
 
-A token cannot run `dam mv`, `dam rm` on a task, `dam done --force`, or `dam edit --focus`. Each
-exits 4, rule `not_open_to_tokens`.
+`dam rm <oid>` on a task the owner has added sends a removal item. It needs `task:remove`. The task
+stays until the owner adds or declines the removal.
+
+A token cannot run `dam mv`, `dam done --force`, or `dam edit --focus`. Each exits 4, rule
+`not_open_to_tokens`.
 
 ## Reading
 

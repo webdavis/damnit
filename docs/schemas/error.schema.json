@@ -97,6 +97,7 @@
         "target_not_committed",
         "target_staged",
         "item_clash",
+        "item_removes_a_changed_task",
         "item_cycle",
         "item_blocked",
         "not_your_item",

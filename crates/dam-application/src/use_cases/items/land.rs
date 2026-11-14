@@ -86,7 +86,7 @@ impl Dam<'_> {
         };
         let change =
             Change::between(before.cloned(), Some(after)).ok_or(ItemRefusal::NothingChanged)?;
-        self.send(author, change, related)
+        self.send(author, change, related).map(Landed::Sent)
     }
 
     pub(crate) fn refuse_unless_permitted(
@@ -107,12 +107,12 @@ impl Dam<'_> {
         }
     }
 
-    fn send(
+    pub(crate) fn send(
         &self,
         author: TokenAuthor,
         change: Change,
         related: &dyn Fn(&Item) -> bool,
-    ) -> Result<Landed, UseCaseError> {
+    ) -> Result<Sent, UseCaseError> {
         for earlier in self.store.items()? {
             if earlier.author.name != author.name
                 || !related(&earlier)
@@ -122,10 +122,10 @@ impl Dam<'_> {
             }
             match earlier.outcome {
                 Outcome::Waiting => {
-                    return Ok(Landed::Sent(Sent {
+                    return Ok(Sent {
                         answer: Answer::Duplicate,
                         item: earlier,
-                    }));
+                    });
                 }
                 Outcome::Declined(_) => return Err(ItemRefusal::Declined(earlier.hash).into()),
                 Outcome::Added(_) | Outcome::Withdrawn(_) => {}
@@ -140,7 +140,7 @@ impl Dam<'_> {
             Change::Create { .. } => Answer::New,
             Change::Update { .. } | Change::Delete { .. } => Answer::Changed,
         };
-        Ok(Landed::Sent(Sent { answer, item }))
+        Ok(Sent { answer, item })
     }
 }
 

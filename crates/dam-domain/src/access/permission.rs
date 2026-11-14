@@ -104,6 +104,13 @@ impl Permission {
         }
     }
 
+    pub fn remove(kind: Kind) -> Permission {
+        match kind {
+            Kind::Task => Permission::TaskRemove,
+            Kind::Event => Permission::EventRemove,
+        }
+    }
+
     pub fn kind(&self) -> Option<Kind> {
         match self.as_str().split_once(':').map(|(kind, _)| kind) {
             Some("task") => Some(Kind::Task),
