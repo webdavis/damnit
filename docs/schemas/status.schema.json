@@ -16,21 +16,38 @@
       "items": {
         "type": "object",
         "required": ["kind"],
-        "if": { "properties": { "kind": { "const": "missing_upstream" } } },
-        "then": {
-          "required": ["remote", "tasks"],
-          "properties": {
-            "remote": { "type": "string" },
-            "tasks": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "required": ["oid", "subject"],
-                "properties": { "oid": { "$ref": "#/$defs/id" }, "subject": { "type": "string" } }
+        "allOf": [
+          {
+            "if": { "properties": { "kind": { "const": "missing_upstream" } } },
+            "then": {
+              "required": ["remote", "tasks"],
+              "properties": {
+                "remote": { "type": "string" },
+                "tasks": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["oid", "subject"],
+                    "properties": { "oid": { "$ref": "#/$defs/id" }, "subject": { "type": "string" } }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "description": "A create that got no answer, of an object since removed here. The remote may hold a copy dam has no id for.",
+            "if": { "properties": { "kind": { "const": "create_in_doubt_removed" } } },
+            "then": {
+              "required": ["remote", "oid", "subject", "path"],
+              "properties": {
+                "remote": { "type": "string" },
+                "oid": { "$ref": "#/$defs/id" },
+                "subject": { "type": "string" },
+                "path": { "type": "string" }
               }
             }
           }
-        }
+        ]
       }
     },
     "unpushed": {

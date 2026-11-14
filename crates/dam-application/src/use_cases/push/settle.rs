@@ -32,6 +32,15 @@ impl Dam<'_> {
                 why: why.clone(),
             })?;
         }
+        for removed in &settlement.removed_in_doubt {
+            let base = removed.base();
+            store.add_notice(&Notice::CreateInDoubtRemoved {
+                remote: remote.name.clone(),
+                oid: base.oid.clone(),
+                subject: base.subject.clone(),
+                path: base.path.clone(),
+            })?;
+        }
         for oid in &settlement.answered {
             store.count_answer(&remote.name, oid)?;
         }

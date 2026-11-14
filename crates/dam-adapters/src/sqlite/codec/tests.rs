@@ -87,6 +87,12 @@ fn every_notice_variant_round_trips() {
                 subject: "milk".into(),
             }],
         },
+        Notice::CreateInDoubtRemoved {
+            remote: RemoteName("t".into()),
+            oid: oid(6),
+            subject: "Ada".into(),
+            path: dam_domain::Path::parse("Work/").unwrap(),
+        },
     ];
     for n in notices {
         assert_eq!(notice_from_json(&notice_to_json(&n).unwrap()).unwrap(), n);

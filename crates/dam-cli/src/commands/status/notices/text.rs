@@ -54,6 +54,15 @@ impl NoticeRow<'_> {
                 "{remote} no longer lists {}; dam done <oid> if finished there, dam rm <oid> if deleted",
                 counted(tasks.len(), "open task", "open tasks")
             ),
+            NoticeRow::CreateInDoubtRemoved {
+                remote,
+                subject,
+                path,
+                ..
+            } => format!(
+                "the create of {subject:?} in {path} got no answer from {remote}, and it was then \
+                 removed here; {remote} may hold a copy to remove by hand"
+            ),
             NoticeRow::KindChanged { oid, ours, theirs } => format!(
                 "{} is {} {ours} here and {} {theirs} upstream",
                 oid.short(),

@@ -20,6 +20,7 @@ mod refile_holds;
 mod refiles;
 mod refusals;
 mod releases;
+mod removed_in_doubt;
 mod retries;
 mod scope;
 mod stops;

@@ -17,6 +17,7 @@ pub(super) struct Settlement {
     pub(super) doubted: Vec<(Oid, Vec<Field>)>,
     pub(super) confirmed: Vec<(Oid, Vec<Field>)>,
     pub(super) created: Vec<Oid>,
+    pub(super) removed_in_doubt: Vec<Object>,
 }
 
 impl Settlement {
@@ -34,6 +35,7 @@ impl Settlement {
         self.doubted.extend(later.doubted);
         self.confirmed.extend(later.confirmed);
         self.created.extend(later.created);
+        self.removed_in_doubt.extend(later.removed_in_doubt);
     }
 
     pub(super) fn pushed<'a>(
