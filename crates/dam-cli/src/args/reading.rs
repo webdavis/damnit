@@ -68,6 +68,6 @@ pub(crate) struct FilterArgs {
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum FilterCommand {
-    #[command(about = "List saved filters with their queries")]
+    #[command(about = "List saved filters with their kinds and queries")]
     List,
 }

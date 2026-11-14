@@ -261,9 +261,9 @@ start of today until now: each one's `at`, its `anchor` (the due time or start) 
 field's JSON key such as `labels:` or `attached:`; any other key is a category and the value must
 be one of its values. Saved filters live under `filter.<name>` in `config.lua` and run by name.
 
-`dam filter list` prints the saved filters and `dam category list` prints the label categories with
-their values and whether each is exclusive:
-`{"filters": [{"name": "today", "query": "due:today | overdue"}]}` and
+`dam filter list` prints the saved filters with their kind, `query` or `function`, and
+`dam category list` prints the label categories with their values and whether each is exclusive:
+`{"filters": [{"name": "today", "kind": "query", "query": "due:today | overdue"}]}` and
 `{"categories": [{"name": "effort", "values": ["light", "admin", "deep"], "exclusive": true}]}`
 under `--json`, an empty array when nothing is declared.
 

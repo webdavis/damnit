@@ -2,6 +2,7 @@
   "filters": [
     {
       "name": "today",
+      "kind": "query",
       "query": "due:today | overdue"
     }
   ]

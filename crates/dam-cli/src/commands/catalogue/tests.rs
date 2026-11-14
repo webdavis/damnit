@@ -42,17 +42,44 @@ fn a_category_line_names_the_values_and_whether_it_holds_one() {
 }
 
 #[test]
-fn a_filter_line_is_its_name_and_its_query() {
+fn a_filter_line_is_its_name_its_kind_and_its_query() {
     let mut config = config();
     config.filters = vec![FilterConfig {
         name: "today".into(),
         rule: FilterRule::Query("due:today | overdue".into()),
     }];
     let report = run_filter(&config, FilterCommand::List).unwrap();
-    assert_eq!(report.human, "today  due:today | overdue");
+    assert_eq!(report.human, "today  query  due:today | overdue");
     assert_eq!(
         report.data["filters"][0],
-        serde_json::json!({"name": "today", "query": "due:today | overdue"})
+        serde_json::json!({"name": "today", "kind": "query", "query": "due:today | overdue"})
+    );
+}
+
+#[test]
+fn a_function_filter_shows_its_kind_and_any_query_but_never_its_source() {
+    let mut config = config();
+    config.filters = vec![
+        FilterConfig {
+            name: "slipping".into(),
+            rule: FilterRule::Function,
+        },
+        FilterConfig {
+            name: "stuck".into(),
+            rule: FilterRule::QueryThenFunction("path:work/".into()),
+        },
+    ];
+    let report = run_filter(&config, FilterCommand::List).unwrap();
+    assert_eq!(
+        report.human,
+        "slipping  function  -\nstuck     function  path:work/"
+    );
+    assert_eq!(
+        report.data["filters"],
+        serde_json::json!([
+            {"name": "slipping", "kind": "function"},
+            {"name": "stuck", "kind": "function", "query": "path:work/"},
+        ])
     );
 }
 
