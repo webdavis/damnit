@@ -111,6 +111,7 @@ impl CredentialSource for EchoCredentials {
             CredentialSpec::Literal { value, .. } => value.clone(),
             CredentialSpec::Command { argv, .. } => argv.join(" ").into(),
             CredentialSpec::Env { var, .. } => format!("${var}").into(),
+            CredentialSpec::Computed { remote, name } => format!("{}.{name}", remote.0).into(),
         })
     }
 }
