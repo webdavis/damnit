@@ -43,6 +43,7 @@ pub use use_cases::edit::{EditFields, apply};
 pub use use_cases::items::accept::{Added, AddedRemoval};
 pub use use_cases::items::land::{Answer, Landed, Sent};
 pub use use_cases::items::refusal::ItemRefusal;
+pub use use_cases::items::reopen::Reopened;
 pub use use_cases::new_object::{NewEvent, NewTask};
 pub use use_cases::prefix::{Named, SHORTEST_OID_PREFIX};
 pub use use_cases::pull::PullReport;

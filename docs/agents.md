@@ -160,7 +160,7 @@ dam rm --id flaky-login --json
 |---|---|---|
 | `withdrawn` | Your item was still waiting. It is gone. | The item, the task. For a new task they are the same hash. |
 | `waiting` | The owner had added the task. A removal item waits for the owner to add or decline. A repeat names the same item. | The removal item, the task |
-| `declined` | The owner declined that removal. The task stays, and the removal is not sent again. | The removal item, the task |
+| `declined` | The owner declined that removal. The task stays, and the removal is not sent again unless the owner puts it back to waiting with `dam reset <hash>`. | The removal item, the task |
 | `nothing` | Nothing of yours is under that id: never sent, already withdrawn, removed, outside your grants, or your item was declined before the owner added it. | Null, null |
 
 Every answer exits 0, so a repeat is safe:
