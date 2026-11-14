@@ -1,7 +1,7 @@
 mod resources;
 
 pub use dam_helper::{MAX_ERROR_BODY_CHARS, ServiceError as ApiError};
-pub use resources::{Deadline, Due, Item, Project, Section, SyncResponse, SyncWrite};
+pub use resources::{Deadline, Due, Item, NotAccepted, Project, Section, SyncResponse, SyncWrite};
 
 use dam_helper::{Secret, agent, base_url, credential, read_answer};
 

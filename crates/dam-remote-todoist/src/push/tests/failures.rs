@@ -1,8 +1,8 @@
 use dam_protocol::Mutation;
 
 use super::fixtures::{mutation, sync_body, task, with_fields};
-use crate::api::ApiError;
 use crate::api::fake::{FakeTodoist, answered, rate_limited};
+use crate::api::{ApiError, SyncResponse, SyncWrite, TodoistSync};
 
 const SERVICE: &str = "Todoist";
 use crate::push::push;
@@ -95,4 +95,26 @@ fn a_rate_limit_stops_the_push_and_names_the_retry_time() {
     assert!(matches!(err, ApiError::RateLimited { .. }), "{err:?}");
     assert_eq!(err.retry_after(), Some(std::time::Duration::from_secs(42)));
     assert!(err.to_string().contains("42s"), "{err}");
+}
+
+struct TodoistThatGivesNoVerdicts;
+
+impl TodoistSync for TodoistThatGivesNoVerdicts {
+    fn read_all(&self) -> Result<SyncResponse, ApiError> {
+        serde_json::from_value(sync_body()).map_err(|e| ApiError::decode(SERVICE, e))
+    }
+
+    fn read_changes(&self, _since: &str) -> Result<SyncResponse, ApiError> {
+        self.read_all()
+    }
+
+    fn write(&self, _commands: &[serde_json::Value]) -> Result<SyncWrite, ApiError> {
+        Ok(SyncWrite::default())
+    }
+}
+
+#[test]
+fn a_write_todoist_gave_no_verdict_for_leaves_its_mutation_and_the_rest_unanswered() {
+    let response = push(&TodoistThatGivesNoVerdicts, three_subject_updates()).unwrap();
+    assert!(response.results.is_empty(), "{:?}", response.results);
 }
