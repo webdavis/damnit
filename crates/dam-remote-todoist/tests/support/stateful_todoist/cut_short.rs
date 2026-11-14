@@ -18,6 +18,7 @@ impl Release {
 
 pub(super) enum Cut {
     RateLimit,
+    Unauthorized,
     Hang(Release),
 }
 
@@ -28,6 +29,7 @@ impl Cut {
                 let limited = Reply::json(429, json!({"error": "Rate limit exceeded"}));
                 Some(limited.with_header("Retry-After", "42"))
             }
+            Cut::Unauthorized => Some(Reply::json(401, json!({"error": "Unauthorized"}))),
             Cut::Hang(release) => {
                 while !release.0.load(Ordering::SeqCst) {
                     std::thread::sleep(Duration::from_millis(10));
@@ -41,6 +43,11 @@ impl Cut {
 impl Held {
     pub fn rate_limiting_after(mut self, writes: u32) -> Held {
         self.cut_short_after = Some((writes, Cut::RateLimit));
+        self
+    }
+
+    pub fn unauthorized_after(mut self, writes: u32) -> Held {
+        self.cut_short_after = Some((writes, Cut::Unauthorized));
         self
     }
 

@@ -43,7 +43,9 @@ pub fn plan_for(
             let remote = addressed(m, "update")?;
             update::update_plan(tree, m, object, remote)
         }
-        other => Err(Failure::OnlyThisMutation(format!("unknown op {other:?}"))),
+        other => Err(Failure::RefusedWithoutAVerdict(format!(
+            "unknown op {other:?}"
+        ))),
     }
 }
 
@@ -53,8 +55,8 @@ fn create_plan(
     object: &WireObject,
     containers_filled_this_push: &[String],
 ) -> Result<Plan, Failure> {
-    let shape =
-        shape_for(tree, object, containers_filled_this_push).map_err(Failure::OnlyThisMutation)?;
+    let shape = shape_for(tree, object, containers_filled_this_push)
+        .map_err(Failure::RefusedWithoutAVerdict)?;
     let temp_id = resend_stable_temp_id(m);
     let mut commands = Vec::new();
     match &shape {
@@ -112,18 +114,19 @@ fn create_plan(
 }
 
 fn numbered(m: &Mutation, ordinal: usize) -> Result<String, Failure> {
-    repeatable_command_uuid(&m.idempotency_key, ordinal).map_err(Failure::OnlyThisMutation)
+    repeatable_command_uuid(&m.idempotency_key, ordinal).map_err(Failure::RefusedWithoutAVerdict)
 }
 
 pub fn missing_object(op: &str) -> Failure {
-    Failure::OnlyThisMutation(format!("{op} without an object"))
+    Failure::RefusedWithoutAVerdict(format!("{op} without an object"))
 }
 
 fn addressed(m: &Mutation, op: &str) -> Result<RemoteId, Failure> {
     let text = m
         .remote_id
         .as_deref()
-        .ok_or_else(|| Failure::OnlyThisMutation(format!("{op} without a Todoist id")))?;
-    text.parse()
-        .map_err(|e| Failure::OnlyThisMutation(format!("{op} with an unusable Todoist id: {e}")))
+        .ok_or_else(|| Failure::RefusedWithoutAVerdict(format!("{op} without a Todoist id")))?;
+    text.parse().map_err(|e| {
+        Failure::RefusedWithoutAVerdict(format!("{op} with an unusable Todoist id: {e}"))
+    })
 }

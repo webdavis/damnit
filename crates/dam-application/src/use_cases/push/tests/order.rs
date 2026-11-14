@@ -123,6 +123,7 @@ fn refusing_removals(ms: &[RemoteMutation]) -> Vec<MutationOutcome> {
             verdict: match m.op {
                 Delete => MutationVerdict::Refused {
                     why: "stopped".into(),
+                    unasked: false,
                 },
                 _ => MutationVerdict::Accepted { remote_id: None },
             },

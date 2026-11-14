@@ -6,7 +6,7 @@ use crate::push::commands::{args, command};
 
 pub fn removal_plan(tree: &Tree, m: &Mutation, remote: RemoteId) -> Result<Plan, Failure> {
     if let Some(held) = tree.what_it_still_holds(&remote) {
-        return Err(Failure::OnlyThisMutation(format!(
+        return Err(Failure::RefusedWithoutAVerdict(format!(
             "Todoist still shows {held} under it, and removing it would remove them too; \
              pull, then push"
         )));

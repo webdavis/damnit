@@ -52,7 +52,7 @@ impl Settlement {
 
     fn settle(&mut self, mutation: &RemoteMutation, verdict: MutationVerdict) {
         let oid = mutation.oid.clone();
-        if !matches!(verdict, MutationVerdict::Unanswered { .. }) {
+        if verdict.is_an_answer_from_the_remote() {
             self.answered.push(oid.clone());
         }
         match verdict {
@@ -73,7 +73,7 @@ impl Settlement {
                     (_, None) => {}
                 }
             }
-            MutationVerdict::Refused { why } => self.failed.push((oid, why)),
+            MutationVerdict::Refused { why, .. } => self.failed.push((oid, why)),
             MutationVerdict::Unanswered { why } => self.unanswered(mutation, why),
         }
     }

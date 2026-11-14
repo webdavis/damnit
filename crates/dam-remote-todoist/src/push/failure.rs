@@ -3,7 +3,8 @@ use super::shape::Shape;
 use crate::api::{ApiError, NotAccepted, SyncWrite};
 
 pub enum Failure {
-    OnlyThisMutation(String),
+    RefusedWithoutAVerdict(String),
+    RefusedAfterAVerdict(String),
     Unanswered(String),
     Unreachable(String),
     StopsThePush(String),
@@ -16,7 +17,7 @@ impl From<ApiError> for Failure {
         match e {
             rate @ ApiError::RateLimited { .. } => Failure::StopsThePush(rate.to_string()),
             ApiError::Http { status, .. } if status < FIRST_SERVER_ERROR => {
-                Failure::OnlyThisMutation(e.to_string())
+                Failure::RefusedWithoutAVerdict(e.to_string())
             }
             ApiError::Http { status, body, .. } => Failure::Unanswered(format!(
                 "Todoist answered with a server error, {status}: {body}"
@@ -38,7 +39,7 @@ impl From<ApiError> for Failure {
 
 impl From<String> for Failure {
     fn from(why: String) -> Failure {
-        Failure::OnlyThisMutation(why)
+        Failure::RefusedWithoutAVerdict(why)
     }
 }
 
@@ -59,7 +60,7 @@ pub fn every_command_accepted(commands: &[Command], written: &SyncWrite) -> Resu
     }
     match refused.into_iter().next() {
         None => Ok(()),
-        Some((_, why)) if accepted.is_empty() => Err(Failure::OnlyThisMutation(why)),
+        Some((_, why)) if accepted.is_empty() => Err(Failure::RefusedAfterAVerdict(why)),
         Some((kind, why)) => Err(Failure::Unanswered(format!(
             "Todoist accepted {} but refused {kind}: {why}",
             accepted.join(", ")

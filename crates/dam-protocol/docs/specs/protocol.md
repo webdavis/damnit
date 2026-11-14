@@ -93,10 +93,14 @@ One push result:
 | `oid` | the mutation this answers |
 | `ok` | whether the remote did it, left out when `unanswered` is true |
 | `unanswered` | true when the helper cannot tell whether the remote did it |
+| `unasked` | true when `ok` is false and the remote gave no verdict on the mutation |
 | `remote_id` | the remote's identity for the object, after a create |
 | `why` | the reason, when `ok` is false or `unanswered` is true |
 
-A result with neither `ok` nor `unanswered` is a protocol error.
+A result with neither `ok` nor `unanswered` is a protocol error. `unasked` is written only when
+true, and its absence reads as a refusal the remote gave. A helper sets it on a refusal it made
+before asking the remote and on a whole request the remote turned away without running it. `dam`
+counts the answers a remote gave about each object, and a refusal marked `unasked` does not count.
 
 ## Early answers
 

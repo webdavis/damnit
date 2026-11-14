@@ -44,8 +44,18 @@ pub struct PushOutcome {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MutationVerdict {
     Accepted { remote_id: Option<String> },
-    Refused { why: String },
+    Refused { why: String, unasked: bool },
     Unanswered { why: String },
+}
+
+impl MutationVerdict {
+    pub fn is_an_answer_from_the_remote(&self) -> bool {
+        match self {
+            MutationVerdict::Accepted { .. } => true,
+            MutationVerdict::Refused { unasked, .. } => !unasked,
+            MutationVerdict::Unanswered { .. } => false,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
