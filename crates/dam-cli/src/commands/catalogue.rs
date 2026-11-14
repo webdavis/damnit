@@ -49,7 +49,9 @@ struct FilterList<'a> {
 #[derive(Serialize)]
 struct FilterRow<'a> {
     name: &'a str,
-    query: &'a str,
+    kind: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    query: Option<&'a str>,
 }
 
 impl View for FilterList<'_> {
@@ -57,7 +59,10 @@ impl View for FilterList<'_> {
         Human::list(
             self.filters
                 .iter()
-                .map(|f| vec![f.name.to_string(), f.query.to_string()])
+                .map(|f| {
+                    let query = f.query.unwrap_or_default().to_string();
+                    vec![f.name.to_string(), f.kind.to_string(), query]
+                })
                 .collect(),
             "no filters declared",
         )
@@ -88,7 +93,11 @@ fn run_filter(config: &Config, command: FilterCommand) -> Result<Report, CliErro
             .iter()
             .map(|f| FilterRow {
                 name: &f.name,
-                query: f.rule.query().unwrap_or_default(),
+                kind: match f.rule.runs_a_function() {
+                    true => "function",
+                    false => "query",
+                },
+                query: f.rule.query(),
             })
             .collect(),
     })

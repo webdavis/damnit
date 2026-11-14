@@ -27,7 +27,7 @@ fn category_list_and_filter_list_print_what_config_declares() {
     let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_eq!(
         answer,
-        serde_json::json!({"filters": [{"name": "today", "query": "due:today | overdue"}]}),
+        serde_json::json!({"filters": [{"name": "today", "kind": "query", "query": "due:today | overdue"}]}),
         "{answer}"
     );
 
@@ -64,7 +64,7 @@ fn the_catalogue_renders_as_a_toon_table_per_list() {
 
     let (ok, out, err) = sb.dam(&["filter", "list", "--toon"]);
     assert!(ok, "{err}");
-    assert!(out.starts_with("filters[1]{name,query}:"), "{out}");
+    assert!(out.starts_with("filters[1]{name,kind,query}:"), "{out}");
 }
 
 #[test]

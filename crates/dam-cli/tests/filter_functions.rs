@@ -1,6 +1,7 @@
 mod support;
 
 use support::sandbox::Sandbox;
+use support::schema::assert_matches_schema;
 use support::tokens::{grant, grant_to};
 
 const ERRAND_BY_FUNCTION: &str = "{ match = function(task, dam)\n\
@@ -38,6 +39,32 @@ fn ls_by_a_function_filter_prints_what_ls_by_a_text_filter_prints() {
     assert_eq!(
         stdout_of(&sb, &["ls", "by_function", "--json"]),
         stdout_of(&sb, &["ls", "by_text", "--json"])
+    );
+}
+
+#[test]
+fn filter_list_shows_each_kind_and_never_a_functions_source() {
+    let _guard = support::guard("filter_list_shows_each_kind_and_never_a_functions_source");
+    let sb = Sandbox::new();
+    errands(&sb);
+    let human = stdout_of(&sb, &["filter", "list"]);
+    assert_eq!(
+        human,
+        "by_function  function  -\nby_text      query     @errand\n"
+    );
+    let json = stdout_of(&sb, &["filter", "list", "--json"]);
+    let document: serde_json::Value = serde_json::from_str(&json).unwrap();
+    assert_matches_schema(&document, "filter-list.schema.json");
+    assert_eq!(
+        document,
+        serde_json::json!({"filters": [
+            {"name": "by_function", "kind": "function"},
+            {"name": "by_text", "kind": "query", "query": "@errand"},
+        ]})
+    );
+    assert!(
+        !json.contains("errand'") && !json.contains("ipairs"),
+        "{json}"
     );
 }
 
