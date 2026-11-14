@@ -1,15 +1,16 @@
 mod carried;
 mod commands;
+mod created;
 mod plan;
 mod shape;
 
-use dam_protocol::{Mutation, MutationResult, PushResponse, Verdict, WireObject};
+use dam_protocol::{Mutation, MutationResult, PushResponse, Verdict};
 
-use crate::api::{ApiError, Item, Project, Section, SyncWrite, TodoistSync};
-use crate::map::{RemoteId, Tree, api_priority};
+use crate::api::{ApiError, SyncWrite, TodoistSync};
+use crate::map::Tree;
 use commands::Command;
+use created::add_created_to_tree;
 use plan::{missing_object, plan_for, resend_stable_temp_id};
-use shape::Shape;
 
 enum Failure {
     OnlyThisMutation(String),
@@ -101,54 +102,6 @@ fn send_every_command(api: &impl TodoistSync, commands: &[Command]) -> Result<Sy
             .map_err(Failure::OnlyThisMutation)?;
     }
     Ok(written)
-}
-
-fn add_created_to_tree(tree: &mut Tree, object: &WireObject, shape: Shape, id: String) -> String {
-    match shape {
-        Shape::Project { parent_id } => {
-            tree.add_project(Project {
-                id: id.clone(),
-                name: object.subject.clone(),
-                parent_id,
-                is_deleted: false,
-                is_archived: false,
-                inbox_project: false,
-            });
-            RemoteId::Project(id).to_string()
-        }
-        Shape::Section { project_id } => {
-            tree.add_section(Section {
-                id: id.clone(),
-                name: object.subject.clone(),
-                project_id,
-                is_deleted: false,
-            });
-            RemoteId::Section(id).to_string()
-        }
-        Shape::Item {
-            project_id,
-            section_id,
-            parent_id,
-        } => {
-            let task = object.task.as_ref();
-            tree.add_item(Item {
-                id: id.clone(),
-                content: object.subject.clone(),
-                description: object.body.clone(),
-                project_id,
-                section_id,
-                parent_id,
-                priority: task.map(|t| api_priority(t.priority)).unwrap_or(1),
-                due: None,
-                deadline: None,
-                labels: object.labels.clone(),
-                checked: task.is_some_and(|t| t.done),
-                completed_at: None,
-                is_deleted: false,
-            });
-            RemoteId::Item(id).to_string()
-        }
-    }
 }
 
 #[cfg(test)]
