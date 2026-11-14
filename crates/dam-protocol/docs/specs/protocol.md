@@ -62,7 +62,7 @@ a failure. Any other response must carry one of the answer's required keys.
 |---|---|---|
 | capabilities | `protocol` | `protocol`, `kinds`, `fields`, `credentials`, `incremental`, `removes_only_empty_containers` |
 | pull | `objects`, `rejected`, `removed`, `cancelled`, `sync` | the same five, and `complete` |
-| push | `results` | `results`, one entry per mutation |
+| push | `results` | `results`, one entry per mutation, and `stopped` |
 | error | `error` | `error`, the reason as text |
 
 `removed` lists remote ids the remote no longer has. `dam` stops tracking each one.
@@ -80,6 +80,11 @@ in `fields`; otherwise each id changes nothing.
 `rejected` lists objects the helper could not read, each as `{"remote_id", "why"}`. `dam` lands the
 rest of the pull and shows each entry in `dam status` as a notice naming the id and the reason. An
 object `dam` itself cannot read is reported the same way.
+
+`stopped` is the reason a helper stopped partway through a push, as text, as on a rate limit.
+`results` then holds what the remote answered before the stop. `dam` keeps those answers, sends
+the rest again on the next push, and reports the reason as it reports `error`. Without `stopped`,
+the helper did not stop.
 
 One push result:
 

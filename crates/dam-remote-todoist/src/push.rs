@@ -44,7 +44,10 @@ pub fn push(api: &impl TodoistSync, mutations: Vec<Mutation>) -> Result<PushResp
             verdict,
         });
     }
-    Ok(PushResponse { results })
+    Ok(PushResponse {
+        results,
+        stopped: None,
+    })
 }
 
 fn containers_this_push_fills(mutations: &[Mutation]) -> Vec<String> {
