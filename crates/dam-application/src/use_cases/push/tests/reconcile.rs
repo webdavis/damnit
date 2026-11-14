@@ -44,6 +44,7 @@ fn only_the_first_answer_about_a_mutation_counts() {
             map: vec![(oid(1), "r1".into())],
             snapshot: vec![task(1)],
             heard: vec![(oid(1), Heard::Accepted)],
+            created: vec![oid(1)],
             ..Settlement::default()
         }
     );
@@ -58,6 +59,7 @@ fn an_answer_about_a_mutation_never_sent_is_ignored() {
             map: vec![(oid(1), "r1".into())],
             snapshot: vec![task(1)],
             heard: vec![(oid(1), Heard::Accepted)],
+            created: vec![oid(1)],
             ..Settlement::default()
         }
     );
@@ -87,6 +89,7 @@ fn an_unanswered_mutation_fails_with_no_answer_from_the_helper() {
             failed: vec![(oid(2), "no answer from helper".into())],
             unanswered: BTreeSet::from([oid(2)]),
             heard: vec![(oid(1), Heard::Accepted)],
+            created: vec![oid(1)],
             ..Settlement::default()
         }
     );

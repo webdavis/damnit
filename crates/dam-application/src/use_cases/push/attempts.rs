@@ -1,8 +1,8 @@
 use dam_domain::Oid;
 
 use crate::errors::UseCaseError;
-use crate::ports::{RemoteName, Store};
-use crate::remote::RemoteMutation;
+use crate::ports::{Attempt, RemoteName, Store};
+use crate::remote::{MutationOp, RemoteMutation};
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::push::attempting::Attempting;
 use crate::use_cases::push::reconcile::Heard;
@@ -40,10 +40,21 @@ pub(super) fn settle_attempts(
             continue;
         };
         match heard {
+            Heard::Accepted if owes_a_follow_up(attempts, &sent.attempt) => {}
             Heard::Accepted => attempts.clear(),
             Heard::Refused => attempts.retain(|a| a.key != sent.attempt.key),
         }
         store.set_attempts(remote, oid, attempts)?;
     }
     Ok(())
+}
+
+fn owes_a_follow_up(attempts: &[Attempt], accepted: &Attempt) -> bool {
+    let differs_from_what_was_accepted = |attempt: &Attempt| {
+        attempt
+            .declared
+            .iter()
+            .any(|(field, value)| accepted.declared.get(field).is_some_and(|v| v != value))
+    };
+    accepted.op == MutationOp::Create && attempts.iter().any(differs_from_what_was_accepted)
 }
