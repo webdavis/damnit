@@ -10,7 +10,7 @@ return {
   owner = "Ada",
   done = { interactive = true },
   remote = {
-    todoist = { url = "todoist::", stale = "15m", deadline = "60s", path = "work" },
+    todoist = { url = "todoist::", deadline = "60s", path = "work" },
   },
   category = {
     effort = { values = { "light", "admin", "deep" }, exclusive = true },
@@ -28,12 +28,11 @@ fn config_lua_reads_its_owner_remotes_categories_and_filters() {
     assert_eq!(config.done_interactive, Some(true));
     let remote = config.remote("todoist").unwrap();
     assert_eq!(remote.helper, "todoist");
-    assert_eq!(remote.stale.as_ref().unwrap().text, "15m");
-    assert_eq!(
-        remote.stale.as_ref().unwrap().value,
-        Duration::from_secs(900)
-    );
     assert_eq!(remote.deadline.as_ref().unwrap().text, "60s");
+    assert_eq!(
+        remote.deadline.as_ref().unwrap().value,
+        Duration::from_secs(60)
+    );
     assert_eq!(remote.path, Some(Path::parse("work").unwrap()));
     assert!(remote.credentials.is_empty());
     let effort = config.categories.category_of_name("effort").unwrap();

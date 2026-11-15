@@ -15,7 +15,6 @@ fn a_config_holding_a_literal_credential_never_debug_prints_it() {
                 name: "api_token".into(),
                 value: TOKEN.into(),
             }],
-            stale: None,
             deadline: None,
             path: None,
         }],
@@ -31,7 +30,6 @@ fn the_address_is_the_text_after_the_helper_name() {
         helper: "gcal".into(),
         url: "gcal::primary,team@group.calendar.google.com".into(),
         credentials: vec![],
-        stale: None,
         deadline: None,
         path: None,
     };

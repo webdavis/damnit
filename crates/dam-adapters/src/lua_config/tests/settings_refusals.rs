@@ -25,9 +25,9 @@ fn an_unknown_key_is_refused_naming_the_key_and_its_table() {
 #[test]
 fn a_value_of_the_wrong_type_is_refused_by_name() {
     assert_eq!(
-        config("return { remote = { todoist = { url = 'todoist::', stale = 15 } } }").refusal(),
+        config("return { remote = { todoist = { url = 'todoist::', deadline = 15 } } }").refusal(),
         Misread::WrongType {
-            key: "stale".into(),
+            key: "deadline".into(),
             at: in_table("remote.todoist", "config.lua"),
             expected: Expected::Text,
         }
@@ -65,9 +65,7 @@ fn a_credential_on_a_remote_is_refused_as_belonging_in_secrets_lua() {
         Misread::UnknownRemoteKey {
             key: "api_token".into(),
             at: in_table("remote.todoist", "config.lua"),
-            takes: ["url", "stale", "deadline", "path"]
-                .map(String::from)
-                .to_vec(),
+            takes: ["url", "deadline", "path"].map(String::from).to_vec(),
         }
         .into()
     );
@@ -135,9 +133,10 @@ fn a_remote_url_must_name_its_helper() {
 #[test]
 fn a_duration_with_a_sign_is_refused() {
     assert_eq!(
-        config("return { remote = { todoist = { url = 'todoist::', stale = '+15m' } } }").refusal(),
+        config("return { remote = { todoist = { url = 'todoist::', deadline = '+15m' } } }")
+            .refusal(),
         Misread::NotADuration {
-            key: "stale".into(),
+            key: "deadline".into(),
             text: "+15m".into(),
             at: in_table("remote.todoist", "config.lua"),
         }

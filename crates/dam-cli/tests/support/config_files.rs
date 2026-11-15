@@ -5,7 +5,6 @@ use super::token_table::{TokenTable, list, text};
 
 pub struct Remote {
     url: String,
-    stale: Option<String>,
     deadline: Option<String>,
     api_token: Option<String>,
 }
@@ -14,7 +13,6 @@ impl Remote {
     pub fn at(url: &str) -> Remote {
         Remote {
             url: url.to_string(),
-            stale: None,
             deadline: None,
             api_token: None,
         }
@@ -22,13 +20,6 @@ impl Remote {
 
     pub fn fake() -> Remote {
         Remote::at("fake::").api_token("tok-123")
-    }
-
-    pub fn stale(self, after: &str) -> Remote {
-        Remote {
-            stale: Some(after.to_string()),
-            ..self
-        }
     }
 
     pub fn deadline(self, silence: &str) -> Remote {
@@ -70,7 +61,6 @@ impl ConfigFiles {
             .map(|o| format!("  owner = {},\n", text(o)));
         let remotes = self.remotes.iter().map(|(name, remote)| {
             let mut fields = vec![format!("url = {}", text(&remote.url))];
-            fields.extend(remote.stale.iter().map(|s| format!("stale = {}", text(s))));
             fields.extend(
                 remote
                     .deadline

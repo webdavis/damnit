@@ -8,7 +8,6 @@ fn remote_with(credentials: Vec<CredentialSpec>) -> RemoteConfig {
         helper: "todoist".into(),
         url: "todoist::".into(),
         credentials,
-        stale: None,
         deadline: None,
         path: None,
     }

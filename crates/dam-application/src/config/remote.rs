@@ -9,7 +9,6 @@ pub struct RemoteConfig {
     pub helper: String,
     pub url: String,
     pub credentials: Vec<CredentialSpec>,
-    pub stale: Option<ConfiguredDuration>,
     pub deadline: Option<ConfiguredDuration>,
     pub path: Option<Path>,
 }

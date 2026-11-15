@@ -22,7 +22,6 @@ Settings ── what dam is using
   owner                                Ada
   done.interactive                     false (default)
   remote.todoist.url                   todoist::
-  remote.todoist.stale                 15m
   remote.todoist.deadline              60s (default)
   remote.todoist.path                  work/
   remote.todoist.credential.api_token  hidden
@@ -85,10 +84,6 @@ fn a_machine_reader_gets_the_settings_its_schema_names() {
     assert_eq!(
         todoist["deadline"],
         serde_json::json!({"value": "60s", "default": true})
-    );
-    assert_eq!(
-        todoist["stale"],
-        serde_json::json!({"value": "15m", "default": false})
     );
 
     let (ok, out, err) = sb.dam(&["config", "list", "--toon"]);

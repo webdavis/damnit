@@ -23,7 +23,6 @@ pub fn config() -> Config {
                 name: "api_token".into(),
                 value: "t".into(),
             }],
-            stale: None,
             deadline: None,
             path: None,
         }],
