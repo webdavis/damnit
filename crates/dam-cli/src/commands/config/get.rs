@@ -4,6 +4,7 @@ use serde::Serialize;
 
 use super::setting::Setting;
 use super::settings::settings;
+use super::warnings::warnings_naming_only_the_token;
 use crate::error::CliError;
 use crate::output::Report;
 use crate::style::{column, field};
@@ -15,6 +16,8 @@ struct Got<'a> {
     #[serde(skip)]
     key: &'a str,
     setting: &'a Setting,
+    #[serde(skip)]
+    warnings: Vec<String>,
 }
 
 impl View for Got<'_> {
@@ -27,6 +30,10 @@ impl View for Got<'_> {
                 .collect()
         })
     }
+
+    fn warnings(&self) -> Vec<String> {
+        self.warnings.clone()
+    }
 }
 
 pub(super) fn run(file: &LuaConfigFile, key: &str) -> Result<Report, CliError> {
@@ -34,7 +41,11 @@ pub(super) fn run(file: &LuaConfigFile, key: &str) -> Result<Report, CliError> {
     let settings = settings(&config);
     match settings.readings(key).as_slice() {
         [] => Err(Refusal::NoSuchSetting(key.to_string()).into()),
-        [(_, setting)] => report(&Got { key, setting }),
+        [(_, setting)] => report(&Got {
+            key,
+            setting,
+            warnings: warnings_naming_only_the_token(&config.tokens),
+        }),
         readings => Err(CliError::Usage(read_more_than_one_way(key, readings))),
     }
 }

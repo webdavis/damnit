@@ -112,3 +112,39 @@ fn a_token_left_with_no_channel_or_permission_reads_a_dash() {
     assert!(out.contains("  token.odd.grant       -\n"), "{out}");
     assert!(out.contains("  token.odd.via         -\n"), "{out}");
 }
+
+#[test]
+fn an_ignored_or_disabled_token_is_warned_of_by_its_name_alone() {
+    let _guard = support::guard("an_ignored_or_disabled_token_is_warned_of_by_its_name_alone");
+    let tokens = config_tokens();
+    let doctor = tokens.sb.output(&["doctor"]);
+    let reasoned = String::from_utf8_lossy(&doctor.stderr).into_owned();
+    assert!(reasoned.contains("token stray is ignored: "), "{reasoned}");
+    assert!(reasoned.contains("token off is disabled: "), "{reasoned}");
+    let warning = "warning: token stray is ignored; run dam doctor to see why\n\
+warning: token off is disabled; run dam doctor to see why\n";
+    for (line, on_standard_error) in [
+        (&["config", "list"][..], warning),
+        (&["config", "get", "owner"], warning),
+        (&["config", "list", "--json"], ""),
+        (&["config", "get", "token", "--toon"], ""),
+    ] {
+        let out = tokens.sb.output(line);
+        assert!(out.status.success(), "{line:?}: {out:?}");
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert_eq!(stderr, on_standard_error, "{line:?}");
+        let both = format!("{stderr}{}", String::from_utf8_lossy(&out.stdout));
+        assert!(!both.contains("MARKER-stray"), "{line:?}: {both}");
+        for value in &tokens.values {
+            assert!(!both.contains(value.as_str()), "{line:?}: {both}");
+        }
+    }
+    let listed = json_of(&tokens.sb, &["config", "list"]);
+    let in_the_document: Vec<String> = listed["warnings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|w| format!("warning: {}\n", w.as_str().unwrap()))
+        .collect();
+    assert_eq!(in_the_document.concat(), warning);
+}

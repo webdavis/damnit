@@ -4,12 +4,17 @@
   "title": "dam config list answer",
   "description": "What dam config list prints on standard output with --json or --toon: where the two files are and every setting dam is using. A secret is never shown. A file that does not read gives the error document instead.",
   "type": "object",
-  "required": ["config", "secrets", "settings"],
+  "required": ["config", "secrets", "settings", "warnings"],
   "additionalProperties": false,
   "properties": {
     "config": { "type": ["string", "null"], "description": "The path of config.lua, or null when there is none." },
     "secrets": { "type": ["string", "null"], "description": "The path of secrets.lua, beside config.lua, or null when there is none." },
-    "settings": { "$ref": "#/$defs/part" }
+    "settings": { "$ref": "#/$defs/part" },
+    "warnings": {
+      "description": "Each token dam ignores or holds disabled, as dam doctor warns of it. Without --json or --toon each goes to standard error.",
+      "type": "array",
+      "items": { "type": "string" }
+    }
   },
   "$defs": {
     "setting": {

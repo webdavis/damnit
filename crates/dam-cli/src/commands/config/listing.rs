@@ -4,6 +4,7 @@ use serde::Serialize;
 
 use super::setting::Setting;
 use super::settings::settings;
+use super::warnings::warnings_naming_only_the_token;
 use crate::commands::doctor::found;
 use crate::error::CliError;
 use crate::output::Report;
@@ -15,6 +16,7 @@ struct Listing {
     config: Option<String>,
     secrets: Option<String>,
     settings: Setting,
+    warnings: Vec<String>,
 }
 
 impl View for Listing {
@@ -42,6 +44,10 @@ impl View for Listing {
             lines
         })
     }
+
+    fn warnings(&self) -> Vec<String> {
+        self.warnings.clone()
+    }
 }
 
 pub(super) fn run(file: &LuaConfigFile) -> Result<Report, CliError> {
@@ -50,5 +56,6 @@ pub(super) fn run(file: &LuaConfigFile) -> Result<Report, CliError> {
         config: found(file.config_path()),
         secrets: found(&file.secrets_path()),
         settings: settings(&config),
+        warnings: warnings_naming_only_the_token(&config.tokens),
     })
 }
