@@ -28,7 +28,9 @@ pub use follow_ons::{FollowOn, FollowOnRepository, ObjectState};
 pub use helper::{
     ComputeFailure, CredentialError, CredentialSource, HelperError, HelperLauncher, RemoteHelper,
 };
-pub use hooks::{EditRequest, EditRequests, HookEdits, HookFailure, HookWarnings, Hooks};
+pub use hooks::{
+    EditRequest, EditRequests, HookEdits, HookFailure, HookProgress, HookWarnings, Hooks,
+};
 pub use ids::IdRepository;
 pub use items::ItemRepository;
 pub use notices::{DroppedBecause, MissingTask, Notice, NoticeRepository};

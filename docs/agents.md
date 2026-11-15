@@ -248,6 +248,7 @@ and `commit`, the id of the commit that holds the hook's changes when it made on
 `not_reached` counts the tasks the hook was not called for once the pull's 60 seconds for it ran
 out.
 An interrupt during the hook keeps the pull and the hook's changes, and exits 3, `cancelled`.
+The line `dam: running task_pulled for <n> tasks` shows on standard error only in plain text.
 
 A mistyped command line also carries `usage`, which says what was wrong with it:
 

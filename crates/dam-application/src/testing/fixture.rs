@@ -4,8 +4,8 @@ use crate::config::Config;
 use crate::ports::{HelperLauncher, Store};
 use crate::service::{Dam, Remotes};
 use crate::testing::{
-    EchoCredentials, FakeEditRequests, FakeFilterFunctions, FakeHookEdits, FakeHookWarnings,
-    FakeHooks, FakeInterruption, FixedClock, FixedRandom,
+    EchoCredentials, FakeEditRequests, FakeFilterFunctions, FakeHookEdits, FakeHookProgress,
+    FakeHookWarnings, FakeHooks, FakeInterruption, FixedClock, FixedRandom,
 };
 
 pub struct Fixture {
@@ -15,6 +15,7 @@ pub struct Fixture {
     pub filter_functions: FakeFilterFunctions,
     pub hooks: FakeHooks,
     pub hook_warnings: FakeHookWarnings,
+    pub hook_progress: FakeHookProgress,
     pub edit_requests: FakeEditRequests,
     pub hook_edits: FakeHookEdits,
     pub interruption: FakeInterruption,
@@ -29,6 +30,7 @@ impl Default for Fixture {
             filter_functions: FakeFilterFunctions::default(),
             hooks: FakeHooks::default(),
             hook_warnings: FakeHookWarnings::default(),
+            hook_progress: FakeHookProgress::default(),
             edit_requests: FakeEditRequests::default(),
             hook_edits: FakeHookEdits::default(),
             interruption: FakeInterruption::default(),
@@ -47,6 +49,7 @@ impl Fixture {
             filter_functions: &self.filter_functions,
             hooks: &self.hooks,
             hook_warnings: &self.hook_warnings,
+            hook_progress: &self.hook_progress,
             edit_requests: &self.edit_requests,
             hook_edits: &self.hook_edits,
             interruption: &self.interruption,

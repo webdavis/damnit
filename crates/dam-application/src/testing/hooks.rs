@@ -6,7 +6,7 @@ use crate::config::HookEvent;
 use crate::errors::Refusal;
 use crate::ports::{
     EditRequest, EditRequests, FunctionFailure, Histories, History, HookEdits, HookFailure,
-    HookWarnings, Hooks, Pull,
+    HookProgress, HookWarnings, Hooks, Pull,
 };
 use crate::use_cases::edit::EditFields;
 
@@ -72,6 +72,17 @@ pub struct FakeHookWarnings {
 impl HookWarnings for FakeHookWarnings {
     fn warn(&self, failure: &HookFailure) {
         self.warned.borrow_mut().push(failure.clone());
+    }
+}
+
+#[derive(Default)]
+pub struct FakeHookProgress {
+    pub said: RefCell<Vec<(HookEvent, usize)>>,
+}
+
+impl HookProgress for FakeHookProgress {
+    fn running(&self, event: HookEvent, tasks: usize) {
+        self.said.borrow_mut().push((event, tasks));
     }
 }
 
