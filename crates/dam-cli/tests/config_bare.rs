@@ -7,7 +7,11 @@ fn config_alone_prints_the_help_of_its_commands() {
     let _guard = support::guard("config_alone_prints_the_help_of_its_commands");
     let sb = Sandbox::new();
     let asked = sb.output(&["config", "--help"]);
-    for line in [&["config"][..], &["config", "--json"]] {
+    for line in [
+        &["config"][..],
+        &["config", "--json"],
+        &["--json", "config"],
+    ] {
         let alone = sb.output(line);
         assert_eq!(alone.status.code(), Some(0), "{line:?}: {alone:?}");
         assert!(alone.stderr.is_empty(), "{line:?}: {alone:?}");
