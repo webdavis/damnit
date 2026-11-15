@@ -11,9 +11,10 @@ pub(super) fn keep_what_we_sent(
     local: &Object,
     mut theirs: Object,
     attempts: &[Attempt],
-) -> Result<Object, UseCaseError> {
+) -> Result<(Object, usize), UseCaseError> {
+    let mut kept = 0;
     if attempts.is_empty() {
-        return Ok(theirs);
+        return Ok((theirs, kept));
     }
     let held = as_it_stands(helper, caps, &theirs)?;
     let here = as_it_stands(helper, caps, local)?;
@@ -26,7 +27,8 @@ pub(super) fn keep_what_we_sent(
             .any(|a| a.declared.get(field) == Some(value));
         if here.get(field) != Some(value) && sent_by_dam {
             field.copy(local, &mut theirs);
+            kept += 1;
         }
     }
-    Ok(theirs)
+    Ok((theirs, kept))
 }
