@@ -1,43 +1,60 @@
+mod check;
+mod config_check;
+mod machine;
+mod report;
+
 use std::path::Path;
 
-use dam_adapters::LuaConfigFile;
-use serde::Serialize;
-
-use super::token_warnings::token_warnings;
+use crate::args::{CheckName, Command, ConfigArgs, ConfigCommand};
 use crate::error::CliError;
-use crate::output::Report;
-use crate::view::{Human, View, report};
+use crate::output::{self, Format};
+use crate::view;
+use check::Check;
+pub(crate) use machine::Machine;
+use report::Doctor;
 
-#[derive(Serialize)]
-struct Diagnosis {
-    config: Option<String>,
-    secrets: Option<String>,
-    warnings: Vec<String>,
+type Run = fn(&Machine) -> Vec<Check>;
+
+const CHECKS: [(CheckName, Run); 1] = [(CheckName::Config, config_check::check)];
+
+pub(crate) struct Asked<'a> {
+    names: &'a [CheckName],
+    command: &'static str,
 }
 
-impl View for Diagnosis {
-    fn human(&self) -> Human {
-        let or_none = |path: &Option<String>, name: &str| {
-            path.clone().unwrap_or_else(|| format!("no {name}"))
-        };
-        Human::Lines(vec![
-            or_none(&self.config, "config.lua"),
-            or_none(&self.secrets, "secrets.lua"),
-        ])
-    }
-
-    fn warnings(&self) -> Vec<String> {
-        self.warnings.clone()
+pub(crate) fn asked(command: &Command) -> Option<Asked<'_>> {
+    match command {
+        Command::Doctor => Some(Asked {
+            names: &[],
+            command: "doctor",
+        }),
+        Command::Config(ConfigArgs {
+            command: Some(ConfigCommand::Validate),
+        }) => Some(Asked {
+            names: &[CheckName::Config],
+            command: "config validate",
+        }),
+        _ => None,
     }
 }
 
-pub(crate) fn run(file: &LuaConfigFile) -> Result<Report, CliError> {
-    let config = file.check().map_err(CliError::Doctor)?;
-    report(&Diagnosis {
-        config: found(file.config_path()),
-        secrets: found(&file.secrets_path()),
-        warnings: token_warnings(&config.tokens).collect(),
-    })
+pub(crate) fn print(
+    asked: Asked,
+    machine: &Machine,
+    format: Format,
+    color: bool,
+) -> Result<(), CliError> {
+    let checks = CHECKS
+        .iter()
+        .filter(|(name, _)| asked.names.is_empty() || asked.names.contains(name))
+        .flat_map(|(_, check)| check(machine))
+        .collect();
+    let doctor = Doctor::new(asked.command, checks);
+    output::print(format, color, &view::report(&doctor)?)?;
+    match doctor.found_an_issue() {
+        true => Err(CliError::Reported),
+        false => Ok(()),
+    }
 }
 
 pub(super) fn found(path: &Path) -> Option<String> {

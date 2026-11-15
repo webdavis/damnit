@@ -19,7 +19,15 @@ impl LuaConfigFile {
         LuaConfigFile { config }
     }
 
+    pub fn ends_in_lua(&self) -> Result<(), ConfigError> {
+        match self.config.extension().is_some_and(|e| e == "lua") {
+            true => Ok(()),
+            false => Err(ConfigError::NotLua(self.config.clone())),
+        }
+    }
+
     pub fn check(&self) -> Result<Config, ConfigError> {
+        self.ends_in_lua()?;
         self.read_both(ErrorText::QuotesWhatItsCodeRaised)
             .map(|loaded| loaded.config)
     }

@@ -8,7 +8,6 @@ mod warnings;
 
 use dam_adapters::LuaConfigFile;
 
-use super::doctor;
 use crate::args::ConfigCommand;
 use crate::error::CliError;
 use crate::output::Report;
@@ -18,6 +17,8 @@ pub(crate) fn run(file: &LuaConfigFile, command: ConfigCommand) -> Result<Report
         ConfigCommand::List => listing::run(file),
         ConfigCommand::Get { key } => get::run(file, &key),
         ConfigCommand::PrintDefault => print_default::run(),
-        ConfigCommand::Validate => doctor::run(file),
+        ConfigCommand::Validate => Err(CliError::Internal(
+            "dam config validate is answered as dam doctor config".into(),
+        )),
     }
 }

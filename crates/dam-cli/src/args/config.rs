@@ -30,8 +30,8 @@ pub(crate) enum ConfigCommand {
     )]
     PrintDefault,
     #[command(
-        about = "Check the config as dam doctor does; an error raised in secrets.lua is shown as that file wrote it",
-        after_help = "Examples:\n  dam config validate\n  dam config validate --json"
+        about = "Check the config as dam doctor config does; an error raised in secrets.lua is shown as that file wrote it",
+        after_help = "It runs the top-level code of config.lua and secrets.lua and calls no credential function.\nIt exits 1 when the check finds an issue, and prints the report to stdout either way.\n\nExamples:\n  dam config validate\n  dam config validate --json"
     )]
     Validate,
 }

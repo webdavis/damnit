@@ -117,8 +117,7 @@ fn a_token_left_with_no_channel_or_permission_reads_a_dash() {
 fn an_ignored_or_disabled_token_is_warned_of_by_its_name_alone() {
     let _guard = support::guard("an_ignored_or_disabled_token_is_warned_of_by_its_name_alone");
     let tokens = config_tokens();
-    let doctor = tokens.sb.output(&["doctor"]);
-    let reasoned = String::from_utf8_lossy(&doctor.stderr).into_owned();
+    let reasoned = tokens.sb.doctor(&["doctor"]).out;
     assert!(reasoned.contains("token stray is ignored: "), "{reasoned}");
     assert!(reasoned.contains("token off is disabled: "), "{reasoned}");
     let warning = "warning: token stray is ignored; run dam doctor to see why\n\

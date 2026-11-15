@@ -16,7 +16,7 @@ mod style;
 mod view;
 
 use dam_adapters::{Interrupt, LuaConfigFile, OsRandom, SystemClock};
-use dam_application::{Clock, ConfigError, ConfigFile, HelperError, UseCaseError};
+use dam_application::{Clock, ConfigFile, HelperError, UseCaseError};
 
 use crate::args::{Cli, Command};
 use crate::caller::{authenticated, caller};
@@ -81,13 +81,15 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         ));
     }
     let config_path = cli.config.unwrap_or_else(dam_adapters::default_config_path);
-    if config_path.extension().is_none_or(|e| e != "lua") {
-        return Err(ConfigError::NotLua(config_path).into());
-    }
     let config_file = LuaConfigFile::new(config_path.clone());
     let presented_token = std::env::var_os(TOKEN_VARIABLE);
     let meta = cli.meta.into_iter().collect();
     gate::refuse_any_token_to_an_owner_only_verb(presented_token.is_some(), &cli.command)?;
+    if let Some(asked) = commands::doctor::asked(&cli.command) {
+        let machine = commands::doctor::Machine::new(&config_file);
+        return commands::doctor::print(asked, &machine, format, color);
+    }
+    config_file.ends_in_lua()?;
     if let Command::Config(args) = cli.command {
         let Some(command) = args.command else {
             return group_help::print("config");
@@ -100,9 +102,6 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     }
     if presented_token.is_none() {
         first_run::create_the_owners_config_when_missing(&config_file, &config_path, format);
-    }
-    if let Command::Doctor = cli.command {
-        return output::print(format, color, &commands::doctor::run(&config_file)?);
     }
     if let Command::Token(args) = cli.command {
         return output::print(

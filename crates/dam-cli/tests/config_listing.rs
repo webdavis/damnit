@@ -106,8 +106,12 @@ fn a_broken_config_lua_gives_validates_error_and_the_next_step() {
     let validated = sb.output(&["config", "validate"]);
     assert_eq!(listed.status.code(), Some(1), "{listed:?}");
     assert!(listed.stdout.is_empty());
-    let said = String::from_utf8(validated.stderr).unwrap();
-    let expected = format!("{}; run dam doctor\n", said.trim_end());
+    let report = String::from_utf8(validated.stdout).unwrap();
+    let reason = report
+        .lines()
+        .find_map(|line| line.strip_prefix("  ✗ config: "))
+        .unwrap();
+    let expected = format!("dam: config: {reason}; run dam doctor\n");
     assert_eq!(String::from_utf8(listed.stderr).unwrap(), expected);
     let listed = sb.output(&["config", "list", "--json"]);
     assert_eq!(kind_of(&listed), "parse");

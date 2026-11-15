@@ -64,7 +64,7 @@ fn validate_still_names_what_secrets_lua_holds() {
         let out = sb.output(&["config", "validate"]);
         assert_eq!(out.status.code(), Some(1), "{out:?}");
         assert!(
-            String::from_utf8_lossy(&out.stderr).contains(NAME),
+            String::from_utf8_lossy(&out.stdout).contains(NAME),
             "{out:?}"
         );
     }
@@ -78,11 +78,8 @@ fn a_word_a_token_warning_is_about_reaches_no_stream_of_list_or_get() {
         "  token = {{ tool = {{ value = \"{value}\", via = {{ \"local\", \"{NAME}\" }},\n    \
          grant = {{ {{ allow = {{ \"task:read\", \"{NAME}\" }} }} }} }} }},"
     ));
-    let doctor = sb.output(&["doctor"]);
-    assert!(
-        String::from_utf8_lossy(&doctor.stderr).contains(NAME),
-        "{doctor:?}"
-    );
+    let doctor = sb.doctor(&["doctor"]);
+    assert!(doctor.out.contains(NAME), "{}", doctor.out);
     for line in [
         &["config", "list"][..],
         &["config", "list", "--json"],
