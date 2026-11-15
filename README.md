@@ -204,6 +204,14 @@ edit. Under `--json` or `--toon` it refuses instead of opening an editor.
 `dam edit <oid> --no-done` reopens a task you completed by mistake, and
 `dam restore <oid>...` throws a working change away, back to the last commit and out of the stage.
 
+`dam revert <commit> [<oid>...]` sets back what a commit changed, or only the named objects' part.
+Each field goes back to its value before the commit; a field changed again since is kept and named.
+A task the commit created goes only when nothing about it changed since.
+A task the commit removed comes back.
+The result is a working change to read in `dam diff`, then commit or `dam restore`.
+It refuses a commit `dam pull` made, rule `pulled_commit`, and an oid it did not change, rule
+`not_in_commit`.
+
 `dam done` records when it ran, as `completed_at` on the task: RFC 3339 in UTC, null on an open
 task, and cleared again by `--no-done`. A task completed in Todoist comes in with Todoist's time.
 

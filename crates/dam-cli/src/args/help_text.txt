@@ -65,6 +65,20 @@ dam reset: about = Unstage changes
 dam reset oids: help = Unstage these objects, or put these declined items back to waiting, by oid, hash or prefix. Default: everything staged
 dam restore: about = Set objects back to their last committed state, staged or not
 dam restore oids: help = Set back these objects, by oid or prefix
+dam revert: about = Set back what a commit changed, as working changes to review
+dam revert: after_help = Each field the commit changed goes back to its value before the commit.
+A field changed again since is kept as it is and named.
+A task the commit created is removed only when nothing about it changed since.
+A task the commit removed comes back as it was.
+It stages and commits nothing: read it with dam diff, then dam add and dam commit it.
+It refuses a commit that dam pull made.
+
+Examples:
+  dam revert 1a2b3c4
+  dam revert 1a2b3c4 5d6e7f8
+  dam revert 1a2b3c4 --json
+dam revert commit: help = Pick the commit by id, full or prefixed
+dam revert oids: help = Set back only these objects' changes in the commit, by oid or prefix
 dam commit: about = Record the stage as a commit
 dam commit message: help = Describe the commit
 dam log: about = List commits, newest first

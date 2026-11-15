@@ -17,6 +17,7 @@ mod parsing;
 mod reminders;
 mod remote;
 mod restore;
+mod revert;
 mod rm;
 mod sent;
 mod settled;
@@ -54,6 +55,7 @@ pub(crate) fn dispatch_a_verb_that_opens_the_store(
         Command::Add(a) => stage::run_add(ctx, a),
         Command::Reset(a) => stage::run_reset(ctx, a),
         Command::Restore(a) => restore::run(ctx, a),
+        Command::Revert(a) => revert::run(ctx, a),
         Command::Commit(a) => commit::run_commit(ctx, a),
         Command::Log => commit::run_log(ctx),
         Command::Show(a) => show::run_show(ctx, a),

@@ -1,6 +1,6 @@
 mod refusal_name;
 
-use dam_domain::{Blockers, Date, LabelViolation, Oid, Permission, QueryError, Tracked};
+use dam_domain::{Blockers, CommitId, Date, LabelViolation, Oid, Permission, QueryError, Tracked};
 
 use crate::access::TokenRefusal;
 use crate::ports::{CredentialError, FilterFailure, HelperError, StoreError};
@@ -65,6 +65,11 @@ pub enum Refusal {
     NoSuchToken(String),
     NoSuchSetting(String),
     Item(ItemRefusal),
+    PulledCommit(CommitId),
+    NotInCommit {
+        commit: CommitId,
+        text: String,
+    },
 }
 
 #[derive(Debug, PartialEq, Eq)]

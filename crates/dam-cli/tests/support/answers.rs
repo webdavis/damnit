@@ -79,6 +79,19 @@ pub fn answers(command: &str) -> Option<Vec<serde_json::Value>> {
         "add" => vec![json_of(&fixture::seeded(), &["add", "-A"])],
         "reset" => vec![json_of(&staged(), &["reset"])],
         "restore" => vec![json_of(&staged(), &["restore", &milk])],
+        "revert" => {
+            let sb = fixture::committed();
+            run(&sb, &["rm", &short(STANDUP)]);
+            run(&sb, &["edit", &milk, "--subject", "buy soy milk"]);
+            run(&sb, &["add", "-A"]);
+            run(&sb, &["commit", "-m", "change"]);
+            let commit = json_of(&sb, &["log"])["commits"][0]["id"]
+                .as_str()
+                .unwrap()
+                .to_string();
+            run(&sb, &["edit", &milk, "--subject", "buy rice milk"]);
+            vec![json_of(&sb, &["revert", &commit])]
+        }
         "commit" => {
             let sb = fixture::seeded();
             run(&sb, &["add", "-A"]);
