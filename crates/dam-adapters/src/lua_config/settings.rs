@@ -47,6 +47,7 @@ pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
         .iter()
         .map(|(name, filter)| read_filter(name, filter))
         .collect::<Result<Vec<_>, _>>()?;
+    let (hooks, task_pulled) = read_hooks(root)?;
     Ok(Config {
         owner: root.string("owner")?,
         done_interactive,
@@ -54,7 +55,8 @@ pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
         categories,
         categories_writing_exclusive,
         filters,
-        hooks: read_hooks(root)?,
+        hooks,
+        task_pulled,
         tokens: Default::default(),
     })
 }

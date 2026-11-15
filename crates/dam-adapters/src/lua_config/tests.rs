@@ -22,6 +22,7 @@ mod hook_runs;
 mod hook_tables;
 mod lua_page;
 mod printing_restored;
+mod pulled_hook_tables;
 mod read_only;
 mod remove_token;
 mod secrets_file;

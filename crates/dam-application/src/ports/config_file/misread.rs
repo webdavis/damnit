@@ -56,4 +56,8 @@ pub enum Misread {
         text: String,
         at: Place,
     },
+    AlwaysWarns {
+        key: String,
+        at: Place,
+    },
 }

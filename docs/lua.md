@@ -25,6 +25,7 @@ key dam does not know is an error. A `<name>` in a key is a name you choose.
 | `hook.task_new` | A hook that runs when you create a task. |
 | `hook.task_changed` | A hook that runs when you change a task. |
 | `hook.task_done` | A hook that runs when you complete a task. |
+| `hook.task_pulled` | A hook for each task a pull brings in. It takes no `on_failure`. |
 | `hook.<event>.run` | The hook's function, when the hook is a table. Required. |
 | `hook.<event>.on_failure` | `warn` or `refuse`. Default: `warn`. |
 

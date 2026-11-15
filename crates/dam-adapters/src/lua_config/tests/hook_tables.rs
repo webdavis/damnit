@@ -44,9 +44,9 @@ fn a_hook_is_a_function_or_a_table_that_runs_one() {
 #[test]
 fn an_event_dam_does_not_know_is_refused() {
     assert_eq!(
-        refusal("{ task_pulled = function() end }"),
+        refusal("{ task_moved = function() end }"),
         Misread::UnknownKey {
-            key: "task_pulled".into(),
+            key: "task_moved".into(),
             at: in_table("hook", "config.lua"),
         }
     );

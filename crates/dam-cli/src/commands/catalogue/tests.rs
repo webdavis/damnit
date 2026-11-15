@@ -11,6 +11,7 @@ fn config() -> Config {
         categories_writing_exclusive: Default::default(),
         filters: vec![],
         hooks: vec![],
+        task_pulled: None,
         tokens: Default::default(),
     }
 }

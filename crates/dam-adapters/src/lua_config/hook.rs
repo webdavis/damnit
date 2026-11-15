@@ -1,28 +1,38 @@
-use dam_application::{Expected, HookConfig, HookEvent, Misread, OnFailure};
+use dam_application::{Expected, HookConfig, HookEvent, Misread, OnFailure, PulledHook};
 use mlua::Value;
 
 use super::strict::StrictMap;
 
-pub(crate) const HOOK: [&str; 3] = event_names();
+pub(crate) const HOOK: [&str; 4] = event_names();
 pub(crate) const HOOK_TABLE: [&str; 2] = ["run", "on_failure"];
+pub(crate) const PULLED_HOOK_TABLE: [&str; 1] = ["run"];
 
-const fn event_names() -> [&'static str; 3] {
-    let [new, changed, done] = HookEvent::ALL;
-    [new.as_str(), changed.as_str(), done.as_str()]
+const PULLED: &str = HookEvent::TaskPulled.as_str();
+
+const fn event_names() -> [&'static str; 4] {
+    let [new, changed, done] = HookEvent::LOCAL;
+    [new.as_str(), changed.as_str(), done.as_str(), PULLED]
 }
 
-pub(super) fn read_hooks(root: &StrictMap) -> Result<Vec<HookConfig>, Misread> {
+pub(super) type Hooks = (Vec<HookConfig>, Option<PulledHook>);
+
+pub(super) fn read_hooks(root: &StrictMap) -> Result<Hooks, Misread> {
     let Some(hooks) = root.map("hook")? else {
-        return Ok(Vec::new());
+        return Ok((Vec::new(), None));
     };
     hooks.only(&HOOK)?;
-    HookEvent::ALL
+    let local = HookEvent::LOCAL
         .into_iter()
         .filter_map(|event| {
             let value = hooks.get(event.as_str())?;
             Some(read_hook(&hooks, event, value))
         })
-        .collect()
+        .collect::<Result<_, _>>()?;
+    let pulled = hooks
+        .get(PULLED)
+        .map(|value| read_pulled_hook(&hooks, value))
+        .transpose()?;
+    Ok((local, pulled))
 }
 
 fn read_hook(hooks: &StrictMap, event: HookEvent, value: &Value) -> Result<HookConfig, Misread> {
@@ -31,16 +41,39 @@ fn read_hook(hooks: &StrictMap, event: HookEvent, value: &Value) -> Result<HookC
         Value::Table(_) => {
             let hook = hooks.child(event.as_str(), value)?;
             hook.only(&HOOK_TABLE)?;
-            match hook.get("run") {
-                Some(Value::Function(_)) => {}
-                Some(_) => return Err(hook.wrong("run", Expected::Function)),
-                None => return Err(hook.missing("run")),
-            }
+            read_run(&hook)?;
             read_on_failure(&hook)?
         }
         _ => return Err(hooks.wrong(event.as_str(), Expected::FunctionOrTable)),
     };
     Ok(HookConfig { event, on_failure })
+}
+
+fn read_pulled_hook(hooks: &StrictMap, value: &Value) -> Result<PulledHook, Misread> {
+    match value {
+        Value::Function(_) => {}
+        Value::Table(_) => {
+            let hook = hooks.child(PULLED, value)?;
+            if hook.get("on_failure").is_some() {
+                return Err(Misread::AlwaysWarns {
+                    key: "on_failure".to_string(),
+                    at: hook.place(),
+                });
+            }
+            hook.only(&PULLED_HOOK_TABLE)?;
+            read_run(&hook)?;
+        }
+        _ => return Err(hooks.wrong(PULLED, Expected::FunctionOrTable)),
+    }
+    Ok(PulledHook)
+}
+
+fn read_run(hook: &StrictMap) -> Result<(), Misread> {
+    match hook.get("run") {
+        Some(Value::Function(_)) => Ok(()),
+        Some(_) => Err(hook.wrong("run", Expected::Function)),
+        None => Err(hook.missing("run")),
+    }
 }
 
 fn read_on_failure(hook: &StrictMap) -> Result<Option<OnFailure>, Misread> {
