@@ -29,7 +29,11 @@ Settings ── what dam is using
   category.effort.values               light, deep
   category.effort.exclusive            true
   filter.today.query                   due:today | overdue
-  token.tool                           task:read paths work/
+  token.tool.grant                     task:read paths work/
+  token.tool.expires                   not set
+  token.tool.not_before                not set
+  token.tool.via                       local (default)
+  token.tool.require                   not set
 ",
         sb.config_path().display(),
         sb.secrets_path().display(),

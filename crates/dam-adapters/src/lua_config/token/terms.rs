@@ -29,6 +29,7 @@ pub(super) fn read_terms(
         expires: instant(token, "expires")?,
         not_before: instant(token, "not_before")?,
         via: channels(name, token, warnings)?,
+        via_written: token.get("via").is_some(),
         require: token.strings("require")?.unwrap_or_default(),
         grants: read_grants(name, token, warnings)?,
     })

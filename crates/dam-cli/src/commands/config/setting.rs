@@ -1,12 +1,15 @@
 use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
 
+use crate::commands::token::grant_view::GrantView;
+
 #[derive(Serialize)]
 #[serde(untagged)]
 pub(super) enum Value {
     Text(String),
     Flag(bool),
     List(Vec<String>),
+    Grants(Vec<GrantView>),
     Unset,
 }
 
@@ -113,6 +116,11 @@ impl Value {
             Value::Text(text) => text.clone(),
             Value::Flag(flag) => flag.to_string(),
             Value::List(items) => items.join(", "),
+            Value::Grants(grants) => grants
+                .iter()
+                .map(GrantView::text)
+                .collect::<Vec<_>>()
+                .join(" | "),
             Value::Unset => "not set".to_string(),
         }
     }

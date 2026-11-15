@@ -1,8 +1,8 @@
-use dam_application::{Config, CredentialSpec, FilterConfig, RemoteConfig, Standing, TokenConfig};
+use dam_application::{Config, CredentialSpec, FilterConfig, RemoteConfig};
 use dam_domain::Category;
 
 use super::setting::{Credential, Setting, Value};
-use crate::commands::token::grant_view::GrantView;
+use super::token_settings::token;
 
 pub(super) fn settings(config: &Config) -> Setting {
     let owner = match &config.owner {
@@ -83,19 +83,6 @@ fn category(category: &Category, written: bool) -> (String, Setting) {
 
 fn filter(filter: &FilterConfig) -> (String, Setting) {
     named(&filter.name, vec![text("query", &filter.query)])
-}
-
-fn token(token: &TokenConfig) -> (String, Setting) {
-    let grants = match &token.standing {
-        Standing::Usable(terms) => terms
-            .grants
-            .iter()
-            .map(|grant| GrantView::of(grant).text())
-            .collect::<Vec<_>>()
-            .join(" | "),
-        Standing::Disabled(_) => "disabled".to_string(),
-    };
-    (token.name.clone(), Setting::set(Value::Text(grants)))
 }
 
 fn named(name: &str, fields: Vec<(String, Setting)>) -> (String, Setting) {

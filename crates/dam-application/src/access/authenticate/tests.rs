@@ -16,6 +16,7 @@ fn terms() -> TokenTerms {
         expires: None,
         not_before: None,
         via: [Channel::Local].into(),
+        via_written: false,
         require: vec![],
         grants: vec![Grant {
             allow: [Permission::TaskRead].into(),
