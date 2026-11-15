@@ -29,6 +29,7 @@ use config_text::ConfigText;
 pub(crate) use hook_text::HookText;
 pub(crate) use misuse::{Misuse, Problem};
 use refusal_oids::refusal_oids;
+pub(crate) use refusal_text::RefusalText;
 pub(crate) use secrets_tightened_text::SecretsTightenedText;
 pub(crate) use token_fault_text::{TokenFaultText, TokenWarningText};
 pub(crate) use use_case_text::UseCaseText;

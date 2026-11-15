@@ -79,6 +79,7 @@ impl Context {
             filter_functions: self.filter_functions.as_ref(),
             hooks: self.hooks.as_ref(),
             hook_warnings: &HookWarningsOnStandardError,
+            edit_requests: self,
         }
     }
 
@@ -102,3 +103,5 @@ pub(crate) fn terminal_pair_for_a_human_and_refusals_for_a_machine(
         Format::Json | Format::Toon => (Box::new(RefusingPrompt), None),
     }
 }
+
+mod edit_requests;

@@ -24,6 +24,7 @@ impl fmt::Display for FilterText<'_> {
                     FunctionFault::Returned { returned } => {
                         write!(f, ": match returned {returned}, not true, false or nil")
                     }
+                    FunctionFault::Requested { why } => write!(f, ": {why}"),
                 }
             }
         }

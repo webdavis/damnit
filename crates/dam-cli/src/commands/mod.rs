@@ -8,7 +8,7 @@ pub(crate) mod config;
 mod day;
 pub(crate) mod doctor;
 mod done;
-mod edit;
+pub(crate) mod edit;
 mod follow_ons;
 mod ls;
 mod mv;

@@ -1,5 +1,6 @@
 mod dam_table;
 mod history_document;
+mod json_value;
 mod lua_value;
 mod time_limit;
 
@@ -15,6 +16,7 @@ use super::evaluate::{ErrorText, line_and_reason, lua_message, short_name_lua_ne
 use super::printed::while_the_top_level_runs;
 use dam_table::dam_table;
 pub use history_document::history_document;
+pub(super) use json_value::json_value;
 use lua_value::lua_value;
 pub(super) use time_limit::limit_every_thread;
 
@@ -45,6 +47,10 @@ impl LuaFunctions {
             owner: owner.to_string(),
             limit,
         })
+    }
+
+    pub(super) fn path(&self) -> &std::path::Path {
+        &self.path
     }
 
     pub(super) fn settings(&self) -> mlua::Result<Table> {

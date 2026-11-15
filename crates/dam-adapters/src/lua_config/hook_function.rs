@@ -1,11 +1,11 @@
 use std::time::Instant;
 
-use dam_application::{FunctionFailure, FunctionFault, Histories, HookEvent, Hooks};
+use dam_application::{EditRequest, FunctionFailure, FunctionFault, Histories, HookEvent, Hooks};
 use dam_domain::Object;
 use mlua::{Function, Table, Value};
 
 use super::evaluate::described;
-use super::functions::{LuaFunctions, line_defined};
+use super::functions::{LuaFunctions, json_value, line_defined};
 use super::hook_marker::while_marked;
 
 impl LuaFunctions {
@@ -28,7 +28,7 @@ impl Hooks for LuaFunctions {
         event: HookEvent,
         task: &Object,
         histories: &dyn Histories,
-    ) -> Result<(), FunctionFailure> {
+    ) -> Result<Option<EditRequest>, FunctionFailure> {
         let function = self.hook(event).map_err(|e| self.unkept(&e))?;
         let defined = line_defined(&function);
         self.limited(|scope, deadline| {
@@ -39,7 +39,8 @@ impl Hooks for LuaFunctions {
                 return Err(self.failed(defined, FunctionFault::RanOver));
             }
             match returned {
-                Ok(Value::Nil) => Ok(()),
+                Ok(Value::Nil) => Ok(None),
+                Ok(table @ Value::Table(_)) => self.request(&table, defined).map(Some),
                 Ok(other) => {
                     let returned = described(&other);
                     Err(self.failed(defined, FunctionFault::Returned { returned }))
@@ -47,5 +48,19 @@ impl Hooks for LuaFunctions {
                 Err(e) => Err(self.raised(&e, defined)),
             }
         })
+    }
+}
+
+impl LuaFunctions {
+    fn request(&self, table: &Value, line: Option<u32>) -> Result<EditRequest, FunctionFailure> {
+        let request = |json: String| EditRequest {
+            json,
+            file: self.path().to_path_buf(),
+            line,
+        };
+        match json_value("the request", table) {
+            Ok(document) => Ok(request(document.to_string())),
+            Err(why) => Err(request(String::new()).failed(why)),
+        }
     }
 }

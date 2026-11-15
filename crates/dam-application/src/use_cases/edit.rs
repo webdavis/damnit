@@ -12,35 +12,41 @@ pub use fields::{EditFields, apply};
 impl Dam<'_> {
     pub fn edit(&self, oid: &Oid, fields: EditFields) -> Result<Landed, UseCaseError> {
         atomically(self.store, || {
-            self.entering(None, || {
-                let current = self.load_permitted(oid, Permission::change)?;
-                self.refuse_what_a_token_may_not_edit(&fields)?;
-                let mut next = apply(&current, &fields)?;
-                if let Some(day) = fields.focus {
-                    self.mark_focus(&mut next, day)?;
-                }
-                self.config
-                    .categories
-                    .check(&next.base().labels)
-                    .map_err(Refusal::Labels)?;
-                if self.access.token().is_none()
-                    && let Some(path) = self.cycle_through(oid, &fields.add_depends)?
-                {
-                    return Err(Refusal::Cycle {
-                        oid: oid.clone(),
-                        path,
-                    }
-                    .into());
-                }
-                if let Some(Some(event)) = &fields.attach
-                    && !matches!(self.store.get(event)?, Some(Object::Event(_)))
-                {
-                    return Err(no_such_object(event).into());
-                }
-                refuse_losing_a_held_folder(self.store, &current, &next)?;
-                self.put_or_send(Permission::change(current.kind()), Some(&current), next)
-            })
+            self.entering(None, || self.edit_in_place(oid, fields))
         })
+    }
+
+    pub(crate) fn edit_in_place(
+        &self,
+        oid: &Oid,
+        fields: EditFields,
+    ) -> Result<Landed, UseCaseError> {
+        let current = self.load_permitted(oid, Permission::change)?;
+        self.refuse_what_a_token_may_not_edit(&fields)?;
+        let mut next = apply(&current, &fields)?;
+        if let Some(day) = fields.focus {
+            self.mark_focus(&mut next, day)?;
+        }
+        self.config
+            .categories
+            .check(&next.base().labels)
+            .map_err(Refusal::Labels)?;
+        if self.access.token().is_none()
+            && let Some(path) = self.cycle_through(oid, &fields.add_depends)?
+        {
+            return Err(Refusal::Cycle {
+                oid: oid.clone(),
+                path,
+            }
+            .into());
+        }
+        if let Some(Some(event)) = &fields.attach
+            && !matches!(self.store.get(event)?, Some(Object::Event(_)))
+        {
+            return Err(no_such_object(event).into());
+        }
+        refuse_losing_a_held_folder(self.store, &current, &next)?;
+        self.put_or_send(Permission::change(current.kind()), Some(&current), next)
     }
 }
 

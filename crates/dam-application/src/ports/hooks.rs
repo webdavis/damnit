@@ -1,12 +1,33 @@
-use dam_domain::Object;
+use std::path::PathBuf;
+
+use dam_domain::{Object, Oid};
 
 use crate::config::HookEvent;
-use crate::ports::{FunctionFailure, Histories};
+use crate::errors::Refusal;
+use crate::ports::{FunctionFailure, FunctionFault, Histories};
+use crate::use_cases::edit::EditFields;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HookFailure {
     pub event: HookEvent,
     pub failure: FunctionFailure,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EditRequest {
+    pub json: String,
+    pub file: PathBuf,
+    pub line: Option<u32>,
+}
+
+impl EditRequest {
+    pub fn failed(&self, why: String) -> FunctionFailure {
+        FunctionFailure {
+            file: self.file.clone(),
+            line: self.line,
+            fault: FunctionFault::Requested { why },
+        }
+    }
 }
 
 pub trait Hooks {
@@ -15,7 +36,12 @@ pub trait Hooks {
         event: HookEvent,
         task: &Object,
         histories: &dyn Histories,
-    ) -> Result<(), FunctionFailure>;
+    ) -> Result<Option<EditRequest>, FunctionFailure>;
+}
+
+pub trait EditRequests {
+    fn fields(&self, task: &Oid, request: &EditRequest) -> Result<EditFields, String>;
+    fn refused(&self, refusal: &Refusal) -> String;
 }
 
 pub trait HookWarnings {

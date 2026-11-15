@@ -44,8 +44,13 @@ impl Dam<'_> {
         let histories = LogByObject::new(self);
         let ran = self.hooks.run(event, &task, &histories);
         histories.unread()?;
-        let Err(failure) = ran else {
-            return Ok(());
+        let failure = match ran {
+            Ok(None) => return Ok(()),
+            Ok(Some(request)) => match self.hook_edit(task.oid(), &request)? {
+                None => return Ok(()),
+                Some(failure) => failure,
+            },
+            Err(failure) => failure,
         };
         let failure = HookFailure { event, failure };
         match hook.on_failure() {
@@ -68,6 +73,8 @@ fn tasks_by_oid(objects: &dyn ObjectRepository) -> Result<BTreeMap<Oid, Task>, U
         })
         .collect())
 }
+
+mod edit_request;
 
 #[cfg(test)]
 mod tests;
