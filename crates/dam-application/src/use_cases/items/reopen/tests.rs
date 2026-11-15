@@ -60,6 +60,12 @@ fn reopening_an_added_item_still_staged_unstages_its_object() {
 
     let reopened = s.dam().reopen(&hash).unwrap();
 
-    assert_eq!(reopened, Reopened::Unstaged(hash.oid().clone()));
+    assert_eq!(
+        reopened,
+        Reopened::Unstaged {
+            oid: hash.oid().clone(),
+            kept: Vec::new()
+        }
+    );
     assert!(s.store.staged().unwrap().is_empty());
 }

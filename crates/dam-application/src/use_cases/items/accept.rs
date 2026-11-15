@@ -37,19 +37,25 @@ impl Dam<'_> {
 
     pub(crate) fn take(&self, hash: &ItemHash, on_clash: OnClash) -> Result<Added, UseCaseError> {
         let item = self.waiting_item(hash)?;
+        let untouched = self.untouched()?;
+        let added = self.apply(&item, on_clash)?;
+        self.keep_what_followed(&item, untouched)?;
+        Ok(added)
+    }
+
+    fn apply(&self, item: &Item, on_clash: OnClash) -> Result<Added, UseCaseError> {
+        let hash = &item.hash;
         let change = match &item.change {
             Change::Create { after } => {
                 self.store.put(after)?;
                 Some(item.change.clone())
             }
-            Change::Update { before, after } => {
-                self.apply_change(&item, before, after, on_clash)?
-            }
-            Change::Delete { before } => return self.take_removal(&item, before, on_clash),
+            Change::Update { before, after } => self.apply_change(item, before, after, on_clash)?,
+            Change::Delete { before } => return self.take_removal(item, before, on_clash),
         };
         self.store.settle(hash, Outcome::Added(self.clock.now()))?;
         Ok(Added {
-            staged: self.stage_as_sent(&item, change)?.into_iter().collect(),
+            staged: self.stage_as_sent(item, change)?.into_iter().collect(),
             removals: Vec::new(),
         })
     }
@@ -113,6 +119,9 @@ impl Dam<'_> {
 mod follow_ons;
 mod merge;
 mod removal;
+mod what_followed;
+
+pub(crate) use what_followed::state;
 
 #[cfg(test)]
 mod tests;
