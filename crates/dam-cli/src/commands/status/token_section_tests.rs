@@ -11,7 +11,7 @@ fn a_conflict_and_a_warning() -> crate::context::Context {
         .mark_conflict(&Conflict {
             remote: RemoteName("todoist".into()),
             oid: task.oid().clone(),
-            ours: task.clone(),
+            ours: Some(task.clone()),
             theirs: task,
         })
         .unwrap();

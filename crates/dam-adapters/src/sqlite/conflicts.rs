@@ -1,5 +1,5 @@
 use dam_application::{Conflict, ConflictRepository, RemoteName, StoreError};
-use dam_domain::Oid;
+use dam_domain::{Object, Oid};
 use rusqlite::params;
 
 use super::SqliteStore;
@@ -18,7 +18,7 @@ impl ConflictRepository for SqliteStore {
             .execute(
                 "INSERT INTO conflicts (oid, remote, ours_json, theirs_json) VALUES (?1, ?2, ?3, ?4)
                  ON CONFLICT(oid) DO UPDATE SET remote = excluded.remote, ours_json = excluded.ours_json, theirs_json = excluded.theirs_json",
-                params![oid.as_str(), remote.0, object_to_json(ours)?, object_to_json(theirs)?],
+                params![oid.as_str(), remote.0, ours_json(ours.as_ref())?, object_to_json(theirs)?],
             )
             .map(|_| ())
             .map_err(sql)
@@ -44,7 +44,7 @@ impl ConflictRepository for SqliteStore {
             Ok(Conflict {
                 remote: RemoteName(remote),
                 oid: Oid::parse(&oid).map_err(|e| StoreError::Failed(e.to_string()))?,
-                ours: object_from_json(&ours)?,
+                ours: ours_from_json(&ours)?,
                 theirs: object_from_json(&theirs)?,
             })
         })
@@ -59,5 +59,18 @@ impl ConflictRepository for SqliteStore {
             )
             .map(|_| ())
             .map_err(sql)
+    }
+}
+
+const REMOVED_HERE: &str = "null";
+
+fn ours_json(ours: Option<&Object>) -> Result<String, StoreError> {
+    ours.map_or(Ok(REMOVED_HERE.to_string()), object_to_json)
+}
+
+fn ours_from_json(json: &str) -> Result<Option<Object>, StoreError> {
+    match json {
+        REMOVED_HERE => Ok(None),
+        stored => object_from_json(stored).map(Some),
     }
 }

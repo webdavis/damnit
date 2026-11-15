@@ -152,7 +152,7 @@ fn status_reports_conflicts_and_unpushed_commits() {
         .mark_conflict(&Conflict {
             remote: RemoteName("todoist".into()),
             oid: oid(1),
-            ours: Object::Task(Task::new(oid(1), "mine")),
+            ours: Some(Object::Task(Task::new(oid(1), "mine"))),
             theirs: Object::Task(Task::new(oid(1), "theirs")),
         })
         .unwrap();

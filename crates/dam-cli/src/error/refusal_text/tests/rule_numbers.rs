@@ -1,6 +1,6 @@
 use dam_application::Refusal;
 
-pub(super) const RULES: usize = 34;
+pub(super) const RULES: usize = 33;
 
 pub(super) fn rule_number(refusal: &Refusal) -> usize {
     match refusal {
@@ -18,25 +18,24 @@ pub(super) fn rule_number(refusal: &Refusal) -> usize {
         Refusal::NotAnEvent(_) => 11,
         Refusal::NotCompleted(_) => 12,
         Refusal::NotCommitted(_) => 13,
-        Refusal::DirtyOnPull { .. } => 14,
-        Refusal::MoveInsideItself(_) => 15,
-        Refusal::NothingToCommit => 16,
-        Refusal::NeedsAnAnswer => 17,
-        Refusal::NeedsAnEditor => 18,
-        Refusal::UnresolvedConflicts(_) => 19,
-        Refusal::MissingCredential { .. } => 20,
-        Refusal::StaleRemote { .. } => 21,
-        Refusal::UnreadableRecurrence { .. } => 22,
-        Refusal::NoConflict(_) => 23,
-        Refusal::Token(_) => 24,
-        Refusal::NotPermitted(_) => 25,
-        Refusal::NotOpenToTokens(_) => 26,
-        Refusal::SubjectNamesNoFolder(_) => 27,
-        Refusal::FocusFull { .. } => 28,
-        Refusal::TokenExists(_) => 29,
-        Refusal::NotGrantable(_) => 30,
-        Refusal::NoSuchToken(_) => 31,
-        Refusal::NoSuchSetting(_) => 32,
-        Refusal::Item(_) => 33,
+        Refusal::MoveInsideItself(_) => 14,
+        Refusal::NothingToCommit => 15,
+        Refusal::NeedsAnAnswer => 16,
+        Refusal::NeedsAnEditor => 17,
+        Refusal::UnresolvedConflicts(_) => 18,
+        Refusal::MissingCredential { .. } => 19,
+        Refusal::StaleRemote { .. } => 20,
+        Refusal::UnreadableRecurrence { .. } => 21,
+        Refusal::NoConflict(_) => 22,
+        Refusal::Token(_) => 23,
+        Refusal::NotPermitted(_) => 24,
+        Refusal::NotOpenToTokens(_) => 25,
+        Refusal::SubjectNamesNoFolder(_) => 26,
+        Refusal::FocusFull { .. } => 27,
+        Refusal::TokenExists(_) => 28,
+        Refusal::NotGrantable(_) => 29,
+        Refusal::NoSuchToken(_) => 30,
+        Refusal::NoSuchSetting(_) => 31,
+        Refusal::Item(_) => 32,
     }
 }

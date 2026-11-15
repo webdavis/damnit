@@ -101,10 +101,6 @@ fn refusals_by_object_rules() -> Vec<(Refusal, &'static str)> {
             "0101010 has no commit behind it; dam rm removes it instead",
         ),
         (
-            Refusal::DirtyOnPull { oid: oid(1) },
-            "0101010 changed upstream and has uncommitted local changes; commit or reset it, then pull again",
-        ),
-        (
             Refusal::MoveInsideItself(oid(1)),
             "0101010 cannot move inside itself",
         ),

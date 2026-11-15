@@ -23,15 +23,16 @@ impl Dam<'_> {
             let (word, before, after) = match side {
                 Side::Theirs => {
                     self.store.put(&conflict.theirs)?;
-                    ("theirs", conflict.ours, conflict.theirs)
+                    ("theirs", conflict.ours, Some(conflict.theirs))
                 }
-                Side::Ours => ("ours", conflict.theirs, conflict.ours),
+                Side::Ours => ("ours", Some(conflict.theirs), conflict.ours),
             };
-            let resolution = Authored::by_owner(Change::Update { before, after })
-                .with_details(self.access.details());
-            let message = format!("resolve {} with {word}", oid.short());
-            self.store
-                .commit(&record(self.clock, self.random, message, vec![resolution]))?;
+            if let Some(change) = Change::between(before, after) {
+                let resolution = Authored::by_owner(change).with_details(self.access.details());
+                let message = format!("resolve {} with {word}", oid.short());
+                self.store
+                    .commit(&record(self.clock, self.random, message, vec![resolution]))?;
+            }
             self.store.clear_conflict(oid)?;
             Ok(())
         })

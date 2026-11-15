@@ -17,7 +17,6 @@ impl Refusal {
             Refusal::NotAnEvent(_) => "not_an_event",
             Refusal::NotCompleted(_) => "not_completed",
             Refusal::NotCommitted(_) => "not_committed",
-            Refusal::DirtyOnPull { .. } => "dirty_on_pull",
             Refusal::MoveInsideItself(_) => "move_inside_itself",
             Refusal::SubjectNamesNoFolder(_) => "subject_names_no_folder",
             Refusal::NothingToCommit => "nothing_to_commit",

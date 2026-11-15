@@ -2,7 +2,6 @@ use dam_domain::{Event, EventStatus, Field, Object, Task, When};
 use jiff::civil::date;
 
 use super::super::*;
-use crate::errors::Refusal;
 use crate::ports::Notice;
 use crate::remote::{IncomingObject, PullOutcome};
 use crate::testing::prelude::*;
@@ -129,15 +128,16 @@ fn an_event_already_cancelled_is_unchanged() {
 }
 
 #[test]
-fn an_uncommitted_local_edit_stops_the_pull_as_any_upstream_change_would() {
+fn an_uncommitted_local_edit_meets_a_cancellation_as_a_conflict() {
     let s = tracked(meeting());
     let mut edited = meeting();
     edited.base.subject = "renamed here".into();
-    s.working(Object::Event(edited));
-    assert!(matches!(
-        run(&s, &["e1"]).unwrap_err(),
-        UseCaseError::Refused(Refusal::DirtyOnPull { .. })
-    ));
+    s.working(Object::Event(edited.clone()));
+    assert_eq!(run(&s, &["e1"]).unwrap()[0].conflicts, 1);
+    assert_eq!(
+        s.store.get(&edited.base.oid).unwrap(),
+        Some(Object::Event(edited))
+    );
 }
 
 #[test]

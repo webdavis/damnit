@@ -101,7 +101,6 @@
         "not_an_event",
         "not_completed",
         "not_committed",
-        "dirty_on_pull",
         "move_inside_itself",
         "subject_names_no_folder",
         "nothing_to_commit",

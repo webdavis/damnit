@@ -1,7 +1,7 @@
 mod accepted_kinds;
+mod both_sides_changed;
 mod cancellations;
 mod cancelled_conflicts;
-mod conflicts_and_refusals;
 mod creates_in_doubt;
 mod helper_failures;
 mod history;
@@ -15,6 +15,8 @@ mod removed_with_writes_owed;
 mod skipped_objects;
 mod skipped_twice;
 mod unanswered;
+mod uncommitted_work;
+mod untouched_table;
 
 use crate::remote::{IncomingObject, PullOutcome};
 use crate::testing::prelude::*;

@@ -34,9 +34,6 @@ pub enum Refusal {
     NotAnEvent(Oid),
     NotCompleted(Oid),
     NotCommitted(Oid),
-    DirtyOnPull {
-        oid: Oid,
-    },
     MoveInsideItself(Oid),
     SubjectNamesNoFolder(Oid),
     NothingToCommit,
