@@ -42,18 +42,19 @@ and never a secret. `secrets.lua` holds each remote's credentials and the tokens
 A credential is a string, or a function dam calls only when the remote is used. Any key dam does
 not know fails with exit 1. `docs/examples/` holds one of each file.
 
-`dam config list` prints where the two files are and every setting dam is using, one row each: the key,
-then the value, with `(default)` after a value dam supplies. A remote's credential shows under
-`remote.<name>.credential` as only `hidden`, or `hidden (function)` for one dam calls. A token shows each of its settings by the key `secrets.lua` uses, never its value, or `disabled`. A setting
-with no value and no default shows `not set`. It never quotes `secrets.lua`.
+`dam config list` prints where the two files are and every setting dam is using, one row each: the
+key, then the value, with `(default)` after a value dam supplies. A remote's credential shows under
+`remote.<name>.credential` as only `hidden`, or `hidden (function)` for one dam calls. A token shows
+each of its settings by the key `secrets.lua` uses, never its value, or `disabled`. A setting with
+no value and no default shows `not set`.
 `docs/schemas/config-list.schema.json` is the schema of its `--json` answer.
 `dam config get <key>` prints the rows of one setting, or of every setting in one part, by the key
-`dam config list` shows, such as `remote.todoist.stale` or `remote.todoist`, and never quotes
-`secrets.lua` either. A name may hold a dot, and a key that can be read two
-ways is refused with both readings.
+`dam config list` shows, such as `remote.todoist.stale` or `remote.todoist`. A name may hold a dot,
+and a key that can be read two ways is refused with both readings.
 `dam config list` and `dam config get` run the top-level code of `secrets.lua` and call no
-credential function. What that code prints is dropped.
-Both warn of a token dam ignores or holds disabled, as `dam doctor` does.
+credential function. What that code prints is dropped, except through `io.open("/dev/stdout")`,
+`io.popen` or `os.execute`. Their errors and warnings quote nothing from `secrets.lua` but a token's
+name. Both warn of a token dam ignores or holds disabled, and `dam doctor` says why.
 
 `dam config print-default` prints the starter `config.lua` a first run writes, and writes no file.
 `dam config` alone prints the help of these commands.
