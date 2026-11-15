@@ -4,6 +4,7 @@ pub mod answers;
 pub mod commands;
 pub mod config_files;
 pub mod config_tokens;
+pub mod doctor;
 pub mod errors;
 pub mod fixture;
 pub mod golden;

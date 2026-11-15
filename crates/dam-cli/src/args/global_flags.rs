@@ -16,7 +16,7 @@ pub(crate) struct Cli {
         long,
         global = true,
         conflicts_with = "toon",
-        help = "Print JSON, and a failure as one error document on stderr"
+        help = "Print JSON, and a failure as one error document on stderr; dam doctor and dam config validate print only their report, to stdout"
     )]
     pub(crate) json: bool,
     #[arg(

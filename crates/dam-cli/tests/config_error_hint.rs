@@ -57,8 +57,9 @@ fn every_config_error_points_to_doctor_except_doctor_s_own() {
         assert_eq!(err.matches(HINT).count(), 1, "{err}");
         assert!(err.trim_end().ends_with(HINT), "{err}");
 
-        let err = said_by(&sb, &["doctor"]);
-        assert!(err.contains(doctor_why), "{err}");
-        assert!(!err.contains(HINT), "{err}");
+        let doctor = sb.doctor(&["doctor"]);
+        assert_eq!(doctor.code, Some(1), "{}", doctor.out);
+        assert!(doctor.out.contains(doctor_why), "{}", doctor.out);
+        assert!(!doctor.out.contains(HINT), "{}", doctor.out);
     }
 }

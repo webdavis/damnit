@@ -7,6 +7,8 @@ use super::misread_text::{MisreadText, PlaceText};
 
 pub(super) struct ConfigText<'a>(pub(super) &'a ConfigError);
 
+pub(crate) struct ConfigReason<'a>(pub(crate) &'a ConfigError);
+
 impl fmt::Display for ConfigText<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let heading = match self.0 {
@@ -14,7 +16,12 @@ impl fmt::Display for ConfigText<'_> {
             ConfigError::Unwritable { .. } => "writing config",
             _ => "config",
         };
-        write!(f, "{heading}: ")?;
+        write!(f, "{heading}: {}", ConfigReason(self.0))
+    }
+}
+
+impl fmt::Display for ConfigReason<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.0 {
             ConfigError::NotLua(path) => write!(
                 f,

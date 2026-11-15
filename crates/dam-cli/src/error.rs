@@ -21,6 +21,7 @@ mod token_fault_text;
 mod token_text;
 mod use_case_text;
 
+pub(crate) use config_text::ConfigReason;
 use config_text::ConfigText;
 pub(crate) use misuse::{Misuse, Problem};
 use refusal_oids::refusal_oids;
@@ -33,7 +34,7 @@ pub(crate) enum CliError {
     UseCase(UseCaseError),
     Editor(EditorError),
     Config(ConfigError),
-    Doctor(ConfigError),
+    Reported,
     Open(OpenError),
     Usage(String),
     CommandLine(Misuse),
@@ -82,8 +83,7 @@ impl CliError {
                 ConfigError::Unreadable { .. }
                 | ConfigError::Unwritable { .. }
                 | ConfigError::ReadOnly { .. },
-            )
-            | CliError::Doctor(ConfigError::Unreadable { .. }) => "store",
+            ) => "store",
             CliError::UseCase(UseCaseError::PushStopped {
                 by: HelperError::Cancelled,
                 ..
@@ -95,11 +95,10 @@ impl CliError {
             CliError::Editor(_) => KIND_OF_AN_EDITOR_FAILURE_NO_DOCUMENT_CARRIES,
             CliError::UseCase(UseCaseError::Parse(_))
             | CliError::UseCase(UseCaseError::Query(_))
-            | CliError::Config(_)
-            | CliError::Doctor(_) => "parse",
+            | CliError::Config(_) => "parse",
             CliError::Usage(_) | CliError::CommandLine(_) => KIND_USAGE,
             CliError::Cancelled => "cancelled",
-            CliError::Internal(_) => "internal",
+            CliError::Internal(_) | CliError::Reported => "internal",
         }
     }
 
@@ -123,8 +122,7 @@ impl fmt::Display for CliError {
         match self {
             CliError::UseCase(e) => write!(f, "{}", UseCaseText(e)),
             CliError::Editor(e) => write!(f, "editor: {}", e.0),
-            CliError::Config(e @ (ConfigError::NotLua(_) | ConfigError::ReadOnly { .. }))
-            | CliError::Doctor(e) => {
+            CliError::Config(e @ (ConfigError::NotLua(_) | ConfigError::ReadOnly { .. })) => {
                 write!(f, "{}", ConfigText(e))
             }
             CliError::Config(e) => write!(f, "{}; run dam doctor", ConfigText(e)),
@@ -134,6 +132,7 @@ impl fmt::Display for CliError {
             }
             CliError::CommandLine(misuse) => f.write_str(&misuse.message),
             CliError::Cancelled => f.write_str("cancelled"),
+            CliError::Reported => f.write_str("the report names an issue"),
         }
     }
 }

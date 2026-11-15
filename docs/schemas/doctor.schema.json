@@ -2,13 +2,38 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/doctor.schema.json",
   "title": "dam doctor answer",
-  "description": "What dam doctor prints on standard output with --json or --toon when config.lua and secrets.lua both read in full. A file that does not read gives the error document instead.",
+  "description": "What dam doctor prints on standard output with --json or --toon. It exits 1 when a check that ran is an issue, and prints no error document.",
   "type": "object",
-  "required": ["config", "secrets", "warnings"],
+  "required": ["version", "command", "checks", "needs_attention"],
   "additionalProperties": false,
   "properties": {
-    "config": { "type": ["string", "null"], "description": "The path of config.lua, or null when there is none." },
-    "secrets": { "type": ["string", "null"], "description": "The path of secrets.lua, beside config.lua, or null when there is none." },
-    "warnings": { "type": "array", "items": { "type": "string" }, "description": "What dam says about the token tables: tokens left out or disabled, and why." }
+    "version": { "type": "string", "description": "The version of this dam." },
+    "command": { "type": "string", "enum": ["doctor", "config validate"], "description": "The command that produced the report." },
+    "checks": {
+      "type": "array",
+      "description": "Each check that ran, in the order the report shows them.",
+      "items": { "$ref": "#/$defs/check" }
+    },
+    "needs_attention": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Each issue, then each warning, as the closing section numbers them."
+    }
+  },
+  "$defs": {
+    "check": {
+      "type": "object",
+      "required": ["name", "result", "detail", "advice"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "enum": ["config"], "description": "The check, by the name dam doctor takes." },
+        "result": { "type": "string", "enum": ["ok", "warning", "issue", "not_run"], "description": "What the check found; not_run when it could not run." },
+        "detail": { "type": "string", "description": "What the check found, in words." },
+        "advice": { "type": ["string", "null"], "description": "What to do next, or null." },
+        "config": { "type": ["string", "null"], "description": "On the config check: the path of config.lua, or null when there is none." },
+        "secrets": { "type": ["string", "null"], "description": "On the config check: the path of secrets.lua, beside config.lua, or null when there is none." },
+        "warnings": { "type": "array", "items": { "type": "string" }, "description": "On the config check: each token dam ignores or holds disabled, and why." }
+      }
+    }
   }
 }

@@ -107,20 +107,23 @@ fn validate_quotes_what_secrets_lua_raised_and_creates_nothing() {
     let line = &["config", "validate"];
     let (out, stdout, stderr) = run(Secrets::Raises, line).unwrap();
     assert_eq!(out.status.code(), Some(1));
-    assert!(stdout.is_empty());
+    assert!(stderr.is_empty(), "{stderr}");
     assert!(
-        stderr.ends_with("secrets.lua:2: bad token MARKER-s3cret\n"),
-        "{stderr}"
+        stdout.contains("secrets.lua:2: bad token MARKER-s3cret\n"),
+        "{stdout}"
     );
     let (out, stdout, stderr) = run(Secrets::Missing, line).unwrap();
     assert!(out.status.success() && stderr.is_empty(), "{out:?}");
-    assert!(stdout.ends_with("\nno secrets.lua\n"), "{stdout}");
+    assert!(
+        stdout.contains("\n  ✓ config: config.lua is valid, no secrets.lua\n"),
+        "{stdout}"
+    );
     if let Some((out, stdout, stderr)) = run(Secrets::Unreadable, line) {
         assert_eq!(out.status.code(), Some(1));
-        assert!(stdout.is_empty());
+        assert!(stderr.is_empty(), "{stderr}");
         assert!(
-            stderr.ends_with("Permission denied (os error 13)\n"),
-            "{stderr}"
+            stdout.contains("Permission denied (os error 13)\n"),
+            "{stdout}"
         );
     }
 }

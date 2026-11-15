@@ -1,5 +1,6 @@
 mod config;
 mod dispositions;
+mod doctor;
 mod editing;
 mod global_flags;
 mod new;
@@ -14,6 +15,7 @@ mod writing;
 use clap::Subcommand;
 
 pub(crate) use config::{ConfigArgs, ConfigCommand};
+pub(crate) use doctor::CheckName;
 pub(crate) use editing::EditArgs;
 pub(crate) use global_flags::Cli;
 pub(crate) use new::NewArgs;
@@ -84,7 +86,8 @@ pub(crate) enum Command {
     )]
     Config(ConfigArgs),
     #[command(
-        about = "Read config.lua and secrets.lua in full and print where they are; an error raised in secrets.lua is shown as that file wrote it"
+        about = "Read this machine, say what is wrong and how to fix it, and contact nothing",
+        after_help = "An error raised in secrets.lua is shown as that file wrote it.\nIt runs the top-level code of config.lua and secrets.lua and calls no credential function.\nIt exits 1 when a check finds an issue, and prints the report to stdout either way.\n\nExamples:\n  dam doctor\n  dam doctor --json"
     )]
     Doctor,
 }

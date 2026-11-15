@@ -59,11 +59,14 @@ name. Both warn of a token dam ignores or holds disabled, and `dam doctor` says 
 `dam config print-default` prints the starter `config.lua` a first run writes, and writes no file.
 `dam config` alone prints the help of these commands.
 
-`dam doctor` reads both files in full and prints their paths and any token warnings, or the
-error. It prints `no secrets.lua` for a missing file. Its error may quote `secrets.lua`. Elsewhere only a credential function's own error reaches
-you, and only when you run the command without `DAM_TOKEN`.
+`dam doctor` reads this machine, says what is wrong and how to fix it, and contacts nothing.
+It prints one row per check, then what needs attention, and creates no file.
+Its `config` check reads both files in full and lists each token warning under its row.
+That row may quote an error raised in `secrets.lua`. Elsewhere only a credential function's own
+error reaches you, and only when you run the command without `DAM_TOKEN`.
+`dam doctor` exits 1 when a check finds an issue.
 `docs/schemas/doctor.schema.json` is the schema of its `--json` answer.
-`dam config validate` checks the config as `dam doctor` does, and never creates `config.lua`.
+`dam config validate` prints the report of the `config` check alone.
 
 `stale` makes reads pull first when the last pull is older than that. A failed pull that a read
 started leaves a notice in `dam status`, and the read still answers. `deadline` (default `"60s"`)
@@ -446,6 +449,9 @@ output:
 `nothing_to_commit`, and is null for every other kind except an ambiguous oid prefix, a `usage`
 failure with rule `ambiguous_prefix`. `oids` names the objects the message names, in the order it
 names them.
+
+`dam doctor` and `dam config validate` are the exception: their report goes to standard output,
+with exit 1 when a check finds an issue, and no error document.
 
 Standard error carries that one document and nothing else, so parse the whole stream; a run that
 succeeds writes nothing there. A mistyped command line also carries `usage`, which says what was
