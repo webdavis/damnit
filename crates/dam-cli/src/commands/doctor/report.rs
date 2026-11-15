@@ -43,7 +43,12 @@ impl Doctor {
             lines.push(row(paint, check.result.mark(), 2, &check.line()));
             let warnings = check.files.iter().flat_map(|files| &files.warnings);
             lines.extend(warnings.map(|w| row(paint, Mark::Warn, 4, w)));
-            lines.extend(check.advice.iter().map(|text| advice(paint, text)));
+            lines.extend(check.advice.iter().map(|text| advice(paint, 4, text)));
+            for each in &check.rows {
+                let text = format!("{}: {}", each.name, each.detail);
+                lines.push(row(paint, each.result.mark(), 4, &text));
+                lines.extend(each.advice.iter().map(|text| advice(paint, 6, text)));
+            }
         }
         lines.extend(needs_attention(
             paint,
@@ -57,8 +62,7 @@ impl Doctor {
 fn lines_of(checks: &[Check], outcome: Outcome) -> Vec<String> {
     checks
         .iter()
-        .filter(|check| check.result == outcome)
-        .map(Check::line)
+        .flat_map(|check| check.attention(outcome))
         .collect()
 }
 

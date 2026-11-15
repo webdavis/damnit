@@ -12,6 +12,7 @@ pub(crate) struct DoctorArgs {
 pub(crate) enum CheckName {
     Config,
     Database,
+    Helpers,
 }
 
 impl CheckName {
@@ -19,6 +20,7 @@ impl CheckName {
         match self {
             CheckName::Config => "config",
             CheckName::Database => "database",
+            CheckName::Helpers => "helpers",
         }
     }
 }

@@ -1,8 +1,10 @@
 mod check;
 mod config_check;
 mod database;
+mod helpers;
 mod machine;
 mod report;
+mod row;
 
 use std::path::Path;
 
@@ -16,9 +18,10 @@ use report::Doctor;
 
 type Run = fn(&Machine) -> Vec<Check>;
 
-const CHECKS: [(CheckName, Run); 2] = [
+const CHECKS: [(CheckName, Run); 3] = [
     (CheckName::Config, config_check::check),
     (CheckName::Database, database::check),
+    (CheckName::Helpers, helpers::check),
 ];
 
 pub(crate) struct Asked<'a> {

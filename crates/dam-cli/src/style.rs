@@ -11,7 +11,6 @@ const BAD: &str = "\x1b[1;38;5;203m";
 const RESET: &str = "\x1b[0m";
 
 const GAP: usize = 2;
-const ADVICE_INDENT: usize = 4;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Paint {
@@ -33,6 +32,7 @@ pub(crate) enum Mark {
     Good,
     Warn,
     Bad,
+    Quiet,
 }
 
 impl Mark {
@@ -41,6 +41,7 @@ impl Mark {
             Mark::Good => ("✓", GOOD),
             Mark::Warn => ("⚠", WARN),
             Mark::Bad => ("✗", BAD),
+            Mark::Quiet => ("·", FAINT),
         }
     }
 }
@@ -62,12 +63,8 @@ pub(crate) fn row(paint: Paint, mark: Mark, indent: usize, text: &str) -> String
     format!("{}{} {text}", " ".repeat(indent), paint.wrap(color, symbol))
 }
 
-pub(crate) fn advice(paint: Paint, text: &str) -> String {
-    format!(
-        "{}{} {text}",
-        " ".repeat(ADVICE_INDENT),
-        paint.wrap(FAINT, "→")
-    )
+pub(crate) fn advice(paint: Paint, indent: usize, text: &str) -> String {
+    format!("{}{} {text}", " ".repeat(indent), paint.wrap(FAINT, "→"))
 }
 
 pub(crate) fn column<'a>(names: impl IntoIterator<Item = &'a str>) -> usize {
