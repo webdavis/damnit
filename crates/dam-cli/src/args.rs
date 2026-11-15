@@ -81,7 +81,7 @@ pub(crate) enum Command {
     #[command(about = "Show and check the config")]
     Config(ConfigArgs),
     #[command(
-        about = "Read config.lua and secrets.lua in full and print where they are; an error's message may show a value from the file"
+        about = "Read config.lua and secrets.lua in full and print where they are; an error raised in secrets.lua is shown as that file wrote it"
     )]
     Doctor,
 }
