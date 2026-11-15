@@ -61,7 +61,7 @@ fn reset_of_an_added_and_committed_item_is_refused_and_changes_nothing() {
         let said = text(&out.stderr);
         assert!(
             said.contains(&format!(
-                "{} was added and committed; dam reset undoes only what is staged",
+                "{} was added and committed; dam reset undoes only what is staged, and dam revert sets back a commit",
                 &hash[..7]
             )),
             "{kind}: {said}"
@@ -75,6 +75,28 @@ fn reset_of_an_added_and_committed_item_is_refused_and_changes_nothing() {
         nothing_moved(&sb, kind);
         let (shown, _, _) = sb.dam(&["show", &dentist]);
         assert_eq!(shown, kind == "new", "{kind}");
+    }
+}
+
+#[test]
+fn dam_revert_sets_back_an_added_and_committed_item() {
+    let _guard = support::guard("dam_revert_sets_back_an_added_and_committed_item");
+    for kind in ["new", "removal"] {
+        let (sb, _, dentist) = added_and_committed(kind);
+        let (_, log, _) = sb.dam(&["log", "--json"]);
+        let log: Value = serde_json::from_str(&log).unwrap();
+        let commit = log["commits"][0]["id"].as_str().unwrap().to_string();
+
+        owner(&sb, &["revert", &commit]);
+
+        let (shown, _, _) = sb.dam(&["show", &dentist]);
+        assert_eq!(shown, kind == "removal", "{kind}");
+        let status = support::status_json(&sb, &["--json"]);
+        assert_eq!(
+            status["unstaged"].as_array().map(Vec::len),
+            Some(1),
+            "{kind}"
+        );
     }
 }
 

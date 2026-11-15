@@ -23,7 +23,7 @@ pub(super) fn item_refusals_with_their_text() -> Vec<(Refusal, &'static str)> {
         ),
         (
             ItemRefusal::AlreadyCommitted(hash()),
-            "0101010 was added and committed; dam reset undoes only what is staged",
+            "0101010 was added and committed; dam reset undoes only what is staged, and dam revert sets back a commit",
         ),
         (
             ItemRefusal::NotYours(hash()),

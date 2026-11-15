@@ -22,7 +22,7 @@ impl fmt::Display for ItemText<'_> {
             ),
             ItemRefusal::AlreadyCommitted(hash) => write!(
                 f,
-                "{} was added and committed; dam reset undoes only what is staged",
+                "{} was added and committed; dam reset undoes only what is staged, and dam revert sets back a commit",
                 hash.short()
             ),
             ItemRefusal::NotYours(hash) => write!(
