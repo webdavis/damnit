@@ -4,7 +4,7 @@ use dam_domain::Permission;
 
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
-use crate::ports::RemoteName;
+use crate::ports::{RemoteHelper, RemoteName};
 use crate::remote::{PullOutcome, RemoteCapabilities};
 use crate::service::{Dam, Remotes};
 use crate::use_cases::connect::connect;
@@ -14,6 +14,7 @@ mod classify;
 mod land;
 mod missing;
 mod notices;
+mod ours;
 mod skipped;
 
 use classify::classify;
@@ -42,7 +43,7 @@ impl Dam<'_> {
             let (mut helper, caps) = connect(remotes, self.store, self.access, target)?;
             let since = self.store.sync_token(&target.name)?;
             let response = helper.pull(since.as_deref())?;
-            reports.push(self.apply_pulled(target, &caps, response)?);
+            reports.push(self.apply_pulled(target, &caps, helper.as_ref(), response)?);
         }
         Ok(reports)
     }
@@ -51,6 +52,7 @@ impl Dam<'_> {
         &self,
         remote: &RemoteConfig,
         caps: &RemoteCapabilities,
+        helper: &dyn RemoteHelper,
         mut response: PullOutcome,
     ) -> Result<PullReport, UseCaseError> {
         let store = self.store;
@@ -77,7 +79,7 @@ impl Dam<'_> {
                 &response.cancelled,
             )?);
             let (planned, new_remote_id_mappings) =
-                classify(store, remote, caps, objects, self.random)?;
+                classify(store, remote, caps, helper, objects, self.random)?;
             for (oid, remote_id) in new_remote_id_mappings {
                 store.map_remote_id(&remote.name, &oid, &remote_id)?;
             }

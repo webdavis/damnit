@@ -5,9 +5,11 @@ mod conflicts_and_refusals;
 mod helper_failures;
 mod history;
 mod kind_change;
+mod our_own_writes;
 mod removals_and_notices;
 mod skipped_objects;
 mod skipped_twice;
+mod unanswered;
 
 use crate::remote::{IncomingObject, PullOutcome};
 use crate::testing::prelude::*;
