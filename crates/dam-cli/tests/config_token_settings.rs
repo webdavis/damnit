@@ -80,3 +80,35 @@ fn a_token_holds_the_same_facts_as_dam_token_list() {
         assert!(!text.contains(value.as_str()), "{text}");
     }
 }
+
+#[test]
+fn a_token_with_no_grant_says_so_as_dam_token_list_does() {
+    let _guard = support::guard("a_token_with_no_grant_says_so_as_dam_token_list_does");
+    let tokens = config_tokens();
+    let (ok, out, err) = tokens.sb.dam(&["config", "get", "token.empty.grant"]);
+    assert!(ok, "{err}");
+    assert_eq!(out, "  token.empty.grant  -\n");
+    let (ok, listed, err) = tokens.sb.dam(&["token", "list"]);
+    assert!(ok, "{err}");
+    let row = listed.lines().find(|l| l.starts_with("empty ")).unwrap();
+    assert!(row.contains(" - "), "{row}");
+    assert_eq!(
+        json_of(&tokens.sb, &["config", "get", "token.empty.grant"]),
+        json!({"value": [], "default": false})
+    );
+}
+
+#[test]
+fn a_token_left_with_no_channel_or_permission_reads_a_dash() {
+    let _guard = support::guard("a_token_left_with_no_channel_or_permission_reads_a_dash");
+    let sb = support::sandbox::Sandbox::new();
+    sb.write_secrets_lua(&format!(
+        "return {{ schema = 1, token = {{ odd = {{ value = \"{}\", via = {{ \"carrier-pigeon\" }},\n  \
+         grant = {{ {{ allow = {{ \"task:juggle\" }} }} }} }} }} }}\n",
+        support::tokens::token(5).expose()
+    ));
+    let (ok, out, err) = sb.dam(&["config", "get", "token.odd"]);
+    assert!(ok, "{err}");
+    assert!(out.contains("  token.odd.grant       -\n"), "{out}");
+    assert!(out.contains("  token.odd.via         -\n"), "{out}");
+}

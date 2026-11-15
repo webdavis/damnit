@@ -115,14 +115,23 @@ impl Value {
         match self {
             Value::Text(text) => text.clone(),
             Value::Flag(flag) => flag.to_string(),
-            Value::List(items) => items.join(", "),
-            Value::Grants(grants) => grants
-                .iter()
-                .map(GrantView::text)
-                .collect::<Vec<_>>()
-                .join(" | "),
+            Value::List(items) => or_a_dash(items.join(", ")),
+            Value::Grants(grants) => or_a_dash(
+                grants
+                    .iter()
+                    .map(GrantView::text)
+                    .collect::<Vec<_>>()
+                    .join(" | "),
+            ),
             Value::Unset => "not set".to_string(),
         }
+    }
+}
+
+fn or_a_dash(text: String) -> String {
+    match text.is_empty() {
+        true => "-".to_string(),
+        false => text,
     }
 }
 
