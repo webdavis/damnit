@@ -3,6 +3,7 @@ use serde::Serialize;
 
 use crate::context::Context;
 use crate::error::CliError;
+use crate::layout::ago_to_one_unit_and_never_in_the_future;
 use crate::output::Report;
 use crate::view::{Human, View, optional_display, report};
 
@@ -79,22 +80,6 @@ fn when_phrase(verb: &str, at: Option<Timestamp>, now: Timestamp) -> String {
             "{verb} {}",
             ago_to_one_unit_and_never_in_the_future(now, at)
         ),
-    }
-}
-
-fn ago_to_one_unit_and_never_in_the_future(now: Timestamp, then: Timestamp) -> String {
-    const MINUTE: i64 = 60;
-    const HOUR: i64 = 60 * MINUTE;
-    const DAY: i64 = 24 * HOUR;
-    let seconds = now.duration_since(then).as_secs().max(0);
-    if seconds < MINUTE {
-        "just now".to_string()
-    } else if seconds < HOUR {
-        format!("{}m ago", seconds / MINUTE)
-    } else if seconds < DAY {
-        format!("{}h ago", seconds / HOUR)
-    } else {
-        format!("{}d ago", seconds / DAY)
     }
 }
 

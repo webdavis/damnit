@@ -66,8 +66,8 @@ It prints one row per check, then what needs attention, and creates no file.
 `dam doctor --fix` creates the starter `config.lua` and the store where each is missing.
 It changes no file that exists, and the report names each file it created.
 `dam doctor --fix <check>...` creates only what the named checks cover.
-`dam doctor <check>...` runs only the named checks: `config`, `database`, `helpers`, `credentials`
-and `pushes`.
+`dam doctor <check>...` runs only the named checks: `config`, `database`, `helpers`, `credentials`,
+`pushes` and `sync`.
 Its `config` check reads both files in full and lists each token warning under its row.
 That row may quote an error raised in `secrets.lua`. Elsewhere only a credential function's own
 error reaches you, and only when you run the command without `DAM_TOKEN`.
@@ -77,7 +77,12 @@ Its `helpers` check starts each remote's helper with no credential and asks only
 Its `credentials` check finds each credential the helper asks for in `secrets.lua`, and calls no
 credential function.
 Its `pushes` check warns of changes still owed to a remote, or sent without an answer.
-`helpers`, `credentials` and `pushes` list one row for each remote under their own row.
+Its `sync` check warns of a remote with `sync_every` while the schedule is not installed, or
+whose last sync failed, and names the last-run file and when it was written.
+It warns when the schedule is installed and that file is missing or older than 10 minutes.
+Ten minutes leaves room for a long run and for the first run after the machine wakes.
+`helpers`, `credentials` and `pushes` list one row for each remote under their own row; `sync`
+lists one for each remote with `sync_every`.
 `dam doctor` exits 1 when a check finds an issue.
 `docs/schemas/doctor.schema.json` is the schema of its `--json` answer.
 `dam config validate` prints what `dam doctor config` prints, with `command` set to

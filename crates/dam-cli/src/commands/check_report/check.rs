@@ -1,5 +1,6 @@
 use serde::Serialize;
 
+use super::last_run::LastRun;
 use super::row::Row;
 use crate::args::CheckName;
 use crate::style::Mark;
@@ -33,6 +34,8 @@ pub(crate) struct Check {
     pub(super) rows: Vec<Row>,
     #[serde(flatten)]
     pub(super) files: Option<ConfigFiles>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) last_run: Option<LastRun>,
 }
 
 #[derive(Serialize)]
@@ -51,6 +54,7 @@ impl Check {
             advice: None,
             rows: Vec::new(),
             files: None,
+            last_run: None,
         }
     }
 

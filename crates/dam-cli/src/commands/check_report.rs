@@ -1,8 +1,10 @@
 mod check;
+mod last_run;
 mod report;
 mod row;
 
 pub(crate) use check::{Check, ConfigFiles, Outcome};
+pub(crate) use last_run::LastRun;
 pub(crate) use report::{CheckReport, Heading};
 pub(crate) use row::Row;
 

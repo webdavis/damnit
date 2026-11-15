@@ -1,3 +1,5 @@
+use dam_domain::Timestamp;
+
 const GAP: &str = "  ";
 const EMPTY_CELL: &str = "-";
 
@@ -62,6 +64,22 @@ pub(crate) fn terminal_width(columns: Option<&str>, terminal: Option<usize>) -> 
 
 pub(crate) fn counted(n: usize, one: &str, many: &str) -> String {
     format!("{n} {}", if n == 1 { one } else { many })
+}
+
+pub(crate) fn ago_to_one_unit_and_never_in_the_future(now: Timestamp, then: Timestamp) -> String {
+    const MINUTE: i64 = 60;
+    const HOUR: i64 = 60 * MINUTE;
+    const DAY: i64 = 24 * HOUR;
+    let seconds = now.duration_since(then).as_secs().max(0);
+    if seconds < MINUTE {
+        "just now".to_string()
+    } else if seconds < HOUR {
+        format!("{}m ago", seconds / MINUTE)
+    } else if seconds < DAY {
+        format!("{}h ago", seconds / HOUR)
+    } else {
+        format!("{}d ago", seconds / DAY)
+    }
 }
 
 #[cfg(test)]

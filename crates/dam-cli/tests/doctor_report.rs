@@ -3,6 +3,14 @@ mod support;
 use support::doctor::{ALL_WELL, listing, report};
 use support::sandbox::Sandbox;
 
+fn no_sync(sb: &Sandbox) -> [String; 2] {
+    let last_run = sb.dir.path().join("state/dam/sync-last-run.txt");
+    [
+        "  · sync: no remote has sync_every".into(),
+        format!("    · last run {}, not written yet", last_run.display()),
+    ]
+}
+
 fn commit_two_tasks(sb: &Sandbox) {
     for subject in ["buy oat milk", "call Ada"] {
         sb.new_object(&[subject]);
@@ -33,6 +41,8 @@ fn a_machine_set_up_well_reads_every_check_and_changes_nothing() {
                 "      → run dam test credentials",
                 "  ✓ pushes: 1 remote: 1 ok",
                 "    ✓ fake: nothing owed",
+                &no_sync(&sb)[0],
+                &no_sync(&sb)[1],
             ],
             ALL_WELL
         )
@@ -62,6 +72,8 @@ fn an_issue_and_a_warning_are_counted_then_numbered() {
                 "  ⚠ pushes: 1 remote: 1 warning",
                 "    ⚠ fake: 2 changes still owed",
                 "      → run dam push",
+                &no_sync(&sb)[0],
+                &no_sync(&sb)[1],
             ],
             &[
                 "  ✗ 1 issue to fix, 1 warning to look at",
@@ -87,6 +99,7 @@ fn an_issue_and_a_warning_are_counted_then_numbered() {
             ("helpers", "issue"),
             ("credentials", "not_run"),
             ("pushes", "warning"),
+            ("sync", "not_run"),
         ]
     );
     assert_eq!(

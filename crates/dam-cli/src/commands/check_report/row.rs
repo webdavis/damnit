@@ -18,6 +18,13 @@ pub(crate) struct Row {
     pub(super) advice: Option<String>,
 }
 
+pub(super) fn worst(outcomes: &[Outcome]) -> Outcome {
+    (WORST_FIRST.iter())
+        .map(|(outcome, ..)| *outcome)
+        .find(|outcome| outcomes.contains(outcome))
+        .unwrap_or(Outcome::NotRun)
+}
+
 impl Row {
     pub(crate) fn of(name: &str, result: Outcome, detail: impl Into<String>) -> Row {
         Row {
@@ -39,11 +46,7 @@ impl Row {
 impl Check {
     pub(crate) fn of_rows(name: CheckName, rows: Vec<Row>) -> Check {
         let counted = |outcome| rows.iter().filter(|row| row.result == outcome).count();
-        let result = WORST_FIRST
-            .iter()
-            .map(|(outcome, ..)| *outcome)
-            .find(|outcome| counted(*outcome) > 0)
-            .unwrap_or(Outcome::NotRun);
+        let result = worst(&rows.iter().map(|row| row.result).collect::<Vec<_>>());
         let counts: Vec<String> = WORST_FIRST
             .iter()
             .filter_map(|(outcome, one, many)| match counted(*outcome) {
@@ -64,17 +67,15 @@ impl Check {
     }
 
     pub(super) fn attention(&self, outcome: Outcome) -> Vec<String> {
-        if self.rows.is_empty() {
-            return (self.result == outcome)
-                .then(|| self.line())
-                .into_iter()
-                .collect();
-        }
+        let speaks_for_itself = self.rows.is_empty() && self.last_run.is_none();
+        let own = (speaks_for_itself && self.result == outcome).then(|| self.line());
         let name = self.name.as_str();
-        self.rows
-            .iter()
+        let last_run = (self.last_run.iter())
+            .filter(|run| run.result == outcome)
+            .map(|run| format!("{name}: {}", run.detail));
+        let rows = (self.rows.iter())
             .filter(|row| row.result == outcome)
-            .map(|row| format!("{name} for {}: {}", row.name, row.detail))
-            .collect()
+            .map(|row| format!("{name} for {}: {}", row.name, row.detail));
+        own.into_iter().chain(last_run).chain(rows).collect()
     }
 }

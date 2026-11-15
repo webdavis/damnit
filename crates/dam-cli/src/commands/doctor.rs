@@ -6,6 +6,7 @@ mod helpers;
 mod machine;
 mod pushes;
 mod store_reading;
+mod sync;
 
 use std::path::Path;
 
@@ -22,12 +23,13 @@ const SETUP: Heading = Heading {
 
 type Run = fn(&Machine) -> Vec<Check>;
 
-const CHECKS: [(CheckName, Run); 5] = [
+const CHECKS: [(CheckName, Run); 6] = [
     (CheckName::Config, config_check::check),
     (CheckName::Database, database::check),
     (CheckName::Helpers, helpers::check),
     (CheckName::Credentials, credentials::check),
     (CheckName::Pushes, pushes::check),
+    (CheckName::Sync, sync::check),
 ];
 
 pub(crate) struct Asked<'a> {

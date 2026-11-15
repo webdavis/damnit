@@ -1,21 +1,30 @@
 use std::cell::OnceCell;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use super::store_reading::{self, Store};
-use dam_adapters::{LuaConfigFile, OpenError};
+use dam_adapters::{LuaConfigFile, OpenError, SystemClock};
 use dam_application::{
-    Config, ConfigError, HelperError, HelperLauncher, RemoteCapabilities, RemoteConfig,
+    Clock, Config, ConfigError, HelperError, HelperLauncher, RemoteCapabilities, RemoteConfig,
+    Schedule,
 };
+use dam_domain::Timestamp;
 
 pub(super) struct Answer {
     pub(super) remote: RemoteConfig,
     pub(super) capabilities: Result<RemoteCapabilities, HelperError>,
 }
 
+pub(super) struct Scheduling {
+    pub(super) schedule: Box<dyn Schedule>,
+    pub(super) last_run: PathBuf,
+    pub(super) now: Timestamp,
+}
+
 pub(crate) struct Machine<'a> {
     pub(super) config_file: &'a LuaConfigFile,
     pub(super) store_path: &'a Path,
     launcher: &'a dyn HelperLauncher,
+    pub(super) scheduling: Scheduling,
     config: OnceCell<Result<Config, ConfigError>>,
     store: OnceCell<Result<Store, OpenError>>,
     answers: OnceCell<Option<Vec<Answer>>>,
@@ -27,10 +36,16 @@ impl<'a> Machine<'a> {
         store_path: &'a Path,
         launcher: &'a dyn HelperLauncher,
     ) -> Machine<'a> {
+        let scheduling = Scheduling {
+            schedule: dam_adapters::this_systems_schedule(),
+            last_run: dam_adapters::default_last_run_path(),
+            now: SystemClock.now(),
+        };
         Machine {
             config_file,
             store_path,
             launcher,
+            scheduling,
             config: OnceCell::new(),
             store: OnceCell::new(),
             answers: OnceCell::new(),

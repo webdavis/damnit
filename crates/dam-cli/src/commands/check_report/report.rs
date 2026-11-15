@@ -60,6 +60,10 @@ impl CheckReport {
             lines.push(row(paint, check.result.mark(), 2, &check.line()));
             let warnings = check.files.iter().flat_map(|files| &files.warnings);
             lines.extend(warnings.map(|w| row(paint, Mark::Warn, 4, w)));
+            if let Some(run) = &check.last_run {
+                lines.push(row(paint, run.result.mark(), 4, &run.line()));
+                lines.extend(run.advice.iter().map(|text| advice(paint, 6, text)));
+            }
             lines.extend(check.advice.iter().map(|text| advice(paint, 4, text)));
             for each in &check.rows {
                 let text = format!("{}: {}", each.name, each.detail);

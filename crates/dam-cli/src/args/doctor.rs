@@ -20,6 +20,7 @@ pub(crate) enum CheckName {
     Helpers,
     Credentials,
     Pushes,
+    Sync,
 }
 
 impl CheckName {
@@ -30,6 +31,7 @@ impl CheckName {
             CheckName::Helpers => "helpers",
             CheckName::Credentials => "credentials",
             CheckName::Pushes => "pushes",
+            CheckName::Sync => "sync",
         }
     }
 }
