@@ -10,7 +10,7 @@ pub(super) struct Pushed<'a> {
 }
 
 #[derive(Serialize)]
-pub(super) struct PushRow<'a> {
+pub(crate) struct PushRow<'a> {
     remote: &'a str,
     sent: usize,
     succeeded: usize,
@@ -27,7 +27,7 @@ struct FailedPush<'a> {
 }
 
 impl<'a> PushRow<'a> {
-    pub(super) fn new(r: &'a PushReport) -> PushRow<'a> {
+    pub(crate) fn new(r: &'a PushReport) -> PushRow<'a> {
         PushRow {
             remote: &r.remote.0,
             sent: r.sent,
@@ -42,27 +42,36 @@ impl<'a> PushRow<'a> {
         }
     }
 
-    fn line(&self) -> String {
-        let mut line = format!(
-            "{}: {} sent, {} ok, {} failed, {} skipped",
-            self.remote,
+    pub(crate) fn counts(&self) -> String {
+        format!(
+            "{} sent, {} ok, {} failed, {} skipped",
             self.sent,
             self.succeeded,
             self.failed.len(),
             self.skipped
-        );
+        )
+    }
+
+    fn line(&self) -> String {
+        let mut line = format!("{}: {}", self.remote, self.counts());
         for f in &self.failed {
             line.push_str(&format!("\n  {}: {}", f.oid.short(), f.why));
         }
+        if let Some(held) = self.held_for_a_conflict() {
+            line.push_str(&format!("\n  {held}"));
+        }
+        line
+    }
+
+    pub(crate) fn held_for_a_conflict(&self) -> Option<String> {
         let held = match self.held {
-            Some(0) => return line,
+            Some(0) => return None,
             Some(n) => format!("{n} held"),
             None => "some held".to_string(),
         };
-        line.push_str(&format!(
-            "\n  {held} for a conflict; see dam status, settle with dam resolve"
-        ));
-        line
+        Some(format!(
+            "{held} for a conflict; see dam status, settle with dam resolve"
+        ))
     }
 }
 

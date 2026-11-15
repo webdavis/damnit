@@ -10,7 +10,7 @@ pub(super) struct Pulled<'a> {
 }
 
 #[derive(Serialize)]
-pub(super) struct PullRow<'a> {
+pub(crate) struct PullRow<'a> {
     remote: &'a str,
     created: usize,
     updated: usize,
@@ -23,7 +23,7 @@ pub(super) struct PullRow<'a> {
 }
 
 impl<'a> PullRow<'a> {
-    pub(super) fn new(r: &'a PullReport) -> PullRow<'a> {
+    pub(crate) fn new(r: &'a PullReport) -> PullRow<'a> {
         PullRow {
             remote: &r.remote.0,
             created: r.created,
@@ -37,16 +37,19 @@ impl<'a> PullRow<'a> {
         }
     }
 
-    fn line(&self) -> String {
-        let mut line = format!(
-            "{}: {} new, {} updated, {} unchanged, {}, {} removed upstream",
-            self.remote,
+    pub(crate) fn counts(&self) -> String {
+        format!(
+            "{} new, {} updated, {} unchanged, {}, {} removed upstream",
             self.created,
             self.updated,
             self.unchanged,
             counted(self.conflicts, "conflict", "conflicts"),
             self.removed_upstream
-        );
+        )
+    }
+
+    fn line(&self) -> String {
+        let mut line = format!("{}: {}", self.remote, self.counts());
         let taken_from_the_record = [
             (self.creates_matched, "create matched", "creates matched"),
             (self.values_kept, "value kept", "values kept"),

@@ -25,6 +25,7 @@ pub(crate) mod remove;
 pub(crate) mod resolve;
 pub(crate) mod restore;
 pub(crate) mod revert;
+pub(crate) mod scheduled_sync;
 pub(crate) mod stage;
 pub(crate) mod status;
 pub(crate) mod subtree;

@@ -20,6 +20,10 @@ pub enum Notice {
         oid: Oid,
         why: String,
     },
+    SyncFailed {
+        remote: RemoteName,
+        why: String,
+    },
     PullSkipped {
         remote: RemoteName,
         object: RejectedObject,

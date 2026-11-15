@@ -100,6 +100,14 @@ It prints how many it held as `held`. The next push after `dam resolve` sends th
 
     dam pull
 
+`sync_every = "15m"` on a remote makes `dam sync run` pull from it and push to it that often.
+The shortest is `1m`. Without it, a remote syncs only on `dam pull` and `dam push`.
+`dam sync run` runs once and syncs each remote whose last pull is older than its `sync_every`.
+A remote that takes no kinds, such as a calendar, is only pulled from.
+A failed sync leaves one notice in `dam status`, until a sync of that remote works.
+It exits 1 when a sync failed. `docs/schemas/sync-run.schema.json` is the schema of its `--json`
+answer.
+
 ## Google Calendar
 
     cargo install --git https://github.com/webdavis/damnit dam-remote-gcal
@@ -461,7 +469,7 @@ added gets a removal item. It answers `withdrawn`, `waiting`, `declined` or `not
 exit 0. Your own `dam rm --id` removes your task, or answers `nothing`.
 
 A token cannot run `mv`, `add`, `reset`, `restore`, `commit`, `remote add`, `resolve`, `day`,
-`config` or `token`, or set `--focus`.
+`sync run`, `config` or `token`, or set `--focus`.
 
 An unknown permission is skipped. An unknown key, or a reserved name such as `config:change`,
 disables the token, and so does sharing a value with another token. A `schema` above 1 disables

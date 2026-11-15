@@ -64,6 +64,10 @@ fn every_notice_variant_round_trips() {
             oid: oid(3),
             why: "w".into(),
         },
+        Notice::SyncFailed {
+            remote: RemoteName("t".into()),
+            why: "w".into(),
+        },
         Notice::PullSkipped {
             remote: RemoteName("t".into()),
             object: RejectedObject {

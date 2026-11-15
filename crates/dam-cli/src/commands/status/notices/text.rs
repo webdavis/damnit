@@ -38,6 +38,7 @@ impl NoticeRow<'_> {
             NoticeRow::PushFailed { remote, oid, why } => {
                 format!("push of {} to {remote} failed: {why}", oid.short())
             }
+            NoticeRow::SyncFailed { remote, why } => format!("sync with {remote} failed: {why}"),
             NoticeRow::PullSkipped {
                 remote,
                 remote_id: "",

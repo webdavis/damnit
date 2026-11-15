@@ -28,11 +28,11 @@ impl Dam<'_> {
     }
 }
 
-fn is_stale(age: Option<Duration>, window: Duration) -> bool {
+pub(crate) fn is_stale(age: Option<Duration>, window: Duration) -> bool {
     age.is_none_or(|a| a.as_secs() > window.as_secs())
 }
 
-fn age_of_last_pull(
+pub(crate) fn age_of_last_pull(
     tracking: &dyn RemoteTrackingRepository,
     clock: &dyn Clock,
     remote: &RemoteName,

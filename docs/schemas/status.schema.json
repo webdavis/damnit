@@ -35,6 +35,14 @@
             }
           },
           {
+            "description": "The last dam sync run of this remote failed. The next sync of it that works removes this notice.",
+            "if": { "properties": { "kind": { "const": "sync_failed" } } },
+            "then": {
+              "required": ["remote", "why"],
+              "properties": { "remote": { "type": "string" }, "why": { "type": "string" } }
+            }
+          },
+          {
             "description": "A create that got no answer, of an object since removed here or no longer sent to that remote. The remote may hold a copy dam has no id for.",
             "if": { "properties": { "kind": { "const": "unanswered_create_dropped" } } },
             "then": {

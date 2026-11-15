@@ -9,8 +9,11 @@ use crate::view::report;
 mod pull_view;
 mod view;
 
-use pull_view::{PullRow, Pulled};
-use view::{PushRow, Pushed, Resolved};
+pub(crate) use pull_view::PullRow;
+pub(crate) use view::PushRow;
+
+use pull_view::Pulled;
+use view::{Pushed, Resolved};
 
 pub(crate) fn run_push(ctx: &Context, args: PushArgs) -> Result<Report, CliError> {
     let reports = ctx.dam().push(ctx.remotes(), args.remote.as_deref())?;

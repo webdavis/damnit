@@ -19,6 +19,7 @@ mod remote;
 mod restore;
 mod revert;
 mod rm;
+pub(crate) mod scheduled_sync;
 mod sent;
 mod settled;
 mod show;
@@ -62,6 +63,9 @@ pub(crate) fn dispatch_a_verb_that_opens_the_store(
         Command::Push(a) => sync::run_push(ctx, a),
         Command::Pull(a) => sync::run_pull(ctx, a),
         Command::Resolve(a) => sync::run_resolve(ctx, a),
+        Command::Sync(_) => Err(CliError::Internal(
+            "dam sync is answered before the dispatch".into(),
+        )),
         Command::Category(_)
         | Command::Filter(_)
         | Command::Token(_)

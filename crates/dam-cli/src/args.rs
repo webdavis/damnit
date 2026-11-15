@@ -24,7 +24,9 @@ pub(crate) use planning::{DayArgs, DayCommand, RemindersArgs};
 pub(crate) use reading::{
     AgendaArgs, AuthorKind, CategoryArgs, CategoryCommand, FilterArgs, FilterCommand, LsArgs,
 };
-pub(crate) use remotes::{PullArgs, PushArgs, RemoteArgs, RemoteCommand, ResolveArgs};
+pub(crate) use remotes::{
+    PullArgs, PushArgs, RemoteArgs, RemoteCommand, ResolveArgs, SyncArgs, SyncCommand,
+};
 pub(crate) use staging::{
     AddArgs, CommitArgs, DiffArgs, ResetArgs, RestoreArgs, RevertArgs, ShowArgs, StatusArgs,
 };
@@ -95,6 +97,11 @@ Examples:
     Pull(PullArgs),
     #[command(about = "Settle a conflict for one object")]
     Resolve(ResolveArgs),
+    #[command(
+        about = "Sync the remotes that set sync_every",
+        after_help = "Examples:\n  dam sync run"
+    )]
+    Sync(SyncArgs),
     #[command(about = "Manage the tokens tools and agents run dam with")]
     Token(TokenArgs),
     #[command(

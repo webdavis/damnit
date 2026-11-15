@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/sync-run.schema.json",
+  "title": "dam sync run answer",
+  "description": "What dam sync run prints with --json or --toon, one row per remote that has sync_every.",
+  "type": "object",
+  "required": ["remotes"],
+  "additionalProperties": false,
+  "properties": {
+    "remotes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["remote", "sync_every", "result"],
+        "properties": {
+          "remote": { "type": "string" },
+          "sync_every": { "type": "string" },
+          "result": { "enum": ["synced", "not_due", "failed"] }
+        },
+        "oneOf": [
+          {
+            "required": ["pulled", "pushed"],
+            "additionalProperties": false,
+            "properties": {
+              "remote": true,
+              "sync_every": true,
+              "result": { "const": "synced" },
+              "pulled": { "$ref": "pull.schema.json#/properties/remotes/items" },
+              "pushed": {
+                "description": "null when the remote takes no kinds, so nothing is pushed to it.",
+                "oneOf": [{ "type": "null" }, { "$ref": "push.schema.json#/properties/remotes/items" }]
+              }
+            }
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "remote": true,
+              "sync_every": true,
+              "result": { "const": "not_due" }
+            }
+          },
+          {
+            "required": ["why"],
+            "additionalProperties": false,
+            "properties": {
+              "remote": true,
+              "sync_every": true,
+              "result": { "const": "failed" },
+              "why": { "type": "string" }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

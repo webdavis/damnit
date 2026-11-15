@@ -1,5 +1,6 @@
 use std::io::Write;
 
+use super::config_files::Remote;
 use super::fixture::{self, CALL_MOM, OAT_MILK, STANDUP, run, short};
 use super::sandbox::Sandbox;
 use super::small_config::small_config;
@@ -146,6 +147,7 @@ pub fn answers(command: &str) -> Option<Vec<serde_json::Value>> {
         "remote list" => vec![json_of(&fixture::pulled_and_pushed(), &["remote", "list"])],
         "push" => vec![json_of(&fixture::committed(), &["push"])],
         "pull" => vec![json_of(&fixture::committed(), &["pull"])],
+        "sync run" => vec![json_of(&syncing(), &["sync", "run"])],
         "resolve" => vec![json_of(&in_conflict(), &["resolve", &milk, "--theirs"])],
         "token create" => vec![json_of(
             &Sandbox::new(),
@@ -167,4 +169,10 @@ pub fn answers(command: &str) -> Option<Vec<serde_json::Value>> {
         "token revoke" => vec![json_of(&with_token(), &["token", "revoke", "tool"])],
         _ => return None,
     })
+}
+
+fn syncing() -> Sandbox {
+    let sb = fixture::committed();
+    sb.add_remote("fake", Remote::fake().sync_every("1m"));
+    sb
 }

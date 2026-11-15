@@ -6,6 +6,7 @@ use super::token_table::{TokenTable, list, text};
 pub struct Remote {
     url: String,
     deadline: Option<String>,
+    sync_every: Option<String>,
     api_token: Option<String>,
 }
 
@@ -14,6 +15,7 @@ impl Remote {
         Remote {
             url: url.to_string(),
             deadline: None,
+            sync_every: None,
             api_token: None,
         }
     }
@@ -25,6 +27,13 @@ impl Remote {
     pub fn deadline(self, silence: &str) -> Remote {
         Remote {
             deadline: Some(silence.to_string()),
+            ..self
+        }
+    }
+
+    pub fn sync_every(self, every: &str) -> Remote {
+        Remote {
+            sync_every: Some(every.to_string()),
             ..self
         }
     }
@@ -66,6 +75,12 @@ impl ConfigFiles {
                     .deadline
                     .iter()
                     .map(|d| format!("deadline = {}", text(d))),
+            );
+            fields.extend(
+                remote
+                    .sync_every
+                    .iter()
+                    .map(|e| format!("sync_every = {}", text(e))),
             );
             entry(name, &format!("{{ {} }}", fields.join(", ")))
         });

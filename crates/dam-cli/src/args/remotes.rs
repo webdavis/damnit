@@ -20,6 +20,21 @@ pub(crate) enum RemoteCommand {
 }
 
 #[derive(Args, Debug)]
+pub(crate) struct SyncArgs {
+    #[command(subcommand)]
+    pub(crate) command: Option<SyncCommand>,
+}
+
+#[derive(Subcommand, Debug)]
+pub(crate) enum SyncCommand {
+    #[command(
+        about = "Pull from and push to each remote whose sync_every has passed since its last pull",
+        after_help = "A remote that takes no kinds is pulled from alone.\nA failed sync leaves one notice in dam status, until a sync of that remote works.\nIt exits 1 when a remote's sync failed, and prints the report to stdout either way.\n\nExamples:\n  dam sync run\n  dam sync run --json"
+    )]
+    Run,
+}
+
+#[derive(Args, Debug)]
 pub(crate) struct PushArgs {
     #[arg(help = "Push to this remote alone. Default: every remote")]
     pub(crate) remote: Option<String>,

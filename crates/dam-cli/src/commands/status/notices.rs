@@ -25,6 +25,10 @@ pub(super) enum NoticeRow<'a> {
         oid: &'a Oid,
         why: &'a str,
     },
+    SyncFailed {
+        remote: &'a str,
+        why: &'a str,
+    },
     PullSkipped {
         remote: &'a str,
         remote_id: &'a str,
@@ -82,6 +86,10 @@ impl<'a> NoticeRow<'a> {
             Notice::PushFailed { remote, oid, why } => NoticeRow::PushFailed {
                 remote: &remote.0,
                 oid,
+                why,
+            },
+            Notice::SyncFailed { remote, why } => NoticeRow::SyncFailed {
+                remote: &remote.0,
                 why,
             },
             Notice::PullSkipped { remote, object } => NoticeRow::PullSkipped {

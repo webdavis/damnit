@@ -20,7 +20,7 @@ mod view;
 use dam_adapters::{Interrupt, LuaConfigFile, OsRandom, ProcessLauncher, SystemClock};
 use dam_application::{Clock, ConfigFile, HelperError, UseCaseError};
 
-use crate::args::{Cli, Command};
+use crate::args::{Cli, Command, SyncArgs};
 use crate::caller::{authenticated, caller};
 use crate::context::Context;
 use crate::error::CliError;
@@ -106,6 +106,9 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
             &commands::config::run(&config_file, command)?,
         );
     }
+    if let Command::Sync(SyncArgs { command: None }) = cli.command {
+        return group_help::print("sync");
+    }
     if presented_token.is_none() {
         first_run::create_the_owners_config_when_missing(&config_file, &config_path, format);
     }
@@ -136,6 +139,9 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         format,
         interrupt,
     )?;
+    if let Command::Sync(_) = cli.command {
+        return commands::scheduled_sync::print(&ctx, format, color);
+    }
     let report = commands::dispatch_a_verb_that_opens_the_store(&ctx, cli.command)?;
     output::print(format, color, &report)
 }
