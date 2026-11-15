@@ -14,6 +14,7 @@ mod landings;
 mod last_push;
 mod lost_settlement;
 mod namesakes;
+mod newer_value_wins;
 mod order;
 mod partial_stops;
 mod read_only;

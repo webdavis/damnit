@@ -13,10 +13,11 @@ something `dam` no longer believes.
 
 ## Decision
 
-A retry sends a synthetic update built from the committed view, except where an unpushed commit
-already covers that oid. A coalesced commit change already ends at the committed state, so leaving
-it in place resends exactly what the synthetic one would have. An object removed since the failed
-attempt is resent as a removal.
+Every object a push owes is sent from what the remote snapshot holds to the committed state, whether
+an unpushed commit, a retry or a recorded write makes it owed. The changes an unpushed commit
+recorded only say which objects are owed. A commit left unpushed by one unanswered write can hold an
+older value of another object that a later push already sent, so its recorded change is never sent.
+An object removed since the failed attempt is resent as a removal.
 
 ## Consequence
 
@@ -35,10 +36,9 @@ sends what an older recorded write sent. A create's key takes no content and no 
 between an unanswered create and its resend keeps the key, and a remote that runs a key once runs
 the create once. No key comes from a commit.
 
-An object with recorded writes is resent from what the remote snapshot holds to the committed
-state, like a retry. Each write also declares every field where a recorded write sent another value
-than the object holds now. A create accepted after a recorded write that sent other values may have
-been skipped as already run, so the same push follows it with an update of those fields only.
+Each write also declares every field where a recorded write sent another value than the object
+holds now. A create accepted after a recorded write that sent other values may have been skipped as
+already run, so the same push follows it with an update of those fields only.
 
 A create with no answer whose object is removed here, or no longer goes to that remote, leaves a
 notice that the remote may hold a copy. The record forgets it and the count moves, so a create that
