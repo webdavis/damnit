@@ -9,6 +9,7 @@ mod edit_checks;
 mod edit_files;
 mod examples;
 mod file_text;
+mod printing_restored;
 mod read_only;
 mod remove_token;
 mod secrets_file;
