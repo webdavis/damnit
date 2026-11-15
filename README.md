@@ -418,7 +418,8 @@ of your tasks needs `task:remove` and waits as a removal item. A token's `dam rm
 `--id` answers `withdrawn`, `waiting`, `declined` or `nothing`. Adding a removal item does what your
 `dam rm` does: children move up and other tasks stop depending on it. Those changes are staged as
 yours, and `dam status` counts them first. If you have removed the task yourself, `dam add` settles
-the removal item and stages nothing.
+the removal item and stages nothing. `dam reset <hash>` sets back the other tasks an added item
+moved or changed. A task you changed since `dam add` stays as it is and is named as `kept`.
 
 Your own rows in `status` and `log` read `you` to you and `owner` to a token.
 

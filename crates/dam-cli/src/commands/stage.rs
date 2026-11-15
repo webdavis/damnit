@@ -36,6 +36,8 @@ struct Unstaged<'a> {
     unstaged: &'a [Oid],
     #[serde(serialize_with = "displays", skip_serializing_if = "<[_]>::is_empty")]
     waiting: &'a [ItemHash],
+    #[serde(serialize_with = "displays", skip_serializing_if = "<[_]>::is_empty")]
+    kept: &'a [Oid],
 }
 
 impl View for Unstaged<'_> {
@@ -51,6 +53,10 @@ impl View for Unstaged<'_> {
         if !self.waiting.is_empty() {
             let hashes = self.waiting.iter().map(ItemHash::short).collect();
             lines.push(format!("waiting again {}", shorts(hashes)));
+        }
+        if !self.kept.is_empty() {
+            let oids = self.kept.iter().map(Oid::short).collect();
+            lines.push(format!("kept {}, changed since dam add", shorts(oids)));
         }
         Human::Lines(lines)
     }
@@ -91,19 +97,24 @@ pub(crate) fn run_reset(ctx: &Context, args: ResetArgs) -> Result<Report, CliErr
             Named::Item(hash) => hashes.push(hash),
         }
     }
+    let mut kept = Vec::new();
     if !oids.is_empty() || hashes.is_empty() {
-        ctx.dam().reset(&oids)?;
+        kept = ctx.dam().reset(&oids)?;
     }
     let mut waiting = Vec::new();
     for hash in &hashes {
         match ctx.dam().reopen(hash)? {
-            Reopened::Unstaged(oid) => oids.push(oid),
+            Reopened::Unstaged { oid, kept: more } => {
+                oids.push(oid);
+                kept.extend(more);
+            }
             Reopened::Waiting(hash) => waiting.push(hash),
         }
     }
     report(&Unstaged {
         unstaged: &oids,
         waiting: &waiting,
+        kept: &kept,
     })
 }
 

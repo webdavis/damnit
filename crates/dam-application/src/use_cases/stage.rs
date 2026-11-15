@@ -52,7 +52,7 @@ impl Dam<'_> {
         Ok(added)
     }
 
-    pub fn reset(&self, oids: &[Oid]) -> Result<(), UseCaseError> {
+    pub fn reset(&self, oids: &[Oid]) -> Result<Vec<Oid>, UseCaseError> {
         atomically(self.store, || {
             let everything: Vec<Oid>;
             let oids = if oids.is_empty() {
@@ -66,11 +66,12 @@ impl Dam<'_> {
             } else {
                 oids
             };
+            let mut kept = Vec::new();
             for oid in oids {
-                self.unpick(oid)?;
+                kept.extend(self.unpick(oid)?);
                 self.store.unstage(oid)?;
             }
-            Ok(())
+            Ok(kept)
         })
     }
 

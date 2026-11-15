@@ -5,9 +5,9 @@ use crate::errors::UseCaseError;
 use crate::service::Dam;
 
 impl Dam<'_> {
-    pub(crate) fn unpick(&self, oid: &Oid) -> Result<(), UseCaseError> {
+    pub(crate) fn unpick(&self, oid: &Oid) -> Result<Vec<Oid>, UseCaseError> {
         let Some(item) = self.added_item_staged_at(oid)? else {
-            return Ok(());
+            return Ok(Vec::new());
         };
         let working = self.store.get(oid)?;
         match (&item.change, working) {
@@ -36,7 +36,7 @@ impl Dam<'_> {
             _ => {}
         }
         self.store.settle(&item.hash, Outcome::Waiting)?;
-        Ok(())
+        self.set_back_what_followed(&item.hash)
     }
 
     pub(super) fn added_item_staged_at(&self, oid: &Oid) -> Result<Option<Item>, UseCaseError> {

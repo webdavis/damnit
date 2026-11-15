@@ -8,7 +8,7 @@ use crate::use_cases::prefix::Named;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Reopened {
-    Unstaged(Oid),
+    Unstaged { oid: Oid, kept: Vec<Oid> },
     Waiting(ItemHash),
 }
 
@@ -69,8 +69,11 @@ impl Dam<'_> {
                     if !still_staged {
                         return Err(ItemRefusal::AlreadyCommitted(item.hash).into());
                     }
-                    self.reset(std::slice::from_ref(item.target()))?;
-                    Ok(Reopened::Unstaged(item.target().clone()))
+                    let kept = self.reset(std::slice::from_ref(item.target()))?;
+                    Ok(Reopened::Unstaged {
+                        oid: item.target().clone(),
+                        kept,
+                    })
                 }
                 Outcome::Waiting => Err(ItemRefusal::NotAnObject(item.hash).into()),
                 Outcome::Withdrawn(_) => Err(ItemRefusal::NotWaiting {
@@ -85,3 +88,6 @@ impl Dam<'_> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod follow_on_tests;
