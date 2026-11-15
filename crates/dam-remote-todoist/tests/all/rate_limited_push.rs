@@ -1,4 +1,4 @@
-mod support;
+use crate::support;
 
 use dam_application::HelperError;
 use dam_application::UseCaseError;

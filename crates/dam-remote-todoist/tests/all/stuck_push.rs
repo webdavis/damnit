@@ -1,4 +1,4 @@
-mod support;
+use crate::support;
 
 use dam_application::Notice;
 use dam_application::testing::prelude::*;

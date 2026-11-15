@@ -1,4 +1,4 @@
-mod support;
+use crate::support;
 
 use dam_application::ObjectRepository;
 use dam_application::testing::{Scenario, oid, remotes_launched_by, task_in};
