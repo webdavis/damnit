@@ -7,7 +7,7 @@ use dam_domain::{
 
 use super::filter_fields::NOT_IN_THE_TABLE;
 use super::filter_support::{every_field_event, every_field_task, field_names};
-use crate::lua_config::{filter, remote, secrets, settings, token};
+use crate::lua_config::{filter, hook, remote, secrets, settings, token};
 use crate::{history_document, object_document};
 
 const PAGE: &str = include_str!("../../../../../docs/lua.md");
@@ -45,6 +45,8 @@ fn the_page_names_every_key_config_lua_takes_and_no_other() {
         &settings::CATEGORY[..],
         &remote::SETTINGS[..],
         &filter::FILTER[..],
+        &hook::HOOK[..],
+        &hook::HOOK_TABLE[..],
     ]);
     assert_eq!(keys_named(&rows_under("config.lua")), read);
 }

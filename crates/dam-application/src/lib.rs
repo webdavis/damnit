@@ -13,7 +13,8 @@ mod use_cases;
 
 pub use access::{Access, Detailed, Holder, Owner, TokenRefusal, authenticate};
 pub use config::{
-    Config, ConfiguredDuration, CredentialSpec, FilterConfig, FilterRule, RemoteConfig,
+    Config, ConfiguredDuration, CredentialSpec, FilterConfig, FilterRule, HookConfig, HookEvent,
+    OnFailure, RemoteConfig,
 };
 pub use credentials::resolve_credentials;
 pub use dam_domain::{

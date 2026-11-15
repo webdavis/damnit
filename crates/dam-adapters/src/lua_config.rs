@@ -5,6 +5,7 @@ mod evaluate;
 mod file;
 mod filter;
 mod filter_function;
+mod hook;
 mod port;
 mod printed;
 mod remote;

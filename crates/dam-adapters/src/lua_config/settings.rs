@@ -2,10 +2,11 @@ use dam_application::{Config, ConfigError};
 use dam_domain::{Categories, Category};
 
 use super::filter::read_filter;
+use super::hook::read_hooks;
 use super::remote::read_remote;
 use super::strict::StrictMap;
 
-pub(crate) const SETTINGS: [&str; 5] = ["owner", "done", "remote", "category", "filter"];
+pub(crate) const SETTINGS: [&str; 6] = ["owner", "done", "remote", "category", "filter", "hook"];
 pub(crate) const DONE: [&str; 1] = ["interactive"];
 pub(crate) const CATEGORY: [&str; 2] = ["values", "exclusive"];
 const SECRETS: [&str; 2] = ["token", "schema"];
@@ -53,6 +54,7 @@ pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
         categories,
         categories_writing_exclusive,
         filters,
+        hooks: read_hooks(root)?,
         tokens: Default::default(),
     })
 }

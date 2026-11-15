@@ -26,6 +26,7 @@ pub(crate) fn context() -> Context {
             categories: Categories::new(vec![]).unwrap_or_else(|_| unreachable!()),
             categories_writing_exclusive: Default::default(),
             filters: vec![],
+            hooks: vec![],
             tokens: Default::default(),
         },
         access: Box::new(dam_application::Owner),
