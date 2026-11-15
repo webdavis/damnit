@@ -2,6 +2,7 @@ mod agenda;
 mod authorship;
 mod caller_id;
 pub(crate) mod catalogue;
+mod check_report;
 mod commit;
 pub(crate) mod config;
 mod day;

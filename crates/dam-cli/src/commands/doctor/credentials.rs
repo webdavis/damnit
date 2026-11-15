@@ -1,10 +1,10 @@
 use dam_application::CredentialSpec;
 
-use super::check::{Check, Outcome};
 use super::helpers::{CONFIG_UNREAD, NO_REMOTES};
 use super::machine::{Answer, Machine};
-use super::row::Row;
 use crate::args::CheckName;
+use crate::commands::check_report::Row;
+use crate::commands::check_report::{Check, Outcome};
 
 pub(super) fn check(machine: &Machine) -> Vec<Check> {
     match machine.answers() {

@@ -19,7 +19,7 @@ pub(crate) struct Row {
 }
 
 impl Row {
-    pub(super) fn of(name: &str, result: Outcome, detail: impl Into<String>) -> Row {
+    pub(crate) fn of(name: &str, result: Outcome, detail: impl Into<String>) -> Row {
         Row {
             name: name.to_string(),
             result,
@@ -28,7 +28,7 @@ impl Row {
         }
     }
 
-    pub(super) fn advising(self, advice: impl Into<String>) -> Row {
+    pub(crate) fn advising(self, advice: impl Into<String>) -> Row {
         Row {
             advice: Some(advice.into()),
             ..self
@@ -37,7 +37,7 @@ impl Row {
 }
 
 impl Check {
-    pub(super) fn of_rows(name: CheckName, rows: Vec<Row>) -> Check {
+    pub(crate) fn of_rows(name: CheckName, rows: Vec<Row>) -> Check {
         let counted = |outcome| rows.iter().filter(|row| row.result == outcome).count();
         let result = WORST_FIRST
             .iter()

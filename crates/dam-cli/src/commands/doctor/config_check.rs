@@ -1,7 +1,7 @@
-use super::check::{Check, ConfigFiles, Outcome};
 use super::found;
 use super::machine::Machine;
 use crate::args::CheckName;
+use crate::commands::check_report::{Check, ConfigFiles, Outcome};
 use crate::commands::token_warnings::token_warnings;
 use crate::error::ConfigReason;
 use dam_application::ConfigError;

@@ -3,10 +3,10 @@ use std::path::PathBuf;
 
 use dam_adapters::SqliteStore;
 
-use super::check::{Check, Outcome};
 use super::machine::Machine;
 use super::store_reading::Store;
 use crate::args::CheckName;
+use crate::commands::check_report::{Check, Outcome};
 
 const SUPPORTED: u32 = SqliteStore::SCHEMA_VERSION;
 const SETTLE: &str =
