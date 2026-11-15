@@ -1,6 +1,6 @@
 use std::io::{self, BufRead, Write};
 
-use dam_protocol::{EarlyAnswer, Reply, Request, read_line, write_line};
+use dam_protocol::{EarlyAnswer, LoginResponse, Reply, Request, read_line, write_line};
 
 use crate::Remote;
 
@@ -25,6 +25,10 @@ pub fn serve(input: &mut impl BufRead, out: &mut impl Write, remote: &impl Remot
 fn answer(out: &mut impl Write, remote: &impl Remote, request: Request) -> io::Result<()> {
     match request {
         Request::Capabilities => write_line(out, &Reply::Answered(remote.capabilities())),
+        Request::Login => {
+            let signed_in = remote.login().map(|()| LoginResponse { signed_in: true });
+            write_line(out, &Reply::from(signed_in))
+        }
         Request::Pull { since } => write_line(out, &Reply::from(remote.pull(since.as_deref()))),
         Request::Push {
             mutations,

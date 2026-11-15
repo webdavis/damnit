@@ -135,6 +135,7 @@ fn every_field_a_mutation_names_reads_back_from_a_helpers_capabilities() {
         credentials: vec![],
         incremental: false,
         removes_only_empty_containers: false,
+        answers_login: false,
     });
     assert_eq!(caps.fields, Field::ALL);
 }

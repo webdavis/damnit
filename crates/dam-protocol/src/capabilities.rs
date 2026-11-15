@@ -15,6 +15,8 @@ pub struct Capabilities {
     pub incremental: bool,
     #[serde(default)]
     pub removes_only_empty_containers: bool,
+    #[serde(default)]
+    pub answers_login: bool,
 }
 
 impl Capabilities {

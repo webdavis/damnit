@@ -128,6 +128,7 @@ fn a_kind_or_field_this_dam_does_not_know_is_dropped_rather_than_refused() {
         credentials: vec!["api_token".into()],
         incremental: true,
         removes_only_empty_containers: true,
+        answers_login: false,
     });
     assert_eq!(caps.kinds, vec![dam_domain::Kind::Task]);
     assert_eq!(caps.fields, vec![dam_domain::Field::Subject]);

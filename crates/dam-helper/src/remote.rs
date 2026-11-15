@@ -8,4 +8,7 @@ pub trait Remote {
         mutations: Vec<Mutation>,
         answered: &mut dyn FnMut(&MutationResult),
     ) -> Result<PushResponse, String>;
+    fn login(&self) -> Result<(), String> {
+        Err("this helper cannot test a login".into())
+    }
 }
