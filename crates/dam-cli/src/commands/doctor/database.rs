@@ -11,12 +11,13 @@ use crate::commands::check_report::{Check, Outcome};
 const SUPPORTED: u32 = SqliteStore::SCHEMA_VERSION;
 const SETTLE: &str =
     "run dam status, which opens the store and settles what is left, then run dam doctor";
+const CREATE: &str = "dam doctor --fix creates it";
 const RESTORE: &str = "restore it from a backup, or point DAM_STORE at another file";
 
 pub(super) fn check(machine: &Machine) -> Vec<Check> {
     let found = |result, detail: String| Check::of(CheckName::Database, result, detail);
     let check = match machine.store() {
-        Ok(Store::NoneYet) => found(Outcome::Ok, "none yet".into()),
+        Ok(Store::NoneYet) => found(Outcome::Ok, "none yet".into()).advising(CREATE),
         Ok(Store::LeftOver(files)) => found(Outcome::Warning, left_over(files)).advising(SETTLE),
         Ok(Store::Read(opened)) => match opened.version.cmp(&SUPPORTED) {
             Ordering::Equal => found(Outcome::Ok, format!("version {SUPPORTED}")),

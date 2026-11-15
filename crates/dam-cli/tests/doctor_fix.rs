@@ -133,3 +133,21 @@ fn fixing_a_check_with_nothing_to_fix_creates_nothing() {
     );
     assert_eq!(listing(fresh.sb.dir.path()), before);
 }
+
+#[test]
+fn a_missing_config_and_store_are_advised_to_dam_doctor_fix() {
+    let _guard = support::guard("a_missing_config_and_store_are_advised_to_dam_doctor_fix");
+    let fresh = Fresh::new();
+    let (code, out) = fresh.run(&["doctor", "config", "database"]);
+    assert_eq!(code, Some(0), "{out}");
+    assert!(
+        out.contains(
+            "  ✓ config: no config.lua, defaults in use\n    → dam doctor --fix creates a starter config.lua\n"
+        ),
+        "{out}"
+    );
+    assert!(
+        out.contains("  ✓ database: none yet\n    → dam doctor --fix creates it\n"),
+        "{out}"
+    );
+}
