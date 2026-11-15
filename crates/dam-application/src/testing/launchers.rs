@@ -57,7 +57,7 @@ pub fn pushing_to_a_remote_that_removes_only_empty_containers(
     pushing_with(caps, answer)
 }
 
-fn pushing_with(
+pub fn pushing_with(
     caps: RemoteCapabilities,
     answer: impl Fn(&[RemoteMutation]) -> Vec<MutationOutcome> + Clone + 'static,
 ) -> (ScriptedLauncher, Pushed) {

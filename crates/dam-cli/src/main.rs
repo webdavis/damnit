@@ -141,4 +141,6 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
 }
 
 #[cfg(test)]
+mod interrupt_tests;
+#[cfg(test)]
 mod testing;

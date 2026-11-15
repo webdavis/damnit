@@ -97,6 +97,14 @@ fn owner_rows<'a>(
 }
 
 #[cfg(test)]
+mod missing_upstream_notice_tests;
+#[cfg(test)]
+mod notice_text_tests;
+#[cfg(test)]
+mod removed_conflict_tests;
+#[cfg(test)]
+mod removed_notice_tests;
+#[cfg(test)]
 mod skipped_tests;
 #[cfg(test)]
 mod task_pulled_notice_tests;

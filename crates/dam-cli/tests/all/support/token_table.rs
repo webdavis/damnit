@@ -19,10 +19,6 @@ impl Grant {
         self.limited("labels", list(labels))
     }
 
-    pub fn remotes(self, remotes: &[&str]) -> Grant {
-        self.limited("remotes", list(remotes))
-    }
-
     pub fn own(self) -> Grant {
         self.limited("own", "true".to_string())
     }

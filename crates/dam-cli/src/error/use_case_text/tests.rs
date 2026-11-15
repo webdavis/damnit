@@ -104,3 +104,60 @@ fn no_credential_failure_reveals_a_value() {
         assert!(!text(error).contains(TOKEN));
     }
 }
+
+#[test]
+fn a_raised_credential_names_where_it_failed_and_quotes_only_a_message_dam_kept() {
+    let raised = |message: Option<&str>| {
+        text(UseCaseError::from(CredentialError::ComputeFailed {
+            remote: dam_application::RemoteName("todoist".into()),
+            name: "api_token".into(),
+            at: "secrets.lua:4".into(),
+            why: dam_application::ComputeFailure::Raised {
+                message: message.map(str::to_string),
+            },
+        }))
+    };
+    assert_eq!(
+        raised(Some("the vault is locked")),
+        "remote todoist: computing api_token failed at secrets.lua:4: the vault is locked"
+    );
+    assert_eq!(
+        raised(None),
+        "remote todoist: computing api_token failed at secrets.lua:4: its function raised an error, which the owner sees by running dam pull todoist"
+    );
+}
+
+#[test]
+fn a_helper_answer_dam_cannot_read_fails_and_says_why() {
+    let error = || UseCaseError::Helper(HelperError::Protocol("expected a JSON object".into()));
+    assert_eq!(
+        text(error()),
+        "the helper answered something dam cannot read: expected a JSON object"
+    );
+    assert_eq!(crate::error::CliError::UseCase(error()).exit_code(), 1);
+}
+
+#[test]
+fn a_remote_that_refused_is_quoted() {
+    assert_eq!(
+        text(UseCaseError::Helper(HelperError::Remote(
+            "rate limited".into()
+        ))),
+        "the remote refused: rate limited"
+    );
+}
+
+#[test]
+fn a_computed_credential_that_is_not_a_string_names_what_it_returned() {
+    assert_eq!(
+        text(UseCaseError::from(CredentialError::ComputeFailed {
+            remote: dam_application::RemoteName("todoist".into()),
+            name: "api_token".into(),
+            at: "secrets.lua:4".into(),
+            why: ComputeFailure::ReturnedNotAString {
+                returned: "a number".into(),
+            },
+        })),
+        "remote todoist: computing api_token failed at secrets.lua:4: its function returned a number, not a string"
+    );
+}

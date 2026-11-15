@@ -50,4 +50,6 @@ impl Dam<'_> {
 }
 
 #[cfg(test)]
+mod access_tests;
+#[cfg(test)]
 mod tests;

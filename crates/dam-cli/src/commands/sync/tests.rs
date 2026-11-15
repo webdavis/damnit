@@ -57,8 +57,7 @@ fn push_sends_unpushed_commits_and_reports_counts() {
     );
 }
 
-#[test]
-fn pull_reports_what_arrived_and_resolve_settles_a_conflict() {
+fn conflicted_after_a_pull() -> (Context, Oid) {
     let mut ctx = with_remote();
     let oid = Oid::generate(&mut |x: &mut [u8]| x.fill(1));
     ctx.store
@@ -117,7 +116,12 @@ fn pull_reports_what_arrived_and_resolve_settles_a_conflict() {
     .unwrap();
     assert_eq!(report.data["remotes"][0]["conflicts"], 1);
     assert_eq!(ctx.store.conflicts().unwrap().len(), 1);
-    let Command::Resolve(args) = Cli::try_parse_from(["dam", "resolve", oid.short(), "--theirs"])
+    (ctx, oid)
+}
+
+fn resolved_with(side: &str) -> String {
+    let (ctx, oid) = conflicted_after_a_pull();
+    let Command::Resolve(args) = Cli::try_parse_from(["dam", "resolve", oid.short(), side])
         .unwrap()
         .command
     else {
@@ -125,8 +129,15 @@ fn pull_reports_what_arrived_and_resolve_settles_a_conflict() {
     };
     run_resolve(&ctx, args).unwrap();
     assert!(ctx.store.conflicts().unwrap().is_empty());
-    assert_eq!(
-        ctx.store.get(&oid).unwrap().unwrap().base().subject,
-        "theirs"
-    );
+    ctx.store.get(&oid).unwrap().unwrap().base().subject.clone()
+}
+
+#[test]
+fn pull_reports_what_arrived_and_resolve_settles_a_conflict_with_theirs() {
+    assert_eq!(resolved_with("--theirs"), "theirs");
+}
+
+#[test]
+fn resolve_settles_a_conflict_with_ours() {
+    assert_eq!(resolved_with("--ours"), "mine, edited");
 }

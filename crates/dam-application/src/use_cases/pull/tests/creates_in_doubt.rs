@@ -94,3 +94,40 @@ fn a_create_removed_here_and_not_committed_is_not_adopted() {
     assert_eq!(mapped_to(&s, "i:9"), Some(oid(42)));
     assert!(s.store.get(&oid(1)).unwrap().is_none());
 }
+
+#[test]
+fn an_adopted_create_is_counted_as_a_create_matched() {
+    let s = created_with_no_answer();
+    let l = crate::testing::pulling(crate::remote::PullOutcome {
+        objects: vec![pulled(ada(0, "call Ada"), "i:9")],
+        ..Default::default()
+    });
+
+    let reports = s
+        .dam()
+        .pull(crate::testing::remotes_launched_by(&l), None)
+        .unwrap();
+
+    assert_eq!(reports[0].creates_matched, 1);
+}
+
+#[test]
+fn a_pulled_task_already_tracked_here_is_not_adopted_for_an_equal_create_in_doubt() {
+    let s = Scenario::default().drawing_from(42);
+    s.committed(ada(5, "call Ada")).tracked_as(&oid(5), "i:5");
+    s.pushed();
+    s.committed(ada(1, "call Ada"));
+    push_with_no_answer(&s);
+
+    let l = crate::testing::pulling(crate::remote::PullOutcome {
+        objects: vec![pulled(ada(0, "call Ada"), "i:5")],
+        ..Default::default()
+    });
+    let reports = s
+        .dam()
+        .pull(crate::testing::remotes_launched_by(&l), None)
+        .unwrap();
+
+    assert_eq!(reports[0].creates_matched, 0);
+    assert_eq!(mapped_to(&s, "i:5"), Some(oid(5)));
+}

@@ -70,3 +70,6 @@ impl<'a> Machine<'a> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests;

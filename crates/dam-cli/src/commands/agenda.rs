@@ -71,4 +71,6 @@ impl View for Agenda<'_> {
 mod event;
 
 #[cfg(test)]
+mod people_tests;
+#[cfg(test)]
 mod tests;

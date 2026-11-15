@@ -143,3 +143,6 @@ mod verdict_tests;
 
 #[cfg(test)]
 mod declared_tests;
+
+#[cfg(test)]
+mod event_detail_tests;
