@@ -3,7 +3,7 @@ use clap::{Args, Subcommand};
 #[derive(Args, Debug)]
 pub(crate) struct ConfigArgs {
     #[command(subcommand)]
-    pub(crate) command: ConfigCommand,
+    pub(crate) command: Option<ConfigCommand>,
 }
 
 #[derive(Subcommand, Debug)]

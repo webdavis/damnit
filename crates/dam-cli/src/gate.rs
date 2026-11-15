@@ -46,10 +46,11 @@ pub(crate) fn need(command: &Command) -> Need {
             TokenCommand::Revoke { .. } => Need::OwnerOnly("token revoke"),
         },
         Command::Config(a) => match a.command {
-            ConfigCommand::List => Need::OwnerOnly("config list"),
-            ConfigCommand::Get { .. } => Need::OwnerOnly("config get"),
-            ConfigCommand::PrintDefault => Need::OwnerOnly("config print-default"),
-            ConfigCommand::Validate => Need::OwnerOnly("config validate"),
+            None => Need::Open,
+            Some(ConfigCommand::List) => Need::OwnerOnly("config list"),
+            Some(ConfigCommand::Get { .. }) => Need::OwnerOnly("config get"),
+            Some(ConfigCommand::PrintDefault) => Need::OwnerOnly("config print-default"),
+            Some(ConfigCommand::Validate) => Need::OwnerOnly("config validate"),
         },
         Command::Doctor => Need::OwnerOnly("doctor"),
     }
