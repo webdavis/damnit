@@ -5,7 +5,7 @@ use std::os::unix::fs::PermissionsExt;
 use support::config_files::Remote;
 use support::sandbox::Sandbox;
 
-const TRY: &str = "      → run dam pull fake to try it";
+const TRY: &str = "      → run dam test credentials";
 
 fn rows(sb: &Sandbox) -> (Option<i32>, Vec<String>) {
     let answer = sb.doctor(&["doctor", "credentials"]);

@@ -30,7 +30,7 @@ fn a_machine_set_up_well_reads_every_check_and_changes_nothing() {
                 "    ✓ fake: dam-remote-fake answered",
                 "  ✓ credentials: 1 remote: 1 ok",
                 "    ✓ fake: has its credential, not tested",
-                "      → run dam pull fake to try it",
+                "      → run dam test credentials",
                 "  ✓ pushes: 1 remote: 1 ok",
                 "    ✓ fake: nothing owed",
             ],

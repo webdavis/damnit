@@ -57,5 +57,5 @@ fn held(answer: &Answer) -> Row {
         true => "has its credential, not tested".to_string(),
         false => format!("{computed} comes from a function dam did not run"),
     };
-    found(Outcome::Ok, detail).advising(format!("run dam pull {remote} to try it"))
+    found(Outcome::Ok, detail).advising("run dam test credentials")
 }
