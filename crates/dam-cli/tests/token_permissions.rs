@@ -48,7 +48,7 @@ fn every_write_verb_is_refused_to_a_token_and_the_store_is_untouched() {
         let out = sb.output_holding(&held, &args);
         assert_eq!(rule_of(&out), "not_open_to_tokens", "{line:?}");
     }
-    let (ok, listed, _) = sb.dam(&["ls", "--json", "--no-pull"]);
+    let (ok, listed, _) = sb.dam(&["ls", "--json"]);
     assert!(ok);
     assert!(listed.contains("milk"));
 }

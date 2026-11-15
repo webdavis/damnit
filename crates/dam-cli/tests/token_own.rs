@@ -6,7 +6,7 @@ use support::own::{listed, own_grant, own_hidden, send};
 fn a_token_reads_edits_and_completes_the_task_it_made() {
     let _guard = support::guard("a_token_reads_edits_and_completes_the_task_it_made");
     let h = own_hidden(own_grant());
-    let shown = h.holding(&["show", &h.report, "--json", "--no-pull"]);
+    let shown = h.holding(&["show", &h.report, "--json"]);
     assert!(shown.status.success(), "{shown:?}");
     let edit = send(
         &h.sb,

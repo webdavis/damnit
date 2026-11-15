@@ -98,7 +98,7 @@ fn a_runtime_error_in_secrets_lua_is_quoted_in_the_row() {
     let sb = Sandbox::new();
     sb.write_secrets_lua(RAISES);
     let secrets = sb.secrets_path().display().to_string();
-    let (ok, out, err) = sb.dam(&["ls", "--no-pull"]);
+    let (ok, out, err) = sb.dam(&["ls"]);
     assert!(!ok && out.is_empty());
     assert!(
         err.contains("dam doctor") && !err.contains("hunter2"),

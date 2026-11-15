@@ -46,12 +46,6 @@ pub(crate) struct Cli {
     #[arg(
         long,
         global = true,
-        help = "Never pull a stale remote first; answer from the local store"
-    )]
-    pub(crate) no_pull: bool,
-    #[arg(
-        long,
-        global = true,
         help = "Print without color; color is also off under NO_COLOR or when not a terminal"
     )]
     pub(crate) no_color: bool,

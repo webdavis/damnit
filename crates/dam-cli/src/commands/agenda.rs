@@ -6,7 +6,6 @@ use serde::Serialize;
 
 use crate::args::AgendaArgs;
 use crate::commands::parsing::when_flag;
-use crate::commands::remote::refresh_stale_unless_no_pull;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
@@ -22,7 +21,6 @@ pub(crate) fn run_agenda(ctx: &Context, args: AgendaArgs) -> Result<Report, CliE
         .iter()
         .map(|(remote, age)| (remote.0.clone(), *age))
         .collect();
-    refresh_stale_unless_no_pull(ctx)?;
     ctx.dam().require_fresh(&bounds)?;
     let found = ctx.dam().agenda(args.query.as_deref(), window, &ctx.tz)?;
     report(&Agenda {

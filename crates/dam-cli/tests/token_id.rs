@@ -28,7 +28,7 @@ fn owner(sb: &Sandbox, args: &[&str]) -> String {
 }
 
 fn shown(sb: &Sandbox, oid: &str) -> serde_json::Value {
-    serde_json::from_str(&owner(sb, &["show", oid, "--json", "--no-pull"])).unwrap()
+    serde_json::from_str(&owner(sb, &["show", oid, "--json"])).unwrap()
 }
 
 #[test]

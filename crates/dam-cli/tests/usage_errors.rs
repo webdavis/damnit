@@ -74,7 +74,11 @@ fn each_problem_the_command_line_can_have_names_itself_and_its_word() {
             "conflict",
             json!("--due"),
         ),
-        (&["agenda", "--no-pull=yes", "--json"], "other", Value::Null),
+        (
+            &["agenda", "--no-color=yes", "--json"],
+            "other",
+            Value::Null,
+        ),
     ];
     for (line, problem, word) in lines {
         assert_eq!(
@@ -115,7 +119,17 @@ fn a_usage_error_dam_raises_itself_says_other() {
     let _guard = support::guard("a_usage_error_dam_raises_itself_says_other");
     let sb = Sandbox::new();
     assert_eq!(
-        usage_part(&sb, &["new", "milk", "--no-pull", "--json"]),
+        usage_part(
+            &sb,
+            &[
+                "agenda",
+                "--to",
+                "2026-01-01",
+                "--from",
+                "2026-01-02",
+                "--json"
+            ]
+        ),
         json!({"problem": "other", "word": null})
     );
 }

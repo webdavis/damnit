@@ -41,7 +41,7 @@ fn rule(document: &serde_json::Value) -> &str {
 fn without_dam_token_the_caller_is_the_owner() {
     let _guard = support::guard("without_dam_token_the_caller_is_the_owner");
     let sb = sandbox_with(vec![("tool", TokenTable::valued(&token(1)))]);
-    let (ok, _, err) = sb.dam(&["ls", "--json", "--no-pull"]);
+    let (ok, _, err) = sb.dam(&["ls", "--json"]);
     assert!(ok, "{err}");
 }
 
@@ -55,10 +55,10 @@ fn a_token_that_is_not_well_formed_is_refused_as_malformed() {
         "damk_v1_tooshort",
         "damk_s3cr3tValue_abcdef",
     ] {
-        let document = refused(&sb, presented, &["ls", "--json", "--no-pull"]);
+        let document = refused(&sb, presented, &["ls", "--json"]);
         assert_eq!(rule(&document), "malformed_token");
     }
-    let document = refused(&sb, "damk_v7_abcdef", &["ls", "--json", "--no-pull"]);
+    let document = refused(&sb, "damk_v7_abcdef", &["ls", "--json"]);
     assert_eq!(rule(&document), "unknown_token_version");
 }
 
@@ -66,7 +66,7 @@ fn a_token_that_is_not_well_formed_is_refused_as_malformed() {
 fn a_well_formed_token_the_config_does_not_list_is_unknown() {
     let _guard = support::guard("a_well_formed_token_the_config_does_not_list_is_unknown");
     let sb = sandbox_with(vec![("tool", TokenTable::valued(&token(1)))]);
-    let document = refused(&sb, &token(2), &["ls", "--json", "--no-pull"]);
+    let document = refused(&sb, &token(2), &["ls", "--json"]);
     assert_eq!(rule(&document), "unknown_token");
 }
 
@@ -96,10 +96,10 @@ fn disabled_expired_early_and_wrong_channel_tokens_each_name_their_rule() {
         (token(4), "channel_not_allowed"),
     ];
     for (presented, expected) in cases {
-        let document = refused(&sb, &presented, &["ls", "--json", "--no-pull"]);
+        let document = refused(&sb, &presented, &["ls", "--json"]);
         assert_eq!(rule(&document), expected);
     }
-    let disabled = refused(&sb, &token(1), &["ls", "--json", "--no-pull"]);
+    let disabled = refused(&sb, &token(1), &["ls", "--json"]);
     assert!(
         disabled["error"]["message"]
             .as_str()
@@ -125,7 +125,7 @@ fn a_token_that_requires_request_details_is_refused_naming_them() {
             .require(&["session", "model"])
             .grant(Grant::allowing(&["task:read"])),
     )]);
-    let document = refused(&sb, &token(1), &["ls", "--json", "--no-pull"]);
+    let document = refused(&sb, &token(1), &["ls", "--json"]);
     assert_eq!(rule(&document), "missing_details");
     let message = document["error"]["message"].as_str().unwrap();
     assert!(

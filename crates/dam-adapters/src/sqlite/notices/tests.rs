@@ -6,8 +6,9 @@ fn a_notice_table_that_is_never_cleared_keeps_the_newest_and_drops_the_oldest() 
     let store = crate::sqlite::SqliteStore::in_memory().unwrap();
     for n in 0..NOTICES_KEPT_FOR_AN_OPERATOR_WHO_NEVER_CLEARS_THEM + 5 {
         store
-            .add_notice(&Notice::PullFailed {
+            .add_notice(&Notice::PushFailed {
                 remote: RemoteName("t".into()),
+                oid: dam_domain::Oid::generate(&mut |x: &mut [u8]| x.fill(0)),
                 why: format!("reason {n}"),
             })
             .unwrap();
@@ -18,7 +19,7 @@ fn a_notice_table_that_is_never_cleared_keeps_the_newest_and_drops_the_oldest() 
         NOTICES_KEPT_FOR_AN_OPERATOR_WHO_NEVER_CLEARS_THEM
     );
     let oldest = match &kept[0] {
-        Notice::PullFailed { why, .. } => why.clone(),
+        Notice::PushFailed { why, .. } => why.clone(),
         other => panic!("{other:?}"),
     };
     assert_eq!(oldest, "reason 5", "the five oldest went");

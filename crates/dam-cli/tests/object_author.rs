@@ -27,7 +27,7 @@ fn accepted(sb: &Sandbox, held: &str, subject: &str, session: &str) -> String {
 }
 
 fn shown(sb: &Sandbox, held: Option<&str>, oid: &str) -> Value {
-    let args = ["show", oid, "--json", "--no-pull"];
+    let args = ["show", oid, "--json"];
     let out = match held {
         Some(held) => sb.output_holding(held, &args),
         None => sb.output(&args),
@@ -51,11 +51,11 @@ fn an_object_names_its_author_and_the_details_of_the_request_that_made_it() {
     let mine = shown(&sb, None, &rent);
     assert_eq!(mine["author"], "Ada");
     assert!(mine["details"].is_null(), "{mine}");
-    let (ok, human, err) = sb.dam(&["show", &dentist, "--no-pull"]);
+    let (ok, human, err) = sb.dam(&["show", &dentist]);
     assert!(ok, "{err}");
     assert!(human.contains("author: claude"), "{human}");
     assert!(human.contains("session: s1"), "{human}");
-    let (ok, toon, err) = sb.dam(&["show", &dentist, "--toon", "--no-pull"]);
+    let (ok, toon, err) = sb.dam(&["show", &dentist, "--toon"]);
     assert!(ok, "{err}");
     assert!(
         toon.contains("author: claude") && toon.contains("session: s1"),
@@ -85,7 +85,7 @@ fn ls_shows_the_author_and_filters_by_mine_agents_or_all() {
     accepted(&sb, &claude, "Call the dentist", "s1");
     sb.new_object(&["Pay rent"]);
     let subjects = |by: &str, format: &str| -> Vec<String> {
-        let out = sb.output(&["ls", "--no-pull", "--by", by, format]);
+        let out = sb.output(&["ls", "--by", by, format]);
         assert!(out.status.success(), "{out:?}");
         let text = String::from_utf8(out.stdout).unwrap();
         if format == "--toon" {
@@ -112,7 +112,7 @@ fn ls_shows_the_author_and_filters_by_mine_agents_or_all() {
     assert_eq!(subjects("all", "--json").len(), 2);
     assert_eq!(subjects("agents", "--toon"), ["Call the dentist"]);
     assert_eq!(subjects("mine", "--toon"), ["Pay rent"]);
-    let (ok, human, err) = sb.dam(&["ls", "--no-pull"]);
+    let (ok, human, err) = sb.dam(&["ls"]);
     assert!(ok, "{err}");
     let dentist = human
         .lines()

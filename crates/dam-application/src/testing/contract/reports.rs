@@ -50,8 +50,9 @@ pub fn conflict_repository_contract(store: &dyn Store) {
 pub fn notice_repository_contract(notices: &dyn NoticeRepository) {
     assert!(notices.notices().unwrap().is_empty());
 
-    let first = Notice::PullFailed {
+    let first = Notice::PushFailed {
         remote: remote("here"),
+        oid: oid(1),
         why: "first".into(),
     };
     let second = Notice::EventCancelled {

@@ -12,10 +12,7 @@ fn a_token_caller_is_refused_when_secrets_lua_cannot_be_read() {
     let sb = Sandbox::new();
     let held = grant_to(&sb, "tool", 1, vec![grant(&["task:read", "task:create"])]);
     std::fs::set_permissions(sb.secrets_path(), std::fs::Permissions::from_mode(0o000)).unwrap();
-    for line in [
-        vec!["ls", "--json", "--no-pull"],
-        vec!["new", "report", "--json"],
-    ] {
+    for line in [vec!["ls", "--json"], vec!["new", "report", "--json"]] {
         let out = sb.output_holding(&held, &line);
         assert_eq!(out.status.code(), Some(1), "{line:?}: {out:?}");
         assert!(out.stdout.is_empty(), "{line:?}: {out:?}");

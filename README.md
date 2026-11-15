@@ -91,12 +91,10 @@ Its `credentials` part signs in to each remote and writes nothing.
 It exits 1 when a part finds an issue.
 `docs/schemas/test.schema.json` is the schema of its `--json` answer.
 
-`stale` makes reads pull first when the last pull is older than that. A failed pull that a read
-started leaves a notice in `dam status`, and the read still answers. `deadline` (default `"60s"`)
-is the longest the helper may stay silent; past it `dam` kills the helper and exits 1. A pull
-answers at once, so the deadline bounds the whole pull. Ctrl-C kills the helper and exits 3. A push
-cut short keeps what the remote already answered, says how many it kept and left unanswered, and
-sends the rest on the next push.
+`deadline` (default `"60s"`) is the longest the helper may stay silent; past it `dam` kills the
+helper and exits 1. A pull answers at once, so the deadline bounds the whole pull. Ctrl-C kills the
+helper and exits 3. A push cut short keeps what the remote already answered, says how many it kept
+and left unanswered, and sends the rest on the next push.
 A push holds an object in conflict, and a removal or move that waits on one, and sends the rest.
 It prints how many it held as `held`. The next push after `dam resolve` sends them.
 
@@ -151,8 +149,7 @@ declares no kinds, so `dam push` sends it nothing, and an event you make or chan
 dam. `path` narrows what a push sends, so it does nothing for this remote.
 
 Pull it on a schedule: run `dam pull gcal` every few minutes from cron, launchd or a systemd timer.
-Its credential functions must run without a terminal. Setting `stale` also keeps it fresh, but then
-whichever read finds it stale waits on Google first.
+Its credential functions must run without a terminal.
 
 ## How Todoist maps
 
@@ -223,9 +220,8 @@ line green, unless output is not a terminal, `NO_COLOR` is set or `--no-color` i
 in the line, `last_pull` and `last_push` as RFC 3339 under `--json`, null until that verb has
 reached the remote once.
 
-`--no-pull` answers from the local store: `dam ls`, `dam show`, `dam agenda` and `dam reminders`
-otherwise pull a remote whose `stale` window has passed, and with the flag they spawn no helper at
-all. Every other verb refuses the flag with exit 2.
+`dam ls`, `dam show`, `dam agenda` and `dam reminders` read only the local store and never reach a
+remote.
 
 ## Planning a day
 
@@ -361,15 +357,13 @@ made in dam is listed at its stored occurrence only. With no flags the window ru
 hours later; `--from` and `--to` take the same words `--due` does, and a query narrows it the way
 `dam ls` reads one. Keys are only ever added, never renamed or retyped.
 
-Like `ls`, `agenda` pulls a stale remote first unless given `--no-pull`.
-
 `--max-age <remote>=<duration>` makes the answer depend on that remote being fresh. When its last
 successful pull is older than the duration, or it has never pulled, `agenda` prints nothing on
 standard output and exits 4, rule `stale_remote`, with one sentence on standard error. A failed
 pull never counts as fresh. A program that polls with `dam pull gcal` scheduled every five minutes
 runs:
 
-    dam agenda --json --no-pull --max-age gcal=15m
+    dam agenda --json --max-age gcal=15m
 
 Repeat the flag to bound more than one remote.
 
@@ -476,8 +470,7 @@ added gets a removal item. It answers `withdrawn`, `waiting`, `declined` or `not
 exit 0. Your own `dam rm --id` removes your task, or answers `nothing`.
 
 A token cannot run `mv`, `add`, `reset`, `restore`, `commit`, `remote add`, `resolve`, `day`,
-`config` or `token`, or set `--focus`. A read pulls a stale remote only when the token holds
-`remote:pull` for it.
+`config` or `token`, or set `--focus`.
 
 An unknown permission is skipped. An unknown key, or a reserved name such as `config:change`,
 disables the token, and so does sharing a value with another token. A `schema` above 1 disables
