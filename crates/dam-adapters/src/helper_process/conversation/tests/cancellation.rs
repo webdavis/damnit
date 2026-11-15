@@ -1,3 +1,4 @@
+mod nothing_sent;
 mod waiting_answers;
 
 use std::time::Duration;
