@@ -25,11 +25,17 @@ fn the_pulled_hook_shows_as_a_function() {
     let sb = with_hooks("task_pulled = { run = function(task, before, pull) end }");
     assert_eq!(
         listed(&sb)["settings"]["hook"],
-        json!({"task_pulled": {"run": {"function": true}}})
+        json!({"task_pulled": {
+            "run": {"function": true},
+            "changes": {"value": "committed", "default": true},
+        }})
     );
     let (ok, out, err) = sb.dam(&["config", "get", "hook"]);
     assert!(ok, "{err}");
-    assert_eq!(out, "  hook.task_pulled.run  function\n");
+    assert_eq!(
+        out,
+        "  hook.task_pulled.run      function\n  hook.task_pulled.changes  committed (default)\n"
+    );
 }
 
 #[test]

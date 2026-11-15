@@ -83,7 +83,8 @@
           "required": ["run"],
           "additionalProperties": false,
           "properties": {
-            "run": { "description": "A Lua function(task, before, pull)." }
+            "run": { "description": "A Lua function(task, before, pull)." },
+            "changes": { "enum": ["committed", "working"] }
           }
         }
       ]

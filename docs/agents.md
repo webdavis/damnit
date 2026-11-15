@@ -243,7 +243,8 @@ A hook's own commands run with `DAM_HOOK` set to the event. A `dam` that finds `
 exits 4, rule `started_by_hook`, before it reads or writes anything.
 A pull runs only `hook.task_pulled`, once for each task it created or changed, after the pull
 has landed. A failing one never changes the pull's exit code. The answer of `pull` carries
-`task_pulled` on each remote it ran for: the counts `ran`, `changed`, `failed` and `not_reached`.
+`task_pulled` on each remote it ran for: the counts `ran`, `changed`, `failed` and `not_reached`,
+and `commit`, the id of the commit that holds the hook's changes when it made one.
 
 A mistyped command line also carries `usage`, which says what was wrong with it:
 

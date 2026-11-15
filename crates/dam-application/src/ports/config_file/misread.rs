@@ -18,6 +18,7 @@ pub enum Expected {
     Function,
     FunctionOrTable,
     WarnOrRefuse,
+    CommittedOrWorking,
     DateTime,
     TableOfWholeNumbers,
 }

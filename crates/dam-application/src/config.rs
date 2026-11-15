@@ -14,7 +14,9 @@ use crate::tokens::Tokens;
 pub use credential::CredentialSpec;
 pub use duration::ConfiguredDuration;
 pub use filter::{FilterConfig, FilterRule};
-pub use hook::{HookConfig, HookEvent, OnFailure, PulledHook, STARTED_BY_HOOK_VARIABLE};
+pub use hook::{
+    HookConfig, HookEvent, OnFailure, PulledChanges, PulledHook, STARTED_BY_HOOK_VARIABLE,
+};
 pub use remote::RemoteConfig;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

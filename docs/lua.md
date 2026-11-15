@@ -28,6 +28,7 @@ key dam does not know is an error. A `<name>` in a key is a name you choose.
 | `hook.task_pulled` | A hook for each task a pull brings in. It takes no `on_failure`. |
 | `hook.<event>.run` | The hook's function, when the hook is a table. Required. |
 | `hook.<event>.on_failure` | `warn` or `refuse`. Default: `warn`. |
+| `hook.task_pulled.changes` | `committed` or `working`: where its changes go. Default: `committed`. |
 
 A duration is a whole number followed by `s`, `m` or `h`.
 
@@ -204,7 +205,12 @@ went from open to done.
 It does not run for a task the pull found unchanged, held as a conflict, left alone for your
 newer work, or removed, nor for an event.
 It does not run on the first pull from a remote, so the tasks of that pull never get it.
-It may return a table of fields, as the other hooks do. dam leaves that change as a working change.
+It may return a table of fields, as the other hooks do.
+With `changes = "committed"`, the default, dam commits those changes in one commit of their own
+right after the pull's commit: `task_pulled after pull from <remote>`, by you, each change's
+details holding `hook = task_pulled` in `meta`. The commit is owed to the remote like any other;
+the pull pushes nothing. No change, no commit.
+With `changes = "working"`, dam leaves them as working changes, as the other hooks do.
 When it fails on a task, dam drops that task's change, goes on to the next task, and keeps the
 pull. The pull's exit code stays as it was.
 The first failure of a pull warns on standard error, unless a token's command caused the pull:
@@ -214,8 +220,8 @@ The first failure of a pull warns on standard error, unless a token's command ca
 Later failures of that pull are counted, not printed. `dam status` does not yet show them, and
 the hook has no limit yet on its total time for one pull.
 The pull's answer counts what it did under `task_pulled`: `ran`, `changed`, `failed` and
-`not_reached`. In plain text it is the line `task_pulled: 1 ran, 1 changed, 0 failed, 0 not
-reached`.
+`not_reached`, and `commit`, the id of the commit it made. In plain text it is a line such as
+`task_pulled: 1 ran, 1 changed, 0 failed, 0 not reached, commit 2b2b2b2`.
 When a remote rewrites what dam pushed, the task comes back changed and the hook runs on it once
 more. A hook that changes a task each time it runs changes it once per push and pull, never in a
 loop.

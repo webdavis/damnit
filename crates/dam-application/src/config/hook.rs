@@ -55,5 +55,31 @@ impl HookConfig {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct PulledHook;
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum PulledChanges {
+    #[default]
+    Committed,
+    Working,
+}
+
+impl PulledChanges {
+    pub const ALL: [PulledChanges; 2] = [PulledChanges::Committed, PulledChanges::Working];
+
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            PulledChanges::Committed => "committed",
+            PulledChanges::Working => "working",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct PulledHook {
+    pub changes: Option<PulledChanges>,
+}
+
+impl PulledHook {
+    pub fn changes(&self) -> PulledChanges {
+        self.changes.unwrap_or_default()
+    }
+}
