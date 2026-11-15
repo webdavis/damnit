@@ -23,6 +23,10 @@
         }
       }
     },
+    "changed_by_hook": {
+      "$ref": "object.schema.json#/$defs/changed_by_hook",
+      "description": "Each task a hook changed as dam add took an item, with that hook's event; left out when none did."
+    },
     "gone": {
       "type": "array",
       "items": {

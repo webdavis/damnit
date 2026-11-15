@@ -2,6 +2,7 @@ use std::collections::BTreeSet;
 
 use crate::args::NewArgs;
 use crate::commands::caller_id::with_caller_id;
+use crate::commands::hooked::{as_it_is_now, hooked};
 use crate::commands::parsing::{deadline_flag, when_flag};
 use crate::commands::sent::report_landed;
 use crate::context::Context;
@@ -81,8 +82,11 @@ pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
             id: args.id,
         })?
     };
-    report_landed(&landed, |object| report(&Created(object)))
-        .map(|answer| with_caller_id(answer, id.as_ref()))
+    report_landed(&landed, |object| {
+        let now = as_it_is_now(ctx, object)?;
+        report(&hooked(ctx, Created(&now)))
+    })
+    .map(|answer| with_caller_id(answer, id.as_ref()))
 }
 
 #[cfg(test)]

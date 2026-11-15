@@ -3,6 +3,7 @@ use dam_application::{
 };
 
 use crate::args::DoneArgs;
+use crate::commands::hooked::hooked;
 use crate::commands::sent::report_landed;
 use crate::context::Context;
 use crate::error::CliError;
@@ -36,7 +37,9 @@ pub(crate) fn run(ctx: &Context, args: DoneArgs) -> Result<Report, CliError> {
         Completed::Done => "done".to_string(),
         Completed::RolledForward { next_due } => format!("rolled forward to {next_due}"),
     };
-    report_landed(&landed, |_| report(&Finished { oid: &oid, result }))
+    report_landed(&landed, |_| {
+        report(&hooked(ctx, Finished { oid: &oid, result }))
+    })
 }
 
 fn tracked_by_a_remote(ctx: &Context, oid: &Oid) -> Result<Tracked, CliError> {

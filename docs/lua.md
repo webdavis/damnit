@@ -171,6 +171,8 @@ It returns nothing, or a table of fields to change on that task.
 The table takes the keys and values of a `dam edit --request` document, except `oid` and `meta`.
 dam applies it to the task within the same command, by the rules `dam edit` applies.
 The change a hook makes runs no hook.
+The command's answer lists each task a hook changed under `changed_by_hook`, as its `oid` and
+the `hook`'s event. In plain text it says `dam: hook task_new changed <oid>` on standard error.
 `dam log` does not yet name the hook that made a change.
 A command a hook starts with `os.execute` or `io.popen` runs with `DAM_HOOK` set to the event.
 A `dam` that finds `DAM_HOOK` set refuses at once, before it reads or writes anything.

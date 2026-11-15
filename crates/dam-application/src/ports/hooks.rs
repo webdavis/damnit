@@ -44,6 +44,10 @@ pub trait EditRequests {
     fn refused(&self, refusal: &Refusal) -> String;
 }
 
+pub trait HookEdits {
+    fn edited(&self, event: HookEvent, task: &Oid);
+}
+
 pub trait HookWarnings {
     fn warn(&self, failure: &HookFailure);
 }

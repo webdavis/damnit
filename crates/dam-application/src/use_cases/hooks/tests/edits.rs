@@ -57,6 +57,10 @@ fn the_edit_a_hook_returns_lands_on_its_task_in_the_same_command() {
     let landed = s.dam().new_task(new_task("call the dentist")).unwrap();
     assert_eq!(labels(&s, landed.oid()), ["errand"]);
     assert_eq!(
+        *s.fixture.hook_edits.edited.borrow(),
+        [(TaskNew, landed.oid().clone())]
+    );
+    assert_eq!(
         *s.fixture.edit_requests.read.borrow(),
         [(landed.oid().clone(), request())]
     );
@@ -78,6 +82,7 @@ fn a_wrong_request_that_warns_keeps_the_commands_change_and_names_what_was_wrong
     let landed = s.dam().new_task(new_task("call the dentist")).unwrap();
     assert!(labels(&s, landed.oid()).is_empty());
     warned_why(&s, why);
+    assert!(s.fixture.hook_edits.edited.borrow().is_empty());
 }
 
 #[test]
@@ -117,12 +122,13 @@ fn an_edit_the_edit_rules_refuse_is_a_failure_with_that_refusal() {
 }
 
 #[test]
-fn an_edit_that_changes_nothing_is_no_failure() {
+fn an_edit_that_changes_nothing_is_no_failure_and_no_change() {
     let s = hooked(&[(TaskNew, Some(OnFailure::Refuse))]);
     hook_returns(&s, Ok(retitled("call the dentist")));
     let landed = s.dam().new_task(new_task("call the dentist")).unwrap();
     assert!(s.store.get(landed.oid()).unwrap().is_some());
     assert!(s.fixture.hook_warnings.warned.borrow().is_empty());
+    assert!(s.fixture.hook_edits.edited.borrow().is_empty());
 }
 
 #[test]

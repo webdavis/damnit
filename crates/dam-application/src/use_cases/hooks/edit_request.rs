@@ -1,5 +1,6 @@
 use dam_domain::Oid;
 
+use crate::config::HookEvent;
 use crate::errors::UseCaseError;
 use crate::ports::{EditRequest, FunctionFailure};
 use crate::service::Dam;
@@ -7,6 +8,7 @@ use crate::service::Dam;
 impl Dam<'_> {
     pub(super) fn hook_edit(
         &self,
+        event: HookEvent,
         task: &Oid,
         request: &EditRequest,
     ) -> Result<Option<FunctionFailure>, UseCaseError> {
@@ -14,8 +16,14 @@ impl Dam<'_> {
             Ok(fields) => fields,
             Err(why) => return Ok(Some(request.failed(why))),
         };
+        let before = self.store.get(task)?;
         match self.edit_in_place(task, fields) {
-            Ok(_) => Ok(None),
+            Ok(_) => {
+                if self.store.get(task)? != before {
+                    self.hook_edits.edited(event, task);
+                }
+                Ok(None)
+            }
             Err(UseCaseError::Refused(refusal)) => {
                 Ok(Some(request.failed(self.edit_requests.refused(&refusal))))
             }
