@@ -32,6 +32,7 @@ fn a_pulled_task_with_an_unreadable_rule_is_told_to_complete_it_upstream() {
         url: "todoist::".into(),
         credentials: vec![],
         deadline: None,
+        sync_every: None,
         path: None,
     });
     ctx.store.map_remote_id(&todoist, &oid(7), "4242").unwrap();

@@ -15,6 +15,7 @@ fn remote_list_reports_the_last_pull_and_push_as_rfc_3339_a_phrase_or_null() {
         url: "t::".into(),
         credentials: vec![],
         deadline: None,
+        sync_every: None,
         path: None,
     });
     let never = listed(&ctx);

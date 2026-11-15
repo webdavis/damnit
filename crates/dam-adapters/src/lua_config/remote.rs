@@ -3,7 +3,7 @@ use dam_domain::Path;
 
 use super::strict::StrictMap;
 
-pub(crate) const SETTINGS: [&str; 3] = ["url", "deadline", "path"];
+pub(crate) const SETTINGS: [&str; 4] = ["url", "deadline", "sync_every", "path"];
 
 pub(super) fn read_remote(name: &str, remote: &StrictMap) -> Result<RemoteConfig, ConfigError> {
     remote.only(&SETTINGS).map_err(|misread| match misread {
@@ -41,6 +41,7 @@ pub(super) fn read_remote(name: &str, remote: &StrictMap) -> Result<RemoteConfig
         url,
         credentials: Vec::new(),
         deadline: duration(remote, "deadline")?,
+        sync_every: sync_every(remote)?,
         path,
     })
 }
@@ -61,4 +62,18 @@ fn duration(remote: &StrictMap, key: &str) -> Result<Option<ConfiguredDuration>,
             })
         })
         .transpose()
+}
+
+fn sync_every(remote: &StrictMap) -> Result<Option<ConfiguredDuration>, Misread> {
+    match duration(remote, "sync_every")? {
+        Some(every) if every.value < RemoteConfig::SHORTEST_SYNC_EVERY => {
+            Err(Misread::DurationTooShort {
+                key: "sync_every".into(),
+                text: every.text,
+                shortest: RemoteConfig::SHORTEST_SYNC_EVERY_TEXT.into(),
+                at: remote.place(),
+            })
+        }
+        every => Ok(every),
+    }
 }

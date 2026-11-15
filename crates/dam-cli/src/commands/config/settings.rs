@@ -53,6 +53,10 @@ fn remote(remote: &RemoteConfig) -> (String, Setting) {
     let mut fields = vec![
         text("url", &remote.url),
         ("deadline".to_string(), deadline),
+        optional(
+            "sync_every",
+            remote.sync_every.as_ref().map(|every| every.text.as_str()),
+        ),
         optional("path", remote.path.as_ref().map(|path| path.as_str())),
     ];
     let credentials: Vec<_> = remote.credentials.iter().map(credential).collect();

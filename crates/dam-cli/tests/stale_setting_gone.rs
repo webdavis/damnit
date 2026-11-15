@@ -13,7 +13,7 @@ fn a_remote_with_stale_gets_the_unknown_key_answer() {
     assert!(!ok && out.is_empty(), "{err}");
     assert!(
         err.contains(
-            "unknown key stale in remote.fake of config.lua. A remote takes url, deadline, path"
+            "unknown key stale in remote.fake of config.lua. A remote takes url, deadline, sync_every, path"
         ),
         "{err}"
     );

@@ -56,4 +56,10 @@ pub enum Misread {
         text: String,
         at: Place,
     },
+    DurationTooShort {
+        key: String,
+        text: String,
+        shortest: String,
+        at: Place,
+    },
 }

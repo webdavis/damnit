@@ -47,6 +47,7 @@ fn a_setting_a_part_and_a_default_print_by_key() {
         got("remote.todoist"),
         "  remote.todoist.url                   todoist::
   remote.todoist.deadline              60s (default)
+  remote.todoist.sync_every            15m
   remote.todoist.path                  work/
   remote.todoist.credential.api_token  hidden
 "

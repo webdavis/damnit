@@ -23,6 +23,7 @@ Settings ── what dam is using
   done.interactive                     false (default)
   remote.todoist.url                   todoist::
   remote.todoist.deadline              60s (default)
+  remote.todoist.sync_every            15m
   remote.todoist.path                  work/
   remote.todoist.credential.api_token  hidden
   category.effort.values               light, deep

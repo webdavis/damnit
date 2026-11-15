@@ -12,6 +12,7 @@ fn remote(name: &str) -> RemoteConfig {
         url: format!("{name}::"),
         credentials: vec![],
         deadline: None,
+        sync_every: None,
         path: None,
     }
 }

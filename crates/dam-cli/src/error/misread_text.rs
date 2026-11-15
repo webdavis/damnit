@@ -34,6 +34,16 @@ impl fmt::Display for MisreadText<'_> {
                 "{key} {text:?} must be <number><s|m|h> {}",
                 PlaceText(at)
             ),
+            Misread::DurationTooShort {
+                key,
+                text,
+                shortest,
+                at,
+            } => write!(
+                f,
+                "{key} {text:?} must be at least {shortest} {}",
+                PlaceText(at)
+            ),
         }
     }
 }

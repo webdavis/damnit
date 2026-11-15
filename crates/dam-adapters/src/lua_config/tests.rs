@@ -28,6 +28,7 @@ mod secrets_kept;
 mod secrets_names_withheld;
 mod settings_refusals;
 mod support;
+mod sync_every;
 mod template;
 mod token_tables;
 mod token_terms;

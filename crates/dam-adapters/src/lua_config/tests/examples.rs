@@ -98,6 +98,11 @@ fn the_reader_and_the_config_schema_refuse_the_same_remotes() {
     for (remote, accepted) in [
         ("{ url = 'todoist::', deadline = '15m' }", true),
         ("{ url = 'todoist::', deadline = '+15m' }", false),
+        ("{ url = 'todoist::', sync_every = '1m' }", true),
+        ("{ url = 'todoist::', sync_every = '060s' }", true),
+        ("{ url = 'todoist::', sync_every = '2h' }", true),
+        ("{ url = 'todoist::', sync_every = '59s' }", false),
+        ("{ url = 'todoist::', sync_every = '0m' }", false),
         ("{ url = 'a:b::x' }", false),
         ("{ url = '../elsewhere::' }", false),
         ("{ url = 'two words::' }", false),

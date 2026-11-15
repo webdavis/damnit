@@ -24,6 +24,7 @@ pub fn config() -> Config {
                 value: "t".into(),
             }],
             deadline: None,
+            sync_every: None,
             path: None,
         }],
         ..Config::default()
