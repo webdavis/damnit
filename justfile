@@ -9,10 +9,10 @@ clippy:
     cargo clippy --workspace --all-targets --locked -- -D warnings
 
 build:
-    cargo build --locked
+    cargo build --workspace --all-targets --locked
 
 test:
-    cargo test --workspace --no-fail-fast --locked
+    cargo test --workspace --all-targets --no-fail-fast --locked
 
 doc:
     RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
