@@ -16,6 +16,7 @@ mod filter_limits;
 mod filter_support;
 mod filter_tables;
 mod fixture_fields;
+mod hook_marker;
 mod hook_runs;
 mod hook_tables;
 mod lua_page;

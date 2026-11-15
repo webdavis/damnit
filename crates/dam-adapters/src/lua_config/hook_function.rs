@@ -6,6 +6,7 @@ use mlua::{Function, Table, Value};
 
 use super::evaluate::described;
 use super::functions::{LuaFunctions, line_defined};
+use super::hook_marker::while_marked;
 
 impl LuaFunctions {
     fn hook(&self, event: HookEvent) -> mlua::Result<Function> {
@@ -31,7 +32,9 @@ impl Hooks for LuaFunctions {
         let function = self.hook(event).map_err(|e| self.unkept(&e))?;
         let defined = line_defined(&function);
         self.limited(|scope, deadline| {
-            let returned = self.call(scope, &function, task, histories);
+            let returned = while_marked(&self.lua, event, || {
+                self.call(scope, &function, task, histories)
+            });
             if Instant::now() >= deadline {
                 return Err(self.failed(defined, FunctionFault::RanOver));
             }

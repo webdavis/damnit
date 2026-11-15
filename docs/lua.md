@@ -167,7 +167,12 @@ commands run no hook.
 
 A hook is a function, or a table that holds the function as `run`. `run(task, dam)` gets what a
 filter's `match` gets, with the task as it is after the change. It returns nothing.
-A `dam` that a hook starts cannot change anything: the store stays busy until the hook returns.
+A command a hook starts with `os.execute` or `io.popen` runs with `DAM_HOOK` set to the event.
+A `dam` that finds `DAM_HOOK` set refuses at once, before it reads or writes anything.
+It exits 4 with rule `started_by_hook`.
+A program started another way, such as through a Lua library other than `os` and `io`, does not
+carry `DAM_HOOK`, and neither does one that clears its environment.
+A `dam` it starts waits on the busy store and fails, and the hook runs over.
 
 A hook fails when it raises an error, returns a value, or runs over.
 With `on_failure = "warn"`, the default, the change stands and dam warns on standard error:

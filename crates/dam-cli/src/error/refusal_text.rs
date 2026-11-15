@@ -144,6 +144,12 @@ impl fmt::Display for RefusalText<'_> {
             Refusal::HookRefused(failure) => {
                 write!(f, "{}; the command changed nothing", HookText(failure))
             }
+            Refusal::StartedByHook(event) => {
+                write!(
+                    f,
+                    "hook {event} started this dam, and a hook cannot run dam"
+                )
+            }
             Refusal::Item(refusal) => write!(f, "{}", ItemText(refusal)),
             Refusal::PulledCommit(id) => pulled_commit(f, id),
             Refusal::NotInCommit { commit, text } => not_in_commit(f, commit, text),

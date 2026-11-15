@@ -235,6 +235,8 @@ A hook in `config.lua` runs on the owner's `dam new`, `dam edit`, `dam done` and
 A token's command runs no hook; its item runs one when the owner's `dam add` takes it.
 What it prints and its warnings go to standard error. A hook set to refuse exits 4, rule
 `hook_refused`, and the error names the event under `hook`.
+A hook's own commands run with `DAM_HOOK` set to the event. A `dam` that finds `DAM_HOOK` set
+exits 4, rule `started_by_hook`, before it reads or writes anything.
 
 A mistyped command line also carries `usage`, which says what was wrong with it:
 

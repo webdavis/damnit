@@ -65,6 +65,7 @@ pub enum Refusal {
     NoSuchToken(String),
     NoSuchSetting(String),
     HookRefused(HookFailure),
+    StartedByHook(String),
     Item(ItemRefusal),
     PulledCommit(CommitId),
     NotInCommit {
