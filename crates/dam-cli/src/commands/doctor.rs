@@ -1,5 +1,6 @@
 mod check;
 mod config_check;
+mod credentials;
 mod database;
 mod helpers;
 mod machine;
@@ -18,10 +19,11 @@ use report::Doctor;
 
 type Run = fn(&Machine) -> Vec<Check>;
 
-const CHECKS: [(CheckName, Run); 3] = [
+const CHECKS: [(CheckName, Run); 4] = [
     (CheckName::Config, config_check::check),
     (CheckName::Database, database::check),
     (CheckName::Helpers, helpers::check),
+    (CheckName::Credentials, credentials::check),
 ];
 
 pub(crate) struct Asked<'a> {
