@@ -54,3 +54,5 @@ fn a_non_decode_read_error_ends_the_loop_without_spinning_forever() {
 }
 
 mod early_answers;
+
+mod login;

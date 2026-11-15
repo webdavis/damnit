@@ -14,6 +14,12 @@ pub enum Request {
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         early_answers: bool,
     },
+    Login,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LoginResponse {
+    pub signed_in: bool,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -127,3 +133,6 @@ mod event_tests;
 
 #[cfg(test)]
 mod push_stop_tests;
+
+#[cfg(test)]
+mod login_tests;
