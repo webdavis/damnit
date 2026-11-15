@@ -69,7 +69,7 @@ pub(crate) fn dispatch_a_verb_that_opens_the_store(
         | Command::Filter(_)
         | Command::Token(_)
         | Command::Config(_)
-        | Command::Doctor => {
+        | Command::Doctor(_) => {
             unreachable!("answered before the store")
         }
     }

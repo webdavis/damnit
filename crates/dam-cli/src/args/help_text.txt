@@ -159,4 +159,6 @@ It exits 1 when a check finds an issue, and prints the report to stdout either w
 
 Examples:
   dam doctor
+  dam doctor config
   dam doctor --json
+dam doctor checks: help = Run only these checks. Default: every check

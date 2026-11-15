@@ -6,7 +6,7 @@ use support::sandbox::Sandbox;
 use support::schema::assert_matches_schema;
 use support::token_table::TokenTable;
 
-const DOCTOR_CONFIG: &[&str] = &["doctor"];
+const DOCTOR_CONFIG: &[&str] = &["doctor", "config"];
 
 fn answers_as_doctor_config_does(sb: &Sandbox) {
     for format in [&[][..], &["--json"], &["--toon"]] {

@@ -52,7 +52,7 @@ pub(crate) fn need(command: &Command) -> Need {
             Some(ConfigCommand::PrintDefault) => Need::OwnerOnly("config print-default"),
             Some(ConfigCommand::Validate) => Need::OwnerOnly("config validate"),
         },
-        Command::Doctor => Need::OwnerOnly("doctor"),
+        Command::Doctor(_) => Need::OwnerOnly("doctor"),
     }
 }
 

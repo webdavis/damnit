@@ -24,8 +24,8 @@ pub(crate) struct Asked<'a> {
 
 pub(crate) fn asked(command: &Command) -> Option<Asked<'_>> {
     match command {
-        Command::Doctor => Some(Asked {
-            names: &[],
+        Command::Doctor(args) => Some(Asked {
+            names: &args.checks,
             command: "doctor",
         }),
         Command::Config(ConfigArgs {
