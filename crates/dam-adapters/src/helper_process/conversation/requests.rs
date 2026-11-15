@@ -14,11 +14,14 @@ use crate::wire::{capabilities_from_wire, declared_on_the_wire, mutation_to_wire
 
 impl ProcessHelper {
     fn call<T: DeserializeOwned>(&mut self, request: &Request) -> Result<T, HelperError> {
-        self.send(request)?;
+        self.send_unless_interrupted(request)?;
         reply_from(self.receive_within_the_deadline()?)
     }
 
-    pub(super) fn send(&mut self, request: &Request) -> Result<(), HelperError> {
+    fn send_unless_interrupted(&mut self, request: &Request) -> Result<(), HelperError> {
+        if self.interrupt.requested() {
+            return Ok(());
+        }
         let stdin = self
             .stdin
             .as_mut()
@@ -89,7 +92,7 @@ impl RemoteHelper for ProcessHelper {
     }
 
     fn push(&mut self, mutations: Vec<RemoteMutation>) -> Result<PushOutcome, HelperError> {
-        self.send(&Request::Push {
+        self.send_unless_interrupted(&Request::Push {
             mutations: mutations.into_iter().map(mutation_to_wire).collect(),
             early_answers: true,
         })?;
