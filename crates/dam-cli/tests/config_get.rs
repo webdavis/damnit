@@ -49,12 +49,12 @@ fn a_setting_a_part_and_a_default_print_by_key() {
   remote.todoist.stale                 15m
   remote.todoist.deadline              60s (default)
   remote.todoist.path                  work/
-  remote.todoist.credential.api_token  set
+  remote.todoist.credential.api_token  hidden
 "
     );
     assert_eq!(
         got("remote.todoist.credential"),
-        "  remote.todoist.credential.api_token  set\n"
+        "  remote.todoist.credential.api_token  hidden\n"
     );
 }
 
