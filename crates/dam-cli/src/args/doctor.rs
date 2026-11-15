@@ -11,12 +11,14 @@ pub(crate) struct DoctorArgs {
 #[serde(rename_all = "snake_case")]
 pub(crate) enum CheckName {
     Config,
+    Database,
 }
 
 impl CheckName {
     pub(crate) fn as_str(self) -> &'static str {
         match self {
             CheckName::Config => "config",
+            CheckName::Database => "database",
         }
     }
 }

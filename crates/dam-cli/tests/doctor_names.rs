@@ -41,6 +41,6 @@ fn the_help_lists_every_check_by_name() {
     assert!(ok);
     let out = out.split_whitespace().collect::<Vec<_>>().join(" ");
     assert!(out.contains("contact nothing"), "{out}");
-    assert!(out.contains("[possible values: config]"), "{out}");
+    assert!(out.contains("[possible values: config, database]"), "{out}");
     assert!(out.contains("dam doctor config"), "{out}");
 }

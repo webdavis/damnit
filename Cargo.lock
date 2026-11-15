@@ -396,6 +396,7 @@ dependencies = [
  "dam-toml",
  "jiff",
  "jsonschema",
+ "rusqlite",
  "serde",
  "serde_json",
  "tempfile",
