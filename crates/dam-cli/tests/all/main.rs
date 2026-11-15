@@ -78,7 +78,6 @@ mod pulled_author;
 mod pulled_hook;
 mod pulled_hook_interrupt;
 mod pulled_hook_notice;
-mod pulled_hook_progress;
 mod push_cut_short;
 mod push_dropped_create;
 mod push_held_for_conflict;
