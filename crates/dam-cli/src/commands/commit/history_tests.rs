@@ -48,6 +48,7 @@ fn a_plan(ctx: &Context) -> CommitRecord {
     let record = CommitRecord {
         id: CommitId::generate(&mut |b: &mut [u8]| b.fill(9)),
         message: "plan".into(),
+        pulled: false,
         at: Timestamp::UNIX_EPOCH,
         changes: vec![
             Authored::by_owner(Change::Update {

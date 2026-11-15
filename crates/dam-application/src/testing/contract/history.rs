@@ -12,6 +12,7 @@ pub fn commit_repository_contract(commits: &dyn CommitRepository) {
     let first = record(1, "first", 1);
     let mut second = record(2, "second", 2);
     second.changes[0].author = token_author();
+    second.pulled = true;
     commits.commit(&first).unwrap();
     commits.commit(&second).unwrap();
 
@@ -26,6 +27,11 @@ pub fn commit_repository_contract(commits: &dyn CommitRepository) {
         "a commit keeps its changes and who made each"
     );
     assert_eq!(log[1].changes, first.changes);
+    assert_eq!(
+        (log[0].pulled, log[1].pulled),
+        (true, false),
+        "a commit keeps whether a pull made it"
+    );
 
     assert_eq!(commits.unpushed(&here).unwrap().len(), 2);
     commits.mark_pushed(&here, &first.id).unwrap();
@@ -90,6 +96,7 @@ pub(super) fn record(byte: u8, message: &str, object: u8) -> CommitRecord {
     CommitRecord {
         id: commit_id(byte),
         message: message.to_string(),
+        pulled: false,
         at: Timestamp::UNIX_EPOCH,
         changes: vec![Authored::by_owner(Change::Create {
             after: task(object, message, ""),

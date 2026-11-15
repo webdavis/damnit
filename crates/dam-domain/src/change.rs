@@ -103,6 +103,7 @@ impl fmt::Display for CommitId {
 pub struct CommitRecord {
     pub id: CommitId,
     pub message: String,
+    pub pulled: bool,
     pub at: Timestamp,
     pub changes: Vec<Authored>,
 }

@@ -25,6 +25,7 @@ pub(crate) fn record(
     CommitRecord {
         id: CommitId::generate(&mut |b| random.fill(b)),
         message,
+        pulled: false,
         at: clock.now(),
         changes,
     }

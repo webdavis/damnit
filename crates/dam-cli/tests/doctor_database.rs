@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use support::doctor::listing;
 use support::sandbox::Sandbox;
 
-const SUPPORTED: u32 = 13;
+const SUPPORTED: u32 = 14;
 
 fn store(sb: &Sandbox) -> PathBuf {
     sb.dir.path().join("dam.db")

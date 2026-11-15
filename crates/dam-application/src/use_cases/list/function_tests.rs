@@ -154,6 +154,7 @@ fn a_token_reads_no_details_of_a_change_another_sender_made() {
         .commit(&dam_domain::CommitRecord {
             id: dam_domain::CommitId::generate(&mut |b: &mut [u8]| b.fill(50)),
             message: "noted".into(),
+            pulled: false,
             at: dam_domain::Timestamp::UNIX_EPOCH,
             changes: vec![dam_domain::Authored {
                 details: Some(dam_domain::Details {

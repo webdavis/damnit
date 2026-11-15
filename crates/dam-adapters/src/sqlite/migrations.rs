@@ -1,6 +1,6 @@
 use rusqlite::Connection;
 
-pub(super) const VERSION: u32 = 13;
+pub(super) const VERSION: u32 = 14;
 
 const V1: &str = r#"
 CREATE TABLE objects (oid TEXT PRIMARY KEY, kind TEXT NOT NULL, path TEXT NOT NULL, json TEXT NOT NULL);
@@ -90,7 +90,15 @@ const V13: &str = r#"
 CREATE TABLE follow_ons (hash TEXT NOT NULL, position INTEGER NOT NULL, moment TEXT NOT NULL, working_json TEXT NOT NULL, op TEXT, before_json TEXT, after_json TEXT, author_token TEXT, author_key_id TEXT, author_channel TEXT, details_json TEXT, PRIMARY KEY (hash, position, moment));
 "#;
 
-const BATCHES: [(u32, &str); 13] = [
+const V14: &str = r#"
+ALTER TABLE commits ADD COLUMN pulled INTEGER NOT NULL DEFAULT 0;
+UPDATE commits SET pulled = 1 WHERE id IN (
+    SELECT c.id FROM commits AS c JOIN pushed AS p ON p.commit_id = c.id
+    WHERE c.message = 'pull from ' || p.remote
+);
+"#;
+
+const BATCHES: [(u32, &str); 14] = [
     (1, V1),
     (2, V2),
     (3, V3),
@@ -104,6 +112,7 @@ const BATCHES: [(u32, &str); 13] = [
     (11, V11),
     (12, V12),
     (13, V13),
+    (14, V14),
 ];
 
 pub(super) fn migrate_above_user_version_in_one_transaction(
@@ -131,6 +140,9 @@ mod author_tests;
 
 #[cfg(test)]
 mod pulled_author_tests;
+
+#[cfg(test)]
+mod pulled_commit_tests;
 
 #[cfg(test)]
 mod upgrade_tests;

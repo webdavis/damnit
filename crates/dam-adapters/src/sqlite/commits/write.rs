@@ -13,12 +13,13 @@ pub(super) fn write_commit(conn: &Connection, record: &CommitRecord) -> Result<(
         })
         .map_err(sql)?;
     conn.execute(
-        "INSERT INTO commits (id, seq, message, at) VALUES (?1, ?2, ?3, ?4)",
+        "INSERT INTO commits (id, seq, message, at, pulled) VALUES (?1, ?2, ?3, ?4, ?5)",
         params![
             record.id.as_str(),
             seq,
             record.message,
-            record.at.to_string()
+            record.at.to_string(),
+            record.pulled
         ],
     )
     .map_err(sql)?;

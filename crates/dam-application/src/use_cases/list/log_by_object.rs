@@ -40,6 +40,7 @@ impl<'d, 'a> LogByObject<'d, 'a> {
                 by_object.entry(oid).or_default().push(CommitRecord {
                     id: commit.id.clone(),
                     message: commit.message.clone(),
+                    pulled: commit.pulled,
                     at: commit.at,
                     changes,
                 });
