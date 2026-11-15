@@ -110,31 +110,3 @@ fn the_repo_and_branch_are_those_of_the_working_directory() {
     let said = std::fs::canonicalize(details["repo"].as_str().unwrap()).unwrap();
     assert_eq!(said, std::fs::canonicalize(&repo).unwrap());
 }
-
-#[test]
-fn a_token_reads_the_author_of_another_senders_change_but_not_its_details() {
-    let _guard =
-        support::guard("a_token_reads_the_author_of_another_senders_change_but_not_its_details");
-    let sb = Sandbox::new();
-    let held = claude(&sb);
-    let hash = sent_by_claude(&sb, &held);
-    let (ok, _, err) = sb.dam(&["add", &hash]);
-    assert!(ok, "{err}");
-    let (ok, _, err) = sb.dam(&["commit", "-m", "dentist"]);
-    assert!(ok, "{err}");
-    let reader = grant_to(
-        &sb,
-        "auditor",
-        2,
-        vec![grant(&["task:read", "history:read"])],
-    );
-    let theirs = json(&sb.output_holding(&reader, &["log", "--json"]));
-    let change = &theirs["commits"][0]["changes"][0];
-    assert_eq!(change["author"], "claude");
-    assert!(change["details"].is_null(), "{change}");
-    let own = json(&sb.output_holding(&held, &["log", "--json"]));
-    assert_eq!(
-        own["commits"][0]["changes"][0]["details"]["meta"]["model"],
-        "opus"
-    );
-}

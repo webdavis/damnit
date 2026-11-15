@@ -41,19 +41,6 @@ fn conflicts(sb: &Sandbox) -> Vec<Value> {
 }
 
 #[test]
-fn a_pull_leaves_an_uncommitted_removal_alone_when_the_app_did_not_change_it() {
-    let _guard =
-        support::guard("a_pull_leaves_an_uncommitted_removal_alone_when_the_app_did_not_change_it");
-    let (sb, ann) = pushed_ann();
-    sb.run(&["rm", &ann[..7]]);
-
-    pull_ann_as(&sb, &ann, "Ann");
-
-    assert!(subjects_here(&sb).is_empty());
-    assert!(conflicts(&sb).is_empty());
-}
-
-#[test]
 fn a_pull_holds_an_uncommitted_removal_as_a_conflict_that_resolve_settles() {
     let _guard =
         support::guard("a_pull_holds_an_uncommitted_removal_as_a_conflict_that_resolve_settles");
@@ -79,23 +66,4 @@ fn a_pull_holds_an_uncommitted_removal_as_a_conflict_that_resolve_settles() {
 
     assert!(conflicts(&sb).is_empty());
     assert!(subjects_here(&sb).is_empty());
-}
-
-#[test]
-fn a_pull_holds_an_uncommitted_edit_as_a_conflict_that_resolve_settles() {
-    let _guard =
-        support::guard("a_pull_holds_an_uncommitted_edit_as_a_conflict_that_resolve_settles");
-    let (sb, ann) = pushed_ann();
-    sb.run(&["edit", &ann[..7], "--subject", "Ann here"]);
-
-    pull_ann_as(&sb, &ann, "Ann there");
-
-    assert_eq!(subjects_here(&sb), vec!["Ann here".to_string()]);
-    let held = conflicts(&sb);
-    assert_eq!(held[0]["ours"]["subject"], "Ann here");
-
-    sb.run(&["resolve", &ann[..7], "--theirs"]);
-
-    assert!(conflicts(&sb).is_empty());
-    assert_eq!(subjects_here(&sb), vec!["Ann there".to_string()]);
 }

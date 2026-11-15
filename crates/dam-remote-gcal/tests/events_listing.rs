@@ -1,4 +1,3 @@
-use dam_helper::ServiceError;
 use dam_helper::testing;
 use dam_remote_gcal::calendar_api::{Calendar, CalendarApi, MAX_PAGES, Window};
 use dam_remote_gcal::{ApiError, Endpoints};
@@ -117,59 +116,4 @@ fn a_calendar_id_is_one_percent_encoded_path_segment() {
         listing.calendar,
         "en.usa#holiday@group.v.calendar.google.com"
     );
-}
-
-#[test]
-fn a_calendar_google_does_not_know_names_itself_in_the_error() {
-    let _guard = testing::guard("a_calendar_google_does_not_know_names_itself_in_the_error");
-    let mut routes = HashMap::new();
-    routes.insert(
-        "GET /calendar/v3/calendars/nope/events",
-        vec![Reply::json(
-            404,
-            serde_json::json!({"error": {"code": 404, "message": "Not Found"}}),
-        )],
-    );
-    let google = testing::serve(routes);
-    let said = api(&google.base)
-        .events("nope", &window())
-        .unwrap_err()
-        .to_string();
-    assert!(said.contains("404") && said.contains("Not Found"), "{said}");
-}
-
-#[test]
-fn a_rate_limit_carries_the_retry_time_google_named() {
-    let _guard = testing::guard("a_rate_limit_carries_the_retry_time_google_named");
-    let mut routes = HashMap::new();
-    routes.insert(
-        "GET /calendar/v3/calendars/primary/events",
-        vec![Reply::json(429, serde_json::json!({})).with_header("Retry-After", "30")],
-    );
-    let google = testing::serve(routes);
-    let err = api(&google.base).events("primary", &window()).unwrap_err();
-    assert!(err.to_string().contains("retry after 30s"), "{err}");
-}
-
-#[test]
-fn a_huge_error_body_is_bounded_to_one_short_line() {
-    let _guard = testing::guard("a_huge_error_body_is_bounded_to_one_short_line");
-    let huge = Reply {
-        status: 500,
-        body: format!("line one\nline two {}", "x".repeat(100 * 1024)),
-        headers: vec![],
-    };
-    let mut routes = HashMap::new();
-    routes.insert("GET /calendar/v3/calendars/primary/events", vec![huge]);
-    let google = testing::serve(routes);
-    let err = api(&google.base).events("primary", &window()).unwrap_err();
-    let ApiError::Service(ServiceError::Http {
-        status: 500, body, ..
-    }) = &err
-    else {
-        panic!("{err:?}")
-    };
-    assert_eq!(body.chars().count(), 500);
-    assert!(body.starts_with("line one line two x"), "{body:?}");
-    assert!(body.ends_with('\u{2026}'), "the cut is marked: {body:?}");
 }

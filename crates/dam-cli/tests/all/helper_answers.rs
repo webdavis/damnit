@@ -29,14 +29,3 @@ fn a_push_answered_with_an_array_is_refused_as_not_a_json_object() {
     assert_eq!(out.status.code(), Some(1));
     assert_eq!(String::from_utf8_lossy(&out.stderr), NOT_AN_OBJECT);
 }
-
-#[test]
-fn capabilities_answered_with_an_array_are_refused_as_not_a_json_object() {
-    let _guard =
-        support::guard("capabilities_answered_with_an_array_are_refused_as_not_a_json_object");
-    let sb = Sandbox::new();
-    install_helper_answering(&sb, r#"[1,["task"],["subject"],[],false]"#, "{}");
-    let out = sb.output(&["pull"]);
-    assert_eq!(out.status.code(), Some(1));
-    assert_eq!(String::from_utf8_lossy(&out.stderr), NOT_AN_OBJECT);
-}

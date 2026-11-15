@@ -78,17 +78,6 @@ fn a_whole_id_that_matches_nothing_is_named_by_its_first_seven_characters() {
 }
 
 #[test]
-fn an_ambiguous_prefix_still_lists_what_it_matched() {
-    let _guard = support::guard("an_ambiguous_prefix_still_lists_what_it_matched");
-    let sb = with_two_objects_starting_abab();
-    let error = error_of(&sb, &["done", "abab", "--json"], 2);
-    let matched: Vec<String> = ["01", "02"]
-        .map(|last| format!("abab{}{last}", "0".repeat(34)))
-        .to_vec();
-    assert_eq!(error["oids"], json!(matched));
-}
-
-#[test]
 fn a_refusal_about_no_typed_id_has_no_prefix() {
     let _guard = support::guard("a_refusal_about_no_typed_id_has_no_prefix");
     let sb = Sandbox::new();

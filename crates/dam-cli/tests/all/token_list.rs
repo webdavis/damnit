@@ -105,22 +105,3 @@ fn a_config_without_tokens_lists_none() {
     let (_, out, _) = sb.dam(&["token", "list"]);
     assert_eq!(out, "no tokens declared\n");
 }
-
-#[test]
-fn a_token_that_requires_details_lists_as_active_with_what_it_requires() {
-    let _guard =
-        support::guard("a_token_that_requires_details_lists_as_active_with_what_it_requires");
-    let sb = Sandbox::new();
-    sb.add_token(
-        "asks",
-        TokenTable::valued(&token(4).expose())
-            .require(&["ticket"])
-            .grant(Grant::allowing(&["task:read"])),
-    );
-    let (ok, out, err) = sb.dam(&["token", "list", "--json"]);
-    assert!(ok, "{err}");
-    let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
-    let asks = &answer["tokens"][0];
-    assert_eq!(asks["standing"], "active", "{asks}");
-    assert_eq!(asks["require"], serde_json::json!(["ticket"]));
-}

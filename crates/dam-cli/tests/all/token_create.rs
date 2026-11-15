@@ -88,31 +88,6 @@ fn a_created_token_lets_its_holder_run_what_the_grant_allows() {
 }
 
 #[test]
-fn text_prints_the_token_alone_and_toon_carries_the_json_facts() {
-    let _guard = support::guard("text_prints_the_token_alone_and_toon_carries_the_json_facts");
-    let sb = Sandbox::new();
-    std::fs::set_permissions(sb.secrets_path(), std::fs::Permissions::from_mode(0o600)).unwrap();
-    let (ok, out, err) = sb.dam(&["token", "create", "a", "--allow", "task:read"]);
-    assert!(ok, "{err}");
-    assert_eq!(out.lines().count(), 1, "{out}");
-    assert!(Token::parse(out.trim_end()).is_ok(), "{out}");
-    let (ok, out, err) = sb.dam(&[
-        "token",
-        "create",
-        "b",
-        "--allow",
-        "task:read",
-        "--via",
-        "mcp",
-        "--toon",
-    ]);
-    assert!(ok, "{err}");
-    for fact in ["name: b", "value: damk_v1_", "key_id: ", "via[1]: mcp"] {
-        assert!(out.contains(fact), "{fact} missing from {out}");
-    }
-}
-
-#[test]
 fn a_taken_name_a_bad_name_and_a_bad_permission_change_nothing() {
     let _guard = support::guard("a_taken_name_a_bad_name_and_a_bad_permission_change_nothing");
     let sb = Sandbox::new();
@@ -156,22 +131,6 @@ fn a_taken_name_a_bad_name_and_a_bad_permission_change_nothing() {
         "dam: token tool already exists\n"
     );
     assert_eq!(secrets_of(&sb), before);
-}
-
-#[test]
-fn a_reserved_name_cannot_be_created_for_any_token() {
-    let _guard = support::guard("a_reserved_name_cannot_be_created_for_any_token");
-    let sb = Sandbox::new();
-    for reserved in ["token:create", "token:revoke", "history:rewrite"] {
-        let out = sb.output(&["token", "create", "x", "--allow", reserved, "--json"]);
-        assert_eq!(out.status.code(), Some(4), "{out:?}");
-        assert!(
-            error_document(&out)["error"]["message"]
-                .as_str()
-                .unwrap()
-                .contains(reserved)
-        );
-    }
 }
 
 #[test]

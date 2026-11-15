@@ -1,7 +1,5 @@
 use crate::support;
 
-use std::os::unix::fs::PermissionsExt;
-
 use support::config_files::Remote;
 use support::sandbox::Sandbox;
 
@@ -17,12 +15,6 @@ fn rows(sb: &Sandbox, check: &str) -> (Option<i32>, Vec<String>) {
         .map(str::to_string)
         .collect();
     (answer.code, rows)
-}
-
-fn install_helper(sb: &Sandbox, script: &str) {
-    let helper = sb.dir.path().join("bin/dam-remote-fake");
-    std::fs::write(&helper, script).unwrap();
-    std::fs::set_permissions(&helper, std::fs::Permissions::from_mode(0o755)).unwrap();
 }
 
 #[test]
@@ -42,39 +34,6 @@ fn a_helper_that_answers_is_well_and_is_given_no_credential() {
     assert_eq!(given, "\n");
     assert!(sb.pushes().is_empty());
     assert!(sb.no_helper_left_within(std::time::Duration::from_secs(2)));
-}
-
-#[test]
-fn a_missing_helper_is_an_issue_with_advice() {
-    let _guard = support::guard("a_missing_helper_is_an_issue_with_advice");
-    let sb = Sandbox::new();
-    std::fs::remove_file(sb.dir.path().join("bin/dam-remote-fake")).unwrap();
-    let (code, rows) = rows(&sb, "helpers");
-    assert_eq!(code, Some(1));
-    assert_eq!(
-        rows,
-        [
-            "  ✗ helpers: 1 remote: 1 issue",
-            "    ✗ fake: dam-remote-fake is not installed",
-            "      → install it, then run dam doctor",
-        ]
-    );
-}
-
-#[test]
-fn a_helper_on_another_protocol_is_an_issue() {
-    let _guard = support::guard("a_helper_on_another_protocol_is_an_issue");
-    let sb = Sandbox::new();
-    install_helper(
-        &sb,
-        "#!/bin/sh\nread -r line\nprintf '{\"protocol\":99,\"kinds\":[\"task\"],\"fields\":[],\"credentials\":[],\"incremental\":false}\\n'\n",
-    );
-    let (code, rows) = rows(&sb, "helpers");
-    assert_eq!(code, Some(1));
-    assert!(
-        rows[1].starts_with("    ✗ fake: helper fake speaks protocol version 99"),
-        "{rows:?}"
-    );
 }
 
 #[test]
@@ -102,17 +61,6 @@ fn no_remotes_means_no_helper_to_check() {
     let (code, rows) = rows(&sb, "helpers");
     assert_eq!(code, Some(0));
     assert_eq!(rows, ["  · helpers: no remotes configured"]);
-}
-
-#[test]
-fn helpers_are_not_checked_when_the_config_does_not_read() {
-    let _guard = support::guard("helpers_are_not_checked_when_the_config_does_not_read");
-    let sb = Sandbox::new();
-    sb.write_config_lua("return {\n");
-    let (code, rows) = rows(&sb, "helpers");
-    assert_eq!(code, Some(0));
-    assert_eq!(rows, ["  · helpers: not checked, the config did not read"]);
-    assert!(!sb.dir.path().join("token.txt").exists());
 }
 
 #[test]

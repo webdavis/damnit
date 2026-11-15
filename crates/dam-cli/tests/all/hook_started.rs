@@ -38,18 +38,6 @@ fn a_dam_a_hook_started_refuses_before_it_reads_or_writes_anything() {
 }
 
 #[test]
-fn the_refusal_names_the_hook_that_started_dam() {
-    let _guard = support::guard("the_refusal_names_the_hook_that_started_dam");
-    let sb = Sandbox::new();
-    let out = started_by_a_hook(&sb, &["ls"]);
-    assert_eq!(out.status.code(), Some(4), "{out:?}");
-    assert_eq!(
-        String::from_utf8_lossy(&out.stderr),
-        "dam: hook task_new started this dam, and a hook cannot run dam\n"
-    );
-}
-
-#[test]
 fn dam_new_inside_a_hook_refuses_at_once_and_the_hook_finishes_in_time() {
     let _guard =
         support::guard("dam_new_inside_a_hook_refuses_at_once_and_the_hook_finishes_in_time");

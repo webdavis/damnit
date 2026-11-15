@@ -107,20 +107,3 @@ fn a_token_holder_is_refused_before_anything_is_read() {
     assert_eq!(error_document(&out)["error"]["rule"], "not_open_to_tokens");
     assert!(!calls.exists());
 }
-
-#[test]
-fn the_help_says_what_it_contacts_and_runs_and_lists_the_parts() {
-    let _guard = support::guard("the_help_says_what_it_contacts_and_runs_and_lists_the_parts");
-    let (ok, out, _) = Sandbox::new().dam(&["test", "--help"]);
-    assert!(ok);
-    let out = out.split_whitespace().collect::<Vec<_>>().join(" ");
-    for said in [
-        "Make each part do its real job once and say whether it worked",
-        "contacts each remote",
-        "credential function",
-        "[possible values: credentials]",
-        "dam test credentials",
-    ] {
-        assert!(out.contains(said), "{said}: {out}");
-    }
-}

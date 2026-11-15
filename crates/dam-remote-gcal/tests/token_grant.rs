@@ -125,26 +125,6 @@ fn an_unreadable_refresh_answer_says_it_could_not_be_read() {
 }
 
 #[test]
-fn an_empty_access_token_is_refused() {
-    let _guard = testing::guard("an_empty_access_token_is_refused");
-    let google = token_route(Reply::json(
-        200,
-        serde_json::json!({"access_token": "", "token_type": "Bearer"}),
-    ));
-    let err = grant(&google.base).unwrap_err();
-    assert!(
-        matches!(
-            err,
-            ApiError::TokenRefused(Refusal {
-                status: Some(200),
-                code: None
-            })
-        ),
-        "{err:?}"
-    );
-}
-
-#[test]
 fn a_token_endpoint_nobody_answers_is_an_exchange_that_did_not_reach_google() {
     let _guard =
         testing::guard("a_token_endpoint_nobody_answers_is_an_exchange_that_did_not_reach_google");

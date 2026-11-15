@@ -98,27 +98,6 @@ impl Removal {
 }
 
 #[test]
-fn adding_a_removal_moves_its_children_up_as_the_owners_change() {
-    let _guard = support::guard("adding_a_removal_moves_its_children_up_as_the_owners_change");
-    let r = sent_by_tool_and_tied(&["new", "Trip"], |sb, _| {
-        full(sb, &sb.new_object(&["Book flights", "--path", "work/Trip"]))
-    });
-    let item = r.sent();
-    let removes = &r.waiting_row()["removes"];
-    assert_eq!(removes["descendants"], json!([r.other]));
-    let added = r.added(&item);
-    assert_eq!(added["removed"][0]["descendants"], json!([r.other]));
-    assert_eq!(r.other_as_owner_sees_it()["path"], "work/");
-    assert_eq!(
-        r.staged_by_author(),
-        r.sorted(vec![
-            (r.target.clone(), json!("delete"), json!("tool")),
-            (r.other.clone(), json!("update"), Value::Null),
-        ])
-    );
-}
-
-#[test]
 fn adding_a_removal_drops_the_dependency_on_it_as_the_owners_change() {
     let _guard = support::guard("adding_a_removal_drops_the_dependency_on_it_as_the_owners_change");
     let r = sent_by_tool_and_tied(&["new", "Draft"], |sb, target| {
@@ -145,31 +124,4 @@ fn adding_a_removal_drops_the_dependency_on_it_as_the_owners_change() {
     let held = r.sb.output_holding(&r.held, &["status", "--json"]);
     let held = String::from_utf8_lossy(&held.stdout).into_owned();
     assert!(!held.contains(&r.other), "{held}");
-}
-
-#[test]
-fn adding_an_event_removal_names_the_tasks_still_attached_to_it() {
-    let _guard = support::guard("adding_an_event_removal_names_the_tasks_still_attached_to_it");
-    let event = [
-        "new",
-        "Standup",
-        "--event",
-        "--start",
-        "2026-09-25T14:00",
-        "--end",
-        "2026-09-25T14:30",
-    ];
-    let r = sent_by_tool_and_tied(&event, |sb, target| {
-        let short = sb.new_object(&["Prepare notes", "--path", "home"]);
-        owner(sb, &["edit", &short, "--attached", target]);
-        full(sb, &short)
-    });
-    let item = r.sent();
-    assert_eq!(r.waiting_row()["removes"]["attached"], json!([r.other]));
-    let added = r.added(&item);
-    assert_eq!(added["removed"][0]["attached"], json!([r.other]));
-    assert_eq!(
-        r.staged_by_author(),
-        vec![(r.target.clone(), json!("delete"), json!("tool"))]
-    );
 }

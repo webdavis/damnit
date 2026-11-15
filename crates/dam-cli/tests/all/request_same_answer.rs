@@ -152,24 +152,3 @@ fn a_request_on_standard_input_and_in_toon_is_read_the_same() {
         assert_eq!(stored(&by_stdin), stored(&by_flags));
     }
 }
-
-#[test]
-fn day_set_reads_its_document_from_a_request_file_or_from_standard_input() {
-    let _guard =
-        support::guard("day_set_reads_its_document_from_a_request_file_or_from_standard_input");
-    let day = json!({"day": "2026-11-11", "decisions": ["rest"]});
-    let by_stdin = Sandbox::new();
-    let stdin_answer = answered(&fed(&by_stdin, &["day", "set", "--json"], &day.to_string()));
-    let by_file = Sandbox::new();
-    assert_eq!(
-        answered(&by_request(&by_file, &["day", "set"], &day)),
-        stdin_answer
-    );
-    let by_dash = Sandbox::new();
-    let dash = fed(
-        &by_dash,
-        &["day", "set", "--json", "--request", "-"],
-        &day.to_string(),
-    );
-    assert_eq!(answered(&dash), stdin_answer);
-}

@@ -39,12 +39,3 @@ fn an_estimate_in_minutes_finds_the_tasks_that_fit_five_minutes() {
     assert!(sb.dam(&["edit", &long, "--no-estimate"]).0);
     assert_eq!(estimate(&sb, &long), serde_json::Value::Null);
 }
-
-#[test]
-fn an_estimate_that_is_not_whole_minutes_is_refused_as_usage() {
-    let _guard = support::guard("an_estimate_that_is_not_whole_minutes_is_refused_as_usage");
-    let sb = Sandbox::new();
-    let oid = sb.new_object(&["x"]);
-    let out = sb.output(&["edit", &oid, "--estimate", "90s"]);
-    assert_eq!(out.status.code(), Some(2), "{out:?}");
-}

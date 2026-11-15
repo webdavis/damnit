@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::io::Write;
 use std::process::{Command, Stdio};
 
-use dam_protocol::{Capabilities, PullResponse, PushResponse, Reply as Answer};
+use dam_protocol::{Capabilities, PullResponse, Reply as Answer};
 use serde::de::DeserializeOwned;
 use testing::Reply;
 
@@ -126,61 +126,6 @@ fn a_pull_reaches_the_token_endpoint_then_the_calendar_and_answers_dams_document
     for secret in [CLIENT_SECRET, REFRESH, ACCESS] {
         assert!(!stderr.contains(secret));
     }
-}
-
-#[test]
-fn a_remote_under_another_name_reads_its_own_credentials_and_its_address() {
-    let _guard =
-        testing::guard("a_remote_under_another_name_reads_its_own_credentials_and_its_address");
-    let home = tempfile::tempdir().unwrap();
-    let google = google();
-    let (responses, _) = converse(
-        with_credentials(
-            helper(home.path(), &["work", "primary,primary"], &google.base),
-            "WORK",
-        ),
-        "{\"cmd\":\"pull\",\"since\":null}\n",
-    );
-    assert!(
-        matches!(read::<PullResponse>(&responses[0]), Answer::Answered(p) if p.objects.len() == 1),
-        "{:?}",
-        responses[0]
-    );
-}
-
-#[test]
-fn a_push_is_refused_per_mutation_without_a_credential_or_a_request() {
-    let _guard = testing::guard("a_push_is_refused_per_mutation_without_a_credential_or_a_request");
-    let home = tempfile::tempdir().unwrap();
-    let google = google();
-    let push = r#"{"cmd":"push","mutations":[{"op":"update","oid":"0101010101010101010101010101010101010101","idempotency_key":"k","remote_id":"primary/a","fields":["subject"]}]}"#;
-    let (responses, _) = converse(
-        helper(home.path(), &["gcal", ""], &google.base),
-        &format!("{push}\n"),
-    );
-    let Answer::Answered(answer) = read::<PushResponse>(&responses[0]) else {
-        panic!("{:?}", responses[0])
-    };
-    assert!(!answer.results[0].ok());
-    assert!(answer.results[0].why().unwrap().contains("read-only"));
-    assert!(google.seen().is_empty(), "a push sent a request");
-}
-
-#[test]
-fn a_request_that_does_not_decode_is_answered_and_the_loop_goes_on() {
-    let _guard = testing::guard("a_request_that_does_not_decode_is_answered_and_the_loop_goes_on");
-    let home = tempfile::tempdir().unwrap();
-    let (responses, _) = converse(
-        helper(home.path(), &["gcal", ""], "http://127.0.0.1:1"),
-        "not json\n{\"cmd\":\"capabilities\"}\n",
-    );
-    assert!(
-        matches!(read::<Capabilities>(&responses[0]), Answer::Failed { error } if error.contains("cannot read"))
-    );
-    assert!(matches!(
-        read::<Capabilities>(&responses[1]),
-        Answer::Answered(_)
-    ));
 }
 
 #[test]

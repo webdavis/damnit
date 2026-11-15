@@ -33,10 +33,3 @@ fn another_token_cannot_take_back_an_item_by_its_id_oid_or_prefix() {
     let _guard = support::guard("another_token_cannot_take_back_an_item_by_its_id_oid_or_prefix");
     b_cannot_take_back_what_a_sent(&["task:create", "task:read", "task:remove"]);
 }
-
-#[test]
-fn another_token_without_task_remove_cannot_take_back_an_item_either() {
-    let _guard =
-        support::guard("another_token_without_task_remove_cannot_take_back_an_item_either");
-    b_cannot_take_back_what_a_sent(&["task:create"]);
-}

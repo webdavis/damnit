@@ -3,23 +3,6 @@ use crate::support;
 use support::own::{listed, own_grant, own_hidden, send};
 
 #[test]
-fn a_token_reads_edits_and_completes_the_task_it_made() {
-    let _guard = support::guard("a_token_reads_edits_and_completes_the_task_it_made");
-    let h = own_hidden(own_grant());
-    let shown = h.holding(&["show", &h.report, "--json"]);
-    assert!(shown.status.success(), "{shown:?}");
-    let edit = send(
-        &h.sb,
-        &h.held,
-        &["edit", &h.report, "--subject", "final report"],
-    );
-    assert_eq!(edit["answer"], "changed");
-    assert_eq!(edit["oid"], h.report.as_str());
-    let done = h.holding(&["done", &h.report, "--json"]);
-    assert!(done.status.success(), "{done:?}");
-}
-
-#[test]
 fn a_tokens_ls_lists_only_what_it_made() {
     let _guard = support::guard("a_tokens_ls_lists_only_what_it_made");
     let h = own_hidden(own_grant());

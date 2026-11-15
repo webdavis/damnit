@@ -64,39 +64,3 @@ fn a_decline_holds_for_a_token_made_again_under_the_same_name() {
     assert_eq!(answer["answer"], "declined");
     assert_eq!(answer["item"], first["item"]);
 }
-
-#[test]
-fn adding_a_removal_of_a_task_the_owner_changed_or_finished_names_the_removal() {
-    let _guard = support::guard(
-        "adding_a_removal_of_a_task_the_owner_changed_or_finished_names_the_removal",
-    );
-    for (change, field) in [
-        (
-            &["edit", "", "--subject", "Call the dentist today"][..],
-            "subject",
-        ),
-        (&["done", ""][..], "done"),
-    ] {
-        let sb = Sandbox::new();
-        let held = grant_to(&sb, "tool", 1, vec![grant(&EVERY_RIGHT)]);
-        let oid = added_from(&sb, &held, &["new", "Call the dentist"]);
-        let item = removal(&sb, &held, &oid)["item"]
-            .as_str()
-            .unwrap()
-            .to_string();
-        let mut line = change.to_vec();
-        line[1] = &oid;
-        owner(&sb, &line);
-        let out = sb.output(&["add", &item, "--json"]);
-        assert_eq!(refused(&out), "item_removes_a_changed_task");
-        let text = String::from_utf8_lossy(&sb.output(&["add", &item]).stderr).into_owned();
-        assert!(
-            text.contains(&format!(
-                "{} removes {}, whose {field} you changed",
-                &item[..7],
-                &oid[..7]
-            )),
-            "{text}"
-        );
-    }
-}

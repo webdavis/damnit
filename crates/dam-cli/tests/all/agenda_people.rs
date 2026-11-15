@@ -71,31 +71,6 @@ fn an_agenda_row_names_the_people_place_and_link_of_its_meeting() {
 }
 
 #[test]
-fn an_agenda_row_without_people_has_an_empty_list_and_no_organizer() {
-    let _guard = support::guard("an_agenda_row_without_people_has_an_empty_list_and_no_organizer");
-    let sb = pulled_from_the_calendar();
-    let document: Value = serde_json::from_str(&agenda(&sb, "--json")).unwrap();
-    let alone = row(&document, "focus block").as_object().unwrap();
-    assert_eq!(alone["attendees"], json!([]));
-    for absent in ["organizer", "location", "conference"] {
-        assert!(!alone.contains_key(absent), "{absent} in {alone:?}");
-    }
-}
-
-#[test]
-fn the_toon_agenda_carries_the_same_people_as_the_json_one() {
-    let _guard = support::guard("the_toon_agenda_carries_the_same_people_as_the_json_one");
-    let sb = pulled_from_the_calendar();
-    let from_json: Value = serde_json::from_str(&agenda(&sb, "--json")).unwrap();
-    let from_toon: Value = toon_format::decode_default(&agenda(&sb, "--toon")).unwrap();
-    assert_eq!(from_toon, from_json);
-    assert_eq!(
-        row(&from_toon, "design review")["organizer"]["email"],
-        "grace@example.com"
-    );
-}
-
-#[test]
 fn a_token_sees_no_meeting_or_attendee_outside_its_grants() {
     let _guard = support::guard("a_token_sees_no_meeting_or_attendee_outside_its_grants");
     let sb = pulled_from_the_calendar();

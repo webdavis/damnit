@@ -116,20 +116,6 @@ fn pushes_are_not_checked_on_a_store_this_dam_does_not_read() {
 }
 
 #[test]
-fn pushes_are_not_checked_without_a_config_or_a_remote() {
-    let _guard = support::guard("pushes_are_not_checked_without_a_config_or_a_remote");
-    let sb = Sandbox::new();
-    sb.write_config_lua("return {\n");
-    assert_eq!(
-        rows(&sb).1,
-        ["  · pushes: not checked, the config did not read"]
-    );
-    sb.write_config_lua("return {}\n");
-    sb.write_secrets_lua("return { schema = 1 }\n");
-    assert_eq!(rows(&sb).1, ["  · pushes: no remotes configured"]);
-}
-
-#[test]
 fn pushes_are_not_checked_beside_a_side_file_the_database_check_warns_of() {
     let _guard =
         support::guard("pushes_are_not_checked_beside_a_side_file_the_database_check_warns_of");

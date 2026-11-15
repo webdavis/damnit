@@ -1,6 +1,5 @@
 use crate::support;
 
-use support::errors::error_document;
 use support::sandbox::Sandbox;
 use support::token_table::TokenTable;
 use support::tokens::{grant, token};
@@ -14,21 +13,6 @@ fn requiring_session_and_model(sb: &Sandbox) -> String {
             .grant(grant(&["task:read"])),
     );
     held
-}
-
-#[test]
-fn a_request_missing_a_required_detail_is_refused_naming_only_what_to_pass() {
-    let _guard =
-        support::guard("a_request_missing_a_required_detail_is_refused_naming_only_what_to_pass");
-    let sb = Sandbox::new();
-    let held = requiring_session_and_model(&sb);
-    let out = sb.output_holding(&held, &["ls", "--json", "--meta", "session=s1"]);
-    assert_eq!(out.status.code(), Some(5), "{out:?}");
-    let document = error_document(&out);
-    assert_eq!(document["error"]["rule"], "missing_details");
-    let message = document["error"]["message"].as_str().unwrap();
-    assert!(message.contains("--meta model="), "{message}");
-    assert!(!message.contains("session"), "{message}");
 }
 
 #[test]

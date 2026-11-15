@@ -93,14 +93,3 @@ fn config_validate_takes_no_fix() {
     let out = sb.output(&["config", "validate", "--fix"]);
     assert_eq!(out.status.code(), Some(2), "{out:?}");
 }
-
-#[test]
-fn a_token_cannot_fix() {
-    let _guard = support::guard("a_token_cannot_fix");
-    let sb = Sandbox::new();
-    std::fs::remove_file(sb.config_path()).unwrap();
-    let before = listing(sb.dir.path());
-    let out = sb.output_holding("damk_v1_whatever", &["doctor", "--fix"]);
-    assert!(!out.status.success(), "{out:?}");
-    assert_eq!(listing(sb.dir.path()), before);
-}

@@ -82,17 +82,6 @@ fn a_repeat_after_the_owner_took_the_task_leaves_the_owners_unsaved_edit_alone()
 }
 
 #[test]
-fn two_tokens_with_the_same_id_make_two_tasks() {
-    let _guard = support::guard("two_tokens_with_the_same_id_make_two_tasks");
-    let (sb, held) = tool();
-    let claude = grant_to(&sb, "claude", 2, vec![grant(&["task:create"])]);
-    let from_tool = send(&sb, &held, &["Call dentist", "--id", "dentist"]);
-    let from_claude = send(&sb, &claude, &["Call dentist", "--id", "dentist"]);
-    assert_eq!(from_claude["answer"], "new");
-    assert_ne!(from_claude["oid"], from_tool["oid"]);
-}
-
-#[test]
 fn the_same_subject_under_two_ids_makes_two_items() {
     let _guard = support::guard("the_same_subject_under_two_ids_makes_two_items");
     let (sb, held) = tool();

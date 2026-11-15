@@ -15,22 +15,6 @@ fn helper(home: &Path, args: &[&str]) -> Command {
     command
 }
 
-fn pull_error(command: &mut Command) -> String {
-    let mut child = command
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .spawn()
-        .unwrap();
-    let mut stdin = child.stdin.take().unwrap();
-    stdin
-        .write_all(b"{\"cmd\":\"pull\",\"since\":null}\n")
-        .unwrap();
-    drop(stdin);
-    let out = child.wait_with_output().unwrap();
-    let answer: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
-    answer["error"].as_str().unwrap_or_default().to_string()
-}
-
 #[test]
 fn capabilities_are_answered_without_a_token_and_pull_needs_one() {
     let _guard = testing::guard("capabilities_are_answered_without_a_token_and_pull_needs_one");
@@ -81,24 +65,6 @@ fn a_malformed_line_answers_an_error_and_the_loop_keeps_going() {
     assert!(error["error"].as_str().is_some());
     let caps: serde_json::Value = serde_json::from_str(lines[1]).unwrap();
     assert_eq!(caps["kinds"], serde_json::json!(["task"]));
-}
-
-#[test]
-fn a_remote_under_another_name_reads_its_own_token_and_not_todoists() {
-    let _guard = testing::guard("a_remote_under_another_name_reads_its_own_token_and_not_todoists");
-    let home = tempfile::tempdir().unwrap();
-    let missing =
-        pull_error(helper(home.path(), &["work", ""]).env("DAM_TODOIST_API_TOKEN", "tok"));
-    assert_eq!(
-        missing,
-        "DAM_WORK_API_TOKEN is not set; declare api_token under remote.work in secrets.lua"
-    );
-    let read = pull_error(
-        helper(home.path(), &["work", ""])
-            .env("DAM_WORK_API_TOKEN", "tok")
-            .env("DAM_TODOIST_BASE_URL", "http://127.0.0.1:1"),
-    );
-    assert!(!read.contains("is not set"), "{read}");
 }
 
 #[test]

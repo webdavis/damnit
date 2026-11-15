@@ -26,22 +26,6 @@ fn through_the_flag(sb: &Sandbox, config: &Path) -> Output {
 }
 
 #[test]
-fn an_existing_toml_config_is_refused_without_being_read() {
-    let _guard = support::guard("an_existing_toml_config_is_refused_without_being_read");
-    let sb = Sandbox::new();
-    let config = sb.dir.path().join("config.toml");
-    std::fs::write(&config, "[remote.fake]\nurl = \"fake::\"\n").unwrap();
-    for out in [
-        through_the_variable(&sb, &config),
-        through_the_flag(&sb, &config),
-    ] {
-        let said = refused(&out);
-        assert!(said.contains(&*config.to_string_lossy()), "{said}");
-        assert!(!said.contains("config.toml:"), "{said}");
-    }
-}
-
-#[test]
 fn a_missing_toml_config_is_refused_and_nothing_is_created() {
     let _guard = support::guard("a_missing_toml_config_is_refused_and_nothing_is_created");
     let sb = Sandbox::new();

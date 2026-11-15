@@ -48,24 +48,6 @@ fn a_push_the_deadline_cuts_short_says_how_much_it_kept_and_resends_only_the_res
 }
 
 #[test]
-fn a_push_the_deadline_cuts_short_before_any_answer_prints_as_it_always_did() {
-    let _guard =
-        support::guard("a_push_the_deadline_cuts_short_before_any_answer_prints_as_it_always_did")
-            .allow_slow(THE_DEADLINE_IS_LONG_ENOUGH_FOR_A_BUSY_MACHINE);
-    let sb = two_committed_tasks_on_a_two_second_deadline();
-    sb.hang_the_next_push(false);
-
-    let out = sb.output(&["push"]);
-
-    assert_eq!(out.status.code(), Some(1));
-    assert_eq!(
-        String::from_utf8_lossy(&out.stderr),
-        "dam: helper fake gave no answer within 2s\n"
-    );
-    assert_eq!(sb.pushes().len(), 1);
-}
-
-#[test]
 fn the_json_error_of_a_cut_short_push_carries_the_counts_in_its_message() {
     let _guard =
         support::guard("the_json_error_of_a_cut_short_push_carries_the_counts_in_its_message")

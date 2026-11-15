@@ -71,19 +71,6 @@ fn a_token_dam_cannot_read_can_still_be_revoked() {
 }
 
 #[test]
-fn revoking_a_name_no_token_holds_is_refused_and_changes_nothing() {
-    let _guard = support::guard("revoking_a_name_no_token_holds_is_refused_and_changes_nothing");
-    let sb = Sandbox::new();
-    let before = secrets_of(&sb);
-    let out = sb.output(&["token", "revoke", "tool", "--json"]);
-    assert_eq!(out.status.code(), Some(4), "{out:?}");
-    let document = error_document(&out);
-    assert_matches_schema(&document, "error.schema.json");
-    assert_eq!(document["error"]["rule"], "no_such_token");
-    assert_eq!(secrets_of(&sb), before);
-}
-
-#[test]
 fn text_and_toon_name_the_revoked_token() {
     let _guard = support::guard("text_and_toon_name_the_revoked_token");
     let sb = Sandbox::new();

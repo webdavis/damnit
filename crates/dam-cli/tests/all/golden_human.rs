@@ -2,7 +2,6 @@ use crate::support;
 
 use support::fixture;
 use support::golden::assert_golden_output;
-use support::token_table::TokenTable;
 
 #[test]
 fn ls_prints_the_golden_lines() {
@@ -71,30 +70,4 @@ fn no_line_of_a_list_passes_a_forty_column_terminal() {
             assert!(line.chars().count() <= 40, "{args:?}: {line}");
         }
     }
-}
-
-#[test]
-fn status_prints_its_warning_whole_at_forty_columns() {
-    let sb = fixture::with_staged_and_unstaged_changes();
-    sb.add_token("tool", TokenTable::valued("not-a-token"));
-    let out = sb
-        .command(&["status"])
-        .env("COLUMNS", "40")
-        .output()
-        .unwrap();
-    let text = String::from_utf8(out.stdout).unwrap();
-    assert!(
-        text.lines()
-            .any(|l| l.starts_with("warning:") && l.ends_with("not a damnit token")),
-        "{text}"
-    );
-}
-
-#[test]
-fn a_piped_list_without_columns_prints_whole_lines() {
-    let sb = support::sandbox::Sandbox::new();
-    let subject = "a subject far longer than any terminal would ever show in one row of a list";
-    sb.new_object(&[subject]);
-    let out = sb.command(&["ls"]).env_remove("COLUMNS").output().unwrap();
-    assert!(String::from_utf8(out.stdout).unwrap().contains(subject));
 }

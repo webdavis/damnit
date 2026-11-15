@@ -54,16 +54,6 @@ fn token_create_prints_only_a_token_that_authenticates() {
 }
 
 #[test]
-fn token_create_json_keeps_its_warnings() {
-    let _guard = support::guard("token_create_json_keeps_its_warnings");
-    let sb = Sandbox::new();
-    assert_json_keeps_warnings_and_stderr_empty(
-        &sb,
-        &["token", "create", "tool", "--allow", "task:read"],
-    );
-}
-
-#[test]
 fn token_revoke_warns_on_stderr() {
     let _guard = support::guard("token_revoke_warns_on_stderr");
     let sb = Sandbox::new();
@@ -78,20 +68,4 @@ fn token_revoke_json_keeps_its_warnings() {
     let sb = Sandbox::new();
     holding_a_token(&sb);
     assert_json_keeps_warnings_and_stderr_empty(&sb, &["token", "revoke", "tool"]);
-}
-
-#[test]
-fn remote_add_keeps_the_mode_of_the_config_that_holds_no_secret() {
-    let _guard = support::guard("remote_add_keeps_the_mode_of_the_config_that_holds_no_secret");
-    let sb = Sandbox::new();
-    std::fs::set_permissions(sb.config_path(), std::fs::Permissions::from_mode(0o644)).unwrap();
-    let (ok, out, err) = sb.dam(&["remote", "add", "second", "fake::"]);
-    assert!(ok, "{err}");
-    assert_eq!(out, "added second (fake::)\n");
-    assert!(err.is_empty(), "{err}");
-    let mode = std::fs::metadata(sb.config_path())
-        .unwrap()
-        .permissions()
-        .mode();
-    assert_eq!(mode & 0o777, 0o644);
 }

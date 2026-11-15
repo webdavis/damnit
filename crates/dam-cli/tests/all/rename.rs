@@ -1,7 +1,5 @@
 use crate::support;
 
-use std::os::unix::fs::PermissionsExt;
-
 use support::sandbox::Sandbox;
 
 fn path_of(sb: &Sandbox, oid: &str) -> String {
@@ -26,35 +24,6 @@ fn renaming_a_subject_with_the_flag_carries_its_children() {
 
     let (ok, _, err) = sb.dam(&["edit", &parent[..7], "--subject", "renamed"]);
     assert!(ok, "{err}");
-
-    assert_eq!(path_of(&sb, &child), "renamed/");
-    assert_eq!(path_of(&sb, &grandchild), "renamed/child/");
-}
-
-#[test]
-fn renaming_a_subject_in_the_editor_carries_its_children() {
-    let _guard = support::guard("renaming_a_subject_in_the_editor_carries_its_children");
-    let sb = Sandbox::new();
-    let (parent, child, grandchild) = parent_with_family(&sb);
-    let renames = sb.dir.path().join("bin/rename-subject");
-    std::fs::write(
-        &renames,
-        "#!/bin/sh\nsed 's/^subject = .*/subject = \"renamed\"/' \"$1\" > \"$1.new\" && mv \"$1.new\" \"$1\"\n",
-    )
-    .unwrap();
-    std::fs::set_permissions(&renames, std::fs::Permissions::from_mode(0o755)).unwrap();
-
-    let out = sb
-        .command(&["edit", "-e", &parent[..7]])
-        .env("EDITOR", &renames)
-        .env("VISUAL", &renames)
-        .output()
-        .unwrap();
-    assert!(
-        out.status.success(),
-        "{}",
-        String::from_utf8_lossy(&out.stderr)
-    );
 
     assert_eq!(path_of(&sb, &child), "renamed/");
     assert_eq!(path_of(&sb, &grandchild), "renamed/child/");

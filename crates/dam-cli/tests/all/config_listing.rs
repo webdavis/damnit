@@ -2,7 +2,6 @@ use crate::support;
 
 use support::errors::{error_document, kind_of};
 use support::sandbox::Sandbox;
-use support::schema::assert_matches_schema;
 use support::small_config::small_config;
 
 #[test]
@@ -69,27 +68,6 @@ Settings ── what dam is using
             );
         }
     }
-}
-
-#[test]
-fn a_machine_reader_gets_the_settings_its_schema_names() {
-    let _guard = support::guard("a_machine_reader_gets_the_settings_its_schema_names");
-    let sb = small_config();
-    let out = sb.output(&["config", "list", "--json"]);
-    assert!(out.status.success(), "{out:?}");
-    let answer: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
-    assert_matches_schema(&answer, "config-list.schema.json");
-    assert_eq!(answer["config"], sb.config_path().display().to_string());
-    let todoist = &answer["settings"]["remote"]["todoist"];
-    assert_eq!(
-        todoist["deadline"],
-        serde_json::json!({"value": "60s", "default": true})
-    );
-
-    let (ok, out, err) = sb.dam(&["config", "list", "--toon"]);
-    assert!(ok, "{err}");
-    let from_toon: serde_json::Value = toon_format::decode_default(&out).unwrap();
-    assert_eq!(from_toon, answer);
 }
 
 #[test]

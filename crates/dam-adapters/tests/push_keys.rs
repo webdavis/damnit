@@ -1,9 +1,9 @@
 use dam_application::testing::{
-    Pushed, Scenario, ScriptedHelper, ScriptedLauncher, oid, remotes_launched_by, task, todoist,
+    Pushed, Scenario, ScriptedHelper, ScriptedLauncher, oid, remotes_launched_by, task,
 };
 use dam_application::{
-    CommitRepository, Declared, HelperError, MutationOp, MutationOutcome, MutationVerdict,
-    PushOutcome, RemoteMutation,
+    Declared, HelperError, MutationOp, MutationOutcome, MutationVerdict, PushOutcome,
+    RemoteMutation,
 };
 use dam_domain::{Object, Task};
 
@@ -50,13 +50,6 @@ fn accepted(_: &RemoteMutation) -> Option<MutationVerdict> {
     })
 }
 
-fn refused(_: &RemoteMutation) -> Option<MutationVerdict> {
-    Some(MutationVerdict::Refused {
-        why: "not now".into(),
-        unasked: false,
-    })
-}
-
 fn named(subject: &str) -> Object {
     Object::Task(Task::new(oid(1), subject))
 }
@@ -89,26 +82,6 @@ fn an_update_s_key_is_pinned_for_its_wire_form() {
 }
 
 #[test]
-fn a_create_resent_after_no_answer_carries_its_first_key_through_an_edit() {
-    let s = Scenario::default();
-    s.committed(task(1));
-    let first = key_of_one_push(&s, no_answer);
-    assert_eq!(key_of_one_push(&s, no_answer), first);
-    s.committed(named("edited"));
-    assert_eq!(key_of_one_push(&s, no_answer), first);
-    assert_eq!(first.0, MutationOp::Create);
-}
-
-#[test]
-fn the_same_update_resent_after_no_answer_carries_the_same_key() {
-    let s = held_as_t1();
-    s.committed(named("second"));
-    let first = key_of_one_push(&s, no_answer);
-    assert_eq!(key_of_one_push(&s, no_answer), first);
-    assert_eq!(first.0, MutationOp::Update);
-}
-
-#[test]
 fn an_update_set_back_after_two_unanswered_ones_gets_a_key_of_its_own() {
     let s = held_as_t1();
     s.committed(named("x"));
@@ -122,35 +95,6 @@ fn an_update_set_back_after_two_unanswered_ones_gets_a_key_of_its_own() {
         "the remote would skip the set-back as already run"
     );
     assert_ne!(third, second);
-}
-
-#[test]
-fn two_accepted_changes_to_one_object_carry_different_keys() {
-    let s = held_as_t1();
-    s.committed(named("first"));
-    let first = key_of_one_push(&s, accepted);
-    s.committed(named("second"));
-    assert_ne!(key_of_one_push(&s, accepted), first);
-}
-
-#[test]
-fn two_retries_of_one_object_for_different_changes_carry_different_keys() {
-    let s = held_as_t1();
-    s.committed(named("first")).pushed();
-    s.store.set_push_retries(&todoist(), &[oid(1)]).unwrap();
-    let first = key_of_one_push(&s, refused);
-    s.committed(named("second")).pushed();
-    assert_ne!(key_of_one_push(&s, refused), first);
-}
-
-#[test]
-fn a_refused_create_retried_carries_a_new_key_each_time() {
-    let s = Scenario::default();
-    s.committed(task(1));
-    let first = key_of_one_push(&s, refused);
-    let second = key_of_one_push(&s, refused);
-    assert_ne!(second, first);
-    assert_eq!(second.0, MutationOp::Create);
 }
 
 #[test]

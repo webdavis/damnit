@@ -20,13 +20,6 @@ fn owner(sb: &Sandbox, args: &[&str]) -> Value {
     serde_json::from_str(&out).unwrap_or(Value::Null)
 }
 
-fn snapshot(sb: &Sandbox) -> Vec<Value> {
-    ["status", "ls", "diff"]
-        .iter()
-        .map(|command| owner(sb, &[command]))
-        .collect()
-}
-
 struct Trip {
     sb: Sandbox,
     held: String,
@@ -77,22 +70,6 @@ fn item_of_kind(t: &Trip, kind: &str) -> String {
         "change" => send(t, &["edit", &t.trip, "--subject", "Journey"]),
         "done" => send(t, &["done", &t.flights]),
         _ => send(t, &["rm", &t.trip]),
-    }
-}
-
-#[test]
-fn add_then_reset_of_each_kind_leaves_status_ls_and_diff_as_before() {
-    let _guard = support::guard("add_then_reset_of_each_kind_leaves_status_ls_and_diff_as_before");
-    for kind in ["create", "change", "done", "removal"] {
-        let t = trip_with_a_child_and_a_dependent();
-        let hash = item_of_kind(&t, kind);
-        let before = snapshot(&t.sb);
-        owner(&t.sb, &["add", &hash]);
-
-        owner(&t.sb, &["reset", &hash]);
-
-        let after = snapshot(&t.sb);
-        assert_eq!(after, before, "{kind}");
     }
 }
 

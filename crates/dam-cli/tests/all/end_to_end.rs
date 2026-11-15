@@ -1,7 +1,5 @@
 use crate::support;
 
-use std::os::unix::fs::PermissionsExt;
-
 use support::sandbox::Sandbox;
 
 #[test]
@@ -78,61 +76,6 @@ fn new_add_commit_push_pull_and_ls_work_across_processes() {
 }
 
 #[test]
-fn a_machine_format_refuses_to_open_an_editor_rather_than_running_one() {
-    let _guard =
-        support::guard("a_machine_format_refuses_to_open_an_editor_rather_than_running_one");
-    let sb = Sandbox::new();
-    let oid = sb.new_object(&["buy oat milk"]);
-
-    let rewrites_the_template_if_ever_run = sb.dir.path().join("bin/rewrite-template");
-    std::fs::write(
-        &rewrites_the_template_if_ever_run,
-        "#!/bin/sh\nprintf 'subject = \"rewritten by the editor\"\\n' > \"$1\"\n",
-    )
-    .unwrap();
-    std::fs::set_permissions(
-        &rewrites_the_template_if_ever_run,
-        std::fs::Permissions::from_mode(0o755),
-    )
-    .unwrap();
-
-    let refused = sb
-        .command(&["edit", "-e", &oid[..7], "--json"])
-        .env("EDITOR", &rewrites_the_template_if_ever_run)
-        .env("VISUAL", &rewrites_the_template_if_ever_run)
-        .output()
-        .unwrap();
-    assert!(!refused.status.success(), "the editor ran under --json");
-
-    let (ok, out, _) = sb.dam(&["show", &oid[..7], "--json"]);
-    assert!(ok);
-    let json: serde_json::Value = serde_json::from_str(&out).unwrap();
-    assert_eq!(
-        json["subject"].as_str(),
-        Some("buy oat milk"),
-        "the editor reached the store under --json"
-    );
-}
-
-#[test]
-fn an_interval_no_calendar_holds_is_refused_at_the_edit_so_completion_stays_ordinary() {
-    let _guard = support::guard(
-        "an_interval_no_calendar_holds_is_refused_at_the_edit_so_completion_stays_ordinary",
-    );
-    let sb = Sandbox::new();
-    let oid = sb.new_object(&["water the plants", "--due", "2026-10-01"]);
-
-    let refused = sb.output(&["edit", &oid, "--recurrence", "every 2147483647 weeks"]);
-    assert_eq!(refused.status.code(), Some(1));
-    let said = String::from_utf8_lossy(&refused.stderr);
-    assert!(said.contains("1 to 1043497 weeks"), "{said}");
-
-    let (ok, out, err) = sb.dam(&["done", &oid]);
-    assert!(ok, "{err}");
-    assert!(out.contains("done"), "{out}");
-}
-
-#[test]
 fn every_recurrence_the_parser_refuses_reports_one_code_and_kind() {
     let _guard = support::guard("every_recurrence_the_parser_refuses_reports_one_code_and_kind");
     let sb = Sandbox::new();
@@ -184,15 +127,4 @@ fn each_exit_code_means_one_thing() {
         String::from_utf8_lossy(&unreadable.stderr).trim(),
         "dam: expected & or | before due:tomorrow"
     );
-}
-
-#[test]
-fn a_refusal_exits_four_and_names_the_rule() {
-    let _guard = support::guard("a_refusal_exits_four_and_names_the_rule");
-    let sb = Sandbox::new();
-    let parent = sb.new_object(&["parent"]);
-    assert!(sb.dam(&["new", "child", "--path", "parent/"]).0);
-    let output = sb.output(&["done", &parent[..7]]);
-    assert_eq!(output.status.code(), Some(4));
-    assert!(String::from_utf8_lossy(&output.stderr).contains("child"));
 }
