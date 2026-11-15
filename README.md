@@ -51,6 +51,8 @@ with no value and no default shows `not set`. It never quotes `secrets.lua`.
 `dam config list` shows, such as `remote.todoist.stale` or `remote.todoist`, and never quotes
 `secrets.lua` either. A name may hold a dot, and a key that can be read two
 ways is refused with both readings.
+`dam config list` and `dam config get` run the top-level code of `secrets.lua` and call no
+credential function. What that code prints is dropped.
 
 `dam config print-default` prints the starter `config.lua` a first run writes, and writes no file.
 `dam config` alone prints the help of these commands.

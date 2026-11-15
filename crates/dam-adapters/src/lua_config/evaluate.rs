@@ -4,6 +4,8 @@ use dam_application::ConfigError;
 use mlua::chunk::ChunkMode;
 use mlua::{Lua, Table, Value};
 
+use super::printed::while_the_top_level_runs;
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(super) enum ErrorText {
     QuotesTheFile,
@@ -33,12 +35,13 @@ pub(super) fn evaluate(
         return Ok(None);
     };
     let short_name = short_name_lua_never_truncates(path);
-    let value: Value = lua
-        .load(text)
-        .set_name(format!("@{short_name}"))
-        .set_mode(ChunkMode::Text)
-        .eval()
-        .map_err(|e| stopped_loading(path, &short_name, &e, error_text))?;
+    let value: Value = while_the_top_level_runs(lua, error_text, || {
+        lua.load(text)
+            .set_name(format!("@{short_name}"))
+            .set_mode(ChunkMode::Text)
+            .eval()
+    })
+    .map_err(|e| stopped_loading(path, &short_name, &e, error_text))?;
     match value {
         Value::Table(table) => Ok(Some(table)),
         other => Err(ConfigError::NotATable {

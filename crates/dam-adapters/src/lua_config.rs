@@ -4,6 +4,7 @@ mod credentials;
 mod evaluate;
 mod file;
 mod port;
+mod printed;
 mod remote;
 mod secrets;
 mod settings;

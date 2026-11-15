@@ -10,12 +10,12 @@ pub(crate) struct ConfigArgs {
 pub(crate) enum ConfigCommand {
     #[command(
         about = "List where the config files are and every setting dam is using, its own defaults marked, never a secret",
-        after_help = "Examples:\n  dam config list\n  dam config list --json"
+        after_help = "It runs the top-level code of secrets.lua and calls no credential function.\n\nExamples:\n  dam config list\n  dam config list --json"
     )]
     List,
     #[command(
         about = "Print one setting, or every setting in one part, by its key",
-        after_help = "Examples:\n  dam config get remote.todoist.stale\n  dam config get remote.todoist\n  dam config get remote.todoist --json"
+        after_help = "It runs the top-level code of secrets.lua and calls no credential function.\n\nExamples:\n  dam config get remote.todoist.stale\n  dam config get remote.todoist\n  dam config get remote.todoist --json"
     )]
     Get {
         #[arg(

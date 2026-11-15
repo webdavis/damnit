@@ -124,11 +124,15 @@ dam token revoke: about = Remove a token's table from secrets.lua
 dam token revoke name: help = Name the token to remove
 dam config: about = Show and check the config
 dam config list: about = List where the config files are and every setting dam is using, its own defaults marked, never a secret
-dam config list: after_help = Examples:
+dam config list: after_help = It runs the top-level code of secrets.lua and calls no credential function.
+
+Examples:
   dam config list
   dam config list --json
 dam config get: about = Print one setting, or every setting in one part, by its key
-dam config get: after_help = Examples:
+dam config get: after_help = It runs the top-level code of secrets.lua and calls no credential function.
+
+Examples:
   dam config get remote.todoist.stale
   dam config get remote.todoist
   dam config get remote.todoist --json
