@@ -4,7 +4,7 @@ use dam_application::{Config, ConfigError, LoadedConfig, Tokens};
 use mlua::Lua;
 
 use super::computed::ConfiguredCredentials;
-use super::evaluate::{ErrorText, evaluate, read_text};
+use super::evaluate::{ErrorText, evaluate, read_text, stopped_at_an_error};
 use super::secrets::read_secrets;
 use super::settings::read_settings;
 use super::strict::StrictMap;
@@ -31,15 +31,13 @@ impl LuaConfigFile {
         let text = read_text(&path)?;
         let secrets = evaluate(&lua, &path, text.as_deref(), secrets_error)?;
         if let Some(table) = &secrets {
-            read_secrets(&StrictMap::root("secrets.lua", table)?)?
-                .complete(&mut config, &file_name(&self.config))?;
+            StrictMap::root("secrets.lua", table)
+                .and_then(|root| read_secrets(&root))
+                .and_then(|read| read.complete(&mut config, &file_name(&self.config)))
+                .map_err(|error| secrets_error.about_what_it_holds(&path, error))?;
         }
-        let unkept = ConfigError::StoppedLoading {
-            path: path.clone(),
-            line: None,
-            reason: None,
-        };
-        let credentials = ConfiguredCredentials::keep(lua, path, secrets).map_err(|_| unkept)?;
+        let credentials = ConfiguredCredentials::keep(lua, path.clone(), secrets)
+            .map_err(|_| stopped_at_an_error(&path))?;
         Ok(LoadedConfig {
             config,
             credentials: Box::new(credentials),

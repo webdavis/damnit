@@ -43,9 +43,9 @@ fn loading_never_calls_a_function_credential() {
 }
 
 #[test]
-fn a_credential_that_is_neither_a_string_nor_a_function_is_refused_by_name() {
+fn a_check_refuses_a_credential_that_is_neither_a_string_nor_a_function_by_name() {
     assert_eq!(
-        secrets("return { remote = { todoist = { api_token = 42 } } }").refusal(),
+        secrets("return { remote = { todoist = { api_token = 42 } } }").checked_refusal(),
         Misread::WrongType {
             key: "api_token".into(),
             at: in_table("remote.todoist", "secrets.lua"),
@@ -56,9 +56,9 @@ fn a_credential_that_is_neither_a_string_nor_a_function_is_refused_by_name() {
 }
 
 #[test]
-fn a_remote_that_config_lua_does_not_declare_is_refused_by_name() {
+fn a_check_refuses_a_remote_that_config_lua_does_not_declare_by_name() {
     assert_eq!(
-        secrets("return { remote = { gcal = { api_token = 'abc' } } }").refusal(),
+        secrets("return { remote = { gcal = { api_token = 'abc' } } }").checked_refusal(),
         ConfigError::UndeclaredRemote {
             remote: "gcal".into(),
             config: "config.lua".into(),
@@ -67,9 +67,9 @@ fn a_remote_that_config_lua_does_not_declare_is_refused_by_name() {
 }
 
 #[test]
-fn an_unknown_top_level_key_in_secrets_lua_is_refused() {
+fn a_check_refuses_an_unknown_top_level_key_in_secrets_lua_by_name() {
     assert_eq!(
-        secrets("return { owner = 'Ada' }").refusal(),
+        secrets("return { owner = 'Ada' }").checked_refusal(),
         Misread::UnknownKey {
             key: "owner".into(),
             at: top_of("secrets.lua"),

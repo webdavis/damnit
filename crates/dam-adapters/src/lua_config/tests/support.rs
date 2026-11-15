@@ -69,6 +69,10 @@ impl Folder {
     pub(super) fn refusal(&self) -> ConfigError {
         self.load().unwrap_err()
     }
+
+    pub(super) fn checked_refusal(&self) -> ConfigError {
+        self.file().check().unwrap_err()
+    }
 }
 
 pub(super) fn config(text: &str) -> Folder {

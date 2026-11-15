@@ -14,6 +14,7 @@ mod read_only;
 mod remove_token;
 mod secrets_file;
 mod secrets_kept;
+mod secrets_names_withheld;
 mod settings_refusals;
 mod support;
 mod template;

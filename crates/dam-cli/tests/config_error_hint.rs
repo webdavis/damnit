@@ -12,7 +12,7 @@ fn said_by(sb: &Sandbox, line: &[&str]) -> String {
     err
 }
 
-fn each_kind_of_config_error() -> Vec<(Sandbox, &'static str)> {
+fn each_kind_of_config_error() -> Vec<(Sandbox, &'static str, &'static str)> {
     let returns_an_integer = Sandbox::new();
     returns_an_integer.write_secrets_lua("return 5\n");
     let returns_nil = Sandbox::new();
@@ -31,25 +31,34 @@ fn each_kind_of_config_error() -> Vec<(Sandbox, &'static str)> {
         (
             returns_an_integer,
             "must return a table, and it returned an integer",
+            "must return a table, and it returned an integer",
         ),
-        (returns_nil, "must return a table, and it returned nil"),
-        (wrong_shape, "api_token must be a string or a function"),
-        (syntax, "config.lua:"),
-        (unreadable, "config.lua"),
+        (
+            returns_nil,
+            "must return a table, and it returned nil",
+            "must return a table, and it returned nil",
+        ),
+        (
+            wrong_shape,
+            "secrets.lua: loading stopped at an error",
+            "api_token must be a string or a function",
+        ),
+        (syntax, "config.lua:", "config.lua:"),
+        (unreadable, "config.lua", "config.lua"),
     ]
 }
 
 #[test]
 fn every_config_error_points_to_doctor_except_doctor_s_own() {
     let _guard = support::guard("every_config_error_points_to_doctor_except_doctor_s_own");
-    for (sb, why) in each_kind_of_config_error() {
+    for (sb, why, doctor_why) in each_kind_of_config_error() {
         let err = said_by(&sb, &["ls", "--no-pull"]);
         assert!(err.contains(why), "{err}");
         assert_eq!(err.matches(HINT).count(), 1, "{err}");
         assert!(err.trim_end().ends_with(HINT), "{err}");
 
         let err = said_by(&sb, &["doctor"]);
-        assert!(err.contains(why), "{err}");
+        assert!(err.contains(doctor_why), "{err}");
         assert!(!err.contains(HINT), "{err}");
     }
 }
