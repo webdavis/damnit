@@ -59,6 +59,8 @@ fn expected_text(expected: Expected) -> &'static str {
         Expected::TableOfNamedEntries => "a table of named entries",
         Expected::TextOrFunction => "a string or a function",
         Expected::Function => "a function",
+        Expected::FunctionOrTable => "a function or a table",
+        Expected::WarnOrRefuse => "\"warn\" or \"refuse\"",
         Expected::DateTime => "an RFC 3339 date-time",
         Expected::TableOfWholeNumbers => "a table of whole numbers",
     }

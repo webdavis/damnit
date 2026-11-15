@@ -14,7 +14,16 @@
     },
     "remote": { "type": "object", "additionalProperties": { "$ref": "#/$defs/remote" } },
     "category": { "type": "object", "additionalProperties": { "$ref": "#/$defs/category" } },
-    "filter": { "type": "object", "additionalProperties": { "$ref": "#/$defs/filter" } }
+    "filter": { "type": "object", "additionalProperties": { "$ref": "#/$defs/filter" } },
+    "hook": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "task_new": { "$ref": "#/$defs/hook" },
+        "task_changed": { "$ref": "#/$defs/hook" },
+        "task_done": { "$ref": "#/$defs/hook" }
+      }
+    }
   },
   "$defs": {
     "remote": {
@@ -48,6 +57,21 @@
         "query": { "type": "string" },
         "match": { "description": "A Lua function(task, dam) that returns true to keep the object; docs/lua.md describes it." }
       }
+    },
+    "hook": {
+      "description": "A Lua function(task, dam), or a table holding it as run; docs/lua.md describes it.",
+      "anyOf": [
+        { "not": { "type": "object" } },
+        {
+          "type": "object",
+          "required": ["run"],
+          "additionalProperties": false,
+          "properties": {
+            "run": { "description": "A Lua function(task, dam)." },
+            "on_failure": { "enum": ["warn", "refuse"] }
+          }
+        }
+      ]
     }
   }
 }

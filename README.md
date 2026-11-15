@@ -46,7 +46,7 @@ What `config.lua` prints goes to standard error, so it never mixes with a comman
 `dam config list` prints where the two files are and every setting dam is using, one row each: the
 key, then the value, with `(default)` after a value dam supplies. A remote's credential shows under
 `remote.<name>.credential` as only `hidden`, or `hidden (function)` for one dam calls.
-A filter's `match` shows as `function`, never its source. A token shows
+A filter's `match` and a hook's `run` show as `function`, never their source. A token shows
 each of its settings by the key `secrets.lua` uses, never its value, or `disabled`. A setting with
 no value and no default shows `not set`.
 `docs/schemas/config-list.schema.json` is the schema of its `--json` answer.

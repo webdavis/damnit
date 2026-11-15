@@ -1,6 +1,7 @@
 mod credential;
 mod duration;
 mod filter;
+mod hook;
 mod remote;
 
 use std::collections::BTreeSet;
@@ -13,6 +14,7 @@ use crate::tokens::Tokens;
 pub use credential::CredentialSpec;
 pub use duration::ConfiguredDuration;
 pub use filter::{FilterConfig, FilterRule};
+pub use hook::{HookConfig, HookEvent, OnFailure};
 pub use remote::RemoteConfig;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -23,6 +25,7 @@ pub struct Config {
     pub categories: Categories,
     pub categories_writing_exclusive: BTreeSet<String>,
     pub filters: Vec<FilterConfig>,
+    pub hooks: Vec<HookConfig>,
     pub tokens: Tokens,
 }
 
@@ -54,6 +57,10 @@ impl Config {
 
     pub fn filter(&self, name: &str) -> Option<&FilterConfig> {
         self.filters.iter().find(|f| f.name == name)
+    }
+
+    pub fn hook(&self, event: HookEvent) -> Option<&HookConfig> {
+        self.hooks.iter().find(|h| h.event == event)
     }
 }
 

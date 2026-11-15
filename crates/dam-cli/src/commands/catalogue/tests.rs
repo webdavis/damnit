@@ -10,6 +10,7 @@ fn config() -> Config {
         categories: Categories::default(),
         categories_writing_exclusive: Default::default(),
         filters: vec![],
+        hooks: vec![],
         tokens: Default::default(),
     }
 }

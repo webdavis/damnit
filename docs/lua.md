@@ -21,6 +21,12 @@ key dam does not know is an error. A `<name>` in a key is a name you choose. Hoo
 | `filter` | A table of saved filters by name. |
 | `filter.<name>.query` | Query text. |
 | `filter.<name>.match` | A function that returns `true` to keep an object. |
+| `hook` | A table of hooks by event. |
+| `hook.task_new` | A hook that runs when you create a task. |
+| `hook.task_changed` | A hook that runs when you change a task. |
+| `hook.task_done` | A hook that runs when you complete a task. |
+| `hook.<event>.run` | The hook's function, when the hook is a table. Required. |
+| `hook.<event>.on_failure` | `warn` or `refuse`. Default: `warn`. |
 
 A duration is a whole number followed by `s`, `m` or `h`.
 
