@@ -1,8 +1,7 @@
-use dam_application::{PullReport, PushReport};
+use dam_application::PushReport;
 use dam_domain::Oid;
 use serde::Serialize;
 
-use crate::layout::counted;
 use crate::view::{Human, View, display};
 
 #[derive(Serialize)]
@@ -62,55 +61,6 @@ impl View for Pushed<'_> {
         match self.remotes.as_slice() {
             [] => Human::Lines(vec!["no remotes to push to".to_string()]),
             remotes => Human::Lines(remotes.iter().map(PushRow::line).collect()),
-        }
-    }
-}
-
-#[derive(Serialize)]
-pub(super) struct Pulled<'a> {
-    pub(super) remotes: Vec<PullRow<'a>>,
-}
-
-#[derive(Serialize)]
-pub(super) struct PullRow<'a> {
-    remote: &'a str,
-    created: usize,
-    updated: usize,
-    unchanged: usize,
-    conflicts: usize,
-    removed_upstream: usize,
-}
-
-impl<'a> PullRow<'a> {
-    pub(super) fn new(r: &'a PullReport) -> PullRow<'a> {
-        PullRow {
-            remote: &r.remote.0,
-            created: r.created,
-            updated: r.updated,
-            unchanged: r.unchanged,
-            conflicts: r.conflicts,
-            removed_upstream: r.removed_upstream,
-        }
-    }
-
-    fn line(&self) -> String {
-        format!(
-            "{}: {} new, {} updated, {} unchanged, {}, {} removed upstream",
-            self.remote,
-            self.created,
-            self.updated,
-            self.unchanged,
-            counted(self.conflicts, "conflict", "conflicts"),
-            self.removed_upstream
-        )
-    }
-}
-
-impl View for Pulled<'_> {
-    fn human(&self) -> Human {
-        match self.remotes.as_slice() {
-            [] => Human::Lines(vec!["no remotes to pull from".to_string()]),
-            remotes => Human::Lines(remotes.iter().map(PullRow::line).collect()),
         }
     }
 }

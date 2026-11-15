@@ -5,6 +5,7 @@ mod conflicts_and_refusals;
 mod creates_in_doubt;
 mod helper_failures;
 mod history;
+mod kept_values;
 mod kind_change;
 mod our_own_writes;
 mod removal_table;

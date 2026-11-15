@@ -1,5 +1,6 @@
 use dam_domain::{Object, Oid, kind_change, merge_fields};
 
+use super::PullReport;
 use super::adopt::creates_found;
 use super::ours::keep_what_we_sent;
 use crate::config::RemoteConfig;
@@ -25,6 +26,7 @@ pub(super) fn classify(
     helper: &dyn RemoteHelper,
     objects: Vec<IncomingObject>,
     random: &dyn Randomness,
+    report: &mut PullReport,
 ) -> Result<Classified, UseCaseError> {
     let staged: Vec<Oid> = store
         .staged()?
@@ -33,6 +35,7 @@ pub(super) fn classify(
         .collect();
     let record = store.attempts(&remote.name)?;
     let adopted = creates_found(store, remote, helper, caps, &record, &objects)?;
+    report.creates_matched += adopted.len();
     let mut notices = store.notices()?;
     let mut planned = Vec::new();
     let mut new_remote_id_mappings = Vec::new();
@@ -77,7 +80,8 @@ pub(super) fn classify(
             Some(l) if l == theirs => settled(store, remote, theirs)?,
             Some(l) => {
                 let attempts = record.get(&oid).map_or(&[][..], Vec::as_slice);
-                let theirs = keep_what_we_sent(helper, caps, &l, theirs, attempts)?;
+                let (theirs, kept) = keep_what_we_sent(helper, caps, &l, theirs, attempts)?;
+                report.values_kept += kept;
                 against_local(store, remote, &staged, l, theirs)?
             }
         };

@@ -19,7 +19,10 @@
           "updated",
           "unchanged",
           "conflicts",
-          "removed_upstream"
+          "removed_upstream",
+          "creates_matched",
+          "values_kept",
+          "deletes_confirmed"
         ],
         "additionalProperties": false,
         "properties": {
@@ -43,6 +46,18 @@
             "minimum": 0
           },
           "removed_upstream": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "creates_matched": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "values_kept": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "deletes_confirmed": {
             "type": "integer",
             "minimum": 0
           }

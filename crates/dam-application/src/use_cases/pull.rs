@@ -33,6 +33,9 @@ pub struct PullReport {
     pub conflicts: usize,
     pub removed_upstream: usize,
     pub unchanged: usize,
+    pub creates_matched: usize,
+    pub values_kept: usize,
+    pub deletes_confirmed: usize,
 }
 
 impl Dam<'_> {
@@ -66,6 +69,9 @@ impl Dam<'_> {
             conflicts: 0,
             removed_upstream: 0,
             unchanged: 0,
+            creates_matched: 0,
+            values_kept: 0,
+            deletes_confirmed: 0,
         };
         let listed: HashSet<String> = response
             .objects
@@ -81,14 +87,23 @@ impl Dam<'_> {
                 remote,
                 &response.cancelled,
             )?);
-            let (planned, new_remote_id_mappings) =
-                classify(store, remote, caps, helper, objects, self.random)?;
+            let (planned, new_remote_id_mappings) = classify(
+                store,
+                remote,
+                caps,
+                helper,
+                objects,
+                self.random,
+                &mut report,
+            )?;
             for (oid, remote_id) in new_remote_id_mappings {
                 store.map_remote_id(&remote.name, &oid, &remote_id)?;
             }
             self.land(remote, planned, &mut report)?;
             let removed = std::mem::take(&mut response.removed);
-            report.removed_upstream = record_removals(store, remote, removed)?;
+            let removals = record_removals(store, remote, removed)?;
+            report.removed_upstream = removals.in_the_app;
+            report.deletes_confirmed = removals.dams_own;
             if response.complete {
                 record_missing(store, remote, &listed)?;
             }

@@ -7,14 +7,20 @@ use crate::ports::{Notice, Store};
 use crate::remote::MutationOp;
 use crate::use_cases::last_seen::LastSeen;
 
+#[derive(Default)]
+pub(super) struct Removals {
+    pub(super) in_the_app: usize,
+    pub(super) dams_own: usize,
+}
+
 pub(super) fn record_removals(
     store: &dyn Store,
     remote: &RemoteConfig,
     removed: Vec<String>,
-) -> Result<usize, UseCaseError> {
-    let mut in_the_app = 0;
+) -> Result<Removals, UseCaseError> {
+    let mut removals = Removals::default();
     if removed.is_empty() {
-        return Ok(in_the_app);
+        return Ok(removals);
     }
     let name = &remote.name;
     let mut record = store.attempts(name)?;
@@ -44,13 +50,15 @@ pub(super) fn record_removals(
         }
         if removal.noticed {
             notify(store, remote, &oid)?;
-            in_the_app += 1;
+            removals.in_the_app += 1;
+        } else {
+            removals.dams_own += 1;
         }
     }
     if retries.len() > retried_before {
         store.set_push_retries(name, &retries)?;
     }
-    Ok(in_the_app)
+    Ok(removals)
 }
 
 fn notify(store: &dyn Store, remote: &RemoteConfig, oid: &Oid) -> Result<(), UseCaseError> {

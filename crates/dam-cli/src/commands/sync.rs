@@ -6,9 +6,11 @@ use crate::error::CliError;
 use crate::output::Report;
 use crate::view::report;
 
+mod pull_view;
 mod view;
 
-use view::{PullRow, Pulled, PushRow, Pushed, Resolved};
+use pull_view::{PullRow, Pulled};
+use view::{PushRow, Pushed, Resolved};
 
 pub(crate) fn run_push(ctx: &Context, args: PushArgs) -> Result<Report, CliError> {
     let reports = ctx.dam().push(ctx.remotes(), args.remote.as_deref())?;

@@ -55,6 +55,11 @@ fn check(row: Row) {
         .unwrap();
     let noticed = row.here == Here::Kept && row.owed != Owed::DeleteUnanswered;
     assert_eq!(reports[0].removed_upstream, usize::from(noticed), "{row:?}");
+    assert_eq!(
+        reports[0].deletes_confirmed,
+        usize::from(!noticed),
+        "{row:?}"
+    );
     let notices = s.store.notices().unwrap();
     let about_ann: Vec<&Notice> = notices.iter().filter(|n| names(n, &oid(1))).collect();
     let removed_upstream = matches!(about_ann[..], [Notice::RemovedUpstream { .. }]);
