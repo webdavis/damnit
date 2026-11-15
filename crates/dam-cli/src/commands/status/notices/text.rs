@@ -71,6 +71,7 @@ impl NoticeRow<'_> {
                      {remote} may hold a copy to remove by hand"
                 )
             }
+            NoticeRow::TaskPulledFailed(row) => row.line(),
             NoticeRow::KindChanged { oid, ours, theirs } => format!(
                 "{} is {} {ours} here and {} {theirs} upstream",
                 oid.short(),

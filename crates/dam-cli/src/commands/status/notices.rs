@@ -53,6 +53,7 @@ pub(super) enum NoticeRow<'a> {
         path: &'a Path,
         because: &'static str,
     },
+    TaskPulledFailed(TaskPulledFailedRow<'a>),
 }
 
 #[derive(Serialize)]
@@ -128,8 +129,22 @@ impl<'a> NoticeRow<'a> {
                     DroppedBecause::NoLongerSent => "no_longer_sent",
                 },
             },
+            Notice::TaskPulledFailed {
+                remote,
+                failed,
+                not_reached,
+                error,
+            } => NoticeRow::TaskPulledFailed(TaskPulledFailedRow::new(
+                remote,
+                *failed,
+                *not_reached,
+                error.as_ref(),
+            )),
         }
     }
 }
 
+mod task_pulled;
 mod text;
+
+use task_pulled::TaskPulledFailedRow;

@@ -1,5 +1,6 @@
 use dam_domain::{Kind, Oid, Path};
 
+use super::filter_functions::FunctionFailure;
 use super::store::{RemoteName, StoreError};
 use crate::remote::RejectedObject;
 
@@ -43,6 +44,12 @@ pub enum Notice {
         subject: String,
         path: Path,
         because: DroppedBecause,
+    },
+    TaskPulledFailed {
+        remote: RemoteName,
+        failed: usize,
+        not_reached: usize,
+        error: Option<FunctionFailure>,
     },
 }
 

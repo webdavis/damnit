@@ -249,6 +249,10 @@ and `commit`, the id of the commit that holds the hook's changes when it made on
 out.
 An interrupt during the hook keeps the pull and the hook's changes, and exits 3, `cancelled`.
 The line `dam: running task_pulled for <n> tasks` shows on standard error only in plain text.
+A run that failed on a task or did not reach one leaves one notice per remote in `dam status`,
+kind `task_pulled_failed`, with `remote`, `failed`, `not_reached` and `error`, the first error's
+`file`, `line` and `message`, or null. The next run of that remote replaces or clears it.
+A token's `dam status` never shows it.
 
 A mistyped command line also carries `usage`, which says what was wrong with it:
 

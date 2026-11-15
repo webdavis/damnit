@@ -47,6 +47,29 @@
                 "because": { "enum": ["removed", "no_longer_sent"] }
               }
             }
+          },
+          {
+            "description": "The last run of hook.task_pulled on a pull from this remote failed on tasks or did not reach them. A later run replaces it, and a run that fails on none and reaches every task clears it. Never shown to a token.",
+            "if": { "properties": { "kind": { "const": "task_pulled_failed" } } },
+            "then": {
+              "required": ["remote", "failed", "not_reached", "error"],
+              "properties": {
+                "remote": { "type": "string" },
+                "failed": { "type": "integer", "minimum": 0 },
+                "not_reached": { "type": "integer", "minimum": 0 },
+                "error": {
+                  "description": "The first error of that run, null when the run failed on no task.",
+                  "type": ["object", "null"],
+                  "required": ["file", "line", "message"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "file": { "type": "string" },
+                    "line": { "type": ["integer", "null"] },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
           }
         ]
       }

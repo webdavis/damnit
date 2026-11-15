@@ -62,6 +62,7 @@ impl Dam<'_> {
         let mut run = PulledHookRun::default();
         let mut run_time = RunTime::started_on(self.clock);
         let owners = self.access.token().is_none();
+        let mut first_error = None;
         for task in &pulled {
             if run_time.ran_out() || self.interruption.requested() {
                 break;
@@ -78,11 +79,13 @@ impl Dam<'_> {
                 Edited::Nothing => {}
                 Edited::Changed => run.changed += 1,
                 Edited::Failed(failure) => {
-                    if run.failed == 0 && owners {
+                    run.failed += 1;
+                    if first_error.is_none() && owners {
                         let event = HookEvent::TaskPulled;
+                        let failure = failure.clone();
                         self.hook_warnings.warn(&HookFailure { event, failure });
                     }
-                    run.failed += 1;
+                    first_error.get_or_insert(failure);
                 }
             }
             run.ran += 1;
@@ -91,6 +94,7 @@ impl Dam<'_> {
         if let Some(before) = &before {
             run.commit = self.commit_hook_edits(remote, before)?;
         }
+        self.note_pulled_hook_run(remote, &run, first_error)?;
         if self.interruption.requested() {
             return Err(HelperError::Cancelled.into());
         }
@@ -110,6 +114,7 @@ impl Dam<'_> {
 }
 
 mod committed;
+mod notice;
 mod run_time;
 
 use committed::BeforeTheHook;

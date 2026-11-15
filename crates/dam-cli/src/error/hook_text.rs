@@ -16,13 +16,21 @@ impl fmt::Display for HookText<'_> {
         if let Some(line) = failure.line {
             write!(f, ":{line}")?;
         }
-        match &failure.fault {
-            FunctionFault::Raised { message } => write!(f, ": {message}"),
-            FunctionFault::RanOver => f.write_str(": it ran past the time limit for one hook call"),
+        write!(f, ": {}", FaultText(&failure.fault))
+    }
+}
+
+pub(crate) struct FaultText<'a>(pub(crate) &'a FunctionFault);
+
+impl fmt::Display for FaultText<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            FunctionFault::Raised { message } => f.write_str(message),
+            FunctionFault::RanOver => f.write_str("it ran past the time limit for one hook call"),
             FunctionFault::Returned { returned } => {
-                write!(f, ": it returned {returned}, not nil or a table")
+                write!(f, "it returned {returned}, not nil or a table")
             }
-            FunctionFault::Requested { why } => write!(f, ": its edit request failed: {why}"),
+            FunctionFault::Requested { why } => write!(f, "its edit request failed: {why}"),
         }
     }
 }

@@ -217,7 +217,7 @@ The first failure of a pull warns on standard error, unless a token's command ca
 
     warning: hook task_pulled failed at /home/ada/.config/dam/config.lua:3: no bell; the pull is kept
 
-Later failures of that pull are counted, not printed. `dam status` does not yet show them.
+Later failures of that pull are counted, not printed.
 After 60 seconds of one pull's run, dam calls the hook for no more tasks and counts them in
 `not_reached`.
 Ctrl-C stops the hook and keeps the pull and the changes the hook made; the command exits 3.
@@ -226,6 +226,13 @@ a token's command caused the pull:
 
     dam: running task_pulled for 40 tasks
 
+When a pull's run failed on a task or did not reach one, `dam status` keeps one notice for that
+remote, also when a token's command caused the pull:
+
+    task_pulled on the last pull from todoist: 2 failed, 0 not reached; first error at /home/ada/.config/dam/config.lua:3: no bell
+
+The next run of that remote replaces it, or clears it when it fails on no task and reaches all.
+A token never sees it.
 The pull's answer counts what it did under `task_pulled`: `ran`, `changed`, `failed` and
 `not_reached`, and `commit`, the id of the commit it made. In plain text it is a line such as
 `task_pulled: 1 ran, 1 changed, 0 failed, 0 not reached, commit 2b2b2b2`.
