@@ -69,3 +69,37 @@ fn validate_still_names_what_secrets_lua_holds() {
         );
     }
 }
+
+#[test]
+fn a_word_a_token_warning_is_about_reaches_no_stream_of_list_or_get() {
+    let _guard = support::guard("a_word_a_token_warning_is_about_reaches_no_stream_of_list_or_get");
+    let value = support::tokens::token(1).expose();
+    let sb = secrets_naming(&format!(
+        "  token = {{ tool = {{ value = \"{value}\", via = {{ \"local\", \"{NAME}\" }},\n    \
+         grant = {{ {{ allow = {{ \"task:read\", \"{NAME}\" }} }} }} }} }},"
+    ));
+    let doctor = sb.output(&["doctor"]);
+    assert!(
+        String::from_utf8_lossy(&doctor.stderr).contains(NAME),
+        "{doctor:?}"
+    );
+    for line in [
+        &["config", "list"][..],
+        &["config", "list", "--json"],
+        &["config", "get", "token.tool"],
+        &["config", "get", "token.tool", "--toon"],
+    ] {
+        let out = sb.output(line);
+        assert!(out.status.success(), "{line:?}: {out:?}");
+        for stream in [&out.stdout, &out.stderr] {
+            let text = String::from_utf8_lossy(stream);
+            assert!(!text.contains(NAME), "{line:?}: {text}");
+        }
+    }
+    let said = sb.output(&["config", "list"]).stderr;
+    assert_eq!(
+        String::from_utf8_lossy(&said),
+        "warning: token tool: an unknown channel is skipped; run dam doctor to see it\n\
+warning: token tool: an unknown permission is skipped; run dam doctor to see it\n"
+    );
+}

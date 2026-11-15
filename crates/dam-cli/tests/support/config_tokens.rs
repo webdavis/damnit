@@ -27,7 +27,7 @@ pub fn config_tokens() -> ConfigTokens {
     plain = {{ value = "{}", grant = {{ {{ allow = {{ "task:read" }} }} }} }},
     empty = {{ value = "{}" }},
     off = {{ value = "{}", limits = {{ day = 1 }} }},
-    stray = {{ value = "not a token" }},
+    stray = {{ value = "MARKER-stray" }},
   }},
 }}
 "#,

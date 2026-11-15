@@ -53,6 +53,7 @@ with no value and no default shows `not set`. It never quotes `secrets.lua`.
 ways is refused with both readings.
 `dam config list` and `dam config get` run the top-level code of `secrets.lua` and call no
 credential function. What that code prints is dropped.
+Both warn of a token dam ignores or holds disabled, as `dam doctor` does.
 
 `dam config print-default` prints the starter `config.lua` a first run writes, and writes no file.
 `dam config` alone prints the help of these commands.

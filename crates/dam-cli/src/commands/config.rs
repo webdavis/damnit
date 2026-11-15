@@ -4,6 +4,7 @@ mod print_default;
 mod setting;
 mod settings;
 mod token_settings;
+mod warnings;
 
 use dam_adapters::LuaConfigFile;
 
