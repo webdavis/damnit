@@ -1,6 +1,6 @@
 default: gates
 
-gates: fmt clippy build test doc size
+gates: fmt clippy build test doc size last-seen
 
 fmt:
     cargo fmt --all -- --check
@@ -19,3 +19,6 @@ doc:
 
 size:
     @scripts/check-file-sizes-and-test-placement.sh
+
+last-seen:
+    @scripts/check-remote-snapshot-readers.sh

@@ -59,6 +59,15 @@ pub fn commit_repository_contract(commits: &dyn CommitRepository) {
         vec![oid(3)],
         "the retry set is replaced, not added to"
     );
+    assert!(
+        commits.set_push_retries(&here, &[oid(4), oid(4)]).is_err(),
+        "an object listed twice is refused"
+    );
+    assert_eq!(
+        commits.push_retries(&here).unwrap(),
+        vec![oid(3)],
+        "a refused retry set leaves the one before"
+    );
     assert!(commits.push_retries(&there).unwrap().is_empty());
     commits.set_push_retries(&here, &[]).unwrap();
     assert!(commits.push_retries(&here).unwrap().is_empty());

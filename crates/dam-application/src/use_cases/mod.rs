@@ -9,6 +9,7 @@ pub(crate) mod day;
 pub(crate) mod edit;
 pub(crate) mod freshness;
 pub(crate) mod items;
+pub(crate) mod last_seen;
 pub(crate) mod list;
 pub(crate) mod load;
 pub(crate) mod new_object;

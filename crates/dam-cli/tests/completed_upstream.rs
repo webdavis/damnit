@@ -64,4 +64,8 @@ fn a_task_deleted_in_the_app_is_noticed_as_removed() {
     let (ok, out, err) = sb.dam(&["status"]);
     assert!(ok, "{err}");
     assert!(out.contains("was removed on fake"), "{out}");
+    let kept = "\"old errand\" is kept here; dam rm ";
+    assert!(out.contains(kept), "{out}");
+    let sent_again = " to drop it, or edit it to send it to fake again";
+    assert!(out.contains(sent_again), "{out}");
 }

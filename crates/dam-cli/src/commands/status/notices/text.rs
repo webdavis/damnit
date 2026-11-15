@@ -21,7 +21,8 @@ impl NoticeRow<'_> {
                 oid,
                 subject,
             } => format!(
-                "{} was removed on {remote}: {subject:?} is kept here; dam rm {} to drop it",
+                "{} was removed on {remote}: {subject:?} is kept here; dam rm {} to drop it, \
+                 or edit it to send it to {remote} again",
                 oid.short(),
                 oid.short()
             ),

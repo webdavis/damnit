@@ -4,13 +4,15 @@ use crate::ports::{Clock, Notice};
 use crate::remote::PullOutcome;
 use crate::testing::prelude::*;
 use crate::testing::{Scenario, oid, pulling, remotes_launched_by, todoist};
+use crate::use_cases::last_seen::LastSeen;
 use dam_domain::{Object, Task};
 
 #[test]
 fn a_removal_upstream_is_a_notice_not_a_deletion() {
     let s = Scenario::default();
     s.committed(Object::Task(Task::new(oid(1), "keep me")))
-        .tracked_as(&oid(1), "r1");
+        .tracked_as(&oid(1), "r1")
+        .pushed();
     let l = pulling(PullOutcome {
         removed: vec!["r1".into()],
         ..PullOutcome::default()
@@ -28,11 +30,10 @@ fn a_removal_upstream_is_a_notice_not_a_deletion() {
             .unwrap()
             .is_none()
     );
-    assert!(
-        s.store
-            .remote_snapshot(&todoist(), &oid(1))
-            .unwrap()
-            .is_none()
+    let kept = s.store.committed(&oid(1)).unwrap().unwrap();
+    assert_eq!(
+        LastSeen::read(&s.store, &todoist(), &oid(1)).unwrap(),
+        LastSeen::RemovedInTheAppNothingOwed(kept)
     );
 }
 

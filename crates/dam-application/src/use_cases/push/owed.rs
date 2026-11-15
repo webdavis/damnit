@@ -5,6 +5,7 @@ use dam_domain::{Change, CommitRecord, Oid};
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
 use crate::ports::{Attempts, RemoteName, Store};
+use crate::use_cases::last_seen::LastSeen;
 
 pub(super) type OwedChanges = BTreeMap<Oid, Change>;
 
@@ -17,6 +18,11 @@ pub(super) fn changes_to_send(
     let mut changes = net_changes(unpushed);
     let mut retried: BTreeSet<Oid> = store.push_retries(&remote.name)?.into_iter().collect();
     retried.extend(record.keys().cloned());
+    retried.extend(removed_in_the_app_nothing_owed(
+        store,
+        &remote.name,
+        &changes,
+    )?);
     declare_since_the_remote_snapshot(store, remote, retried, &mut changes)?;
     owe_a_write_for_each_object_attempted(store, record, &mut changes)?;
     Ok(changes)
@@ -70,6 +76,20 @@ fn net_changes(unpushed: &[CommitRecord]) -> OwedChanges {
     changes
 }
 
+fn removed_in_the_app_nothing_owed(
+    store: &dyn Store,
+    remote: &RemoteName,
+    changes: &OwedChanges,
+) -> Result<Vec<Oid>, UseCaseError> {
+    let mut removed = Vec::new();
+    for oid in changes.keys() {
+        if let LastSeen::RemovedInTheAppNothingOwed(_) = LastSeen::read(store, remote, oid)? {
+            removed.push(oid.clone());
+        }
+    }
+    Ok(removed)
+}
+
 fn declare_since_the_remote_snapshot(
     store: &dyn Store,
     remote: &RemoteConfig,
@@ -77,7 +97,7 @@ fn declare_since_the_remote_snapshot(
     changes: &mut OwedChanges,
 ) -> Result<(), UseCaseError> {
     for oid in retried {
-        let snapshot = store.remote_snapshot(&remote.name, &oid)?;
+        let snapshot = LastSeen::baseline(store, &remote.name, &oid)?;
         let after = match changes.remove(&oid) {
             Some(owed) => owed.after().cloned(),
             None => store.committed(&oid)?,

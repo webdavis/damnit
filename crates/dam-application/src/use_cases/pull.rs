@@ -16,11 +16,13 @@ mod land;
 mod missing;
 mod notices;
 mod ours;
+mod removal;
+mod removed;
 mod skipped;
 
 use classify::classify;
 use missing::record_missing;
-use notices::record_removals;
+use removed::record_removals;
 use skipped::record_skipped;
 
 #[derive(Debug)]

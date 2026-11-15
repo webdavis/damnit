@@ -4,6 +4,7 @@ use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
 use crate::ports::Notice;
 use crate::service::Dam;
+use crate::use_cases::last_seen::LastSeen;
 use crate::use_cases::push::attempting::Attempting;
 use crate::use_cases::push::attempts::settle_attempts;
 use crate::use_cases::push::reconcile::{Heard, Settlement};
@@ -22,10 +23,10 @@ impl Dam<'_> {
             store.map_remote_id(&remote.name, oid, id)?;
         }
         for oid in &settlement.clear {
-            store.clear_remote_mapping(&remote.name, oid)?;
+            LastSeen::gone(store, &remote.name, oid)?;
         }
         for after in &settlement.snapshot {
-            store.set_remote_snapshot(&remote.name, after)?;
+            LastSeen::now_holds(store, &remote.name, after)?;
         }
         for (oid, why) in &settlement.failed {
             store.add_notice(&Notice::PushFailed {
