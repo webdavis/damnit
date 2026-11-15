@@ -81,3 +81,45 @@ fn a_rate_limit_after_the_move_sends_no_removal_and_keeps_the_move() {
         assert_eq!(sent(&s).last(), Some(&(oid(parent), Delete)));
     }
 }
+
+fn answering_every_write_yet_cancelled() -> (ScriptedLauncher, Pushed) {
+    let pushed = Pushed::default();
+    let seen = pushed.clone();
+    let launcher = ScriptedLauncher::launching(move || ScriptedHelper {
+        push_answer: Box::new(|ms| {
+            Ok(PushOutcome {
+                outcomes: ms
+                    .iter()
+                    .map(|m| MutationOutcome {
+                        oid: m.oid.clone(),
+                        verdict: MutationVerdict::Accepted { remote_id: None },
+                    })
+                    .collect(),
+                stopped_by: Some(HelperError::Cancelled),
+            })
+        }),
+        pushed: seen.clone(),
+        ..ScriptedHelper::answering(Ok(Default::default()))
+    });
+    (launcher, pushed)
+}
+
+#[test]
+fn a_wave_answered_in_full_yet_cancelled_keeps_its_answers_and_sends_no_next_wave() {
+    let s = held_upstream(&[task_in(1, "P", "Home/"), task_in(2, "c", "Home/P/")]);
+    s.filed(task_in(2, "c", "Home/")).deleted(&oid(1));
+    let (l, pushed) = answering_every_write_yet_cancelled();
+    let err = s.dam().push(remotes_launched_by(&l), None).unwrap_err();
+    assert_eq!(
+        err,
+        UseCaseError::PushStopped {
+            by: HelperError::Cancelled,
+            kept: 1,
+            unanswered: 1,
+        }
+    );
+    let sent_in_the_only_wave: Vec<_> = pushed.borrow().iter().map(|m| m.oid.clone()).collect();
+    assert_eq!(sent_in_the_only_wave, vec![oid(2)]);
+    let upstream = s.store.remote_snapshot(&todoist(), &oid(2)).unwrap();
+    assert_eq!(upstream.unwrap().base().path.as_str(), "Home/");
+}
