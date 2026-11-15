@@ -1,6 +1,8 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock};
 
+use dam_application::Interruption;
+
 #[derive(Clone, Debug, Default)]
 pub struct Interrupt(Arc<AtomicBool>);
 
@@ -11,6 +13,12 @@ impl Interrupt {
 
     pub fn requested(&self) -> bool {
         self.0.load(Ordering::Relaxed)
+    }
+}
+
+impl Interruption for Interrupt {
+    fn requested(&self) -> bool {
+        Interrupt::requested(self)
     }
 }
 

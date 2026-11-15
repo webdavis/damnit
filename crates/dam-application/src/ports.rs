@@ -22,7 +22,7 @@ pub use config_file::{
     Place, SecretsTightened, Uneditable,
 };
 pub use days::DayRepository;
-pub use environment::{Clock, Randomness};
+pub use environment::{Clock, Interruption, Randomness};
 pub use filter_functions::{FilterFunctions, FunctionFailure, FunctionFault, Histories, History};
 pub use follow_ons::{FollowOn, FollowOnRepository, ObjectState};
 pub use helper::{

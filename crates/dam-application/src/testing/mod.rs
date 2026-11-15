@@ -6,6 +6,7 @@ mod filter_functions;
 mod fixture;
 mod holders;
 mod hooks;
+mod interruption;
 mod launchers;
 mod memory_store;
 mod scenario;
@@ -20,6 +21,7 @@ pub use filter_functions::FakeFilterFunctions;
 pub use fixture::{Fixture, remotes_launched_by};
 pub use holders::{allowed, holder};
 pub use hooks::{FakeEditRequests, FakeHookEdits, FakeHookWarnings, FakeHooks};
+pub use interruption::FakeInterruption;
 pub use launchers::{
     Pushed, accepting_all, answering, pulling, pulling_events, pushing,
     pushing_to_a_remote_that_removes_only_empty_containers, refusing_all, refusing_all_unasked,

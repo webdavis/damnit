@@ -27,9 +27,9 @@ pub use ports::{
     CredentialError, CredentialSource, DayRepository, Declared, DroppedBecause, EditFault,
     EditRequest, EditRequests, EditedTable, Expected, FilterFunctions, FollowOn,
     FollowOnRepository, FunctionFailure, FunctionFault, HelperError, HelperLauncher, Histories,
-    History, HookEdits, HookFailure, HookWarnings, Hooks, IdRepository, ItemRepository,
-    LoadedConfig, Misread, MissingTask, Notice, NoticeRepository, ObjectRepository, ObjectState,
-    OriginRepository, Place, Pull, PulledChange, Randomness, RemoteHelper, RemoteName,
+    History, HookEdits, HookFailure, HookWarnings, Hooks, IdRepository, Interruption,
+    ItemRepository, LoadedConfig, Misread, MissingTask, Notice, NoticeRepository, ObjectRepository,
+    ObjectState, OriginRepository, Place, Pull, PulledChange, Randomness, RemoteHelper, RemoteName,
     RemoteNameError, RemoteTrackingRepository, SecretsTightened, StageRepository, Store,
     StoreError, Transactional, Uneditable,
 };

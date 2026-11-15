@@ -5,7 +5,7 @@ use crate::ports::{HelperLauncher, Store};
 use crate::service::{Dam, Remotes};
 use crate::testing::{
     EchoCredentials, FakeEditRequests, FakeFilterFunctions, FakeHookEdits, FakeHookWarnings,
-    FakeHooks, FixedClock, FixedRandom,
+    FakeHooks, FakeInterruption, FixedClock, FixedRandom,
 };
 
 pub struct Fixture {
@@ -17,6 +17,7 @@ pub struct Fixture {
     pub hook_warnings: FakeHookWarnings,
     pub edit_requests: FakeEditRequests,
     pub hook_edits: FakeHookEdits,
+    pub interruption: FakeInterruption,
 }
 
 impl Default for Fixture {
@@ -30,6 +31,7 @@ impl Default for Fixture {
             hook_warnings: FakeHookWarnings::default(),
             edit_requests: FakeEditRequests::default(),
             hook_edits: FakeHookEdits::default(),
+            interruption: FakeInterruption::default(),
         }
     }
 }
@@ -47,6 +49,7 @@ impl Fixture {
             hook_warnings: &self.hook_warnings,
             edit_requests: &self.edit_requests,
             hook_edits: &self.hook_edits,
+            interruption: &self.interruption,
         }
     }
 }
