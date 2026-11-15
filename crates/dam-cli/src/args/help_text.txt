@@ -156,12 +156,17 @@ dam doctor: about = Read this machine, say what is wrong and how to fix it, and 
 dam doctor: after_help = An error raised in secrets.lua is shown as that file wrote it.
 It runs the top-level code of config.lua and secrets.lua and calls no credential function.
 It exits 1 when a check finds an issue, and prints the report to stdout either way.
+--fix creates the starter config.lua and the store where each is missing, then runs the checks.
+It changes no file that exists. With checks named, it creates only what those checks cover.
 
 Examples:
   dam doctor
   dam doctor config
   dam doctor --json
+  dam doctor --fix
+  dam doctor --fix database
 dam doctor checks: help = Run only these checks. Default: every check
+dam doctor fix: help = Create the starter config and the store where they are missing
 dam test: about = Make each part do its real job once and say whether it worked
 dam test: after_help = It contacts each remote, and runs credential functions, which may prompt.
 It writes nothing: not the store, not the config, not a remote.

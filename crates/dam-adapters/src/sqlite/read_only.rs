@@ -5,7 +5,7 @@ use rusqlite::{Connection, OpenFlags};
 
 use super::{BUSY_TIMEOUT_MS, OpenError, SqliteStore, migrations};
 
-const SIDE_FILES: [&str; 3] = ["-wal", "-shm", "-journal"];
+pub(super) const SIDE_FILES: [&str; 3] = ["-wal", "-shm", "-journal"];
 const HELD_OPEN: [&str; 2] = ["-wal", "-shm"];
 
 pub enum ReadOnly {

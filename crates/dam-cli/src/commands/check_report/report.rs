@@ -15,6 +15,8 @@ pub(crate) struct CheckReport {
     command: &'static str,
     #[serde(skip)]
     heading: Heading,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    created: Option<Vec<String>>,
     checks: Vec<Check>,
     needs_attention: Vec<String>,
 }
@@ -29,9 +31,14 @@ impl CheckReport {
             version: env!("CARGO_PKG_VERSION"),
             command,
             heading,
+            created: None,
             checks,
             needs_attention,
         }
+    }
+
+    pub(crate) fn creating(self, created: Option<Vec<String>>) -> CheckReport {
+        CheckReport { created, ..self }
     }
 
     pub(super) fn found_an_issue(&self) -> bool {
@@ -44,6 +51,11 @@ impl CheckReport {
             String::new(),
             heading(paint, self.heading.title, self.heading.blurb),
         ];
+        lines.extend(
+            self.created
+                .as_deref()
+                .map_or_else(Vec::new, |paths| created(paint, paths)),
+        );
         for check in &self.checks {
             lines.push(row(paint, check.result.mark(), 2, &check.line()));
             let warnings = check.files.iter().flat_map(|files| &files.warnings);
@@ -62,6 +74,14 @@ impl CheckReport {
         ));
         lines
     }
+}
+
+fn created(paint: Paint, paths: &[String]) -> Vec<String> {
+    if paths.is_empty() {
+        return vec![row(paint, Mark::Quiet, 2, "created nothing")];
+    }
+    let each = |path| row(paint, Mark::Good, 2, &format!("created {path}"));
+    paths.iter().map(each).collect()
 }
 
 fn lines_of(checks: &[Check], outcome: Outcome) -> Vec<String> {
