@@ -9,6 +9,7 @@ use crate::remote::{PullOutcome, RemoteCapabilities};
 use crate::service::{Dam, Remotes};
 use crate::use_cases::connect::connect;
 
+mod adopt;
 mod cancelled;
 mod classify;
 mod land;

@@ -1,5 +1,6 @@
 use dam_domain::{Object, Oid, kind_change, merge_fields};
 
+use super::adopt::creates_found;
 use super::ours::keep_what_we_sent;
 use crate::config::RemoteConfig;
 use crate::errors::{Refusal, UseCaseError};
@@ -30,6 +31,7 @@ pub(super) fn classify(
         .map(|c| c.change.oid().clone())
         .collect();
     let record = store.attempts(&remote.name)?;
+    let adopted = creates_found(store, remote, helper, caps, &record, &objects)?;
     let mut notices = store.notices()?;
     let mut planned = Vec::new();
     let mut new_remote_id_mappings = Vec::new();
@@ -40,8 +42,10 @@ pub(super) fn classify(
             mut object,
         } = incoming;
         let existing = store.oid_for_remote_id(&remote.name, &remote_id)?;
+        let adopting = adopted.get(&remote_id);
         let oid = existing
             .clone()
+            .or_else(|| adopting.cloned())
             .unwrap_or_else(|| Oid::generate(&mut |b| random.fill(b)));
         object.base_mut().oid = oid.clone();
         let theirs_raw = object;
@@ -65,6 +69,9 @@ pub(super) fn classify(
             &theirs_raw,
             &caps.fields,
         );
+        if adopting.is_some() {
+            store.set_remote_snapshot(&remote.name, &theirs)?;
+        }
         let incoming = match local {
             None => Incoming::Create(theirs),
             Some(l) if l == theirs => settled(store, remote, theirs)?,

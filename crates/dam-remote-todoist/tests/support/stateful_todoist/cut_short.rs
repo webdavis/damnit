@@ -46,6 +46,10 @@ impl Held {
         self
     }
 
+    pub fn rate_limit_after(&mut self, writes: u32) {
+        self.cut_short_after = Some((writes, Cut::RateLimit));
+    }
+
     pub fn unauthorized_after(mut self, writes: u32) -> Held {
         self.cut_short_after = Some((writes, Cut::Unauthorized));
         self

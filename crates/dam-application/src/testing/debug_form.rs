@@ -2,6 +2,7 @@ use dam_domain::carrying_only;
 
 use crate::ports::{Declared, HelperError};
 use crate::remote::RemoteMutation;
+use crate::testing::oid;
 
 pub fn each_field_in_its_debug_form(mutation: &RemoteMutation) -> Result<Declared, HelperError> {
     Ok(mutation
@@ -11,7 +12,11 @@ pub fn each_field_in_its_debug_form(mutation: &RemoteMutation) -> Result<Declare
             let value = mutation
                 .object
                 .as_ref()
-                .map(|o| carrying_only(o, &[*field]));
+                .map(|o| carrying_only(o, &[*field]))
+                .map(|mut o| {
+                    o.base_mut().oid = oid(0);
+                    o
+                });
             (*field, format!("{value:?}"))
         })
         .collect())
