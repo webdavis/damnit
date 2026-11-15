@@ -7,6 +7,7 @@ use mlua::{Lua, Table};
 use super::computed::ConfiguredCredentials;
 use super::evaluate::{ErrorText, evaluate, read_text, stopped_at_an_error};
 use super::functions::{LuaFunctions, limit_every_thread};
+use super::hook_marker::mark_what_a_hook_starts;
 use super::secrets::read_secrets;
 use super::settings::read_settings;
 use super::strict::StrictMap;
@@ -96,7 +97,9 @@ impl LuaConfigFile {
         text: Option<&str>,
     ) -> Result<(Config, Lua, Option<Table>), ConfigError> {
         let lua = Lua::new();
-        limit_every_thread(&lua).map_err(|_| stopped_at_an_error(&self.config))?;
+        limit_every_thread(&lua)
+            .and_then(|()| mark_what_a_hook_starts(&lua))
+            .map_err(|_| stopped_at_an_error(&self.config))?;
         let table = evaluate(&lua, &self.config, text, ErrorText::QuotesTheFile)?;
         let config = match &table {
             Some(table) => read_settings(&StrictMap::root(&file_name(&self.config), table)?)?,

@@ -35,6 +35,10 @@ pub(super) fn every_refusal_with_its_text() -> Vec<(Refusal, &'static str)> {
         }),
         "hook task_done failed at /home/ada/.config/dam/config.lua:3: no bell; the command changed nothing",
     ));
+    samples.push((
+        Refusal::StartedByHook("task_new".into()),
+        "hook task_new started this dam, and a hook cannot run dam",
+    ));
     samples
 }
 

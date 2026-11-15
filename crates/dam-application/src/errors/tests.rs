@@ -7,10 +7,12 @@ fn commit_id() -> dam_domain::CommitId {
     dam_domain::CommitId::generate(&mut |b: &mut [u8]| b.fill(9))
 }
 
+mod hook_samples;
 mod item_samples;
+use hook_samples::hook_samples;
 use item_samples::item_samples;
 
-const HAND_COUNTED_RULES: usize = 49;
+const HAND_COUNTED_RULES: usize = 50;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -63,6 +65,7 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::PulledCommit(_) => 46,
         Refusal::NotInCommit { .. } => 47,
         Refusal::HookRefused(_) => 48,
+        Refusal::StartedByHook(_) => 49,
     }
 }
 
@@ -135,16 +138,9 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
             commit: commit_id(),
             text: "abab".into(),
         },
-        Refusal::HookRefused(crate::ports::HookFailure {
-            event: crate::config::HookEvent::TaskDone,
-            failure: crate::ports::FunctionFailure {
-                file: "config.lua".into(),
-                line: Some(3),
-                fault: crate::ports::FunctionFault::RanOver,
-            },
-        }),
     ]
     .into_iter()
+    .chain(hook_samples())
     .chain(item_samples().into_iter().map(Refusal::Item))
     .collect()
 }

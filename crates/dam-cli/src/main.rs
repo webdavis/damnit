@@ -13,6 +13,7 @@ mod output;
 mod paint;
 mod prompt;
 mod request;
+mod started_by_hook;
 mod style;
 mod view;
 
@@ -28,7 +29,10 @@ use crate::output::Format;
 fn main() {
     let interrupt = Interrupt::default();
     let interrupts_installed = dam_adapters::catch_interrupts(&interrupt);
-    let cli = match request::parse(std::env::args_os().collect()) {
+    let line: Vec<_> = std::env::args_os().collect();
+    let cli = match started_by_hook::refuse_a_dam_a_hook_started(&line)
+        .and_then(|()| request::parse(line))
+    {
         Ok(cli) => cli,
         Err(refused) => {
             output::print_error(refused.format, &refused.error);

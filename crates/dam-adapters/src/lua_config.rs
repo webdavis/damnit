@@ -8,6 +8,7 @@ mod filter_function;
 mod functions;
 mod hook;
 mod hook_function;
+mod hook_marker;
 mod port;
 mod printed;
 mod remote;

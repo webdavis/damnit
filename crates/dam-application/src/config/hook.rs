@@ -1,3 +1,5 @@
+pub const STARTED_BY_HOOK_VARIABLE: &str = "DAM_HOOK";
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum HookEvent {
     TaskNew,

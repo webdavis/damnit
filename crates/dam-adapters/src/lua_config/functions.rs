@@ -22,7 +22,7 @@ const SETTINGS: &str = "settings";
 
 #[derive(Clone)]
 pub struct LuaFunctions {
-    lua: Lua,
+    pub(super) lua: Lua,
     path: PathBuf,
     owner: String,
     limit: Duration,

@@ -126,6 +126,7 @@
         "no_such_token",
         "no_such_setting",
         "hook_refused",
+        "started_by_hook",
         "nothing_changed",
         "item_declined",
         "item_not_an_object",
