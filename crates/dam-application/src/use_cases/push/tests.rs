@@ -9,6 +9,7 @@ mod cut_short;
 mod deletes;
 mod dropped_creates;
 mod empty_containers;
+mod failure_notices;
 mod follow_ups;
 mod holds;
 mod landings;
