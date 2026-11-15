@@ -2,7 +2,7 @@ use crate::access::Access;
 use crate::config::Config;
 use crate::ports::{
     Clock, CredentialSource, EditRequests, FilterFunctions, HelperLauncher, HookEdits,
-    HookWarnings, Hooks, Interruption, Randomness, Store,
+    HookProgress, HookWarnings, Hooks, Interruption, Randomness, Store,
 };
 
 pub struct Dam<'a> {
@@ -14,6 +14,7 @@ pub struct Dam<'a> {
     pub filter_functions: &'a dyn FilterFunctions,
     pub hooks: &'a dyn Hooks,
     pub hook_warnings: &'a dyn HookWarnings,
+    pub hook_progress: &'a dyn HookProgress,
     pub edit_requests: &'a dyn EditRequests,
     pub hook_edits: &'a dyn HookEdits,
     pub interruption: &'a dyn Interruption,

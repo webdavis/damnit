@@ -8,7 +8,9 @@ use dam_application::testing::{
 use dam_domain::Categories;
 use jiff::civil::date;
 
-use crate::context::{Context, terminal_pair_for_a_human_and_refusals_for_a_machine};
+use crate::context::{
+    Context, HookProgressOnStandardError, terminal_pair_for_a_human_and_refusals_for_a_machine,
+};
 use crate::output::Format;
 
 mod config_file;
@@ -51,6 +53,7 @@ pub(crate) fn context() -> Context {
         no_pull: false,
         changed_by_hook: Default::default(),
         interrupt: Interrupt::default(),
+        hook_progress: HookProgressOnStandardError::for_format(Format::Json),
     }
 }
 

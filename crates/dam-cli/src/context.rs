@@ -32,6 +32,7 @@ pub(crate) struct Context {
     pub(crate) no_pull: bool,
     pub(crate) changed_by_hook: ChangedByHook,
     pub(crate) interrupt: Interrupt,
+    pub(crate) hook_progress: HookProgressOnStandardError,
 }
 
 impl Context {
@@ -70,6 +71,7 @@ impl Context {
             no_pull,
             changed_by_hook: ChangedByHook::default(),
             interrupt: interrupt.clone(),
+            hook_progress: HookProgressOnStandardError::for_format(format),
         })
     }
 
@@ -83,6 +85,7 @@ impl Context {
             filter_functions: self.filter_functions.as_ref(),
             hooks: self.hooks.as_ref(),
             hook_warnings: &HookWarningsOnStandardError,
+            hook_progress: &self.hook_progress,
             edit_requests: self,
             hook_edits: &self.changed_by_hook,
             interruption: &self.interrupt,
@@ -112,5 +115,7 @@ pub(crate) fn terminal_pair_for_a_human_and_refusals_for_a_machine(
 
 mod changed_by_hook;
 mod edit_requests;
+mod hook_progress;
 
 pub(crate) use changed_by_hook::ChangedByHook;
+pub(crate) use hook_progress::HookProgressOnStandardError;

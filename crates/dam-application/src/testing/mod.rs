@@ -20,7 +20,7 @@ pub use faulty_store::FaultyStore;
 pub use filter_functions::FakeFilterFunctions;
 pub use fixture::{Fixture, remotes_launched_by};
 pub use holders::{allowed, holder};
-pub use hooks::{FakeEditRequests, FakeHookEdits, FakeHookWarnings, FakeHooks};
+pub use hooks::{FakeEditRequests, FakeHookEdits, FakeHookProgress, FakeHookWarnings, FakeHooks};
 pub use interruption::FakeInterruption;
 pub use launchers::{
     Pushed, accepting_all, answering, pulling, pulling_events, pushing,

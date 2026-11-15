@@ -221,6 +221,11 @@ Later failures of that pull are counted, not printed. `dam status` does not yet 
 After 60 seconds of one pull's run, dam calls the hook for no more tasks and counts them in
 `not_reached`.
 Ctrl-C stops the hook and keeps the pull and the changes the hook made; the command exits 3.
+After two seconds of one pull's run, dam says once on standard error, in plain text and unless
+a token's command caused the pull:
+
+    dam: running task_pulled for 40 tasks
+
 The pull's answer counts what it did under `task_pulled`: `ran`, `changed`, `failed` and
 `not_reached`, and `commit`, the id of the commit it made. In plain text it is a line such as
 `task_pulled: 1 ran, 1 changed, 0 failed, 0 not reached, commit 2b2b2b2`.

@@ -2,6 +2,7 @@ mod committed;
 mod edits;
 mod interrupt;
 mod limits;
+mod progress;
 mod runs;
 mod skips;
 mod slow;

@@ -60,10 +60,15 @@ impl Dam<'_> {
             ..*self
         };
         let mut run = PulledHookRun::default();
-        let run_time = RunTime::started_on(self.clock);
+        let mut run_time = RunTime::started_on(self.clock);
+        let owners = self.access.token().is_none();
         for task in &pulled {
             if run_time.ran_out() || self.interruption.requested() {
                 break;
+            }
+            if run_time.first_time_long() && owners {
+                self.hook_progress
+                    .running(HookEvent::TaskPulled, pulled.len());
             }
             let pull = Pull {
                 remote: remote.clone(),
@@ -73,7 +78,7 @@ impl Dam<'_> {
                 Edited::Nothing => {}
                 Edited::Changed => run.changed += 1,
                 Edited::Failed(failure) => {
-                    if run.failed == 0 && self.access.token().is_none() {
+                    if run.failed == 0 && owners {
                         let event = HookEvent::TaskPulled;
                         self.hook_warnings.warn(&HookFailure { event, failure });
                     }
