@@ -13,6 +13,23 @@ pub(super) enum ErrorText {
     NeverQuotesTheFile,
 }
 
+impl ErrorText {
+    pub(super) fn about_what_it_holds(self, path: &Path, error: ConfigError) -> ConfigError {
+        match self {
+            ErrorText::NeverQuotesTheFile => stopped_at_an_error(path),
+            _ => error,
+        }
+    }
+}
+
+pub(super) fn stopped_at_an_error(path: &Path) -> ConfigError {
+    ConfigError::StoppedLoading {
+        path: path.to_path_buf(),
+        line: None,
+        reason: None,
+    }
+}
+
 pub(super) fn read_text(path: &Path) -> Result<Option<String>, ConfigError> {
     match std::fs::read_to_string(path) {
         Ok(text) if text.trim().is_empty() => Ok(None),
@@ -64,6 +81,9 @@ fn stopped_loading(
     };
     let reason = match (error, error_text) {
         (_, ErrorText::QuotesTheFile) => Some(reason),
+        (mlua::Error::SyntaxError { .. }, ErrorText::NeverQuotesTheFile) => {
+            before_the_first_quote(&without_the_text_lua_stopped_at(reason))
+        }
         (mlua::Error::SyntaxError { .. }, _) => Some(without_the_text_lua_stopped_at(reason)),
         (_, ErrorText::QuotesWhatItsCodeRaised) => Some(reason),
         _ => None,
@@ -105,6 +125,15 @@ fn without_the_text_lua_stopped_at(message: String) -> String {
         Some((reason, _)) => reason.to_string(),
         None => message,
     }
+}
+
+fn before_the_first_quote(message: &str) -> Option<String> {
+    let fixed = message
+        .split(['\'', '"'])
+        .next()
+        .unwrap_or_default()
+        .trim_end();
+    (!fixed.is_empty()).then(|| fixed.to_string())
 }
 
 pub(super) fn lua_message(error: &mlua::Error) -> String {
