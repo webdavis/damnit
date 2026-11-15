@@ -7,6 +7,7 @@ use dam_application::{
 use dam_domain::Oid;
 
 use super::super::super::testing::{install, install_listening_to, remote};
+use super::until_the_helper_has_complained;
 use crate::Interrupt;
 
 const ASKED: &str =
@@ -21,6 +22,10 @@ fn early(n: u8) -> String {
 
 fn script(steps: &[&str]) -> String {
     format!("#!/bin/sh\n{ASKED}{}", steps.concat())
+}
+
+fn script_that_says_it_is_up(steps: &[&str]) -> String {
+    format!("#!/bin/sh\necho up >&2\n{ASKED}{}", steps.concat())
 }
 
 const HANG: &str = "while :; do sleep 0.05; done\n";
@@ -64,8 +69,12 @@ fn silent_for_at_most(millis: u64) -> RemoteConfig {
 #[test]
 fn a_helper_that_hangs_after_two_answers_hands_them_back_with_the_timeout() {
     let dir = tempfile::tempdir().unwrap();
-    let launcher = install(dir.path(), &script(&[&early(1), &early(2), HANG]));
-    let mut helper = launcher.spawn(&silent_for_at_most(1500), &[]).unwrap();
+    let launcher = install(
+        dir.path(),
+        &script_that_says_it_is_up(&[&early(1), &early(2), HANG]),
+    );
+    let mut helper = launcher.spawn(&silent_for_at_most(250), &[]).unwrap();
+    until_the_helper_has_complained(&helper);
     let pushed = helper.push(three_deletes()).unwrap();
     assert_eq!(
         pushed,
@@ -73,8 +82,8 @@ fn a_helper_that_hangs_after_two_answers_hands_them_back_with_the_timeout() {
             outcomes: vec![accepted(1), accepted(2)],
             stopped_by: Some(HelperError::Timeout {
                 helper: "t".into(),
-                deadline: "1500ms".into(),
-                said: None,
+                deadline: "250ms".into(),
+                said: Some("up".into()),
             }),
         }
     );
@@ -149,7 +158,7 @@ fn a_helper_that_answers_once_is_read_as_before() {
 #[test]
 fn a_helper_answering_steadily_is_not_cut_off_when_the_whole_call_outlasts_the_deadline() {
     let dir = tempfile::tempdir().unwrap();
-    let pause = "sleep 0.5\n";
+    let pause = "sleep 0.15\n";
     let results: Vec<String> = (1..=3)
         .map(|n| {
             format!(
@@ -169,12 +178,13 @@ fn a_helper_answering_steadily_is_not_cut_off_when_the_whole_call_outlasts_the_d
         pause,
         &reply,
     ];
-    let launcher = install(dir.path(), &script(&steps));
-    let mut helper = launcher.spawn(&silent_for_at_most(1500), &[]).unwrap();
+    let launcher = install(dir.path(), &script_that_says_it_is_up(&steps));
+    let mut helper = launcher.spawn(&silent_for_at_most(400), &[]).unwrap();
+    until_the_helper_has_complained(&helper);
     let started = Instant::now();
     let pushed = helper.push(three_deletes()).unwrap();
     assert!(
-        started.elapsed() > Duration::from_millis(1500),
+        started.elapsed() > Duration::from_millis(400),
         "{:?}",
         started.elapsed()
     );
