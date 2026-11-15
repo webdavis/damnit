@@ -37,6 +37,17 @@ impl TodoistApi {
         Ok(TodoistApi::new(&base, token.expose()))
     }
 
+    pub fn sign_in(&self) -> Result<(), String> {
+        let withheld = |e: ApiError| e.to_string().replace(self.token.expose(), "<api_token>");
+        let response = self
+            .agent
+            .get(format!("{}/projects?limit=1", self.base))
+            .header("Authorization", &self.authorization())
+            .call()
+            .map_err(|e| withheld(call_failed(SERVICE, e)))?;
+        read_answer(SERVICE, response).map(drop).map_err(withheld)
+    }
+
     fn read_since(&self, sync_token: &str) -> Result<SyncResponse, ApiError> {
         let body = serde_json::json!({ "sync_token": sync_token, "resource_types": ["projects", "sections", "items"] });
         let value = self.post("/sync", &body)?;
