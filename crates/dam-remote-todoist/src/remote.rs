@@ -26,4 +26,8 @@ impl Remote for Todoist<'_> {
         let api = TodoistApi::from_env(self.remote)?;
         push::push(&api, mutations, answered).map_err(|e| e.to_string())
     }
+
+    fn login(&self) -> Result<(), String> {
+        TodoistApi::from_env(self.remote)?.sign_in()
+    }
 }

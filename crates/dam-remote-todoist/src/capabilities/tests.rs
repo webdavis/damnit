@@ -9,5 +9,6 @@ fn matches_the_todoist_helper_scope() {
     assert_eq!(caps.credentials, vec!["api_token".to_string()]);
     assert!(caps.incremental);
     assert!(caps.removes_only_empty_containers);
+    assert!(caps.answers_login);
     assert!(caps.fields.contains(&"deadline".to_string()));
 }
