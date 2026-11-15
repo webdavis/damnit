@@ -2,7 +2,6 @@ mod support;
 
 mod api;
 mod api_changes;
-mod cut_short_push;
 mod follow_up_push;
 mod login;
 mod protocol;
