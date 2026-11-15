@@ -5,8 +5,8 @@ Tasks and events live on your machine in a form you can stage, commit and push. 
 Calendar and any other service are remotes: mirrors that `dam` pushes to and pulls from through a
 helper program, the way git reaches Mercurial through `git-remote-hg`.
 
-This document is the design for version one of the `dam` tool. The two clients that follow it,
-`damnit.nvim` and `herdr-damnit`, get their own specifications once this ships.
+This document is the design for version one of the `dam` tool. The client that follows it,
+`damnit.nvim`, gets its own specification once this ships.
 
 ## Why it exists
 
@@ -41,7 +41,6 @@ Every one of those is a problem git solved for source code. `dam` applies the sa
 | Remote helper for Todoist | `dam-remote-todoist`, ships in this repository |
 | Remote helper for Google Calendar | `dam-remote-gcal`, ships in this repository, second |
 | Neovim client | `damnit.nvim`, separate repository, separate spec |
-| herdr client | `herdr-damnit`, separate repository, separate spec |
 
 `dammit` is reserved on crates.io alongside `damnit` and points at the same package.
 
@@ -766,7 +765,7 @@ included. No crate depends on anything outside this workspace except published c
 
 ## Out of scope for version one
 
-- `damnit.nvim` and `herdr-damnit`, each its own spec
+- `damnit.nvim`, which gets its own spec
 - Google Calendar push notifications; `stale` covers the gap
 - `dam-remote-https` and any server
 - A capacity or scheduling model over free windows; the data for it is present, the logic is not

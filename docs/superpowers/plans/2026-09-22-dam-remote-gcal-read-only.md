@@ -113,7 +113,7 @@ PR 3 A2, PR 4 A3, PR 5 A6, PR 6 the rest of A4, and PR 7 A5.
 Every branch starts from `main` in its own worktree:
 
 ```bash
-herdr worktree create --cwd <repo> --branch <branch> --no-focus
+wt switch --create <branch>
 ```
 
 ## File structure
