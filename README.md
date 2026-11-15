@@ -61,12 +61,13 @@ name. Both warn of a token dam ignores or holds disabled, and `dam doctor` says 
 
 `dam doctor` reads this machine, says what is wrong and how to fix it, and contacts nothing.
 It prints one row per check, then what needs attention, and creates no file.
+`dam doctor <check>...` runs only the named checks: `config`.
 Its `config` check reads both files in full and lists each token warning under its row.
 That row may quote an error raised in `secrets.lua`. Elsewhere only a credential function's own
 error reaches you, and only when you run the command without `DAM_TOKEN`.
 `dam doctor` exits 1 when a check finds an issue.
 `docs/schemas/doctor.schema.json` is the schema of its `--json` answer.
-`dam config validate` prints the report of the `config` check alone.
+`dam config validate` prints what `dam doctor config` prints, with `command` set to `config validate`.
 
 `stale` makes reads pull first when the last pull is older than that. A failed pull that a read
 started leaves a notice in `dam status`, and the read still answers. `deadline` (default `"60s"`)

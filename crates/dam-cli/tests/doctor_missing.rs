@@ -14,7 +14,7 @@ fn a_missing_secrets_lua_is_said_to_be_missing() {
     let _guard = support::guard("a_missing_secrets_lua_is_said_to_be_missing");
     let sb = Sandbox::new();
     std::fs::remove_file(sb.secrets_path()).unwrap();
-    let answer = sb.doctor(&["doctor"]);
+    let answer = sb.doctor(&["doctor", "config"]);
     assert_eq!(answer.code, Some(0));
     assert!(
         answer
@@ -23,7 +23,7 @@ fn a_missing_secrets_lua_is_said_to_be_missing() {
         "{}",
         answer.out
     );
-    let (_, document) = sb.doctor_json(&["doctor"]);
+    let (_, document) = sb.doctor_json(&["doctor", "config"]);
     let config = &document["checks"][0];
     assert_eq!(config["config"], sb.config_path().display().to_string());
     assert_eq!(config["secrets"], serde_json::Value::Null);
@@ -35,7 +35,7 @@ fn only_secrets_lua_is_said_to_be_read_beside_the_defaults() {
     let sb = Sandbox::new();
     std::fs::remove_file(sb.config_path()).unwrap();
     sb.write_secrets_lua("return { schema = 1 }\n");
-    let answer = sb.doctor(&["doctor"]);
+    let answer = sb.doctor(&["doctor", "config"]);
     assert!(
         answer
             .out
@@ -55,7 +55,7 @@ fn an_unreadable_config_lua_names_the_file_in_its_row() {
         eprintln!("skipped: this user reads a file marked unreadable");
         return;
     }
-    let answer = sb.doctor(&["doctor"]);
+    let answer = sb.doctor(&["doctor", "config"]);
     set_mode(&sb.config_path(), 0o600);
     assert_eq!(answer.code, Some(1));
     let row = format!("\n  ✗ config: {}: ", sb.config_path().display());

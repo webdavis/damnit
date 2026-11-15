@@ -12,14 +12,14 @@ const FIX: &str = "    → fix the file it names";
 fn good_files_read_as_one_good_row() {
     let _guard = support::guard("good_files_read_as_one_good_row");
     let sb = Sandbox::new();
-    let answer = sb.doctor(&["doctor"]);
+    let answer = sb.doctor(&["doctor", "config"]);
     assert_eq!(answer.code, Some(0));
     assert_eq!(
         answer.out,
         report(&["  ✓ config: both files are valid"], ALL_WELL)
     );
 
-    let (code, document) = sb.doctor_json(&["doctor"]);
+    let (code, document) = sb.doctor_json(&["doctor", "config"]);
     assert_eq!(code, Some(0));
     assert_eq!(document["version"], VERSION);
     assert_eq!(document["command"], "doctor");
@@ -39,7 +39,7 @@ fn a_token_warning_shows_under_a_warning_row() {
     let sb = Sandbox::new();
     sb.add_token("tool", TokenTable::valued("not-a-token"));
     let row = "config: both files read, with 1 token warning";
-    let answer = sb.doctor(&["doctor"]);
+    let answer = sb.doctor(&["doctor", "config"]);
     assert_eq!(answer.code, Some(0));
     assert_eq!(
         answer.out,
@@ -52,7 +52,7 @@ fn a_token_warning_shows_under_a_warning_row() {
         )
     );
 
-    let (code, document) = sb.doctor_json(&["doctor"]);
+    let (code, document) = sb.doctor_json(&["doctor", "config"]);
     assert_eq!(code, Some(0));
     assert_eq!(document["checks"][0]["result"], "warning");
     assert_eq!(
@@ -61,7 +61,7 @@ fn a_token_warning_shows_under_a_warning_row() {
     );
     assert_eq!(document["needs_attention"], serde_json::json!([row]));
 
-    let answer = sb.doctor(&["doctor", "--toon"]);
+    let answer = sb.doctor(&["doctor", "config", "--toon"]);
     assert!(answer.out.contains("warnings[1]"), "{}", answer.out);
 }
 
@@ -71,7 +71,7 @@ fn a_broken_config_lua_is_an_issue_reported_on_standard_output() {
     let sb = Sandbox::new();
     sb.write_config_lua("return {\n  owner = ,\n}\n");
     let config = sb.config_path().display().to_string();
-    let answer = sb.doctor(&["doctor"]);
+    let answer = sb.doctor(&["doctor", "config"]);
     assert_eq!(answer.code, Some(1));
     let lines: Vec<&str> = answer.out.lines().collect();
     assert!(
@@ -86,7 +86,7 @@ fn a_broken_config_lua_is_an_issue_reported_on_standard_output() {
         answer.out
     );
 
-    let (code, document) = sb.doctor_json(&["doctor"]);
+    let (code, document) = sb.doctor_json(&["doctor", "config"]);
     assert_eq!(code, Some(1));
     assert_eq!(document["checks"][0]["result"], "issue");
     assert!(document.get("error").is_none());
@@ -105,7 +105,7 @@ fn a_runtime_error_in_secrets_lua_is_quoted_in_the_row() {
         "{err}"
     );
 
-    let answer = sb.doctor(&["doctor"]);
+    let answer = sb.doctor(&["doctor", "config"]);
     assert_eq!(answer.code, Some(1));
     let quoted = format!("  ✗ config: {secrets}:1: the vault said hunter2");
     assert!(answer.out.contains(&quoted), "{}", answer.out);
@@ -116,7 +116,7 @@ fn a_syntax_error_in_secrets_lua_is_never_quoted() {
     let _guard = support::guard("a_syntax_error_in_secrets_lua_is_never_quoted");
     let sb = Sandbox::new();
     sb.write_secrets_lua("return { token = { tool = { value = 'hunter2' } } \n");
-    let answer = sb.doctor(&["doctor"]);
+    let answer = sb.doctor(&["doctor", "config"]);
     assert_eq!(answer.code, Some(1));
     assert!(answer.out.contains("secrets.lua:"), "{}", answer.out);
     assert!(!answer.out.contains("hunter2"), "{}", answer.out);
@@ -129,7 +129,7 @@ fn no_config_lua_means_defaults_and_doctor_creates_nothing() {
     std::fs::remove_file(sb.config_path()).unwrap();
     std::fs::remove_file(sb.secrets_path()).unwrap();
     let before = listing(sb.dir.path());
-    let answer = sb.doctor(&["doctor"]);
+    let answer = sb.doctor(&["doctor", "config"]);
     assert_eq!(answer.code, Some(0));
     assert!(
         answer
