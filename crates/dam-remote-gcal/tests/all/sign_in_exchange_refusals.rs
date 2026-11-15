@@ -1,4 +1,4 @@
-mod walk;
+use crate::walk;
 
 use dam_helper::testing;
 use std::collections::HashMap;

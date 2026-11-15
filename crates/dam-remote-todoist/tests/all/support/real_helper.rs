@@ -4,7 +4,7 @@ pub const FRESH_HELPER_PROCESSES_TRIED: usize = 8;
 
 const WRAPPER_THAT_READS_ITS_FOLDER: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/tests/support/helper_against_a_fake.sh"
+    "/tests/all/support/helper_against_a_fake.sh"
 );
 
 pub fn the_real_helper_against(base: &str, dir: &std::path::Path) -> ProcessLauncher {

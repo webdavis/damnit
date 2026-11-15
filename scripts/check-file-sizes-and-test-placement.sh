@@ -22,12 +22,13 @@ while IFS= read -r f; do
     echo "INLINE TEST MODULE: $f"; fail=1
   fi
 done < <(git ls-files '*.rs')
-one_program=crates/dam-cli/tests/all
-while IFS= read -r f; do
-  if [[ "$f" == "$one_program"/*/* ]]; then continue; fi
-  name=$(basename "$f" .rs)
-  if [ "$name" != main ] && ! grep -qx "mod $name;" "$one_program/main.rs"; then
-    echo "TEST FILE NOT LISTED IN $one_program/main.rs: $f"; fail=1
-  fi
-done < <(git ls-files "$one_program/*.rs")
+for one_program in crates/{dam-cli,dam-adapters,dam-remote-gcal,dam-remote-todoist}/tests/all; do
+  while IFS= read -r f; do
+    if [[ "$f" == "$one_program"/*/* ]]; then continue; fi
+    name=$(basename "$f" .rs)
+    if [ "$name" != main ] && ! grep -qx "mod $name;" "$one_program/main.rs"; then
+      echo "TEST FILE NOT LISTED IN $one_program/main.rs: $f"; fail=1
+    fi
+  done < <(git ls-files "$one_program/*.rs")
+done
 exit "$fail"
