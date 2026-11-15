@@ -18,6 +18,7 @@
           "sent",
           "succeeded",
           "skipped",
+          "held",
           "failed"
         ],
         "additionalProperties": false,
@@ -35,6 +36,14 @@
           },
           "skipped": {
             "type": "integer",
+            "minimum": 0
+          },
+          "held": {
+            "description": "Objects not sent because they, or an object they wait on, are in conflict. Null for a token without conflict:read when some were held.",
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 0
           },
           "failed": {

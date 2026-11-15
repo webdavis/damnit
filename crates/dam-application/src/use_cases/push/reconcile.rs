@@ -14,6 +14,7 @@ pub(super) struct Settlement {
     pub(super) snapshot: Vec<Object>,
     pub(super) failed: Vec<(Oid, String)>,
     pub(super) unanswered: BTreeSet<Oid>,
+    pub(super) held: BTreeSet<Oid>,
     pub(super) heard: Vec<(Oid, Heard)>,
     pub(super) created: Vec<Oid>,
     pub(super) dropped: Dropped,
@@ -28,7 +29,8 @@ pub(super) enum Heard {
 
 impl Settlement {
     pub(super) fn retries(&self) -> Vec<Oid> {
-        self.failed.iter().map(|(oid, _)| oid.clone()).collect()
+        let failed = self.failed.iter().map(|(oid, _)| oid);
+        failed.chain(&self.held).cloned().collect()
     }
 
     pub(super) fn absorb(&mut self, later: Settlement) {
@@ -37,6 +39,7 @@ impl Settlement {
         self.snapshot.extend(later.snapshot);
         self.failed.extend(later.failed);
         self.unanswered.extend(later.unanswered);
+        self.held.extend(later.held);
         self.heard.extend(later.heard);
         self.created.extend(later.created);
         self.dropped.absorb(later.dropped);
@@ -51,7 +54,8 @@ impl Settlement {
             .filter(|r| {
                 !r.changes
                     .iter()
-                    .any(|c| self.unanswered.contains(c.change.oid()))
+                    .map(|c| c.change.oid())
+                    .any(|oid| self.unanswered.contains(oid) || self.held.contains(oid))
             })
             .map(|r| &r.id)
     }

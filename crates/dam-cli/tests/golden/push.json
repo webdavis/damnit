@@ -5,6 +5,7 @@
       "sent": 2,
       "succeeded": 2,
       "skipped": 2,
+      "held": 0,
       "failed": []
     }
   ]

@@ -1,6 +1,6 @@
 use dam_application::Refusal;
 
-pub(super) const RULES: usize = 33;
+pub(super) const RULES: usize = 32;
 
 pub(super) fn rule_number(refusal: &Refusal) -> usize {
     match refusal {
@@ -22,20 +22,19 @@ pub(super) fn rule_number(refusal: &Refusal) -> usize {
         Refusal::NothingToCommit => 15,
         Refusal::NeedsAnAnswer => 16,
         Refusal::NeedsAnEditor => 17,
-        Refusal::UnresolvedConflicts(_) => 18,
-        Refusal::MissingCredential { .. } => 19,
-        Refusal::StaleRemote { .. } => 20,
-        Refusal::UnreadableRecurrence { .. } => 21,
-        Refusal::NoConflict(_) => 22,
-        Refusal::Token(_) => 23,
-        Refusal::NotPermitted(_) => 24,
-        Refusal::NotOpenToTokens(_) => 25,
-        Refusal::SubjectNamesNoFolder(_) => 26,
-        Refusal::FocusFull { .. } => 27,
-        Refusal::TokenExists(_) => 28,
-        Refusal::NotGrantable(_) => 29,
-        Refusal::NoSuchToken(_) => 30,
-        Refusal::NoSuchSetting(_) => 31,
-        Refusal::Item(_) => 32,
+        Refusal::MissingCredential { .. } => 18,
+        Refusal::StaleRemote { .. } => 19,
+        Refusal::UnreadableRecurrence { .. } => 20,
+        Refusal::NoConflict(_) => 21,
+        Refusal::Token(_) => 22,
+        Refusal::NotPermitted(_) => 23,
+        Refusal::NotOpenToTokens(_) => 24,
+        Refusal::SubjectNamesNoFolder(_) => 25,
+        Refusal::FocusFull { .. } => 26,
+        Refusal::TokenExists(_) => 27,
+        Refusal::NotGrantable(_) => 28,
+        Refusal::NoSuchToken(_) => 29,
+        Refusal::NoSuchSetting(_) => 30,
+        Refusal::Item(_) => 31,
     }
 }

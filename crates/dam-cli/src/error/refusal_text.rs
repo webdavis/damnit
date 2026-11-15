@@ -65,12 +65,6 @@ impl fmt::Display for RefusalText<'_> {
                 "{} has no commit behind it; dam rm removes it instead",
                 o.short()
             ),
-            Refusal::UnresolvedConflicts(Some(n)) => {
-                write!(f, "{n} conflicts are unresolved; run dam resolve")
-            }
-            Refusal::UnresolvedConflicts(None) => {
-                f.write_str("conflicts are unresolved; run dam resolve")
-            }
             Refusal::MoveInsideItself(o) => {
                 write!(f, "{} cannot move inside itself", o.short())
             }

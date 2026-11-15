@@ -15,6 +15,7 @@ pub(super) struct PushRow<'a> {
     sent: usize,
     succeeded: usize,
     skipped: usize,
+    held: Option<usize>,
     failed: Vec<FailedPush<'a>>,
 }
 
@@ -32,6 +33,7 @@ impl<'a> PushRow<'a> {
             sent: r.sent,
             succeeded: r.succeeded,
             skipped: r.skipped,
+            held: r.held,
             failed: r
                 .failed
                 .iter()
@@ -52,6 +54,14 @@ impl<'a> PushRow<'a> {
         for f in &self.failed {
             line.push_str(&format!("\n  {}: {}", f.oid.short(), f.why));
         }
+        let held = match self.held {
+            Some(0) => return line,
+            Some(n) => format!("{n} held"),
+            None => "some held".to_string(),
+        };
+        line.push_str(&format!(
+            "\n  {held} for a conflict; see dam status, settle with dam resolve"
+        ));
         line
     }
 }

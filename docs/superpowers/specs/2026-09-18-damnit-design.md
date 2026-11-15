@@ -707,7 +707,7 @@ blocked are both refusals, and a list that should refresh itself on the first sh
 blockers on the second. The words are `blocked`, `cycle`, `exclusive_label`, `unknown_category`,
 `no_such_object`, `no_working_object`, `no_such_remote`, `not_a_task`, `not_an_event`,
 `not_completed`, `not_committed`, `move_inside_itself`, `subject_names_no_folder`, `nothing_to_commit`,
-`needs_an_answer`, `needs_an_editor`, `unresolved_conflicts`, `missing_credential` and
+`needs_an_answer`, `needs_an_editor`, `missing_credential` and
 `stale_remote`. A token's refusals add `not_permitted` and `not_open_to_tokens`, and
 `malformed_token`, `unknown_token_version`, `unknown_token`, `disabled_token`, `expired_token`,
 `token_not_yet_valid`, `channel_not_allowed` and `missing_details` for the token itself, which exit

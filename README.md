@@ -94,6 +94,8 @@ is the longest the helper may stay silent; past it `dam` kills the helper and ex
 answers at once, so the deadline bounds the whole pull. Ctrl-C kills the helper and exits 3. A push
 cut short keeps what the remote already answered, says how many it kept and left unanswered, and
 sends the rest on the next push.
+A push holds an object in conflict, and a removal or move that waits on one, and sends the rest.
+It prints how many it held as `held`. The next push after `dam resolve` sends them.
 
     dam pull
 
@@ -386,7 +388,7 @@ The permissions are `task:` and `event:` `read`, `create`, `change`, `move` and 
 | `diff` | `working:read` and `stage:read` |
 | `log`, `show <commit>` | `history:read` |
 | `category list`, `filter list` | `config:read` |
-| `remote list`, `pull`, `push` | `remote:read`, `remote:pull`, `remote:push` |
+| `remote list`, `pull`, `push` | `remote:read`, `remote:pull`, `remote:push`; `conflict:read` for the count `push` held |
 
 A token's `new`, `edit` and `done` never touch your tasks. Each waits as an item in `dam status`,
 with its hash, the task a change changes, the token's name and its age. A change shows the current
