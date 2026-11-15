@@ -1,7 +1,7 @@
 # Lua reference
 
 dam reads two Lua files from one folder: `config.lua` and `secrets.lua`. Each returns a table. A
-key dam does not know is an error. A `<name>` in a key is a name you choose. Hooks do not exist yet.
+key dam does not know is an error. A `<name>` in a key is a name you choose.
 
 ## config.lua
 
@@ -151,9 +151,53 @@ request stated, and `nil` when it is not shown to the caller.
 | `changes[].details.at` | When the request was made. |
 | `changes[].details.channel` | `local` or `mcp`. |
 
+## Hooks
+
+A hook is a function dam calls when your own command changes a task.
+`hook.task_new` runs for a task your `dam new` creates.
+`hook.task_done` runs for a task your `dam done` completes, or rolls forward when it repeats.
+`hook.task_changed` runs for any other change your `dam new`, `dam edit` or `dam done` makes.
+A command runs one hook for each task it changed, so `dam done --force` that moves open children
+runs `task_changed` for each child.
+Events, `dam rm`, `dam restore`, `dam resolve`, `dam revert`, `dam reset`, a pull and a token's
+commands run no hook.
+
+A hook is a function, or a table that holds the function as `run`. `run(task, dam)` gets what a
+filter's `match` gets, with the task as it is after the change. It returns nothing.
+A `dam` that a hook starts cannot change anything: the store stays busy until the hook returns.
+
+A hook fails when it raises an error, returns a value, or runs over.
+With `on_failure = "warn"`, the default, the change stands and dam warns on standard error:
+
+    warning: hook task_done failed at /home/ada/.config/dam/config.lua:3: no bell; the change stands
+
+With `on_failure = "refuse"`, the command changes nothing and exits 4 with rule `hook_refused`.
+Its error document names the event under `hook`.
+
+Tasks you complete, written to a file, and no task left outside a folder:
+
+    return {
+      hook = {
+        task_done = function(task)
+          local log = io.open(os.getenv("HOME") .. "/done.log", "a")
+          log:write(task.subject, "\n")
+          log:close()
+        end,
+        task_new = {
+          run = function(task)
+            if task.path == "" then
+              error("file it under a folder")
+            end
+          end,
+          on_failure = "refuse",
+        },
+      },
+    }
+
 ## Limits and errors
 
-One filter has 5 seconds in total for a whole listing. dam checks the time while Lua code runs.
+One filter has 5 seconds in total for a whole listing. One hook call has 5 seconds.
+dam checks the time while Lua code runs.
 The limit covers code in a coroutine, and a `pcall` or `xpcall` cannot catch it for long.
 It cannot stop a blocked external command, such as one started with `os.execute`. It notices the
 overrun only when that command returns.
@@ -162,7 +206,7 @@ backtracks for a long time.
 It cannot stop a `__gc` method, an `xpcall` handler that runs as dam stops the code, or a
 `__close` method that runs as dam stops the code.
 
-What `match` prints, with `print` or `io.write`, goes to standard error.
+What `match` or a hook prints, with `print` or `io.write`, goes to standard error.
 
 A filter that raises an error, runs over, or returns another value fails the command with exit 1.
 For you, the message names the filter, the file and the line, then Lua's own message:

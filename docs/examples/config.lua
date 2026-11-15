@@ -10,4 +10,7 @@ return {
   filter = {
     today = { query = "due:today | overdue" },
   },
+  -- hook = {
+  --   task_done = function(task) print("done: " .. task.subject) end,
+  -- },
 }

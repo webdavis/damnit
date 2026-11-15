@@ -58,6 +58,8 @@ fn every_example_uncommented_at_once_is_a_working_config() {
         Some("due:today | overdue")
     );
     assert!(config.filter("undated").unwrap().rule.runs_a_function());
+    let done = config.hook(dam_application::HookEvent::TaskDone).unwrap();
+    assert_eq!(done.on_failure(), dam_application::OnFailure::Warn);
 }
 
 #[test]

@@ -80,7 +80,7 @@ fn order(a: &Object, b: &Object, today: Date) -> Ordering {
 }
 
 mod by_function;
-mod log_by_object;
+pub(crate) mod log_by_object;
 
 #[cfg(test)]
 mod access_tests;

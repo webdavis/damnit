@@ -13,6 +13,7 @@ mod edit_text;
 mod filter_text;
 mod given_key;
 mod given_prefix;
+mod hook_text;
 mod item_text;
 mod misread_text;
 mod misuse;
@@ -25,6 +26,7 @@ mod use_case_text;
 
 pub(crate) use config_text::ConfigReason;
 use config_text::ConfigText;
+pub(crate) use hook_text::HookText;
 pub(crate) use misuse::{Misuse, Problem};
 use refusal_oids::refusal_oids;
 pub(crate) use secrets_tightened_text::SecretsTightenedText;

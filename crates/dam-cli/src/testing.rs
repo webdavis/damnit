@@ -2,7 +2,9 @@ use std::cell::RefCell;
 
 use dam_adapters::Interrupt;
 use dam_application::Config;
-use dam_application::testing::{FakeFilterFunctions, FixedClock, FixedRandom, MemoryStore};
+use dam_application::testing::{
+    FakeFilterFunctions, FakeHooks, FixedClock, FixedRandom, MemoryStore,
+};
 use dam_domain::Categories;
 use jiff::civil::date;
 
@@ -38,6 +40,7 @@ pub(crate) fn context() -> Context {
         }),
         credentials: Box::new(MissingCredentials),
         filter_functions: Box::new(FakeFilterFunctions::default()),
+        hooks: Box::new(FakeHooks::default()),
         editor: Some(Box::new(ScriptedEditor::saving_unchanged())),
         prompt: Box::new(ScriptedPrompt {
             choices: RefCell::new(vec![]),

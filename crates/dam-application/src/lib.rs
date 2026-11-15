@@ -26,11 +26,11 @@ pub use ports::{
     CommitRepository, ComputeFailure, ConfigError, ConfigFile, Conflict, ConflictRepository,
     CredentialError, CredentialSource, DayRepository, Declared, DroppedBecause, EditFault,
     EditedTable, Expected, FilterFunctions, FollowOn, FollowOnRepository, FunctionFailure,
-    FunctionFault, HelperError, HelperLauncher, Histories, History, IdRepository, ItemRepository,
-    LoadedConfig, Misread, MissingTask, Notice, NoticeRepository, ObjectRepository, ObjectState,
-    OriginRepository, Place, Randomness, RemoteHelper, RemoteName, RemoteNameError,
-    RemoteTrackingRepository, SecretsTightened, StageRepository, Store, StoreError, Transactional,
-    Uneditable,
+    FunctionFault, HelperError, HelperLauncher, Histories, History, HookFailure, HookWarnings,
+    Hooks, IdRepository, ItemRepository, LoadedConfig, Misread, MissingTask, Notice,
+    NoticeRepository, ObjectRepository, ObjectState, OriginRepository, Place, Randomness,
+    RemoteHelper, RemoteName, RemoteNameError, RemoteTrackingRepository, SecretsTightened,
+    StageRepository, Store, StoreError, Transactional, Uneditable,
 };
 pub use remote::{
     IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, PushOutcome,

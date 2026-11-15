@@ -8,6 +8,7 @@ pub(crate) mod connect;
 pub(crate) mod day;
 pub(crate) mod edit;
 pub(crate) mod freshness;
+pub(crate) mod hooks;
 pub(crate) mod items;
 pub(crate) mod last_seen;
 pub(crate) mod list;

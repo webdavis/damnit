@@ -34,6 +34,7 @@ impl Refusal {
             Refusal::NotGrantable(_) => "not_grantable",
             Refusal::NoSuchToken(_) => "no_such_token",
             Refusal::NoSuchSetting(_) => "no_such_setting",
+            Refusal::HookRefused(_) => "hook_refused",
             Refusal::Item(refusal) => refusal.name(),
             Refusal::PulledCommit(_) => "pulled_commit",
             Refusal::NotInCommit { .. } => "not_in_commit",

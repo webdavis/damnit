@@ -5,6 +5,7 @@ use dam_domain::{Blockers, Oid, Tracked};
 use dam_application::Refusal;
 
 use super::commit_text::{not_in_commit, pulled_commit};
+use super::hook_text::HookText;
 use super::item_text::ItemText;
 use super::token_text::TokenText;
 
@@ -139,6 +140,9 @@ impl fmt::Display for RefusalText<'_> {
                     f,
                     "no setting named {key}; run dam config list to see the keys"
                 )
+            }
+            Refusal::HookRefused(failure) => {
+                write!(f, "{}; the command changed nothing", HookText(failure))
             }
             Refusal::Item(refusal) => write!(f, "{}", ItemText(refusal)),
             Refusal::PulledCommit(id) => pulled_commit(f, id),

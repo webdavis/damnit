@@ -5,7 +5,9 @@ mod evaluate;
 mod file;
 mod filter;
 mod filter_function;
+mod functions;
 mod hook;
+mod hook_function;
 mod port;
 mod printed;
 mod remote;
@@ -18,7 +20,7 @@ mod write;
 
 pub use create::STARTER_CONFIG;
 pub use file::LuaConfigFile;
-pub use filter_function::history_document;
+pub use functions::history_document;
 
 #[cfg(test)]
 mod tests;

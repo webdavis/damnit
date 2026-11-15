@@ -150,6 +150,6 @@ fn keeps_within(
         "return {{\n  filter = {{\n    probe = {{\n      match = function(task, dam)\n{match_body}\n      end,\n    }},\n  }},\n}}\n"
     );
     let folder = config(&text);
-    let loaded = folder.file().limiting_filters_to(limit).load().unwrap();
+    let loaded = folder.file().limiting_functions_to(limit).load().unwrap();
     loaded.filter_functions.keeps("probe", objects, histories)
 }

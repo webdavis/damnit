@@ -6,6 +6,7 @@ mod environment;
 mod filter_functions;
 mod follow_ons;
 mod helper;
+mod hooks;
 mod ids;
 mod items;
 mod notices;
@@ -26,6 +27,7 @@ pub use follow_ons::{FollowOn, FollowOnRepository, ObjectState};
 pub use helper::{
     ComputeFailure, CredentialError, CredentialSource, HelperError, HelperLauncher, RemoteHelper,
 };
+pub use hooks::{HookFailure, HookWarnings, Hooks};
 pub use ids::IdRepository;
 pub use items::ItemRepository;
 pub use notices::{DroppedBecause, MissingTask, Notice, NoticeRepository};

@@ -281,6 +281,20 @@ A filter holds query text, a Lua `match` function, or both. `docs/lua.md` descri
 `{"categories": [{"name": "effort", "values": ["light", "admin", "deep"], "exclusive": true}]}`
 under `--json`, an empty array when nothing is declared.
 
+## Hooks
+
+A hook in `config.lua` runs when your own `dam new`, `dam edit` or `dam done` changes a task:
+
+    hook = {
+      task_done = function(task)
+        print("done: " .. task.subject)
+      end,
+    }
+
+The events are `task_new`, `task_changed` and `task_done`. What a hook prints goes to standard
+error. A failing hook warns, or with `on_failure = "refuse"` stops the command, which then changes
+nothing and exits 4. `docs/lua.md` describes hooks.
+
 ## Reading it from a program
 
 A flag is named after the key it writes: a value `dam show --json` prints under `due` goes back
@@ -491,7 +505,8 @@ names them.
 standard output, with exit 1 when a check finds an issue, and no error document.
 
 Standard error carries that one document and nothing else, so parse the whole stream; a run that
-succeeds writes nothing there. A mistyped command line also carries `usage`, which says what was
+succeeds writes nothing there, unless a hook prints or warns. A `hook_refused` error carries
+`hook`, the event whose hook refused. A mistyped command line also carries `usage`, which says what was
 wrong with it. An error about an id you gave, such as `no_such_object`, also carries `prefix`, that
 id as the message shows it: the text you gave, or the first seven characters of a whole id. Without
 those flags you get the plain `dam: <message>` line, or clap's usage text for a command line it
