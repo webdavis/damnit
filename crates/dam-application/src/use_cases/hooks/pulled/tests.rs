@@ -1,3 +1,4 @@
+mod committed;
 mod edits;
 mod runs;
 mod skips;
@@ -5,15 +6,19 @@ mod warnings;
 
 use dam_domain::{Completion, Object, Oid, Task};
 
-use crate::config::{Config, PulledHook};
+use crate::config::{Config, PulledChanges, PulledHook};
 use crate::ports::{ObjectRepository, RemoteTrackingRepository};
 use crate::remote::{IncomingObject, PullOutcome};
 use crate::testing::{Scenario, config, oid, pulling, remotes_launched_by, todoist};
 use crate::use_cases::pull::PullReport;
 
 fn pulled_hooked() -> Scenario {
+    pulled_hooked_leaving(None)
+}
+
+fn pulled_hooked_leaving(changes: Option<PulledChanges>) -> Scenario {
     let s = Scenario::default().drawing_from(42).configured(Config {
-        task_pulled: Some(PulledHook),
+        task_pulled: Some(PulledHook { changes }),
         ..config()
     });
     s.store.set_sync_token(&todoist(), Some("s0")).unwrap();

@@ -6,7 +6,7 @@ use crate::ports::{
 };
 use crate::use_cases::edit::EditFields;
 
-fn requesting(s: &Scenario, subject: &str) {
+pub(super) fn requesting(s: &Scenario, subject: &str) {
     *s.fixture.hooks.requesting.borrow_mut() = Some(EditRequest {
         json: String::new(),
         file: PathBuf::from("config.lua"),
@@ -30,7 +30,7 @@ fn failing(s: &Scenario) {
 
 #[test]
 fn an_edit_is_left_as_a_working_change_on_top_of_the_pull() {
-    let s = pulled_hooked();
+    let s = pulled_hooked_leaving(Some(PulledChanges::Working));
     tracked(&s, 1, "old");
     requesting(&s, "filed");
     let report = pull_objects(&s, vec![incoming("new", "r1")]);
@@ -43,7 +43,7 @@ fn an_edit_is_left_as_a_working_change_on_top_of_the_pull() {
 
 #[test]
 fn a_failure_drops_only_that_tasks_edit_and_the_pull_is_kept() {
-    let s = pulled_hooked();
+    let s = pulled_hooked_leaving(Some(PulledChanges::Working));
     failing(&s);
     requesting(&s, "filed");
     let report = pull_objects(&s, vec![incoming("a", "r1"), incoming("b", "r2")]);
@@ -68,7 +68,7 @@ fn a_failure_drops_only_that_tasks_edit_and_the_pull_is_kept() {
 
 #[test]
 fn an_edit_that_changes_nothing_counts_as_no_change() {
-    let s = pulled_hooked();
+    let s = pulled_hooked_leaving(Some(PulledChanges::Working));
     requesting(&s, "a");
     let report = pull_objects(&s, vec![incoming("a", "r1")]);
     let run = report.task_pulled.unwrap();

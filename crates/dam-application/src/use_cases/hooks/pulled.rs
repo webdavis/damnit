@@ -1,8 +1,8 @@
-use dam_domain::{Object, Oid};
+use dam_domain::{CommitId, Object, Oid};
 
 use super::edit_request::Edited;
 use crate::access::Owner;
-use crate::config::HookEvent;
+use crate::config::{HookEvent, PulledChanges};
 use crate::errors::UseCaseError;
 use crate::ports::{HookFailure, Pull, PulledChange, RemoteName};
 use crate::service::Dam;
@@ -13,6 +13,7 @@ pub struct PulledHookRun {
     pub changed: usize,
     pub failed: usize,
     pub not_reached: usize,
+    pub commit: Option<CommitId>,
 }
 
 pub(crate) struct PulledTask {
@@ -47,9 +48,13 @@ impl Dam<'_> {
         remote: &RemoteName,
         pulled: Vec<PulledTask>,
     ) -> Result<Option<PulledHookRun>, UseCaseError> {
-        if self.config.task_pulled.is_none() || pulled.is_empty() {
+        let Some(hook) = self.config.task_pulled.filter(|_| !pulled.is_empty()) else {
             return Ok(None);
-        }
+        };
+        let before = match hook.changes() {
+            PulledChanges::Committed => Some(BeforeTheHook::of(self.store)?),
+            PulledChanges::Working => None,
+        };
         let as_owner = Dam {
             access: &Owner,
             ..*self
@@ -73,6 +78,9 @@ impl Dam<'_> {
             }
             run.ran += 1;
         }
+        if let Some(before) = &before {
+            run.commit = self.commit_hook_edits(remote, before)?;
+        }
         Ok(Some(run))
     }
 
@@ -87,6 +95,10 @@ impl Dam<'_> {
         }
     }
 }
+
+mod committed;
+
+use committed::BeforeTheHook;
 
 #[cfg(test)]
 mod tests;

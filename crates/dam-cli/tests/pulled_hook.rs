@@ -48,6 +48,14 @@ fn subjects(sb: &Sandbox) -> Vec<String> {
         .collect()
 }
 
+fn log(sb: &Sandbox) -> Vec<Value> {
+    let (ok, out, err) = sb.dam(&["log", "--json"]);
+    assert!(ok, "{err}");
+    let log: Value = serde_json::from_str(&out).unwrap();
+    assert_matches_schema(&log, "log.schema.json");
+    log["commits"].as_array().unwrap().clone()
+}
+
 #[test]
 fn the_pulled_hook_edits_what_a_later_pull_brings_and_the_answer_counts_it() {
     let _guard =
@@ -61,13 +69,32 @@ fn the_pulled_hook_edits_what_a_later_pull_brings_and_the_answer_counts_it() {
     );
     let answer: Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_matches_schema(&answer, "pull.schema.json");
+    let commit = log(&sb)[0].clone();
+    assert_eq!(commit["message"], "task_pulled after pull from fake");
+    assert_eq!(
+        commit["changes"][0]["details"]["meta"]["hook"],
+        "task_pulled"
+    );
     assert_eq!(
         answer["remotes"][0]["task_pulled"],
-        json!({"ran": 1, "changed": 1, "failed": 0, "not_reached": 0})
+        json!({"ran": 1, "changed": 1, "failed": 0, "not_reached": 0, "commit": commit["id"]})
     );
     let mut listed = subjects(&sb);
     listed.sort();
     assert_eq!(listed, ["call Bob today", "water the plants"]);
+}
+
+#[test]
+fn the_pulled_hook_set_to_working_leaves_its_edit_uncommitted() {
+    let _guard = support::guard("the_pulled_hook_set_to_working_leaves_its_edit_uncommitted");
+    let sb = hooked(&format!("{{ run = {FILING}, changes = 'working' }}"));
+    let answer = pulled(&sb);
+    assert_eq!(
+        answer["remotes"][0]["task_pulled"],
+        json!({"ran": 1, "changed": 1, "failed": 0, "not_reached": 0})
+    );
+    assert_eq!(log(&sb).len(), 2);
+    assert!(subjects(&sb).contains(&"call Bob today".to_string()));
 }
 
 #[test]
@@ -98,4 +125,21 @@ fn a_failing_pulled_hook_warns_once_and_the_pull_is_kept() {
     let answer: Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_eq!(answer["remotes"][0]["created"], 1, "{answer}");
     assert_eq!(answer["remotes"][0]["task_pulled"]["failed"], 1, "{answer}");
+}
+
+#[test]
+fn a_pull_names_in_plain_text_the_commit_its_pulled_hook_made() {
+    let _guard = support::guard("a_pull_names_in_plain_text_the_commit_its_pulled_hook_made");
+    let sb = hooked(FILING);
+    let (ok, out, err) = sb.dam(&["pull"]);
+    assert!(ok, "{err}");
+    let commit = log(&sb)[0]["id"].as_str().unwrap().to_string();
+    assert_eq!(
+        out,
+        format!(
+            "fake: 1 new, 0 updated, 0 unchanged, 0 conflicts, 0 removed upstream\n  \
+             task_pulled: 1 ran, 1 changed, 0 failed, 0 not reached, commit {}\n",
+            &commit[..7]
+        )
+    );
 }

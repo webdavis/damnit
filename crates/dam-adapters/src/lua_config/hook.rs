@@ -1,11 +1,13 @@
-use dam_application::{Expected, HookConfig, HookEvent, Misread, OnFailure, PulledHook};
+use dam_application::{
+    Expected, HookConfig, HookEvent, Misread, OnFailure, PulledChanges, PulledHook,
+};
 use mlua::Value;
 
 use super::strict::StrictMap;
 
 pub(crate) const HOOK: [&str; 4] = event_names();
 pub(crate) const HOOK_TABLE: [&str; 2] = ["run", "on_failure"];
-pub(crate) const PULLED_HOOK_TABLE: [&str; 1] = ["run"];
+pub(crate) const PULLED_HOOK_TABLE: [&str; 2] = ["run", "changes"];
 
 const PULLED: &str = HookEvent::TaskPulled.as_str();
 
@@ -50,8 +52,8 @@ fn read_hook(hooks: &StrictMap, event: HookEvent, value: &Value) -> Result<HookC
 }
 
 fn read_pulled_hook(hooks: &StrictMap, value: &Value) -> Result<PulledHook, Misread> {
-    match value {
-        Value::Function(_) => {}
+    let changes = match value {
+        Value::Function(_) => None,
         Value::Table(_) => {
             let hook = hooks.child(PULLED, value)?;
             if hook.get("on_failure").is_some() {
@@ -62,10 +64,22 @@ fn read_pulled_hook(hooks: &StrictMap, value: &Value) -> Result<PulledHook, Misr
             }
             hook.only(&PULLED_HOOK_TABLE)?;
             read_run(&hook)?;
+            read_changes(&hook)?
         }
         _ => return Err(hooks.wrong(PULLED, Expected::FunctionOrTable)),
-    }
-    Ok(PulledHook)
+    };
+    Ok(PulledHook { changes })
+}
+
+fn read_changes(hook: &StrictMap) -> Result<Option<PulledChanges>, Misread> {
+    let Some(written) = hook.string("changes")? else {
+        return Ok(None);
+    };
+    PulledChanges::ALL
+        .into_iter()
+        .find(|choice| choice.as_str() == written)
+        .map(Some)
+        .ok_or_else(|| hook.wrong("changes", Expected::CommittedOrWorking))
 }
 
 fn read_run(hook: &StrictMap) -> Result<(), Misread> {

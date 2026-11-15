@@ -87,6 +87,11 @@
               "not_reached": {
                 "type": "integer",
                 "minimum": 0
+              },
+              "commit": {
+                "description": "The commit holding the hook's changes, when changes is committed and a change was made.",
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
               }
             }
           }

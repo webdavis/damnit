@@ -1,16 +1,26 @@
-use dam_application::{Config, HookConfig, HookEvent};
+use dam_application::{Config, HookConfig, HookEvent, PulledHook};
 
 use super::match_function::MatchFunction;
 use super::setting::{Setting, Value};
 
 pub(super) fn hooks(config: &Config) -> Vec<(String, Setting)> {
-    let pulled = config.task_pulled.map(|_| {
-        named(
-            HookEvent::TaskPulled.as_str(),
-            vec![("run".to_string(), Setting::Function(MatchFunction))],
-        )
-    });
+    let pulled = config.task_pulled.as_ref().map(pulled_hook);
     config.hooks.iter().map(hook).chain(pulled).collect()
+}
+
+fn pulled_hook(hook: &PulledHook) -> (String, Setting) {
+    let changes = Value::Text(hook.changes().as_str().to_string());
+    let changes = match hook.changes {
+        Some(_) => Setting::set(changes),
+        None => Setting::by_default(changes),
+    };
+    named(
+        HookEvent::TaskPulled.as_str(),
+        vec![
+            ("run".to_string(), Setting::Function(MatchFunction)),
+            ("changes".to_string(), changes),
+        ],
+    )
 }
 
 fn hook(hook: &HookConfig) -> (String, Setting) {

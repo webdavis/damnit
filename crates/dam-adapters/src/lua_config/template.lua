@@ -65,7 +65,8 @@ return {
   -- table of fields to set on it, as dam edit --request takes them. A failing hook warns,
   -- or with on_failure = "refuse" the command changes nothing. What it prints goes to standard
   -- error. task_pulled runs after a pull for each task it created or changed, as
-  -- run(task, before, pull), never on the first pull from a remote.
+  -- run(task, before, pull), never on the first pull from a remote. dam commits what it
+  -- changes, or with changes = "working" leaves it as working changes.
   --hook = {
     --task_done = function(task, dam) print("done: " .. task.subject) end,
   --},
