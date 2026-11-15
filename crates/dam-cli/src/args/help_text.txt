@@ -1,5 +1,5 @@
 dam: about = Track tasks and events, staged and committed like git
-dam json: help = Print JSON, and a failure as one error document on stderr; dam doctor and dam config validate print only their report, to stdout
+dam json: help = Print JSON, and a failure as one error document on stderr; dam doctor, dam test and dam config validate print only their report, to stdout
 dam toon: help = Print TOON, a compact form for language models; errors as --json
 dam config: help = Read the config from FILE; secrets.lua beside it holds the secrets. Default: ${XDG_CONFIG_HOME:-~/.config}/dam/config.lua
 dam store: help = Open the store at FILE. Default: ${XDG_DATA_HOME:-~/.local/share}/dam/dam.db
@@ -162,3 +162,13 @@ Examples:
   dam doctor config
   dam doctor --json
 dam doctor checks: help = Run only these checks. Default: every check
+dam test: about = Make each part do its real job once and say whether it worked
+dam test: after_help = It contacts each remote, and runs credential functions, which may prompt.
+It writes nothing: not the store, not the config, not a remote.
+It exits 1 when a part finds an issue, and prints the report to stdout either way.
+
+Examples:
+  dam test
+  dam test credentials
+  dam test --json
+dam test parts: help = Test only these parts. Default: every part

@@ -8,6 +8,7 @@ mod planning;
 mod reading;
 mod remotes;
 mod staging;
+mod test;
 mod tokens;
 mod values;
 mod writing;
@@ -27,6 +28,7 @@ pub(crate) use remotes::{PullArgs, PushArgs, RemoteArgs, RemoteCommand, ResolveA
 pub(crate) use staging::{
     AddArgs, CommitArgs, DiffArgs, ResetArgs, RestoreArgs, ShowArgs, StatusArgs,
 };
+pub(crate) use test::{PartName, TestArgs};
 pub(crate) use tokens::{CreateArgs, TokenArgs, TokenCommand};
 pub(crate) use writing::{DoneArgs, MvArgs, RmArgs};
 
@@ -97,6 +99,18 @@ Examples:
   dam doctor --json"
     )]
     Doctor(DoctorArgs),
+    #[command(
+        about = "Make each part do its real job once and say whether it worked",
+        after_help = "It contacts each remote, and runs credential functions, which may prompt.
+It writes nothing: not the store, not the config, not a remote.
+It exits 1 when a part finds an issue, and prints the report to stdout either way.
+
+Examples:
+  dam test
+  dam test credentials
+  dam test --json"
+    )]
+    Test(TestArgs),
 }
 
 #[cfg(test)]

@@ -24,6 +24,7 @@ mod show;
 mod stage;
 mod status;
 mod sync;
+pub(crate) mod test;
 pub(crate) mod token;
 mod token_warnings;
 
@@ -70,7 +71,8 @@ pub(crate) fn dispatch_a_verb_that_opens_the_store(
         | Command::Filter(_)
         | Command::Token(_)
         | Command::Config(_)
-        | Command::Doctor(_) => {
+        | Command::Doctor(_)
+        | Command::Test(_) => {
             unreachable!("answered before the store")
         }
     }

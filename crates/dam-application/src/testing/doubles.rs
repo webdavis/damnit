@@ -87,6 +87,9 @@ impl RemoteHelper for ScriptedHelper {
         self.pushed.borrow_mut().extend(mutations);
         Ok(answer)
     }
+    fn login(&mut self) -> Result<(), HelperError> {
+        Ok(())
+    }
     fn declared_on_the_wire(&self, mutation: &RemoteMutation) -> Result<Declared, HelperError> {
         (self.declare)(mutation)
     }
@@ -135,5 +138,6 @@ pub fn task_caps() -> RemoteCapabilities {
         credentials: vec!["api_token".into()],
         incremental: true,
         removes_only_empty_containers: false,
+        answers_login: false,
     }
 }

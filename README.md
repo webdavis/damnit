@@ -79,6 +79,14 @@ Its `pushes` check warns of changes still owed to a remote, or sent without an a
 `dam config validate` prints what `dam doctor config` prints, with `command` set to
 `config validate`.
 
+`dam test` makes each part do its real job once and says whether it worked.
+It contacts each remote and runs credential functions, which may prompt.
+`dam test <part>...` runs only the named parts. The one part today is `credentials`.
+Its `credentials` part signs in to each remote and writes nothing.
+`dam test` prints the report `dam doctor` prints, with `command` set to `test`.
+It exits 1 when a part finds an issue.
+`docs/schemas/test.schema.json` is the schema of its `--json` answer.
+
 `stale` makes reads pull first when the last pull is older than that. A failed pull that a read
 started leaves a notice in `dam status`, and the read still answers. `deadline` (default `"60s"`)
 is the longest the helper may stay silent; past it `dam` kills the helper and exits 1. A pull
@@ -461,8 +469,8 @@ output:
 failure with rule `ambiguous_prefix`. `oids` names the objects the message names, in the order it
 names them.
 
-`dam doctor` and `dam config validate` are the exception: their report goes to standard output,
-with exit 1 when a check finds an issue, and no error document.
+`dam doctor`, `dam test` and `dam config validate` are the exception: their report goes to
+standard output, with exit 1 when a check finds an issue, and no error document.
 
 Standard error carries that one document and nothing else, so parse the whole stream; a run that
 succeeds writes nothing there. A mistyped command line also carries `usage`, which says what was

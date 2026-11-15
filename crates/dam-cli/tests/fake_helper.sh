@@ -13,7 +13,15 @@ remember() {
 base='{"oid":"","remote_id":"r1","kind":"task","subject":"","body":"","path":"","labels":[],"depends":[],"reminders":[],"recurrence":null,"task":{"done":false,"priority":2,"due":null,"deadline":null,"event":null},"event":null}'
 while IFS= read -r line; do
   case "$line" in
-    *'"capabilities"'*) printf '{"protocol":1,"kinds":["task"],"fields":["subject","body","path","labels","done","priority","due","deadline"],"credentials":["api_token"],"incremental":false}\n' ;;
+    *'"capabilities"'*) printf '{"protocol":1,"kinds":["task"],"fields":["subject","body","path","labels","done","priority","due","deadline"],"credentials":["api_token"],"incremental":false,"answers_login":true}\n' ;;
+    *'"cmd":"login"'*)
+      variable="DAM_$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]' | tr -c 'A-Z0-9' _)_API_TOKEN"
+      eval "token=\${$variable:-}"
+      case "$token" in
+        '') printf '{"error":"%s is not set"}\n' "$variable" ;;
+        refused*) printf '{"error":"fake answered 401: token %s is not valid"}\n' "$token" ;;
+        *) printf '{"signed_in":true}\n' ;;
+      esac ;;
     *'"pull"'*)
       objects="$upstream"
       if [ -e "$remote.kept" ]; then

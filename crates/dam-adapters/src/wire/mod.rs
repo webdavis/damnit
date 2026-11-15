@@ -26,6 +26,7 @@ pub fn capabilities_from_wire(caps: &Capabilities) -> RemoteCapabilities {
         credentials: caps.credentials.clone(),
         incremental: caps.incremental,
         removes_only_empty_containers: caps.removes_only_empty_containers,
+        answers_login: caps.answers_login,
     }
 }
 
