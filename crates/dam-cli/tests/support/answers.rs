@@ -140,6 +140,7 @@ pub fn answers(command: &str) -> Option<Vec<serde_json::Value>> {
         )],
         "token list" => vec![json_of(&with_token(), &["token", "list"])],
         "doctor" => vec![json_of(&with_token(), &["doctor"])],
+        "test" => vec![json_of(&Sandbox::new(), &["test"])],
         "config list" => vec![json_of(&small_config(), &["config", "list"])],
         "config get" => {
             let sb = small_config();

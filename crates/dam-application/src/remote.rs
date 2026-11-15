@@ -9,6 +9,7 @@ pub struct RemoteCapabilities {
     pub credentials: Vec<String>,
     pub incremental: bool,
     pub removes_only_empty_containers: bool,
+    pub answers_login: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

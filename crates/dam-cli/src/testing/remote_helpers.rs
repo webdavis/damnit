@@ -34,6 +34,7 @@ impl RemoteHelper for EchoHelper {
             credentials: vec![],
             incremental: false,
             removes_only_empty_containers: false,
+            answers_login: false,
         })
     }
     fn pull(&mut self, _: Option<&str>) -> Result<PullOutcome, HelperError> {
@@ -53,6 +54,9 @@ impl RemoteHelper for EchoHelper {
             outcomes,
             stopped_by: None,
         })
+    }
+    fn login(&mut self) -> Result<(), HelperError> {
+        Ok(())
     }
     fn declared_on_the_wire(&self, mutation: &RemoteMutation) -> Result<Declared, HelperError> {
         dam_adapters::declared_on_the_wire(mutation)

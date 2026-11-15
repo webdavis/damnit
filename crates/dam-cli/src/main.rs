@@ -86,6 +86,10 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     let meta = cli.meta.into_iter().collect();
     gate::refuse_any_token_to_an_owner_only_verb(presented_token.is_some(), &cli.command)?;
     let store_path = cli.store.unwrap_or_else(dam_adapters::default_store_path);
+    if let Command::Test(args) = &cli.command {
+        let launcher = ProcessLauncher::from_env(interrupt.clone());
+        return commands::test::print(&args.parts, &config_file, &launcher, format, color);
+    }
     if let Some(asked) = commands::doctor::asked(&cli.command) {
         let launcher = ProcessLauncher::from_env(interrupt.clone());
         let machine = commands::doctor::Machine::new(&config_file, &store_path, &launcher);

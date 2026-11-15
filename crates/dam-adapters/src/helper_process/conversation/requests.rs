@@ -5,7 +5,7 @@ use dam_application::{
     Declared, HelperError, PullOutcome, PushOutcome, RemoteCapabilities, RemoteHelper,
     RemoteMutation,
 };
-use dam_protocol::{Capabilities, PullResponse, Reply, Request, write_line};
+use dam_protocol::{Capabilities, LoginResponse, PullResponse, Reply, Request, write_line};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
@@ -97,6 +97,14 @@ impl RemoteHelper for ProcessHelper {
             early_answers: true,
         })?;
         Ok(self.read_answers_as_they_come())
+    }
+
+    fn login(&mut self) -> Result<(), HelperError> {
+        let answer: LoginResponse = self.call(&Request::Login)?;
+        match answer.signed_in {
+            true => Ok(()),
+            false => Err(HelperError::Remote("the helper did not sign in".into())),
+        }
     }
 
     fn declared_on_the_wire(&self, mutation: &RemoteMutation) -> Result<Declared, HelperError> {

@@ -8,7 +8,7 @@
   "additionalProperties": false,
   "properties": {
     "version": { "type": "string", "description": "The version of this dam." },
-    "command": { "type": "string", "enum": ["doctor", "config validate"], "description": "The command that produced the report." },
+    "command": { "type": "string", "enum": ["doctor", "config validate", "test"], "description": "The command that produced the report." },
     "checks": {
       "type": "array",
       "description": "Each check that ran, in the order the report shows them.",
@@ -26,7 +26,7 @@
       "required": ["name", "result", "detail", "advice", "rows"],
       "additionalProperties": false,
       "properties": {
-        "name": { "type": "string", "enum": ["config", "database", "helpers", "credentials", "pushes"], "description": "The check, by the name dam doctor takes." },
+        "name": { "type": "string", "enum": ["config", "database", "helpers", "credentials", "pushes"], "description": "The check, by the name dam doctor takes, or the part, by the name dam test takes." },
         "result": { "type": "string", "enum": ["ok", "warning", "issue", "not_run"], "description": "What the check found; not_run when it could not run." },
         "detail": { "type": "string", "description": "What the check found, in words." },
         "advice": { "type": ["string", "null"], "description": "What to do next, or null." },

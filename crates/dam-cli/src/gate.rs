@@ -53,6 +53,7 @@ pub(crate) fn need(command: &Command) -> Need {
             Some(ConfigCommand::Validate) => Need::OwnerOnly("config validate"),
         },
         Command::Doctor(_) => Need::OwnerOnly("doctor"),
+        Command::Test(_) => Need::OwnerOnly("test"),
     }
 }
 
