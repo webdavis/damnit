@@ -13,30 +13,34 @@ use crate::use_cases::prefix::Named;
 impl Dam<'_> {
     pub fn add(&self, named: &[Named]) -> Result<Added, UseCaseError> {
         atomically(self.store, || {
-            let mut added = Added::default();
-            let mut oids = Vec::new();
-            for name in named {
-                match name {
-                    Named::Object(oid) => {
-                        refuse_unknown(self.store, oid)?;
-                        oids.push(oid.clone());
+            self.entering(None, || {
+                let mut added = Added::default();
+                let mut oids = Vec::new();
+                for name in named {
+                    match name {
+                        Named::Object(oid) => {
+                            refuse_unknown(self.store, oid)?;
+                            oids.push(oid.clone());
+                        }
+                        Named::Item(hash) => added.extend(self.accept(hash)?),
                     }
-                    Named::Item(hash) => added.extend(self.accept(hash)?),
                 }
-            }
-            added.staged.extend(self.stage_each(&oids)?);
-            Ok(added)
+                added.staged.extend(self.stage_each(&oids)?);
+                Ok(added)
+            })
         })
     }
 
     pub fn add_all(&self) -> Result<Added, UseCaseError> {
         atomically(self.store, || {
-            let mut added = self.accept_every_item_that_applies()?;
-            let list: Vec<Oid> = working_and_ever_committed_oids(self.store)?
-                .into_iter()
-                .collect();
-            added.staged.extend(self.stage_each(&list)?);
-            Ok(added)
+            self.entering(None, || {
+                let mut added = self.accept_every_item_that_applies()?;
+                let list: Vec<Oid> = working_and_ever_committed_oids(self.store)?
+                    .into_iter()
+                    .collect();
+                added.staged.extend(self.stage_each(&list)?);
+                Ok(added)
+            })
         })
     }
 

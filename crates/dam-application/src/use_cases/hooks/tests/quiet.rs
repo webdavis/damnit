@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use dam_domain::Permission::{TaskChange, TaskCreate};
-use dam_domain::{Object, Path, When};
+use dam_domain::{CallerId, Object, Path, When};
 use jiff::civil::date;
 
 use super::{every_hook, new_task, ran, retitled};
@@ -96,5 +96,21 @@ fn revert_runs_no_hook() {
     s.fixture.hooks.ran.borrow_mut().clear();
     let newest = s.store.log().unwrap()[0].id.to_string();
     s.dam().revert(&newest, &[]).unwrap();
+    assert_eq!(ran(&s), []);
+}
+
+#[test]
+fn rm_by_id_runs_no_hook_for_a_task_that_depended_on_the_one_removed() {
+    let s = every_hook();
+    let mut named = new_task("call the dentist");
+    named.id = Some(CallerId::parse("dentist").unwrap());
+    let dentist = s.dam().new_task(named).unwrap();
+    let mut pack = task_in(2, "pack", "home");
+    pack.base.depends = vec![dentist.oid().clone()];
+    s.committed(Object::Task(pack));
+    s.fixture.hooks.ran.borrow_mut().clear();
+    s.dam()
+        .remove_by_id(&CallerId::parse("dentist").unwrap())
+        .unwrap();
     assert_eq!(ran(&s), []);
 }

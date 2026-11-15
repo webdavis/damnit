@@ -283,7 +283,7 @@ under `--json`, an empty array when nothing is declared.
 
 ## Hooks
 
-A hook in `config.lua` runs when your own `dam new`, `dam edit` or `dam done` changes a task:
+A hook in `config.lua` runs when your `dam new`, `dam edit`, `dam done` or `dam add` changes a task:
 
     hook = {
       task_done = function(task)
