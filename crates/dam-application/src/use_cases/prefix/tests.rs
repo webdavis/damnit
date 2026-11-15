@@ -77,6 +77,7 @@ fn commit_numbered(last: u8) -> CommitRecord {
             x[19] = last;
         }),
         message: format!("c{last}"),
+        pulled: false,
         at: Timestamp::UNIX_EPOCH,
         changes: vec![],
     }

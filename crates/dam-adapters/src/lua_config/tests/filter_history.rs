@@ -14,6 +14,7 @@ fn postponed(task: &Object) -> CommitRecord {
     CommitRecord {
         id: CommitId::generate(&mut |b: &mut [u8]| b.fill(9)),
         message: "push it back".into(),
+        pulled: false,
         at: Timestamp::UNIX_EPOCH,
         changes: vec![Authored::by_owner(Change::Update {
             before: task.clone(),

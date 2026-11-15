@@ -16,6 +16,7 @@ fn record(b: u8, changes: Vec<Authored>) -> CommitRecord {
     CommitRecord {
         id: CommitId::generate(&mut |x| x.fill(b)),
         message: "m".into(),
+        pulled: false,
         at: jiff::Timestamp::UNIX_EPOCH,
         changes,
     }

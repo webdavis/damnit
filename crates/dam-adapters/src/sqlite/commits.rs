@@ -15,7 +15,7 @@ impl CommitRepository for SqliteStore {
     fn log(&self) -> Result<Vec<CommitRecord>, StoreError> {
         records(
             &self.conn,
-            "SELECT id, message, at FROM commits ORDER BY seq DESC",
+            "SELECT id, message, at, pulled FROM commits ORDER BY seq DESC",
             [],
         )
     }
@@ -23,7 +23,7 @@ impl CommitRepository for SqliteStore {
     fn unpushed(&self, remote: &RemoteName) -> Result<Vec<CommitRecord>, StoreError> {
         records(
             &self.conn,
-            "SELECT id, message, at FROM commits WHERE NOT EXISTS \
+            "SELECT id, message, at, pulled FROM commits WHERE NOT EXISTS \
              (SELECT 1 FROM pushed WHERE pushed.remote = ?1 AND pushed.commit_id = commits.id) \
              ORDER BY seq",
             params![remote.0],
@@ -81,16 +81,16 @@ fn records(
     heads_query: &str,
     params: impl rusqlite::Params,
 ) -> Result<Vec<CommitRecord>, StoreError> {
-    let heads: Vec<(String, String, String)> = conn
+    let heads: Vec<(String, String, String, bool)> = conn
         .prepare(heads_query)
         .map_err(sql)?
-        .query_map(params, |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+        .query_map(params, |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)))
         .map_err(sql)?
         .collect::<Result<_, _>>()
         .map_err(sql)?;
     heads
         .into_iter()
-        .map(|(id, message, at)| {
+        .map(|(id, message, at, pulled)| {
             let mut stmt = conn
                 .prepare(&format!(
                     "SELECT {AUTHORED_COLUMNS} FROM commit_changes WHERE commit_id = ?1 ORDER BY ord"
@@ -99,6 +99,7 @@ fn records(
             Ok(CommitRecord {
                 id: CommitId::parse(&id).map_err(|e| StoreError::Failed(e.to_string()))?,
                 message,
+                pulled,
                 at: at
                     .parse()
                     .map_err(|e: jiff::Error| StoreError::Failed(e.to_string()))?,

@@ -24,6 +24,7 @@ fn empty_commit() -> CommitRecord {
     CommitRecord {
         id: CommitId::generate(&mut |x| x.fill(7)),
         message: "m".into(),
+        pulled: false,
         at: jiff::Timestamp::UNIX_EPOCH,
         changes: Vec::new(),
     }

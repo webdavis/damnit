@@ -1,4 +1,4 @@
-use dam_domain::{Authored, Change, Object, Oid};
+use dam_domain::{Authored, Change, CommitRecord, Object, Oid};
 
 use super::PullReport;
 use super::classify::Incoming;
@@ -52,12 +52,15 @@ impl Dam<'_> {
         remote: &RemoteConfig,
         landed: Vec<Change>,
     ) -> Result<(), UseCaseError> {
-        let pulled = record(
-            self.clock,
-            self.random,
-            format!("pull from {}", remote.name.0),
-            landed.into_iter().map(Authored::by_owner).collect(),
-        );
+        let pulled = CommitRecord {
+            pulled: true,
+            ..record(
+                self.clock,
+                self.random,
+                format!("pull from {}", remote.name.0),
+                landed.into_iter().map(Authored::by_owner).collect(),
+            )
+        };
         self.store.commit(&pulled)?;
         self.store.mark_pushed(&remote.name, &pulled.id)?;
         Ok(())

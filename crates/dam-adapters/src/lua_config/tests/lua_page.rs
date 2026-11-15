@@ -98,6 +98,7 @@ fn the_page_names_every_field_dam_history_returns_and_no_other() {
     let commits = vec![CommitRecord {
         id: CommitId::generate(&mut |b: &mut [u8]| b.fill(9)),
         message: "both".into(),
+        pulled: false,
         at: Timestamp::UNIX_EPOCH,
         changes: vec![
             change_by_a_token(every_field_task()),
