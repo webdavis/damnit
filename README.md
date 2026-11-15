@@ -41,6 +41,7 @@ and never a secret. `secrets.lua` holds each remote's credentials and the tokens
 
 A credential is a string, or a function dam calls only when the remote is used. Any key dam does
 not know fails with exit 1. `docs/examples/` holds one of each file.
+What `config.lua` prints goes to standard error, so it never mixes with a command's answer.
 
 `dam config list` prints where the two files are and every setting dam is using, one row each: the
 key, then the value, with `(default)` after a value dam supplies. A remote's credential shows under

@@ -39,9 +39,8 @@ pub(super) fn while_the_top_level_runs<T>(
     run: impl FnOnce() -> mlua::Result<T>,
 ) -> mlua::Result<T> {
     let replacement = match error_text {
-        ErrorText::QuotesTheFile => return run(),
         ErrorText::NeverQuotesTheFile => DISCARD,
-        ErrorText::QuotesWhatItsCodeRaised => TO_STANDARD_ERROR,
+        ErrorText::QuotesTheFile | ErrorText::QuotesWhatItsCodeRaised => TO_STANDARD_ERROR,
     };
     let real: Table = lua.load(KEEP_THE_REAL_ONES).eval()?;
     lua.load(replacement).exec()?;
