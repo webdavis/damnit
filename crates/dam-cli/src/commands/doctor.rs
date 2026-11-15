@@ -1,23 +1,23 @@
-mod check;
 mod config_check;
 mod credentials;
 mod database;
 mod helpers;
 mod machine;
 mod pushes;
-mod report;
-mod row;
 mod store_reading;
 
 use std::path::Path;
 
 use crate::args::{CheckName, Command, ConfigArgs, ConfigCommand};
+use crate::commands::check_report::{self, Check, CheckReport, Heading};
 use crate::error::CliError;
-use crate::output::{self, Format};
-use crate::view;
-use check::Check;
+use crate::output::Format;
 pub(crate) use machine::Machine;
-use report::Doctor;
+
+const SETUP: Heading = Heading {
+    title: "Setup",
+    blurb: "whether this machine is set up to run dam",
+};
 
 type Run = fn(&Machine) -> Vec<Check>;
 
@@ -61,12 +61,11 @@ pub(crate) fn print(
         .filter(|(name, _)| asked.names.is_empty() || asked.names.contains(name))
         .flat_map(|(_, check)| check(machine))
         .collect();
-    let doctor = Doctor::new(asked.command, checks);
-    output::print(format, color, &view::report(&doctor)?)?;
-    match doctor.found_an_issue() {
-        true => Err(CliError::Reported),
-        false => Ok(()),
-    }
+    check_report::print(
+        CheckReport::new(asked.command, SETUP, checks),
+        format,
+        color,
+    )
 }
 
 pub(super) fn found(path: &Path) -> Option<String> {

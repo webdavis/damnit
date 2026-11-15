@@ -1,11 +1,11 @@
 use dam_adapters::SqliteStore;
 
-use super::check::{Check, Outcome};
 use super::helpers::{CONFIG_UNREAD, NO_REMOTES};
 use super::machine::Machine;
-use super::row::Row;
 use super::store_reading::{Owed, Store};
 use crate::args::CheckName;
+use crate::commands::check_report::Row;
+use crate::commands::check_report::{Check, Outcome};
 
 pub(super) fn check(machine: &Machine) -> Vec<Check> {
     let Ok(config) = machine.config() else {

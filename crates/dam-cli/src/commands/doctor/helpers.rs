@@ -1,9 +1,9 @@
 use dam_application::{HelperError, UseCaseError};
 
-use super::check::{Check, Outcome};
 use super::machine::{Answer, Machine};
-use super::row::Row;
 use crate::args::CheckName;
+use crate::commands::check_report::Row;
+use crate::commands::check_report::{Check, Outcome};
 use crate::error::UseCaseText;
 
 pub(super) const CONFIG_UNREAD: &str = "not checked, the config did not read";

@@ -37,13 +37,13 @@ pub(crate) struct Check {
 
 #[derive(Serialize)]
 pub(crate) struct ConfigFiles {
-    pub(super) config: Option<String>,
-    pub(super) secrets: Option<String>,
-    pub(super) warnings: Vec<String>,
+    pub(crate) config: Option<String>,
+    pub(crate) secrets: Option<String>,
+    pub(crate) warnings: Vec<String>,
 }
 
 impl Check {
-    pub(super) fn of(name: CheckName, result: Outcome, detail: impl Into<String>) -> Check {
+    pub(crate) fn of(name: CheckName, result: Outcome, detail: impl Into<String>) -> Check {
         Check {
             name,
             result,
@@ -54,14 +54,14 @@ impl Check {
         }
     }
 
-    pub(super) fn advising(self, advice: impl Into<String>) -> Check {
+    pub(crate) fn advising(self, advice: impl Into<String>) -> Check {
         Check {
             advice: Some(advice.into()),
             ..self
         }
     }
 
-    pub(super) fn reading(self, files: ConfigFiles) -> Check {
+    pub(crate) fn reading(self, files: ConfigFiles) -> Check {
         Check {
             files: Some(files),
             ..self
