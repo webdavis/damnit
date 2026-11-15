@@ -245,6 +245,8 @@ A pull runs only `hook.task_pulled`, once for each task it created or changed, a
 has landed. A failing one never changes the pull's exit code. The answer of `pull` carries
 `task_pulled` on each remote it ran for: the counts `ran`, `changed`, `failed` and `not_reached`,
 and `commit`, the id of the commit that holds the hook's changes when it made one.
+`not_reached` counts the tasks the hook was not called for once the pull's 60 seconds for it ran
+out.
 
 A mistyped command line also carries `usage`, which says what was wrong with it:
 

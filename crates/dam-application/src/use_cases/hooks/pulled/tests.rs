@@ -1,7 +1,9 @@
 mod committed;
 mod edits;
+mod limits;
 mod runs;
 mod skips;
+mod slow;
 mod warnings;
 
 use dam_domain::{Completion, Object, Oid, Task};

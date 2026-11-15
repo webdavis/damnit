@@ -85,6 +85,7 @@
                 "minimum": 0
               },
               "not_reached": {
+                "description": "Tasks the hook was not called for once the pull's 60 seconds for it ran out.",
                 "type": "integer",
                 "minimum": 0
               },

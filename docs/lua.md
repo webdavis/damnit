@@ -217,8 +217,9 @@ The first failure of a pull warns on standard error, unless a token's command ca
 
     warning: hook task_pulled failed at /home/ada/.config/dam/config.lua:3: no bell; the pull is kept
 
-Later failures of that pull are counted, not printed. `dam status` does not yet show them, and
-the hook has no limit yet on its total time for one pull.
+Later failures of that pull are counted, not printed. `dam status` does not yet show them.
+After 60 seconds of one pull's run, dam calls the hook for no more tasks and counts them in
+`not_reached`.
 The pull's answer counts what it did under `task_pulled`: `ran`, `changed`, `failed` and
 `not_reached`, and `commit`, the id of the commit it made. In plain text it is a line such as
 `task_pulled: 1 ran, 1 changed, 0 failed, 0 not reached, commit 2b2b2b2`.
@@ -255,6 +256,7 @@ changed task that has none:
 ## Limits and errors
 
 One filter has 5 seconds in total for a whole listing. One hook call has 5 seconds.
+`hook.task_pulled` has 60 seconds in total for one pull.
 dam checks the time while Lua code runs.
 The limit covers code in a coroutine, and a `pcall` or `xpcall` cannot catch it for long.
 It cannot stop a blocked external command, such as one started with `os.execute`. It notices the

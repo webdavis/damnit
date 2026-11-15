@@ -60,7 +60,11 @@ impl Dam<'_> {
             ..*self
         };
         let mut run = PulledHookRun::default();
+        let run_time = RunTime::started_on(self.clock);
         for task in &pulled {
+            if run_time.ran_out() {
+                break;
+            }
             let pull = Pull {
                 remote: remote.clone(),
                 change: task.change,
@@ -78,6 +82,7 @@ impl Dam<'_> {
             }
             run.ran += 1;
         }
+        run.not_reached = pulled.len() - run.ran;
         if let Some(before) = &before {
             run.commit = self.commit_hook_edits(remote, before)?;
         }
@@ -97,8 +102,10 @@ impl Dam<'_> {
 }
 
 mod committed;
+mod run_time;
 
 use committed::BeforeTheHook;
+use run_time::RunTime;
 
 #[cfg(test)]
 mod tests;
