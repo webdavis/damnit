@@ -5,10 +5,11 @@ pub enum HookEvent {
     TaskNew,
     TaskChanged,
     TaskDone,
+    TaskPulled,
 }
 
 impl HookEvent {
-    pub const ALL: [HookEvent; 3] = [
+    pub const LOCAL: [HookEvent; 3] = [
         HookEvent::TaskNew,
         HookEvent::TaskChanged,
         HookEvent::TaskDone,
@@ -19,6 +20,7 @@ impl HookEvent {
             HookEvent::TaskNew => "task_new",
             HookEvent::TaskChanged => "task_changed",
             HookEvent::TaskDone => "task_done",
+            HookEvent::TaskPulled => "task_pulled",
         }
     }
 }
@@ -52,3 +54,6 @@ impl HookConfig {
         self.on_failure.unwrap_or_default()
     }
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PulledHook;

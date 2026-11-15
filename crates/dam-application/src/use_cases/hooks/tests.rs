@@ -27,7 +27,7 @@ fn hooked(hooks: &[(HookEvent, Option<OnFailure>)]) -> Scenario {
 }
 
 fn every_hook() -> Scenario {
-    hooked(&HookEvent::ALL.map(|event| (event, None)))
+    hooked(&HookEvent::LOCAL.map(|event| (event, None)))
 }
 
 fn new_task(subject: &str) -> NewTask {

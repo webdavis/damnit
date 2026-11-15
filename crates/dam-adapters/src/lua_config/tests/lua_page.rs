@@ -47,6 +47,7 @@ fn the_page_names_every_key_config_lua_takes_and_no_other() {
         &filter::FILTER[..],
         &hook::HOOK[..],
         &hook::HOOK_TABLE[..],
+        &hook::PULLED_HOOK_TABLE[..],
     ]);
     assert_eq!(keys_named(&rows_under("config.lua")), read);
 }

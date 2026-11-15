@@ -29,6 +29,7 @@ pub(crate) fn context() -> Context {
             categories_writing_exclusive: Default::default(),
             filters: vec![],
             hooks: vec![],
+            task_pulled: None,
             tokens: Default::default(),
         },
         access: Box::new(dam_application::Owner),

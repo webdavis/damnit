@@ -34,6 +34,11 @@ impl fmt::Display for MisreadText<'_> {
                 "{key} {text:?} must be <number><s|m|h> {}",
                 PlaceText(at)
             ),
+            Misread::AlwaysWarns { key, at } => write!(
+                f,
+                "{key} is not taken {}: that hook always warns",
+                PlaceText(at)
+            ),
         }
     }
 }

@@ -1,4 +1,5 @@
 mod get;
+mod hook_settings;
 mod listing;
 mod match_function;
 mod print_default;

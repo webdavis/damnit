@@ -14,7 +14,7 @@ use crate::tokens::Tokens;
 pub use credential::CredentialSpec;
 pub use duration::ConfiguredDuration;
 pub use filter::{FilterConfig, FilterRule};
-pub use hook::{HookConfig, HookEvent, OnFailure, STARTED_BY_HOOK_VARIABLE};
+pub use hook::{HookConfig, HookEvent, OnFailure, PulledHook, STARTED_BY_HOOK_VARIABLE};
 pub use remote::RemoteConfig;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -26,6 +26,7 @@ pub struct Config {
     pub categories_writing_exclusive: BTreeSet<String>,
     pub filters: Vec<FilterConfig>,
     pub hooks: Vec<HookConfig>,
+    pub task_pulled: Option<PulledHook>,
     pub tokens: Tokens,
 }
 

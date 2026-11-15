@@ -21,7 +21,8 @@
       "properties": {
         "task_new": { "$ref": "#/$defs/hook" },
         "task_changed": { "$ref": "#/$defs/hook" },
-        "task_done": { "$ref": "#/$defs/hook" }
+        "task_done": { "$ref": "#/$defs/hook" },
+        "task_pulled": { "$ref": "#/$defs/pulled_hook" }
       }
     }
   },
@@ -69,6 +70,20 @@
           "properties": {
             "run": { "description": "A Lua function(task, dam)." },
             "on_failure": { "enum": ["warn", "refuse"] }
+          }
+        }
+      ]
+    },
+    "pulled_hook": {
+      "description": "A Lua function(task, before, pull), or a table holding it as run; docs/lua.md describes it.",
+      "anyOf": [
+        { "not": { "type": "object" } },
+        {
+          "type": "object",
+          "required": ["run"],
+          "additionalProperties": false,
+          "properties": {
+            "run": { "description": "A Lua function(task, before, pull)." }
           }
         }
       ]
