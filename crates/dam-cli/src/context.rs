@@ -5,7 +5,7 @@ use std::path::Path;
 use dam_adapters::{Interrupt, OsRandom, ProcessLauncher, SqliteStore, SystemClock};
 use dam_application::{
     Access, Clock, Config, ConfigFile, CredentialSource, Dam, FilterFunctions, HelperLauncher,
-    Hooks, Randomness, Remotes, Store,
+    Hooks, Randomness, Remotes, Schedule, Store,
 };
 
 use crate::caller::{authenticated, caller};
@@ -28,6 +28,7 @@ pub(crate) struct Context {
     pub(crate) hooks: Box<dyn Hooks>,
     pub(crate) editor: Option<Box<dyn EditorSession>>,
     pub(crate) prompt: Box<dyn Prompt>,
+    pub(crate) schedule: Box<dyn Schedule>,
     pub(crate) tz: jiff::tz::TimeZone,
 }
 
@@ -62,6 +63,7 @@ impl Context {
             hooks: loaded.hooks,
             editor,
             prompt,
+            schedule: dam_adapters::this_systems_schedule(),
             tz: jiff::tz::TimeZone::system(),
         })
     }

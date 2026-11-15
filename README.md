@@ -123,6 +123,8 @@ That last-run file holds only the last run.
 Where neither scheduler runs, it refuses and prints the crontab line to add.
 `dam sync disable` stops it and removes the entry. Both are safe to run twice.
 Setting `sync_every` installs nothing by itself.
+Until the schedule is installed, `dam status` warns of each remote with `sync_every` and names
+`dam sync enable`.
 
 ## Google Calendar
 

@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use dam_adapters::Interrupt;
 use dam_application::Config;
 use dam_application::testing::{
-    FakeFilterFunctions, FakeHooks, FixedClock, FixedRandom, MemoryStore,
+    FakeFilterFunctions, FakeHooks, FakeSchedule, FixedClock, FixedRandom, MemoryStore,
 };
 use dam_domain::Categories;
 use jiff::civil::date;
@@ -46,6 +46,7 @@ pub(crate) fn context() -> Context {
             choices: RefCell::new(vec![]),
             texts: RefCell::new(vec![]),
         }),
+        schedule: Box::new(FakeSchedule::default()),
         tz: jiff::tz::TimeZone::UTC,
     }
 }

@@ -25,6 +25,7 @@ pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliE
     let s = ctx.dam().status(&remotes)?;
     let shown = |permission| may(ctx.access.as_ref(), permission);
     let warnings = token_warnings(&ctx.config.tokens).map(|w| format!("warning: {w}"));
+    let schedule_missing = sync_schedule_missing(ctx).filter(|_| ctx.access.token().is_none());
     report(&StatusView {
         staged: authored_rows(ctx, &s.staged, args.full).collect(),
         unstaged: owner_rows(ctx, &s.unstaged, args.full).collect(),
@@ -43,8 +44,23 @@ pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliE
         ),
         notices: only_if(shown(RemoteRead), s.notices.iter().map(NoticeRow::new)),
         unpushed: only_if(shown(RemoteRead), s.unpushed.iter().map(UnpushedRow::new)),
-        warnings: only_if(shown(ConfigRead), warnings),
+        warnings: only_if(shown(ConfigRead), warnings)
+            .into_iter()
+            .chain(schedule_missing)
+            .collect(),
         owner: the_owner_to(ctx.access.as_ref()),
+    })
+}
+
+fn sync_schedule_missing(ctx: &Context) -> Option<String> {
+    let syncing = ctx.config.remotes.iter().filter(|r| r.sync_every.is_some());
+    let names: Vec<&str> = syncing.map(|r| r.name.0.as_str()).collect();
+    (!names.is_empty() && !ctx.schedule.installed()).then(|| {
+        format!(
+            "warning: sync_every is set on {} and the schedule is not installed; \
+             run dam sync enable",
+            names.join(", ")
+        )
     })
 }
 
@@ -90,6 +106,8 @@ fn owner_rows<'a>(
 
 #[cfg(test)]
 mod skipped_tests;
+#[cfg(test)]
+mod sync_schedule_tests;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]

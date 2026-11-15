@@ -73,7 +73,7 @@
         }
       }
     },
-    "warnings": { "type": "array", "items": { "type": "string" } }
+    "warnings": { "type": "array", "items": { "type": "string" }, "description": "Each token warning, seen with config:read, then for the owner alone one line when a remote sets sync_every and the schedule of dam sync enable is not installed." }
   },
   "$defs": {
     "id": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
