@@ -7,6 +7,7 @@ use crate::service::Dam;
 use crate::use_cases::last_seen::LastSeen;
 use crate::use_cases::push::attempting::Attempting;
 use crate::use_cases::push::attempts::settle_attempts;
+use crate::use_cases::push::failure_notices::renew_failure_notices;
 use crate::use_cases::push::reconcile::{Heard, Settlement};
 
 impl Dam<'_> {
@@ -27,13 +28,6 @@ impl Dam<'_> {
         }
         for after in &settlement.snapshot {
             LastSeen::now_holds(store, &remote.name, after)?;
-        }
-        for (oid, why) in &settlement.failed {
-            store.add_notice(&Notice::PushFailed {
-                remote: remote.name.clone(),
-                oid: oid.clone(),
-                why: why.clone(),
-            })?;
         }
         let answers = settlement
             .heard
@@ -62,6 +56,7 @@ impl Dam<'_> {
         let mut retries = earlier_retries.to_vec();
         retries.extend(settlement.retries());
         store.set_push_retries(&remote.name, &retries)?;
+        renew_failure_notices(store, &remote.name, &retries, &settlement.failed)?;
         for id in settlement.pushed(unpushed) {
             store.mark_pushed(&remote.name, id)?;
         }

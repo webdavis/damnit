@@ -124,6 +124,7 @@ mod attempting;
 mod attempts;
 mod conflict_holds;
 mod dropped;
+mod failure_notices;
 mod idempotency;
 mod mutations;
 mod owed;
