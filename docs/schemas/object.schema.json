@@ -19,6 +19,7 @@
     "id": { "type": "string", "description": "The caller's own id for it, given with dam new --id." },
     "author": { "type": "string", "description": "Who made it: the token's name, or the owner's from the config. dam ls and dam show always carry it." },
     "details": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/details" }], "description": "The details of the change that made it; null until that change is staged, and for another sender's object read with a token. dam ls and dam show always carry it." },
+    "changed_by_hook": { "$ref": "#/$defs/changed_by_hook", "description": "Each task a hook changed within this command, with that hook's event; dam new and dam edit carry it only then." },
     "task": { "$ref": "#/$defs/task" },
     "event": { "$ref": "#/$defs/event" }
   },
@@ -27,6 +28,7 @@
     { "properties": { "kind": { "const": "event" } }, "required": ["event"], "not": { "required": ["task"] } }
   ],
   "$defs": {
+    "changed_by_hook": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["oid", "hook"], "additionalProperties": false, "properties": { "oid": { "$ref": "#/$defs/oid" }, "hook": { "enum": ["task_new", "task_changed", "task_done"] } } } },
     "details": {
       "description": "What a request stated with --meta, kept as given, and what dam knew of its own process: the host, the working directory, the repo and branch of that directory, the time and the channel.",
       "type": "object",

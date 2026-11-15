@@ -5,8 +5,8 @@ use dam_domain::{Object, Oid};
 use crate::config::HookEvent;
 use crate::errors::Refusal;
 use crate::ports::{
-    EditRequest, EditRequests, FunctionFailure, Histories, History, HookFailure, HookWarnings,
-    Hooks,
+    EditRequest, EditRequests, FunctionFailure, Histories, History, HookEdits, HookFailure,
+    HookWarnings, Hooks,
 };
 use crate::use_cases::edit::EditFields;
 
@@ -70,5 +70,16 @@ impl EditRequests for FakeEditRequests {
 
     fn refused(&self, refusal: &Refusal) -> String {
         format!("{refusal:?}")
+    }
+}
+
+#[derive(Default)]
+pub struct FakeHookEdits {
+    pub edited: RefCell<Vec<(HookEvent, Oid)>>,
+}
+
+impl HookEdits for FakeHookEdits {
+    fn edited(&self, event: HookEvent, task: &Oid) {
+        self.edited.borrow_mut().push((event, task.clone()));
     }
 }

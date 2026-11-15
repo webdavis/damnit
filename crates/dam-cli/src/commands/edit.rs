@@ -2,6 +2,7 @@ use dam_application::{EditFields, Refusal};
 use dam_domain::Oid;
 
 use crate::args::EditArgs;
+use crate::commands::hooked::{as_it_is_now, hooked};
 use crate::commands::parsing::{day_flag, deadline_flag, when_flag};
 use crate::commands::sent::report_landed;
 use crate::context::Context;
@@ -20,7 +21,10 @@ pub(crate) fn run(ctx: &Context, args: EditArgs) -> Result<Report, CliError> {
         from_flags(ctx, args)?
     };
     let landed = ctx.dam().edit(&oid, fields)?;
-    report_landed(&landed, |object| report(&ObjectRow(object, &ctx.tz)))
+    report_landed(&landed, |object| {
+        let now = as_it_is_now(ctx, object)?;
+        report(&hooked(ctx, ObjectRow(&now, &ctx.tz)))
+    })
 }
 
 pub(crate) fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {

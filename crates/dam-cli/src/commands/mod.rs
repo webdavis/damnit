@@ -10,6 +10,7 @@ pub(crate) mod doctor;
 mod done;
 pub(crate) mod edit;
 mod follow_ons;
+mod hooked;
 mod ls;
 mod mv;
 mod new;

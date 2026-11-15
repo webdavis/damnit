@@ -46,7 +46,7 @@ impl Dam<'_> {
         histories.unread()?;
         let failure = match ran {
             Ok(None) => return Ok(()),
-            Ok(Some(request)) => match self.hook_edit(task.oid(), &request)? {
+            Ok(Some(request)) => match self.hook_edit(event, task.oid(), &request)? {
                 None => return Ok(()),
                 Some(failure) => failure,
             },

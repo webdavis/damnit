@@ -3,6 +3,7 @@ use dam_domain::{ItemHash, Oid};
 
 use self::removals::AddedRemovals;
 use crate::args::{AddArgs, ResetArgs};
+use crate::commands::hooked::hooked;
 use crate::commands::status::ChangeRow;
 use crate::context::Context;
 use crate::error::CliError;
@@ -73,14 +74,15 @@ pub(crate) fn run_add(ctx: &Context, args: AddArgs) -> Result<Report, CliError> 
             .collect::<Result<Vec<_>, _>>()?;
         ctx.dam().add(&named)?
     };
-    report(&Staged {
+    let staged = Staged {
         staged: added
             .staged
             .iter()
             .map(|c| ChangeRow::authored(ctx, c, false))
             .collect(),
         removals: AddedRemovals::new(&added.removals),
-    })
+    };
+    report(&hooked(ctx, staged))
 }
 
 pub(crate) fn run_reset(ctx: &Context, args: ResetArgs) -> Result<Report, CliError> {

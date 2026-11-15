@@ -30,6 +30,7 @@ pub(crate) struct Context {
     pub(crate) prompt: Box<dyn Prompt>,
     pub(crate) tz: jiff::tz::TimeZone,
     pub(crate) no_pull: bool,
+    pub(crate) changed_by_hook: ChangedByHook,
 }
 
 impl Context {
@@ -66,6 +67,7 @@ impl Context {
             prompt,
             tz: jiff::tz::TimeZone::system(),
             no_pull,
+            changed_by_hook: ChangedByHook::default(),
         })
     }
 
@@ -80,6 +82,7 @@ impl Context {
             hooks: self.hooks.as_ref(),
             hook_warnings: &HookWarningsOnStandardError,
             edit_requests: self,
+            hook_edits: &self.changed_by_hook,
         }
     }
 
@@ -104,4 +107,7 @@ pub(crate) fn terminal_pair_for_a_human_and_refusals_for_a_machine(
     }
 }
 
+mod changed_by_hook;
 mod edit_requests;
+
+pub(crate) use changed_by_hook::ChangedByHook;
