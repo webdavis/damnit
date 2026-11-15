@@ -25,7 +25,7 @@ fn a_machine_set_up_well_reads_every_check_and_changes_nothing() {
         report(
             &[
                 "  ✓ config: both files are valid",
-                "  ✓ database: version 12",
+                "  ✓ database: version 13",
                 "  ✓ helpers: 1 remote: 1 ok",
                 "    ✓ fake: dam-remote-fake answered",
                 "  ✓ credentials: 1 remote: 1 ok",
@@ -53,7 +53,7 @@ fn an_issue_and_a_warning_are_counted_then_numbered() {
         report(
             &[
                 "  ✓ config: both files are valid",
-                "  ✓ database: version 12",
+                "  ✓ database: version 13",
                 "  ✗ helpers: 1 remote: 1 issue",
                 "    ✗ fake: dam-remote-fake is not installed",
                 "      → install it, then run dam doctor",

@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::collections::BTreeMap;
 
 use dam_domain::{
-    Author, Authored, CommitId, CommitRecord, IdKey, Item, Kind, Object, Oid, Timestamp,
+    Author, Authored, CommitId, CommitRecord, IdKey, Item, ItemHash, Kind, Object, Oid, Timestamp,
 };
 
 use crate::errors::UseCaseError;
@@ -30,6 +30,7 @@ struct Inner {
     attempts: BTreeMap<(RemoteName, Oid), Vec<crate::ports::Attempt>>,
     days: BTreeMap<dam_domain::Date, dam_domain::Day>,
     items: Vec<Item>,
+    follow_ons: BTreeMap<ItemHash, Vec<crate::ports::FollowOn>>,
     ids: BTreeMap<IdKey, Oid>,
 }
 
@@ -120,6 +121,7 @@ mod answers;
 mod attempts;
 mod commits;
 mod days;
+mod follow_ons;
 mod ids;
 mod items;
 mod origins;

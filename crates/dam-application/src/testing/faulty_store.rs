@@ -8,6 +8,7 @@ use crate::testing::MemoryStore;
 
 mod answers;
 mod attempts;
+mod follow_ons;
 mod history;
 mod ids;
 mod items;

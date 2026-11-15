@@ -9,6 +9,7 @@ mod create;
 mod days;
 mod details_json;
 mod file;
+mod follow_ons;
 mod ids;
 mod items;
 mod migrations;

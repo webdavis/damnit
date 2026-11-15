@@ -1,6 +1,6 @@
 use rusqlite::Connection;
 
-pub(super) const VERSION: u32 = 12;
+pub(super) const VERSION: u32 = 13;
 
 const V1: &str = r#"
 CREATE TABLE objects (oid TEXT PRIMARY KEY, kind TEXT NOT NULL, path TEXT NOT NULL, json TEXT NOT NULL);
@@ -86,6 +86,26 @@ const V12: &str = r#"
 CREATE TABLE attempts (remote TEXT NOT NULL, oid TEXT NOT NULL, position INTEGER NOT NULL, key TEXT NOT NULL, op TEXT NOT NULL, container_remote_id TEXT, declared TEXT NOT NULL, PRIMARY KEY (remote, oid, position));
 "#;
 
+const V13: &str = r#"
+CREATE TABLE follow_ons (hash TEXT NOT NULL, position INTEGER NOT NULL, moment TEXT NOT NULL, working_json TEXT NOT NULL, op TEXT, before_json TEXT, after_json TEXT, author_token TEXT, author_key_id TEXT, author_channel TEXT, details_json TEXT, PRIMARY KEY (hash, position, moment));
+"#;
+
+const BATCHES: [(u32, &str); 13] = [
+    (1, V1),
+    (2, V2),
+    (3, V3),
+    (4, V4),
+    (5, V5),
+    (6, V6),
+    (7, V7),
+    (8, V8),
+    (9, V9),
+    (10, V10),
+    (11, V11),
+    (12, V12),
+    (13, V13),
+];
+
 pub(super) fn migrate_above_user_version_in_one_transaction(
     conn: &mut Connection,
 ) -> Result<(), rusqlite::Error> {
@@ -94,41 +114,10 @@ pub(super) fn migrate_above_user_version_in_one_transaction(
         return Ok(());
     }
     let tx = conn.transaction()?;
-    if current < 1 {
-        tx.execute_batch(V1)?;
-    }
-    if current < 2 {
-        tx.execute_batch(V2)?;
-    }
-    if current < 3 {
-        tx.execute_batch(V3)?;
-    }
-    if current < 4 {
-        tx.execute_batch(V4)?;
-    }
-    if current < 5 {
-        tx.execute_batch(V5)?;
-    }
-    if current < 6 {
-        tx.execute_batch(V6)?;
-    }
-    if current < 7 {
-        tx.execute_batch(V7)?;
-    }
-    if current < 8 {
-        tx.execute_batch(V8)?;
-    }
-    if current < 9 {
-        tx.execute_batch(V9)?;
-    }
-    if current < 10 {
-        tx.execute_batch(V10)?;
-    }
-    if current < 11 {
-        tx.execute_batch(V11)?;
-    }
-    if current < 12 {
-        tx.execute_batch(V12)?;
+    for (version, batch) in BATCHES {
+        if current < version {
+            tx.execute_batch(batch)?;
+        }
     }
     tx.pragma_update(None, "user_version", VERSION)?;
     tx.commit()
