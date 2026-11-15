@@ -39,4 +39,12 @@ impl Remote for Gcal<'_> {
     ) -> Result<PushResponse, String> {
         Ok(push::refuse(&mutations))
     }
+
+    fn login(&self) -> Result<(), String> {
+        let credentials = Credentials::from_env(self.remote)?;
+        let endpoints = Endpoints::from_env()?;
+        access_token(&agent(), &endpoints, &credentials)
+            .map(drop)
+            .map_err(|e| e.to_string())
+    }
 }
