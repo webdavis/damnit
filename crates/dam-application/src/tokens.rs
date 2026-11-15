@@ -50,6 +50,7 @@ pub struct TokenTerms {
     pub expires: Option<Timestamp>,
     pub not_before: Option<Timestamp>,
     pub via: BTreeSet<Channel>,
+    pub via_written: bool,
     pub require: Vec<String>,
     pub grants: Vec<Grant>,
 }

@@ -43,9 +43,9 @@
       "additionalProperties": false,
       "properties": {
         "value": {
-          "description": "The value. A token reads its grants in short, or disabled. It is null for a setting dam knows that the file leaves without a value and that has no default.",
+          "description": "The value. A list holds texts, or for a token's grant one object per grant as dam token list prints it. A disabled token reads disabled. It is null for a setting dam knows that the file leaves without a value and that has no default.",
           "type": ["string", "boolean", "array", "null"],
-          "items": { "type": "string" }
+          "items": { "anyOf": [{ "type": "string" }, { "$ref": "token-list.schema.json#/$defs/grant" }] }
         },
         "default": { "type": "boolean", "description": "True when the file does not set it: dam then uses its own default, or nothing when value is null." }
       }

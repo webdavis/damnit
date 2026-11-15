@@ -1,0 +1,82 @@
+mod support;
+
+use serde_json::{Value, json};
+use support::config_tokens::config_tokens;
+use support::schema::assert_matches_schema;
+
+fn json_of(sb: &support::sandbox::Sandbox, args: &[&str]) -> Value {
+    let out = sb.output(&[args, &["--json"]].concat());
+    assert!(out.status.success(), "{args:?}: {out:?}");
+    serde_json::from_slice(&out.stdout).unwrap()
+}
+
+#[test]
+fn a_token_lists_each_of_its_settings_by_its_key_in_secrets_lua() {
+    let _guard = support::guard("a_token_lists_each_of_its_settings_by_its_key_in_secrets_lua");
+    let tokens = config_tokens();
+    let (ok, out, err) = tokens.sb.dam(&["config", "get", "token.tool"]);
+    assert!(ok, "{err}");
+    assert_eq!(
+        out,
+        "  token.tool.grant       task:read paths work/ | task:create own
+  token.tool.expires     2027-05-11T00:00:00Z
+  token.tool.not_before  2026-01-01T00:00:00Z
+  token.tool.via         mcp
+  token.tool.require     session
+"
+    );
+    let (ok, out, err) = tokens.sb.dam(&["config", "get", "token.plain"]);
+    assert!(ok, "{err}");
+    assert_eq!(
+        out,
+        "  token.plain.grant       task:read
+  token.plain.expires     not set
+  token.plain.not_before  not set
+  token.plain.via         local (default)
+  token.plain.require     not set
+"
+    );
+    let (ok, out, err) = tokens.sb.dam(&["config", "get", "token.off"]);
+    assert!(ok, "{err}");
+    assert_eq!(out, "  token.off  disabled\n");
+}
+
+#[test]
+fn a_token_holds_the_same_facts_as_dam_token_list() {
+    let _guard = support::guard("a_token_holds_the_same_facts_as_dam_token_list");
+    let tokens = config_tokens();
+    let listed = json_of(&tokens.sb, &["token", "list"]);
+    let settings = json_of(&tokens.sb, &["config", "list"]);
+    assert_matches_schema(&settings, "config-list.schema.json");
+    for name in ["tool", "plain"] {
+        let row = listed["tokens"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["name"] == name)
+            .unwrap();
+        let part = &settings["settings"]["token"][name];
+        assert_eq!(part["grant"]["value"], row["grants"], "{name}");
+        for key in ["expires", "not_before", "via"] {
+            assert_eq!(part[key]["value"], row[key], "{name} {key}");
+        }
+        let require = &part["require"]["value"];
+        let require = if require.is_null() {
+            json!([])
+        } else {
+            require.clone()
+        };
+        assert_eq!(require, row["require"], "{name}");
+    }
+    let plain = &settings["settings"]["token"]["plain"];
+    assert_eq!(plain["via"], json!({"value": ["local"], "default": true}));
+    assert_eq!(plain["expires"], json!({"value": null, "default": true}));
+    assert_eq!(
+        settings["settings"]["token"]["off"],
+        json!({"value": "disabled", "default": false})
+    );
+    let text = settings.to_string();
+    for value in &tokens.values {
+        assert!(!text.contains(value.as_str()), "{text}");
+    }
+}
