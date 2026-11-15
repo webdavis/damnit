@@ -3,7 +3,6 @@ dam json: help = Print JSON, and a failure as one error document on stderr; dam 
 dam toon: help = Print TOON, a compact form for language models; errors as --json
 dam config: help = Read the config from FILE; secrets.lua beside it holds the secrets. Default: ${XDG_CONFIG_HOME:-~/.config}/dam/config.lua
 dam store: help = Open the store at FILE. Default: ${XDG_DATA_HOME:-~/.local/share}/dam/dam.db
-dam no_pull: help = Never pull a stale remote first; answer from the local store
 dam no_color: help = Print without color; color is also off under NO_COLOR or when not a terminal
 dam meta: help = State a detail of this request, such as session=abc123, kept with each change it makes. Repeatable
 dam request: help = Read the request from FILE, or stdin when FILE is -, as JSON or TOON keyed by the command's flags

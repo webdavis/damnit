@@ -2,14 +2,12 @@ use dam_domain::Object;
 
 use crate::args::LsArgs;
 use crate::commands::authorship::Authorship;
-use crate::commands::remote::refresh_stale_unless_no_pull;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 use crate::view::{ObjectList, report};
 
 pub(crate) fn run_ls(ctx: &Context, args: LsArgs) -> Result<Report, CliError> {
-    refresh_stale_unless_no_pull(ctx)?;
     let authorship = Authorship::read(ctx)?;
     let objects: Vec<Object> = ctx
         .dam()

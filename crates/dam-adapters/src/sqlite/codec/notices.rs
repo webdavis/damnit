@@ -22,10 +22,6 @@ enum NoticeRow {
         oid: String,
         why: String,
     },
-    PullFailed {
-        remote: String,
-        why: String,
-    },
     PullSkipped {
         remote: String,
         remote_id: String,
@@ -78,10 +74,6 @@ pub(in crate::sqlite) fn notice_to_json(n: &Notice) -> Result<String, StoreError
         Notice::PushFailed { remote, oid, why } => NoticeRow::PushFailed {
             remote: remote.0.clone(),
             oid: oid.to_string(),
-            why: why.clone(),
-        },
-        Notice::PullFailed { remote, why } => NoticeRow::PullFailed {
-            remote: remote.0.clone(),
             why: why.clone(),
         },
         Notice::PullSkipped { remote, object } => NoticeRow::PullSkipped {
@@ -156,10 +148,6 @@ pub(in crate::sqlite) fn notice_from_json(s: &str) -> Result<Notice, StoreError>
         } => Notice::PushFailed {
             remote: RemoteName(remote),
             oid: oid(&o)?,
-            why,
-        },
-        NoticeRow::PullFailed { remote, why } => Notice::PullFailed {
-            remote: RemoteName(remote),
             why,
         },
         NoticeRow::PullSkipped {

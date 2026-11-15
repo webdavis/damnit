@@ -90,7 +90,7 @@ done
 
     let (ok, _, err) = sb.dam(&["pull", "--json"]);
     assert!(ok, "{err}");
-    let (ok, out, err) = sb.dam(&["ls", "--json", "--no-pull"]);
+    let (ok, out, err) = sb.dam(&["ls", "--json"]);
     assert!(ok, "{err}");
     let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
     let task = &answer["objects"][0]["task"];

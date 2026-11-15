@@ -4,7 +4,7 @@ use support::own::{listed, made_by, own_grant, own_hidden};
 use support::tokens::{grant, grant_to};
 
 const ASKS: [&[&str]; 3] = [
-    &["show", "{}", "--json", "--no-pull"],
+    &["show", "{}", "--json"],
     &["edit", "{}", "--subject", "x", "--json"],
     &["done", "{}", "--json"],
 ];

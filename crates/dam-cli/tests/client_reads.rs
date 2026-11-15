@@ -1,32 +1,6 @@
 mod support;
 
-use support::config_files::Remote;
 use support::sandbox::Sandbox;
-
-#[test]
-fn no_pull_answers_a_read_from_the_store_alone() {
-    let _guard = support::guard("no_pull_answers_a_read_from_the_store_alone");
-    let sb = Sandbox::new();
-    sb.add_remote("fake", Remote::fake().stale("15m"));
-
-    let (ok, out, err) = sb.dam(&["ls", "--json", "--no-pull"]);
-    assert!(ok, "{err}");
-    let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
-    assert_eq!(
-        answer["objects"].as_array().unwrap().len(),
-        0,
-        "a local read reached the remote: {answer}"
-    );
-
-    let (ok, out, err) = sb.dam(&["ls", "--json"]);
-    assert!(ok, "{err}");
-    let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
-    assert_eq!(
-        answer["objects"].as_array().unwrap().len(),
-        1,
-        "the same read without the flag pulls the stale remote: {answer}"
-    );
-}
 
 #[test]
 fn remote_list_reports_when_each_remote_was_last_pulled_and_pushed() {
@@ -67,38 +41,6 @@ fn the_one_sandbox_remote_as_listed(sb: &Sandbox) -> serde_json::Value {
     assert!(ok, "{err}");
     let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
     answer["remotes"][0].clone()
-}
-
-#[test]
-fn no_pull_is_refused_on_a_verb_that_never_pulls() {
-    let _guard = support::guard("no_pull_is_refused_on_a_verb_that_never_pulls");
-    let sb = Sandbox::new();
-    let oid = sb.new_object(&["buy oat milk"]);
-
-    for args in [
-        vec!["pull", "--no-pull"],
-        vec!["status", "--no-pull"],
-        vec!["done", oid.as_str(), "--no-pull"],
-        vec!["category", "list", "--no-pull"],
-        vec!["filter", "list", "--no-pull"],
-    ] {
-        let out = sb.output(&args);
-        assert_eq!(
-            out.status.code(),
-            Some(2),
-            "{args:?} took a flag it cannot act on"
-        );
-        let said = String::from_utf8_lossy(&out.stderr);
-        assert!(said.contains("--no-pull"), "{said}");
-    }
-
-    for args in [
-        vec!["ls", "--no-pull"],
-        vec!["show", oid.as_str(), "--no-pull"],
-    ] {
-        let out = sb.output(&args);
-        assert_eq!(out.status.code(), Some(0), "{args:?} refused the flag");
-    }
 }
 
 #[test]

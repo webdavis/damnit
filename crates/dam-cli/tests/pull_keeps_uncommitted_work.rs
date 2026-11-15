@@ -25,7 +25,7 @@ fn pull_ann_as(sb: &Sandbox, ann: &str, subject: &str) -> String {
 }
 
 fn subjects_here(sb: &Sandbox) -> Vec<String> {
-    let (ok, out, err) = sb.dam(&["ls", "--json", "--no-pull"]);
+    let (ok, out, err) = sb.dam(&["ls", "--json"]);
     assert!(ok, "{err}");
     let listed: Value = serde_json::from_str(&out).unwrap();
     let objects = listed["objects"].as_array().cloned().unwrap_or_default();

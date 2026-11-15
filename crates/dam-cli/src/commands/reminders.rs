@@ -5,7 +5,6 @@ use serde::Serialize;
 
 use crate::args::RemindersArgs;
 use crate::commands::parsing::when_flag;
-use crate::commands::remote::refresh_stale_unless_no_pull;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::{Report, local_time};
@@ -13,7 +12,6 @@ use crate::view::{Human, View, display, report};
 
 pub(crate) fn run_reminders(ctx: &Context, args: RemindersArgs) -> Result<Report, CliError> {
     let window = window(ctx, &args)?;
-    refresh_stale_unless_no_pull(ctx)?;
     let due = ctx.dam().due_reminders(window, &ctx.tz)?;
     report(&Due {
         reminders: due.iter().map(Row).collect(),

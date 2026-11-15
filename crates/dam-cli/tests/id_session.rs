@@ -50,7 +50,7 @@ fn the_owners_ids_are_kept_apart_by_session_and_show_names_each() {
     }
     assert_ne!(oids[0], oids[1]);
     for oid in &oids {
-        let (ok, out, err) = sb.dam(&["show", oid, "--json", "--no-pull"]);
+        let (ok, out, err) = sb.dam(&["show", oid, "--json"]);
         assert!(ok, "{err}");
         let shown: serde_json::Value = serde_json::from_str(&out).unwrap();
         assert_eq!(shown["id"], "build");

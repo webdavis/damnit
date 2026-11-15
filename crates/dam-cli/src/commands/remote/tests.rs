@@ -1,7 +1,6 @@
 use super::*;
 use crate::args::{RemoteArgs, RemoteCommand};
-use crate::testing::{FailingLauncher, FakeConfigFile, context};
-use dam_application::{ConfiguredDuration, RemoteConfig, RemoteName};
+use crate::testing::{FakeConfigFile, context};
 
 fn add(name: &str, url: &str) -> RemoteArgs {
     RemoteArgs {
@@ -9,18 +8,6 @@ fn add(name: &str, url: &str) -> RemoteArgs {
             name: name.into(),
             url: url.into(),
         },
-    }
-}
-
-fn remote(name: &str) -> RemoteConfig {
-    RemoteConfig {
-        name: RemoteName(name.into()),
-        helper: name.into(),
-        url: format!("{name}::"),
-        credentials: vec![],
-        stale: ConfiguredDuration::parse("60s"),
-        deadline: None,
-        path: None,
     }
 }
 
@@ -70,25 +57,5 @@ fn remote_add_writes_the_remote_to_the_config_file() {
     assert_eq!(
         file.added(),
         vec![("todoist".to_string(), "todoist::default".to_string())]
-    );
-}
-
-#[test]
-fn no_pull_answers_from_the_store_and_never_launches_a_helper() {
-    let mut ctx = context();
-    ctx.no_pull = true;
-    ctx.config.remotes.push(remote("t"));
-    ctx.launcher = Box::new(FailingLauncher);
-    refresh_stale_unless_no_pull(&ctx).unwrap();
-    assert!(ctx.store.all().unwrap().is_empty());
-    assert!(
-        ctx.store.notices().unwrap().is_empty(),
-        "reaching for the unreachable helper at all would have left a PullFailed notice"
-    );
-    assert!(
-        ctx.store
-            .last_pull(&RemoteName("t".into()))
-            .unwrap()
-            .is_none()
     );
 }

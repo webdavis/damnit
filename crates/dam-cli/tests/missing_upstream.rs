@@ -10,7 +10,7 @@ fn listing(tasks: &[(&str, &str)], complete: bool) -> Value {
 }
 
 fn oid_of(sb: &Sandbox, subject: &str) -> String {
-    let (ok, out, err) = sb.dam(&["ls", "--json", "--no-pull"]);
+    let (ok, out, err) = sb.dam(&["ls", "--json"]);
     assert!(ok, "{err}");
     let listed: Value = serde_json::from_str(&out).unwrap();
     listed["objects"]

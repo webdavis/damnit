@@ -3,8 +3,8 @@ use std::time::Duration;
 use dam_domain::Permission;
 
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{Clock, HelperError, Notice, RemoteName, RemoteTrackingRepository, StoreError};
-use crate::service::{Dam, Remotes};
+use crate::ports::{Clock, RemoteName, RemoteTrackingRepository, StoreError};
+use crate::service::Dam;
 
 impl Dam<'_> {
     pub fn require_fresh(&self, bounds: &[(String, Duration)]) -> Result<(), UseCaseError> {
@@ -22,34 +22,6 @@ impl Dam<'_> {
                     limit: bound.as_secs(),
                 }
                 .into());
-            }
-        }
-        Ok(())
-    }
-
-    pub fn refresh_stale(
-        &self,
-        remotes: Remotes<'_>,
-        say: fn(&UseCaseError) -> String,
-    ) -> Result<(), UseCaseError> {
-        for remote in &self.config.remotes {
-            let Some(window) = remote.stale.as_ref().map(|s| s.value) else {
-                continue;
-            };
-            if !self.may_reach(Permission::RemotePull, remote) {
-                continue;
-            }
-            let age = age_of_last_pull(self.store, self.clock, &remote.name)?;
-            if !is_stale(age, window) {
-                continue;
-            }
-            match self.pull(remotes, Some(&remote.name.0)) {
-                Ok(_) => {}
-                Err(e @ UseCaseError::Helper(HelperError::Cancelled)) => return Err(e),
-                Err(e) => self.store.add_notice(&Notice::PullFailed {
-                    remote: remote.name.clone(),
-                    why: say(&e.withholding_what_credential_code_raised()),
-                })?,
             }
         }
         Ok(())
@@ -73,7 +45,5 @@ fn age_of_last_pull(
 
 #[cfg(test)]
 mod access_tests;
-#[cfg(test)]
-mod refresh_tests;
 #[cfg(test)]
 mod tests;

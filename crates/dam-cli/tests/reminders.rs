@@ -15,7 +15,7 @@ fn reminders_list_the_ones_that_fall_due_in_the_window_as_json_and_toon() {
     assert!(ok, "{err}");
 
     let window = ["--from", "2026-01-02T09:00", "--to", "2026-01-02T10:00"];
-    let mut args = vec!["reminders", "--no-pull", "--json"];
+    let mut args = vec!["reminders", "--json"];
     args.extend(window);
     let (ok, out, err) = sb.dam(&args);
     assert!(ok, "{err}");
@@ -31,7 +31,7 @@ fn reminders_list_the_ones_that_fall_due_in_the_window_as_json_and_toon() {
     assert_eq!(reminders[0]["minutes_before"], 30);
     assert_eq!(reminders[0]["subject"], "call the bank");
 
-    args[2] = "--toon";
+    args[1] = "--toon";
     let (ok, out, err) = sb.dam(&args);
     assert!(ok, "{err}");
     assert!(out.starts_with("reminders[1]{"), "{out}");

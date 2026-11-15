@@ -4,7 +4,7 @@ use dam_application::{ConfigError, Refusal, RemoteName};
 
 use crate::args::{RemoteArgs, RemoteCommand};
 use crate::context::Context;
-use crate::error::{CliError, SecretsTightenedText, UseCaseText};
+use crate::error::{CliError, SecretsTightenedText};
 use crate::output::Report;
 use crate::view::{Human, View, report};
 use serde::Serialize;
@@ -45,15 +45,6 @@ pub(crate) fn run_remote(ctx: &Context, args: RemoteArgs) -> Result<Report, CliE
         }
         RemoteCommand::List => listing::run(ctx),
     }
-}
-
-pub(crate) fn refresh_stale_unless_no_pull(ctx: &Context) -> Result<(), CliError> {
-    if ctx.no_pull {
-        return Ok(());
-    }
-    Ok(ctx
-        .dam()
-        .refresh_stale(ctx.remotes(), |e| UseCaseText(e).to_string())?)
 }
 
 #[cfg(test)]

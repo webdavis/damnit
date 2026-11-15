@@ -24,7 +24,7 @@ fn revert(sb: &Sandbox, args: &[&str]) -> Value {
 }
 
 fn subject(sb: &Sandbox, oid: &str) -> Option<String> {
-    let out = sb.output(&["show", oid, "--json", "--no-pull"]);
+    let out = sb.output(&["show", oid, "--json"]);
     let shown: Value = serde_json::from_slice(&out.stdout).ok()?;
     shown["subject"].as_str().map(str::to_string)
 }

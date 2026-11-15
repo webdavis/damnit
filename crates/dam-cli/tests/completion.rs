@@ -16,12 +16,12 @@ fn a_done_task_keeps_done_and_completed_at_as_two_keys_in_the_store_and_in_show(
     sb.install_helper_pulling(DONE_UPSTREAM);
     let (ok, _, err) = sb.dam(&["pull"]);
     assert!(ok, "{err}");
-    let (ok, out, err) = sb.dam(&["ls", "--json", "--no-pull"]);
+    let (ok, out, err) = sb.dam(&["ls", "--json"]);
     assert!(ok, "{err}");
     let listed: serde_json::Value = serde_json::from_str(&out).unwrap();
     let oid = listed["objects"][0]["oid"].as_str().unwrap().to_string();
 
-    let (ok, out, err) = sb.dam(&["show", &oid, "--json", "--no-pull"]);
+    let (ok, out, err) = sb.dam(&["show", &oid, "--json"]);
     assert!(ok, "{err}");
     let shown: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_eq!(

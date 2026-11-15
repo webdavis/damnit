@@ -6,7 +6,6 @@ use crate::args::ShowArgs;
 use crate::commands::authorship::Authorship;
 use crate::commands::caller_id::with_caller_id;
 use crate::commands::commit::CommitDoc;
-use crate::commands::remote::refresh_stale_unless_no_pull;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::gate::may;
@@ -15,7 +14,6 @@ use crate::output::{Report, object_cells};
 use crate::view::{Human, View, report, wire};
 
 pub(crate) fn run_show(ctx: &Context, args: ShowArgs) -> Result<Report, CliError> {
-    refresh_stale_unless_no_pull(ctx)?;
     if let Some(object) = working_object_named(ctx, &args.id)? {
         let id = ctx.dam().caller_id(object.oid())?;
         let authorship = Authorship::read(ctx)?;

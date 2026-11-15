@@ -49,7 +49,7 @@ fn token_create_prints_only_a_token_that_authenticates() {
     let sb = Sandbox::new();
     let token =
         assert_warned_on_stderr_only(&sb, &["token", "create", "tool", "--allow", "task:read"]);
-    let out = sb.output_holding(&token, &["ls", "--json", "--no-pull"]);
+    let out = sb.output_holding(&token, &["ls", "--json"]);
     assert!(out.status.success(), "{out:?}");
 }
 

@@ -14,7 +14,7 @@ fn done_refuses_a_pulled_rule_dam_cannot_read_and_the_task_stays_open() {
     sb.install_helper_pulling(PULLED_EVERY_OTHER_WEEK);
     let (ok, _, err) = sb.dam(&["pull"]);
     assert!(ok, "{err}");
-    let (ok, out, err) = sb.dam(&["ls", "--json", "--no-pull"]);
+    let (ok, out, err) = sb.dam(&["ls", "--json"]);
     assert!(ok, "{err}");
     let listed: serde_json::Value = serde_json::from_str(&out).unwrap();
     let oid = listed["objects"][0]["oid"].as_str().unwrap().to_string();
@@ -29,7 +29,7 @@ fn done_refuses_a_pulled_rule_dam_cannot_read_and_the_task_stays_open() {
     let document: serde_json::Value = serde_json::from_slice(&refused.stderr).unwrap();
     assert_eq!(document["error"]["rule"], "unreadable_recurrence");
 
-    let (ok, out, _) = sb.dam(&["show", &oid, "--json", "--no-pull"]);
+    let (ok, out, _) = sb.dam(&["show", &oid, "--json"]);
     assert!(ok);
     let shown: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_eq!(shown["task"]["done"], false, "{shown}");
@@ -71,7 +71,7 @@ fn a_rule_is_stored_as_typed_not_as_the_parser_would_spell_it() {
         sb.dam(&["edit", &oid, "--recurrence", "every week on Monday"])
             .0
     );
-    let (ok, out, _) = sb.dam(&["show", &oid, "--json", "--no-pull"]);
+    let (ok, out, _) = sb.dam(&["show", &oid, "--json"]);
     assert!(ok);
     let shown: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_eq!(shown["recurrence"], "every week on Monday");
@@ -88,7 +88,7 @@ fn a_pulled_rule_goes_back_to_the_remote_spelled_as_it_came() {
     sb.install_helper_pulling(PULLED_EVERY_WEEK_ON_MONDAY);
     let (ok, _, err) = sb.dam(&["pull"]);
     assert!(ok, "{err}");
-    let (ok, out, _) = sb.dam(&["ls", "--json", "--no-pull"]);
+    let (ok, out, _) = sb.dam(&["ls", "--json"]);
     assert!(ok);
     let listed: serde_json::Value = serde_json::from_str(&out).unwrap();
     let oid = listed["objects"][0]["oid"].as_str().unwrap().to_string();

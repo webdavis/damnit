@@ -24,15 +24,3 @@ fn a_skipped_object_with_no_remote_id_reads_as_an_object_skipped() {
         "{human}"
     );
 }
-
-#[test]
-fn a_pull_that_failed_still_reads_as_failed() {
-    let human = status_after(Notice::PullFailed {
-        remote: RemoteName("fake".into()),
-        why: "the helper went away".into(),
-    });
-    assert!(
-        human.contains("pull from fake failed: the helper went away"),
-        "{human}"
-    );
-}

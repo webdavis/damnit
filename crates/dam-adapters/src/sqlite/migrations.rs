@@ -4,7 +4,7 @@ mod steps;
 
 use steps::*;
 
-pub(super) const VERSION: u32 = 14;
+pub(super) const VERSION: u32 = 15;
 
 pub(super) fn migrate_above_user_version_in_one_transaction(
     conn: &mut Connection,
@@ -37,3 +37,6 @@ mod pulled_commit_tests;
 
 #[cfg(test)]
 mod upgrade_tests;
+
+#[cfg(test)]
+mod pull_failed_tests;

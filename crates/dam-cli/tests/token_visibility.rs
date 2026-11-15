@@ -18,7 +18,7 @@ fn a_token_reads_only_what_its_grants_cover_and_nothing_hints_at_the_rest() {
     sb.new_object(&["report", "--path", "work"]);
     let hidden = sb.new_object(&["diary", "--path", "home"]);
 
-    let out = sb.output_holding(&held, &["ls", "--json", "--no-pull"]);
+    let out = sb.output_holding(&held, &["ls", "--json"]);
     assert!(out.status.success(), "{out:?}");
     let listed = String::from_utf8_lossy(&out.stdout);
     assert!(
@@ -26,7 +26,7 @@ fn a_token_reads_only_what_its_grants_cover_and_nothing_hints_at_the_rest() {
         "{listed}"
     );
 
-    let out = sb.output_holding(&held, &["show", &hidden, "--json", "--no-pull"]);
+    let out = sb.output_holding(&held, &["show", &hidden, "--json"]);
     assert_eq!(out.status.code(), Some(4));
     assert_eq!(error_document(&out)["error"]["rule"], "no_such_object");
 }
@@ -74,7 +74,6 @@ fn a_path_restricted_token_sees_no_event_outside_its_path_in_the_agenda() {
         "--to",
         "2026-09-26",
         "--json",
-        "--no-pull",
     ];
     let out = sb.output_holding(&held, &window);
     assert!(out.status.success(), "{out:?}");
@@ -128,12 +127,12 @@ fn a_token_never_sees_the_oid_of_a_hidden_dependency_or_attached_event() {
     let report = sb.new_object(&["report", "--path", "work"]);
     let (ok, _, err) = sb.dam(&["edit", &report, "--depends", &diary, "--attach", &dentist]);
     assert!(ok, "{err}");
-    let (_, owner_view, _) = sb.dam(&["show", &report, "--json", "--no-pull"]);
+    let (_, owner_view, _) = sb.dam(&["show", &report, "--json"]);
     assert!(owner_view.contains(&diary) && owner_view.contains(&dentist));
 
     for format in [vec!["--json"], vec!["--toon"], vec![]] {
         for read in [vec!["ls"], vec!["show", &report]] {
-            let args = [read, format.clone(), vec!["--no-pull"]].concat();
+            let args = [read, format.clone()].concat();
             let out = sb.output_holding(&held, &args);
             assert!(out.status.success(), "{args:?}: {out:?}");
             let shown = String::from_utf8_lossy(&out.stdout);
