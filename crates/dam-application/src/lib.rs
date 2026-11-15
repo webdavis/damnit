@@ -24,11 +24,12 @@ pub use ports::{
     AcceptedKindsRepository, AnswerRepository, Attempt, AttemptRepository, Attempts, ByHand, Clock,
     CommitRepository, ComputeFailure, ConfigError, ConfigFile, Conflict, ConflictRepository,
     CredentialError, CredentialSource, DayRepository, Declared, DroppedBecause, EditFault,
-    EditedTable, Expected, FilterFailure, FilterFault, FilterFunctions, HelperError,
-    HelperLauncher, Histories, History, IdRepository, ItemRepository, LoadedConfig, Misread,
-    MissingTask, Notice, NoticeRepository, ObjectRepository, OriginRepository, Place, Randomness,
-    RemoteHelper, RemoteName, RemoteNameError, RemoteTrackingRepository, SecretsTightened,
-    StageRepository, Store, StoreError, Transactional, Uneditable,
+    EditedTable, Expected, FilterFailure, FilterFault, FilterFunctions, FollowOn,
+    FollowOnRepository, HelperError, HelperLauncher, Histories, History, IdRepository,
+    ItemRepository, LoadedConfig, Misread, MissingTask, Notice, NoticeRepository, ObjectRepository,
+    ObjectState, OriginRepository, Place, Randomness, RemoteHelper, RemoteName, RemoteNameError,
+    RemoteTrackingRepository, SecretsTightened, StageRepository, Store, StoreError, Transactional,
+    Uneditable,
 };
 pub use remote::{
     IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, PushOutcome,

@@ -4,6 +4,7 @@ mod config_file;
 mod days;
 mod environment;
 mod filter_functions;
+mod follow_ons;
 mod helper;
 mod ids;
 mod items;
@@ -21,6 +22,7 @@ pub use config_file::{
 pub use days::DayRepository;
 pub use environment::{Clock, Randomness};
 pub use filter_functions::{FilterFailure, FilterFault, FilterFunctions, Histories, History};
+pub use follow_ons::{FollowOn, FollowOnRepository, ObjectState};
 pub use helper::{
     ComputeFailure, CredentialError, CredentialSource, HelperError, HelperLauncher, RemoteHelper,
 };
