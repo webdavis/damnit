@@ -54,7 +54,6 @@ fn a_record_with_nothing_left_to_declare_is_cleared_and_not_skipped() {
     s.committed(task(1)).tracked_as(&oid(1), "r1").pushed();
     s.committed(named("x"));
     push_with_no_answer(&s);
-    s.committed(task(1));
     pull_holding(&s, "x");
 
     assert_eq!(push_accepting(&s), (vec![], 0));
@@ -67,7 +66,6 @@ fn a_write_after_a_cleared_record_gets_a_key_the_remote_has_not_run() {
     s.committed(task(1)).tracked_as(&oid(1), "r1").pushed();
     s.committed(named("x"));
     let unanswered = keys_sent_with_no_answer(&s);
-    s.committed(task(1));
     pull_holding(&s, "x");
     assert_eq!(push_accepting(&s), (vec![], 0));
     assert!(!attempted(&s));

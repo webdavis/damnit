@@ -1,14 +1,16 @@
 use dam_domain::{Object, Oid, kind_change, merge_fields};
 
+use super::ours::keep_what_we_sent;
 use crate::config::RemoteConfig;
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{Conflict, Notice, Randomness, Store};
+use crate::ports::{Conflict, Notice, Randomness, RemoteHelper, Store};
 use crate::remote::{IncomingObject, RemoteCapabilities};
 
 pub(super) enum Incoming {
     Create(Object),
     FastForward(Object),
     Conflict(Box<Conflict>),
+    Settled(Object),
     Unchanged,
 }
 
@@ -18,6 +20,7 @@ pub(super) fn classify(
     store: &dyn Store,
     remote: &RemoteConfig,
     caps: &RemoteCapabilities,
+    helper: &dyn RemoteHelper,
     objects: Vec<IncomingObject>,
     random: &dyn Randomness,
 ) -> Result<Classified, UseCaseError> {
@@ -26,6 +29,7 @@ pub(super) fn classify(
         .into_iter()
         .map(|c| c.change.oid().clone())
         .collect();
+    let record = store.attempts(&remote.name)?;
     let mut notices = store.notices()?;
     let mut planned = Vec::new();
     let mut new_remote_id_mappings = Vec::new();
@@ -63,30 +67,56 @@ pub(super) fn classify(
         );
         let incoming = match local {
             None => Incoming::Create(theirs),
-            Some(ref l) if *l == theirs => Incoming::Unchanged,
-            Some(ref l) => {
-                let last_seen_on_the_remote = store.remote_snapshot(&remote.name, &oid)?;
-                let ours_unmoved_since = last_seen_on_the_remote.as_ref() == Some(l);
-                let theirs_unmoved_since = last_seen_on_the_remote.as_ref() == Some(&theirs);
-                if ours_unmoved_since {
-                    Incoming::FastForward(theirs)
-                } else if theirs_unmoved_since {
-                    Incoming::Unchanged
-                } else {
-                    let committed = store.committed(&oid)?;
-                    if committed.as_ref() != Some(l) || staged.contains(&oid) {
-                        return Err(Refusal::DirtyOnPull { oid }.into());
-                    }
-                    Incoming::Conflict(Box::new(Conflict {
-                        remote: remote.name.clone(),
-                        oid: oid.clone(),
-                        ours: l.clone(),
-                        theirs,
-                    }))
-                }
+            Some(l) if l == theirs => settled(store, remote, theirs)?,
+            Some(l) => {
+                let attempts = record.get(&oid).map_or(&[][..], Vec::as_slice);
+                let theirs = keep_what_we_sent(helper, caps, &l, theirs, attempts)?;
+                against_local(store, remote, &staged, l, theirs)?
             }
         };
         planned.push((oid, incoming));
     }
     Ok((planned, new_remote_id_mappings))
+}
+
+fn settled(
+    store: &dyn Store,
+    remote: &RemoteConfig,
+    theirs: Object,
+) -> Result<Incoming, UseCaseError> {
+    let last_seen_on_the_remote = store.remote_snapshot(&remote.name, theirs.oid())?;
+    Ok(if last_seen_on_the_remote.as_ref() == Some(&theirs) {
+        Incoming::Unchanged
+    } else {
+        Incoming::Settled(theirs)
+    })
+}
+
+fn against_local(
+    store: &dyn Store,
+    remote: &RemoteConfig,
+    staged: &[Oid],
+    local: Object,
+    theirs: Object,
+) -> Result<Incoming, UseCaseError> {
+    if local == theirs {
+        return Ok(Incoming::Unchanged);
+    }
+    let oid = local.oid().clone();
+    let last_seen_on_the_remote = store.remote_snapshot(&remote.name, &oid)?;
+    if last_seen_on_the_remote.as_ref() == Some(&local) {
+        return Ok(Incoming::FastForward(theirs));
+    }
+    if last_seen_on_the_remote.as_ref() == Some(&theirs) {
+        return Ok(Incoming::Unchanged);
+    }
+    if store.committed(&oid)?.as_ref() != Some(&local) || staged.contains(&oid) {
+        return Err(Refusal::DirtyOnPull { oid }.into());
+    }
+    Ok(Incoming::Conflict(Box::new(Conflict {
+        remote: remote.name.clone(),
+        oid,
+        ours: local,
+        theirs,
+    })))
 }

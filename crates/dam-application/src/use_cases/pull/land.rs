@@ -20,6 +20,10 @@ impl Dam<'_> {
         for (oid, incoming) in planned {
             match incoming {
                 Incoming::Unchanged => report.unchanged += 1,
+                Incoming::Settled(o) => {
+                    self.store.set_remote_snapshot(&remote.name, &o)?;
+                    report.unchanged += 1;
+                }
                 Incoming::Create(o) => {
                     landed.extend(take_theirs(self.store, remote, &oid, o)?);
                     report.created += 1;

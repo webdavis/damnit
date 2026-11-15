@@ -4,7 +4,8 @@ use dam_domain::{Field, Object, Oid};
 
 use crate::errors::UseCaseError;
 use crate::ports::{Attempt, Attempts, Declared, HelperError, RemoteHelper, RemoteName, Store};
-use crate::remote::{MutationOp, RemoteCapabilities, RemoteMutation};
+use crate::remote::{RemoteCapabilities, RemoteMutation};
+use crate::use_cases::as_it_stands::as_it_stands;
 use crate::use_cases::push::idempotency::key;
 
 pub(super) struct Sending {
@@ -65,15 +66,7 @@ pub(super) fn differing(
     let Some(now) = now.filter(|_| !earlier.is_empty()) else {
         return Ok(BTreeSet::new());
     };
-    let as_it_stands = helper.declared_on_the_wire(&RemoteMutation {
-        op: MutationOp::Update,
-        oid: now.oid().clone(),
-        idempotency_key: String::new(),
-        remote_id: None,
-        container_remote_id: None,
-        object: Some(now.clone()),
-        fields: caps.fields.clone(),
-    })?;
+    let as_it_stands = as_it_stands(helper, caps, now)?;
     Ok(earlier
         .iter()
         .flat_map(|attempt| &attempt.declared)
