@@ -4,7 +4,7 @@ use support::sandbox::Sandbox;
 use support::tokens::{answer, grant, grant_to, refused};
 
 fn objects(sb: &Sandbox) -> Vec<serde_json::Value> {
-    let (ok, out, err) = sb.dam(&["ls", "--json", "--no-pull"]);
+    let (ok, out, err) = sb.dam(&["ls", "--json"]);
     assert!(ok, "{err}");
     serde_json::from_str::<serde_json::Value>(&out).unwrap()["objects"]
         .as_array()

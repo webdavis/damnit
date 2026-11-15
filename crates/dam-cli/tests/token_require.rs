@@ -22,10 +22,7 @@ fn a_request_missing_a_required_detail_is_refused_naming_only_what_to_pass() {
         support::guard("a_request_missing_a_required_detail_is_refused_naming_only_what_to_pass");
     let sb = Sandbox::new();
     let held = requiring_session_and_model(&sb);
-    let out = sb.output_holding(
-        &held,
-        &["ls", "--json", "--no-pull", "--meta", "session=s1"],
-    );
+    let out = sb.output_holding(&held, &["ls", "--json", "--meta", "session=s1"]);
     assert_eq!(out.status.code(), Some(5), "{out:?}");
     let document = error_document(&out);
     assert_eq!(document["error"]["rule"], "missing_details");
@@ -44,7 +41,6 @@ fn a_request_carrying_every_required_detail_is_served() {
         &[
             "ls",
             "--json",
-            "--no-pull",
             "--meta",
             "session=s1",
             "--meta",
@@ -58,7 +54,7 @@ fn a_request_carrying_every_required_detail_is_served() {
 fn a_meta_without_an_equals_sign_is_a_usage_error() {
     let _guard = support::guard("a_meta_without_an_equals_sign_is_a_usage_error");
     let sb = Sandbox::new();
-    let out = sb.output(&["ls", "--no-pull", "--meta", "session"]);
+    let out = sb.output(&["ls", "--meta", "session"]);
     assert_eq!(out.status.code(), Some(2), "{out:?}");
 }
 

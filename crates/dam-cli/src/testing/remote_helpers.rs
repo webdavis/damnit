@@ -79,17 +79,3 @@ impl HelperLauncher for EchoLauncher {
         }))
     }
 }
-
-#[derive(Debug)]
-pub(crate) struct FailingLauncher;
-impl HelperLauncher for FailingLauncher {
-    fn launch(
-        &self,
-        remote: &RemoteConfig,
-        _: &[(String, Secret)],
-    ) -> Result<Box<dyn RemoteHelper>, HelperError> {
-        Err(HelperError::NotFound {
-            helper: remote.helper.clone(),
-        })
-    }
-}

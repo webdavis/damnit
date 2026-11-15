@@ -11,7 +11,7 @@ fn run(sb: &Sandbox, args: &[&str]) {
 }
 
 fn oid_of(sb: &Sandbox, subject: &str) -> String {
-    let (ok, out, err) = sb.dam(&["ls", "--json", "--no-pull"]);
+    let (ok, out, err) = sb.dam(&["ls", "--json"]);
     assert!(ok, "{err}");
     let listed: Value = serde_json::from_str(&out).unwrap();
     let objects = listed["objects"].as_array().unwrap();

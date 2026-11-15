@@ -17,7 +17,7 @@ fn committed_task(sb: &Sandbox, subject: &str) -> String {
 }
 
 fn owner_subject(sb: &Sandbox, oid: &str) -> serde_json::Value {
-    let (ok, out, err) = sb.dam(&["show", oid, "--json", "--no-pull"]);
+    let (ok, out, err) = sb.dam(&["show", oid, "--json"]);
     assert!(ok, "{err}");
     serde_json::from_str::<serde_json::Value>(&out).unwrap()
 }

@@ -14,7 +14,7 @@ fn refused(out: &Output) -> String {
 }
 
 fn through_the_variable(sb: &Sandbox, config: &Path) -> Output {
-    sb.command(&["ls", "--no-pull"])
+    sb.command(&["ls"])
         .env("DAM_CONFIG", config)
         .output()
         .unwrap()
@@ -22,9 +22,7 @@ fn through_the_variable(sb: &Sandbox, config: &Path) -> Output {
 
 fn through_the_flag(sb: &Sandbox, config: &Path) -> Output {
     let config = config.to_str().unwrap();
-    sb.command(&["--config", config, "ls", "--no-pull"])
-        .output()
-        .unwrap()
+    sb.command(&["--config", config, "ls"]).output().unwrap()
 }
 
 #[test]

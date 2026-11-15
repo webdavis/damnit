@@ -50,10 +50,7 @@ fn filter_list_prints_the_golden_lines() {
 fn an_empty_list_names_its_empty_answer_in_one_sentence() {
     let sb = support::sandbox::Sandbox::new();
     assert_eq!(sb.dam(&["ls"]).1, "no objects match\n");
-    assert_eq!(
-        sb.dam(&["agenda", "--no-pull"]).1,
-        "no events in the window\n"
-    );
+    assert_eq!(sb.dam(&["agenda"]).1, "no events in the window\n");
     assert_eq!(sb.dam(&["log"]).1, "no commits yet\n");
     assert_eq!(sb.dam(&["diff"]).1, "no changes\n");
 }

@@ -9,14 +9,7 @@ use support::sandbox::Sandbox;
 use support::schema::assert_matches_schema;
 use support::tokens::{grant, grant_to};
 
-const WINDOW: [&str; 6] = [
-    "agenda",
-    "--from",
-    "2026-09-25",
-    "--to",
-    "2026-09-26",
-    "--no-pull",
-];
+const WINDOW: [&str; 5] = ["agenda", "--from", "2026-09-25", "--to", "2026-09-26"];
 
 fn pulled_from_the_calendar() -> Sandbox {
     let sb = Sandbox::new();

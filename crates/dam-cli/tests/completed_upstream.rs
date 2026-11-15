@@ -5,7 +5,7 @@ use support::sandbox::Sandbox;
 use support::upstream::{answer_pull_with, pulls_asked_since, task};
 
 fn subjects(sb: &Sandbox, query: &str) -> Vec<String> {
-    let (ok, out, err) = sb.dam(&["ls", query, "--json", "--no-pull"]);
+    let (ok, out, err) = sb.dam(&["ls", query, "--json"]);
     assert!(ok, "{err}");
     let listed: serde_json::Value = serde_json::from_str(&out).unwrap();
     listed["objects"]

@@ -24,7 +24,7 @@ fn removal(sb: &Sandbox, held: &str, oid: &str) -> serde_json::Value {
 }
 
 fn listed(sb: &Sandbox) -> usize {
-    let (ok, out, err) = sb.dam(&["ls", "--json", "--no-pull"]);
+    let (ok, out, err) = sb.dam(&["ls", "--json"]);
     assert!(ok, "{err}");
     let ls: serde_json::Value = serde_json::from_str(&out).unwrap();
     ls["objects"].as_array().unwrap().len()

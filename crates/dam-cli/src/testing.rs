@@ -17,7 +17,7 @@ mod config_file;
 mod remote_helpers;
 mod scripted;
 pub(crate) use config_file::FakeConfigFile;
-pub(crate) use remote_helpers::{EchoLauncher, FailingLauncher, MissingCredentials};
+pub(crate) use remote_helpers::{EchoLauncher, MissingCredentials};
 pub(crate) use scripted::{Save, ScriptedEditor, ScriptedPrompt};
 
 pub(crate) fn context() -> Context {
@@ -50,7 +50,6 @@ pub(crate) fn context() -> Context {
             texts: RefCell::new(vec![]),
         }),
         tz: jiff::tz::TimeZone::UTC,
-        no_pull: false,
         changed_by_hook: Default::default(),
         interrupt: Interrupt::default(),
         hook_progress: HookProgressOnStandardError::for_format(Format::Json),

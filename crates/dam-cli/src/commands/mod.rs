@@ -35,13 +35,6 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 
-pub(crate) fn pulls_a_stale_remote(command: &Command) -> bool {
-    matches!(
-        command,
-        Command::Ls(_) | Command::Show(_) | Command::Agenda(_) | Command::Reminders(_)
-    )
-}
-
 pub(crate) fn dispatch_a_verb_that_opens_the_store(
     ctx: &Context,
     command: Command,

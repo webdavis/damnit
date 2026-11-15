@@ -22,7 +22,7 @@ fn the_create_left_unanswered(sb: &Sandbox) -> (String, String) {
         .as_str()
         .unwrap()
         .to_string();
-    let (ok, out, err) = sb.dam(&["ls", "--json", "--no-pull"]);
+    let (ok, out, err) = sb.dam(&["ls", "--json"]);
     assert!(ok, "{err}");
     let listed: Value = serde_json::from_str(&out).unwrap();
     let object = listed["objects"]

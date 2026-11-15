@@ -97,7 +97,7 @@ pub fn text(bytes: &[u8]) -> String {
 }
 
 pub fn full_oid(sb: &Sandbox, short: &str) -> String {
-    let (ok, out, err) = sb.dam(&["show", short, "--json", "--no-pull"]);
+    let (ok, out, err) = sb.dam(&["show", short, "--json"]);
     assert!(ok, "{err}");
     serde_json::from_str::<serde_json::Value>(&out).unwrap()["oid"]
         .as_str()

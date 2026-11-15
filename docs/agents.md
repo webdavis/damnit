@@ -195,14 +195,14 @@ the event's `attendees`, and its `organizer`, `location` and `conference` when i
 object outside the token's grants answers like a missing one: left out of lists, and exit 4, rule
 `no_such_object`, when named.
 
-On `dam ls`, `dam show`, `dam agenda` and `dam reminders`, `--no-pull` answers from the local
-store and starts no remote helper; every other command refuses it with exit 2. `--max-age <remote>=<duration>`
-makes `dam agenda` refuse, exit 4, rule `stale_remote`, when that remote last pulled longer ago,
+`dam ls`, `dam show`, `dam agenda` and `dam reminders` answer from the local store and start no
+remote helper; `dam pull` brings a remote's changes in. `--max-age <remote>=<duration>` makes
+`dam agenda` refuse, exit 4, rule `stale_remote`, when that remote last pulled longer ago,
 here a remote named `calendar`. A token needs `remote:read` on that remote, or it gets rule
 `no_such_remote`:
 
 ```sh example exit=4 rule=stale_remote
-dam agenda --json --no-pull --max-age calendar=15m
+dam agenda --json --max-age calendar=15m
 ```
 
 ## Exit codes and errors

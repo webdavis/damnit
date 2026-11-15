@@ -29,7 +29,6 @@ pub(crate) struct Context {
     pub(crate) editor: Option<Box<dyn EditorSession>>,
     pub(crate) prompt: Box<dyn Prompt>,
     pub(crate) tz: jiff::tz::TimeZone,
-    pub(crate) no_pull: bool,
     pub(crate) changed_by_hook: ChangedByHook,
     pub(crate) interrupt: Interrupt,
     pub(crate) hook_progress: HookProgressOnStandardError,
@@ -42,7 +41,6 @@ impl Context {
         presented_token: Option<OsString>,
         meta: &BTreeMap<String, String>,
         format: Format,
-        no_pull: bool,
         interrupt: &Interrupt,
     ) -> Result<Context, CliError> {
         let loaded = config_file.load()?;
@@ -68,7 +66,6 @@ impl Context {
             editor,
             prompt,
             tz: jiff::tz::TimeZone::system(),
-            no_pull,
             changed_by_hook: ChangedByHook::default(),
             interrupt: interrupt.clone(),
             hook_progress: HookProgressOnStandardError::for_format(format),
