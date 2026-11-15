@@ -134,3 +134,28 @@ fn a_query_dam_cannot_read_exits_two_and_is_of_kind_parse() {
     assert_eq!(error.document()["error"]["kind"], "parse");
     assert_eq!(error.to_string(), "expected & or | before due:tomorrow");
 }
+
+#[test]
+fn a_system_with_no_scheduler_is_refused_with_the_crontab_line_to_add() {
+    let line = "* * * * * '/bin/dam' 'sync' 'run'";
+    let error = CliError::from(dam_application::ScheduleError::NoScheduler {
+        crontab_line: line.into(),
+    });
+    let document = error.document();
+    assert_eq!(error.exit_code(), 4);
+    assert_eq!(document["error"]["rule"], "no_scheduler");
+    assert_eq!(document["error"]["crontab_line"], line);
+    assert_eq!(
+        document["error"]["message"],
+        format!(
+            "this system runs neither launchd nor systemd; add this line with crontab -e: {line}"
+        )
+    );
+}
+
+#[test]
+fn a_scheduler_that_fails_is_a_failure_that_says_why() {
+    let error = CliError::from(dam_application::ScheduleError::Failed("no bus".into()));
+    assert_eq!(error.exit_code(), 1);
+    assert_eq!(error.to_string(), "no bus");
+}

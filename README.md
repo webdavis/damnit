@@ -108,6 +108,17 @@ A failed sync leaves one notice in `dam status`, until a sync of that remote wor
 It exits 1 when a sync failed. `docs/schemas/sync-run.schema.json` is the schema of its `--json`
 answer.
 
+`dam sync enable` has the system run `dam sync run` every minute: a launchd agent on macOS, a
+systemd user timer on Linux.
+It starts a first sync at once, then one every minute.
+The entry runs that `dam` with the config and store in use when it was enabled.
+The entry runs `dam sync run --record-last-run`, which writes the report or the error to
+`${XDG_STATE_HOME:-~/.local/state}/dam/sync-last-run.txt` instead of printing it.
+That last-run file holds only the last run.
+Where neither scheduler runs, it refuses and prints the crontab line to add.
+`dam sync disable` stops it and removes the entry. Both are safe to run twice.
+Setting `sync_every` installs nothing by itself.
+
 ## Google Calendar
 
     cargo install --git https://github.com/webdavis/damnit dam-remote-gcal
@@ -469,7 +480,7 @@ added gets a removal item. It answers `withdrawn`, `waiting`, `declined` or `not
 exit 0. Your own `dam rm --id` removes your task, or answers `nothing`.
 
 A token cannot run `mv`, `add`, `reset`, `restore`, `commit`, `remote add`, `resolve`, `day`,
-`sync run`, `config` or `token`, or set `--focus`.
+`sync run`, `sync enable`, `sync disable`, `config` or `token`, or set `--focus`.
 
 An unknown permission is skipped. An unknown key, or a reserved name such as `config:change`,
 disables the token, and so does sharing a value with another token. A `schema` above 1 disables

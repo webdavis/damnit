@@ -123,15 +123,33 @@ dam resolve ours: help = Keep the local side
 dam resolve theirs: help = Keep the remote's side
 dam sync: about = Sync the remotes that set sync_every
 dam sync: after_help = Examples:
+  dam sync enable
   dam sync run
+  dam sync disable
 dam sync run: about = Pull from and push to each remote whose sync_every has passed since its last pull
 dam sync run: after_help = A remote that takes no kinds is pulled from alone.
 A failed sync leaves one notice in dam status, until a sync of that remote works.
 It exits 1 when a remote's sync failed, and prints the report to stdout either way.
+With --record-last-run the report, or the error, replaces the last-run file instead.
 
 Examples:
   dam sync run
   dam sync run --json
+dam sync run record_last_run: help = Write the report or the error to the last-run file instead of printing it
+dam sync enable: about = Have the system run dam sync run every minute for this user
+dam sync enable: after_help = On macOS it installs a launchd agent; on Linux, a systemd user timer.
+It starts a first sync at once, then one every minute.
+The entry runs this dam with the config and store in use now.
+Each run replaces the last-run file it prints.
+Where neither runs, it refuses and prints the crontab line to add.
+
+Examples:
+  dam sync enable
+  dam sync enable --json
+dam sync disable: about = Stop the system running dam sync run and remove its entry
+dam sync disable: after_help = Examples:
+  dam sync disable
+  dam sync disable --json
 dam token: about = Manage the tokens tools and agents run dam with
 dam token create: about = Make a token with one grant, add it to secrets.lua and print it once
 dam token create name: help = Name the token, such as tool

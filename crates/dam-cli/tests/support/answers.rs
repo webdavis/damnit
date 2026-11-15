@@ -148,6 +148,12 @@ pub fn answers(command: &str) -> Option<Vec<serde_json::Value>> {
         "push" => vec![json_of(&fixture::committed(), &["push"])],
         "pull" => vec![json_of(&fixture::committed(), &["pull"])],
         "sync run" => vec![json_of(&syncing(), &["sync", "run"])],
+        "sync enable" => scheduled_twice(&syncing(), "enable"),
+        "sync disable" => {
+            let sb = Sandbox::new();
+            scheduled_twice(&sb, "enable");
+            scheduled_twice(&sb, "disable")
+        }
         "resolve" => vec![json_of(&in_conflict(), &["resolve", &milk, "--theirs"])],
         "token create" => vec![json_of(
             &Sandbox::new(),
@@ -175,4 +181,13 @@ fn syncing() -> Sandbox {
     let sb = fixture::committed();
     sb.add_remote("fake", Remote::fake().sync_every("1m"));
     sb
+}
+
+fn scheduled_twice(sb: &Sandbox, verb: &str) -> Vec<serde_json::Value> {
+    let once = || {
+        let out = sb.scheduling(&["sync", verb, "--json"]);
+        assert!(out.status.success(), "{verb}: {out:?}");
+        serde_json::from_slice(&out.stdout).unwrap()
+    };
+    vec![once(), once()]
 }

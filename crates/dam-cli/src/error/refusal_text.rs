@@ -150,6 +150,10 @@ impl fmt::Display for RefusalText<'_> {
                     "hook {event} started this dam, and a hook cannot run dam"
                 )
             }
+            Refusal::NoScheduler { crontab_line } => write!(
+                f,
+                "this system runs neither launchd nor systemd; add this line with crontab -e: {crontab_line}"
+            ),
             Refusal::Item(refusal) => write!(f, "{}", ItemText(refusal)),
             Refusal::PulledCommit(id) => pulled_commit(f, id),
             Refusal::NotInCommit { commit, text } => not_in_commit(f, commit, text),

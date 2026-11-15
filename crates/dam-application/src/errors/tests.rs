@@ -12,7 +12,7 @@ mod item_samples;
 use hook_samples::hook_samples;
 use item_samples::item_samples;
 
-const HAND_COUNTED_RULES: usize = 50;
+const HAND_COUNTED_RULES: usize = 51;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -66,6 +66,7 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::NotInCommit { .. } => 47,
         Refusal::HookRefused(_) => 48,
         Refusal::StartedByHook(_) => 49,
+        Refusal::NoScheduler { .. } => 50,
     }
 }
 
@@ -137,6 +138,9 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
         Refusal::NotInCommit {
             commit: commit_id(),
             text: "abab".into(),
+        },
+        Refusal::NoScheduler {
+            crontab_line: "* * * * * dam sync run".into(),
         },
     ]
     .into_iter()

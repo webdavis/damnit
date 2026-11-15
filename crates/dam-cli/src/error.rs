@@ -8,6 +8,7 @@ use crate::editor::EditorError;
 mod commit_text;
 mod config_text;
 mod conversions;
+mod crontab_line;
 mod document;
 mod edit_text;
 mod filter_text;

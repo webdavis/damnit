@@ -1,6 +1,7 @@
 pub mod contract;
 mod debug_form;
 mod doubles;
+mod fake_schedule;
 mod faulty_store;
 mod filter_functions;
 mod fixture;
@@ -15,6 +16,7 @@ pub use doubles::{
     DeclaredForm, EchoCredentials, FixedClock, FixedRandom, ScriptedHelper, ScriptedLauncher, oid,
     task_caps,
 };
+pub use fake_schedule::FakeSchedule;
 pub use faulty_store::FaultyStore;
 pub use filter_functions::FakeFilterFunctions;
 pub use fixture::{Fixture, remotes_launched_by};

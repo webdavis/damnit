@@ -6,6 +6,7 @@ pub mod config_files;
 pub mod config_tokens;
 pub mod doctor;
 pub mod errors;
+pub mod fake_scheduler;
 pub mod fixture;
 pub mod golden;
 pub mod help_flags;

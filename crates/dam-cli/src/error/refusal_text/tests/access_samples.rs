@@ -86,5 +86,12 @@ pub(super) fn token_command_refusals_with_their_text() -> Vec<(Refusal, &'static
             Refusal::NoSuchSetting("nope".into()),
             "no setting named nope; run dam config list to see the keys",
         ),
+        (
+            Refusal::NoScheduler {
+                crontab_line: "* * * * * 'dam' 'sync' 'run'".into(),
+            },
+            "this system runs neither launchd nor systemd; add this line with crontab -e: \
+             * * * * * 'dam' 'sync' 'run'",
+        ),
     ]
 }

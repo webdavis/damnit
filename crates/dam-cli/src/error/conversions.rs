@@ -1,5 +1,5 @@
 use dam_adapters::OpenError;
-use dam_application::{ConfigError, Refusal, StoreError, UseCaseError};
+use dam_application::{ConfigError, Refusal, ScheduleError, StoreError, UseCaseError};
 
 use super::CliError;
 use crate::editor::EditorError;
@@ -37,5 +37,15 @@ impl From<StoreError> for CliError {
 impl From<std::io::Error> for CliError {
     fn from(e: std::io::Error) -> CliError {
         CliError::Io(e.to_string())
+    }
+}
+impl From<ScheduleError> for CliError {
+    fn from(e: ScheduleError) -> CliError {
+        match e {
+            ScheduleError::NoScheduler { crontab_line } => {
+                Refusal::NoScheduler { crontab_line }.into()
+            }
+            ScheduleError::Failed(why) => CliError::Io(why),
+        }
     }
 }

@@ -99,7 +99,7 @@ Examples:
     Resolve(ResolveArgs),
     #[command(
         about = "Sync the remotes that set sync_every",
-        after_help = "Examples:\n  dam sync run"
+        after_help = "Examples:\n  dam sync enable\n  dam sync run\n  dam sync disable"
     )]
     Sync(SyncArgs),
     #[command(about = "Manage the tokens tools and agents run dam with")]

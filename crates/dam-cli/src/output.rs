@@ -48,10 +48,16 @@ pub(crate) fn render(format: Format, report: &Report) -> Result<String, CliError
 }
 
 pub(crate) fn print_error(format: Format, error: &CliError) {
-    if let CliError::Reported = error {
-        return;
+    if let Some(line) = error_text(format, error) {
+        eprintln!("{line}");
     }
-    let line = match format {
+}
+
+pub(crate) fn error_text(format: Format, error: &CliError) -> Option<String> {
+    if let CliError::Reported = error {
+        return None;
+    }
+    Some(match format {
         Format::Human => format!("dam: {error}"),
         Format::Json | Format::Toon => {
             let report = Report {
@@ -64,8 +70,7 @@ pub(crate) fn print_error(format: Format, error: &CliError) {
             };
             render(format, &report).unwrap_or_else(|_| format!("dam: {error}"))
         }
-    };
-    eprintln!("{line}");
+    })
 }
 
 pub(crate) fn print(format: Format, color: bool, report: &Report) -> Result<(), CliError> {

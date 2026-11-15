@@ -1,6 +1,6 @@
 use dam_application::Refusal;
 
-pub(super) const RULES: usize = 36;
+pub(super) const RULES: usize = 37;
 
 pub(super) fn rule_number(refusal: &Refusal) -> usize {
     match refusal {
@@ -35,10 +35,11 @@ pub(super) fn rule_number(refusal: &Refusal) -> usize {
         Refusal::NotGrantable(_) => 28,
         Refusal::NoSuchToken(_) => 29,
         Refusal::NoSuchSetting(_) => 30,
-        Refusal::Item(_) => 31,
-        Refusal::PulledCommit(_) => 32,
-        Refusal::NotInCommit { .. } => 33,
-        Refusal::HookRefused(_) => 34,
-        Refusal::StartedByHook(_) => 35,
+        Refusal::NoScheduler { .. } => 31,
+        Refusal::Item(_) => 32,
+        Refusal::PulledCommit(_) => 33,
+        Refusal::NotInCommit { .. } => 34,
+        Refusal::HookRefused(_) => 35,
+        Refusal::StartedByHook(_) => 36,
     }
 }

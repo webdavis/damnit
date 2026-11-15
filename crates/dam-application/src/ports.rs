@@ -12,6 +12,7 @@ mod items;
 mod notices;
 mod origins;
 mod repositories;
+mod schedule;
 mod store;
 
 pub use answers::AnswerRepository;
@@ -33,6 +34,7 @@ pub use items::ItemRepository;
 pub use notices::{DroppedBecause, MissingTask, Notice, NoticeRepository};
 pub use origins::OriginRepository;
 pub use repositories::Store;
+pub use schedule::{Installed, Removed, Schedule, ScheduleError, ScheduledRun};
 pub use store::{
     AcceptedKindsRepository, CommitRepository, Conflict, ConflictRepository, ObjectRepository,
     RemoteName, RemoteNameError, RemoteTrackingRepository, StageRepository, StoreError,

@@ -42,7 +42,9 @@ pub(crate) fn need(command: &Command) -> Need {
         Command::Resolve(_) => Need::OwnerOnly("resolve"),
         Command::Sync(a) => match a.command {
             None => Need::Open,
-            Some(SyncCommand::Run) => Need::OwnerOnly("sync run"),
+            Some(SyncCommand::Run { .. }) => Need::OwnerOnly("sync run"),
+            Some(SyncCommand::Enable) => Need::OwnerOnly("sync enable"),
+            Some(SyncCommand::Disable) => Need::OwnerOnly("sync disable"),
         },
         Command::Day(_) => Need::OwnerOnly("day"),
         Command::Token(a) => match a.command {

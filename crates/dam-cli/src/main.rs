@@ -1,5 +1,6 @@
 mod args;
 mod caller;
+mod cancellation;
 mod commands;
 mod context;
 mod editor;
@@ -8,6 +9,7 @@ mod first_run;
 mod gate;
 mod group_help;
 mod hook_warnings;
+mod last_run;
 mod layout;
 mod output;
 mod paint;
@@ -17,8 +19,10 @@ mod started_by_hook;
 mod style;
 mod view;
 
+use std::ffi::OsString;
+
 use dam_adapters::{Interrupt, LuaConfigFile, OsRandom, ProcessLauncher, SystemClock};
-use dam_application::{Clock, ConfigFile, HelperError, UseCaseError};
+use dam_application::{Clock, ConfigFile};
 
 use crate::args::{Cli, Command, SyncArgs};
 use crate::caller::{authenticated, caller};
@@ -41,50 +45,36 @@ fn main() {
     };
     let format = Format::of(cli.json, cli.toon);
     if !interrupts_installed {
-        warn_a_human_that_ctrl_c_will_not_cancel_cleanly(format);
+        cancellation::warn_a_human_that_ctrl_c_will_not_cancel_cleanly(format);
     }
-    match run(cli, format, &interrupt) {
-        Ok(()) => {}
-        Err(e) => {
-            let e = cancelled_when_interrupted_whatever_the_work_reported(e, &interrupt);
-            output::print_error(format, &e);
-            std::process::exit(e.exit_code());
-        }
-    }
-}
-
-fn warn_a_human_that_ctrl_c_will_not_cancel_cleanly(format: Format) {
-    if format == Format::Human {
-        eprintln!("dam: could not install the interrupt handler; Ctrl-C will not cancel cleanly");
-    }
-}
-
-fn cancelled_when_interrupted_whatever_the_work_reported(
-    e: CliError,
-    interrupt: &Interrupt,
-) -> CliError {
-    match e {
-        _ if !interrupt.requested() => e,
-        CliError::UseCase(UseCaseError::PushStopped {
-            kept, unanswered, ..
-        }) => CliError::UseCase(UseCaseError::PushStopped {
-            by: HelperError::Cancelled,
-            kept,
-            unanswered,
-        }),
-        _ => CliError::Cancelled,
+    if let Err(e) = run(cli, format, &interrupt) {
+        output::print_error(format, &e);
+        std::process::exit(e.exit_code());
     }
 }
 
 const TOKEN_VARIABLE: &str = "DAM_TOKEN";
 
 fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> {
+    let presented_token = std::env::var_os(TOKEN_VARIABLE);
+    gate::refuse_any_token_to_an_owner_only_verb(presented_token.is_some(), &cli.command)?;
+    last_run::recording(last_run::asked(&cli.command), format, || {
+        admitted(cli, format, interrupt, presented_token).map_err(|e| {
+            cancellation::cancelled_when_interrupted_whatever_the_work_reported(e, interrupt)
+        })
+    })
+}
+
+fn admitted(
+    cli: Cli,
+    format: Format,
+    interrupt: &Interrupt,
+    presented_token: Option<OsString>,
+) -> Result<(), CliError> {
     let color = paint::wanted(cli.no_color);
     let config_path = cli.config.unwrap_or_else(dam_adapters::default_config_path);
     let config_file = LuaConfigFile::new(config_path.clone());
-    let presented_token = std::env::var_os(TOKEN_VARIABLE);
     let meta = cli.meta.into_iter().collect();
-    gate::refuse_any_token_to_an_owner_only_verb(presented_token.is_some(), &cli.command)?;
     let store_path = cli.store.unwrap_or_else(dam_adapters::default_store_path);
     if let Command::Test(args) = &cli.command {
         let launcher = ProcessLauncher::from_env(interrupt.clone());
@@ -111,6 +101,10 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     }
     if presented_token.is_none() {
         first_run::create_the_owners_config_when_missing(&config_file, &config_path, format);
+    }
+    if let Some(change) = commands::sync_schedule::asked(&cli.command) {
+        let in_use = commands::sync_schedule::InUse::of(&config_path, &store_path);
+        return commands::sync_schedule::print(change, &config_file, in_use, format, color);
     }
     if let Command::Token(args) = cli.command {
         return output::print(
@@ -140,7 +134,8 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         interrupt,
     )?;
     if let Command::Sync(_) = cli.command {
-        return commands::scheduled_sync::print(&ctx, format, color);
+        let record_last_run = last_run::asked(&cli.command);
+        return commands::scheduled_sync::print(&ctx, format, color, record_last_run);
     }
     let report = commands::dispatch_a_verb_that_opens_the_store(&ctx, cli.command)?;
     output::print(format, color, &report)

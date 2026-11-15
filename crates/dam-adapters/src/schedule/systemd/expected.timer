@@ -1,0 +1,9 @@
+[Unit]
+Description=dam sync run every minute
+
+[Timer]
+OnActiveSec=0
+OnCalendar=minutely
+
+[Install]
+WantedBy=timers.target

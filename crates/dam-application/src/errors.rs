@@ -66,6 +66,9 @@ pub enum Refusal {
     NoSuchSetting(String),
     HookRefused(HookFailure),
     StartedByHook(String),
+    NoScheduler {
+        crontab_line: String,
+    },
     Item(ItemRefusal),
     PulledCommit(CommitId),
     NotInCommit {

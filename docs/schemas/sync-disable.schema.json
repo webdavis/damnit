@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/sync-disable.schema.json",
+  "title": "dam sync disable answer",
+  "description": "What dam sync disable prints with --json or --toon.",
+  "type": "object",
+  "required": ["schedule", "files"],
+  "additionalProperties": false,
+  "properties": {
+    "schedule": {
+      "description": "removed when this run stopped and removed the entry; not_installed when there was none.",
+      "enum": ["removed", "not_installed"]
+    },
+    "files": {
+      "description": "The scheduler files this run removed. Empty when there was no entry.",
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "if": { "properties": { "schedule": { "const": "not_installed" } } },
+  "then": { "properties": { "files": { "maxItems": 0 } } },
+  "else": { "properties": { "files": { "minItems": 1 } } }
+}

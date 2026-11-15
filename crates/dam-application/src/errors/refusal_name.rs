@@ -36,6 +36,7 @@ impl Refusal {
             Refusal::NoSuchSetting(_) => "no_such_setting",
             Refusal::HookRefused(_) => "hook_refused",
             Refusal::StartedByHook(_) => "started_by_hook",
+            Refusal::NoScheduler { .. } => "no_scheduler",
             Refusal::Item(refusal) => refusal.name(),
             Refusal::PulledCommit(_) => "pulled_commit",
             Refusal::NotInCommit { .. } => "not_in_commit",

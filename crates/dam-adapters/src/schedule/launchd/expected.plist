@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>dam-sync</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/dam bin/dam</string>
+    <string>--config</string>
+    <string>/home/ada/dam/config.lua</string>
+    <string>--store</string>
+    <string>/home/ada/a&amp;b&lt;c&gt;.db</string>
+    <string>sync</string>
+    <string>run</string>
+    <string>--record-last-run</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/dam bin:/usr/bin</string>
+    <key>XDG_STATE_HOME</key>
+    <string>/home/ada/state &amp; more</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StartInterval</key>
+  <integer>60</integer>
+</dict>
+</plist>

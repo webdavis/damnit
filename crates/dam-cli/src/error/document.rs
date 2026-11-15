@@ -16,6 +16,9 @@ impl CliError {
         if let Some(key) = self.given_key() {
             error["key"] = key.into();
         }
+        if let Some(line) = self.crontab_line() {
+            error["crontab_line"] = line.into();
+        }
         if let Some(usage) = misuse::usage_part(self) {
             error["usage"] = usage;
         }

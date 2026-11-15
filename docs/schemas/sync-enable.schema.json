@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/sync-enable.schema.json",
+  "title": "dam sync enable answer",
+  "description": "What dam sync enable prints with --json or --toon.",
+  "type": "object",
+  "required": ["schedule", "files", "last_run", "remotes"],
+  "additionalProperties": false,
+  "properties": {
+    "schedule": {
+      "description": "installed when this run wrote or started the entry; already_installed when it was already in place and running.",
+      "enum": ["installed", "already_installed"]
+    },
+    "files": {
+      "description": "The scheduler files that hold the entry.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "last_run": {
+      "description": "The last-run file: each scheduled dam sync run replaces it with its report or its error.",
+      "type": "string",
+      "minLength": 1
+    },
+    "remotes": {
+      "description": "Each remote that has sync_every. Empty when none has it yet.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["remote", "sync_every"],
+        "additionalProperties": false,
+        "properties": {
+          "remote": { "type": "string" },
+          "sync_every": { "type": "string" }
+        }
+      }
+    }
+  }
+}

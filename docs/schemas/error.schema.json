@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/error.schema.json",
   "title": "dam error document",
-  "description": "What dam prints on standard error when a command run with --json or --toon fails. A rule in tokenRule exits 5; every other rule exits 4, except ambiguous_prefix, whose kind is usage and which exits 2. A usage error carries usage when the command line was mistyped, and prefix when the id text it gave was not one dam could use. A no_such_setting refusal carries key, and a hook_refused refusal carries hook.",
+  "description": "What dam prints on standard error when a command run with --json or --toon fails. A rule in tokenRule exits 5; every other rule exits 4, except ambiguous_prefix, whose kind is usage and which exits 2. A usage error carries usage when the command line was mistyped, and prefix when the id text it gave was not one dam could use. A no_such_setting refusal carries key, a hook_refused refusal carries hook, and a no_scheduler refusal carries crontab_line.",
   "type": "object",
   "required": ["error"],
   "additionalProperties": false,
@@ -41,6 +41,11 @@
         "hook": {
           "description": "The event of the hook that refused the command.",
           "enum": ["task_new", "task_changed", "task_done"]
+        },
+        "crontab_line": {
+          "description": "The line to add with crontab -e so that cron runs dam sync run every minute.",
+          "type": "string",
+          "minLength": 1
         }
       },
       "allOf": [
@@ -67,6 +72,11 @@
           "if": { "required": ["hook"] },
           "then": { "properties": { "rule": { "const": "hook_refused" } } },
           "else": { "properties": { "rule": { "not": { "const": "hook_refused" } } } }
+        },
+        {
+          "if": { "required": ["crontab_line"] },
+          "then": { "properties": { "rule": { "const": "no_scheduler" } } },
+          "else": { "properties": { "rule": { "not": { "const": "no_scheduler" } } } }
         }
       ]
     }
@@ -127,6 +137,7 @@
         "no_such_setting",
         "hook_refused",
         "started_by_hook",
+        "no_scheduler",
         "nothing_changed",
         "item_declined",
         "item_not_an_object",

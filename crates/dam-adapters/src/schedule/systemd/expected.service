@@ -1,0 +1,9 @@
+[Unit]
+Description=dam sync run
+
+[Service]
+Type=oneshot
+Environment="PATH=/opt/dam bin:/usr/bin" "XDG_STATE_HOME=/home/ada/100%% state"
+ExecStart="/opt/dam bin/dam" "--config" "/home/ada/dam/config.lua" "--store" "/home/ada/100%% \"$$HOME\".db" "sync" "run" "--record-last-run"
+StandardOutput=null
+StandardError=null

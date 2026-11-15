@@ -43,7 +43,8 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
         | Refusal::PulledCommit(_)
         | Refusal::NotInCommit { .. }
         | Refusal::HookRefused(_)
-        | Refusal::StartedByHook(_) => Vec::new(),
+        | Refusal::StartedByHook(_)
+        | Refusal::NoScheduler { .. } => Vec::new(),
         Refusal::Item(refusal) => item_oids(refusal),
     }
 }

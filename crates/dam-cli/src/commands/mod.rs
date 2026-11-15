@@ -26,6 +26,7 @@ mod show;
 mod stage;
 mod status;
 mod sync;
+pub(crate) mod sync_schedule;
 pub(crate) mod test;
 pub(crate) mod token;
 mod token_warnings;
