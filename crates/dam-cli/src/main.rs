@@ -15,7 +15,7 @@ mod request;
 mod style;
 mod view;
 
-use dam_adapters::{Interrupt, LuaConfigFile, OsRandom, SystemClock};
+use dam_adapters::{Interrupt, LuaConfigFile, OsRandom, ProcessLauncher, SystemClock};
 use dam_application::{Clock, ConfigFile, HelperError, UseCaseError};
 
 use crate::args::{Cli, Command};
@@ -87,7 +87,8 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     gate::refuse_any_token_to_an_owner_only_verb(presented_token.is_some(), &cli.command)?;
     let store_path = cli.store.unwrap_or_else(dam_adapters::default_store_path);
     if let Some(asked) = commands::doctor::asked(&cli.command) {
-        let machine = commands::doctor::Machine::new(&config_file, &store_path);
+        let launcher = ProcessLauncher::from_env(interrupt.clone());
+        let machine = commands::doctor::Machine::new(&config_file, &store_path, &launcher);
         return commands::doctor::print(asked, &machine, format, color);
     }
     config_file.ends_in_lua()?;

@@ -1,5 +1,6 @@
 use serde::Serialize;
 
+use super::row::Row;
 use crate::args::CheckName;
 use crate::style::Mark;
 
@@ -9,6 +10,7 @@ pub(crate) enum Outcome {
     Ok,
     Warning,
     Issue,
+    NotRun,
 }
 
 impl Outcome {
@@ -17,6 +19,7 @@ impl Outcome {
             Outcome::Ok => Mark::Good,
             Outcome::Warning => Mark::Warn,
             Outcome::Issue => Mark::Bad,
+            Outcome::NotRun => Mark::Quiet,
         }
     }
 }
@@ -27,6 +30,7 @@ pub(crate) struct Check {
     pub(super) result: Outcome,
     pub(super) detail: String,
     pub(super) advice: Option<String>,
+    pub(super) rows: Vec<Row>,
     #[serde(flatten)]
     pub(super) files: Option<ConfigFiles>,
 }
@@ -45,6 +49,7 @@ impl Check {
             result,
             detail: detail.into(),
             advice: None,
+            rows: Vec::new(),
             files: None,
         }
     }

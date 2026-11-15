@@ -17,22 +17,38 @@
     "needs_attention": {
       "type": "array",
       "items": { "type": "string" },
-      "description": "Each issue, then each warning, as the closing section numbers them."
+      "description": "Each issue, then each warning, as the closing section numbers them. A check with rows lists each row that needs attention as <check> for <remote>: <detail>, and never its own detail."
     }
   },
   "$defs": {
     "check": {
       "type": "object",
-      "required": ["name", "result", "detail", "advice"],
+      "required": ["name", "result", "detail", "advice", "rows"],
       "additionalProperties": false,
       "properties": {
-        "name": { "type": "string", "enum": ["config", "database"], "description": "The check, by the name dam doctor takes." },
+        "name": { "type": "string", "enum": ["config", "database", "helpers"], "description": "The check, by the name dam doctor takes." },
         "result": { "type": "string", "enum": ["ok", "warning", "issue", "not_run"], "description": "What the check found; not_run when it could not run." },
         "detail": { "type": "string", "description": "What the check found, in words." },
         "advice": { "type": ["string", "null"], "description": "What to do next, or null." },
+        "rows": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/row" },
+          "description": "One row for each remote, in config order, or empty for a check that has none. The check's result is the worst of its rows, from issue, warning, ok to not_run, and its detail counts them."
+        },
         "config": { "type": ["string", "null"], "description": "On the config check: the path of config.lua, or null when there is none." },
         "secrets": { "type": ["string", "null"], "description": "On the config check: the path of secrets.lua, beside config.lua, or null when there is none." },
         "warnings": { "type": "array", "items": { "type": "string" }, "description": "On the config check: each token dam ignores or holds disabled, and why." }
+      }
+    },
+    "row": {
+      "type": "object",
+      "required": ["name", "result", "detail", "advice"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "description": "The remote this row is about." },
+        "result": { "type": "string", "enum": ["ok", "warning", "issue", "not_run"], "description": "What the check found for this remote." },
+        "detail": { "type": "string", "description": "What the check found for this remote, in words." },
+        "advice": { "type": ["string", "null"], "description": "What to do next, or null." }
       }
     }
   }

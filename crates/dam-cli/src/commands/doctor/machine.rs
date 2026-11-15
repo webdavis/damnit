@@ -2,7 +2,9 @@ use std::cell::OnceCell;
 use std::path::{Path, PathBuf};
 
 use dam_adapters::{LuaConfigFile, OpenError, ReadOnly, SqliteStore};
-use dam_application::{Config, ConfigError};
+use dam_application::{
+    Config, ConfigError, HelperError, HelperLauncher, RemoteCapabilities, RemoteConfig,
+};
 
 pub(super) enum Store {
     NoneYet,
@@ -14,20 +16,33 @@ pub(super) struct Reading {
     pub(super) version: u32,
 }
 
+pub(super) struct Answer {
+    pub(super) remote: RemoteConfig,
+    pub(super) capabilities: Result<RemoteCapabilities, HelperError>,
+}
+
 pub(crate) struct Machine<'a> {
     pub(super) config_file: &'a LuaConfigFile,
     pub(super) store_path: &'a Path,
+    launcher: &'a dyn HelperLauncher,
     config: OnceCell<Result<Config, ConfigError>>,
     store: OnceCell<Result<Store, OpenError>>,
+    answers: OnceCell<Option<Vec<Answer>>>,
 }
 
 impl<'a> Machine<'a> {
-    pub(crate) fn new(config_file: &'a LuaConfigFile, store_path: &'a Path) -> Machine<'a> {
+    pub(crate) fn new(
+        config_file: &'a LuaConfigFile,
+        store_path: &'a Path,
+        launcher: &'a dyn HelperLauncher,
+    ) -> Machine<'a> {
         Machine {
             config_file,
             store_path,
+            launcher,
             config: OnceCell::new(),
             store: OnceCell::new(),
+            answers: OnceCell::new(),
         }
     }
 
@@ -44,5 +59,27 @@ impl<'a> Machine<'a> {
                     version: store.schema_version()?,
                 })),
             })
+    }
+
+    pub(super) fn answers(&self) -> Option<&[Answer]> {
+        let answers = self.answers.get_or_init(|| {
+            // The store is read and closed before a helper starts, since a helper may take
+            // its whole deadline while another dam writes to the store.
+            let _ = self.store();
+            let remotes = &self.config().as_ref().ok()?.remotes;
+            Some(remotes.iter().map(|remote| self.ask(remote)).collect())
+        });
+        answers.as_deref()
+    }
+
+    fn ask(&self, remote: &RemoteConfig) -> Answer {
+        let capabilities = self
+            .launcher
+            .launch(remote, &[])
+            .and_then(|mut helper| helper.capabilities());
+        Answer {
+            remote: remote.clone(),
+            capabilities,
+        }
     }
 }

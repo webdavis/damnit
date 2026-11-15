@@ -41,13 +41,18 @@ fn a_heading_without_a_blurb_is_its_title_alone() {
 
 #[test]
 fn each_mark_leads_its_row_with_a_symbol_that_carries_its_meaning() {
-    let rows: Vec<String> = [Mark::Good, Mark::Warn, Mark::Bad]
+    let rows: Vec<String> = [Mark::Good, Mark::Warn, Mark::Bad, Mark::Quiet]
         .into_iter()
         .map(|mark| row(Paint::Plain, mark, 2, "config: read"))
         .collect();
     assert_eq!(
         rows,
-        ["  ✓ config: read", "  ⚠ config: read", "  ✗ config: read"]
+        [
+            "  ✓ config: read",
+            "  ⚠ config: read",
+            "  ✗ config: read",
+            "  · config: read"
+        ]
     );
     assert_eq!(row(Paint::Plain, Mark::Warn, 4, "token"), "    ⚠ token");
 }
@@ -65,9 +70,12 @@ fn a_colored_row_tints_its_mark_alone() {
 
 #[test]
 fn advice_follows_an_arrow_under_its_row() {
-    assert_eq!(advice(Paint::Plain, "run dam push"), "    → run dam push");
     assert_eq!(
-        without_escapes(&advice(Paint::Color, "run dam push")),
+        advice(Paint::Plain, 4, "run dam push"),
+        "    → run dam push"
+    );
+    assert_eq!(
+        without_escapes(&advice(Paint::Color, 4, "run dam push")),
         "    → run dam push"
     );
 }
