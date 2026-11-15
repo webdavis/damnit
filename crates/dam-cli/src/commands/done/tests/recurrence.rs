@@ -31,7 +31,6 @@ fn a_pulled_task_with_an_unreadable_rule_is_told_to_complete_it_upstream() {
         helper: "todoist".into(),
         url: "todoist::".into(),
         credentials: vec![],
-        stale: None,
         deadline: None,
         path: None,
     });

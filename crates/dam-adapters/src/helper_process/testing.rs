@@ -59,7 +59,6 @@ pub(super) fn remote() -> RemoteConfig {
         helper: "t".into(),
         url: "t::".into(),
         credentials: vec![],
-        stale: None,
         deadline: None,
         path: None,
     }

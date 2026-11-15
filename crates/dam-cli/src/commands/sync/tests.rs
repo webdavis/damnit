@@ -16,7 +16,6 @@ fn with_remote() -> Context {
         helper: "t".into(),
         url: "t::".into(),
         credentials: vec![],
-        stale: None,
         deadline: None,
         path: None,
     });

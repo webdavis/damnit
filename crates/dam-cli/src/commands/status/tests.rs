@@ -141,7 +141,6 @@ fn status_reports_conflicts_and_unpushed_commits() {
         helper: "todoist".into(),
         url: "todoist::".into(),
         credentials: vec![],
-        stale: None,
         deadline: None,
         path: None,
     });

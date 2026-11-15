@@ -52,10 +52,6 @@ fn remote(remote: &RemoteConfig) -> (String, Setting) {
     };
     let mut fields = vec![
         text("url", &remote.url),
-        optional(
-            "stale",
-            remote.stale.as_ref().map(|stale| stale.text.as_str()),
-        ),
         ("deadline".to_string(), deadline),
         optional("path", remote.path.as_ref().map(|path| path.as_str())),
     ];

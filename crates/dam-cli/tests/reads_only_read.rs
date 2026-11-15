@@ -7,7 +7,7 @@ const READS: [&str; 4] = ["ls", "show", "agenda", "reminders"];
 
 fn a_remote_never_pulled_that_marks_each_contact(sb: &Sandbox) -> [std::path::PathBuf; 2] {
     let resolved = sb.dir.path().join("credential-function-ran");
-    sb.add_remote("fake", Remote::at("fake::").stale("1s"));
+    sb.add_remote("fake", Remote::at("fake::"));
     sb.write_secrets_lua(&format!(
         "return {{ schema = 1, remote = {{ fake = {{ api_token = function() \
          io.open({:?}, 'w'):close() return 'tok-123' end }} }} }}\n",

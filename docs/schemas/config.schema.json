@@ -33,7 +33,6 @@
       "additionalProperties": false,
       "properties": {
         "url": { "type": "string", "pattern": "^[A-Za-z0-9_-]+::" },
-        "stale": { "$ref": "#/$defs/duration" },
         "deadline": { "$ref": "#/$defs/duration" },
         "path": { "type": "string" }
       }

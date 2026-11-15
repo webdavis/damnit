@@ -21,7 +21,6 @@ pub(super) fn run(ctx: &Context) -> Result<Report, CliError> {
                 helper: &r.helper,
                 url: &r.url,
                 path: r.path.as_ref().map(|p| p.as_str()),
-                stale_seconds: r.stale.as_ref().map(|s| s.value.as_secs()),
                 last_pull: ctx.store.last_pull(&r.name)?,
                 last_push: ctx.store.last_push(&r.name)?,
             })
@@ -46,7 +45,6 @@ struct RemoteRow<'a> {
     helper: &'a str,
     url: &'a str,
     path: Option<&'a str>,
-    stale_seconds: Option<u64>,
     #[serde(serialize_with = "optional_display")]
     last_pull: Option<Timestamp>,
     #[serde(serialize_with = "optional_display")]
@@ -68,21 +66,9 @@ impl RemoteRow<'_> {
             self.name.to_string(),
             self.url.to_string(),
             self.path.map(|p| format!("path {p}")).unwrap_or_default(),
-            self.stale_seconds
-                .map(|seconds| format!("stale {}", in_the_largest_whole_unit(seconds)))
-                .unwrap_or_default(),
             when_phrase("pulled", self.last_pull, now),
             when_phrase("pushed", self.last_push, now),
         ]
-    }
-}
-
-fn in_the_largest_whole_unit(seconds: u64) -> String {
-    match seconds {
-        0 => "0s".to_string(),
-        s if s % 3600 == 0 => format!("{}h", s / 3600),
-        s if s % 60 == 0 => format!("{}m", s / 60),
-        s => format!("{s}s"),
     }
 }
 

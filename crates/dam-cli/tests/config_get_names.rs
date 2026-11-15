@@ -45,10 +45,10 @@ filter / team.query; run dam config get filter to see both\n"
 fn a_setting_with_no_value_gets_a_row_saying_so() {
     let _guard = support::guard("a_setting_with_no_value_gets_a_row_saying_so");
     let sb = with_config("return { remote = { todoist = { url = 'todoist::' } } }\n");
-    let (ok, out, err) = sb.dam(&["config", "get", "remote.todoist.stale"]);
+    let (ok, out, err) = sb.dam(&["config", "get", "remote.todoist.path"]);
     assert!(ok, "{err}");
-    assert_eq!(out, "  remote.todoist.stale  not set\n");
-    let out = sb.output(&["config", "get", "remote.todoist.stale", "--json"]);
+    assert_eq!(out, "  remote.todoist.path  not set\n");
+    let out = sb.output(&["config", "get", "remote.todoist.path", "--json"]);
     assert!(out.status.success(), "{out:?}");
     let answer: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_eq!(answer, serde_json::json!({"value": null, "default": true}));

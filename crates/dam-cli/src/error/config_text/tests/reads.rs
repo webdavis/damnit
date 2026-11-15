@@ -92,20 +92,20 @@ fn a_value_dam_cannot_take_is_named_with_its_key_and_table() {
             Misread::UnknownRemoteKey {
                 key: "api_token".into(),
                 at: in_table("remote.todoist", "config.lua"),
-                takes: vec!["url".into(), "stale".into()],
+                takes: vec!["url".into(), "deadline".into()],
             }
             .into(),
-            "unknown key api_token in remote.todoist of config.lua. A remote takes url, stale; \
+            "unknown key api_token in remote.todoist of config.lua. A remote takes url, deadline; \
              its credentials belong in secrets.lua",
         ),
         (
             Misread::WrongType {
-                key: "stale".into(),
+                key: "deadline".into(),
                 at: in_table("remote.todoist", "config.lua"),
                 expected: Expected::Text,
             }
             .into(),
-            "stale must be a string in remote.todoist of config.lua",
+            "deadline must be a string in remote.todoist of config.lua",
         ),
         (
             Misread::Missing {
@@ -135,12 +135,12 @@ fn a_value_dam_cannot_take_is_named_with_its_key_and_table() {
         ),
         (
             Misread::NotADuration {
-                key: "stale".into(),
+                key: "deadline".into(),
                 text: "+15m".into(),
                 at: in_table("remote.todoist", "config.lua"),
             }
             .into(),
-            "stale \"+15m\" must be <number><s|m|h> in remote.todoist of config.lua",
+            "deadline \"+15m\" must be <number><s|m|h> in remote.todoist of config.lua",
         ),
         (
             ConfigError::BelongsInSecrets {

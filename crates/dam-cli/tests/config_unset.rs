@@ -28,7 +28,6 @@ fn a_setting_with_no_value_has_a_row_saying_so() {
         settings.ends_with(
             "\
   remote.todoist.url       todoist::
-  remote.todoist.stale     not set
   remote.todoist.deadline  60s (default)
   remote.todoist.path      not set
 "
@@ -38,9 +37,7 @@ fn a_setting_with_no_value_has_a_row_saying_so() {
     let answer = listed(&sb);
     assert_matches_schema(&answer, "config-list.schema.json");
     let todoist = &answer["settings"]["remote"]["todoist"];
-    for field in ["stale", "path"] {
-        assert_eq!(todoist[field], json!({"value": null, "default": true}));
-    }
+    assert_eq!(todoist["path"], json!({"value": null, "default": true}));
 }
 
 #[test]
