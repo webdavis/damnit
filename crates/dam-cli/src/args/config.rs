@@ -29,7 +29,7 @@ pub(crate) enum ConfigCommand {
     )]
     PrintDefault,
     #[command(
-        about = "Check the config as dam doctor does; an error's message may show a value from the file",
+        about = "Check the config as dam doctor does; an error raised in secrets.lua is shown as that file wrote it",
         after_help = "Examples:\n  dam config validate\n  dam config validate --json"
     )]
     Validate,
