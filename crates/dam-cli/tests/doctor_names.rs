@@ -16,6 +16,15 @@ fn a_named_check_runs_alone() {
         .map(|check| check["name"].as_str().unwrap())
         .collect();
     assert_eq!(names, ["config"]);
+
+    let (_, document) = sb.doctor_json(&["doctor", "pushes", "config"]);
+    let names: Vec<&str> = document["checks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|check| check["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(names, ["config", "pushes"]);
 }
 
 #[test]
@@ -42,7 +51,7 @@ fn the_help_lists_every_check_by_name() {
     let out = out.split_whitespace().collect::<Vec<_>>().join(" ");
     assert!(out.contains("contact nothing"), "{out}");
     assert!(
-        out.contains("[possible values: config, database, helpers, credentials]"),
+        out.contains("[possible values: config, database, helpers, credentials, pushes]"),
         "{out}"
     );
     assert!(out.contains("dam doctor config"), "{out}");

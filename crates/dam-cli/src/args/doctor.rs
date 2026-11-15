@@ -14,6 +14,7 @@ pub(crate) enum CheckName {
     Database,
     Helpers,
     Credentials,
+    Pushes,
 }
 
 impl CheckName {
@@ -23,6 +24,7 @@ impl CheckName {
             CheckName::Database => "database",
             CheckName::Helpers => "helpers",
             CheckName::Credentials => "credentials",
+            CheckName::Pushes => "pushes",
         }
     }
 }

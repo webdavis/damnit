@@ -4,8 +4,10 @@ mod credentials;
 mod database;
 mod helpers;
 mod machine;
+mod pushes;
 mod report;
 mod row;
+mod store_reading;
 
 use std::path::Path;
 
@@ -19,11 +21,12 @@ use report::Doctor;
 
 type Run = fn(&Machine) -> Vec<Check>;
 
-const CHECKS: [(CheckName, Run); 4] = [
+const CHECKS: [(CheckName, Run); 5] = [
     (CheckName::Config, config_check::check),
     (CheckName::Database, database::check),
     (CheckName::Helpers, helpers::check),
     (CheckName::Credentials, credentials::check),
+    (CheckName::Pushes, pushes::check),
 ];
 
 pub(crate) struct Asked<'a> {

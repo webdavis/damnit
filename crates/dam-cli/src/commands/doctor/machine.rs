@@ -1,20 +1,11 @@
 use std::cell::OnceCell;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-use dam_adapters::{LuaConfigFile, OpenError, ReadOnly, SqliteStore};
+use super::store_reading::{self, Store};
+use dam_adapters::{LuaConfigFile, OpenError};
 use dam_application::{
     Config, ConfigError, HelperError, HelperLauncher, RemoteCapabilities, RemoteConfig,
 };
-
-pub(super) enum Store {
-    NoneYet,
-    LeftOver(Vec<PathBuf>),
-    Read(Reading),
-}
-
-pub(super) struct Reading {
-    pub(super) version: u32,
-}
 
 pub(super) struct Answer {
     pub(super) remote: RemoteConfig,
@@ -51,14 +42,10 @@ impl<'a> Machine<'a> {
     }
 
     pub(super) fn store(&self) -> &Result<Store, OpenError> {
-        self.store
-            .get_or_init(|| match SqliteStore::open_read_only(self.store_path)? {
-                ReadOnly::NoStore => Ok(Store::NoneYet),
-                ReadOnly::LeftOver(files) => Ok(Store::LeftOver(files)),
-                ReadOnly::Opened(store) => Ok(Store::Read(Reading {
-                    version: store.schema_version()?,
-                })),
-            })
+        self.store.get_or_init(|| {
+            let remotes = self.config().as_ref().map_or(&[][..], |c| &c.remotes);
+            store_reading::read(self.store_path, remotes)
+        })
     }
 
     pub(super) fn answers(&self) -> Option<&[Answer]> {
