@@ -53,6 +53,7 @@ with no value and no default shows `not set`. It never quotes `secrets.lua`.
 ways is refused with both readings.
 
 `dam config print-default` prints the starter `config.lua` a first run writes, and writes no file.
+`dam config` alone prints the help of these commands.
 
 `dam doctor` reads both files in full and prints their paths and any token warnings, or the
 error. It prints `no secrets.lua` for a missing file. Its error may quote `secrets.lua`. Elsewhere only a credential function's own error reaches

@@ -6,6 +6,7 @@ mod editor;
 mod error;
 mod first_run;
 mod gate;
+mod group_help;
 mod layout;
 mod output;
 mod paint;
@@ -88,7 +89,14 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     let meta = cli.meta.into_iter().collect();
     gate::refuse_any_token_to_an_owner_only_verb(presented_token.is_some(), &cli.command)?;
     if let Command::Config(args) = cli.command {
-        return output::print(format, color, &commands::config::run(&config_file, args)?);
+        let Some(command) = args.command else {
+            return group_help::print("config");
+        };
+        return output::print(
+            format,
+            color,
+            &commands::config::run(&config_file, command)?,
+        );
     }
     if presented_token.is_none() {
         first_run::create_the_owners_config_when_missing(&config_file, &config_path, format);

@@ -119,20 +119,3 @@ fn a_token_is_refused_before_the_config_is_read() {
     assert!(out.stdout.is_empty());
     assert_eq!(error_document(&out)["error"]["rule"], "not_open_to_tokens");
 }
-
-#[test]
-fn bare_config_asks_for_a_command_as_bare_remote_does() {
-    let _guard = support::guard("bare_config_asks_for_a_command_as_bare_remote_does");
-    let sb = Sandbox::new();
-    let config = sb.output(&["config"]);
-    let remote = sb.output(&["remote"]);
-    assert_eq!(config.status.code(), Some(2), "{config:?}");
-    assert_eq!(config.status.code(), remote.status.code());
-    assert!(config.stdout.is_empty() && remote.stdout.is_empty());
-    let said = String::from_utf8(config.stderr).unwrap();
-    assert!(
-        said.starts_with("error: 'dam config' requires a subcommand"),
-        "{said}"
-    );
-    assert!(said.contains("[subcommands: list, "), "{said}");
-}
