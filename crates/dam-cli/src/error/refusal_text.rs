@@ -4,6 +4,7 @@ use dam_domain::{Blockers, Oid, Tracked};
 
 use dam_application::Refusal;
 
+use super::commit_text::{not_in_commit, pulled_commit};
 use super::item_text::ItemText;
 use super::token_text::TokenText;
 
@@ -140,6 +141,8 @@ impl fmt::Display for RefusalText<'_> {
                 )
             }
             Refusal::Item(refusal) => write!(f, "{}", ItemText(refusal)),
+            Refusal::PulledCommit(id) => pulled_commit(f, id),
+            Refusal::NotInCommit { commit, text } => not_in_commit(f, commit, text),
         }
     }
 }

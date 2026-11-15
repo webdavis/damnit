@@ -27,6 +27,14 @@ pub(crate) struct RestoreArgs {
 }
 
 #[derive(Args, Debug)]
+pub(crate) struct RevertArgs {
+    #[arg(help = "Pick the commit by id, full or prefixed")]
+    pub(crate) commit: String,
+    #[arg(help = "Set back only these objects' changes in the commit, by oid or prefix")]
+    pub(crate) oids: Vec<String>,
+}
+
+#[derive(Args, Debug)]
 pub(crate) struct CommitArgs {
     #[arg(short = 'm', long, help = "Describe the commit")]
     pub(crate) message: String,

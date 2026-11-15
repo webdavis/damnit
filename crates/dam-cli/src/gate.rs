@@ -23,6 +23,7 @@ pub(crate) fn need(command: &Command) -> Need {
         Command::Add(_) => Need::OwnerOnly("add"),
         Command::Reset(_) => Need::OwnerOnly("reset"),
         Command::Restore(_) => Need::OwnerOnly("restore"),
+        Command::Revert(_) => Need::OwnerOnly("revert"),
         Command::Commit(_) => Need::OwnerOnly("commit"),
         Command::Log => Need::Whole(&[HistoryRead]),
         Command::Status(_) => Need::Open,

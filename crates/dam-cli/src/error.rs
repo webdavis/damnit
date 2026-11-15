@@ -5,6 +5,7 @@ use dam_application::{ConfigError, HelperError, Refusal, UseCaseError};
 
 use crate::editor::EditorError;
 
+mod commit_text;
 mod config_text;
 mod conversions;
 mod document;

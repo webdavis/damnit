@@ -26,7 +26,7 @@ pub(crate) use reading::{
 };
 pub(crate) use remotes::{PullArgs, PushArgs, RemoteArgs, RemoteCommand, ResolveArgs};
 pub(crate) use staging::{
-    AddArgs, CommitArgs, DiffArgs, ResetArgs, RestoreArgs, ShowArgs, StatusArgs,
+    AddArgs, CommitArgs, DiffArgs, ResetArgs, RestoreArgs, RevertArgs, ShowArgs, StatusArgs,
 };
 pub(crate) use test::{PartName, TestArgs};
 pub(crate) use tokens::{CreateArgs, TokenArgs, TokenCommand};
@@ -50,6 +50,21 @@ pub(crate) enum Command {
     Reset(ResetArgs),
     #[command(about = "Set objects back to their last committed state, staged or not")]
     Restore(RestoreArgs),
+    #[command(
+        about = "Set back what a commit changed, as working changes to review",
+        after_help = "Each field the commit changed goes back to its value before the commit.
+A field changed again since is kept as it is and named.
+A task the commit created is removed only when nothing about it changed since.
+A task the commit removed comes back as it was.
+It stages and commits nothing: read it with dam diff, then dam add and dam commit it.
+It refuses a commit that dam pull made.
+
+Examples:
+  dam revert 1a2b3c4
+  dam revert 1a2b3c4 5d6e7f8
+  dam revert 1a2b3c4 --json"
+    )]
+    Revert(RevertArgs),
     #[command(about = "Record the stage as a commit")]
     Commit(CommitArgs),
     #[command(about = "List commits, newest first")]

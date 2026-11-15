@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/revert.schema.json",
+  "title": "dam revert answer",
+  "description": "What dam revert prints with --json or --toon: reverted names each object and the fields it set back to their value before the commit; kept names each object and the fields changed again since the commit, left as they are. An object can be in both.",
+  "type": "object",
+  "required": ["reverted", "kept"],
+  "additionalProperties": false,
+  "properties": {
+    "reverted": { "$ref": "#/$defs/rows" },
+    "kept": { "$ref": "#/$defs/rows" }
+  },
+  "$defs": {
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["oid", "fields"],
+        "additionalProperties": false,
+        "properties": {
+          "oid": { "$ref": "object.schema.json#/$defs/oid" },
+          "fields": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+        }
+      }
+    }
+  }
+}

@@ -130,7 +130,9 @@
         "not_your_item",
         "item_edited_since_added",
         "item_already_committed",
-        "item_subject_names_no_folder"
+        "item_subject_names_no_folder",
+        "pulled_commit",
+        "not_in_commit"
       ]
     },
     "tokenRule": {

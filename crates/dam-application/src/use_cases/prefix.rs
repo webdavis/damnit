@@ -88,7 +88,7 @@ impl Dam<'_> {
     }
 }
 
-fn require_a_hex_prefix(text: &str) -> Result<(), UseCaseError> {
+pub(crate) fn require_a_hex_prefix(text: &str) -> Result<(), UseCaseError> {
     if text.len() < SHORTEST_OID_PREFIX || !text.chars().all(|c| c.is_ascii_hexdigit()) {
         return Err(UseCaseError::NotAnOid(text.to_string()));
     }

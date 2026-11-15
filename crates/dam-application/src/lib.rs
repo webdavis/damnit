@@ -56,4 +56,5 @@ pub use use_cases::reminders::DueReminder;
 pub use use_cases::remove::{ItemAndTask, Removal, RemovePlan};
 pub use use_cases::resolve::Side;
 pub use use_cases::restore::Restored;
+pub use use_cases::revert::{Fields, Reverted};
 pub use use_cases::status::{Status, Unpushed};
