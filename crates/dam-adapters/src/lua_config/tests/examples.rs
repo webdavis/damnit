@@ -96,8 +96,8 @@ fn a_function_credential_is_left_open_by_the_secrets_schema() {
 #[test]
 fn the_reader_and_the_config_schema_refuse_the_same_remotes() {
     for (remote, accepted) in [
-        ("{ url = 'todoist::', stale = '15m' }", true),
-        ("{ url = 'todoist::', stale = '+15m' }", false),
+        ("{ url = 'todoist::', deadline = '15m' }", true),
+        ("{ url = 'todoist::', deadline = '+15m' }", false),
         ("{ url = 'a:b::x' }", false),
         ("{ url = '../elsewhere::' }", false),
         ("{ url = 'two words::' }", false),

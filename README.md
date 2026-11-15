@@ -27,7 +27,7 @@ and never a secret. `secrets.lua` holds each remote's credentials and the tokens
     -- config.lua
     return {
       remote = {
-        todoist = { url = "todoist::", stale = "15m" },
+        todoist = { url = "todoist::" },
       },
     }
 
@@ -51,8 +51,8 @@ each of its settings by the key `secrets.lua` uses, never its value, or `disable
 no value and no default shows `not set`.
 `docs/schemas/config-list.schema.json` is the schema of its `--json` answer.
 `dam config get <key>` prints the rows of one setting, or of every setting in one part, by the key
-`dam config list` shows, such as `remote.todoist.stale` or `remote.todoist`. A name may hold a dot,
-and a key that can be read two ways is refused with both readings.
+`dam config list` shows, such as `remote.todoist.deadline` or `remote.todoist`. A name may hold a
+dot, and a key that can be read two ways is refused with both readings.
 `dam config list` and `dam config get` run the top-level code of `secrets.lua` and call no
 credential function. What that code prints is dropped, except through `io.open("/dev/stdout")`,
 `io.popen` or `os.execute`. Their errors and warnings quote nothing from `secrets.lua` but a token's

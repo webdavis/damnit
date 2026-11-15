@@ -15,11 +15,11 @@ pub(crate) enum ConfigCommand {
     List,
     #[command(
         about = "Print one setting, or every setting in one part, by its key",
-        after_help = "It runs the top-level code of secrets.lua and calls no credential function.\n\nExamples:\n  dam config get remote.todoist.stale\n  dam config get remote.todoist\n  dam config get remote.todoist --json"
+        after_help = "It runs the top-level code of secrets.lua and calls no credential function.\n\nExamples:\n  dam config get remote.todoist.deadline\n  dam config get remote.todoist\n  dam config get remote.todoist --json"
     )]
     Get {
         #[arg(
-            help = "Name the setting by the key dam config list shows, such as remote.todoist.stale",
+            help = "Name the setting by the key dam config list shows, such as remote.todoist.deadline",
             value_parser = clap::builder::NonEmptyStringValueParser::new()
         )]
         key: String,

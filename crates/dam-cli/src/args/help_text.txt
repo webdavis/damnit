@@ -138,7 +138,7 @@ dam token revoke name: help = Name the token to remove
 dam config: about = Show and check the config
 dam config: after_help = Examples:
   dam config list
-  dam config get remote.todoist.stale --json
+  dam config get remote.todoist.deadline --json
   dam config validate
 dam config list: about = List where the config files are and every setting dam is using, its own defaults marked, never a secret
 dam config list: after_help = It runs the top-level code of secrets.lua and calls no credential function.
@@ -150,10 +150,10 @@ dam config get: about = Print one setting, or every setting in one part, by its 
 dam config get: after_help = It runs the top-level code of secrets.lua and calls no credential function.
 
 Examples:
-  dam config get remote.todoist.stale
+  dam config get remote.todoist.deadline
   dam config get remote.todoist
   dam config get remote.todoist --json
-dam config get key: help = Name the setting by the key dam config list shows, such as remote.todoist.stale
+dam config get key: help = Name the setting by the key dam config list shows, such as remote.todoist.deadline
 dam config print-default: about = Print the starter config.lua a first run writes, without writing a file
 dam config print-default: after_help = Examples:
   dam config print-default

@@ -99,7 +99,7 @@ Examples:
     Token(TokenArgs),
     #[command(
         about = "Show and check the config",
-        after_help = "Examples:\n  dam config list\n  dam config get remote.todoist.stale --json\n  dam config validate"
+        after_help = "Examples:\n  dam config list\n  dam config get remote.todoist.deadline --json\n  dam config validate"
     )]
     Config(ConfigArgs),
     #[command(

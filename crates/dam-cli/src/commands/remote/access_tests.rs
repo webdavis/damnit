@@ -11,7 +11,6 @@ fn remote(name: &str) -> RemoteConfig {
         helper: name.into(),
         url: format!("{name}::"),
         credentials: vec![],
-        stale: None,
         deadline: None,
         path: None,
     }

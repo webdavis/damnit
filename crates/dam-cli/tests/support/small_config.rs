@@ -6,7 +6,7 @@ pub const MARKER: &str = "MARKER-s3cret";
 const CONFIG: &str = r#"return {
   owner = "Ada",
   remote = {
-    todoist = { url = "todoist::", stale = "15m", path = "work" },
+    todoist = { url = "todoist::", path = "work" },
   },
   category = {
     effort = { values = { "light", "deep" }, exclusive = true },

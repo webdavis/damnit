@@ -12,7 +12,6 @@ key dam does not know is an error. A `<name>` in a key is a name you choose.
 | `done.interactive` | `true` makes `dam done` ask about open children and dependencies. |
 | `remote` | A table of remotes by name. |
 | `remote.<name>.url` | `<helper>::<address>`. Required. |
-| `remote.<name>.stale` | A duration, such as `15m`. A read pulls first when the last pull is older. |
 | `remote.<name>.deadline` | A duration. The longest the helper may stay silent. Default: `60s`. |
 | `remote.<name>.path` | A push sends only the objects under this path. |
 | `category` | A table of label categories by name. |

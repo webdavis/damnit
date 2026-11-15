@@ -3,7 +3,7 @@ use dam_domain::Path;
 
 use super::strict::StrictMap;
 
-pub(crate) const SETTINGS: [&str; 4] = ["url", "stale", "deadline", "path"];
+pub(crate) const SETTINGS: [&str; 3] = ["url", "deadline", "path"];
 
 pub(super) fn read_remote(name: &str, remote: &StrictMap) -> Result<RemoteConfig, ConfigError> {
     remote.only(&SETTINGS).map_err(|misread| match misread {
@@ -40,7 +40,6 @@ pub(super) fn read_remote(name: &str, remote: &StrictMap) -> Result<RemoteConfig
         helper,
         url,
         credentials: Vec::new(),
-        stale: duration(remote, "stale")?,
         deadline: duration(remote, "deadline")?,
         path,
     })
