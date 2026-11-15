@@ -15,7 +15,9 @@ while IFS= read -r line; do
       printf '%s\n' "$line" >> "$PUSH_LOG"
       if [ -e "$here/answer-next-push" ]; then
         rm "$here/answer-next-push"
+        touch "$here/withheld"
         printf '%s' "$line" | grep -o '"oid":"[0-9a-f]*"' | sort -u | cut -d'"' -f4 |
+          { grep -v -x -F -f "$here/withheld" || true; } |
           awk 'BEGIN{printf "{\"results\":["} NR>1{printf ","} {printf "{\"oid\":\"%s\",\"ok\":true,\"remote_id\":\"r-%s\",\"why\":null}", $0, $0} END{print "]}"}'
       elif [ -e "$here/refuse-next-push" ]; then
         rm "$here/refuse-next-push"
@@ -44,6 +46,10 @@ impl Sandbox {
 
     pub fn answer_the_next_push(&self) {
         std::fs::write(self.dir.path().join("answer-next-push"), "").unwrap();
+    }
+
+    pub fn withhold_answers_for(&self, oids: &[&str]) {
+        std::fs::write(self.dir.path().join("withheld"), oids.join("\n") + "\n").unwrap();
     }
 
     pub fn refuse_the_next_push(&self) {

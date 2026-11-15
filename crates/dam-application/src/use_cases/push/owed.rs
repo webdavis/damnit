@@ -15,15 +15,10 @@ pub(super) fn changes_to_send(
     unpushed: &[CommitRecord],
     record: &Attempts,
 ) -> Result<OwedChanges, UseCaseError> {
-    let mut changes = net_changes(unpushed);
-    let mut retried: BTreeSet<Oid> = store.push_retries(&remote.name)?.into_iter().collect();
-    retried.extend(record.keys().cloned());
-    retried.extend(removed_in_the_app_nothing_owed(
-        store,
-        &remote.name,
-        &changes,
-    )?);
-    declare_since_the_remote_snapshot(store, remote, retried, &mut changes)?;
+    let mut owed = touched(unpushed);
+    owed.extend(store.push_retries(&remote.name)?);
+    owed.extend(record.keys().cloned());
+    let mut changes = declare_since_the_remote_snapshot(store, &remote.name, owed)?;
     owe_a_write_for_each_object_attempted(store, record, &mut changes)?;
     Ok(changes)
 }
@@ -60,51 +55,24 @@ fn owe_a_write_for_each_object_attempted(
     Ok(())
 }
 
-fn net_changes(unpushed: &[CommitRecord]) -> OwedChanges {
-    let mut changes = OwedChanges::new();
-    for record in unpushed {
-        for change in record.changes.iter().map(|c| &c.change) {
-            let merged = match changes.remove(change.oid()) {
-                Some(first) => Change::between(first.before().cloned(), change.after().cloned()),
-                None => Some(change.clone()),
-            };
-            if let Some(c) = merged {
-                changes.insert(c.oid().clone(), c);
-            }
-        }
-    }
-    changes
-}
-
-fn removed_in_the_app_nothing_owed(
-    store: &dyn Store,
-    remote: &RemoteName,
-    changes: &OwedChanges,
-) -> Result<Vec<Oid>, UseCaseError> {
-    let mut removed = Vec::new();
-    for oid in changes.keys() {
-        if let LastSeen::RemovedInTheAppNothingOwed(_) = LastSeen::read(store, remote, oid)? {
-            removed.push(oid.clone());
-        }
-    }
-    Ok(removed)
+fn touched(unpushed: &[CommitRecord]) -> BTreeSet<Oid> {
+    unpushed
+        .iter()
+        .flat_map(|record| record.changes.iter().map(|c| c.change.oid().clone()))
+        .collect()
 }
 
 fn declare_since_the_remote_snapshot(
     store: &dyn Store,
-    remote: &RemoteConfig,
-    retried: BTreeSet<Oid>,
-    changes: &mut OwedChanges,
-) -> Result<(), UseCaseError> {
-    for oid in retried {
-        let snapshot = LastSeen::baseline(store, &remote.name, &oid)?;
-        let after = match changes.remove(&oid) {
-            Some(owed) => owed.after().cloned(),
-            None => store.committed(&oid)?,
-        };
-        if let Some(declared) = Change::between(snapshot, after) {
+    remote: &RemoteName,
+    owed: BTreeSet<Oid>,
+) -> Result<OwedChanges, UseCaseError> {
+    let mut changes = OwedChanges::new();
+    for oid in owed {
+        let snapshot = LastSeen::baseline(store, remote, &oid)?;
+        if let Some(declared) = Change::between(snapshot, store.committed(&oid)?) {
             changes.insert(oid, declared);
         }
     }
-    Ok(())
+    Ok(changes)
 }
