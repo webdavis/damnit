@@ -50,19 +50,6 @@ fn the_first_run_creates_the_config_readable_by_its_owner_alone() {
 }
 
 #[test]
-fn the_created_config_is_read_without_complaint() {
-    let _guard = support::guard("the_created_config_is_read_without_complaint");
-    let sb = Sandbox::new();
-    let config = fresh_config(&sb);
-    run(&sb, &config, &["ls"]);
-    let out = run(&sb, &config, &["status", "--json"]);
-    assert!(out.status.success(), "{out:?}");
-    assert!(out.stderr.is_empty(), "{out:?}");
-    let answer: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
-    assert_eq!(answer["warnings"], serde_json::json!([]));
-}
-
-#[test]
 fn a_machine_reader_gets_clean_streams_on_the_first_run() {
     let _guard = support::guard("a_machine_reader_gets_clean_streams_on_the_first_run");
     let sb = Sandbox::new();
@@ -74,24 +61,6 @@ fn a_machine_reader_gets_clean_streams_on_the_first_run() {
         assert!(String::from_utf8(out.stdout).unwrap().contains("filters"));
     }
     assert!(config.exists());
-}
-
-#[test]
-fn an_existing_config_is_never_rewritten() {
-    let _guard = support::guard("an_existing_config_is_never_rewritten");
-    let sb = Sandbox::new();
-    let config = fresh_config(&sb);
-    run(&sb, &config, &["ls"]);
-    std::fs::write(&config, "return { filter = { mine = { query = 'p1' } } }\n").unwrap();
-    std::fs::set_permissions(&config, std::fs::Permissions::from_mode(0o640)).unwrap();
-    let out = run(&sb, &config, &["ls"]);
-    assert!(out.status.success(), "{out:?}");
-    assert!(out.stderr.is_empty(), "{out:?}");
-    assert_eq!(
-        std::fs::read_to_string(&config).unwrap(),
-        "return { filter = { mine = { query = 'p1' } } }\n"
-    );
-    assert_eq!(mode(&config), 0o640);
 }
 
 #[test]

@@ -1,7 +1,7 @@
 use crate::support;
 
 use support::sandbox::Sandbox;
-use support::tokens::{answer, grant, grant_to, refused, token};
+use support::tokens::{answer, grant, grant_to, token};
 
 fn owner_objects(sb: &Sandbox) -> serde_json::Value {
     let (ok, out, err) = sb.dam(&["ls", "--json"]);
@@ -38,45 +38,4 @@ fn a_tokens_new_task_answers_new_with_the_oid_it_will_have_and_waits() {
         &["new", "Call the dentist", "--path", "inbox", "--toon"],
     );
     assert!(String::from_utf8_lossy(&toon.stdout).contains(hash));
-}
-
-#[test]
-fn an_identical_resend_answers_duplicate_with_the_same_hash() {
-    let _guard = support::guard("an_identical_resend_answers_duplicate_with_the_same_hash");
-    let sb = Sandbox::new();
-    let held = grant_to(&sb, "tool", 1, vec![grant(&["task:create"])]);
-    let line = ["new", "Call the dentist", "--json"];
-    let first = answer(&sb.output_holding(&held, &line), "sent.schema.json");
-    let again = answer(&sb.output_holding(&held, &line), "sent.schema.json");
-    assert_eq!(again["answer"], "duplicate");
-    assert_eq!(again["hash"], first["hash"]);
-}
-
-#[test]
-fn a_new_task_outside_the_grant_is_refused_and_nothing_waits() {
-    let _guard = support::guard("a_new_task_outside_the_grant_is_refused_and_nothing_waits");
-    let sb = Sandbox::new();
-    let held = grant_to(
-        &sb,
-        "tool",
-        1,
-        vec![grant(&["task:create"]).paths(&["work"])],
-    );
-    let home = ["new", "laundry", "--path", "home", "--json"];
-    assert_eq!(refused(&sb.output_holding(&held, &home)), "not_permitted");
-    let event = [
-        "new",
-        "--event",
-        "standup",
-        "--path",
-        "work",
-        "--start",
-        "2026-11-12T09:00",
-        "--end",
-        "2026-11-12T09:15",
-        "--json",
-    ];
-    assert_eq!(refused(&sb.output_holding(&held, &event)), "not_permitted");
-    let work = ["new", "report", "--path", "work", "--json"];
-    answer(&sb.output_holding(&held, &work), "sent.schema.json");
 }

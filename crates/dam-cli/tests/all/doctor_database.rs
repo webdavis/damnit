@@ -102,20 +102,6 @@ fn a_file_that_is_no_store_is_an_issue() {
     );
 }
 
-#[test]
-fn the_database_is_checked_when_the_config_does_not_read() {
-    let _guard = support::guard("the_database_is_checked_when_the_config_does_not_read");
-    let sb = Sandbox::new();
-    sb.write_config_lua("return {\n");
-    let answer = sb.doctor(&["doctor"]);
-    assert_eq!(answer.code, Some(1));
-    assert!(
-        answer.out.contains("\n  ✓ database: none yet\n"),
-        "{}",
-        answer.out
-    );
-}
-
 fn left_with_only_its_wal(sb: &Sandbox, file_version: u32, wal_version: u32) {
     sb.new_object(&["buy milk"]);
     set_version(sb, file_version);

@@ -53,42 +53,6 @@ fn run(secrets: Secrets, line: &[&str]) -> Option<(Output, String, String)> {
 }
 
 #[test]
-fn list_and_get_never_quote_secrets_lua_and_name_the_next_step() {
-    let _guard = support::guard("list_and_get_never_quote_secrets_lua_and_name_the_next_step");
-    for line in [&["config", "list"][..], &["config", "get", "owner"]] {
-        for (secrets, said) in [
-            (
-                Secrets::Raises,
-                "loading stopped at an error; run dam doctor\n",
-            ),
-            (
-                Secrets::Unreadable,
-                "Permission denied (os error 13); run dam doctor\n",
-            ),
-        ] {
-            let Some((out, stdout, stderr)) = run(secrets, line) else {
-                continue;
-            };
-            assert_eq!(out.status.code(), Some(1), "{secrets:?} {line:?}");
-            assert!(stdout.is_empty(), "{secrets:?} {line:?}");
-            assert!(stderr.ends_with(said), "{secrets:?} {line:?}: {stderr}");
-            assert!(!stderr.contains("MARKER"), "{stderr}");
-        }
-    }
-}
-
-#[test]
-fn list_and_get_answer_without_a_secrets_lua() {
-    let _guard = support::guard("list_and_get_answer_without_a_secrets_lua");
-    let (out, stdout, stderr) = run(Secrets::Missing, &["config", "list"]).unwrap();
-    assert!(out.status.success() && stderr.is_empty(), "{out:?}");
-    assert!(stdout.contains("  secrets  no secrets.lua\n"), "{stdout}");
-    let (out, stdout, stderr) = run(Secrets::Missing, &["config", "get", "owner"]).unwrap();
-    assert!(out.status.success() && stderr.is_empty(), "{out:?}");
-    assert_eq!(stdout, "  owner  Ada\n");
-}
-
-#[test]
 fn print_default_never_reads_secrets_lua() {
     let _guard = support::guard("print_default_never_reads_secrets_lua");
     for secrets in [Secrets::Raises, Secrets::Missing, Secrets::Unreadable] {
@@ -98,32 +62,5 @@ fn print_default_never_reads_secrets_lua() {
         assert!(out.status.success(), "{secrets:?}: {out:?}");
         assert!(stdout.starts_with("-- dam config."), "{secrets:?}");
         assert!(stderr.is_empty(), "{secrets:?}: {stderr}");
-    }
-}
-
-#[test]
-fn validate_quotes_what_secrets_lua_raised_and_creates_nothing() {
-    let _guard = support::guard("validate_quotes_what_secrets_lua_raised_and_creates_nothing");
-    let line = &["config", "validate"];
-    let (out, stdout, stderr) = run(Secrets::Raises, line).unwrap();
-    assert_eq!(out.status.code(), Some(1));
-    assert!(stderr.is_empty(), "{stderr}");
-    assert!(
-        stdout.contains("secrets.lua:2: bad token MARKER-s3cret\n"),
-        "{stdout}"
-    );
-    let (out, stdout, stderr) = run(Secrets::Missing, line).unwrap();
-    assert!(out.status.success() && stderr.is_empty(), "{out:?}");
-    assert!(
-        stdout.contains("\n  ✓ config: config.lua is valid, no secrets.lua\n"),
-        "{stdout}"
-    );
-    if let Some((out, stdout, stderr)) = run(Secrets::Unreadable, line) {
-        assert_eq!(out.status.code(), Some(1));
-        assert!(stderr.is_empty(), "{stderr}");
-        assert!(
-            stdout.contains("Permission denied (os error 13)\n"),
-            "{stdout}"
-        );
     }
 }

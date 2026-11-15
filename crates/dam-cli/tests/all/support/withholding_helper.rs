@@ -48,14 +48,6 @@ impl Sandbox {
         std::fs::write(self.dir.path().join("answer-next-push"), "").unwrap();
     }
 
-    pub fn withhold_answers_for(&self, oids: &[&str]) {
-        std::fs::write(self.dir.path().join("withheld"), oids.join("\n") + "\n").unwrap();
-    }
-
-    pub fn refuse_the_next_push(&self) {
-        std::fs::write(self.dir.path().join("refuse-next-push"), "").unwrap();
-    }
-
     pub fn answer_the_next_pull(&self, objects: &[String], removed: &[String]) {
         let removed: Vec<String> = removed.iter().map(|id| format!(r#""{id}""#)).collect();
         let answer = format!(
@@ -83,18 +75,5 @@ impl Sandbox {
         let objects = listed["objects"].as_array().unwrap();
         let object = objects.iter().find(|o| o["subject"] == subject).unwrap();
         object["oid"].as_str().unwrap().to_string()
-    }
-
-    pub fn mutations_since(&self, pushes_before: usize) -> Vec<(String, String)> {
-        let pushes = self.pushes();
-        let since = pushes.get(pushes_before..).unwrap_or_default();
-        since
-            .iter()
-            .flat_map(|p| p["mutations"].as_array().cloned().unwrap_or_default())
-            .map(|m| {
-                let field = |k: &str| m[k].as_str().unwrap_or_default().to_string();
-                (field("op"), field("oid"))
-            })
-            .collect()
     }
 }

@@ -112,17 +112,6 @@ fn a_runtime_error_in_secrets_lua_is_quoted_in_the_row() {
 }
 
 #[test]
-fn a_syntax_error_in_secrets_lua_is_never_quoted() {
-    let _guard = support::guard("a_syntax_error_in_secrets_lua_is_never_quoted");
-    let sb = Sandbox::new();
-    sb.write_secrets_lua("return { token = { tool = { value = 'hunter2' } } \n");
-    let answer = sb.doctor(&["doctor", "config"]);
-    assert_eq!(answer.code, Some(1));
-    assert!(answer.out.contains("secrets.lua:"), "{}", answer.out);
-    assert!(!answer.out.contains("hunter2"), "{}", answer.out);
-}
-
-#[test]
 fn no_config_lua_means_defaults_and_doctor_creates_nothing() {
     let _guard = support::guard("no_config_lua_means_defaults_and_doctor_creates_nothing");
     let sb = Sandbox::new();

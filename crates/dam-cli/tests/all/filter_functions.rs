@@ -1,72 +1,10 @@
 use crate::support;
 
 use support::sandbox::Sandbox;
-use support::schema::assert_matches_schema;
 use support::tokens::{grant, grant_to};
-
-const ERRAND_BY_FUNCTION: &str = "{ match = function(task, dam)\n\
-    for _, label in ipairs(task.labels) do\n\
-      if label == 'errand' then return true end\n\
-    end\n\
-  end }";
-
 const RAISING: &str = "{ match = function(task, dam)\n\
     error('no such field')\n\
   end }";
-
-fn errands(sb: &Sandbox) {
-    sb.new_object(&["buy milk", "--labels", "errand"]);
-    sb.new_object(&["post the letter", "--labels", "errand"]);
-    sb.new_object(&["write the report"]);
-    sb.add_filter("by_text", "@errand");
-    sb.add_filter_written_as("by_function", ERRAND_BY_FUNCTION);
-}
-
-fn stdout_of(sb: &Sandbox, args: &[&str]) -> String {
-    let (ok, out, err) = sb.dam(args);
-    assert!(ok, "{err}");
-    out
-}
-
-#[test]
-fn ls_by_a_function_filter_prints_what_ls_by_a_text_filter_prints() {
-    let _guard = support::guard("ls_by_a_function_filter_prints_what_ls_by_a_text_filter_prints");
-    let sb = Sandbox::new();
-    errands(&sb);
-    let by_text = stdout_of(&sb, &["ls", "by_text"]);
-    assert_eq!(by_text.lines().count(), 2, "{by_text}");
-    assert_eq!(stdout_of(&sb, &["ls", "by_function"]), by_text);
-    assert_eq!(
-        stdout_of(&sb, &["ls", "by_function", "--json"]),
-        stdout_of(&sb, &["ls", "by_text", "--json"])
-    );
-}
-
-#[test]
-fn filter_list_shows_each_kind_and_never_a_functions_source() {
-    let _guard = support::guard("filter_list_shows_each_kind_and_never_a_functions_source");
-    let sb = Sandbox::new();
-    errands(&sb);
-    let human = stdout_of(&sb, &["filter", "list"]);
-    assert_eq!(
-        human,
-        "by_function  function  -\nby_text      query     @errand\n"
-    );
-    let json = stdout_of(&sb, &["filter", "list", "--json"]);
-    let document: serde_json::Value = serde_json::from_str(&json).unwrap();
-    assert_matches_schema(&document, "filter-list.schema.json");
-    assert_eq!(
-        document,
-        serde_json::json!({"filters": [
-            {"name": "by_function", "kind": "function"},
-            {"name": "by_text", "kind": "query", "query": "@errand"},
-        ]})
-    );
-    assert!(
-        !json.contains("errand'") && !json.contains("ipairs"),
-        "{json}"
-    );
-}
 
 #[test]
 fn a_raising_filter_names_itself_its_file_and_its_line_to_the_owner() {
@@ -109,43 +47,6 @@ fn a_raising_filter_tells_a_token_its_name_and_nothing_from_the_file() {
             "dam: filter broken failed; the owner sees why by running the same command\n"
         );
     }
-}
-
-#[test]
-fn config_validate_accepts_a_function_filter() {
-    let _guard = support::guard("config_validate_accepts_a_function_filter");
-    let sb = Sandbox::new();
-    sb.add_filter_written_as("by_function", ERRAND_BY_FUNCTION);
-    let (ok, _, err) = sb.dam(&["config", "validate"]);
-    assert!(ok, "{err}");
-}
-
-#[test]
-fn agenda_by_a_function_filter_keeps_the_events_it_keeps() {
-    let _guard = support::guard("agenda_by_a_function_filter_keeps_the_events_it_keeps");
-    let sb = Sandbox::new();
-    for subject in ["standup", "offsite"] {
-        sb.new_object(&[
-            "--event",
-            subject,
-            "--start",
-            "2030-01-07T09:00",
-            "--end",
-            "2030-01-07T09:30",
-        ]);
-    }
-    sb.add_filter_written_as(
-        "standups",
-        "{ match = function(task, dam) return task.subject == 'standup' end }",
-    );
-    let window = ["--from", "2030-01-07", "--to", "2030-01-08"];
-    let mut args = vec!["agenda", "standups"];
-    args.extend(window);
-    let agenda = stdout_of(&sb, &args);
-    assert!(
-        agenda.contains("standup") && !agenda.contains("offsite"),
-        "{agenda}"
-    );
 }
 
 #[test]

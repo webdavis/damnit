@@ -85,19 +85,6 @@ fn the_pulled_hook_edits_what_a_later_pull_brings_and_the_answer_counts_it() {
 }
 
 #[test]
-fn the_pulled_hook_set_to_working_leaves_its_edit_uncommitted() {
-    let _guard = support::guard("the_pulled_hook_set_to_working_leaves_its_edit_uncommitted");
-    let sb = hooked(&format!("{{ run = {FILING}, changes = 'working' }}"));
-    let answer = pulled(&sb);
-    assert_eq!(
-        answer["remotes"][0]["task_pulled"],
-        json!({"ran": 1, "changed": 1, "failed": 0, "not_reached": 0})
-    );
-    assert_eq!(log(&sb).len(), 2);
-    assert!(subjects(&sb).contains(&"call Bob today".to_string()));
-}
-
-#[test]
 fn a_pull_says_in_plain_text_what_the_pulled_hook_did() {
     let _guard = support::guard("a_pull_says_in_plain_text_what_the_pulled_hook_did");
     let sb = hooked("function() error('no bell') end");

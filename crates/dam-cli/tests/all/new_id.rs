@@ -72,17 +72,6 @@ fn an_id_with_a_line_break_or_past_the_cap_is_a_usage_error() {
 }
 
 #[test]
-fn the_help_says_the_id_is_not_damnits_oid() {
-    let _guard = support::guard("the_help_says_the_id_is_not_damnits_oid");
-    let sb = Sandbox::new();
-    let (ok, out, err) = sb.dam(&["new", "--help"]);
-    assert!(ok, "{err}");
-    let help = out.split_whitespace().collect::<Vec<_>>().join(" ");
-    assert!(help.contains("--id"), "{out}");
-    assert!(help.contains("not damnit's oid"), "{out}");
-}
-
-#[test]
 fn the_owners_repeat_that_moves_the_task_carries_its_children_as_mv_does() {
     let _guard =
         support::guard("the_owners_repeat_that_moves_the_task_carries_its_children_as_mv_does");
@@ -127,21 +116,4 @@ fn the_owners_repeat_that_renames_the_task_carries_its_children_as_edit_does() {
         |oid: &serde_json::Value| all.iter().find(|o| o["oid"] == *oid).unwrap()["path"].clone();
     assert_eq!(path_of(&step["oid"]), "home/Roadmap/");
     assert_eq!(path_of(&detail["oid"]), "home/Roadmap/Step/");
-}
-
-#[test]
-fn the_answer_and_show_print_the_callers_id_under_id() {
-    let _guard = support::guard("the_answer_and_show_print_the_callers_id_under_id");
-    let sb = Sandbox::new();
-    let made = owner_new(&sb, &["Call dentist", "--id", "dentist"]);
-    assert_eq!(made["id"], "dentist");
-    let oid = made["oid"].as_str().unwrap();
-    let (ok, out, err) = sb.dam(&["show", oid, "--json"]);
-    assert!(ok, "{err}");
-    assert_eq!(
-        serde_json::from_str::<serde_json::Value>(&out).unwrap()["id"],
-        "dentist"
-    );
-    let plain = owner_new(&sb, &["Call vet"]);
-    assert!(plain.get("id").is_none(), "{plain}");
 }

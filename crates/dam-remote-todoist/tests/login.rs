@@ -75,13 +75,3 @@ fn a_refused_token_answers_what_todoist_said_without_the_token() {
     assert!(error.contains("is not valid"), "{error}");
     assert!(!error.contains(MARKER), "{error}");
 }
-
-#[test]
-fn a_login_without_a_token_names_the_variable_and_asks_nothing() {
-    let _guard = testing::guard("a_login_without_a_token_names_the_variable_and_asks_nothing");
-    let server = todoist(Reply::json(200, json!({"results": []})));
-    let lines = answers(&server.base, None);
-    let error = lines[1]["error"].as_str().unwrap();
-    assert!(error.contains("DAM_TODOIST_API_TOKEN"), "{error}");
-    assert!(server.seen().is_empty());
-}

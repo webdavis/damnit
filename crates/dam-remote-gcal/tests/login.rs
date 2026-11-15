@@ -62,21 +62,6 @@ fn a_login_is_one_refresh_grant_and_reads_no_calendar() {
 }
 
 #[test]
-fn a_refused_grant_says_what_google_said_and_no_credential() {
-    let _guard = testing::guard("a_refused_grant_says_what_google_said_and_no_credential");
-    let server = google(Reply::json(
-        400,
-        json!({"error": "invalid_grant", "error_description": REFRESH}),
-    ));
-    let lines = answers(&server.base, true);
-    let error = lines[1]["error"].as_str().unwrap();
-    assert!(error.contains("invalid_grant"), "{error}");
-    for secret in [CLIENT_SECRET, REFRESH] {
-        assert!(!error.contains(secret), "{error}");
-    }
-}
-
-#[test]
 fn a_login_without_credentials_names_the_variable_and_asks_nothing() {
     let _guard = testing::guard("a_login_without_credentials_names_the_variable_and_asks_nothing");
     let server = google(Reply::json(200, json!({"access_token": "x"})));

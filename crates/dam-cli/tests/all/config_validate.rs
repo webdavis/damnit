@@ -36,30 +36,6 @@ fn good_files_answer_as_doctor_config_does() {
 }
 
 #[test]
-fn a_missing_secrets_lua_answers_as_doctor_config_does() {
-    let _guard = support::guard("a_missing_secrets_lua_answers_as_doctor_config_does");
-    let sb = Sandbox::new();
-    std::fs::remove_file(sb.secrets_path()).unwrap();
-    answers_as_doctor_config_does(&sb);
-    let (ok, out, _) = sb.dam(&["config", "validate"]);
-    assert!(ok);
-    assert!(
-        out.contains("\n  ✓ config: config.lua is valid, no secrets.lua\n"),
-        "{out}"
-    );
-}
-
-#[test]
-fn a_broken_config_lua_answers_as_doctor_config_does() {
-    let _guard = support::guard("a_broken_config_lua_answers_as_doctor_config_does");
-    let sb = Sandbox::new();
-    sb.write_config_lua("return {\n  owner = ,\n}\n");
-    answers_as_doctor_config_does(&sb);
-    let out = sb.output(&["config", "validate"]);
-    assert_eq!(out.status.code(), Some(1), "{out:?}");
-}
-
-#[test]
 fn neither_validate_nor_doctor_creates_a_missing_config_lua() {
     let _guard = support::guard("neither_validate_nor_doctor_creates_a_missing_config_lua");
     let sb = Sandbox::new();

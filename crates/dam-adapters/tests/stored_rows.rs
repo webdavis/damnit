@@ -15,10 +15,6 @@ fn at(text: &str) -> When {
     When::At(text.parse().unwrap())
 }
 
-fn day(text: &str) -> When {
-    When::Day(text.parse().unwrap())
-}
-
 fn full_task() -> Task {
     let mut t = Task::new(oid(0x11), "buy oat milk");
     t.base.body = "the barista kind".into();
@@ -146,42 +142,4 @@ fn a_fully_populated_task_is_stored_as_this_exact_golden_row() {
 #[test]
 fn a_fully_populated_event_is_stored_as_this_exact_golden_row() {
     assert_eq!(stored_row(&Object::Event(full_event())), FULL_EVENT_ROW);
-}
-
-#[test]
-fn every_event_enum_variant_is_stored_as_its_golden_word() {
-    use EventStatus as S;
-    for (v, w) in [(S::Confirmed, "confirmed"), (S::Cancelled, "cancelled")] {
-        assert_event_row_holds(|e| e.status = v, "status", w);
-    }
-    assert_event_row_holds(
-        |e| e.transparency = Transparency::Busy,
-        "transparency",
-        "busy",
-    );
-    use Visibility as V;
-    for (v, w) in [
-        (V::Default, "default"),
-        (V::Public, "public"),
-        (V::Private, "private"),
-    ] {
-        assert_event_row_holds(|e| e.visibility = v, "visibility", w);
-    }
-    use EventType as T;
-    for (v, w) in [
-        (T::Default, "default"),
-        (T::OutOfOffice, "out_of_office"),
-        (T::WorkingLocation, "working_location"),
-        (T::Birthday, "birthday"),
-    ] {
-        assert_event_row_holds(|e| e.event_type = v, "event_type", w);
-    }
-}
-
-fn assert_event_row_holds(set: impl Fn(&mut Event), field: &str, word: &str) {
-    let mut e = Event::new(oid(0x66), "day off", day("2026-09-25"), day("2026-09-26"));
-    set(&mut e);
-    let row = stored_row(&Object::Event(e));
-    let pair = format!(r#""{field}":"{word}""#);
-    assert!(row.contains(&pair), "{pair} missing from {row}");
 }

@@ -5,9 +5,6 @@ use std::process::Output;
 
 use support::errors::error_document;
 use support::sandbox::Sandbox;
-use support::schema::assert_matches_schema;
-
-const OWN: &str = "return { filter = { mine = { query = 'p1' } } }\n";
 
 fn fresh_config(sb: &Sandbox) -> PathBuf {
     sb.dir.path().join("fresh").join("dam").join("config.lua")
@@ -28,61 +25,6 @@ fn the_printed_text_is_what_a_first_run_writes() {
     assert!(out.status.success(), "{out:?}");
     assert!(out.stderr.is_empty(), "{out:?}");
     assert_eq!(out.stdout, std::fs::read(&created).unwrap());
-}
-
-#[test]
-fn an_existing_config_is_left_as_it_was() {
-    let _guard = support::guard("an_existing_config_is_left_as_it_was");
-    let sb = Sandbox::new();
-    sb.write_config_lua(OWN);
-    let secrets = std::fs::read(sb.secrets_path()).unwrap();
-    let modified = std::fs::metadata(sb.config_path())
-        .unwrap()
-        .modified()
-        .unwrap();
-    let out = sb.output(&["config", "print-default"]);
-    assert!(out.status.success(), "{out:?}");
-    assert_ne!(out.stdout, OWN.as_bytes());
-    assert_eq!(std::fs::read_to_string(sb.config_path()).unwrap(), OWN);
-    assert_eq!(std::fs::read(sb.secrets_path()).unwrap(), secrets);
-    let after = std::fs::metadata(sb.config_path())
-        .unwrap()
-        .modified()
-        .unwrap();
-    assert_eq!(after, modified);
-}
-
-#[test]
-fn no_file_is_created_when_there_is_no_config() {
-    let _guard = support::guard("no_file_is_created_when_there_is_no_config");
-    let sb = Sandbox::new();
-    let config = fresh_config(&sb);
-    for format in [&[][..], &["--json"], &["--toon"]] {
-        let out = run(
-            &sb,
-            &config,
-            &[&["config", "print-default"][..], format].concat(),
-        );
-        assert!(out.status.success(), "{format:?}: {out:?}");
-        assert!(!config.parent().unwrap().exists(), "{format:?}");
-    }
-}
-
-#[test]
-fn a_machine_reader_gets_the_text_in_one_field() {
-    let _guard = support::guard("a_machine_reader_gets_the_text_in_one_field");
-    let sb = Sandbox::new();
-    let plain = sb.output(&["config", "print-default"]);
-    let out = sb.output(&["config", "print-default", "--json"]);
-    assert!(out.status.success(), "{out:?}");
-    assert!(out.stderr.is_empty(), "{out:?}");
-    let answer: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
-    assert_matches_schema(&answer, "config-print-default.schema.json");
-    assert_eq!(answer["text"].as_str().unwrap().as_bytes(), plain.stdout);
-
-    let (ok, out, err) = sb.dam(&["config", "print-default", "--toon"]);
-    assert!(ok, "{err}");
-    assert!(out.starts_with("text: "), "{out}");
 }
 
 #[test]

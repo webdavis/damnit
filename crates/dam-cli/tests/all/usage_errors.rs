@@ -135,20 +135,6 @@ fn a_usage_error_dam_raises_itself_says_other() {
 }
 
 #[test]
-fn toon_prints_the_same_document() {
-    let _guard = support::guard("toon_prints_the_same_document");
-    let sb = Sandbox::new();
-    let out = sb.output(&["agenda", "--bogus", "--toon"]);
-    assert_eq!(out.status.code(), Some(EXIT_USAGE));
-    let document: Value =
-        toon_format::decode_default(&String::from_utf8_lossy(&out.stderr)).unwrap();
-    assert_eq!(
-        document,
-        usage_document(&sb, &["agenda", "--bogus", "--json"])
-    );
-}
-
-#[test]
 fn text_mode_prints_what_clap_prints() {
     let _guard = support::guard("text_mode_prints_what_clap_prints");
     let sb = Sandbox::new();

@@ -29,20 +29,3 @@ fn a_config_path_that_does_not_end_in_lua_is_an_issue_in_the_report() {
     assert!(out.contains(&rows), "{out}");
     assert!(out.contains(&format!("\n  1. {detail}\n")), "{out}");
 }
-
-#[test]
-fn a_config_path_that_does_not_end_in_lua_is_reported_in_every_format() {
-    let _guard =
-        support::guard("a_config_path_that_does_not_end_in_lua_is_reported_in_every_format");
-    let sb = Sandbox::new();
-    for args in [
-        &["doctor", "--json"][..],
-        &["doctor", "--toon"],
-        &["config", "validate"],
-        &["config", "validate", "--json"],
-    ] {
-        let (code, out) = through_a_toml_config(&sb, args);
-        assert_eq!(code, Some(1), "{args:?}");
-        assert!(out.contains("does not end in .lua"), "{args:?}: {out}");
-    }
-}

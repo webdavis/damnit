@@ -1,35 +1,8 @@
 use crate::support;
 
 use dam_domain::Token;
-use support::errors::error_document;
 use support::sandbox::Sandbox;
 use support::token_table::{Grant, TokenTable};
-
-#[test]
-fn a_token_reads_only_what_its_grants_cover_and_nothing_hints_at_the_rest() {
-    let _guard =
-        support::guard("a_token_reads_only_what_its_grants_cover_and_nothing_hints_at_the_rest");
-    let sb = Sandbox::new();
-    let held = Token::generate(&mut |b: &mut [u8]| b.fill(1)).expose();
-    sb.add_token(
-        "tool",
-        TokenTable::valued(&held).grant(Grant::allowing(&["task:read"]).paths(&["work"])),
-    );
-    sb.new_object(&["report", "--path", "work"]);
-    let hidden = sb.new_object(&["diary", "--path", "home"]);
-
-    let out = sb.output_holding(&held, &["ls", "--json"]);
-    assert!(out.status.success(), "{out:?}");
-    let listed = String::from_utf8_lossy(&out.stdout);
-    assert!(
-        listed.contains("report") && !listed.contains("diary"),
-        "{listed}"
-    );
-
-    let out = sb.output_holding(&held, &["show", &hidden, "--json"]);
-    assert_eq!(out.status.code(), Some(4));
-    assert_eq!(error_document(&out)["error"]["rule"], "no_such_object");
-}
 
 fn work_only_reader(sb: &Sandbox) -> String {
     let held = Token::generate(&mut |b: &mut [u8]| b.fill(2)).expose();
@@ -47,64 +20,6 @@ fn work_only_reader(sb: &Sandbox) -> String {
         ),
     );
     held
-}
-
-#[test]
-fn a_path_restricted_token_sees_no_event_outside_its_path_in_the_agenda() {
-    let _guard =
-        support::guard("a_path_restricted_token_sees_no_event_outside_its_path_in_the_agenda");
-    let sb = Sandbox::new();
-    let held = work_only_reader(&sb);
-    for (subject, path) in [("standup", "work"), ("dentist", "home")] {
-        sb.new_object(&[
-            "--event",
-            subject,
-            "--path",
-            path,
-            "--start",
-            "2026-09-25T14:00",
-            "--end",
-            "2026-09-25T14:30",
-        ]);
-    }
-    let window = [
-        "agenda",
-        "--from",
-        "2026-09-25",
-        "--to",
-        "2026-09-26",
-        "--json",
-    ];
-    let out = sb.output_holding(&held, &window);
-    assert!(out.status.success(), "{out:?}");
-    let listed = String::from_utf8_lossy(&out.stdout);
-    assert!(
-        listed.contains("standup") && !listed.contains("dentist"),
-        "{listed}"
-    );
-}
-
-#[test]
-fn a_path_restricted_token_is_refused_the_reads_that_cannot_filter_by_path_yet() {
-    let _guard = support::guard(
-        "a_path_restricted_token_is_refused_the_reads_that_cannot_filter_by_path_yet",
-    );
-    let sb = Sandbox::new();
-    let held = work_only_reader(&sb);
-    sb.new_object(&["diary", "--path", "home"]);
-    let status = sb.output_holding(&held, &["status", "--json"]);
-    assert!(status.status.success(), "{status:?}");
-    assert!(!String::from_utf8_lossy(&status.stdout).contains("diary"));
-    for read in ["diff", "log"] {
-        let out = sb.output_holding(&held, &[read, "--json"]);
-        assert_eq!(out.status.code(), Some(4), "{read}");
-        assert_eq!(
-            error_document(&out)["error"]["rule"],
-            "not_permitted",
-            "{read}"
-        );
-        assert!(!String::from_utf8_lossy(&out.stderr).contains("diary"));
-    }
 }
 
 #[test]

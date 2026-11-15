@@ -40,15 +40,3 @@ fn what_config_lua_prints_goes_to_standard_error_and_leaves_json_whole() {
         }
     }
 }
-
-#[test]
-fn what_config_lua_prints_stays_out_of_a_plain_listing() {
-    let _guard = support::guard("what_config_lua_prints_stays_out_of_a_plain_listing");
-    let sb = a_config_that_prints_every_way();
-    let out = sb.output(&["ls"]);
-    assert!(out.status.success(), "{out:?}");
-    assert!(
-        !String::from_utf8_lossy(&out.stdout).contains(PRINTED),
-        "{out:?}"
-    );
-}

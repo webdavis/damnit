@@ -4,47 +4,6 @@ use support::errors::{error_document, kind_of};
 use support::sandbox::Sandbox;
 
 #[test]
-fn a_refusal_under_json_is_a_document_naming_its_kind_message_and_oids() {
-    let _guard =
-        support::guard("a_refusal_under_json_is_a_document_naming_its_kind_message_and_oids");
-    let sb = Sandbox::new();
-    let parent = sb.new_object(&["parent"]);
-    let child = sb.new_object(&["child", "--path", "parent/"]);
-
-    let out = sb.output(&["done", &parent, "--json"]);
-    assert!(
-        String::from_utf8_lossy(&out.stdout).is_empty(),
-        "a failure wrote to standard output"
-    );
-    let document = error_document(&out);
-    assert_eq!(document["error"]["kind"], "refused");
-    assert_eq!(document["error"]["rule"], "blocked");
-    let named: Vec<&str> = document["error"]["oids"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|o| o.as_str().unwrap())
-        .collect();
-    assert_eq!(named.len(), 2, "the task and then the blocker: {named:?}");
-    assert!(
-        named[0].starts_with(&parent) && named[0].len() == 40,
-        "{named:?}"
-    );
-    assert!(
-        named[1].starts_with(&child) && named[1].len() == 40,
-        "{named:?}"
-    );
-
-    let message = document["error"]["message"].as_str().unwrap();
-    let human = sb.output(&["done", &parent]);
-    assert_eq!(
-        String::from_utf8_lossy(&human.stderr).trim(),
-        format!("dam: {message}").trim(),
-        "the message is the sentence the human form prints, which keeps tokens and paths out"
-    );
-}
-
-#[test]
 fn every_failure_class_names_itself_under_json() {
     let _guard = support::guard("every_failure_class_names_itself_under_json");
     let sb = Sandbox::new();

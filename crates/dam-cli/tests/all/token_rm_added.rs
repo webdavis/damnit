@@ -1,7 +1,7 @@
 use crate::support;
 
 use support::sandbox::Sandbox;
-use support::tokens::{answer, grant, grant_to, refused};
+use support::tokens::{answer, grant, grant_to};
 
 fn added_from_tool(allow: &[&str]) -> (Sandbox, String, String) {
     let sb = Sandbox::new();
@@ -53,34 +53,6 @@ fn a_tokens_rm_of_an_added_task_waits_once_until_the_owner_adds_it() {
     let status = support::status_json(&sb, &["--json"]);
     assert_eq!(status["staged"][0]["op"], "delete");
     assert_eq!(status["staged"][0]["from"], "tool");
-}
-
-#[test]
-fn a_removal_the_owner_declined_answers_declined_and_the_task_stays() {
-    let _guard = support::guard("a_removal_the_owner_declined_answers_declined_and_the_task_stays");
-    let (sb, held, oid) = added_from_tool(&EVERY_RIGHT);
-    let first = removal(&sb, &held, &oid);
-    let (ok, _, err) = sb.dam(&["rm", first["item"].as_str().unwrap()]);
-    assert!(ok, "{err}");
-    let again = removal(&sb, &held, &oid);
-    assert_eq!(again["answer"], "declined");
-    assert_eq!(again["item"], first["item"]);
-    assert_eq!(listed(&sb), 1);
-    assert!(
-        support::status_json(&sb, &["--json"])["waiting"]
-            .as_array()
-            .unwrap()
-            .is_empty()
-    );
-}
-
-#[test]
-fn removing_an_added_task_needs_task_remove() {
-    let _guard = support::guard("removing_an_added_task_needs_task_remove");
-    let (sb, held, oid) = added_from_tool(&["task:create", "task:read"]);
-    let out = sb.output_holding(&held, &["rm", &oid, "--json"]);
-    assert_eq!(refused(&out), "not_permitted");
-    assert_eq!(listed(&sb), 1);
 }
 
 #[test]

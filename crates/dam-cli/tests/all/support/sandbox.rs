@@ -164,11 +164,4 @@ impl Sandbox {
             .map(|line| serde_json::from_str(line).unwrap())
             .collect()
     }
-
-    pub fn store_bytes(&self) -> String {
-        let db = self.dir.path().join("dam.db");
-        let mut bytes = std::fs::read(&db).unwrap();
-        bytes.extend(std::fs::read(db.with_extension("db-wal")).unwrap_or_default());
-        String::from_utf8_lossy(&bytes).into_owned()
-    }
 }

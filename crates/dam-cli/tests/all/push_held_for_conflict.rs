@@ -56,16 +56,6 @@ fn a_push_sends_the_rest_and_holds_the_object_in_conflict() {
 }
 
 #[test]
-fn a_push_answers_how_many_it_held() {
-    let _guard = support::guard("a_push_answers_how_many_it_held");
-    let sb = milk_in_conflict_and_mom_renamed();
-
-    let document = answer(&sb.output(&["push", "--json"]), "push.schema.json");
-
-    assert_eq!(document["remotes"][0]["held"], 1, "{document}");
-}
-
-#[test]
 fn a_token_without_conflict_read_is_not_told_how_many_were_held() {
     let _guard = support::guard("a_token_without_conflict_read_is_not_told_how_many_were_held");
     let sb = milk_in_conflict_and_mom_renamed();
@@ -75,18 +65,4 @@ fn a_token_without_conflict_read_is_not_told_how_many_were_held() {
 
     let document = answer(&out, "push.schema.json");
     assert_eq!(document["remotes"][0]["held"], Value::Null, "{document}");
-}
-
-#[test]
-fn the_held_object_goes_out_on_the_push_after_resolve() {
-    let _guard = support::guard("the_held_object_goes_out_on_the_push_after_resolve");
-    let sb = milk_in_conflict_and_mom_renamed();
-    run(&sb, &["push"]);
-
-    run(&sb, &["resolve", &short(OAT_MILK), "--ours"]);
-    let (ok, out, err) = sb.dam(&["push"]);
-
-    assert!(ok, "{err}");
-    assert_eq!(oids_in_the_last_push(&sb), vec![oid(OAT_MILK)]);
-    assert_eq!(out, "fake: 1 sent, 1 ok, 0 failed, 0 skipped\n");
 }

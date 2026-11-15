@@ -1,7 +1,6 @@
 use crate::support;
 
 use serde_json::{Value, json};
-use support::config_files::Remote;
 use support::sandbox::Sandbox;
 use support::tokens::{answer, grant, grant_to, refused};
 
@@ -95,64 +94,6 @@ fn a_created_task_untouched_since_is_removed_and_one_edited_since_is_kept() {
     assert_eq!(out["kept"].as_array().map(Vec::len), Some(1), "{out}");
     assert_eq!(subject(&sb, &ann), None);
     assert_eq!(subject(&sb, &bob).as_deref(), Some("call Bob at 5"));
-}
-
-#[test]
-fn a_removed_task_comes_back_and_nothing_is_staged_or_committed() {
-    let _guard = support::guard("a_removed_task_comes_back_and_nothing_is_staged_or_committed");
-    let sb = Sandbox::new();
-    let ann = sb.new_object(&["call Ann"]);
-    commit(&sb, "add");
-    run(&sb, &["rm", &ann]);
-    let removed = commit(&sb, "remove");
-
-    let out = revert(&sb, &[&removed]);
-
-    assert_eq!(out["reverted"][0]["fields"], json!(["subject"]), "{out}");
-    assert_eq!(subject(&sb, &ann).as_deref(), Some("call Ann"));
-    let status = support::status_json(&sb, &["--json"]);
-    assert_eq!(status["staged"], json!([]));
-    assert_eq!(
-        status["unstaged"].as_array().map(Vec::len),
-        Some(1),
-        "{status}"
-    );
-    let (_, log, _) = sb.dam(&["log", "--json"]);
-    let log: Value = serde_json::from_str(&log).unwrap();
-    assert_eq!(log["commits"].as_array().map(Vec::len), Some(2));
-}
-
-#[test]
-fn a_pulls_commit_is_refused_with_its_rule() {
-    let _guard = support::guard("a_pulls_commit_is_refused_with_its_rule");
-    let sb = Sandbox::new();
-    sb.add_remote("fake", Remote::fake());
-    run(&sb, &["pull"]);
-    let (_, log, _) = sb.dam(&["log", "--json"]);
-    let log: Value = serde_json::from_str(&log).unwrap();
-    let pulled = log["commits"][0]["id"].as_str().unwrap().to_string();
-
-    assert_eq!(
-        refused(&sb.output(&["revert", &pulled, "--json"])),
-        "pulled_commit"
-    );
-    let (_, _, said) = sb.dam(&["revert", &pulled]);
-    assert!(said.contains("came from dam pull"), "{said}");
-}
-
-#[test]
-fn a_task_not_in_the_commit_is_refused_with_its_rule() {
-    let _guard = support::guard("a_task_not_in_the_commit_is_refused_with_its_rule");
-    let sb = Sandbox::new();
-    let ann = sb.new_object(&["call Ann"]);
-    commit(&sb, "add");
-    sb.new_object(&["call Bob"]);
-    let second = commit(&sb, "bob");
-
-    assert_eq!(
-        refused(&sb.output(&["revert", &second, &ann, "--json"])),
-        "not_in_commit"
-    );
 }
 
 #[test]

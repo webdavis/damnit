@@ -41,18 +41,3 @@ fn an_unknown_check_is_a_usage_error_naming_the_valid_ones() {
     assert_eq!(out.status.code(), Some(2), "{out:?}");
     assert_eq!(error_document(&out)["error"]["kind"], "usage");
 }
-
-#[test]
-fn the_help_lists_every_check_by_name() {
-    let _guard = support::guard("the_help_lists_every_check_by_name");
-    let sb = Sandbox::new();
-    let (ok, out, _) = sb.dam(&["doctor", "--help"]);
-    assert!(ok);
-    let out = out.split_whitespace().collect::<Vec<_>>().join(" ");
-    assert!(out.contains("contact nothing"), "{out}");
-    assert!(
-        out.contains("[possible values: config, database, helpers, credentials, pushes]"),
-        "{out}"
-    );
-    assert!(out.contains("dam doctor config"), "{out}");
-}

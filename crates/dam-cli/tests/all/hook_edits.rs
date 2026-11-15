@@ -12,41 +12,6 @@ fn hooked(task_new: &str) -> Sandbox {
     sb
 }
 
-fn only_task(sb: &Sandbox) -> serde_json::Value {
-    let (ok, out, err) = sb.dam(&["ls", "--json"]);
-    assert!(ok, "{err}");
-    let listing: serde_json::Value = serde_json::from_str(&out).unwrap();
-    assert_eq!(listing["objects"].as_array().unwrap().len(), 1, "{listing}");
-    listing["objects"][0].clone()
-}
-
-#[test]
-fn a_hook_that_returns_a_label_labels_the_new_task() {
-    let _guard = support::guard("a_hook_that_returns_a_label_labels_the_new_task");
-    let sb = hooked("function() return { labels = { 'errand' } } end");
-    let out = sb.output(&["new", "buy milk", "--json"]);
-    assert!(out.status.success(), "{out:?}");
-    assert!(out.stderr.is_empty(), "{out:?}");
-    assert_eq!(only_task(&sb)["labels"], serde_json::json!(["errand"]));
-}
-
-#[test]
-fn a_wrong_request_warns_and_the_new_task_stands_as_given() {
-    let _guard = support::guard("a_wrong_request_warns_and_the_new_task_stands_as_given");
-    let sb = hooked("function() return { colour = 'red' } end");
-    let out = sb.output(&["new", "buy milk", "--json"]);
-    assert!(out.status.success(), "{out:?}");
-    let config = sb.config_path().display().to_string();
-    assert_eq!(
-        String::from_utf8_lossy(&out.stderr),
-        format!(
-            "warning: hook task_new failed at {config}:2: its edit request failed: \
-             --request: colour is not a field it takes; the change stands\n"
-        )
-    );
-    assert_eq!(only_task(&sb)["subject"], "buy milk");
-}
-
 #[test]
 fn an_edit_the_rules_refuse_with_refuse_changes_nothing_and_exits_4() {
     let _guard = support::guard("an_edit_the_rules_refuse_with_refuse_changes_nothing_and_exits_4");

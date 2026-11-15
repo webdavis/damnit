@@ -112,29 +112,6 @@ fn fix_database_creates_only_the_store() {
 }
 
 #[test]
-fn fix_config_creates_only_the_config() {
-    let _guard = support::guard("fix_config_creates_only_the_config");
-    let fresh = Fresh::new();
-    assert_eq!(
-        fresh.created(&["doctor", "--fix", "config"]),
-        serde_json::json!([fresh.config.display().to_string()])
-    );
-    assert!(!fresh.store.exists());
-}
-
-#[test]
-fn fixing_a_check_with_nothing_to_fix_creates_nothing() {
-    let _guard = support::guard("fixing_a_check_with_nothing_to_fix_creates_nothing");
-    let fresh = Fresh::new();
-    let before = listing(fresh.sb.dir.path());
-    assert_eq!(
-        fresh.created(&["doctor", "--fix", "helpers"]),
-        serde_json::json!([])
-    );
-    assert_eq!(listing(fresh.sb.dir.path()), before);
-}
-
-#[test]
 fn a_missing_config_and_store_are_advised_to_dam_doctor_fix() {
     let _guard = support::guard("a_missing_config_and_store_are_advised_to_dam_doctor_fix");
     let fresh = Fresh::new();

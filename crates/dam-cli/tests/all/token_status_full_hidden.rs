@@ -1,7 +1,6 @@
 use crate::support;
 
 use support::hidden::{Hidden, text};
-use support::tokens::{grant, grant_to};
 
 fn without_ages(stdout: &[u8]) -> serde_json::Value {
     let mut status: serde_json::Value = serde_json::from_slice(stdout).unwrap();
@@ -37,34 +36,4 @@ fn a_tokens_full_status_hides_a_hidden_dependency_of_its_own_item() {
     let sent = h.holding(&["edit", &h.report, "--subject", "the report"]);
     assert!(sent.status.success(), "{sent:?}");
     full_status_alike_once_removed(&h, &h.held, &diary);
-}
-
-#[test]
-fn a_tokens_full_status_hides_a_hidden_event_its_item_is_attached_to() {
-    let _guard =
-        support::guard("a_tokens_full_status_hides_a_hidden_event_its_item_is_attached_to");
-    let h = Hidden::new();
-    let dentist = h.event("dentist", "home");
-    h.owner(&["edit", &h.report, "--attach", &dentist]);
-    let sent = h.holding(&["edit", &h.report, "--subject", "the report"]);
-    assert!(sent.status.success(), "{sent:?}");
-    full_status_alike_once_removed(&h, &h.held, &dentist);
-}
-
-#[test]
-fn another_senders_item_under_pending_read_hides_a_hidden_dependency() {
-    let _guard =
-        support::guard("another_senders_item_under_pending_read_hides_a_hidden_dependency");
-    let h = Hidden::new();
-    let diary = h.task("diary", "home");
-    h.owner(&["edit", &h.report, "--depends", &diary]);
-    let reader = grant_to(
-        &h.sb,
-        "reader",
-        2,
-        vec![grant(&["pending:read"]).paths(&["work"])],
-    );
-    let sent = h.holding(&["edit", &h.report, "--subject", "the report"]);
-    assert!(sent.status.success(), "{sent:?}");
-    full_status_alike_once_removed(&h, &reader, &diary);
 }

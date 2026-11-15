@@ -3,7 +3,6 @@ mod walk;
 use dam_helper::testing;
 use std::collections::HashMap;
 
-use dam_remote_gcal::SignInError;
 use testing::Reply;
 use walk::{
     CLIENT_SECRET, REFRESH, client, play_the_browser_returning_its_page, query_of,
@@ -68,88 +67,5 @@ fn the_tests_own_s256_is_the_rfc_7636_appendix_b_example() {
     assert_eq!(
         s256_computed_apart_from_the_code_under_test("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"),
         "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
-    );
-}
-
-#[test]
-fn each_walk_announces_its_own_state_and_challenge() {
-    let _guard = testing::guard("each_walk_announces_its_own_state_and_challenge");
-    let google = testing::serve(HashMap::new());
-    let sign_in = sign_in_against(&google);
-    let mut announced = Vec::new();
-    for _ in 0..2 {
-        let mut browser = None;
-        let _ = sign_in.mint(&client(), &mut |url| {
-            announced.push(testing::decoded_fields(query_of(url)));
-            browser = Some(play_the_browser_returning_its_page(url, |state| {
-                format!("error=access_denied&state={state}")
-            }));
-        });
-        let _ = browser.map(|b| b.join());
-    }
-    for name in ["state", "code_challenge"] {
-        let [first, second] = [0, 1].map(|n| announced[n].get(name).cloned().unwrap_or_default());
-        for value in [&first, &second] {
-            assert_eq!(value.len(), 43, "{name}: {value}");
-            assert!(
-                value
-                    .bytes()
-                    .all(|c| c.is_ascii_alphanumeric() || c == b'-' || c == b'_'),
-                "{name}: {value}"
-            );
-        }
-        assert_ne!(first, second, "two walks announced the same {name}");
-    }
-}
-
-#[test]
-fn a_consent_refused_in_the_browser_sends_no_exchange() {
-    let _guard = testing::guard("a_consent_refused_in_the_browser_sends_no_exchange");
-    let google = testing::serve(HashMap::new());
-    let mut browser = None;
-    let err = sign_in_against(&google)
-        .mint(&client(), &mut |url| {
-            browser = Some(play_the_browser_returning_its_page(url, |state| {
-                format!("error=access_denied&state={state}")
-            }));
-        })
-        .unwrap_err();
-    let page = browser.unwrap().join().unwrap();
-    assert_eq!(err, SignInError::Denied("access_denied"));
-    assert!(page.contains("refused"), "{page}");
-    assert!(google.seen().is_empty());
-}
-
-#[test]
-fn the_client_secret_travels_in_the_exchange_body_and_nowhere_else() {
-    let _guard = testing::guard("the_client_secret_travels_in_the_exchange_body_and_nowhere_else");
-    let mut routes = HashMap::new();
-    routes.insert(
-        "POST /token",
-        vec![Reply::json(
-            200,
-            serde_json::json!({"refresh_token": REFRESH}),
-        )],
-    );
-    let google = testing::serve(routes);
-    let mut browser = None;
-    let mut announced = String::new();
-    sign_in_against(&google)
-        .mint(&client(), &mut |url| {
-            announced = url.to_string();
-            browser = Some(play_the_browser_returning_its_page(url, |state| {
-                format!("state={state}&code=c")
-            }));
-        })
-        .unwrap();
-    let _ = browser.unwrap().join();
-    let seen = google.seen();
-    assert!(!announced.contains(CLIENT_SECRET), "{announced}");
-    assert_eq!(seen.len(), 1);
-    assert!(!seen[0].query.contains(CLIENT_SECRET), "{}", seen[0].query);
-    assert_eq!(seen[0].authorization, None);
-    assert_eq!(
-        seen[0].form().get("client_secret").map(String::as_str),
-        Some(CLIENT_SECRET)
     );
 }

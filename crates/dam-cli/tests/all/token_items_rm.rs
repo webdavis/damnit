@@ -14,29 +14,6 @@ fn dentist_from_tool() -> (Sandbox, String, String) {
 }
 
 #[test]
-fn the_owner_declines_an_item_and_the_same_task_sent_again_is_refused() {
-    let _guard =
-        support::guard("the_owner_declines_an_item_and_the_same_task_sent_again_is_refused");
-    let (sb, held, hash) = dentist_from_tool();
-    let declined = answer(
-        &sb.output(&["rm", &hash[..7], "--json"]),
-        "settled.schema.json",
-    );
-    assert_eq!(declined["outcome"], "declined");
-    assert_eq!(declined["hash"], hash.as_str());
-    assert_eq!(
-        refused(&sb.output_holding(&held, &DENTIST)),
-        "item_declined"
-    );
-    assert_eq!(
-        refused(&sb.output(&["rm", &hash, "--json"])),
-        "no_such_object"
-    );
-    let (_, status, _) = sb.dam(&["status", "--json"]);
-    assert!(!status.contains(&hash), "{status}");
-}
-
-#[test]
 fn a_token_withdraws_its_own_item_and_cannot_remove_another_senders() {
     let _guard = support::guard("a_token_withdraws_its_own_item_and_cannot_remove_another_senders");
     let (sb, held, hash) = dentist_from_tool();

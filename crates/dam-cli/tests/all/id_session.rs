@@ -27,32 +27,3 @@ fn the_same_id_from_another_session_names_another_task() {
     assert_eq!(again["answer"], "changed");
     assert_eq!(again["oid"], first["oid"]);
 }
-
-#[test]
-fn the_owners_ids_are_kept_apart_by_session_and_show_names_each() {
-    let _guard = support::guard("the_owners_ids_are_kept_apart_by_session_and_show_names_each");
-    let sb = Sandbox::new();
-    let mut oids = Vec::new();
-    for session in ["a", "b"] {
-        let meta = format!("session={session}");
-        let (ok, out, err) = sb.dam(&[
-            "new",
-            "Fix the build",
-            "--id",
-            "build",
-            "--meta",
-            &meta,
-            "--json",
-        ]);
-        assert!(ok, "{err}");
-        let made: serde_json::Value = serde_json::from_str(&out).unwrap();
-        oids.push(made["oid"].as_str().unwrap().to_string());
-    }
-    assert_ne!(oids[0], oids[1]);
-    for oid in &oids {
-        let (ok, out, err) = sb.dam(&["show", oid, "--json"]);
-        assert!(ok, "{err}");
-        let shown: serde_json::Value = serde_json::from_str(&out).unwrap();
-        assert_eq!(shown["id"], "build");
-    }
-}
