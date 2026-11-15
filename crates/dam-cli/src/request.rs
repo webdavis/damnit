@@ -1,9 +1,11 @@
 mod argv;
+mod hook;
 mod misuse;
 mod plain;
 mod refusal;
 mod source;
 
+pub(crate) use hook::hook_edit_args;
 use source::read;
 pub(crate) use source::{decode, read_stdin};
 
@@ -48,7 +50,7 @@ pub(crate) fn parse(line: Vec<OsString>) -> Result<Cli, Refused> {
 }
 
 fn with_request(line: Vec<OsString>, given: &ArgMatches, source: &Path) -> Result<Cli, CliError> {
-    let (words, leaf_given) = leaf(given);
+    let (words, _) = leaf(given);
     let text = read(source)?;
     if words == ["day", "set"] {
         let mut cli = Cli::try_parse_from(line).map_err(|e| CliError::Usage(e.to_string()))?;
@@ -67,11 +69,20 @@ fn with_request(line: Vec<OsString>, given: &ArgMatches, source: &Path) -> Resul
     }
     let fields: Map<String, Value> =
         decode(&text).map_err(|why| CliError::Usage(format!("--request: {why}")))?;
+    with_fields(line, given, &fields)
+}
+
+fn with_fields(
+    line: Vec<OsString>,
+    given: &ArgMatches,
+    fields: &Map<String, Value>,
+) -> Result<Cli, CliError> {
+    let (words, leaf_given) = leaf(given);
     let leaf_command = command_at(Cli::command(), &words);
     let takes_meta = words != ["token", "create"];
-    refuse_flags_beside(given, leaf_given, &leaf_command, &fields, takes_meta)?;
+    refuse_flags_beside(given, leaf_given, &leaf_command, fields, takes_meta)?;
     let mut full = line;
-    full.extend(argv::tokens(&leaf_command, &fields, takes_meta)?);
+    full.extend(argv::tokens(&leaf_command, fields, takes_meta)?);
     let cli = Cli::try_parse_from(full).map_err(|e| {
         let mut built = Cli::command();
         built.build();

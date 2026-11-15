@@ -291,10 +291,11 @@ A hook in `config.lua` runs when your `dam new`, `dam edit`, `dam done` or `dam 
       end,
     }
 
-The events are `task_new`, `task_changed` and `task_done`. What a hook prints goes to standard
-error. A failing hook warns, or with `on_failure = "refuse"` stops the command, which then changes
-nothing and exits 4. A `dam` run with `DAM_HOOK` set, as a hook's own commands are, exits 4 at
-once. `docs/lua.md` describes hooks.
+The events are `task_new`, `task_changed` and `task_done`. A hook may return a table of fields,
+as `dam edit --request` takes them, and dam sets them on that task. What a hook prints goes to
+standard error. A failing hook warns, or with `on_failure = "refuse"` stops the command, which
+then changes nothing and exits 4. A `dam` run with `DAM_HOOK` set, as a hook's own commands are,
+exits 4 at once. `docs/lua.md` describes hooks.
 
 ## Reading it from a program
 

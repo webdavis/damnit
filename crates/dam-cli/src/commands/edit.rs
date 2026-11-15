@@ -23,7 +23,7 @@ pub(crate) fn run(ctx: &Context, args: EditArgs) -> Result<Report, CliError> {
     report_landed(&landed, |object| report(&ObjectRow(object, &ctx.tz)))
 }
 
-fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
+pub(crate) fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
     let oid_of = |flag: &str, text: &str| {
         ctx.dam()
             .resolve_object(text)

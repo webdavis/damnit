@@ -61,7 +61,8 @@ return {
   --},
 
   -- A hook runs when your own dam new, dam edit or dam done changes a task: task_new,
-  -- task_changed or task_done. It gets the task as it is after the change. A failing hook warns,
+  -- task_changed or task_done. It gets the task as it is after the change, and may return a
+  -- table of fields to set on it, as dam edit --request takes them. A failing hook warns,
   -- or with on_failure = "refuse" the command changes nothing. What it prints goes to standard
   -- error.
   --hook = {

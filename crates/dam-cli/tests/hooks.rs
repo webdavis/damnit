@@ -72,7 +72,7 @@ fn a_failing_hook_that_refuses_changes_nothing_and_exits_4() {
     assert_eq!(
         document["error"]["message"],
         format!(
-            "hook task_new failed at {config}:2: it returned an integer, not nil; \
+            "hook task_new failed at {config}:2: it returned an integer, not nil or a table; \
              the command changed nothing"
         )
     );

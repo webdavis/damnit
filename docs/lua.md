@@ -166,7 +166,12 @@ Events, `dam rm`, `dam restore`, `dam resolve`, `dam revert`, `dam reset`, a pul
 commands run no hook.
 
 A hook is a function, or a table that holds the function as `run`. `run(task, dam)` gets what a
-filter's `match` gets, with the task as it is after the change. It returns nothing.
+filter's `match` gets, with the task as it is after the change.
+It returns nothing, or a table of fields to change on that task.
+The table takes the keys and values of a `dam edit --request` document, except `oid` and `meta`.
+dam applies it to the task within the same command, by the rules `dam edit` applies.
+The change a hook makes runs no hook.
+`dam log` does not yet name the hook that made a change.
 A command a hook starts with `os.execute` or `io.popen` runs with `DAM_HOOK` set to the event.
 A `dam` that finds `DAM_HOOK` set refuses at once, before it reads or writes anything.
 It exits 4 with rule `started_by_hook`.
@@ -174,7 +179,9 @@ A program started another way, such as through a Lua library other than `os` and
 carry `DAM_HOOK`, and neither does one that clears its environment.
 A `dam` it starts waits on the busy store and fails, and the hook runs over.
 
-A hook fails when it raises an error, returns a value, or runs over.
+A hook fails when it raises an error, returns a value other than nil or a table, or runs over.
+It also fails when its table is not an edit request, or when `dam edit` would refuse that edit.
+Then dam applies none of the hook's table.
 With `on_failure = "warn"`, the default, the change stands and dam warns on standard error:
 
     warning: hook task_done failed at /home/ada/.config/dam/config.lua:3: no bell; the change stands
@@ -182,7 +189,12 @@ With `on_failure = "warn"`, the default, the change stands and dam warns on stan
 With `on_failure = "refuse"`, the command changes nothing and exits 4 with rule `hook_refused`.
 Its error document names the event under `hook`.
 
-Tasks you complete, written to a file, and no task left outside a folder:
+A failing hook's warning says what was wrong with its table:
+
+    warning: hook task_new failed at /home/ada/.config/dam/config.lua:2: its edit request failed: --request: colour is not a field it takes; the change stands
+
+Tasks you complete, written to a file, no task left outside a folder, and a due date on each
+changed task that has none:
 
     return {
       hook = {
@@ -199,6 +211,11 @@ Tasks you complete, written to a file, and no task left outside a folder:
           end,
           on_failure = "refuse",
         },
+        task_changed = function(task)
+          if task.task.due == nil then
+            return { due = "tomorrow" }
+          end
+        end,
       },
     }
 

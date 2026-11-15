@@ -19,7 +19,10 @@ impl fmt::Display for HookText<'_> {
         match &failure.fault {
             FunctionFault::Raised { message } => write!(f, ": {message}"),
             FunctionFault::RanOver => f.write_str(": it ran past the time limit for one hook call"),
-            FunctionFault::Returned { returned } => write!(f, ": it returned {returned}, not nil"),
+            FunctionFault::Returned { returned } => {
+                write!(f, ": it returned {returned}, not nil or a table")
+            }
+            FunctionFault::Requested { why } => write!(f, ": its edit request failed: {why}"),
         }
     }
 }

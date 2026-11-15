@@ -1,6 +1,8 @@
 use std::time::Duration;
 
-use dam_application::{ConfigFile, FunctionFailure, FunctionFault, History, HookEvent};
+use dam_application::{
+    ConfigFile, EditRequest, FunctionFailure, FunctionFault, History, HookEvent,
+};
 
 use super::filter_support::{FixedHistory, every_field_task};
 use super::support::{Folder, config};
@@ -13,7 +15,7 @@ fn hooked(task_done: &str) -> Folder {
     ))
 }
 
-fn run_within(folder: &Folder, limit: Duration) -> Result<(), FunctionFailure> {
+fn run_within(folder: &Folder, limit: Duration) -> Result<Option<EditRequest>, FunctionFailure> {
     let loaded = folder.file().limiting_functions_to(limit).load().unwrap();
     let histories = FixedHistory(History::Recorded(vec![]));
     loaded
@@ -21,16 +23,16 @@ fn run_within(folder: &Folder, limit: Duration) -> Result<(), FunctionFailure> {
         .run(HookEvent::TaskDone, &every_field_task(), &histories)
 }
 
-fn run(task_done: &str) -> Result<(), FunctionFailure> {
+pub(super) fn run(task_done: &str) -> Result<Option<EditRequest>, FunctionFailure> {
     run_within(&hooked(task_done), LIMIT)
 }
 
 #[test]
 fn a_hook_that_returns_nothing_succeeds_written_either_way() {
-    assert_eq!(run("function(task, dam) end"), Ok(()));
+    assert_eq!(run("function(task, dam) end"), Ok(None));
     assert_eq!(
         run("{ run = function() return nil end, on_failure = 'refuse' }"),
-        Ok(())
+        Ok(None)
     );
 }
 
@@ -45,7 +47,7 @@ fn a_hook_is_handed_the_task_and_dam() {
            file:close()\n\
          end }} }}\n"
     ));
-    assert_eq!(run_within(&folder, LIMIT), Ok(()));
+    assert_eq!(run_within(&folder, LIMIT), Ok(None));
     assert_eq!(std::fs::read_to_string(marker).unwrap(), "report 0");
 }
 

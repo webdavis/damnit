@@ -25,6 +25,7 @@ pub enum FunctionFault {
     Raised { message: String },
     RanOver,
     Returned { returned: String },
+    Requested { why: String },
 }
 
 pub trait FilterFunctions {
