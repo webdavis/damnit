@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
 use crate::ports::{MissingTask, Notice, Store};
+use crate::use_cases::last_seen::LastSeen;
 
 pub(super) fn record_missing(
     store: &dyn Store,
@@ -24,7 +25,7 @@ pub(super) fn record_missing(
             continue;
         };
         let unchanged_since_last_seen =
-            store.remote_snapshot(&remote.name, oid)?.as_ref() == Some(&object);
+            LastSeen::held(store, &remote.name, oid)?.as_ref() == Some(&object);
         if unchanged_since_last_seen && !listed.contains(&remote_id) {
             tasks.push(MissingTask {
                 oid: oid.clone(),

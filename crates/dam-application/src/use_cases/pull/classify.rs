@@ -6,6 +6,7 @@ use crate::config::RemoteConfig;
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{Conflict, Notice, Randomness, RemoteHelper, Store};
 use crate::remote::{IncomingObject, RemoteCapabilities};
+use crate::use_cases::last_seen::LastSeen;
 
 pub(super) enum Incoming {
     Create(Object),
@@ -49,9 +50,6 @@ pub(super) fn classify(
             .unwrap_or_else(|| Oid::generate(&mut |b| random.fill(b)));
         object.base_mut().oid = oid.clone();
         let theirs_raw = object;
-        if existing.is_none() {
-            new_remote_id_mappings.push((oid.clone(), remote_id));
-        }
         let local = store.get(&oid)?;
         if let Some((ours, theirs)) = local.as_ref().and_then(|l| kind_change(l, &theirs_raw)) {
             let notice = Notice::KindChanged {
@@ -69,8 +67,10 @@ pub(super) fn classify(
             &theirs_raw,
             &caps.fields,
         );
-        if adopting.is_some() {
-            store.set_remote_snapshot(&remote.name, &theirs)?;
+        match (&existing, adopting) {
+            (Some(_), _) => {}
+            (None, Some(_)) => LastSeen::adopted(store, &remote.name, &remote_id, &theirs)?,
+            (None, None) => new_remote_id_mappings.push((oid.clone(), remote_id)),
         }
         let incoming = match local {
             None => Incoming::Create(theirs),
@@ -91,7 +91,7 @@ fn settled(
     remote: &RemoteConfig,
     theirs: Object,
 ) -> Result<Incoming, UseCaseError> {
-    let last_seen_on_the_remote = store.remote_snapshot(&remote.name, theirs.oid())?;
+    let last_seen_on_the_remote = LastSeen::held(store, &remote.name, theirs.oid())?;
     Ok(if last_seen_on_the_remote.as_ref() == Some(&theirs) {
         Incoming::Unchanged
     } else {
@@ -110,7 +110,7 @@ fn against_local(
         return Ok(Incoming::Unchanged);
     }
     let oid = local.oid().clone();
-    let last_seen_on_the_remote = store.remote_snapshot(&remote.name, &oid)?;
+    let last_seen_on_the_remote = LastSeen::held(store, &remote.name, &oid)?;
     if last_seen_on_the_remote.as_ref() == Some(&local) {
         return Ok(Incoming::FastForward(theirs));
     }

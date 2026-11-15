@@ -4,6 +4,7 @@ use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
 use crate::ports::Store;
 use crate::remote::IncomingObject;
+use crate::use_cases::last_seen::LastSeen;
 
 pub(super) fn cancelled_events(
     store: &dyn Store,
@@ -15,7 +16,7 @@ pub(super) fn cancelled_events(
         let Some(oid) = store.oid_for_remote_id(&remote.name, remote_id)? else {
             continue;
         };
-        let snapshot_or_working_copy = match store.remote_snapshot(&remote.name, &oid)? {
+        let snapshot_or_working_copy = match LastSeen::held(store, &remote.name, &oid)? {
             Some(snapshot) => Some(snapshot),
             None => store.get(&oid)?,
         };

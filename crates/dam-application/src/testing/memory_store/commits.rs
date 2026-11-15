@@ -48,6 +48,13 @@ impl CommitRepository for MemoryStore {
             .unwrap_or_default())
     }
     fn set_push_retries(&self, remote: &RemoteName, oids: &[Oid]) -> Result<(), StoreError> {
+        let listed_twice = oids.iter().enumerate().any(|(i, o)| oids[..i].contains(o));
+        if listed_twice {
+            return Err(StoreError::Failed(format!(
+                "{} lists an object for a retry twice",
+                remote.0
+            )));
+        }
         self.0
             .borrow_mut()
             .retries

@@ -5,6 +5,7 @@ use dam_domain::{Base, Change, Object, Oid, Path};
 use crate::errors::UseCaseError;
 use crate::ports::{RemoteName, Store};
 use crate::remote::{RemoteCapabilities, RemoteMutation};
+use crate::use_cases::last_seen::LastSeen;
 use crate::use_cases::push::owed::OwedChanges;
 use crate::use_cases::push::reconcile::Settlement;
 use blocker::{Blocker, Unsent};
@@ -41,7 +42,7 @@ impl Removals {
             .iter()
             .filter(|(_, change)| matches!(change, Change::Delete { .. }));
         for (oid, change) in removed {
-            let held_at = store.remote_snapshot(remote, oid)?;
+            let held_at = LastSeen::held(store, remote, oid)?;
             let held_at = held_at.as_ref().or(change.before());
             if let Some(folder) = held_at.and_then(|o| o.base().owned_folder()) {
                 folders.insert(oid.clone(), folder);
@@ -56,7 +57,7 @@ impl Removals {
                 if let Some(committed) = store.committed(&oid)? {
                     local.insert(oid.clone(), committed.base().path.clone());
                 }
-                if let Some(held) = store.remote_snapshot(remote, &oid)? {
+                if let Some(held) = LastSeen::held(store, remote, &oid)? {
                     upstream.insert(oid, held.base().clone());
                 }
             }

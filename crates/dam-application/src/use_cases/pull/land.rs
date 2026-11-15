@@ -8,6 +8,7 @@ use crate::errors::UseCaseError;
 use crate::ports::Store;
 use crate::service::Dam;
 use crate::use_cases::commit::record;
+use crate::use_cases::last_seen::LastSeen;
 
 impl Dam<'_> {
     pub(super) fn land(
@@ -21,7 +22,7 @@ impl Dam<'_> {
             match incoming {
                 Incoming::Unchanged => report.unchanged += 1,
                 Incoming::Settled(o) => {
-                    self.store.set_remote_snapshot(&remote.name, &o)?;
+                    LastSeen::now_holds(self.store, &remote.name, &o)?;
                     report.unchanged += 1;
                 }
                 Incoming::Create(o) => {
@@ -34,8 +35,7 @@ impl Dam<'_> {
                 }
                 Incoming::Conflict(conflict) => {
                     self.store.mark_conflict(&conflict)?;
-                    self.store
-                        .set_remote_snapshot(&remote.name, &conflict.theirs)?;
+                    LastSeen::now_holds(self.store, &remote.name, &conflict.theirs)?;
                     report.conflicts += 1;
                     note_cancelled(self.store, &conflict.theirs)?;
                 }
@@ -71,7 +71,7 @@ fn take_theirs(
     theirs: Object,
 ) -> Result<Option<Change>, UseCaseError> {
     store.put(&theirs)?;
-    store.set_remote_snapshot(&remote.name, &theirs)?;
+    LastSeen::now_holds(store, &remote.name, &theirs)?;
     let committed = store.committed(oid)?;
     note_cancelled(store, &theirs)?;
     Ok(Change::between(committed, Some(theirs)))

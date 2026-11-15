@@ -5,6 +5,7 @@ use dam_domain::{Change, Field, Object, Oid};
 use crate::errors::UseCaseError;
 use crate::ports::{RemoteName, RemoteTrackingRepository, Store};
 use crate::remote::RemoteCapabilities;
+use crate::use_cases::last_seen::LastSeen;
 use crate::use_cases::push::owed::OwedChanges;
 
 #[derive(Default)]
@@ -33,7 +34,7 @@ impl Refiles {
         let mut folders_losing_their_owner = Vec::new();
         for (oid, change) in changes {
             if let Change::Delete { .. } = change
-                && let Some(held) = store.remote_snapshot(remote, oid)?
+                && let Some(held) = LastSeen::held(store, remote, oid)?
                 && let Some(folder) = held.base().owned_folder()
             {
                 folders_losing_their_owner.push(folder);
@@ -49,7 +50,7 @@ impl Refiles {
             let Some(after) = store.committed(&oid)? else {
                 continue;
             };
-            let upstream = store.remote_snapshot(remote, &oid)?;
+            let upstream = LastSeen::held(store, remote, &oid)?;
             if upstream.is_some() || changes.contains_key(&oid) {
                 after_the_push.push((after, upstream.map(|held| held.base().path.clone())));
             }
