@@ -6,7 +6,7 @@ use dam_application::{
     SecretsTightened, TokenName, Uneditable,
 };
 
-use dam_application::testing::FakeFilterFunctions;
+use dam_application::testing::{FakeFilterFunctions, FakeHooks};
 
 use super::MissingCredentials;
 
@@ -36,6 +36,7 @@ impl ConfigFile for FakeConfigFile {
             config: Config::default(),
             credentials: Box::new(MissingCredentials),
             filter_functions: Box::new(FakeFilterFunctions::default()),
+            hooks: Box::new(FakeHooks::default()),
         })
     }
     fn add_remote(

@@ -13,14 +13,14 @@ pub trait Histories {
     fn of(&self, oid: &Oid) -> History;
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FunctionFailure {
     pub file: PathBuf,
     pub line: Option<u32>,
     pub fault: FunctionFault,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FunctionFault {
     Raised { message: String },
     RanOver,

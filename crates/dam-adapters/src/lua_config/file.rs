@@ -6,31 +6,31 @@ use mlua::{Lua, Table};
 
 use super::computed::ConfiguredCredentials;
 use super::evaluate::{ErrorText, evaluate, read_text, stopped_at_an_error};
-use super::filter_function::{LuaFilterFunctions, limit_every_thread};
+use super::functions::{LuaFunctions, limit_every_thread};
 use super::secrets::read_secrets;
 use super::settings::read_settings;
 use super::strict::StrictMap;
 use super::token::read_tokens;
 
-const FILTER_LIMIT: Duration = Duration::from_secs(5);
+const FUNCTION_LIMIT: Duration = Duration::from_secs(5);
 
 pub struct LuaConfigFile {
     config: PathBuf,
-    filter_limit: Duration,
+    function_limit: Duration,
 }
 
 impl LuaConfigFile {
     pub fn new(config: PathBuf) -> LuaConfigFile {
         LuaConfigFile {
             config,
-            filter_limit: FILTER_LIMIT,
+            function_limit: FUNCTION_LIMIT,
         }
     }
 
     #[cfg(test)]
-    pub(super) fn limiting_filters_to(self, filter_limit: Duration) -> LuaConfigFile {
+    pub(super) fn limiting_functions_to(self, function_limit: Duration) -> LuaConfigFile {
         LuaConfigFile {
-            filter_limit,
+            function_limit,
             ..self
         }
     }
@@ -63,18 +63,19 @@ impl LuaConfigFile {
         }
         let credentials = ConfiguredCredentials::keep(lua, path.clone(), secrets)
             .map_err(|_| stopped_at_an_error(&path))?;
-        let filter_functions = LuaFilterFunctions::keep(
+        let functions = LuaFunctions::keep(
             settings_lua,
             self.config.clone(),
             settings,
             config.owner_name(),
-            self.filter_limit,
+            self.function_limit,
         )
         .map_err(|_| stopped_at_an_error(&self.config))?;
         Ok(LoadedConfig {
             config,
             credentials: Box::new(credentials),
-            filter_functions: Box::new(filter_functions),
+            filter_functions: Box::new(functions.clone()),
+            hooks: Box::new(functions),
         })
     }
 

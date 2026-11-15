@@ -1,0 +1,73 @@
+use std::collections::BTreeMap;
+
+use dam_domain::{Object, Oid, Task};
+
+use crate::config::{HookEvent, OnFailure};
+use crate::errors::{Refusal, UseCaseError};
+use crate::ports::{HookFailure, ObjectRepository};
+use crate::service::Dam;
+use crate::use_cases::list::log_by_object::LogByObject;
+
+impl Dam<'_> {
+    pub(crate) fn entering<T>(
+        &self,
+        completing: Option<&Oid>,
+        work: impl FnOnce() -> Result<T, UseCaseError>,
+    ) -> Result<T, UseCaseError> {
+        if self.access.token().is_some() || self.config.hooks.is_empty() {
+            return work();
+        }
+        let before = tasks_by_oid(self.store)?;
+        let produced = work()?;
+        for (oid, after) in tasks_by_oid(self.store)? {
+            let earlier = before.get(&oid);
+            if earlier == Some(&after) {
+                continue;
+            }
+            let event = match earlier {
+                None => HookEvent::TaskNew,
+                Some(_) if completing == Some(&oid) => HookEvent::TaskDone,
+                Some(was) if !was.completion.is_done() && after.completion.is_done() => {
+                    HookEvent::TaskDone
+                }
+                Some(_) => HookEvent::TaskChanged,
+            };
+            self.run_hook(event, Object::Task(after))?;
+        }
+        Ok(produced)
+    }
+
+    fn run_hook(&self, event: HookEvent, task: Object) -> Result<(), UseCaseError> {
+        let Some(hook) = self.config.hook(event) else {
+            return Ok(());
+        };
+        let histories = LogByObject::new(self);
+        let ran = self.hooks.run(event, &task, &histories);
+        histories.unread()?;
+        let Err(failure) = ran else {
+            return Ok(());
+        };
+        let failure = HookFailure { event, failure };
+        match hook.on_failure() {
+            OnFailure::Warn => {
+                self.hook_warnings.warn(&failure);
+                Ok(())
+            }
+            OnFailure::Refuse => Err(Refusal::HookRefused(failure).into()),
+        }
+    }
+}
+
+fn tasks_by_oid(objects: &dyn ObjectRepository) -> Result<BTreeMap<Oid, Task>, UseCaseError> {
+    Ok(objects
+        .all()?
+        .into_iter()
+        .filter_map(|object| match object {
+            Object::Task(task) => Some((task.base.oid.clone(), task)),
+            Object::Event(_) => None,
+        })
+        .collect())
+}
+
+#[cfg(test)]
+mod tests;

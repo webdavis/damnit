@@ -7,6 +7,7 @@ mod error;
 mod first_run;
 mod gate;
 mod group_help;
+mod hook_warnings;
 mod layout;
 mod output;
 mod paint;

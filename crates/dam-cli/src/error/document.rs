@@ -1,3 +1,5 @@
+use dam_application::{Refusal, UseCaseError};
+
 use super::{CliError, misuse};
 
 impl CliError {
@@ -16,6 +18,9 @@ impl CliError {
         }
         if let Some(usage) = misuse::usage_part(self) {
             error["usage"] = usage;
+        }
+        if let CliError::UseCase(UseCaseError::Refused(Refusal::HookRefused(refused))) = self {
+            error["hook"] = refused.event.as_str().into();
         }
         serde_json::json!({ "error": error })
     }

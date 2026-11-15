@@ -6,20 +6,20 @@ use dam_domain::{Authored, CommitRecord, Oid, Permission, Subject};
 use crate::ports::{Histories, History, StoreError};
 use crate::service::Dam;
 
-pub(super) struct LogByObject<'d, 'a> {
+pub(crate) struct LogByObject<'d, 'a> {
     dam: &'d Dam<'a>,
     grouped: OnceCell<Result<HashMap<Oid, Vec<CommitRecord>>, StoreError>>,
 }
 
 impl<'d, 'a> LogByObject<'d, 'a> {
-    pub(super) fn new(dam: &'d Dam<'a>) -> Self {
+    pub(crate) fn new(dam: &'d Dam<'a>) -> Self {
         LogByObject {
             dam,
             grouped: OnceCell::new(),
         }
     }
 
-    pub(super) fn unread(self) -> Result<(), StoreError> {
+    pub(crate) fn unread(self) -> Result<(), StoreError> {
         match self.grouped.into_inner() {
             Some(Err(error)) => Err(error),
             _ => Ok(()),

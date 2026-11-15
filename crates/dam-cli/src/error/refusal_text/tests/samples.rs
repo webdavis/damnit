@@ -1,4 +1,4 @@
-use dam_application::{Blockers, Refusal};
+use dam_application::{Blockers, FunctionFailure, FunctionFault, HookEvent, HookFailure, Refusal};
 use dam_domain::{LabelViolation, Oid, Tracked};
 
 use super::oid;
@@ -22,6 +22,19 @@ pub(super) fn every_refusal_with_its_text() -> Vec<(Refusal, &'static str)> {
     samples.extend(super::access_samples::token_command_refusals_with_their_text());
     samples.extend(super::item_samples::item_refusals_with_their_text());
     samples.extend(super::history_samples::history_refusals_with_their_text());
+    samples.push((
+        Refusal::HookRefused(HookFailure {
+            event: HookEvent::TaskDone,
+            failure: FunctionFailure {
+                file: "/home/ada/.config/dam/config.lua".into(),
+                line: Some(3),
+                fault: FunctionFault::Raised {
+                    message: "no bell".into(),
+                },
+            },
+        }),
+        "hook task_done failed at /home/ada/.config/dam/config.lua:3: no bell; the command changed nothing",
+    ));
     samples
 }
 
