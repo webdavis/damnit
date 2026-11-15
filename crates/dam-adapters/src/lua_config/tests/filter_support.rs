@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 use std::time::Duration;
 
-use dam_application::{ConfigFile, FilterFailure, Histories, History};
+use dam_application::{ConfigFile, FunctionFailure, Histories, History};
 use dam_domain::{
     Attachment, Attendee, Completion, Conference, Event, Focus, Object, Oid, Path, Person,
     Priority, Recurrence, Reminder, ResponseStatus, Task, Timestamp, When,
@@ -108,7 +108,10 @@ impl Histories for FixedHistory {
     }
 }
 
-pub(super) fn run_filter(match_body: &str, objects: &[Object]) -> Result<Vec<bool>, FilterFailure> {
+pub(super) fn run_filter(
+    match_body: &str,
+    objects: &[Object],
+) -> Result<Vec<bool>, FunctionFailure> {
     run_filter_with(
         match_body,
         objects,
@@ -120,7 +123,7 @@ pub(super) fn run_filter_with(
     match_body: &str,
     objects: &[Object],
     histories: &dyn Histories,
-) -> Result<Vec<bool>, FilterFailure> {
+) -> Result<Vec<bool>, FunctionFailure> {
     keeps_within(match_body, objects, histories, Duration::from_secs(5))
 }
 
@@ -128,7 +131,7 @@ pub(super) fn run_filter_limited(
     match_body: &str,
     objects: &[Object],
     limit: Duration,
-) -> Result<Vec<bool>, FilterFailure> {
+) -> Result<Vec<bool>, FunctionFailure> {
     keeps_within(
         match_body,
         objects,
@@ -142,7 +145,7 @@ fn keeps_within(
     objects: &[Object],
     histories: &dyn Histories,
     limit: Duration,
-) -> Result<Vec<bool>, FilterFailure> {
+) -> Result<Vec<bool>, FunctionFailure> {
     let text = format!(
         "return {{\n  filter = {{\n    probe = {{\n      match = function(task, dam)\n{match_body}\n      end,\n    }},\n  }},\n}}\n"
     );

@@ -14,14 +14,14 @@ pub trait Histories {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct FilterFailure {
+pub struct FunctionFailure {
     pub file: PathBuf,
     pub line: Option<u32>,
-    pub fault: FilterFault,
+    pub fault: FunctionFault,
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum FilterFault {
+pub enum FunctionFault {
     Raised { message: String },
     RanOver,
     Returned { returned: String },
@@ -33,5 +33,5 @@ pub trait FilterFunctions {
         filter: &str,
         objects: &[Object],
         histories: &dyn Histories,
-    ) -> Result<Vec<bool>, FilterFailure>;
+    ) -> Result<Vec<bool>, FunctionFailure>;
 }

@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 use crate::object_document;
-use dam_application::{FilterFailure, FilterFault, FilterFunctions, Histories};
+use dam_application::{FilterFunctions, FunctionFailure, FunctionFault, Histories};
 use dam_domain::Object;
 use mlua::{Function, Lua, Scope, Table, Value};
 
@@ -63,9 +63,9 @@ impl LuaFilterFunctions {
         objects: &[Object],
         histories: &'s dyn Histories,
         deadline: Instant,
-    ) -> Result<Vec<bool>, FilterFailure> {
+    ) -> Result<Vec<bool>, FunctionFailure> {
         let defined = function.info().line_defined.map(|line| line as u32);
-        let failed = |line, fault| FilterFailure {
+        let failed = |line, fault| FunctionFailure {
             file: self.path.clone(),
             line,
             fault,
@@ -74,14 +74,14 @@ impl LuaFilterFunctions {
         for object in objects {
             let returned = self.call(scope, function, object, histories);
             if Instant::now() >= deadline {
-                return Err(failed(defined, FilterFault::RanOver));
+                return Err(failed(defined, FunctionFault::RanOver));
             }
             keeps.push(match returned {
                 Ok(Value::Boolean(kept)) => kept,
                 Ok(Value::Nil) => false,
                 Ok(other) => {
                     let returned = described(&other);
-                    return Err(failed(defined, FilterFault::Returned { returned }));
+                    return Err(failed(defined, FunctionFault::Returned { returned }));
                 }
                 Err(e) => {
                     let message = lua_message(&e);
@@ -90,7 +90,7 @@ impl LuaFilterFunctions {
                         Some((line, reason)) => (line.parse().ok(), reason.to_string()),
                         None => (defined, message.clone()),
                     };
-                    return Err(failed(line, FilterFault::Raised { message }));
+                    return Err(failed(line, FunctionFault::Raised { message }));
                 }
             });
         }
@@ -118,11 +118,11 @@ impl FilterFunctions for LuaFilterFunctions {
         filter: &str,
         objects: &[Object],
         histories: &dyn Histories,
-    ) -> Result<Vec<bool>, FilterFailure> {
-        let unkept = |message: String| FilterFailure {
+    ) -> Result<Vec<bool>, FunctionFailure> {
+        let unkept = |message: String| FunctionFailure {
             file: self.path.clone(),
             line: None,
-            fault: FilterFault::Raised { message },
+            fault: FunctionFault::Raised { message },
         };
         let function = self.function(filter).map_err(|e| unkept(lua_message(&e)))?;
         let deadline = Instant::now() + self.limit;

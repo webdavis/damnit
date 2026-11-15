@@ -1,10 +1,10 @@
 use std::time::{Duration, Instant};
 
-use dam_application::{FilterFailure, FilterFault};
+use dam_application::{FunctionFailure, FunctionFault};
 
 use super::filter_support::{every_field_task, run_filter, run_filter_limited};
 
-fn answered(body: &str) -> Result<Vec<bool>, FilterFailure> {
+fn answered(body: &str) -> Result<Vec<bool>, FunctionFailure> {
     run_filter(body, &[every_field_task()])
 }
 
@@ -23,7 +23,7 @@ fn a_number_or_a_string_is_refused_naming_what_came_back() {
         assert_eq!(failure.line, Some(4), "{body}");
         assert_eq!(
             failure.fault,
-            FilterFault::Returned {
+            FunctionFault::Returned {
                 returned: returned.into()
             }
         );
@@ -36,7 +36,7 @@ fn a_raised_error_gives_its_line_and_its_message_apart() {
         answered("        local nothing = nil\n        return nothing.field").unwrap_err();
     assert!(failure.file.ends_with("config.lua"), "{:?}", failure.file);
     assert_eq!(failure.line, Some(6));
-    let FilterFault::Raised { message } = failure.fault else {
+    let FunctionFault::Raised { message } = failure.fault else {
         panic!("{:?}", failure.fault);
     };
     assert!(message.starts_with("attempt to index"), "{message}");
@@ -52,7 +52,7 @@ fn a_function_that_never_returns_is_stopped_at_the_limit() {
         Duration::from_millis(200),
     )
     .unwrap_err();
-    assert_eq!(failure.fault, FilterFault::RanOver);
+    assert_eq!(failure.fault, FunctionFault::RanOver);
     assert_eq!(failure.line, Some(4));
     assert!(started.elapsed() < Duration::from_secs(5));
 }
@@ -67,5 +67,5 @@ fn the_limit_covers_the_whole_listing_not_each_object() {
         Duration::from_millis(300),
     )
     .unwrap_err();
-    assert_eq!(failure.fault, FilterFault::RanOver);
+    assert_eq!(failure.fault, FunctionFault::RanOver);
 }

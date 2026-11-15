@@ -5,7 +5,7 @@ use dam_domain::Permission::{HistoryRead, TaskRead};
 
 use crate::config::{Config, FilterConfig, FilterRule};
 use crate::errors::{FilterError, UseCaseError};
-use crate::ports::{FilterFailure, FilterFault, History};
+use crate::ports::{FunctionFailure, FunctionFault, History};
 use crate::service::Dam;
 use crate::testing::prelude::{CommitRepository, ObjectRepository};
 use crate::testing::{FakeFilterFunctions, Scenario, allowed, holder, task_in};
@@ -106,11 +106,11 @@ fn a_token_without_history_read_has_the_history_withheld() {
     assert!(matches!(seen[3].1, Some(History::Recorded(_))));
 }
 
-fn raised() -> FilterFailure {
-    FilterFailure {
+fn raised() -> FunctionFailure {
+    FunctionFailure {
         file: PathBuf::from("/config/config.lua"),
         line: Some(4),
-        fault: FilterFault::Raised {
+        fault: FunctionFault::Raised {
             message: "boom".into(),
         },
     }

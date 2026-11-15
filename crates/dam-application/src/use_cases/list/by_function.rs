@@ -2,7 +2,7 @@ use dam_domain::Object;
 
 use super::log_by_object::LogByObject;
 use crate::errors::{FilterError, UseCaseError};
-use crate::ports::FilterFailure;
+use crate::ports::FunctionFailure;
 use crate::service::Dam;
 
 impl Dam<'_> {
@@ -22,7 +22,7 @@ impl Dam<'_> {
             .collect())
     }
 
-    fn failed(&self, filter: &str, failure: FilterFailure) -> UseCaseError {
+    fn failed(&self, filter: &str, failure: FunctionFailure) -> UseCaseError {
         let filter = filter.to_string();
         UseCaseError::Filter(match self.access.token() {
             None => FilterError::Failed { filter, failure },
