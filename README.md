@@ -297,6 +297,10 @@ standard error. A failing hook warns, or with `on_failure = "refuse"` stops the 
 then changes nothing and exits 4. A `dam` run with `DAM_HOOK` set, as a hook's own commands are,
 exits 4 at once. `docs/lua.md` describes hooks.
 
+`hook.task_pulled` runs after a pull, as `run(task, before, pull)`, for each task the pull created
+or changed. It never runs on the first pull from a remote, and a failing one never undoes the pull.
+`dam pull` answers what it did under `task_pulled`.
+
 ## Reading it from a program
 
 A flag is named after the key it writes: a value `dam show --json` prints under `due` goes back

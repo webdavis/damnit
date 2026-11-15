@@ -1,6 +1,8 @@
 use std::time::Instant;
 
-use dam_application::{EditRequest, FunctionFailure, FunctionFault, Histories, HookEvent, Hooks};
+use dam_application::{
+    EditRequest, FunctionFailure, FunctionFault, Histories, HookEvent, Hooks, Pull,
+};
 use dam_domain::Object;
 use mlua::{Function, Table, Value};
 
@@ -35,23 +37,53 @@ impl Hooks for LuaFunctions {
             let returned = while_marked(&self.lua, event, || {
                 self.call(scope, &function, task, histories)
             });
-            if Instant::now() >= deadline {
-                return Err(self.failed(defined, FunctionFault::RanOver));
-            }
-            match returned {
-                Ok(Value::Nil) => Ok(None),
-                Ok(table @ Value::Table(_)) => self.request(&table, defined).map(Some),
-                Ok(other) => {
-                    let returned = described(&other);
-                    Err(self.failed(defined, FunctionFault::Returned { returned }))
-                }
-                Err(e) => Err(self.raised(&e, defined)),
-            }
+            self.answer(returned, defined, deadline)
+        })
+    }
+
+    fn pulled(
+        &self,
+        task: &Object,
+        before: Option<&Object>,
+        pull: &Pull,
+    ) -> Result<Option<EditRequest>, FunctionFailure> {
+        let event = HookEvent::TaskPulled;
+        let function = self.hook(event).map_err(|e| self.unkept(&e))?;
+        let defined = line_defined(&function);
+        self.limited(|_, deadline| {
+            let returned = while_marked(&self.lua, event, || {
+                let pulled = self.lua.create_table()?;
+                pulled.set("remote", pull.remote.0.as_str())?;
+                pulled.set("change", pull.change.as_str())?;
+                let before = before.map(|b| self.object_value(b)).transpose()?;
+                function.call((self.object_value(task)?, before, pulled))
+            });
+            self.answer(returned, defined, deadline)
         })
     }
 }
 
 impl LuaFunctions {
+    fn answer(
+        &self,
+        returned: mlua::Result<Value>,
+        defined: Option<u32>,
+        deadline: Instant,
+    ) -> Result<Option<EditRequest>, FunctionFailure> {
+        if Instant::now() >= deadline {
+            return Err(self.failed(defined, FunctionFault::RanOver));
+        }
+        match returned {
+            Ok(Value::Nil) => Ok(None),
+            Ok(table @ Value::Table(_)) => self.request(&table, defined).map(Some),
+            Ok(other) => {
+                let returned = described(&other);
+                Err(self.failed(defined, FunctionFault::Returned { returned }))
+            }
+            Err(e) => Err(self.raised(&e, defined)),
+        }
+    }
+
     fn request(&self, table: &Value, line: Option<u32>) -> Result<EditRequest, FunctionFailure> {
         let request = |json: String| EditRequest {
             json,

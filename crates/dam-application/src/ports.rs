@@ -11,6 +11,7 @@ mod ids;
 mod items;
 mod notices;
 mod origins;
+mod pulled;
 mod repositories;
 mod store;
 
@@ -32,6 +33,7 @@ pub use ids::IdRepository;
 pub use items::ItemRepository;
 pub use notices::{DroppedBecause, MissingTask, Notice, NoticeRepository};
 pub use origins::OriginRepository;
+pub use pulled::{Pull, PulledChange};
 pub use repositories::Store;
 pub use store::{
     AcceptedKindsRepository, CommitRepository, Conflict, ConflictRepository, ObjectRepository,

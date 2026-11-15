@@ -29,9 +29,9 @@ pub use ports::{
     FollowOnRepository, FunctionFailure, FunctionFault, HelperError, HelperLauncher, Histories,
     History, HookEdits, HookFailure, HookWarnings, Hooks, IdRepository, ItemRepository,
     LoadedConfig, Misread, MissingTask, Notice, NoticeRepository, ObjectRepository, ObjectState,
-    OriginRepository, Place, Randomness, RemoteHelper, RemoteName, RemoteNameError,
-    RemoteTrackingRepository, SecretsTightened, StageRepository, Store, StoreError, Transactional,
-    Uneditable,
+    OriginRepository, Place, Pull, PulledChange, Randomness, RemoteHelper, RemoteName,
+    RemoteNameError, RemoteTrackingRepository, SecretsTightened, StageRepository, Store,
+    StoreError, Transactional, Uneditable,
 };
 pub use remote::{
     IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, PushOutcome,
@@ -46,6 +46,7 @@ pub use tokens::{
 pub use use_cases::agenda::{Scheduled, Window};
 pub use use_cases::complete::{CompletePlan, Completed};
 pub use use_cases::edit::{EditFields, apply};
+pub use use_cases::hooks::pulled::PulledHookRun;
 pub use use_cases::items::accept::{Added, AddedRemoval};
 pub use use_cases::items::land::{Answer, Landed, Sent};
 pub use use_cases::items::refusal::ItemRefusal;

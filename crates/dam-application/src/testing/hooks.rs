@@ -6,16 +6,18 @@ use crate::config::HookEvent;
 use crate::errors::Refusal;
 use crate::ports::{
     EditRequest, EditRequests, FunctionFailure, Histories, History, HookEdits, HookFailure,
-    HookWarnings, Hooks,
+    HookWarnings, Hooks, Pull,
 };
 use crate::use_cases::edit::EditFields;
 
 #[derive(Default)]
 pub struct FakeHooks {
     pub failing: RefCell<Option<FunctionFailure>>,
+    pub failing_every_call: RefCell<Option<FunctionFailure>>,
     pub requesting: RefCell<Option<EditRequest>>,
     pub ran: RefCell<Vec<(HookEvent, String)>>,
     pub histories: RefCell<Vec<History>>,
+    pub pulled: RefCell<Vec<(String, Option<String>, Pull)>>,
 }
 
 impl FakeHooks {
@@ -35,7 +37,27 @@ impl Hooks for FakeHooks {
             .borrow_mut()
             .push((event, task.base().subject.clone()));
         self.histories.borrow_mut().push(histories.of(task.oid()));
-        match self.failing.borrow_mut().take() {
+        self.answer()
+    }
+
+    fn pulled(
+        &self,
+        task: &Object,
+        before: Option<&Object>,
+        pull: &Pull,
+    ) -> Result<Option<EditRequest>, FunctionFailure> {
+        let subject = |object: &Object| object.base().subject.clone();
+        self.pulled
+            .borrow_mut()
+            .push((subject(task), before.map(subject), pull.clone()));
+        self.answer()
+    }
+}
+
+impl FakeHooks {
+    fn answer(&self) -> Result<Option<EditRequest>, FunctionFailure> {
+        let every_call = self.failing_every_call.borrow().clone();
+        match self.failing.borrow_mut().take().or(every_call) {
             Some(failure) => Err(failure),
             None => Ok(self.requesting.borrow_mut().take()),
         }

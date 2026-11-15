@@ -8,6 +8,7 @@ use crate::ports::{RemoteHelper, RemoteName};
 use crate::remote::{PullOutcome, RemoteCapabilities};
 use crate::service::{Dam, Remotes};
 use crate::use_cases::connect::connect;
+use crate::use_cases::hooks::pulled::{PulledHookRun, PulledTask};
 
 mod adopt;
 mod cancelled;
@@ -37,6 +38,7 @@ pub struct PullReport {
     pub creates_matched: usize,
     pub values_kept: usize,
     pub deletes_confirmed: usize,
+    pub task_pulled: Option<PulledHookRun>,
 }
 
 impl Dam<'_> {
@@ -50,7 +52,12 @@ impl Dam<'_> {
             let (mut helper, caps) = connect(remotes, self.store, self.access, target)?;
             let since = self.store.sync_token(&target.name)?;
             let response = helper.pull(since.as_deref())?;
-            reports.push(self.apply_pulled(target, &caps, helper.as_ref(), response)?);
+            let (mut report, pulled) =
+                self.apply_pulled(target, &caps, helper.as_ref(), response)?;
+            if since.is_some() {
+                report.task_pulled = self.run_pulled_hook(&target.name, pulled)?;
+            }
+            reports.push(report);
         }
         Ok(reports)
     }
@@ -61,7 +68,7 @@ impl Dam<'_> {
         caps: &RemoteCapabilities,
         helper: &dyn RemoteHelper,
         mut response: PullOutcome,
-    ) -> Result<PullReport, UseCaseError> {
+    ) -> Result<(PullReport, Vec<PulledTask>), UseCaseError> {
         let store = self.store;
         let mut report = PullReport {
             remote: remote.name.clone(),
@@ -73,6 +80,7 @@ impl Dam<'_> {
             creates_matched: 0,
             values_kept: 0,
             deletes_confirmed: 0,
+            task_pulled: None,
         };
         let listed: HashSet<String> = response
             .objects
@@ -80,6 +88,7 @@ impl Dam<'_> {
             .map(|o| o.remote_id.clone())
             .chain(response.rejected.iter().map(|r| r.remote_id.clone()))
             .collect();
+        let mut pulled = Vec::new();
         let mut land_everything_as_one_unit = || {
             record_skipped(store, &remote.name, &response.objects, &response.rejected)?;
             let mut objects = std::mem::take(&mut response.objects);
@@ -100,7 +109,7 @@ impl Dam<'_> {
             for (oid, remote_id) in new_remote_id_mappings {
                 store.map_remote_id(&remote.name, &oid, &remote_id)?;
             }
-            self.land(remote, planned, &mut report)?;
+            pulled = self.land(remote, planned, &mut report)?;
             let removed = std::mem::take(&mut response.removed);
             let removals = record_removals(store, remote, removed)?;
             report.removed_upstream = removals.in_the_app;
@@ -113,7 +122,7 @@ impl Dam<'_> {
             Ok(())
         };
         store.in_transaction(&mut land_everything_as_one_unit)?;
-        Ok(report)
+        Ok((report, pulled))
     }
 }
 
