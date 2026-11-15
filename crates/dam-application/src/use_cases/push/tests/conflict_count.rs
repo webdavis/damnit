@@ -14,7 +14,7 @@ fn one_conflict() -> Scenario {
         .mark_conflict(&Conflict {
             remote: todoist(),
             oid: oid(1),
-            ours: task(1),
+            ours: Some(task(1)),
             theirs: Object::Task(Task::new(oid(1), "theirs")),
         })
         .unwrap();

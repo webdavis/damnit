@@ -59,7 +59,7 @@ fn a_conflict_keeps_its_whole_resolve_hint_at_forty_and_eighty_columns() {
         .mark_conflict(&Conflict {
             remote: RemoteName("fake".into()),
             oid: oid(1),
-            ours,
+            ours: Some(ours),
             theirs,
         })
         .unwrap();

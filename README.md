@@ -243,6 +243,8 @@ start of today until now: each one's `at`, its `anchor` (the due time or start) 
   object.
 - A pull never overwrites work you have not committed, and never deletes on your behalf: an
   upstream removal shows in `dam status` until you `dam rm` it.
+- When the remote changed an object you changed or removed and have not committed, the pull marks a
+  conflict for it in `dam status`, and `dam resolve` settles it.
 - No error message contains a token.
 
 ## Query language

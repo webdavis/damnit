@@ -604,9 +604,10 @@ helper and out of scope here.
 
 ## Sync rules
 
-1. `pull` never overwrites uncommitted local work. If the remote changed an object you have in the
-   working layer or the stage, `pull` stops on that object and reports it. Commit or reset, then
-   pull again.
+1. `pull` never overwrites uncommitted local work. If the remote changed an object you have changed
+   or removed in the working layer or the stage, `pull` leaves that object as it is and marks a
+   conflict for it, and every other object still lands. If the remote did not change it, the work
+   is left alone with no conflict.
 2. A conflict is an object both sides changed since the last common state. `pull` marks it; `dam
    status` lists it; `dam resolve <oid> --ours | --theirs` settles it. Nothing is merged
    automatically. Either side is settled by a commit, so what is owed to the remote ends at the
@@ -705,7 +706,7 @@ other kind. `refused` alone is too coarse for a client: a task that is gone and 
 blocked are both refusals, and a list that should refresh itself on the first should show the
 blockers on the second. The words are `blocked`, `cycle`, `exclusive_label`, `unknown_category`,
 `no_such_object`, `no_working_object`, `no_such_remote`, `not_a_task`, `not_an_event`,
-`not_completed`, `not_committed`, `dirty_on_pull`, `move_inside_itself`, `subject_names_no_folder`, `nothing_to_commit`,
+`not_completed`, `not_committed`, `move_inside_itself`, `subject_names_no_folder`, `nothing_to_commit`,
 `needs_an_answer`, `needs_an_editor`, `unresolved_conflicts`, `missing_credential` and
 `stale_remote`. A token's refusals add `not_permitted` and `not_open_to_tokens`, and
 `malformed_token`, `unknown_token_version`, `unknown_token`, `disabled_token`, `expired_token`,

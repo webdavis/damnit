@@ -63,7 +63,7 @@ impl StoreError {
 pub struct Conflict {
     pub remote: RemoteName,
     pub oid: Oid,
-    pub ours: Object,
+    pub ours: Option<Object>,
     pub theirs: Object,
 }
 

@@ -19,6 +19,7 @@ mod ours;
 mod removal;
 mod removed;
 mod skipped;
+mod untouched;
 
 use classify::classify;
 use missing::record_missing;

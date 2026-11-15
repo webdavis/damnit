@@ -65,11 +65,6 @@ impl fmt::Display for RefusalText<'_> {
                 "{} has no commit behind it; dam rm removes it instead",
                 o.short()
             ),
-            Refusal::DirtyOnPull { oid } => write!(
-                f,
-                "{} changed upstream and has uncommitted local changes; commit or reset it, then pull again",
-                oid.short()
-            ),
             Refusal::UnresolvedConflicts(Some(n)) => {
                 write!(f, "{n} conflicts are unresolved; run dam resolve")
             }

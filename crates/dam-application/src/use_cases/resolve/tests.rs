@@ -1,4 +1,5 @@
 mod round_trip;
+mod uncommitted_work;
 
 use super::*;
 use crate::ports::Conflict;
@@ -10,7 +11,7 @@ fn conflict_over_mine() -> Conflict {
     Conflict {
         remote: todoist(),
         oid: oid(1),
-        ours: Object::Task(Task::new(oid(1), "mine")),
+        ours: Some(Object::Task(Task::new(oid(1), "mine"))),
         theirs: Object::Task(Task::new(oid(1), "theirs")),
     }
 }

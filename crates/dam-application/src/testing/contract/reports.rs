@@ -13,7 +13,7 @@ pub fn conflict_repository_contract(store: &dyn Store) {
         .mark_conflict(&Conflict {
             remote: here.clone(),
             oid: oid(1),
-            ours: ours.clone(),
+            ours: Some(ours.clone()),
             theirs: theirs.clone(),
         })
         .unwrap();
@@ -22,7 +22,7 @@ pub fn conflict_repository_contract(store: &dyn Store) {
     assert_eq!(held.len(), 1);
     assert_eq!(held[0].oid, oid(1));
     assert_eq!(held[0].remote, here);
-    assert_eq!(held[0].ours, ours);
+    assert_eq!(held[0].ours, Some(ours.clone()));
     assert_eq!(held[0].theirs, theirs);
 
     let later = task(1, "theirs again", "");
@@ -30,13 +30,17 @@ pub fn conflict_repository_contract(store: &dyn Store) {
         .mark_conflict(&Conflict {
             remote: here.clone(),
             oid: oid(1),
-            ours: ours.clone(),
+            ours: None,
             theirs: later.clone(),
         })
         .unwrap();
     let held = store.conflicts().unwrap();
     assert_eq!(held.len(), 1, "one oid conflicts once");
     assert_eq!(held[0].theirs, later);
+    assert_eq!(
+        held[0].ours, None,
+        "an object removed here conflicts with no side of ours"
+    );
 
     store.clear_conflict(&oid(1)).unwrap();
     assert!(store.conflicts().unwrap().is_empty());
