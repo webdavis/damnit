@@ -25,7 +25,7 @@ Settings ── what dam is using
   remote.todoist.stale                 15m
   remote.todoist.deadline              60s (default)
   remote.todoist.path                  work/
-  remote.todoist.credential.api_token  set
+  remote.todoist.credential.api_token  hidden
   category.effort.values               light, deep
   category.effort.exclusive            true
   filter.today.query                   due:today | overdue

@@ -1,3 +1,4 @@
+use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
 
 #[derive(Serialize)]
@@ -13,7 +14,23 @@ pub(super) enum Value {
 #[serde(untagged)]
 pub(super) enum Setting {
     Leaf { value: Value, default: bool },
+    Hidden(Credential),
     Part(Part),
+}
+
+#[derive(Clone, Copy)]
+pub(super) enum Credential {
+    Text,
+    Function,
+}
+
+impl Serialize for Credential {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut map = serializer.serialize_map(Some(2))?;
+        map.serialize_entry("hidden", &true)?;
+        map.serialize_entry("function", &matches!(self, Credential::Function))?;
+        map.end()
+    }
 }
 
 pub(super) struct Part(pub(super) Vec<(String, Setting)>);
@@ -77,6 +94,10 @@ impl Setting {
                     (_, true) => " (default)",
                 };
                 vec![(key.to_string(), format!("{}{marked}", value.text()))]
+            }
+            Setting::Hidden(Credential::Text) => vec![(key.to_string(), "hidden".to_string())],
+            Setting::Hidden(Credential::Function) => {
+                vec![(key.to_string(), "hidden (function)".to_string())]
             }
             Setting::Part(Part(entries)) => entries
                 .iter()

@@ -1,7 +1,7 @@
 use dam_application::{Config, CredentialSpec, FilterConfig, RemoteConfig, Standing, TokenConfig};
 use dam_domain::Category;
 
-use super::setting::{Setting, Value};
+use super::setting::{Credential, Setting, Value};
 use crate::commands::token::grant_view::GrantView;
 
 pub(super) fn settings(config: &Config) -> Setting {
@@ -65,11 +65,11 @@ fn remote(remote: &RemoteConfig) -> (String, Setting) {
 }
 
 fn credential(credential: &CredentialSpec) -> (String, Setting) {
-    let held = match credential {
-        CredentialSpec::Literal { .. } => "set",
-        CredentialSpec::Computed { .. } => "function",
+    let hidden = match credential {
+        CredentialSpec::Literal { .. } => Credential::Text,
+        CredentialSpec::Computed { .. } => Credential::Function,
     };
-    text(credential.name(), held)
+    (credential.name().to_string(), Setting::Hidden(hidden))
 }
 
 fn category(category: &Category, written: bool) -> (String, Setting) {

@@ -13,11 +13,25 @@
   },
   "$defs": {
     "setting": {
-      "description": "One setting, or a part holding settings by name, as dam config get prints it with --json. A leaf is the object whose default is a boolean; any other object is a part, and a part may hold settings named value or default.",
+      "description": "One setting, or a part holding settings by name, as dam config get prints it with --json. A leaf is the object whose default is a boolean, and a hidden credential is the object whose hidden is a boolean; any other object is a part, and a part may hold settings named value, default, hidden or function.",
       "type": "object",
       "if": { "required": ["default"], "properties": { "default": { "type": "boolean" } } },
       "then": { "$ref": "#/$defs/leaf" },
-      "else": { "$ref": "#/$defs/part" }
+      "else": {
+        "if": { "required": ["hidden"], "properties": { "hidden": { "type": "boolean" } } },
+        "then": { "$ref": "#/$defs/hidden" },
+        "else": { "$ref": "#/$defs/part" }
+      }
+    },
+    "hidden": {
+      "description": "A credential, whose value is never shown. function is true for one dam calls when the remote is used, and false for one written as text.",
+      "type": "object",
+      "required": ["hidden", "function"],
+      "additionalProperties": false,
+      "properties": {
+        "hidden": { "const": true },
+        "function": { "type": "boolean" }
+      }
     },
     "part": {
       "type": "object",
@@ -29,7 +43,7 @@
       "additionalProperties": false,
       "properties": {
         "value": {
-          "description": "The value. A credential's value is never shown: it reads set, or function for one dam calls when the remote is used. A token reads its grants in short, or disabled. It is null for a setting dam knows that the file leaves without a value and that has no default.",
+          "description": "The value. A token reads its grants in short, or disabled. It is null for a setting dam knows that the file leaves without a value and that has no default.",
           "type": ["string", "boolean", "array", "null"],
           "items": { "type": "string" }
         },

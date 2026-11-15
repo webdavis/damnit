@@ -46,7 +46,7 @@ fn a_credential_function_is_named_and_never_called() {
     let (ok, out, err) = sb.dam(&["config", "list"]);
     assert!(ok, "{err}");
     assert!(
-        out.contains("  remote.fake.credential.api_token  function\n"),
+        out.contains("  remote.fake.credential.api_token  hidden (function)\n"),
         "{out}"
     );
     assert!(!out.contains(MARKER) && !err.contains(MARKER), "{out}{err}");
