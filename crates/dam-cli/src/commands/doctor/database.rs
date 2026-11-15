@@ -4,7 +4,8 @@ use std::path::PathBuf;
 use dam_adapters::SqliteStore;
 
 use super::check::{Check, Outcome};
-use super::machine::{Machine, Store};
+use super::machine::Machine;
+use super::store_reading::Store;
 use crate::args::CheckName;
 
 const SUPPORTED: u32 = SqliteStore::SCHEMA_VERSION;
