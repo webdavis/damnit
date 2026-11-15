@@ -2,14 +2,14 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-use dam_application::FilterFault;
+use dam_application::FunctionFault;
 
 use super::filter_support::{every_field_task, run_filter_limited};
 
 const LIMIT: Duration = Duration::from_millis(200);
 const HUNG: Duration = Duration::from_secs(5);
 
-fn fault_of(body: &'static str, listed: usize) -> Result<Option<FilterFault>, &'static str> {
+fn fault_of(body: &'static str, listed: usize) -> Result<Option<FunctionFault>, &'static str> {
     let (sent, received) = mpsc::channel();
     thread::spawn(move || {
         let objects = vec![every_field_task(); listed];
@@ -24,7 +24,11 @@ fn fault_of(body: &'static str, listed: usize) -> Result<Option<FilterFault>, &'
 }
 
 fn stopped(body: &'static str) {
-    assert_eq!(fault_of(body, 1), Ok(Some(FilterFault::RanOver)), "{body}");
+    assert_eq!(
+        fault_of(body, 1),
+        Ok(Some(FunctionFault::RanOver)),
+        "{body}"
+    );
 }
 
 #[test]
@@ -81,5 +85,5 @@ fn a_coroutine_kept_in_a_global_and_resumed_by_a_later_match_is_stopped() {
                 return true\n\
                 end\n\
                 kept()";
-    assert_eq!(fault_of(body, 2), Ok(Some(FilterFault::RanOver)));
+    assert_eq!(fault_of(body, 2), Ok(Some(FunctionFault::RanOver)));
 }

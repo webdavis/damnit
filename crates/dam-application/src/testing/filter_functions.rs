@@ -2,13 +2,13 @@ use std::cell::RefCell;
 
 use dam_domain::Object;
 
-use crate::ports::{FilterFailure, FilterFunctions, Histories, History};
+use crate::ports::{FilterFunctions, FunctionFailure, Histories, History};
 
 #[derive(Default)]
 pub struct FakeFilterFunctions {
     pub keeping: Vec<&'static str>,
     pub never_reading_history: bool,
-    pub failing: RefCell<Option<FilterFailure>>,
+    pub failing: RefCell<Option<FunctionFailure>>,
     pub seen: RefCell<Vec<(String, Option<History>)>>,
 }
 
@@ -31,7 +31,7 @@ impl FilterFunctions for FakeFilterFunctions {
         _filter: &str,
         objects: &[Object],
         histories: &dyn Histories,
-    ) -> Result<Vec<bool>, FilterFailure> {
+    ) -> Result<Vec<bool>, FunctionFailure> {
         let seen: Vec<_> = objects
             .iter()
             .map(|o| {

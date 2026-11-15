@@ -1,6 +1,6 @@
 use std::fmt;
 
-use dam_application::{FilterError, FilterFault};
+use dam_application::{FilterError, FunctionFault};
 
 pub(super) struct FilterText<'a>(pub(super) &'a FilterError);
 
@@ -17,11 +17,11 @@ impl fmt::Display for FilterText<'_> {
                     write!(f, ":{line}")?;
                 }
                 match &failure.fault {
-                    FilterFault::Raised { message } => write!(f, ": {message}"),
-                    FilterFault::RanOver => {
+                    FunctionFault::Raised { message } => write!(f, ": {message}"),
+                    FunctionFault::RanOver => {
                         f.write_str(": match ran past the time limit for one listing")
                     }
-                    FilterFault::Returned { returned } => {
+                    FunctionFault::Returned { returned } => {
                         write!(f, ": match returned {returned}, not true, false or nil")
                     }
                 }

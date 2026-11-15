@@ -1,6 +1,6 @@
 use std::cell::Cell;
 
-use dam_application::{FilterFault, Histories, History};
+use dam_application::{FunctionFault, Histories, History};
 use dam_domain::{Authored, Change, CommitId, CommitRecord, Object, Oid, Timestamp};
 
 use super::filter_support::{FixedHistory, every_field_task, oid, run_filter_with};
@@ -74,7 +74,7 @@ fn dam_history_reads_only_the_object_match_was_handed() {
         &FixedHistory(History::Recorded(vec![])),
     )
     .unwrap_err();
-    assert!(matches!(failure.fault, FilterFault::Raised { .. }));
+    assert!(matches!(failure.fault, FunctionFault::Raised { .. }));
 }
 
 #[test]
@@ -88,7 +88,7 @@ fn a_history_withheld_or_unread_raises_only_when_read() {
         );
         let failure =
             run_filter_with("        return #dam.history(task) > 0", &task, &fixed).unwrap_err();
-        let FilterFault::Raised { message } = failure.fault else {
+        let FunctionFault::Raised { message } = failure.fault else {
             panic!("{:?}", failure.fault);
         };
         assert!(message.contains("dam.history"), "{message}");
