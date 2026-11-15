@@ -78,7 +78,10 @@ pub(crate) enum Command {
     Resolve(ResolveArgs),
     #[command(about = "Manage the tokens tools and agents run dam with")]
     Token(TokenArgs),
-    #[command(about = "Show and check the config")]
+    #[command(
+        about = "Show and check the config",
+        after_help = "Examples:\n  dam config list\n  dam config get remote.todoist.stale --json\n  dam config validate"
+    )]
     Config(ConfigArgs),
     #[command(
         about = "Read config.lua and secrets.lua in full and print where they are; an error raised in secrets.lua is shown as that file wrote it"
