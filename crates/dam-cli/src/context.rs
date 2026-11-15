@@ -31,6 +31,7 @@ pub(crate) struct Context {
     pub(crate) tz: jiff::tz::TimeZone,
     pub(crate) no_pull: bool,
     pub(crate) changed_by_hook: ChangedByHook,
+    pub(crate) interrupt: Interrupt,
 }
 
 impl Context {
@@ -68,6 +69,7 @@ impl Context {
             tz: jiff::tz::TimeZone::system(),
             no_pull,
             changed_by_hook: ChangedByHook::default(),
+            interrupt: interrupt.clone(),
         })
     }
 
@@ -83,6 +85,7 @@ impl Context {
             hook_warnings: &HookWarningsOnStandardError,
             edit_requests: self,
             hook_edits: &self.changed_by_hook,
+            interruption: &self.interrupt,
         }
     }
 

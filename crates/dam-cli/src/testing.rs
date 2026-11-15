@@ -50,6 +50,7 @@ pub(crate) fn context() -> Context {
         tz: jiff::tz::TimeZone::UTC,
         no_pull: false,
         changed_by_hook: Default::default(),
+        interrupt: Interrupt::default(),
     }
 }
 

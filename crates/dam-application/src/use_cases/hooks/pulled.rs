@@ -4,7 +4,7 @@ use super::edit_request::Edited;
 use crate::access::Owner;
 use crate::config::{HookEvent, PulledChanges};
 use crate::errors::UseCaseError;
-use crate::ports::{HookFailure, Pull, PulledChange, RemoteName};
+use crate::ports::{HelperError, HookFailure, Pull, PulledChange, RemoteName};
 use crate::service::Dam;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -62,7 +62,7 @@ impl Dam<'_> {
         let mut run = PulledHookRun::default();
         let run_time = RunTime::started_on(self.clock);
         for task in &pulled {
-            if run_time.ran_out() {
+            if run_time.ran_out() || self.interruption.requested() {
                 break;
             }
             let pull = Pull {
@@ -85,6 +85,9 @@ impl Dam<'_> {
         run.not_reached = pulled.len() - run.ran;
         if let Some(before) = &before {
             run.commit = self.commit_hook_edits(remote, before)?;
+        }
+        if self.interruption.requested() {
+            return Err(HelperError::Cancelled.into());
         }
         Ok(Some(run))
     }

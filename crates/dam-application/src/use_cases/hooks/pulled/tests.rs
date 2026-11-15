@@ -1,5 +1,6 @@
 mod committed;
 mod edits;
+mod interrupt;
 mod limits;
 mod runs;
 mod skips;

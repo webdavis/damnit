@@ -6,6 +6,10 @@ pub trait Clock {
     fn zone(&self) -> jiff::tz::TimeZone;
 }
 
+pub trait Interruption {
+    fn requested(&self) -> bool;
+}
+
 pub trait Randomness {
     fn fill(&self, buf: &mut [u8]);
 }
