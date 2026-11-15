@@ -613,8 +613,10 @@ helper and out of scope here.
    side that won, and a settled conflict is not raised again: a pull that finds the remote holding
    what it held when `dam` last looked has nothing coming in, whichever way the local copy has
    since moved.
-3. A removal upstream is a notice, never a local deletion. A cancellation upstream is a status, not
-   a removal: the event stays, cancelled.
+3. A removal upstream is a notice, never a local deletion, and drops what `dam` still owed the
+   object there until it changes here. A removal of an object already deleted here, committed or
+   not, is no notice. A cancellation upstream is a status, not a removal: the event stays,
+   cancelled.
 4. An event cancelled upstream keeps its attached tasks and is reported.
 5. A helper only writes the fields it declared.
 6. Recurring objects that both sides rolled forward to different dates are conflicts like any other.

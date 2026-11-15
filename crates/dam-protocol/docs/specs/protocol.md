@@ -65,7 +65,10 @@ a failure. Any other response must carry one of the answer's required keys.
 | push | `results` | `results`, one entry per mutation, and `stopped` |
 | error | `error` | `error`, the reason as text |
 
-`removed` lists remote ids the remote no longer has. `dam` stops tracking each one.
+`removed` lists remote ids the remote no longer has. `dam` stops tracking each one. A removal of
+an object whose unanswered delete `dam` sent, or that is already gone here, is that delete's answer.
+Any other removal drops what `dam` still owed the object, and nothing is sent for it until it
+changes here.
 
 `complete` is true when `objects` and `rejected` together list everything the remote holds. `dam`
 then shows in `dam status` one notice naming each open task it tracks on that remote that the answer
@@ -168,3 +171,7 @@ server error, the helper answers `unanswered: true` with a reason a person can a
 that reason in the push failed notice. A mutation left out of the results is unanswered too, and
 its notice says "no answer from helper". A helper that turns one mutation into several remote
 commands numbers them in the key's last character, which `dam` leaves free. Against a remote with no such key, a resend can duplicate.
+
+A pull reads the unanswered writes. A listed object that holds exactly what one unanswered create
+sent, matched one to one, is that object. A field that holds a value an unanswered write sent keeps
+the value held here.
