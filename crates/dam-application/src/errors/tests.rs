@@ -6,7 +6,7 @@ use crate::testing::oid;
 mod item_samples;
 use item_samples::item_samples;
 
-const HAND_COUNTED_RULES: usize = 47;
+const HAND_COUNTED_RULES: usize = 48;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -42,21 +42,22 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::TokenExists(_) => 29,
         Refusal::NotGrantable(_) => 30,
         Refusal::NoSuchToken(_) => 31,
-        Refusal::Item(ItemRefusal::NothingChanged) => 32,
-        Refusal::Item(ItemRefusal::Declined(_)) => 33,
-        Refusal::Item(ItemRefusal::NotAnObject(_)) => 34,
-        Refusal::Item(ItemRefusal::NotWaiting { .. }) => 35,
-        Refusal::Item(ItemRefusal::TargetGone { .. }) => 36,
-        Refusal::Item(ItemRefusal::TargetNotCommitted { .. }) => 37,
-        Refusal::Item(ItemRefusal::TargetStaged { .. }) => 38,
-        Refusal::Item(ItemRefusal::Clash { .. }) => 39,
-        Refusal::Item(ItemRefusal::NotYours(_)) => 40,
-        Refusal::Item(ItemRefusal::Cycle { .. }) => 41,
-        Refusal::Item(ItemRefusal::Blocked { .. }) => 42,
-        Refusal::Item(ItemRefusal::EditedSinceAdded { .. }) => 43,
-        Refusal::Item(ItemRefusal::SubjectNamesNoFolder { .. }) => 44,
-        Refusal::Item(ItemRefusal::RemovesAChangedTask { .. }) => 45,
-        Refusal::Item(ItemRefusal::AlreadyCommitted(_)) => 46,
+        Refusal::NoSuchSetting(_) => 32,
+        Refusal::Item(ItemRefusal::NothingChanged) => 33,
+        Refusal::Item(ItemRefusal::Declined(_)) => 34,
+        Refusal::Item(ItemRefusal::NotAnObject(_)) => 35,
+        Refusal::Item(ItemRefusal::NotWaiting { .. }) => 36,
+        Refusal::Item(ItemRefusal::TargetGone { .. }) => 37,
+        Refusal::Item(ItemRefusal::TargetNotCommitted { .. }) => 38,
+        Refusal::Item(ItemRefusal::TargetStaged { .. }) => 39,
+        Refusal::Item(ItemRefusal::Clash { .. }) => 40,
+        Refusal::Item(ItemRefusal::NotYours(_)) => 41,
+        Refusal::Item(ItemRefusal::Cycle { .. }) => 42,
+        Refusal::Item(ItemRefusal::Blocked { .. }) => 43,
+        Refusal::Item(ItemRefusal::EditedSinceAdded { .. }) => 44,
+        Refusal::Item(ItemRefusal::SubjectNamesNoFolder { .. }) => 45,
+        Refusal::Item(ItemRefusal::RemovesAChangedTask { .. }) => 46,
+        Refusal::Item(ItemRefusal::AlreadyCommitted(_)) => 47,
     }
 }
 
@@ -125,6 +126,7 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
         Refusal::TokenExists("tool".into()),
         Refusal::NotGrantable("config:change".into()),
         Refusal::NoSuchToken("tool".into()),
+        Refusal::NoSuchSetting("nope".into()),
     ]
     .into_iter()
     .chain(item_samples().into_iter().map(Refusal::Item))

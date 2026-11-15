@@ -144,6 +144,12 @@ impl fmt::Display for RefusalText<'_> {
                 write!(f, "{permission} is reserved and cannot be granted")
             }
             Refusal::NoSuchToken(name) => write!(f, "no token named {name:?}"),
+            Refusal::NoSuchSetting(key) => {
+                write!(
+                    f,
+                    "no setting named {key}; run dam config list to see the keys"
+                )
+            }
             Refusal::Item(refusal) => write!(f, "{}", ItemText(refusal)),
         }
     }

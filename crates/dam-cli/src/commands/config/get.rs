@@ -1,5 +1,5 @@
 use dam_adapters::LuaConfigFile;
-use dam_application::ConfigFile;
+use dam_application::{ConfigFile, Refusal};
 use serde::Serialize;
 
 use super::setting::Setting;
@@ -33,9 +33,7 @@ pub(super) fn run(file: &LuaConfigFile, key: &str) -> Result<Report, CliError> {
     let config = file.load()?.config;
     let settings = settings(&config);
     match settings.readings(key).as_slice() {
-        [] => Err(CliError::Usage(format!(
-            "no setting named {key}; run dam config list to see the keys"
-        ))),
+        [] => Err(Refusal::NoSuchSetting(key.to_string()).into()),
         [(_, setting)] => report(&Got { key, setting }),
         readings => Err(CliError::Usage(read_more_than_one_way(key, readings))),
     }

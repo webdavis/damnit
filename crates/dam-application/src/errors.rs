@@ -67,6 +67,7 @@ pub enum Refusal {
     TokenExists(String),
     NotGrantable(String),
     NoSuchToken(String),
+    NoSuchSetting(String),
     Item(ItemRefusal),
 }
 

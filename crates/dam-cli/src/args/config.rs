@@ -19,7 +19,8 @@ pub(crate) enum ConfigCommand {
     )]
     Get {
         #[arg(
-            help = "Name the setting by the key dam config list shows, such as remote.todoist.stale"
+            help = "Name the setting by the key dam config list shows, such as remote.todoist.stale",
+            value_parser = clap::builder::NonEmptyStringValueParser::new()
         )]
         key: String,
     },

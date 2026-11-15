@@ -59,8 +59,8 @@ fn a_setting_a_part_and_a_default_print_by_key() {
 }
 
 #[test]
-fn a_key_that_names_nothing_is_a_usage_error() {
-    let _guard = support::guard("a_key_that_names_nothing_is_a_usage_error");
+fn a_key_that_names_nothing_is_refused_with_the_key() {
+    let _guard = support::guard("a_key_that_names_nothing_is_refused_with_the_key");
     let sb = small_config();
     for key in [
         "nope",
@@ -75,14 +75,30 @@ fn a_key_that_names_nothing_is_a_usage_error() {
         "token.gone",
     ] {
         let out = sb.output(&["config", "get", key]);
-        assert_eq!(out.status.code(), Some(2), "{key}: {out:?}");
+        assert_eq!(out.status.code(), Some(4), "{key}: {out:?}");
         assert!(out.stdout.is_empty(), "{key}");
         let said = String::from_utf8(out.stderr).unwrap();
-        assert_eq!(
-            said,
-            format!("dam: no setting named {key}; run dam config list to see the keys\n")
-        );
+        let message = format!("no setting named {key}; run dam config list to see the keys");
+        assert_eq!(said, format!("dam: {message}\n"));
+        let out = sb.output(&["config", "get", key, "--json"]);
+        assert_eq!(out.status.code(), Some(4), "{key}: {out:?}");
+        let document = error_document(&out);
+        assert_matches_schema(&document, "error.schema.json");
+        assert_eq!(document["error"]["kind"], "refused", "{key}");
+        assert_eq!(document["error"]["rule"], "no_such_setting", "{key}");
+        assert_eq!(document["error"]["key"], key);
+        assert_eq!(document["error"]["message"], message);
     }
+}
+
+#[test]
+fn an_empty_key_is_a_usage_error() {
+    let _guard = support::guard("an_empty_key_is_a_usage_error");
+    let sb = small_config();
+    let out = sb.output(&["config", "get", "", "--json"]);
+    assert_eq!(out.status.code(), Some(2), "{out:?}");
+    assert_eq!(error_document(&out)["error"]["kind"], "usage");
+    assert!(!String::from_utf8_lossy(&out.stderr).contains("no setting named"));
 }
 
 #[test]
