@@ -9,6 +9,7 @@ mod config_text;
 mod conversions;
 mod document;
 mod edit_text;
+mod given_key;
 mod given_prefix;
 mod item_text;
 mod misread_text;

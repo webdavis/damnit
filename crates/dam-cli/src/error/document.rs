@@ -11,6 +11,9 @@ impl CliError {
         if let Some(prefix) = self.given_prefix() {
             error["prefix"] = prefix.into();
         }
+        if let Some(key) = self.given_key() {
+            error["key"] = key.into();
+        }
         if let Some(usage) = misuse::usage_part(self) {
             error["usage"] = usage;
         }

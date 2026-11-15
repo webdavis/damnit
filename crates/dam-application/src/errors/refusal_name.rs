@@ -35,6 +35,7 @@ impl Refusal {
             Refusal::TokenExists(_) => "token_exists",
             Refusal::NotGrantable(_) => "not_grantable",
             Refusal::NoSuchToken(_) => "no_such_token",
+            Refusal::NoSuchSetting(_) => "no_such_setting",
             Refusal::Item(refusal) => refusal.name(),
         }
     }

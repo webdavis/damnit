@@ -82,5 +82,9 @@ pub(super) fn token_command_refusals_with_their_text() -> Vec<(Refusal, &'static
             Refusal::NoSuchToken("tool".into()),
             "no token named \"tool\"",
         ),
+        (
+            Refusal::NoSuchSetting("nope".into()),
+            "no setting named nope; run dam config list to see the keys",
+        ),
     ]
 }
