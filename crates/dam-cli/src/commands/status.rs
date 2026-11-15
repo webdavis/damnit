@@ -1,3 +1,4 @@
+use dam_application::Notice;
 use dam_domain::Permission::{ConfigRead, ConflictRead, RemoteRead};
 use dam_domain::{Authored, Change};
 
@@ -24,6 +25,7 @@ pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliE
     let remotes: Vec<_> = ctx.config.remotes.iter().map(|r| r.name.clone()).collect();
     let s = ctx.dam().status(&remotes)?;
     let shown = |permission| may(ctx.access.as_ref(), permission);
+    let owners = ctx.access.token().is_none();
     let warnings = token_warnings(&ctx.config.tokens).map(|w| format!("warning: {w}"));
     report(&StatusView {
         staged: authored_rows(ctx, &s.staged, args.full).collect(),
@@ -41,7 +43,13 @@ pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliE
             shown(ConflictRead),
             s.conflicts.iter().map(ConflictRow::new),
         ),
-        notices: only_if(shown(RemoteRead), s.notices.iter().map(NoticeRow::new)),
+        notices: only_if(
+            shown(RemoteRead),
+            s.notices
+                .iter()
+                .filter(|n| owners || !matches!(n, Notice::TaskPulledFailed { .. }))
+                .map(NoticeRow::new),
+        ),
         unpushed: only_if(shown(RemoteRead), s.unpushed.iter().map(UnpushedRow::new)),
         warnings: only_if(shown(ConfigRead), warnings),
         owner: the_owner_to(ctx.access.as_ref()),
@@ -90,6 +98,8 @@ fn owner_rows<'a>(
 
 #[cfg(test)]
 mod skipped_tests;
+#[cfg(test)]
+mod task_pulled_notice_tests;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]

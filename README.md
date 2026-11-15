@@ -301,6 +301,8 @@ exits 4 at once. `docs/lua.md` describes hooks.
 or changed. dam commits its changes after the pull's commit, or with `changes = "working"` leaves
 them as working changes. It never runs on the first pull from a remote, and a failing one never
 undoes the pull.
+It has 60 seconds in total for one pull, and Ctrl-C stops it and keeps the pull.
+`dam status` notes the tasks it failed on or did not reach.
 `dam pull` answers what it did under `task_pulled`.
 
 ## Reading it from a program

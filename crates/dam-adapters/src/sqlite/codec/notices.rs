@@ -4,6 +4,10 @@ use dam_application::{
 use dam_domain::{Kind, Oid, Path};
 use serde::{Deserialize, Serialize};
 
+mod task_pulled;
+
+use task_pulled::TaskPulledFailedRow;
+
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 enum NoticeRow {
@@ -47,6 +51,7 @@ enum NoticeRow {
         path: String,
         because: String,
     },
+    TaskPulledFailed(TaskPulledFailedRow),
 }
 
 #[derive(Serialize, Deserialize)]
@@ -117,6 +122,17 @@ pub(in crate::sqlite) fn notice_to_json(n: &Notice) -> Result<String, StoreError
             path: path.to_string(),
             because: dropped_because_name(*because).into(),
         },
+        Notice::TaskPulledFailed {
+            remote,
+            failed,
+            not_reached,
+            error,
+        } => NoticeRow::TaskPulledFailed(TaskPulledFailedRow::new(
+            remote,
+            *failed,
+            *not_reached,
+            error.as_ref(),
+        )),
     };
     serde_json::to_string(&row).map_err(|e| StoreError::Failed(format!("stored notice: {e}")))
 }
@@ -205,6 +221,7 @@ pub(in crate::sqlite) fn notice_from_json(s: &str) -> Result<Notice, StoreError>
                 .map_err(|e| StoreError::Failed(format!("stored notice: {e}")))?,
             because: dropped_because(&because)?,
         },
+        NoticeRow::TaskPulledFailed(row) => row.notice(),
     })
 }
 

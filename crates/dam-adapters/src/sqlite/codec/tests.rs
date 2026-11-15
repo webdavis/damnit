@@ -1,5 +1,7 @@
 use super::*;
-use dam_application::{DroppedBecause, MissingTask, Notice, RejectedObject, RemoteName};
+use dam_application::{
+    DroppedBecause, FunctionFailure, FunctionFault, MissingTask, Notice, RejectedObject, RemoteName,
+};
 use dam_domain::{Kind, Object, Oid, Task};
 
 fn oid(b: u8) -> Oid {
@@ -101,8 +103,41 @@ fn every_notice_variant_round_trips() {
             path: dam_domain::Path::parse("Work/").unwrap(),
             because: DroppedBecause::NoLongerSent,
         },
+        Notice::TaskPulledFailed {
+            remote: RemoteName("t".into()),
+            failed: 0,
+            not_reached: 4,
+            error: None,
+        },
     ];
     for n in notices {
+        assert_eq!(notice_from_json(&notice_to_json(&n).unwrap()).unwrap(), n);
+    }
+}
+
+#[test]
+fn a_task_pulled_notice_round_trips_with_each_kind_of_error() {
+    let faults = [
+        FunctionFault::Raised {
+            message: "no bell".into(),
+        },
+        FunctionFault::RanOver,
+        FunctionFault::Returned {
+            returned: "a number".into(),
+        },
+        FunctionFault::Requested { why: "w".into() },
+    ];
+    for (line, fault) in [Some(3), None].into_iter().cycle().zip(faults) {
+        let n = Notice::TaskPulledFailed {
+            remote: RemoteName("t".into()),
+            failed: 2,
+            not_reached: 1,
+            error: Some(FunctionFailure {
+                file: "/home/ada/config.lua".into(),
+                line,
+                fault,
+            }),
+        };
         assert_eq!(notice_from_json(&notice_to_json(&n).unwrap()).unwrap(), n);
     }
 }
