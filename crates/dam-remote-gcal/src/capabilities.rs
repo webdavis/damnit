@@ -30,7 +30,7 @@ pub fn capabilities() -> Capabilities {
         ],
         incremental: true,
         removes_only_empty_containers: false,
-        answers_login: false,
+        answers_login: true,
     }
 }
 
