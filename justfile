@@ -1,6 +1,6 @@
 default: gates
 
-gates: fmt clippy build test doc size last-seen
+gates: fmt size last-seen clippy build test doc
 
 fmt:
     cargo fmt --all -- --check
