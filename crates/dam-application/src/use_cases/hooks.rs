@@ -7,6 +7,7 @@ use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{HookFailure, ObjectRepository};
 use crate::service::Dam;
 use crate::use_cases::list::log_by_object::LogByObject;
+use edit_request::Edited;
 
 impl Dam<'_> {
     pub(crate) fn entering<T>(
@@ -46,9 +47,13 @@ impl Dam<'_> {
         histories.unread()?;
         let failure = match ran {
             Ok(None) => return Ok(()),
-            Ok(Some(request)) => match self.hook_edit(event, task.oid(), &request)? {
-                None => return Ok(()),
-                Some(failure) => failure,
+            Ok(Some(request)) => match self.hook_edit(task.oid(), &request)? {
+                Edited::Nothing => return Ok(()),
+                Edited::Changed => {
+                    self.hook_edits.edited(event, task.oid());
+                    return Ok(());
+                }
+                Edited::Failed(failure) => failure,
             },
             Err(failure) => failure,
         };
@@ -75,6 +80,7 @@ fn tasks_by_oid(objects: &dyn ObjectRepository) -> Result<BTreeMap<Oid, Task>, U
 }
 
 mod edit_request;
+pub(crate) mod pulled;
 
 #[cfg(test)]
 mod tests;

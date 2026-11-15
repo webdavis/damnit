@@ -60,6 +60,35 @@
           "deletes_confirmed": {
             "type": "integer",
             "minimum": 0
+          },
+          "task_pulled": {
+            "description": "What hook.task_pulled did on this pull. Absent when no such hook is set or the pull brought it no task.",
+            "type": "object",
+            "required": [
+              "ran",
+              "changed",
+              "failed",
+              "not_reached"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "ran": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "changed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "failed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "not_reached": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
           }
         }
       }

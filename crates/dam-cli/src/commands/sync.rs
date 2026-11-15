@@ -7,6 +7,7 @@ use crate::output::Report;
 use crate::view::report;
 
 mod pull_view;
+mod pulled_hook_view;
 mod view;
 
 use pull_view::{PullRow, Pulled};

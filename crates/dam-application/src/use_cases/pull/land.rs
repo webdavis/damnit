@@ -8,6 +8,7 @@ use crate::errors::UseCaseError;
 use crate::ports::Store;
 use crate::service::Dam;
 use crate::use_cases::commit::record;
+use crate::use_cases::hooks::pulled::PulledTask;
 use crate::use_cases::last_seen::LastSeen;
 
 impl Dam<'_> {
@@ -16,8 +17,9 @@ impl Dam<'_> {
         remote: &RemoteConfig,
         planned: Vec<(Oid, Incoming)>,
         report: &mut PullReport,
-    ) -> Result<(), UseCaseError> {
+    ) -> Result<Vec<PulledTask>, UseCaseError> {
         let mut landed = Vec::new();
+        let mut pulled = Vec::new();
         for (oid, incoming) in planned {
             match incoming {
                 Incoming::Unchanged => report.unchanged += 1,
@@ -26,10 +28,12 @@ impl Dam<'_> {
                     report.unchanged += 1;
                 }
                 Incoming::Create(o) => {
+                    pulled.extend(PulledTask::of(None, &o));
                     landed.extend(take_theirs(self.store, remote, &oid, o)?);
                     report.created += 1;
                 }
                 Incoming::FastForward(o) => {
+                    pulled.extend(PulledTask::of(self.store.get(&oid)?, &o));
                     landed.extend(take_theirs(self.store, remote, &oid, o)?);
                     report.updated += 1;
                 }
@@ -41,10 +45,10 @@ impl Dam<'_> {
                 }
             }
         }
-        if landed.is_empty() {
-            return Ok(());
+        if !landed.is_empty() {
+            self.commit_as_already_pushed(remote, landed)?;
         }
-        self.commit_as_already_pushed(remote, landed)
+        Ok(pulled)
     }
 
     fn commit_as_already_pushed(

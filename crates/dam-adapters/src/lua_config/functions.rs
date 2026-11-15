@@ -78,11 +78,15 @@ impl LuaFunctions {
         object: &Object,
         histories: &'s dyn Histories,
     ) -> mlua::Result<Value> {
-        let document =
-            serde_json::to_value(object_document(object)).map_err(mlua::Error::external)?;
-        let task = lua_value(&self.lua, &document)?;
+        let task = self.object_value(object)?;
         let dam = dam_table(&self.lua, scope, object.oid(), histories, &self.owner)?;
         function.call((task, dam))
+    }
+
+    pub(super) fn object_value(&self, object: &Object) -> mlua::Result<Value> {
+        let document =
+            serde_json::to_value(object_document(object)).map_err(mlua::Error::external)?;
+        lua_value(&self.lua, &document)
     }
 
     pub(super) fn failed(&self, line: Option<u32>, fault: FunctionFault) -> FunctionFailure {

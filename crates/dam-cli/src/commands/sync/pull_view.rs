@@ -1,6 +1,7 @@
 use dam_application::PullReport;
 use serde::Serialize;
 
+use super::pulled_hook_view::PulledHookRow;
 use crate::layout::counted;
 use crate::view::{Human, View};
 
@@ -20,6 +21,8 @@ pub(super) struct PullRow<'a> {
     creates_matched: usize,
     values_kept: usize,
     deletes_confirmed: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    task_pulled: Option<PulledHookRow>,
 }
 
 impl<'a> PullRow<'a> {
@@ -34,6 +37,7 @@ impl<'a> PullRow<'a> {
             creates_matched: r.creates_matched,
             values_kept: r.values_kept,
             deletes_confirmed: r.deletes_confirmed,
+            task_pulled: r.task_pulled.as_ref().map(PulledHookRow::new),
         }
     }
 
@@ -58,6 +62,9 @@ impl<'a> PullRow<'a> {
         ];
         for (n, one, many) in taken_from_the_record.into_iter().filter(|(n, ..)| *n > 0) {
             line.push_str(&format!("\n  {}", counted(n, one, many)));
+        }
+        if let Some(run) = &self.task_pulled {
+            line.push_str(&format!("\n  {}", run.line()));
         }
         line
     }

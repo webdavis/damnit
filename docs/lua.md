@@ -164,7 +164,7 @@ runs `task_changed` for each child.
 When the item removes a task, the removed task runs no hook, and each task the removal moves or
 frees runs `task_changed`.
 Events, `dam rm`, `dam restore`, `dam resolve`, `dam revert`, `dam reset`, a pull and a token's
-commands run no hook.
+commands run none of these three. A pull runs only `hook.task_pulled`.
 
 A hook is a function, or a table that holds the function as `run`. `run(task, dam)` gets what a
 filter's `match` gets, with the task as it is after the change.
@@ -195,6 +195,30 @@ Its error document names the event under `hook`.
 A failing hook's warning says what was wrong with its table:
 
     warning: hook task_new failed at /home/ada/.config/dam/config.lua:2: its edit request failed: --request: colour is not a field it takes; the change stands
+
+`hook.task_pulled` runs after a pull has landed, once for each task the pull created or changed.
+`run(task, before, pull)` gets the task as the pull left it, and `before`, dam's task before the
+pull, which is nil for a new task. Both have the shape `match` gets.
+`pull` holds `remote`, the remote's name, and `change`: `new`, `changed`, or `done` when the task
+went from open to done.
+It does not run for a task the pull found unchanged, held as a conflict, left alone for your
+newer work, or removed, nor for an event.
+It does not run on the first pull from a remote, so the tasks of that pull never get it.
+It may return a table of fields, as the other hooks do. dam leaves that change as a working change.
+When it fails on a task, dam drops that task's change, goes on to the next task, and keeps the
+pull. The pull's exit code stays as it was.
+The first failure of a pull warns on standard error, unless a token's command caused the pull:
+
+    warning: hook task_pulled failed at /home/ada/.config/dam/config.lua:3: no bell; the pull is kept
+
+Later failures of that pull are counted, not printed. `dam status` does not yet show them, and
+the hook has no limit yet on its total time for one pull.
+The pull's answer counts what it did under `task_pulled`: `ran`, `changed`, `failed` and
+`not_reached`. In plain text it is the line `task_pulled: 1 ran, 1 changed, 0 failed, 0 not
+reached`.
+When a remote rewrites what dam pushed, the task comes back changed and the hook runs on it once
+more. A hook that changes a task each time it runs changes it once per push and pull, never in a
+loop.
 
 Tasks you complete, written to a file, no task left outside a folder, and a due date on each
 changed task that has none:
