@@ -85,8 +85,9 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     let presented_token = std::env::var_os(TOKEN_VARIABLE);
     let meta = cli.meta.into_iter().collect();
     gate::refuse_any_token_to_an_owner_only_verb(presented_token.is_some(), &cli.command)?;
+    let store_path = cli.store.unwrap_or_else(dam_adapters::default_store_path);
     if let Some(asked) = commands::doctor::asked(&cli.command) {
-        let machine = commands::doctor::Machine::new(&config_file);
+        let machine = commands::doctor::Machine::new(&config_file, &store_path);
         return commands::doctor::print(asked, &machine, format, color);
     }
     config_file.ends_in_lua()?;
@@ -122,7 +123,6 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         let report = commands::catalogue::run(&config, cli.command)?;
         return output::print(format, color, &report);
     }
-    let store_path = cli.store.unwrap_or_else(dam_adapters::default_store_path);
     let ctx = Context::open(
         Box::new(config_file),
         &store_path,

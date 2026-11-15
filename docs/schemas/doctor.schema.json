@@ -26,7 +26,7 @@
       "required": ["name", "result", "detail", "advice"],
       "additionalProperties": false,
       "properties": {
-        "name": { "type": "string", "enum": ["config"], "description": "The check, by the name dam doctor takes." },
+        "name": { "type": "string", "enum": ["config", "database"], "description": "The check, by the name dam doctor takes." },
         "result": { "type": "string", "enum": ["ok", "warning", "issue", "not_run"], "description": "What the check found; not_run when it could not run." },
         "detail": { "type": "string", "description": "What the check found, in words." },
         "advice": { "type": ["string", "null"], "description": "What to do next, or null." },

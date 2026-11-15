@@ -14,6 +14,8 @@ mod migrations;
 mod notices;
 mod objects;
 mod origins;
+mod read_only;
+pub use read_only::ReadOnly;
 mod remote_tracking;
 mod savepoint;
 mod stage;
