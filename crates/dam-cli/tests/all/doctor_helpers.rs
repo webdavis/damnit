@@ -1,9 +1,6 @@
 use crate::support;
 
-use support::config_files::Remote;
 use support::sandbox::Sandbox;
-
-const A_DEADLINE_A_BUSY_MACHINE_MEETS: &str = "the helper is silent until its one second deadline";
 
 fn rows(sb: &Sandbox, check: &str) -> (Option<i32>, Vec<String>) {
     let answer = sb.doctor(&["doctor", check]);
@@ -18,41 +15,6 @@ fn rows(sb: &Sandbox, check: &str) -> (Option<i32>, Vec<String>) {
 }
 
 #[test]
-fn a_helper_that_answers_is_well_and_is_given_no_credential() {
-    let _guard = support::guard("a_helper_that_answers_is_well_and_is_given_no_credential");
-    let sb = Sandbox::new();
-    let (code, rows) = rows(&sb, "helpers");
-    assert_eq!(code, Some(0));
-    assert_eq!(
-        rows,
-        [
-            "  ✓ helpers: 1 remote: 1 ok",
-            "    ✓ fake: dam-remote-fake answered",
-        ]
-    );
-    let given = std::fs::read_to_string(sb.dir.path().join("token.txt")).unwrap();
-    assert_eq!(given, "\n");
-    assert!(sb.pushes().is_empty());
-    assert!(sb.no_helper_left_within(std::time::Duration::from_secs(2)));
-}
-
-#[test]
-fn a_silent_helper_is_an_issue_once_its_deadline_passes() {
-    let _guard = support::guard("a_silent_helper_is_an_issue_once_its_deadline_passes")
-        .allow_slow(A_DEADLINE_A_BUSY_MACHINE_MEETS);
-    let sb = Sandbox::new();
-    sb.add_remote("fake", Remote::fake().deadline("1s"));
-    sb.install_silent_helper();
-    let (code, rows) = rows(&sb, "helpers");
-    assert_eq!(code, Some(1));
-    assert!(
-        rows[1].starts_with("    ✗ fake: helper fake gave no answer within 1s"),
-        "{rows:?}"
-    );
-    assert!(sb.no_helper_left_within(std::time::Duration::from_secs(2)));
-}
-
-#[test]
 fn no_remotes_means_no_helper_to_check() {
     let _guard = support::guard("no_remotes_means_no_helper_to_check");
     let sb = Sandbox::new();
@@ -61,47 +23,6 @@ fn no_remotes_means_no_helper_to_check() {
     let (code, rows) = rows(&sb, "helpers");
     assert_eq!(code, Some(0));
     assert_eq!(rows, ["  · helpers: no remotes configured"]);
-}
-
-#[test]
-fn each_remote_is_a_row_named_by_the_remote_under_its_check() {
-    let _guard = support::guard("each_remote_is_a_row_named_by_the_remote_under_its_check");
-    let sb = Sandbox::new();
-    sb.add_remote("work", Remote::at("nosuch::"));
-    let (code, rows) = rows(&sb, "helpers");
-    assert_eq!(code, Some(1));
-    assert_eq!(
-        rows,
-        [
-            "  ✗ helpers: 2 remotes: 1 issue, 1 ok",
-            "    ✓ fake: dam-remote-fake answered",
-            "    ✗ work: dam-remote-nosuch is not installed",
-            "      → install it, then run dam doctor",
-        ]
-    );
-    let (_, document) = sb.doctor_json(&["doctor", "helpers"]);
-    assert_eq!(
-        document["checks"],
-        serde_json::json!([{
-            "name": "helpers",
-            "result": "issue",
-            "detail": "2 remotes: 1 issue, 1 ok",
-            "advice": null,
-            "rows": [
-                {"name": "fake", "result": "ok", "detail": "dam-remote-fake answered", "advice": null},
-                {
-                    "name": "work",
-                    "result": "issue",
-                    "detail": "dam-remote-nosuch is not installed",
-                    "advice": "install it, then run dam doctor"
-                }
-            ]
-        }])
-    );
-    assert_eq!(
-        document["needs_attention"],
-        serde_json::json!(["helpers for work: dam-remote-nosuch is not installed"])
-    );
 }
 
 #[test]

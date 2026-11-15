@@ -7,7 +7,11 @@ use crate::commands::check_report::Row;
 use crate::commands::check_report::{Check, Outcome};
 
 pub(super) fn check(machine: &Machine) -> Vec<Check> {
-    match machine.answers() {
+    checked(machine.answers())
+}
+
+fn checked(answers: Option<&[Answer]>) -> Vec<Check> {
+    match answers {
         None => vec![found(Outcome::NotRun, CONFIG_UNREAD.into())],
         Some([]) => vec![found(Outcome::NotRun, NO_REMOTES.into())],
         Some(answers) => vec![Check::of_rows(
@@ -59,3 +63,6 @@ fn held(answer: &Answer) -> Row {
     };
     found(Outcome::Ok, detail).advising("run dam test credentials")
 }
+
+#[cfg(test)]
+mod tests;

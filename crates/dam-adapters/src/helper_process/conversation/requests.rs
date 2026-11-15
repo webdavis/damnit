@@ -111,3 +111,6 @@ impl RemoteHelper for ProcessHelper {
         declared_on_the_wire(mutation).map_err(|e| HelperError::Protocol(e.to_string()))
     }
 }
+
+#[cfg(test)]
+mod tests;

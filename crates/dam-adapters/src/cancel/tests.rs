@@ -18,3 +18,12 @@ fn an_interrupt_after_the_handler_is_installed_sets_the_handle() {
         std::thread::sleep(Duration::from_millis(10));
     }
 }
+
+#[test]
+fn the_application_sees_an_interrupt_only_once_it_is_requested() {
+    let interrupt = Interrupt::default();
+    let seen_by_the_application: &dyn Interruption = &interrupt;
+    assert!(!seen_by_the_application.requested());
+    interrupt.request();
+    assert!(seen_by_the_application.requested());
+}

@@ -6,12 +6,17 @@ pub(crate) struct HookWarningsOnStandardError;
 
 impl HookWarnings for HookWarningsOnStandardError {
     fn warn(&self, failure: &HookFailure) {
-        let what_stays = match failure.event {
-            HookEvent::TaskPulled => "the pull is kept",
-            HookEvent::TaskNew | HookEvent::TaskChanged | HookEvent::TaskDone => {
-                "the change stands"
-            }
-        };
-        eprintln!("warning: {}; {what_stays}", HookText(failure));
+        eprintln!("{}", warning(failure));
     }
 }
+
+fn warning(failure: &HookFailure) -> String {
+    let what_stays = match failure.event {
+        HookEvent::TaskPulled => "the pull is kept",
+        HookEvent::TaskNew | HookEvent::TaskChanged | HookEvent::TaskDone => "the change stands",
+    };
+    format!("warning: {}; {what_stays}", HookText(failure))
+}
+
+#[cfg(test)]
+mod tests;

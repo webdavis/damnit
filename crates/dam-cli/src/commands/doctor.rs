@@ -6,6 +6,8 @@ mod helpers;
 mod machine;
 mod pushes;
 mod store_reading;
+#[cfg(test)]
+mod tests;
 
 use std::path::Path;
 
@@ -64,16 +66,20 @@ pub(crate) fn print(
         true => Some(fix::create_what_is_missing(asked.names, machine)?),
         false => None,
     };
-    let checks = CHECKS
-        .iter()
-        .filter(|(name, _)| asked.names.is_empty() || asked.names.contains(name))
-        .flat_map(|(_, check)| check(machine))
-        .collect();
+    let checks = checks(asked.names, machine);
     check_report::print(
         CheckReport::new(asked.command, SETUP, checks).creating(created),
         format,
         color,
     )
+}
+
+fn checks(names: &[CheckName], machine: &Machine) -> Vec<Check> {
+    CHECKS
+        .iter()
+        .filter(|(name, _)| names.is_empty() || names.contains(name))
+        .flat_map(|(_, check)| check(machine))
+        .collect()
 }
 
 pub(super) fn found(path: &Path) -> Option<String> {

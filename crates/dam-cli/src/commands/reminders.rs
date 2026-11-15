@@ -94,3 +94,6 @@ impl View for Due<'_> {
         Human::list(rows, "no reminders due")
     }
 }
+
+#[cfg(test)]
+mod tests;

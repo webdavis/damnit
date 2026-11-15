@@ -30,24 +30,6 @@ fn every_failure_class_names_itself_under_json() {
         .output()
         .unwrap();
     assert_eq!(kind_of(&unreadable_config), "store");
-
-    let no_helper = sb
-        .command(&["push", "--json"])
-        .env("PATH", "/usr/bin:/bin")
-        .output()
-        .unwrap();
-    assert_eq!(kind_of(&no_helper), "helper");
-
-    sb.write_secrets_lua(
-        "return { schema = 1, remote = { fake = { \
-         api_token = function() return os.getenv('DAM_TEST_UNSET_TOKEN') end } } }\n",
-    );
-    let no_credential = sb
-        .command(&["push", "--json"])
-        .env_remove("DAM_TEST_UNSET_TOKEN")
-        .output()
-        .unwrap();
-    assert_eq!(kind_of(&no_credential), "credential");
 }
 
 #[test]
