@@ -31,7 +31,11 @@ pub(super) fn check(machine: &Machine) -> Vec<Check> {
         Ok(config) => {
             files.warnings = token_warnings(&config.tokens).collect();
             let (result, detail) = said(&files);
-            Check::of(CheckName::Config, result, detail)
+            let check = Check::of(CheckName::Config, result, detail);
+            match files.config {
+                None => check.advising("dam doctor --fix creates a starter config.lua"),
+                Some(_) => check,
+            }
         }
     };
     vec![check.reading(files)]

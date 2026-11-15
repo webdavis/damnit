@@ -109,11 +109,12 @@ fn a_broken_config_leaves_only_the_database_to_check() {
     sb.write_config_lua("return {\n  owner = ,\n}\n");
     let answer = sb.doctor(&["doctor"]);
     assert_eq!(answer.code, Some(1));
-    let rows: Vec<&str> = answer.out.lines().skip(5).take(4).collect();
+    let rows: Vec<&str> = answer.out.lines().skip(5).take(5).collect();
     assert_eq!(
         rows,
         [
             "  ✓ database: none yet",
+            "    → dam doctor --fix creates it",
             "  · helpers: not checked, the config did not read",
             "  · credentials: not checked, the config did not read",
             "  · pushes: not checked, the config did not read",
