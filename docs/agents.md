@@ -231,7 +231,8 @@ of a whole id. A send with `--id` is safe to
 retry: a repeat answers `duplicate`. The schema is `docs/schemas/error.schema.json`, and it lists
 every rule.
 
-A hook in `config.lua` runs on the owner's `dam new`, `dam edit` and `dam done`, never on a token's.
+A hook in `config.lua` runs on the owner's `dam new`, `dam edit`, `dam done` and `dam add`.
+A token's command runs no hook; its item runs one when the owner's `dam add` takes it.
 What it prints and its warnings go to standard error. A hook set to refuse exits 4, rule
 `hook_refused`, and the error names the event under `hook`.
 
