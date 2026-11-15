@@ -134,3 +134,26 @@ fn a_query_dam_cannot_read_exits_two_and_is_of_kind_parse() {
     assert_eq!(error.document()["error"]["kind"], "parse");
     assert_eq!(error.to_string(), "expected & or | before due:tomorrow");
 }
+
+#[test]
+fn a_push_the_deadline_cuts_short_exits_one_as_a_helper_error_with_its_counts() {
+    let error = CliError::UseCase(UseCaseError::PushStopped {
+        by: dam_application::HelperError::Timeout {
+            helper: "fake".into(),
+            deadline: "2s".into(),
+            said: None,
+        },
+        kept: 1,
+        unanswered: 1,
+    });
+    assert_eq!(error.exit_code(), 1);
+    assert_eq!(
+        error.document(),
+        serde_json::json!({"error": {
+            "kind": "helper",
+            "rule": null,
+            "message": "helper fake gave no answer within 2s; 1 kept, 1 unanswered",
+            "oids": [],
+        }})
+    );
+}
