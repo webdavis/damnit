@@ -1,6 +1,7 @@
 mod config_check;
 mod credentials;
 mod database;
+mod fix;
 mod helpers;
 mod machine;
 mod pushes;
@@ -32,6 +33,7 @@ const CHECKS: [(CheckName, Run); 5] = [
 pub(crate) struct Asked<'a> {
     names: &'a [CheckName],
     command: &'static str,
+    fix: bool,
 }
 
 pub(crate) fn asked(command: &Command) -> Option<Asked<'_>> {
@@ -39,12 +41,14 @@ pub(crate) fn asked(command: &Command) -> Option<Asked<'_>> {
         Command::Doctor(args) => Some(Asked {
             names: &args.checks,
             command: "doctor",
+            fix: args.fix,
         }),
         Command::Config(ConfigArgs {
             command: Some(ConfigCommand::Validate),
         }) => Some(Asked {
             names: &[CheckName::Config],
             command: "config validate",
+            fix: false,
         }),
         _ => None,
     }
@@ -56,13 +60,17 @@ pub(crate) fn print(
     format: Format,
     color: bool,
 ) -> Result<(), CliError> {
+    let created = match asked.fix {
+        true => Some(fix::create_what_is_missing(asked.names, machine)?),
+        false => None,
+    };
     let checks = CHECKS
         .iter()
         .filter(|(name, _)| asked.names.is_empty() || asked.names.contains(name))
         .flat_map(|(_, check)| check(machine))
         .collect();
     check_report::print(
-        CheckReport::new(asked.command, SETUP, checks),
+        CheckReport::new(asked.command, SETUP, checks).creating(created),
         format,
         color,
     )

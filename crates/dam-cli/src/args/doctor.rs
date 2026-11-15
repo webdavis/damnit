@@ -5,6 +5,11 @@ use serde::Serialize;
 pub(crate) struct DoctorArgs {
     #[arg(value_enum, help = "Run only these checks. Default: every check")]
     pub(crate) checks: Vec<CheckName>,
+    #[arg(
+        long,
+        help = "Create the starter config and the store where they are missing"
+    )]
+    pub(crate) fix: bool,
 }
 
 #[derive(clap::ValueEnum, Serialize, Clone, Copy, Debug, PartialEq, Eq)]

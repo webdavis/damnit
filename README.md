@@ -63,6 +63,9 @@ name. Both warn of a token dam ignores or holds disabled, and `dam doctor` says 
 
 `dam doctor` reads this machine, says what is wrong and how to fix it, and contacts nothing.
 It prints one row per check, then what needs attention, and creates no file.
+`dam doctor --fix` creates the starter `config.lua` and the store where each is missing.
+It changes no file that exists, and the report names each file it created.
+`dam doctor --fix <check>...` creates only what the named checks cover.
 `dam doctor <check>...` runs only the named checks: `config`, `database`, `helpers`, `credentials`
 and `pushes`.
 Its `config` check reads both files in full and lists each token warning under its row.

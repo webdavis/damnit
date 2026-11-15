@@ -2,13 +2,18 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/doctor.schema.json",
   "title": "dam doctor answer",
-  "description": "What dam doctor prints on standard output with --json or --toon. It exits 1 when a check that ran is an issue, and prints no error document.",
+  "description": "What dam doctor prints on standard output with --json or --toon. With --fix it first creates the starter config.lua and the store where each is missing. It exits 1 when a check that ran is an issue, and prints no error document.",
   "type": "object",
   "required": ["version", "command", "checks", "needs_attention"],
   "additionalProperties": false,
   "properties": {
     "version": { "type": "string", "description": "The version of this dam." },
     "command": { "type": "string", "enum": ["doctor", "config validate", "test"], "description": "The command that produced the report." },
+    "created": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "With --fix: the path of each file dam doctor created, empty when it created none. Absent without --fix."
+    },
     "checks": {
       "type": "array",
       "description": "Each check that ran, in the order the report shows them.",

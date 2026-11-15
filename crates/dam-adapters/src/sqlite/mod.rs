@@ -5,6 +5,7 @@ mod authored_rows;
 mod codec;
 mod commits;
 mod conflicts;
+mod create;
 mod days;
 mod details_json;
 mod file;
