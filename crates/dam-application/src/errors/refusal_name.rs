@@ -22,7 +22,6 @@ impl Refusal {
             Refusal::NothingToCommit => "nothing_to_commit",
             Refusal::NeedsAnAnswer => "needs_an_answer",
             Refusal::NeedsAnEditor => "needs_an_editor",
-            Refusal::UnresolvedConflicts(_) => "unresolved_conflicts",
             Refusal::MissingCredential { .. } => "missing_credential",
             Refusal::StaleRemote { .. } => "stale_remote",
             Refusal::UnreadableRecurrence { .. } => "unreadable_recurrence",

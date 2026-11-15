@@ -106,7 +106,6 @@
         "nothing_to_commit",
         "needs_an_answer",
         "needs_an_editor",
-        "unresolved_conflicts",
         "missing_credential",
         "stale_remote",
         "unreadable_recurrence",

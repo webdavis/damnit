@@ -1,31 +1,10 @@
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{AttemptRepository, Conflict, HelperError};
+use crate::ports::{AttemptRepository, HelperError};
 use crate::testing::prelude::*;
 use crate::testing::{
     Scenario, ScriptedHelper, ScriptedLauncher, config, oid, pushing, remotes_launched_by, task,
     task_caps, todoist,
 };
-use dam_domain::{Object, Task};
-
-#[test]
-fn unresolved_conflicts_block_push() {
-    let s = Scenario::default();
-    s.committed(task(1));
-    s.store
-        .mark_conflict(&Conflict {
-            remote: todoist(),
-            oid: oid(1),
-            ours: Some(task(1)),
-            theirs: Object::Task(Task::new(oid(1), "theirs")),
-        })
-        .unwrap();
-    let (l, _) = pushing(|_| vec![]);
-    let err = s.dam().push(remotes_launched_by(&l), None).unwrap_err();
-    assert_eq!(
-        err,
-        UseCaseError::Refused(Refusal::UnresolvedConflicts(Some(1)))
-    );
-}
 
 #[test]
 fn an_unknown_remote_is_refused() {

@@ -1,13 +1,14 @@
 use dam_domain::Permission::{ConflictRead, RemotePush};
-use dam_domain::{Object, Task};
+use dam_domain::{Object, Permission, Task};
 
-use crate::errors::{Refusal, UseCaseError};
 use crate::ports::Conflict;
 use crate::service::Dam;
 use crate::testing::prelude::*;
-use crate::testing::{Scenario, allowed, holder, oid, pushing, remotes_launched_by, task, todoist};
+use crate::testing::{
+    Scenario, accepting_all, allowed, holder, oid, pushing, remotes_launched_by, task, todoist,
+};
 
-fn one_conflict() -> Scenario {
+fn one_conflict_owed() -> Scenario {
     let s = Scenario::default();
     s.committed(task(1));
     s.store
@@ -21,28 +22,32 @@ fn one_conflict() -> Scenario {
     s
 }
 
-fn refusal_to(s: &Scenario, permissions: &[dam_domain::Permission]) -> UseCaseError {
+fn held_as_told_to(s: &Scenario, permissions: &[Permission]) -> Option<usize> {
     let token = holder(vec![allowed(permissions, None)]);
     let dam = Dam {
         access: &token,
         ..s.dam()
     };
-    let (l, _) = pushing(|_| vec![]);
-    dam.push(remotes_launched_by(&l), None).unwrap_err()
+    let (l, _) = pushing(accepting_all(None));
+    dam.push(remotes_launched_by(&l), None).unwrap()[0].held
 }
 
 #[test]
-fn a_token_without_conflict_read_is_refused_without_the_count() {
+fn a_token_without_conflict_read_is_not_told_how_many_were_held() {
+    assert_eq!(held_as_told_to(&one_conflict_owed(), &[RemotePush]), None);
+}
+
+#[test]
+fn a_token_with_conflict_read_is_told_how_many_were_held() {
     assert_eq!(
-        refusal_to(&one_conflict(), &[RemotePush]),
-        UseCaseError::Refused(Refusal::UnresolvedConflicts(None))
+        held_as_told_to(&one_conflict_owed(), &[RemotePush, ConflictRead]),
+        Some(1)
     );
 }
 
 #[test]
-fn a_token_with_conflict_read_is_told_the_count() {
-    assert_eq!(
-        refusal_to(&one_conflict(), &[RemotePush, ConflictRead]),
-        UseCaseError::Refused(Refusal::UnresolvedConflicts(Some(1)))
-    );
+fn a_token_without_conflict_read_is_told_when_nothing_was_held() {
+    let s = Scenario::default();
+    s.committed(task(1));
+    assert_eq!(held_as_told_to(&s, &[RemotePush]), Some(0));
 }
