@@ -66,7 +66,13 @@ fn three_cut_short_by(stop: HelperError) {
     assert_eq!(owed(&s), vec![oid(3)]);
 
     let (accepting, resent) = pushing(accepting_all(Some("r3")));
-    s.dam().push(remotes_launched_by(&accepting), None).unwrap();
+    let report = s
+        .dam()
+        .push(remotes_launched_by(&accepting), None)
+        .unwrap()
+        .remove(0);
+    assert!(report.failed.is_empty(), "{:?}", report.failed);
+    assert!(owed(&s).is_empty());
     let resent: Vec<_> = resent.borrow().iter().map(|m| m.oid.clone()).collect();
     assert_eq!(resent, vec![oid(3)]);
 }

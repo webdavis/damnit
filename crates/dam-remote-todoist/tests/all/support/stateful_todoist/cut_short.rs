@@ -1,25 +1,11 @@
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::Duration;
-
 use dam_helper::testing::Reply;
 use serde_json::json;
 
 use super::Held;
 
-#[derive(Clone, Default)]
-pub struct Release(Arc<AtomicBool>);
-
-impl Release {
-    pub fn now(&self) {
-        self.0.store(true, Ordering::SeqCst);
-    }
-}
-
 pub(super) enum Cut {
     RateLimit,
     Unauthorized,
-    Hang(Release),
 }
 
 impl Cut {
@@ -30,12 +16,6 @@ impl Cut {
                 Some(limited.with_header("Retry-After", "42"))
             }
             Cut::Unauthorized => Some(Reply::json(401, json!({"error": "Unauthorized"}))),
-            Cut::Hang(release) => {
-                while !release.0.load(Ordering::SeqCst) {
-                    std::thread::sleep(Duration::from_millis(10));
-                }
-                None
-            }
         }
     }
 }
@@ -53,12 +33,6 @@ impl Held {
     pub fn unauthorized_after(mut self, writes: u32) -> Held {
         self.cut_short_after = Some((writes, Cut::Unauthorized));
         self
-    }
-
-    pub fn hanging_after(mut self, writes: u32) -> (Held, Release) {
-        let release = Release::default();
-        self.cut_short_after = Some((writes, Cut::Hang(release.clone())));
-        (self, release)
     }
 
     pub(super) fn cuts_this_write_short(&mut self) -> Option<Cut> {
