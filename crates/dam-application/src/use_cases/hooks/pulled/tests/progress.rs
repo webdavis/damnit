@@ -1,4 +1,5 @@
 use dam_domain::Permission::RemotePull;
+use jiff::SignedDuration;
 
 use super::slow::SlowHooks;
 use super::*;
@@ -57,5 +58,16 @@ fn a_run_a_tokens_command_caused_says_nothing() {
     let s = pulled_hooked();
     let tool = holder(vec![allowed(&[RemotePull], None)]);
     pulled_by(&s, &SlowHooks::taking(&s.fixture.hooks, 1), &tool);
+    assert_eq!(said(&s), []);
+}
+
+#[test]
+fn a_run_just_under_two_seconds_says_nothing() {
+    let s = pulled_hooked();
+    let slow = SlowHooks {
+        each_call: SignedDuration::from_millis(600),
+        ..SlowHooks::taking(&s.fixture.hooks, 0)
+    };
+    pulled_by(&s, &slow, &crate::access::Owner);
     assert_eq!(said(&s), []);
 }

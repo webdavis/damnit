@@ -12,12 +12,20 @@ impl HookProgressOnStandardError {
             in_plain_text: format == Format::Human,
         }
     }
+
+    fn line(&self, event: HookEvent, tasks: usize) -> Option<String> {
+        self.in_plain_text
+            .then(|| format!("dam: running {} for {tasks} tasks", event.as_str()))
+    }
 }
 
 impl HookProgress for HookProgressOnStandardError {
     fn running(&self, event: HookEvent, tasks: usize) {
-        if self.in_plain_text {
-            eprintln!("dam: running {} for {tasks} tasks", event.as_str());
+        if let Some(line) = self.line(event, tasks) {
+            eprintln!("{line}");
         }
     }
 }
+
+#[cfg(test)]
+mod tests;
