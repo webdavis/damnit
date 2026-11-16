@@ -55,6 +55,9 @@ function Tasks:read(buf)
   vim.bo[buf].buftype = "acwrite"
   vim.bo[buf].swapfile = false
   vim.bo[buf].filetype = "damtask"
+  self.app.keys:for_task(buf, nil, function()
+    return task.oid, task.cwd
+  end)
   self.app.dam:run({ args = { "show", task.oid }, cwd = task.cwd, key = NAME .. task.oid }, function(answer, err)
     if err then
       return self.app.say:error(err)

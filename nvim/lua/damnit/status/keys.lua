@@ -22,6 +22,14 @@ function Keys:act(key)
 end
 
 ---@param buf integer
+---@return damnit.KeySpec[]
+function Keys:task_keys(buf)
+  return self.app.keys:for_task(buf, GROUP, function()
+    return (self:target() or {}).oid, self.cwd
+  end)
+end
+
+---@param buf integer
 function Keys:bind(buf)
   local function call(lhs, desc, run)
     return { lhs = lhs, desc = desc, group = GROUP, run = run }
@@ -57,7 +65,7 @@ function Keys:bind(buf)
       call("r", "read the status again", function()
         self:read()
       end),
-    }, folds.keys())
+    }, vim.list_extend(folds.keys(), self:task_keys(buf)))
   )
   vim.api.nvim_create_autocmd("BufWipeout", {
     group = self.group,

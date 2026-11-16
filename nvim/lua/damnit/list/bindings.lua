@@ -34,6 +34,13 @@ function Bindings:bind(buf)
   }
   vim.list_extend(specs, section_keys())
   vim.list_extend(specs, self:change_keys(buf))
+  vim.list_extend(
+    specs,
+    self.app.keys:for_task(buf, "task rows", function()
+      local context = self:context(buf)
+      return context.oid or nil, context.cwd
+    end)
+  )
   self.app.keys:bind(buf, vim.list_extend(specs, self.more_keys and self.more_keys(buf) or {}))
   vim.api.nvim_create_autocmd("BufWipeout", {
     group = self.group,
