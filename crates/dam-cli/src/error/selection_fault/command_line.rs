@@ -23,7 +23,7 @@ pub(super) fn command_line(t: &FilterTable, sort: &[String]) -> String {
     words.join(" ")
 }
 
-fn quoted(text: &str) -> String {
+pub(crate) fn quoted(text: &str) -> String {
     let plain = |c: char| c.is_ascii_alphanumeric() || "._:/,=+-@".contains(c);
     match !text.is_empty() && text.chars().all(plain) {
         true => text.to_string(),

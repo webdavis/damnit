@@ -8,7 +8,7 @@ use super::{ScopeArgs, SetArgs};
 #[derive(Args, Debug)]
 pub(crate) struct DoneArgs {
     #[arg(
-        help = "Pick the tasks by oid, or by a prefix of 4 or more hex characters",
+        help = "Pick the tasks by oid, by a prefix of 4 or more hex characters, or - to read the ids dam list prints from stdin",
         required_unless_present_any = ["query", "filter"]
     )]
     pub(crate) oid: Vec<String>,
@@ -49,11 +49,11 @@ pub(crate) struct DoneArgs {
     pub(crate) project_children: Option<(Path, ChildDisposition)>,
 }
 
-#[derive(Args, Debug)]
+#[derive(Args, Debug, Default)]
 pub(crate) struct MvArgs {
     #[arg(
         value_name = "OID... PATH",
-        help = "Pick the objects by oid, or by a prefix of 4 or more hex characters, then the PATH to move them under, such as work/clients/",
+        help = "Pick the objects by oid, by a prefix of 4 or more hex characters, or - to read the ids dam list prints from stdin, then the PATH to move them under, such as work/clients/",
         required_unless_present_any = ["query", "filter"]
     )]
     pub(crate) oid: Vec<String>,
@@ -70,7 +70,7 @@ pub(crate) struct MvArgs {
 #[derive(Args, Debug)]
 pub(crate) struct RmArgs {
     #[arg(
-        help = "Pick the objects by oid, or by a prefix of 4 or more hex characters",
+        help = "Pick the objects by oid, by a prefix of 4 or more hex characters, or - to read the ids dam list prints from stdin",
         required_unless_present_any = ["query", "filter", "id"]
     )]
     pub(crate) oid: Vec<String>,

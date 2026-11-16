@@ -32,11 +32,12 @@ pub(crate) fn set_of(
         expect: set.expect,
         as_one: set.as_one,
     };
-    let run = confirmed(ctx, &selector, run)?;
+    let run = confirmed(ctx, &selector, run, set.piped.as_deref())?;
     Ok((selector, run))
 }
 
 fn selector(ctx: &Context, oids: &[String], set: &SetArgs) -> Result<Selector, CliError> {
+    let oids = set.piped.as_ref().map_or(oids, |piped| &piped.ids);
     Ok(match (&set.query, &set.filter) {
         (Some(query), _) => Selector::Query(query.clone(), set.place.clone()),
         (_, Some(filter)) => Selector::Filter(filter.clone(), set.place.clone()),

@@ -55,7 +55,8 @@ pub(crate) fn parse(line: Vec<OsString>) -> Result<Cli, Refused> {
 }
 
 fn with_request(line: Vec<OsString>, given: &ArgMatches, source: &Path) -> Result<Cli, CliError> {
-    let (words, _) = leaf(given);
+    let (words, leaf_given) = leaf(given);
+    crate::piped::refuse_reading_twice(source, leaf_given, &line)?;
     let text = read(source)?;
     if words == ["day", "set"] {
         let mut cli = Cli::try_parse_from(line).map_err(|e| CliError::Usage(e.to_string()))?;

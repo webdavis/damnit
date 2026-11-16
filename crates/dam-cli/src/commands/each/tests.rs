@@ -1,5 +1,6 @@
 mod as_one;
 mod confirm;
+mod piped;
 mod requests;
 mod schema;
 mod set_listing;

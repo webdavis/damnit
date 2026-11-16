@@ -30,11 +30,20 @@ pub(crate) struct SetArgs {
     pub(crate) as_one: bool,
     #[arg(skip)]
     pub(crate) place: Path,
+    #[arg(skip)]
+    pub(crate) piped: Option<Box<Piped>>,
+}
+
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub(crate) struct Piped {
+    pub(crate) ids: Vec<String>,
+    pub(crate) command: String,
 }
 
 impl SetArgs {
     pub(crate) fn is_plain(&self) -> bool {
         self.query.is_none()
+            && self.piped.is_none()
             && self.filter.is_none()
             && !self.preview
             && self.expect.is_none()

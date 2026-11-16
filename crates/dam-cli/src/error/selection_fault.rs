@@ -9,6 +9,7 @@ mod sentence;
 mod sort_fix;
 
 use command_line::command_line;
+pub(crate) use command_line::quoted;
 
 #[derive(Debug)]
 pub(crate) struct Fault {

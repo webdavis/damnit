@@ -7,7 +7,7 @@ use super::{ScopeArgs, SetArgs};
 #[derive(Args, Debug)]
 pub(crate) struct EditArgs {
     #[arg(
-        help = "Pick the objects by oid, or by a prefix of 4 or more hex characters",
+        help = "Pick the objects by oid, by a prefix of 4 or more hex characters, or - to read the ids dam list prints from stdin",
         required_unless_present_any = ["query", "filter"]
     )]
     pub(crate) oid: Vec<String>,

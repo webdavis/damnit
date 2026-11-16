@@ -19,7 +19,7 @@ mod hook_run;
 mod hooked;
 pub(crate) mod init;
 mod list;
-mod mv;
+pub(crate) mod mv;
 mod new;
 mod parsing;
 mod reminders;
