@@ -119,10 +119,10 @@ pub fn answers(command: &str) -> Option<Vec<serde_json::Value>> {
                 json_of(&sb, &["diff", "--staged", "--full"]),
             ]
         }
-        "ls" => {
+        "list" => {
             let sb = fixture::committed();
             run(&sb, &every_task_field);
-            vec![json_of(&sb, &["ls"])]
+            vec![json_of(&sb, &["list", "--kind", "any", "--done", "any"])]
         }
         "agenda" => vec![json_of(
             &fixture::seeded(),

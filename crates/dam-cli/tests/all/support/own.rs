@@ -35,7 +35,7 @@ pub fn own_hidden(grant: Grant) -> Hidden {
 }
 
 pub fn listed(h: &Hidden, args: &[&str]) -> Vec<String> {
-    let mut line = vec!["ls", "-o", "json"];
+    let mut line = vec!["list", "-o", "json"];
     line.extend_from_slice(args);
     let out = h.holding(&line);
     assert!(out.status.success(), "{out:?}");

@@ -151,18 +151,18 @@ character anywhere in the file, a wrong type or an unknown key refuses the file.
 
 | Key | Holds | Effect inside the project |
 | --- | --- | --- |
-| `path` | a path such as `"app/"` | where `dam new` starts a task's `--path`, and what `dam ls`, `dam agenda` and `dam reminders` list |
+| `path` | a path such as `"app/"` | where `dam new` starts a task's `--path`, and what `dam list`, `dam agenda` and `dam reminders` list |
 | `new_task` | `labels`, `priority`, `due`, `deadline` | what `dam new` gives a task the flags and the template leave unset |
 | `required` | any of `"due"`, `"labels"`, `"priority"`, `"body"`, `"deadline"` | `dam new` refuses a task left without one, after the template and `new_task`, naming the field and its flag |
-| `ls` | a query such as `"@cli & p1"` | what `dam ls` shows when no query is given, narrowed to the project; a query you give replaces it |
-| `filter` | `<name> = { query = ".." }`, never a function | saved filters for `dam ls` and `dam agenda`, found before your own of the same name; `dam filter list` marks them as the project's |
-| `category` | `<name> = { values = { .. }, exclusive = true }`, as in `config.lua` | label categories for `dam new` and the queries you type there, beside your own; inside the project one sets aside whole any of yours that shares its name or a label, and `ls` and `filter` may name only these |
+| `ls` | a query such as `"@cli & p1"` | what `dam list` shows when no selection flag is typed, narrowed to the project; any selection flag replaces it |
+| `filter` | `<name> = { query = ".." }`, never a function | saved filters for `dam list --filter` and `dam agenda`, found before your own of the same name; `dam filter list` marks them as the project's |
+| `category` | `<name> = { values = { .. }, exclusive = true }`, as in `config.lua` | label categories for `dam new`, `dam list --category` and the queries you type there, beside your own; inside the project one sets aside whole any of yours that shares its name or a label, and `ls` and `filter` may name only these |
 | `sections` | names such as `{ "bugs", "features" }`, each one path segment | `dam init` creates each as a task under `path` when it is missing |
 | `branch_label` | `true` or `false` | `dam new` adds the checked-out git branch's name to the new task's labels, read from `.git/HEAD` without running `git`, beside the labels from `--labels`, a template or `new_task.labels`; a detached head adds nothing; a name that is not a usable label adds nothing and warns |
 | `done_children` | `"up"`, `"keep"` or `"into:<name>"`, the words `--children` takes | what `dam done --force` does with the open children of a task under `path` when `--children` is not given; without `--force` the refusal stands |
 | `minimum_dam` | a version such as `"0.3.0"` | an older `dam` refuses the file before it reads any other key |
 
-Inside the folder, `path` is where `dam new` starts a task's `--path`, and `dam ls`, `dam agenda`
+Inside the folder, `path` is where `dam new` starts a task's `--path`, and `dam list`, `dam agenda`
 and `dam reminders` list only what is under it.
 A `.dam.lua` that does not load stops those four commands unless `--global` or `--project` is given;
 the others warn and carry on. dam never quotes the file's text in the error.
@@ -172,8 +172,8 @@ nothing is changed. `--global` writes `config.lua` instead.
 
 ## Filters
 
-A filter takes `query`, `match`, or both. A filter with neither is an error. `dam ls <name>` and
-`dam agenda <name>` run it. With both, the query narrows first, and `match` runs only on the
+A filter takes `query`, `match`, or both. A filter with neither is an error. `dam list --filter <name>`
+and `dam agenda <name>` run it. With both, the query narrows first, and `match` runs only on the
 objects that are left.
 
 `match(task, dam)` runs once for each object the listing would show, events as well as tasks.
@@ -365,7 +365,7 @@ When a remote rewrites what dam pushed, the task comes back changed and the hook
 more. A hook that changes a task each time it runs changes it once per push and pull, never in a
 loop.
 
-`dam hook run <hook> [query]` calls one hook for each task that `dam ls [query]` lists, a saved
+`dam hook run <hook> [query]` calls one hook for each task the query lists, a saved
 filter or a function filter included. Events are skipped, and it contacts no remote.
 It reaches tasks no hook ran for: the tasks of a first pull, tasks a hook failed on or did not
 reach, and tasks older than your rule.

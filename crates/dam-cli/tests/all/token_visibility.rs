@@ -46,7 +46,7 @@ fn a_token_never_sees_the_oid_of_a_hidden_dependency_or_attached_event() {
     assert!(owner_view.contains(&diary) && owner_view.contains(&dentist));
 
     for format in [vec!["-o", "json"], vec!["-o", "toon"], vec![]] {
-        for read in [vec!["ls"], vec!["show", &report]] {
+        for read in [vec!["list"], vec!["show", &report]] {
             let args = [read, format.clone()].concat();
             let out = sb.output_holding(&held, &args);
             assert!(out.status.success(), "{args:?}: {out:?}");

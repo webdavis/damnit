@@ -37,9 +37,9 @@ fn three_focus_tasks_lead_the_list_in_the_order_they_were_marked_and_a_fourth_is
     assert_eq!(error["error"]["rule"], "focus_full", "{error}");
     support::schema::assert_matches_schema(&error, "error.schema.json");
 
-    let focused = json(&sb, &["ls", "focus:today", "-o", "json"]);
+    let focused = json(&sb, &["list", "--focus-day", "today", "-o", "json"]);
     assert_eq!(subjects(&focused), vec!["dentist", "taxes", "gym"]);
-    assert_eq!(subjects(&json(&sb, &["ls", "-o", "json"]))[0], "dentist");
+    assert_eq!(subjects(&json(&sb, &["list", "-o", "json"]))[0], "dentist");
 
     let mark = json(&sb, &["show", &oids[2], "-o", "json"])["task"]["focus"].clone();
     let today = jiff::Timestamp::now()
@@ -58,7 +58,7 @@ fn three_focus_tasks_lead_the_list_in_the_order_they_were_marked_and_a_fourth_is
     assert!(sb.dam(&["edit", &oids[0], "--focus", "today"]).0);
     assert!(sb.dam(&["edit", &oids[1], "--focus", "tomorrow"]).0);
     assert_eq!(
-        subjects(&json(&sb, &["ls", "focus:today", "-o", "json"])),
+        subjects(&json(&sb, &["list", "--focus-day", "today", "-o", "json"])),
         vec!["dentist", "gym", "a later task"]
     );
 }

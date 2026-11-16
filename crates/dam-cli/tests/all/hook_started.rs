@@ -23,7 +23,7 @@ fn a_dam_a_hook_started_refuses_before_it_reads_or_writes_anything() {
     let _guard = support::guard("a_dam_a_hook_started_refuses_before_it_reads_or_writes_anything");
     let sb = Sandbox::new();
     for args in [
-        &["ls", "-o", "json"][..],
+        &["list", "-o", "json"][..],
         &["new", "buy milk", "-o", "json"],
         &["status", "-o", "json"],
     ] {

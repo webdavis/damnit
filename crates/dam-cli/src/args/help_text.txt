@@ -233,7 +233,7 @@ Examples:
   dam hook run task_pulled @waiting
   dam hook run task_new today -o json
 dam hook run hook: help = Name the hook to run by its event
-dam hook run query: help = Narrow the tasks by a query or saved filter, read the way `ls` reads one
+dam hook run query: help = Narrow the tasks by a query, such as due:today, or a saved filter's name
 dam remote: about = Manage remotes
 dam remote add: about = Add a remote to config.lua
 dam remote add name: help = Name the remote, such as todoist

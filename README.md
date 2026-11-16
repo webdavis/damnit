@@ -96,7 +96,7 @@ last run ended. A failed last run, or an enabled remote not run for three interv
 It contacts each remote and runs credential functions, which may prompt.
 `dam test <part>...` runs only the named parts: `credentials` and `filters`.
 Its `credentials` part signs in to each remote and writes nothing.
-Its `filters` part runs each saved filter once over the store, as `dam ls <name>` would, and
+Its `filters` part runs each saved filter once over the store, as `dam list --filter <name>` would, and
 changes nothing. A failing filter names the object and the line of `config.lua` it failed on.
 `dam test` prints the report `dam doctor` prints, with `command` set to `test`.
 It exits 1 when a part finds an issue.
@@ -212,13 +212,25 @@ characters before `dam status` shows it.
 ## Every day
 
     dam new "buy oat milk" --due tomorrow -p 1 --labels errand
-    dam ls due:today
+    dam list --due today
     dam done 3f2a9c1
     dam add -A
     dam commit -m "morning triage"
     dam push
 
 `--labels errand,home` adds two labels; the flag also repeats.
+
+`dam list` lists the tasks that are not done. Each field is a flag of the same name, such as
+`--due`, `--labels`, `--completed-at` or `--start`; `dam list --help` lists them all. Every flag
+repeats and each must hold. A comma list holds when any of its values does, `not:` when none does,
+and `none` when the field is empty. `--any FIELD=VALUE` holds when any of the `--any` flags does.
+`--done any` and `--kind any` lift the defaults, and a field only events have lists events.
+A value dam cannot read exits 2 and names the shapes the field takes and the command to run.
+
+    dam list --labels bug,ui --due ..today
+    dam list --done --completed-at week
+    dam list --path work/ --any labels=urgent --any due=..today
+    dam list --filter today --author not:owner
 
 `dam push --preview [remote]` shows what a push would send, hold and skip for each remote, and
 starts no helper and writes nothing. It needs one `dam pull` or `dam push` with that remote after
@@ -297,19 +309,19 @@ and its plus line green, unless output is not a terminal, `NO_COLOR` is set or `
 in the line, `last_pull` and `last_push` as RFC 3339 under `-o json`, null until that verb has
 reached the remote once.
 
-`dam ls`, `dam show`, `dam agenda` and `dam reminders` read only the local store and never reach a
+`dam list`, `dam show`, `dam agenda` and `dam reminders` read only the local store and never reach a
 remote.
 
 ## Planning a day
 
     dam edit 3f2a9c1 --estimate 5m
-    dam ls estimate:max:5m
+    dam list --estimate ..5m
     dam edit 3f2a9c1 --focus today
-    dam ls completed_at:today
+    dam list --completed-at today
     dam reminders -o json
 
 `--focus DAY` marks a task to work on first that day and records who set it and when. A day holds
-three marks; a fourth exits 4, rule `focus_full`. `dam ls` lists today's marks first, in the order
+three marks; a fourth exits 4, rule `focus_full`. `dam list` lists today's marks first, in the order
 they were set. The mark and the estimate stay in damnit and never reach a remote.
 
 `dam day show [DAY]` prints a day's record: the plan, the proposals for the next day, the
@@ -344,12 +356,12 @@ parent is.
 The nearest `.dam.lua` at or above the folder decides the project; a project inside another uses
 only its own file.
 
-`dam ls`, `dam agenda` and `dam reminders` list only the project there: `dam ls` in that project
-shows what `dam ls 'path:app/'` shows elsewhere, and a `path:` you type starts from the project. A
+`dam list`, `dam agenda` and `dam reminders` list only the project there: `dam list` in that project
+shows what `dam list --path app/` shows elsewhere, and a `--path` or `path:` you type starts from the project. A
 saved filter keeps its own query and is narrowed to the project. Listings print full paths.
 `--global` on these four commands reaches every task and reads a path from the root.
 
-`dam edit`, `dam done`, `dam mv` and `dam rm` with `--query` or `--filter` change only what `dam ls`
+`dam edit`, `dam done`, `dam mv` and `dam rm` with `--query` or `--filter` change only what `dam list`
 lists there: the project's tasks, its filters found before yours, its categories in the query.
 `--global` picks from every task with your own filters and categories; `--project <path>` picks
 that project's. Oids are never narrowed: `dam done 98d8` works on any task from anywhere. When
@@ -358,7 +370,7 @@ is given. On `dam mv`, `--global` and `--project` also decide where the destinat
 `status`, `push`, `pull`, `log` and `show` always cover everything.
 
 `--project <path>` on those four commands works from any folder, in a project or not, and stands in
-for the project you are in: `dam ls --project pns/hooks/`, `dam new "x" --project pns/ --path cli/`.
+for the project you are in: `dam list --project pns/hooks/`, `dam new "x" --project pns/ --path cli/`.
 It takes a path of any depth. `--global` and `--project` together are a usage error. When no task
 holds that path yet, `dam new --project` creates it first and says so on standard error; with `-o json`
 the answer carries `project_created`, its `oid` and `path`.
@@ -373,8 +385,8 @@ holds is refused there; `--global` writes `config.lua` instead. `project.hooks` 
 commands run inside the project without `--global` or `--project`.
 `new_task = { labels = { "app" }, priority = 2 }` fills what a flag and the template leave unset.
 With `required = { "due" }`, `dam new` refuses a task without a due date and names `--due`.
-`ls = "p1"` is what `dam ls` shows there when you give no query.
-`filter = { hot = { query = "p1" } }` is found before your own filter named `hot` in `dam ls`,
+`ls = "p1"` is what `dam list` shows there when you type no selection flag.
+`filter = { hot = { query = "p1" } }` is found before your own filter named `hot` in `dam list`,
 `dam agenda` and the `--filter` of `dam edit`, `dam done`, `dam mv` and `dam rm`, and
 `dam filter list` there marks it `(the project's)`. Inside a project, `dam filter create|remove`
 and `dam category create|remove` change `.dam.lua`, and `--global` changes your `config.lua`.
@@ -402,7 +414,7 @@ replaces the template's value, and `--labels` replaces its labels. A name found 
 refused with the names that exist; a token is told only that the name is not there. See
 `docs/lua.md` for what a template holds.
 
-When `.dam.lua` does not load, `dam new`, `dam ls`, `dam agenda` and `dam reminders` print the error
+When `.dam.lua` does not load, `dam new`, `dam list`, `dam agenda` and `dam reminders` print the error
 and refuse, since they cannot tell where a task belongs; `--global` and `--project` do not read the
 file. Every other command carries on with one warning on standard error, and `dam doctor config`
 reports it.
@@ -479,7 +491,7 @@ It has 60 seconds in total for one pull, and Ctrl-C stops it and keeps the pull.
 `dam hook list` prints each hook file with its event and its `on_failure` or `changes`, and warns
 why a file does not load.
 
-`dam hook run <hook> [query]` calls one hook for each task `dam ls [query]` lists, as if each were
+`dam hook run <hook> [query]` calls one hook for each task the query or saved filter lists, as if each were
 new, and leaves its changes as working changes to read in `dam diff`. Use it for tasks no hook ran
 for: a first pull, a task a hook failed on, a task older than the rule. A rule that compares before
 and after does nothing here, a hook with a side effect fires once per task, and nothing retries by
@@ -566,8 +578,8 @@ attendee that stands for the calendar the event came from. `attendees`, `organiz
 `conference` read as they do in `dam show`; `attendees` is always a list, and the others appear only
 when the event has them. Every event the window overlaps is listed, busy or not; a recurring event
 made in dam is listed at its stored occurrence only. With no flags the window runs from now to 24
-hours later; `--from` and `--to` take the same words `--due` does, and a query narrows it the way
-`dam ls` reads one. Keys are only ever added, never renamed or retyped.
+hours later; `--from` and `--to` take the same words `--due` does, and a query or saved filter's name
+narrows it. Keys are only ever added, never renamed or retyped.
 
 `--max-age <remote>=<duration>` makes the answer depend on that remote being fresh. When its last
 successful pull is older than the duration, or it has never pulled, `agenda` prints nothing on
@@ -622,7 +634,7 @@ The permissions are `task:` and `event:` `read`, `create`, `change`, `move` and 
 
 | Command | Needs |
 |---|---|
-| `ls`, `show`, `agenda`, `reminders` | `task:read` or `event:read`; objects outside every grant are left out, oids included |
+| `list`, `show`, `agenda`, `reminders` | `task:read` or `event:read`; objects outside every grant are left out, oids included |
 | `new`, `edit`, `done` | `task:create` or `event:create`, `task:change` or `event:change`, `task:complete` |
 | `rm` | nothing for its own waiting item; `task:remove` or `event:remove` to send a removal |
 | `status` | nothing for its own items; `stage:read`, `working:read`, `pending:read` and `conflict:read` for the rest, each row only for objects a grant covers |
@@ -667,9 +679,9 @@ Every task and event has an `author`: the name of the token that made it, or you
 `--meta key=value`, such as harness, session, model, effort and version; any key is kept as given.
 Each change keeps them with the host, working directory, repo, branch, time and channel. `dam show
 <oid>` prints the author and the details of the change that made it, and `-o` carries
-them as `author` and `details` on every object in `ls` and `show` and every change in `status`,
-`diff` and `log`. A token reads the details of its own changes only. `dam ls --by mine`, `--by
-agents` or `--by all` lists what you made, what tokens made, or both. damnit takes these values as
+them as `author` and `details` on every object in `list` and `show` and every change in `status`,
+`diff` and `log`. A token reads the details of its own changes only. `dam list --author NAME`
+lists what NAME made, and `--author not:NAME` the rest. damnit takes these values as
 given; the token is the security check.
 
 `dam new --id <text>` names the task with the tool's own id, which is not damnit's oid. The id is

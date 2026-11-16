@@ -35,8 +35,8 @@ the root, and `--project <path>`, or `"project"` in a request, starts it from th
 folder. A missing task for that path is created first; that needs `task:create` there, and the
 answer carries `project_created`. The path `dam mv` moves objects to starts from the project the
 same way. Inside a project, `--query` and `--filter` on `dam edit`, `dam done`, `dam mv` and
-`dam rm` pick only the project's tasks the token sees, as `dam ls` lists them; `--global`, or
-`"global": true` in a request, picks from every task. Oids are never narrowed. `dam ls`, `dam agenda` and `dam reminders` there list only what the token sees under the
+`dam rm` pick only the project's tasks the token sees, as `dam list` lists them; `--global`, or
+`"global": true` in a request, picks from every task. Oids are never narrowed. `dam list`, `dam agenda` and `dam reminders` there list only what the token sees under the
 project. `dam config list -o json` carries every setting the project's `.dam.lua` holds under
 `project`, as the file sets it.
 
@@ -132,7 +132,7 @@ it equals `hash`. `-o toon` gives the same document in TOON. The schema is
 `docs/schemas/sent.schema.json`.
 
 A token's write never touches the owner's tasks. It waits as an item until the owner adds it.
-Meanwhile `dam status -o json` lists the token's own items under `waiting`, `dam ls` leaves the
+Meanwhile `dam status -o json` lists the token's own items under `waiting`, `dam list` leaves the
 task out, and `dam show` refuses the item's hash with rule `item_not_an_object`:
 
 ```sh example as=agent exit=4 rule=item_not_an_object
@@ -260,21 +260,21 @@ the same hash. In a request document the key is `id`. The schema is
 ## Reading
 
 ```sh example as=agent
-dam ls -o json
-dam ls 'due:today | overdue' -o json
-dam ls --by agents -o json
+dam list -o json
+dam list --due ..today -o json
+dam list --author not:owner -o json
 dam show <oid> -o json
 dam agenda -o json
 dam reminders -o json
 ```
 
-`dam ls --by mine`, `--by agents` and `--by all` list what the owner made, what tokens made, or
-both. A grant with `--own` lists only events the token made. Each `dam agenda -o json` row carries
+`dam list --author NAME` lists what NAME made, by the name each row prints in `author`;
+`not:NAME` lists the rest. A grant with `--own` lists only events the token made. Each `dam agenda -o json` row carries
 the event's `attendees`, and its `organizer`, `location` and `conference` when it has them. An
 object outside the token's grants answers like a missing one: left out of lists, and exit 4, rule
 `no_such_object`, when named.
 
-`dam ls`, `dam show`, `dam agenda` and `dam reminders` answer from the local store and start no
+`dam list`, `dam show`, `dam agenda` and `dam reminders` answer from the local store and start no
 remote helper; `dam pull` brings a remote's changes in. `--max-age <remote>=<duration>` makes
 `dam agenda` refuse, exit 4, rule `stale_remote`, when that remote last pulled longer ago,
 here a remote named `calendar`. A token needs `remote:read` on that remote, or it gets rule

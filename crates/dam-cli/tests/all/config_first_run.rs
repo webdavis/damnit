@@ -23,7 +23,7 @@ fn the_first_run_creates_the_config_readable_by_its_owner_alone() {
     let _guard = support::guard("the_first_run_creates_the_config_readable_by_its_owner_alone");
     let sb = Sandbox::new();
     let config = fresh_config(&sb);
-    let out = run(&sb, &config, &["ls"]);
+    let out = run(&sb, &config, &["list"]);
     assert!(out.status.success(), "{out:?}");
     assert_eq!(mode(&config), 0o600);
     assert_eq!(mode(config.parent().unwrap()), 0o700);
@@ -102,7 +102,7 @@ fn a_token_caller_creates_nothing() {
     let sb = Sandbox::new();
     let config = fresh_config(&sb);
     let out = sb
-        .command(&["ls", "-o", "json"])
+        .command(&["list", "-o", "json"])
         .env("DAM_CONFIG", &config)
         .env("DAM_TOKEN", "damk_v1_whatever")
         .output()
@@ -125,7 +125,7 @@ fn a_config_the_first_run_cannot_create_is_named_with_the_systems_reason() {
         eprintln!("skipped: this user writes into a folder marked read-only");
         return;
     }
-    let out = run(&sb, &config, &["ls"]);
+    let out = run(&sb, &config, &["list"]);
     std::fs::set_permissions(folder, std::fs::Permissions::from_mode(0o700)).unwrap();
     let stderr = String::from_utf8(out.stderr).unwrap();
     let said = format!("dam: could not create {}: ", config.display());

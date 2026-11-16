@@ -26,7 +26,7 @@ fn an_edit_the_rules_refuse_with_refuse_changes_nothing_and_exits_4() {
             ),
         "{message}"
     );
-    let (ok, out, err) = sb.dam(&["ls", "-o", "json"]);
+    let (ok, out, err) = sb.dam(&["list", "-o", "json"]);
     assert!(ok, "{err}");
     let listing: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_eq!(listing["objects"], serde_json::json!([]));

@@ -3,8 +3,8 @@ use crate::support;
 use support::sandbox::Sandbox;
 
 #[test]
-fn new_add_commit_push_pull_and_ls_work_across_processes() {
-    let _guard = support::guard("new_add_commit_push_pull_and_ls_work_across_processes");
+fn new_add_commit_push_pull_and_list_work_across_processes() {
+    let _guard = support::guard("new_add_commit_push_pull_and_list_work_across_processes");
     let sb = Sandbox::new();
     let (ok, out, err) = sb.dam(&[
         "new",
@@ -38,7 +38,7 @@ fn new_add_commit_push_pull_and_ls_work_across_processes() {
     assert!(ok, "{err}");
     assert!(out.contains("✓ fake: 1 new, 1 unchanged"), "{out}");
 
-    let (ok, out, _) = sb.dam(&["ls", "-o", "json"]);
+    let (ok, out, _) = sb.dam(&["list", "-o", "json"]);
     assert!(ok);
     let json: serde_json::Value = serde_json::from_str(&out).unwrap();
     let subjects: Vec<&str> = json["objects"]
@@ -50,7 +50,7 @@ fn new_add_commit_push_pull_and_ls_work_across_processes() {
     assert!(subjects.contains(&"buy oat milk"));
     assert!(subjects.contains(&"from upstream"));
 
-    let (ok, out, _) = sb.dam(&["ls", "-o", "toon"]);
+    let (ok, out, _) = sb.dam(&["list", "-o", "toon"]);
     assert!(ok);
     assert!(out.starts_with("objects[2]"), "{out}");
 
@@ -63,7 +63,7 @@ fn new_add_commit_push_pull_and_ls_work_across_processes() {
 
     let (ok, _, err) = sb.dam(&["done", &oid[..7]]);
     assert!(ok, "{err}");
-    let (ok, out, _) = sb.dam(&["ls", "done", "-o", "json"]);
+    let (ok, out, _) = sb.dam(&["list", "--done", "-o", "json"]);
     assert!(ok);
     assert_eq!(
         serde_json::from_str::<serde_json::Value>(&out).unwrap()["objects"]
@@ -99,12 +99,12 @@ fn every_recurrence_the_parser_refuses_reports_one_code_and_kind() {
 fn each_exit_code_means_one_thing() {
     let _guard = support::guard("each_exit_code_means_one_thing");
     let sb = Sandbox::new();
-    assert_eq!(sb.output(&["ls"]).status.code(), Some(0), "success");
+    assert_eq!(sb.output(&["list"]).status.code(), Some(0), "success");
 
     let a_directory_as_the_store = sb.dir.path().join("wrong");
     std::fs::create_dir(&a_directory_as_the_store).unwrap();
     let broken = sb
-        .command(&["ls"])
+        .command(&["list"])
         .env("DAM_STORE", &a_directory_as_the_store)
         .output()
         .unwrap();
@@ -120,10 +120,11 @@ fn each_exit_code_means_one_thing() {
         Some(2),
         "a flag value dam refuses to read"
     );
-    let unreadable = sb.output(&["ls", "due:today due:tomorrow"]);
-    assert_eq!(unreadable.status.code(), Some(2), "a query dam cannot read");
-    assert_eq!(
-        String::from_utf8_lossy(&unreadable.stderr).trim(),
-        "dam: expected & or | before due:tomorrow"
-    );
+    let unreadable = sb.output(&["list", "--labels", "bug", "--due", "tomorow"]);
+    assert_eq!(unreadable.status.code(), Some(2), "a value dam cannot read");
+    let said = String::from_utf8_lossy(&unreadable.stderr);
+    let opening = "dam: --due cannot be \"tomorow\"; it takes 2026-11-20,";
+    assert!(said.starts_with(opening), "{said}");
+    let fix = "; run dam list --due today --labels bug";
+    assert!(said.trim_end().ends_with(fix), "{said}");
 }

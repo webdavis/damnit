@@ -64,6 +64,7 @@ mod hook_started;
 mod hooks;
 mod id_session;
 mod interrupts;
+mod list_project_default;
 mod lua_page_example;
 mod new_id;
 mod object_author;

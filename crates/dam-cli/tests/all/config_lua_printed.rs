@@ -22,7 +22,7 @@ fn what_config_lua_prints_goes_to_standard_error_and_leaves_json_whole() {
         support::guard("what_config_lua_prints_goes_to_standard_error_and_leaves_json_whole");
     let sb = a_config_that_prints_every_way();
     for line in [
-        &["ls", "-o", "json"][..],
+        &["list", "-o", "json"][..],
         &["status", "-o", "json"],
         &["config", "list", "-o", "json"],
         &["doctor", "config", "-o", "json"],

@@ -132,7 +132,7 @@ fn plain_text_says_which_hook_changed_the_task() {
     hooked(&sb, LABELLING);
     let out = sb.output(&["new", "buy milk"]);
     assert!(out.status.success(), "{out:?}");
-    let listed: Value = serde_json::from_slice(&sb.output(&["ls", "-o", "json"]).stdout).unwrap();
+    let listed: Value = serde_json::from_slice(&sb.output(&["list", "-o", "json"]).stdout).unwrap();
     let oid = listed["objects"][0]["oid"].as_str().unwrap();
     assert_eq!(
         String::from_utf8_lossy(&out.stderr),

@@ -36,7 +36,7 @@ Examples:
 pub(crate) struct HookRunArgs {
     #[arg(value_enum, help = "Name the hook to run by its event")]
     pub(crate) hook: HookName,
-    #[arg(help = "Narrow the tasks by a query or saved filter, read the way `ls` reads one")]
+    #[arg(help = "Narrow the tasks by a query, such as due:today, or a saved filter's name")]
     pub(crate) query: Option<String>,
 }
 

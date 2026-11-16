@@ -19,7 +19,7 @@ fn the_printed_text_is_what_a_first_run_writes() {
     let _guard = support::guard("the_printed_text_is_what_a_first_run_writes");
     let first = Sandbox::new();
     let created = fresh_config(&first);
-    assert!(run(&first, &created, &["ls"]).status.success());
+    assert!(run(&first, &created, &["list"]).status.success());
     let sb = Sandbox::new();
     let out = run(&sb, &fresh_config(&sb), &["config", "print-default"]);
     assert!(out.status.success(), "{out:?}");

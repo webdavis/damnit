@@ -120,6 +120,6 @@ fn a_request_for_a_command_without_a_request_schema_is_a_usage_error() {
         support::guard("a_request_for_a_command_without_a_request_schema_is_a_usage_error");
     let sb = Sandbox::new();
     let path = request_file(&sb, "{}");
-    let message = usage_refusal(&sb.output(&["ls", "-o", "json", "--request", &path]));
+    let message = usage_refusal(&sb.output(&["list", "-o", "json", "--request", &path]));
     assert!(message.contains("--request"), "{message}");
 }
