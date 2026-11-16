@@ -1,4 +1,5 @@
 mod agenda;
+mod branch_label;
 mod categories;
 mod listing;
 mod new_task;

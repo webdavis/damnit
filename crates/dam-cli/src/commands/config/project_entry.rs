@@ -14,6 +14,7 @@ pub(super) struct ProjectEntry {
     filter: BTreeMap<String, FilterEntry>,
     category: BTreeMap<String, CategoryEntry>,
     sections: Vec<String>,
+    branch_label: bool,
 }
 
 #[derive(Serialize)]
@@ -72,6 +73,7 @@ impl ProjectEntry {
                 })
                 .collect(),
             sections: settings.sections.clone(),
+            branch_label: settings.branch_label,
         }
     }
 
@@ -111,6 +113,8 @@ impl ProjectEntry {
         }
         let sections = (!self.sections.is_empty()).then(|| self.sections.join(", "));
         rows.push(("sections".into(), sections));
+        let branch_label = self.branch_label.then(|| "true".to_string());
+        rows.push(("branch_label".into(), branch_label));
         rows.into_iter()
             .filter_map(|(key, value)| Some((key, format!("{} (from the project)", value?))))
             .collect()

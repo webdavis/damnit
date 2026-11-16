@@ -27,7 +27,7 @@ use locked::locked_lua;
 pub(super) use template::read_project_template;
 pub use written::{FileSystemProjectFolders, write_project_file};
 
-const PROJECT_SETTINGS: [&str; 8] = [
+const PROJECT_SETTINGS: [&str; 9] = [
     "path",
     "minimum_dam",
     "new_task",
@@ -36,6 +36,7 @@ const PROJECT_SETTINGS: [&str; 8] = [
     "filter",
     "category",
     "sections",
+    "branch_label",
 ];
 const PERSONAL_SETTINGS: [&str; 9] = [
     "owner",
@@ -100,5 +101,9 @@ pub fn read_project_file(file: &Path, this_dam: &str) -> Result<ProjectSettings,
         filters: filters::filters(file, &root, &categories)?,
         categories,
         sections: sections::sections(file, &root)?,
+        branch_label: root
+            .bool("branch_label")
+            .map_err(|e| rule::misshapen(file, "branch_label")(e.into()))?
+            .unwrap_or(false),
     })
 }

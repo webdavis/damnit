@@ -10,6 +10,7 @@ use crate::error::CliError;
 use crate::output::Report;
 use crate::project_scope::Standing;
 
+mod branch_label;
 mod categories;
 mod project_created;
 
@@ -21,13 +22,17 @@ pub(crate) fn dispatch_in(
     standing: Standing,
 ) -> Result<Report, CliError> {
     crate::gate::admit(ctx.access.as_ref(), &command)?;
+    let mut warnings = Vec::new();
     let command = match command {
         Command::New(a) => {
             let to_the_owner = ctx.access.token().is_none();
             let a = from_template(ctx.templates.as_ref(), a, to_the_owner)?;
             Command::New(match standing.rules(&a.scope) {
                 Some(rules) => {
-                    let a = filled(a, rules.new_task.clone());
+                    let (branch, warning) = branch_label::branch_of(&standing, rules);
+                    warnings.extend(warning);
+                    let mut a = filled(a, rules.new_task.clone());
+                    a.labels.extend(branch.filter(|b| !a.labels.contains(b)));
                     holds_each(&a, &rules.required)?;
                     a
                 }
@@ -49,7 +54,9 @@ pub(crate) fn dispatch_in(
             };
             a.path = a.path.under(&place);
             let made = dispatch_a_verb_that_opens_the_store(ctx, Command::New(a))?;
-            return Ok(project_created::told(made, created.as_ref(), &place));
+            let mut told = project_created::told(made, created.as_ref(), &place);
+            told.standard_error_lines.extend(warnings);
+            return Ok(told);
         }
         Command::Mv(a) => {
             let mut a = with_the_path_named(a)?;

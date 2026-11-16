@@ -102,6 +102,7 @@ character anywhere in the file, a wrong type or an unknown key refuses the file.
 | `filter` | `<name> = { query = ".." }`, never a function | saved filters for `dam ls` and `dam agenda`, found before your own of the same name; `dam filter list` marks them as the project's |
 | `category` | `<name> = { values = { .. }, exclusive = true }`, as in `config.lua` | label categories for `dam new` and the queries you type there, beside your own; one that shares a name or a label with yours refuses the file, and `ls` and `filter` may name only these |
 | `sections` | names such as `{ "bugs", "features" }`, each one path segment | `dam init` creates each as a task under `path` when it is missing |
+| `branch_label` | `true` or `false` | `dam new` adds the checked-out git branch's name to the new task's labels, read from `.git/HEAD` without running `git`, beside the labels from `--labels`, a template or `new_task.labels`; a detached head adds nothing; a name that is not a usable label adds nothing and warns |
 | `minimum_dam` | a version such as `"0.3.0"` | an older `dam` refuses the file before it reads any other key |
 
 Inside the folder, `path` is where `dam new` starts a task's `--path`, and `dam ls`, `dam agenda`
