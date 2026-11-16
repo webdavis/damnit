@@ -55,11 +55,11 @@ fn paths_follow_project_section_and_parent_names() {
 #[test]
 fn reverse_lookups_find_ids_by_path() {
     let t = Tree::from_sync(&sync());
-    assert_eq!(t.project_id_for("Work/"), Some("p1"));
-    assert_eq!(t.project_id_for("Work/Client/"), Some("p2"));
-    assert_eq!(t.section_id_for("Work/Now/"), Some("s1"));
-    assert_eq!(t.item_id_for("Work/Now/", "milk"), Some("i1"));
-    assert!(t.project_id_for("Nope/").is_none());
+    assert_eq!(t.project_id_for("Work/"), Ok(Some("p1")));
+    assert_eq!(t.project_id_for("Work/Client/"), Ok(Some("p2")));
+    assert_eq!(t.section_id_for("Work/Now/"), Ok(Some("s1")));
+    assert_eq!(t.item_id_for("Work/Now/", "milk"), Ok(Some("i1")));
+    assert_eq!(t.project_id_for("Nope/"), Ok(None));
 }
 
 #[test]

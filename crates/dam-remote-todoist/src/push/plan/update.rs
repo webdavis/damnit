@@ -4,6 +4,7 @@ use super::{Failure, Plan, TreeChange, numbered};
 use crate::map::{RemoteId, Tree};
 use crate::push::carried::{Carries, PROJECT, SECTION, fields_the_container_cannot_carry};
 use crate::push::commands::{Args, Command, ItemWrite, args, command, item_args};
+use crate::push::named::ThisPush;
 use crate::push::shape::{ItemPlace, Shape, place_inside, shape_for};
 
 struct Commands<'m> {
@@ -24,6 +25,7 @@ pub fn update_plan(
     m: &Mutation,
     object: &WireObject,
     remote: RemoteId,
+    this_push: &ThisPush,
 ) -> Result<Plan, Failure> {
     let changed = |f: &str| m.fields.iter().any(|x| x == f);
     let done = object.task.as_ref().is_some_and(|t| t.done);
@@ -59,7 +61,7 @@ pub fn update_plan(
         }
         RemoteId::Item(id) => {
             if changed("path") {
-                let to = item_place(tree, m, object)?;
+                let to = item_place(tree, m, object, this_push)?;
                 commands.push("item_move", most_specific_container_move_args(&id, &to))?;
                 changes.push(TreeChange::MovesItem { id: id.clone(), to });
             }
@@ -101,11 +103,13 @@ fn renamed(id: &str, object: &WireObject) -> Args {
     args([("id", id.into()), ("name", object.subject.clone().into())])
 }
 
-fn item_place(tree: &Tree, m: &Mutation, object: &WireObject) -> Result<ItemPlace, Failure> {
-    if let Some(named) = &m.container_remote_id {
-        let container: RemoteId = named.parse().map_err(|e| {
-            Failure::RefusedWithoutAVerdict(format!("an unusable Todoist container id: {e}"))
-        })?;
+fn item_place(
+    tree: &Tree,
+    m: &Mutation,
+    object: &WireObject,
+    this_push: &ThisPush,
+) -> Result<ItemPlace, Failure> {
+    if let Some(container) = this_push.named_container(m)? {
         return place_inside(tree, &container).map_err(Failure::RefusedWithoutAVerdict);
     }
     match shape_for(tree, object, &[]).map_err(Failure::RefusedWithoutAVerdict)? {

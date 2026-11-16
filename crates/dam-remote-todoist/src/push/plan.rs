@@ -7,7 +7,8 @@ use super::Failure;
 use super::commands::{
     Command, ItemWrite, args, command, creating_command, item_args, repeatable_command_uuid,
 };
-use super::shape::{ItemPlace, Shape, shape_for};
+use super::named::ThisPush;
+use super::shape::{ItemPlace, Shape, shape_for, shape_inside};
 use crate::map::{RemoteId, Tree};
 
 pub struct Plan {
@@ -27,21 +28,17 @@ pub fn resend_stable_temp_id(m: &Mutation) -> &str {
     m.idempotency_key.as_str()
 }
 
-pub fn plan_for(
-    tree: &Tree,
-    m: &Mutation,
-    containers_filled_this_push: &[String],
-) -> Result<Plan, Failure> {
+pub fn plan_for(tree: &Tree, m: &Mutation, this_push: &ThisPush) -> Result<Plan, Failure> {
     match m.op.as_str() {
         "delete" => removal::removal_plan(tree, m, addressed(m, "delete")?),
         "create" => {
             let object = m.object.as_ref().ok_or(missing_object("create"))?;
-            create_plan(tree, m, object, containers_filled_this_push)
+            create_plan(tree, m, object, this_push)
         }
         "update" => {
             let object = m.object.as_ref().ok_or(missing_object("update"))?;
             let remote = addressed(m, "update")?;
-            update::update_plan(tree, m, object, remote)
+            update::update_plan(tree, m, object, remote, this_push)
         }
         other => Err(Failure::RefusedWithoutAVerdict(format!(
             "unknown op {other:?}"
@@ -53,10 +50,14 @@ fn create_plan(
     tree: &Tree,
     m: &Mutation,
     object: &WireObject,
-    containers_filled_this_push: &[String],
+    this_push: &ThisPush,
 ) -> Result<Plan, Failure> {
-    let shape = shape_for(tree, object, containers_filled_this_push)
-        .map_err(Failure::RefusedWithoutAVerdict)?;
+    let filled = &this_push.containers_filled;
+    let shape = match this_push.named_container(m)? {
+        Some(container) => shape_inside(tree, object, filled, &container),
+        None => shape_for(tree, object, filled),
+    }
+    .map_err(Failure::RefusedWithoutAVerdict)?;
     let temp_id = resend_stable_temp_id(m);
     let mut commands = Vec::new();
     match &shape {

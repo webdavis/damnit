@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use dam_domain::{Field, Object, Oid, nearest_parents};
 
@@ -14,6 +14,7 @@ pub(super) struct Containers {
 
 pub(super) enum Placement {
     Named(Option<String>),
+    CreatedThisPush(Oid),
     Held(String),
 }
 
@@ -55,6 +56,7 @@ impl Containers {
         remote_tracking: &dyn RemoteTrackingRepository,
         remote: &RemoteName,
         object: &Object,
+        creating: &BTreeSet<Oid>,
     ) -> Result<Placement, UseCaseError> {
         if let Some(could_hold) = self.unsettled.get(object.oid()) {
             return Ok(Placement::Held(not_known(object.oid(), could_hold)));
@@ -62,6 +64,9 @@ impl Containers {
         let Some(parent) = &object.base().parent else {
             return Ok(Placement::Named(None));
         };
+        if creating.contains(parent) {
+            return Ok(Placement::CreatedThisPush(parent.clone()));
+        }
         Ok(Placement::Named(remote_tracking.remote_id(remote, parent)?))
     }
 }

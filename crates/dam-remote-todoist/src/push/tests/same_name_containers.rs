@@ -35,6 +35,11 @@ fn create(n: u8, path: &str, subject: &str) -> Mutation {
     )
 }
 
+fn into_created(mut m: Mutation, n: u8) -> Mutation {
+    m.container_oid = Some(n.to_string().repeat(40));
+    m
+}
+
 fn sent_whichever_order_the_tree_holds_them(
     upstream: &serde_json::Value,
     mutations: &[Mutation],
@@ -77,16 +82,19 @@ fn a_task_created_under_a_new_namesake_of_a_held_task_names_the_new_ones_id() {
     );
     let mutations = [
         create(1, "Work/Now/", "P"),
-        create(2, "Work/Now/P/", "Q"),
-        create(3, "Work/Now/P/Q/", "kid"),
-        with_fields(
-            mutation(
-                "update",
-                4,
-                Some("i:r3"),
-                Some(task(&"4".repeat(40), "Work/Now/P/", "moved", false)),
+        into_created(create(2, "Work/Now/P/", "Q"), 1),
+        into_created(create(3, "Work/Now/P/Q/", "kid"), 2),
+        into_created(
+            with_fields(
+                mutation(
+                    "update",
+                    4,
+                    Some("i:r3"),
+                    Some(task(&"4".repeat(40), "Work/Now/P/", "moved", false)),
+                ),
+                &["path"],
             ),
-            &["path"],
+            1,
         ),
     ];
     for executed in sent_whichever_order_the_tree_holds_them(&upstream, &mutations) {
@@ -103,7 +111,10 @@ fn a_task_created_under_a_new_namesake_of_a_held_section_names_the_new_ones_id()
         vec![section("r1", "P", "p1")],
         vec![],
     );
-    let mutations = [create(1, "Work/", "P"), create(2, "Work/P/", "kid")];
+    let mutations = [
+        create(1, "Work/", "P"),
+        into_created(create(2, "Work/P/", "kid"), 1),
+    ];
     for executed in sent_whichever_order_the_tree_holds_them(&upstream, &mutations) {
         assert_eq!(executed[0]["type"], "section_add");
         assert_eq!(args_of(&executed, "item_add", "kid")["section_id"], "new1");
@@ -113,7 +124,7 @@ fn a_task_created_under_a_new_namesake_of_a_held_section_names_the_new_ones_id()
 #[test]
 fn a_task_created_under_a_new_namesake_of_a_held_project_names_the_new_ones_id() {
     let upstream = held(vec![project("r1", "P")], vec![], vec![]);
-    let mutations = [create(1, "", "P"), create(2, "P/", "kid")];
+    let mutations = [create(1, "", "P"), into_created(create(2, "P/", "kid"), 1)];
     for executed in sent_whichever_order_the_tree_holds_them(&upstream, &mutations) {
         assert_eq!(executed[0]["type"], "project_add");
         assert_eq!(args_of(&executed, "item_add", "kid")["project_id"], "new1");

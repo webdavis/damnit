@@ -2,9 +2,12 @@ mod carried;
 mod commands;
 mod created;
 mod failure;
+mod named;
 mod off_limits;
 mod plan;
 mod shape;
+
+use std::collections::HashMap;
 
 use dam_protocol::{Mutation, MutationResult, PushResponse, Verdict};
 
@@ -13,6 +16,7 @@ use crate::map::Tree;
 use commands::Command;
 use created::add_created_to_tree;
 use failure::{Failure, every_command_accepted, no_id_named_for};
+use named::ThisPush;
 use off_limits::OffLimits;
 use plan::{TreeChange, missing_object, plan_for, resend_stable_temp_id};
 
@@ -23,15 +27,23 @@ pub fn push(
 ) -> Result<PushResponse, ApiError> {
     let sync = api.read_all()?;
     let mut tree = Tree::from_sync(&sync);
-    let containers_filled = containers_this_push_fills(&mutations);
+    let mut this_push = ThisPush {
+        containers_filled: containers_this_push_fills(&mutations),
+        created: HashMap::new(),
+    };
     let mut results = Vec::with_capacity(mutations.len());
     let mut off_limits = OffLimits::default();
     let mut stopped = None;
     for m in &mutations {
         let verdict = match off_limits.why_left_out(m) {
             Some(why) => Verdict::Unanswered { why },
-            None => match apply(api, &mut tree, m, &containers_filled) {
-                Ok(remote_id) => Verdict::Accepted { remote_id },
+            None => match apply(api, &mut tree, m, &this_push) {
+                Ok(remote_id) => {
+                    if let (true, Some(id)) = (m.op == "create", &remote_id) {
+                        this_push.created.insert(m.oid.clone(), id.clone());
+                    }
+                    Verdict::Accepted { remote_id }
+                }
                 Err(Failure::RefusedWithoutAVerdict(why)) => {
                     Verdict::Refused { why, unasked: true }
                 }
@@ -76,9 +88,9 @@ fn apply(
     api: &impl TodoistSync,
     tree: &mut Tree,
     m: &Mutation,
-    containers_filled: &[String],
+    this_push: &ThisPush,
 ) -> Result<Option<String>, Failure> {
-    let plan = plan_for(tree, m, containers_filled)?;
+    let plan = plan_for(tree, m, this_push)?;
     let written = match plan.commands.is_empty() {
         true => None,
         false => Some(send_every_command(api, &plan.commands)?),

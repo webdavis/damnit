@@ -28,6 +28,7 @@ pub(super) fn plan(
 ) -> Result<Plan, UseCaseError> {
     let remote_tracking: &dyn RemoteTrackingRepository = store;
     let containers = Containers::new(store, &changes)?;
+    let mut creating = BTreeSet::new();
     let mut plan = Plan {
         mutations: Vec::new(),
         skipped: 0,
@@ -42,13 +43,17 @@ pub(super) fn plan(
         match mutation_for(remote_tracking, caps, remote, &change, &differing)? {
             Some(mut mutation) => {
                 if let (true, Some(object)) = (places(&mutation), &mutation.object) {
-                    match containers.place(remote_tracking, &remote.name, object)? {
+                    match containers.place(remote_tracking, &remote.name, object, &creating)? {
                         Placement::Named(container) => mutation.container_remote_id = container,
+                        Placement::CreatedThisPush(parent) => mutation.container_oid = Some(parent),
                         Placement::Held(why) => {
                             plan.unplaced.push((mutation.oid, why));
                             continue;
                         }
                     }
+                }
+                if mutation.op == MutationOp::Create {
+                    creating.insert(mutation.oid.clone());
                 }
                 plan.mutations.push(mutation);
             }
@@ -119,6 +124,7 @@ fn mutation_for(
         idempotency_key: String::new(),
         remote_id,
         container_remote_id: None,
+        container_oid: None,
         object: change.after().cloned(),
         fields,
     }))

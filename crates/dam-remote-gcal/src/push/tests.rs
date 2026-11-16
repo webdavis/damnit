@@ -7,6 +7,7 @@ fn mutation(oid: &str, op: &str) -> Mutation {
         idempotency_key: "k".into(),
         remote_id: None,
         container_remote_id: None,
+        container_oid: None,
         object: None,
         fields: vec![],
     }

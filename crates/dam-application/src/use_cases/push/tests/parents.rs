@@ -108,3 +108,27 @@ fn an_object_dam_cannot_place_between_two_namesakes_is_held_with_the_reason() {
     );
     assert!(s.store.push_retries(&todoist()).unwrap().contains(&oid(3)));
 }
+
+#[test]
+fn a_task_under_a_parent_this_push_creates_names_that_parent_by_its_oid() {
+    let s = two_namesakes();
+    s.committed(Object::Task(task_in(5, "S", "Home/")))
+        .committed(Object::Task(held_by(3, "a", "Home/S/", 5)));
+    let (pushed, failed) = pushed(&s);
+    assert!(failed.is_empty(), "{failed:?}");
+    let named_by_oid: Vec<(Oid, Option<String>, Option<Oid>)> = pushed
+        .borrow()
+        .iter()
+        .map(|m| {
+            (
+                m.oid.clone(),
+                m.container_remote_id.clone(),
+                m.container_oid.clone(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        named_by_oid,
+        vec![(oid(5), None, None), (oid(3), None, Some(oid(5)))]
+    );
+}

@@ -14,6 +14,7 @@ fn update(subject: &str, body: &str, fields: Vec<Field>) -> RemoteMutation {
         idempotency_key: String::new(),
         remote_id: Some("r1".into()),
         container_remote_id: None,
+        container_oid: None,
         object: Some(Object::Task(task)),
         fields,
     }

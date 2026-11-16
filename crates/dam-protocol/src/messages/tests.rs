@@ -121,6 +121,7 @@ fn push_round_trips_the_fixtures() {
         idempotency_key: "0102030a-0b0c-4d0e-8f10-111213141500".into(),
         remote_id: Some("r1".into()),
         container_remote_id: None,
+        container_oid: None,
         object: Some(milk("buy oat milk", true)),
         fields: vec!["subject".into(), "done".into()],
     };

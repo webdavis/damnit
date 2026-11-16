@@ -28,6 +28,7 @@ pub struct RemoteMutation {
     pub idempotency_key: String,
     pub remote_id: Option<String>,
     pub container_remote_id: Option<String>,
+    pub container_oid: Option<Oid>,
     pub object: Option<Object>,
     pub fields: Vec<Field>,
 }

@@ -2,7 +2,7 @@ use crate::support;
 
 use dam_application::RemoteTrackingRepository;
 use dam_application::testing::{Scenario, oid, remotes_launched_by, task_in, todoist};
-use dam_domain::Object;
+use dam_domain::{Object, Oid, Task};
 use dam_helper::testing;
 use serde_json::json;
 use support::real_helper::{FRESH_HELPER_PROCESSES_TRIED, the_real_helper_against};
@@ -20,6 +20,12 @@ fn old_p_held_upstream_with_nothing_under_it() -> Held {
     )
 }
 
+fn child_of(byte: u8, subject: &str, path: &str, parent: &Oid) -> Task {
+    let mut child = task_in(byte, subject, path);
+    child.base.parent = Some(parent.clone());
+    child
+}
+
 #[test]
 fn a_child_under_a_new_namesake_of_a_removed_parent_lands_under_the_new_one_and_survives() {
     let _guard = testing::guard(
@@ -34,7 +40,7 @@ fn a_child_under_a_new_namesake_of_a_removed_parent_lands_under_the_new_one_and_
             .pushed();
         s.deleted(&old)
             .working(Object::Task(task_in(2, "P", "Home/Now/")))
-            .committed(Object::Task(task_in(3, "c", "Home/Now/P/")));
+            .committed(Object::Task(child_of(3, "c", "Home/Now/P/", &new)));
         let (server, upstream) = serve(old_p_held_upstream_with_nothing_under_it());
         let dir = tempfile::tempdir().unwrap();
         let launcher = the_real_helper_against(&server.base, dir.path());
