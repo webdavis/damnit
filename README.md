@@ -244,12 +244,14 @@ and `dam edit` carry `category` and `overdue`.
 starts no helper and writes nothing. It needs one `dam pull` or `dam push` with that remote after
 upgrading; until then it says the remote is not known.
 
-`--due`, `--deadline`, `--start` and `--end` all read the same words, in any case: `today`,
+`--due`, `--deadline`, `--start`, `--end` and `--focus` all read the same words, in any case:
+`today`, `today+3` or `today-1` for that many days on or back, `now+2h` for a time from now,
 `tomorrow`, a weekday (`mon` or `monday`, meaning its next occurrence after today, so naming today's
 own weekday is a week out), `next mon` for that same day, `in 3 days`, `in 2 weeks`, `in 1 month`,
 `YYYY-MM-DD`, and `YYYY-MM-DDTHH:MM` or an RFC 3339 time such as `2026-09-25T09:00:00-04:00`
 where a time makes sense. A deadline is a whole day, so a time given to `--deadline` is dropped.
-Anything else exits 2 with a message naming the accepted forms.
+A date to set is one day or instant, so a period such as `2026-11` or `week`, a span or `on:thu`
+exits 2 with a message naming the accepted forms.
 
 `--recurrence` takes `every [N] day|week|month|year`, then `on mon,thu` for a weekly rule or, for a
 monthly one, `on 1,15` or `on 1tue,-1fri` (the first Tuesday and the last Friday; `1` to `5` and

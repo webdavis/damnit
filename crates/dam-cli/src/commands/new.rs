@@ -135,6 +135,8 @@ pub(crate) mod required;
 pub(crate) mod templated;
 
 #[cfg(test)]
+mod date_tests;
+#[cfg(test)]
 mod field_tests;
 #[cfg(test)]
 mod tests;

@@ -50,7 +50,14 @@ fn every_date_flag_accepts_the_words_and_refuses_anything_else() {
         let document: serde_json::Value = serde_json::from_str(&said).unwrap();
         assert_eq!(document["error"]["kind"], "usage", "{said}");
         let message = document["error"]["message"].as_str().unwrap();
-        for form in ["today", "next <weekday>", "in <n> days", "YYYY-MM-DD"] {
+        for form in [
+            "today",
+            "today+3",
+            "now+2h",
+            "next mon",
+            "in 3 days",
+            "2026-11-20",
+        ] {
             assert!(message.contains(form), "{flag}: {message}");
         }
     }

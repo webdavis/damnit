@@ -36,7 +36,7 @@ pub(crate) struct EditArgs {
     #[arg(
         long,
         conflicts_with = "no_due",
-        help = "Set the due date: a date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM"
+        help = "Set the due date: a date word, today+N, now+LENGTH, YYYY-MM-DD or YYYY-MM-DDTHH:MM"
     )]
     pub(crate) due: Option<String>,
     #[arg(long, help = "Clear the due date")]

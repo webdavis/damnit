@@ -33,7 +33,7 @@ pub(crate) struct NewArgs {
     pub(crate) parent: Option<String>,
     #[arg(
         long,
-        help = "Set the due date: a date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM"
+        help = "Set the due date: a date word, today+N, now+LENGTH, YYYY-MM-DD or YYYY-MM-DDTHH:MM"
     )]
     pub(crate) due: Option<String>,
     #[arg(

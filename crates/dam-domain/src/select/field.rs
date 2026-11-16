@@ -52,6 +52,13 @@ impl SelectField {
         shapes
     }
 
+    pub(crate) fn date_shapes(&self) -> Vec<&'static str> {
+        match self.ty {
+            FieldType::Date => FieldType::Date.shapes().to_vec(),
+            _ => Vec::new(),
+        }
+    }
+
     pub fn takes_a_list(&self) -> bool {
         !matches!(
             self.ty,
