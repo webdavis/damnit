@@ -8,6 +8,7 @@ local M = {}
 ---@field objects? damnit.Object[]
 ---@field rows? damnit.Row[] rows already arranged, drawn as they are
 ---@field uncounted? boolean the header reads the title alone
+---@field key? string names the header from one draw to the next; the title when left out
 ---@field error? damnit.Error
 
 ---@param segment damnit.Segment
@@ -18,7 +19,7 @@ local function header_of(segment)
   end
   local header = segment.uncounted and segment.title
     or ("%s (%d)"):format(segment.title, #(segment.rows or segment.objects))
-  return { header = header, depth = 0, key = segment.title }
+  return { header = header, depth = 0, key = segment.key or segment.title }
 end
 
 ---@param segments damnit.Segment[]

@@ -871,6 +871,10 @@ its events with their time and `busy`, then its tasks due, which take every list
 window holds today, the overdue tasks come first. `>` and `<` move a day or week later or
 earlier, `T` comes back, and `<CR>` opens an event.
 
+`:Dam plan` lists the first 50 open, unblocked tasks with no focus mark, then the marks
+of today and each of the six days after it. `>` moves the marks of the target rows a day later,
+an unplanned task to today; `<` moves them a day earlier and clears today's.
+
 `:Dam capture` opens the `dam new` prompt with the line under the cursor as the subject, its
 comment leader and any `TODO:` taken off, and `--body "<file>:<line>"` after the cursor. A range
 or a selection joins its lines. dam runs in the file's folder, so the task lands in that
