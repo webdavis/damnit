@@ -60,8 +60,8 @@ pub(super) fn this_clone(
 ) -> Result<Report, CliError> {
     let config = file.load()?.config;
     let setting = match in_force(switches, clone, &config)? {
-        (on, From::Default) => Setting::by_default(Value::Flag(on)),
-        (on, _) => Setting::set(Value::Flag(on)),
+        (now, From::Default) => Setting::by_default(Value::Flag(now.runs())),
+        (now, _) => Setting::set(Value::Flag(now.runs())),
     };
     report(&Got {
         key: KEY,

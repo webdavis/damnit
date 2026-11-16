@@ -45,7 +45,7 @@ pub use items::ItemRepository;
 pub use notices::{DroppedBecause, MissingTask, Notice, NoticeRepository};
 pub use origins::OriginRepository;
 pub use progress::{NoProgress, Progress, Step, waited_on};
-pub use project_hook_switches::ProjectHookSwitches;
+pub use project_hook_switches::{ProjectHookSwitch, ProjectHookSwitches};
 pub use pulled::{Pull, PulledChange};
 pub use repositories::Store;
 pub use run_records::{LastRun, RunEnding, RunRecords};

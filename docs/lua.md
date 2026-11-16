@@ -76,17 +76,29 @@ A project may ship hooks in `.damhooks/` beside its `.dam.lua`, one file per eve
 hook file above. They are off until you turn them on, and while off dam never loads, runs or reads
 the code in them.
 
-Turning them on runs that repository's code as you, with full Lua, now and after every pull that
-changes it. dam does not ask again when the files change. Read them first.
+Turning them on runs that repository's code as you, with full Lua. Read them first. dam remembers
+every file and folder in `.damhooks/`, at every depth, as they were when you turned them on,
+beside its store. When any of them changes, is added, removed or renamed, the project's hooks stop
+running: yours still run, the command goes on, and dam warns once on standard error. Look at the
+files with `dam hook list`, then run `dam config set project.hooks true` again to turn them on as
+they are now. A clone turned
+on before dam remembered its files counts as changed. A folder of more than 1000 entries or 8 MiB
+is too large to check, and its hooks never run.
+
+The fingerprint covers every file in `.damhooks/`. A hook that loads code from outside that folder
+is trusted as written. `require` in a project's hook finds modules only in `.damhooks/`, as
+`require('lib.util')` for `.damhooks/lib/util.lua`, and loads them from the bytes dam checked.
 
 | Command | Turns on |
 | --- | --- |
 | `dam config set project.hooks true`, inside the project | This project, in this clone only. Kept by dam beside its store, never in the repository. |
 | `dam config set --global project.hooks true` | Every project. Written as `project.hooks` in `config.lua`. |
 
-This clone's setting wins over `config.lua`, so `false` here keeps one project off. `dam config
+This clone's setting wins over `config.lua`, so `false` here keeps one project off, and a clone
+whose files changed since it was turned on runs none even with `--global` on. `--global` remembers
+no files: it is a yes to every project's hooks as they are, then and after every pull. `dam config
 unset project.hooks` forgets this clone's setting. `dam config list` shows whether a project's
-hooks are on and where that comes from. Nothing in `.dam.lua`, `.damhooks/` or `.damtemplates/`
+hooks are on, where that comes from, or `changed since turned on`. Nothing in `.dam.lua`, `.damhooks/` or `.damtemplates/`
 can turn them on; a `project` key in `.dam.lua` is refused.
 
 A project's hook runs only for a command you run inside that project, and only for a task under
@@ -97,10 +109,13 @@ pulled tasks under the project's path; the pull's answer counts both hooks' runs
 A token's commands run no hook at all, yours or a project's.
 
 `dam hook list` inside a project lists its files after yours as `.damhooks/<event>.lua`. While
-they are off it shows each as `off`, without loading it, and says how to turn them on.
+they are off it shows each as `off`, without loading it, and says how to turn them on. When they
+changed since you turned them on, it shows each file as `changed`, `new`, `removed` or
+`unchanged`, without loading any.
 `dam hook run <hook>` runs the project's hook too once they are on, only over tasks under the
 project's path. A project's hook names its `.damhooks/` file in every warning and error.
-A file in `.damhooks/` whose name holds a control character is never loaded or shown;
+A file in `.damhooks/` whose name holds a control character, or a hook file that is a symbolic
+link, is never loaded or shown;
 `dam hook list` counts it. A project's file that does not load is named without quoting it, and a
 control character in what a project's hook raises or returns prints as �, U+FFFD.
 `dam log` names it by its event, as it names your own.

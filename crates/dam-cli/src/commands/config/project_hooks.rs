@@ -1,14 +1,20 @@
 use std::path::Path;
 
-use dam_application::{Config, ProjectHookSwitches, SettingChange, SettingKey, SettingValue};
+use dam_adapters::ProjectHookFolder;
+use dam_application::{
+    Config, ProjectHookSwitch, ProjectHookSwitches, SettingChange, SettingKey, SettingValue,
+};
 
 use super::set::{bad_value, changed, refused};
 use super::setting::{Setting, Value};
 use crate::error::CliError;
 use crate::output::Report;
+use crate::project_hooks::{ProjectHookAnswer, answer};
 use crate::project_scope::Standing;
 
 pub(super) const KEY: &str = "project.hooks";
+
+const TOO_LARGE_TO_TURN_ON: &str = "this project's .damhooks folder holds more than dam checks, 1000 entries or 8 MiB, so dam cannot turn its hooks on";
 
 pub(super) fn this_clone<'a>(key: &str, global: bool, standing: &'a Standing) -> Option<&'a Path> {
     match standing {
@@ -29,12 +35,20 @@ pub(super) fn set(
         Some(Err(bad)) => return Err(bad_value(bad)),
         None => None,
     };
+    let switch = match on {
+        Some(true) => match ProjectHookFolder::read(clone)?.fingerprint()? {
+            Some(fingerprint) => Some(ProjectHookSwitch::on_for(fingerprint)),
+            None => return Err(CliError::Usage(TOO_LARGE_TO_TURN_ON.into())),
+        },
+        Some(false) => Some(ProjectHookSwitch::off()),
+        None => None,
+    };
     let old = switches.switch(clone)?;
-    switches.turn(clone, on)?;
+    switches.turn(clone, switch)?;
     changed(
         &SettingChange {
             key: KEY.into(),
-            old: old.map(|on| on.to_string()),
+            old: old.map(|old| old.on.to_string()),
             new: on.map(|on| on.to_string()),
         },
         None,
@@ -61,14 +75,13 @@ pub(super) fn in_force(
     switches: &dyn ProjectHookSwitches,
     clone: &Path,
     config: &Config,
-) -> Result<(bool, From), CliError> {
-    let this_clone = switches.switch(clone)?;
-    let from = match (this_clone, config.project_hooks) {
+) -> Result<(ProjectHookAnswer, From), CliError> {
+    let from = match (switches.switch(clone)?, config.project_hooks) {
         (Some(_), _) => From::ThisClone,
         (None, Some(_)) => From::ConfigLua,
         (None, None) => From::Default,
     };
-    Ok((config.project_hooks_on(this_clone), from))
+    Ok((answer(switches, clone, config)?, from))
 }
 
 pub(super) fn personal(config: &Config) -> (String, Setting) {

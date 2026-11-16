@@ -2,9 +2,43 @@ use std::collections::BTreeMap;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use dam_application::{ConfigError, ProjectHookSwitches};
+use dam_application::{ConfigError, HookFingerprint, ProjectHookSwitch, ProjectHookSwitches};
+use serde::{Deserialize, Serialize};
 
 const RECORD: &str = "project-hooks.json";
+
+#[derive(Serialize, Deserialize)]
+#[serde(untagged)]
+enum Kept {
+    BeforeFingerprints(bool),
+    Switch {
+        on: bool,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        files: Option<BTreeMap<String, String>>,
+    },
+}
+
+impl Kept {
+    fn of(switch: ProjectHookSwitch) -> Kept {
+        Kept::Switch {
+            on: switch.on,
+            files: switch.fingerprint.map(|f| f.files().clone()),
+        }
+    }
+
+    fn switch(self) -> ProjectHookSwitch {
+        match self {
+            Kept::BeforeFingerprints(on) => ProjectHookSwitch {
+                on,
+                fingerprint: None,
+            },
+            Kept::Switch { on, files } => ProjectHookSwitch {
+                on,
+                fingerprint: files.map(HookFingerprint::from_files),
+            },
+        }
+    }
+}
 
 pub struct ProjectHookSwitchFile {
     record: PathBuf,
@@ -17,7 +51,7 @@ impl ProjectHookSwitchFile {
         }
     }
 
-    fn read(&self) -> Result<BTreeMap<String, bool>, ConfigError> {
+    fn read(&self) -> Result<BTreeMap<String, Kept>, ConfigError> {
         let unreadable = |why: String| ConfigError::Unreadable {
             path: self.record.clone(),
             why,
@@ -29,7 +63,7 @@ impl ProjectHookSwitchFile {
         }
     }
 
-    fn write(&self, switches: &BTreeMap<String, bool>) -> Result<(), ConfigError> {
+    fn write(&self, switches: &BTreeMap<String, Kept>) -> Result<(), ConfigError> {
         let unwritable = |e: std::io::Error| ConfigError::Unwritable {
             path: self.record.clone(),
             why: e.to_string(),
@@ -54,14 +88,14 @@ fn key_of(project: &Path) -> String {
 }
 
 impl ProjectHookSwitches for ProjectHookSwitchFile {
-    fn switch(&self, project: &Path) -> Result<Option<bool>, ConfigError> {
-        Ok(self.read()?.get(&key_of(project)).copied())
+    fn switch(&self, project: &Path) -> Result<Option<ProjectHookSwitch>, ConfigError> {
+        Ok(self.read()?.remove(&key_of(project)).map(Kept::switch))
     }
 
-    fn turn(&self, project: &Path, on: Option<bool>) -> Result<(), ConfigError> {
+    fn turn(&self, project: &Path, switch: Option<ProjectHookSwitch>) -> Result<(), ConfigError> {
         let mut switches = self.read()?;
-        match on {
-            Some(on) => switches.insert(key_of(project), on),
+        match switch {
+            Some(switch) => switches.insert(key_of(project), Kept::of(switch)),
             None => switches.remove(&key_of(project)),
         };
         self.write(&switches)

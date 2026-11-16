@@ -481,7 +481,9 @@ itself. It answers `ran`, `changed`, `failed` and `not_reached`.
 A project may ship hooks in `.damhooks/`. They stay off, never loaded, until you turn them on:
 `dam config set project.hooks true` inside the project for this clone, or
 `dam config set --global project.hooks true` for every project. Turning them on runs that
-repository's code as you, now and after every pull. They run after yours, only for tasks under the
+repository's code as you. A clone's hooks stop running when their files change, until you look
+and turn them on again; `--global` is a yes to every project's files as they are, now and after
+every pull. They run after yours, only for tasks under the
 project's path and only for commands run inside it. `docs/lua.md` says more.
 
 ## Reading it from a program

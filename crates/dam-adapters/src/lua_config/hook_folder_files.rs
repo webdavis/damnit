@@ -4,34 +4,74 @@ use dam_application::ConfigError;
 
 use super::evaluate::ErrorText;
 use super::hook_folder::lua_files;
+use super::hook_tree::{HookTree, TreeEntry};
 
-pub(in crate::lua_config) struct HookFolder<'a> {
-    pub(super) path: &'a Path,
-    pub(super) files: Vec<PathBuf>,
+pub(in crate::lua_config) struct HookFolder {
+    pub(super) path: PathBuf,
+    pub(super) files: Vec<HookSource>,
     pub(super) unshown: usize,
     pub(super) error_text: ErrorText,
 }
 
-impl HookFolder<'_> {
-    pub(in crate::lua_config) fn personal(path: &Path) -> Result<HookFolder<'_>, ConfigError> {
+pub(in crate::lua_config) struct HookSource {
+    pub(super) path: PathBuf,
+    pub(super) bytes: std::io::Result<Vec<u8>>,
+}
+
+impl HookFolder {
+    pub(in crate::lua_config) fn personal(path: &Path) -> Result<HookFolder, ConfigError> {
         Ok(HookFolder {
-            path,
-            files: lua_files(path)?,
+            path: path.to_path_buf(),
+            files: read(lua_files(path)?),
             unshown: 0,
             error_text: ErrorText::QuotesTheFile,
         })
     }
 
-    pub(in crate::lua_config) fn project(path: &Path) -> Result<HookFolder<'_>, ConfigError> {
-        let (files, unshown): (Vec<PathBuf>, Vec<PathBuf>) =
-            lua_files(path)?.into_iter().partition(|file| shown(file));
-        Ok(HookFolder {
-            path,
-            files,
-            unshown: unshown.len(),
+    pub(in crate::lua_config) fn project(path: &Path, tree: &HookTree) -> HookFolder {
+        let mut folder = HookFolder {
+            path: path.to_path_buf(),
+            files: Vec::new(),
+            unshown: 0,
             error_text: ErrorText::NeverQuotesTheFile,
-        })
+        };
+        let hook_files = tree.entries.iter().filter(|(relative, _)| {
+            relative.parent() == Some(Path::new("")) && relative.extension() == Some("lua".as_ref())
+        });
+        for (relative, entry) in hook_files {
+            match entry {
+                TreeEntry::File(bytes) if shown(relative) => folder.files.push(HookSource {
+                    path: path.join(relative),
+                    bytes: Ok(bytes.clone()),
+                }),
+                TreeEntry::Folder => {}
+                _ => folder.unshown += 1,
+            }
+        }
+        folder
     }
+}
+
+impl HookSource {
+    pub(super) fn text(&self) -> std::io::Result<&str> {
+        let bytes = self.bytes.as_ref().map_err(clone_of)?;
+        std::str::from_utf8(bytes)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+    }
+}
+
+fn clone_of(error: &std::io::Error) -> std::io::Error {
+    std::io::Error::new(error.kind(), error.to_string())
+}
+
+fn read(files: Vec<PathBuf>) -> Vec<HookSource> {
+    files
+        .into_iter()
+        .map(|path| HookSource {
+            bytes: std::fs::read(&path),
+            path,
+        })
+        .collect()
 }
 
 fn shown(file: &Path) -> bool {

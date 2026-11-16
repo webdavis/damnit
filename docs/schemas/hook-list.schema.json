@@ -139,6 +139,42 @@
                 "const": true
               }
             }
+          },
+          {
+            "type": "object",
+            "required": [
+              "hook",
+              "file",
+              "project",
+              "changed"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "hook": {
+                "enum": [
+                  "task_new",
+                  "task_changed",
+                  "task_done",
+                  "task_pulled",
+                  null
+                ]
+              },
+              "file": {
+                "type": "string"
+              },
+              "project": {
+                "const": true
+              },
+              "changed": {
+                "enum": [
+                  "changed",
+                  "new",
+                  "removed",
+                  "unchanged"
+                ],
+                "description": "How this file differs from the files as they were when this clone turned its hooks on; the hooks did not run."
+              }
+            }
           }
         ]
       }
@@ -146,7 +182,7 @@
     "unshown_files": {
       "type": "integer",
       "minimum": 1,
-      "description": "Inside a project, how many .lua files in .damhooks have a name holding a control character or not valid UTF-8; dam never loads or shows them. Left out when there are none."
+      "description": "Inside a project, how many .lua files in .damhooks are symbolic links or have a name holding a control character or not valid UTF-8; dam never loads or shows them. Left out when there are none."
     }
   }
 }

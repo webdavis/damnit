@@ -67,8 +67,8 @@ pub(super) fn run(
     let config = file.load()?.config;
     let project = match standing {
         Standing::Inside(project) => {
-            let (hooks, from) = in_force(switches, &project.folder, &config)?;
-            Some(ProjectEntry::of(project).with_hooks(hooks, from.as_str()))
+            let (now, from) = in_force(switches, &project.folder, &config)?;
+            Some(ProjectEntry::of(project).with_hooks(&now, from.as_str()))
         }
         _ => None,
     };

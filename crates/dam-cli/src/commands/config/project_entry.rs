@@ -3,6 +3,8 @@ use std::collections::BTreeMap;
 use dam_application::Project;
 use serde::Serialize;
 
+mod hooks;
+
 #[derive(Serialize)]
 pub(super) struct ProjectEntry {
     file: String,
@@ -16,6 +18,9 @@ pub(super) struct ProjectEntry {
     sections: Vec<String>,
     branch_label: bool,
     hooks: bool,
+    hooks_changed: bool,
+    #[serde(skip)]
+    hooks_too_large: bool,
     hooks_from: &'static str,
     done_children: Option<String>,
 }
@@ -78,22 +83,11 @@ impl ProjectEntry {
             sections: settings.sections.clone(),
             branch_label: settings.branch_label,
             hooks: false,
+            hooks_changed: false,
+            hooks_too_large: false,
             hooks_from: "default",
             done_children: settings.done_children.as_ref().map(|d| d.words()),
         }
-    }
-
-    pub(super) fn with_hooks(self, hooks: bool, hooks_from: &'static str) -> ProjectEntry {
-        ProjectEntry {
-            hooks,
-            hooks_from,
-            ..self
-        }
-    }
-
-    pub(super) fn hooks_line(&self) -> String {
-        let on = if self.hooks { "on" } else { "off" };
-        format!("{on} (from {})", self.hooks_from)
     }
 
     pub(super) fn file(&self) -> &str {
