@@ -97,3 +97,33 @@
 
 ---@class damnit.ListAnswer
 ---@field objects damnit.Object[]
+
+---@class damnit.StatusChange
+---@field oid string
+---@field op "create"|"update"|"delete"
+---@field fields string[]
+---@field kind "task"|"event"
+---@field subject string
+---@field path string
+
+---@class damnit.StatusWaiting: damnit.StatusChange
+---@field hash string
+---@field item "new"|"change"|"removal"
+---@field from string
+---@field age integer
+
+---@class damnit.StatusSet
+---@field set string
+---@field from string
+---@field count integer
+---@field age integer
+
+---@class damnit.StatusDoc
+---@field conflicts { oid: string, remote: string, ours?: damnit.Object, theirs?: damnit.Object }[]
+---@field staged damnit.StatusChange[]
+---@field unstaged damnit.StatusChange[]
+---@field waiting damnit.StatusWaiting[]
+---@field sets damnit.StatusSet[]
+---@field unpushed { remote: string, commits: integer }[]
+---@field notices { kind: string, remote?: string }[]
+---@field warnings string[]
