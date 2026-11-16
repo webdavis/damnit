@@ -99,7 +99,7 @@ character anywhere in the file, a wrong type or an unknown key refuses the file.
 | `new_task` | `labels`, `priority`, `due`, `deadline` | what `dam new` gives a task the flags and the template leave unset |
 | `required` | any of `"due"`, `"labels"`, `"priority"`, `"body"`, `"deadline"` | `dam new` refuses a task left without one, after the template and `new_task`, naming the field and its flag |
 | `ls` | a query such as `"@cli & p1"` | what `dam ls` shows when no query is given, narrowed to the project; a query you give replaces it |
-| `filter` | `<name> = { query = ".." }`, never a function | saved filters found before your own of the same name; `dam filter list` marks them as the project's |
+| `filter` | `<name> = { query = ".." }`, never a function | saved filters for `dam ls` and `dam agenda`, found before your own of the same name; `dam filter list` marks them as the project's |
 | `minimum_dam` | a version such as `"0.3.0"` | an older `dam` refuses the file before it reads any other key |
 
 Inside the folder, `path` is where `dam new` starts a task's `--path`, and `dam ls`, `dam agenda`
