@@ -229,6 +229,11 @@ own weekday is a week out), `next mon` for that same day, `in 3 days`, `in 2 wee
 where a time makes sense. A deadline is a whole day, so a time given to `--deadline` is dropped.
 Anything else exits 2 with a message naming the accepted forms.
 
+`--recurrence` takes `every [N] day|week|month|year`, then `on mon,thu` for a weekly rule or, for a
+monthly one, `on 1,15` or `on 1tue,-1fri` (the first Tuesday and the last Friday; `1` to `5` and
+`-1` to `-5`, and a month without that day is skipped), then `until YYYY-MM-DD`. `every!` counts
+from the day the task is done.
+
 Every verb that takes an oid takes it whole or as a prefix of at least 4 hex characters that names
 one object in the working layer. An object only the history holds, such as one you removed, takes
 its full oid.

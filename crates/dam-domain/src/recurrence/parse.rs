@@ -1,9 +1,7 @@
 use std::num::NonZeroU32;
 
-use jiff::civil::Weekday;
-
 use super::{Anchor, Freq, Rule, RuleError, WIDEST_WEEKLY_INTERVAL_WITH_WEEKDAYS};
-use crate::weekday::{parse_weekday, weekday_text};
+use crate::weekday::weekday_text;
 
 impl Rule {
     pub fn parse(text: &str) -> Result<Rule, RuleError> {
@@ -43,24 +41,13 @@ impl Rule {
             interval,
             by_day: vec![],
             by_month_day: vec![],
+            by_nth_weekday: vec![],
             until: None,
             anchor,
         };
         while let Some(word) = words.next() {
             match word {
-                "on" => {
-                    let list = words.next().ok_or(RuleError::Empty)?;
-                    for item in list.split(',') {
-                        if let Ok(day) = item.parse::<i8>() {
-                            if !(1..=31).contains(&day) {
-                                return Err(RuleError::BadDay(item.to_string()));
-                            }
-                            rule.by_month_day.push(day);
-                        } else {
-                            rule.by_day.push(weekday(item)?);
-                        }
-                    }
-                }
+                "on" => rule.take_on_list(words.next().ok_or(RuleError::Empty)?)?,
                 "until" => {
                     let raw = words.next().ok_or(RuleError::Empty)?;
                     rule.until = Some(
@@ -75,8 +62,14 @@ impl Rule {
         rule.by_day.dedup();
         rule.by_month_day.sort_unstable();
         rule.by_month_day.dedup();
+        rule.by_nth_weekday.sort_by_key(|d| d.sort_key());
+        rule.by_nth_weekday.dedup();
+        rule.refuse_mixed_day_kinds()?;
         if !rule.by_day.is_empty() && freq != Freq::Weekly {
             return Err(RuleError::WeekdaysWantWeekly(rule.weekday_list()));
+        }
+        if !rule.by_nth_weekday.is_empty() && freq != Freq::Monthly {
+            return Err(RuleError::NthWeekdaysWantMonthly(rule.nth_weekday_list()));
         }
         if !rule.by_month_day.is_empty() && freq != Freq::Monthly {
             return Err(RuleError::MonthDaysWantMonthly(rule.month_day_list()));
@@ -107,25 +100,24 @@ impl Rule {
         if !self.by_month_day.is_empty() {
             out.push_str(&format!(" on {}", self.month_day_list()));
         }
+        if !self.by_nth_weekday.is_empty() {
+            out.push_str(&format!(" on {}", self.nth_weekday_list()));
+        }
         if let Some(until) = self.until {
             out.push_str(&format!(" until {until}"));
         }
         out
     }
 
-    fn weekday_list(&self) -> String {
+    pub(super) fn weekday_list(&self) -> String {
         let days: Vec<&str> = self.by_day.iter().map(|d| weekday_text(*d)).collect();
         days.join(",")
     }
 
-    fn month_day_list(&self) -> String {
+    pub(super) fn month_day_list(&self) -> String {
         let days: Vec<String> = self.by_month_day.iter().map(|d| d.to_string()).collect();
         days.join(",")
     }
-}
-
-fn weekday(text: &str) -> Result<Weekday, RuleError> {
-    parse_weekday(text).ok_or_else(|| RuleError::BadDay(text.to_string()))
 }
 
 #[cfg(test)]
