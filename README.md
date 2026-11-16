@@ -870,6 +870,9 @@ it goes: `host = "auto"` sends it to another pane when Neovim runs in Rex, else 
 clipboard; `"rex"` or `"clipboard"` picks one. When Rex refuses it, the brief is copied instead.
 The Rex host was written from Rex's help and sends the brief as one paste, then Enter.
 
+`:checkhealth damnit` says whether dam was found and its version fits the plugin, shows each
+check of `dam doctor` with dam's advice, and names the hand-off host.
+
 `require("damnit").statusline()` gives short counts for a statusline, such as `!2 ?1 M3 S1 ^2`:
 overdue, waiting, unstaged, staged and unpushed commits, using the `signs` characters. It is
 empty when all are zero. It never waits on dam: it reads again after a change, when Neovim gains

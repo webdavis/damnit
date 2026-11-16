@@ -29,6 +29,7 @@
 ---@field stdin? string
 ---@field key? string
 ---@field progress? boolean
+---@field report? boolean an exit 1 with a JSON answer on stdout is still the answer, as for dam doctor
 
 ---@class damnit.Handle
 ---@field cancel fun()

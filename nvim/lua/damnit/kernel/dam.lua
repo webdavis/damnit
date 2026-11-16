@@ -18,11 +18,11 @@ function M.new(options, process, queue, say)
   return setmetatable({ spawn = spawned, handshake = handshake.new(spawned), queue = queue, say = say, reads = 0 }, Dam)
 end
 
-local function answer_of(exit, err)
+local function answer_of(exit, err, report)
   if err then
     return nil, err
   end
-  if exit.code ~= 0 then
+  if exit.code ~= 0 and not (report and exit.code == 1) then
     return nil, errors.of_exit(exit.code, exit.stderr)
   end
   local ok, decoded = pcall(vim.json.decode, exit.stdout, { luanil = { object = true, array = true } })
@@ -54,7 +54,7 @@ function Dam:call(call, done, shown)
       if shown then
         shown.stop("failed")
       end
-      done(answer_of(exit, spawn_err))
+      done(answer_of(exit, spawn_err, call.report))
     end)
   end)
   return {
