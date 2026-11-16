@@ -37,6 +37,9 @@ function M.new()
   fake.port = {
     run = function(argv, opts, on_exit)
       local reply = assert(fake.replies[verb_of(argv)], "the fake has no reply for " .. table.concat(argv, " "))
+      if type(reply) == "function" then
+        reply = reply(argv)
+      end
       local call = { argv = argv, cwd = opts.cwd, stdin = opts.stdin, reply = reply, on_exit = on_exit, killed = false }
       table.insert(fake.calls, call)
       if not reply.hold then

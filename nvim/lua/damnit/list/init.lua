@@ -1,4 +1,5 @@
 local buffer = require("damnit.list.buffer")
+local new_keys = require("damnit.list.new_keys")
 
 local M = {}
 
@@ -33,7 +34,15 @@ end
 ---@param open_task fun(oid: string, cwd: string)
 ---@return damnit.Feature
 function M.new(app, open_task)
-  local lists = buffer.new(app, open_task)
+  local quickadd = require("damnit.list.quickadd").new(app, require("damnit.kernel.prompt").new(app.queue))
+  local lists
+  lists = buffer.new(
+    app,
+    open_task,
+    new_keys.keys(app, quickadd, function()
+      return lists
+    end)
+  )
   return {
     open = function(view, cwd, smods)
       lists:open(view, cwd, smods)
@@ -42,6 +51,7 @@ function M.new(app, open_task)
       list = function(args, cmd)
         lists:open(args[1], vim.fn.getcwd(), cmd.smods)
       end,
+      new = new_keys.command(quickadd, lists),
     },
     complete = { list = view_names(app) },
   }

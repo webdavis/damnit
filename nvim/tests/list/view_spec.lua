@@ -36,4 +36,14 @@ return {
     local got = call({ kind = "event" })
     assert(vim.deep_equal(got.stdin, { kind = "event" }), vim.inspect(got))
   end,
+
+  ["a view's single path is the one folder it lists"] = function()
+    local views = { work = { path = "work/" }, both = { path = "a/,b/" }, listed = { path = { "home/" } } }
+    assert(view.single_path("work", views) == "work/")
+    assert(view.single_path("listed", views) == "home/")
+    assert(view.single_path("both", views) == nil)
+    assert(view.single_path("today", views) == nil)
+    assert(view.single_path(nil, views) == nil)
+    assert(view.single_path({ path = { "a/", "b/" } }, views) == nil)
+  end,
 }
