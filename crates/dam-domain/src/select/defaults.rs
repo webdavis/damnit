@@ -1,4 +1,5 @@
 use super::condition::Condition;
+use super::defaults_error::DefaultsError;
 use super::field::Has;
 use super::fields::{COMPLETED_AT, DONE, KIND};
 use super::filter::Filter;
@@ -8,6 +9,7 @@ use crate::Object;
 pub enum Command {
     List,
     Agenda,
+    HookRun,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -15,41 +17,6 @@ pub struct Scope {
     pub tasks: bool,
     pub events: bool,
     pub done: Option<bool>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum DefaultsError {
-    KindContradicts {
-        field: &'static str,
-    },
-    DoneContradicts {
-        field: &'static str,
-    },
-    BothKinds {
-        task_field: &'static str,
-        event_field: &'static str,
-    },
-    TaskFieldInAgenda {
-        field: &'static str,
-    },
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Fix {
-    Drop(&'static str),
-    UseAny,
-    UseList,
-}
-
-impl DefaultsError {
-    pub fn fix(&self) -> Fix {
-        match self {
-            DefaultsError::KindContradicts { .. } => Fix::Drop(KIND.key),
-            DefaultsError::DoneContradicts { .. } => Fix::Drop(DONE.key),
-            DefaultsError::BothKinds { .. } => Fix::UseAny,
-            DefaultsError::TaskFieldInAgenda { .. } => Fix::UseList,
-        }
-    }
 }
 
 impl Scope {
@@ -105,19 +72,28 @@ pub fn scope(filter: &Filter, command: Command) -> Result<Scope, DefaultsError> 
     {
         return Err(DefaultsError::DoneContradicts { field });
     }
-    if command == Command::Agenda {
-        if let Some(field) = task_field {
-            return Err(DefaultsError::TaskFieldInAgenda { field });
+    let only = |kinds| kind.filter(|k| *k == kinds).map(|_| KIND.key);
+    match command {
+        Command::Agenda => {
+            if let Some(field) = task_field.or(only((true, false))) {
+                return Err(DefaultsError::TaskFieldInAgenda { field });
+            }
         }
-        if kind == Some((true, false)) {
-            return Err(DefaultsError::TaskFieldInAgenda { field: KIND.key });
+        Command::HookRun => {
+            if let Some(field) = event_field.or(only((false, true))) {
+                return Err(DefaultsError::EventFieldInHookRun { field });
+            }
         }
+        Command::List => {}
     }
-    let (tasks, events) = kind
-        .or(event_field.map(|_| (false, true)))
-        .or(task_field.map(|_| (true, false)))
-        .or(names_both_kinds(filter).then_some((true, true)))
-        .unwrap_or((command == Command::List, command == Command::Agenda));
+    let (tasks, events) = match command {
+        Command::HookRun => (true, false),
+        _ => kind
+            .or(event_field.map(|_| (false, true)))
+            .or(task_field.map(|_| (true, false)))
+            .or(names_both_kinds(filter).then_some((true, true)))
+            .unwrap_or((command == Command::List, command == Command::Agenda)),
+    };
     let done = match (done, completed) {
         (Some((yes, no)), _) => (yes != no).then_some(yes),
         (None, Some(_)) => Some(true),

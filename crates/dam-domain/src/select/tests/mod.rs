@@ -8,6 +8,7 @@ mod fake;
 mod fields;
 mod filters;
 mod fixture;
+mod hook_defaults;
 mod negation;
 mod objects;
 mod on_days;
