@@ -1,0 +1,8 @@
+{
+  "name": "bugs",
+  "table": {
+    "labels": "bug",
+    "overdue": "true"
+  },
+  "file": "config.lua"
+}

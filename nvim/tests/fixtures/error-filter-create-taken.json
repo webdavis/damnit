@@ -1,0 +1,12 @@
+{
+  "error": {
+    "kind": "usage",
+    "rule": null,
+    "message": "filter bugs exists; run dam filter remove bugs first, or pick another name",
+    "oids": [],
+    "usage": {
+      "problem": "other",
+      "word": null
+    }
+  }
+}
