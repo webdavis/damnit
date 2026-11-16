@@ -1,7 +1,7 @@
 local M = {}
 
-local ORDER = { "labels", "category", "waits", "estimate", "deadline", "days", "due" }
-local DROPPED_FIRST = { "labels", "category", "waits", "estimate", "deadline", "days" }
+local ORDER = { "labels", "category", "path", "waits", "estimate", "deadline", "days", "due" }
+local DROPPED_FIRST = { "waits", "deadline", "category", "path", "estimate", "labels", "days" }
 local GAP = "  "
 
 M.gap = #GAP
@@ -66,6 +66,7 @@ local function cells_of(object, subjects)
   return {
     labels = { table.concat(labels, " "), "DamLabel" },
     category = { table.concat(category, " "), "DamCategory" },
+    path = { object.path, "DamMeta" },
     waits = { waits_on(object, subjects), "DamMeta" },
     estimate = { task.estimate and (task.estimate .. "m"), "DamMeta" },
     deadline = { task.deadline and ("deadline " .. task.deadline), "DamDue" },
@@ -75,21 +76,42 @@ local function cells_of(object, subjects)
 end
 
 ---@param rows damnit.Row[]
+---@return boolean
+local function one_path(rows)
+  local seen
+  for _, row in ipairs(rows) do
+    if row.object then
+      seen = seen or row.object.path
+      if row.object.path ~= seen then
+        return false
+      end
+    end
+  end
+  return true
+end
+
+---@param rows damnit.Row[]
+---@param without_path? boolean leave the path out, as when the rows are grouped by it
 ---@return damnit.Layout
-function M.layout(rows)
+function M.layout(rows, without_path)
   local subjects = {}
   for _, row in ipairs(rows) do
-    subjects[row.object.oid] = row.object.subject
+    if row.object then
+      subjects[row.object.oid] = row.object.subject
+    end
   end
   local layout = { cells = {}, widths = {} }
   for _, name in ipairs(ORDER) do
     layout.widths[name] = 0
   end
   for n, row in ipairs(rows) do
-    layout.cells[n] = cells_of(row.object, subjects)
+    layout.cells[n] = row.object and cells_of(row.object, subjects) or {}
     for name, cell in pairs(layout.cells[n]) do
       layout.widths[name] = math.max(layout.widths[name], vim.fn.strdisplaywidth(cell[1] or ""))
     end
+  end
+  if without_path or one_path(rows) then
+    layout.widths.path = 0
   end
   return layout
 end

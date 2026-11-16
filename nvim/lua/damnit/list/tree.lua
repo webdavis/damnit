@@ -1,8 +1,11 @@
 local M = {}
 
 ---@class damnit.Row
----@field object damnit.Object
+---@field object? damnit.Object
 ---@field depth integer
+---@field header? string
+---@field failed? boolean
+---@field key? string
 
 ---@param objects damnit.Object[]
 ---@return table<string, damnit.Object[]> children, damnit.Object[] roots
