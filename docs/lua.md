@@ -69,6 +69,13 @@ A hook file holds no secret, so others may read it.
 | `token.<name>.grant[].own` | `true` gives only objects a token of this name made. |
 | `token.<name>.grant[].remotes` | Only these remotes. |
 
+## .dam.lua
+
+A project's `.dam.lua` comes with the repository, so dam runs it locked: no `os`, `io`,
+`package`, `require`, `load`, `dofile`, `string` or `debug`, only plain values and a few base
+functions, with a cap on time and memory. It may hold one key, `path`. A key that belongs to a
+person, such as `owner`, `remote` or `token`, is refused; it belongs in `config.lua`.
+
 ## Filters
 
 A filter takes `query`, `match`, or both. A filter with neither is an error. `dam ls <name>` and

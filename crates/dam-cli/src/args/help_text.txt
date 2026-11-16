@@ -9,6 +9,16 @@ dam progress: help = Show the progress of slow steps on stderr, even when it is 
 dam no_progress: help = Hide the progress of slow steps
 dam meta: help = State a detail of this request, such as session=abc123, kept with each change it makes. Repeatable
 dam request: help = Read the request from FILE, or stdin when FILE is -, as JSON or TOON keyed by the command's flags
+dam init: about = Make this folder a project: write .dam.lua and create the project's task
+dam init: after_help = It writes .dam.lua, which says where this project's tasks go, and creates
+the task that holds that path as a working change when no object holds it yet.
+Run again where .dam.lua exists, it changes nothing.
+It refuses inside another project's folder.
+
+Examples:
+  dam init
+  dam init --path work/app
+dam init path: help = Keep this project's tasks under PATH. Default: the folder's own name
 dam new: about = Create a task, or an event with --kind event
 dam new subject: help = Title the new task or event
 dam new kind: help = Create a task or an event; an event needs --start and --end. Default: task
