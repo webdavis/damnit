@@ -72,6 +72,7 @@ mod lua_page_example;
 mod new_id;
 mod nvim_fixtures;
 mod nvim_list_fixtures;
+mod nvim_progress_fixtures;
 mod nvim_prompt_fixtures;
 mod nvim_status_fixtures;
 mod nvim_task_fixtures;
