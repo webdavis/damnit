@@ -68,6 +68,7 @@ mod lua_page_example;
 mod new_id;
 mod object_author;
 mod project_hooks_loading;
+mod project_hooks_messages;
 mod reads_only_read;
 mod rename;
 mod request_refusals;
