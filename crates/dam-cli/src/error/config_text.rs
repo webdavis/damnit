@@ -5,6 +5,9 @@ use dam_application::ConfigError;
 use super::edit_text::{ByHandClause, ByHandText, cannot_edit, named, would_break};
 use super::misread_text::{MisreadText, PlaceText};
 use super::setting_text::setting_reason;
+use project::project_text;
+
+mod project;
 
 pub(super) struct ConfigText<'a>(pub(super) &'a ConfigError);
 
@@ -63,11 +66,9 @@ impl fmt::Display for ConfigReason<'_> {
             ConfigError::BelongsInSecrets { key, at } => {
                 write!(f, "{key} belongs in secrets.lua {}", PlaceText(at))
             }
-            ConfigError::BelongsInPersonalConfig { key, file } => write!(
-                f,
-                "{key} belongs in your own config.lua, never in a project file; remove it from {}",
-                file.display()
-            ),
+            ConfigError::BelongsInPersonalConfig { .. }
+            | ConfigError::HoldsAControlCharacter { .. }
+            | ConfigError::NotAPath { .. } => project_text(f, self.0),
             ConfigError::BadRemoteName(why) => write!(f, "{why}"),
             ConfigError::BadCategories(why) => write!(f, "category: {why:?}"),
             ConfigError::UndeclaredRemote { remote, config } => write!(

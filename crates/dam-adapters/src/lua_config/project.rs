@@ -35,6 +35,15 @@ pub fn read_project_file(file: &Path) -> Result<ProjectSettings, ConfigError> {
         });
     };
     let root = StrictMap::root(&short_name, &table)?;
+    let holds_a_control_character = |text: &str| text.chars().any(char::is_control);
+    if root.entries().any(|(key, value)| {
+        holds_a_control_character(key)
+            || matches!(value, Value::String(s) if holds_a_control_character(&s.to_string_lossy()))
+    }) {
+        return Err(ConfigError::HoldsAControlCharacter {
+            file: file.to_path_buf(),
+        });
+    }
     if let Some((key, _)) = root
         .entries()
         .find(|(key, _)| PERSONAL_SETTINGS.contains(key))
@@ -46,5 +55,10 @@ pub fn read_project_file(file: &Path) -> Result<ProjectSettings, ConfigError> {
     }
     root.only(&PROJECT_SETTINGS)?;
     let path = root.string("path")?.ok_or_else(|| root.missing("path"))?;
-    Ok(ProjectSettings { path })
+    let path = dam_domain::Path::parse(&path).map_err(|_| ConfigError::NotAPath {
+        file: file.to_path_buf(),
+    })?;
+    Ok(ProjectSettings {
+        path: path.as_str().to_string(),
+    })
 }

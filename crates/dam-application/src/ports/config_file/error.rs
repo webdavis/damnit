@@ -48,6 +48,12 @@ pub enum ConfigError {
         key: String,
         file: PathBuf,
     },
+    HoldsAControlCharacter {
+        file: PathBuf,
+    },
+    NotAPath {
+        file: PathBuf,
+    },
     BadRemoteName(RemoteNameError),
     BadCategories(CategoryError),
     UndeclaredRemote {
