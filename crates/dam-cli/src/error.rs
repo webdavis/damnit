@@ -20,6 +20,7 @@ mod misuse;
 mod refusal_oids;
 mod refusal_text;
 mod secrets_tightened_text;
+mod setting_text;
 mod token_fault_text;
 mod token_text;
 mod use_case_text;

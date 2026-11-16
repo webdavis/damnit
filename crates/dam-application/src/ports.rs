@@ -14,6 +14,7 @@ mod origins;
 mod progress;
 mod pulled;
 mod repositories;
+mod settings_file;
 mod store;
 
 pub use answers::AnswerRepository;
@@ -37,6 +38,7 @@ pub use origins::OriginRepository;
 pub use progress::{Progress, Step};
 pub use pulled::{Pull, PulledChange};
 pub use repositories::Store;
+pub use settings_file::{SettingChange, SettingsFile};
 pub use store::{
     AcceptedKindsRepository, CommitRepository, Conflict, ConflictRepository, ObjectRepository,
     RemoteName, RemoteNameError, RemoteTrackingRepository, StageRepository, StoreError,

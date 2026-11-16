@@ -66,6 +66,18 @@ pub enum ConfigError {
         entry: String,
         fault: EditFault,
     },
+    SettingNotEditable {
+        key: String,
+        why: Uneditable,
+        by_hand: String,
+    },
+    SettingEditWouldBreak {
+        key: String,
+    },
+    SettingReadOnly {
+        key: String,
+        by_hand: String,
+    },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -54,7 +54,7 @@ pub(super) fn locate(text: &str, section: &str) -> Result<Located, Uneditable> {
     })
 }
 
-fn table(constructor: &TableConstructor) -> TableLayout {
+pub(super) fn table(constructor: &TableConstructor) -> TableLayout {
     let (open, close) = constructor.braces().tokens();
     TableLayout {
         open: end_of(open),
@@ -74,7 +74,7 @@ fn table(constructor: &TableConstructor) -> TableLayout {
     }
 }
 
-fn key_of(field: &Field) -> Option<String> {
+pub(super) fn key_of(field: &Field) -> Option<String> {
     match field {
         Field::NameKey { key, .. } => name_of(key),
         Field::ExpressionKey { key, .. } => string_key(key),
@@ -101,10 +101,10 @@ fn string_key(key: &Expression) -> Option<String> {
     }
 }
 
-fn start_of(node: &impl Node) -> usize {
+pub(super) fn start_of(node: &impl Node) -> usize {
     node.start_position().map_or(0, |p| p.bytes())
 }
 
-fn end_of(node: &impl Node) -> usize {
+pub(super) fn end_of(node: &impl Node) -> usize {
     node.end_position().map_or(0, |p| p.bytes())
 }

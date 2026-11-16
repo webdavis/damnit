@@ -8,6 +8,9 @@ mod remote_entry;
 mod remove;
 mod replace;
 mod section;
+mod setting_change;
+mod setting_flat;
+mod setting_path;
 mod token_entry;
 
 pub(super) use edit::Change;

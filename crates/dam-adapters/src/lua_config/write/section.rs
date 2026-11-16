@@ -19,7 +19,7 @@ impl Section<'_> {
         entry: &dyn Fn(&Indent) -> String,
     ) -> Result<String, ConfigError> {
         let located = self.locate(text)?;
-        let per_level = indent_per_level(text, &located);
+        let per_level = indent_per_level(text, &located.root);
         match &located.section {
             Some(table) if self.position(table).is_some() => Err(self.held_already()),
             Some(table) => Ok(insert(text, table, &per_level, entry)),
@@ -78,8 +78,8 @@ impl Section<'_> {
     }
 }
 
-fn indent_per_level(text: &str, located: &Located) -> String {
-    match located.root.entries.first() {
+pub(super) fn indent_per_level(text: &str, root: &TableLayout) -> String {
+    match root.entries.first() {
         Some(e) if starts_its_line(text, e.span.start) => {
             let first = indent_of_line(text, e.span.start);
             if first.is_empty() { "  " } else { first }.to_string()

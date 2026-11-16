@@ -6,6 +6,7 @@ mod ports;
 mod remote;
 mod secret;
 mod service;
+mod setting;
 #[cfg(any(test, feature = "testing"))]
 pub mod testing;
 mod tokens;
@@ -30,8 +31,8 @@ pub use ports::{
     History, HookEdits, HookFailure, HookWarnings, Hooks, IdRepository, Interruption,
     ItemRepository, LoadedConfig, Misread, MissingTask, Notice, NoticeRepository, ObjectRepository,
     ObjectState, OriginRepository, Place, Progress, Pull, PulledChange, Randomness, RemoteHelper,
-    RemoteName, RemoteNameError, RemoteTrackingRepository, SecretsTightened, StageRepository, Step,
-    Store, StoreError, Transactional, Uneditable,
+    RemoteName, RemoteNameError, RemoteTrackingRepository, SecretsTightened, SettingChange,
+    SettingsFile, StageRepository, Step, Store, StoreError, Transactional, Uneditable,
 };
 pub use remote::{
     IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, PushOutcome,
@@ -39,6 +40,7 @@ pub use remote::{
 };
 pub use secret::Secret;
 pub use service::{Dam, Remotes};
+pub use setting::{BadValue, KeyRefusal, SettingKey, SettingKind, SettingValue};
 pub use tokens::{
     NewToken, Standing, TokenConfig, TokenFault, TokenName, TokenTerms, TokenWarning, Tokens,
     disable_shared_values,

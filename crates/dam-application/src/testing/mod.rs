@@ -11,6 +11,7 @@ mod launchers;
 mod memory_store;
 mod progress;
 mod scenario;
+mod settings_file;
 
 pub use debug_form::each_field_in_its_debug_form;
 pub use doubles::{
@@ -31,6 +32,7 @@ pub use launchers::{
 pub use memory_store::MemoryStore;
 pub use progress::{FakeProgress, Said};
 pub use scenario::{Scenario, config, event, task, task_in, todoist};
+pub use settings_file::{FakeSettingsFile, Written};
 
 pub mod prelude {
     pub use crate::ports::{
@@ -38,3 +40,6 @@ pub mod prelude {
         NoticeRepository, ObjectRepository, RemoteTrackingRepository, StageRepository,
     };
 }
+
+#[cfg(test)]
+mod settings_file_tests;

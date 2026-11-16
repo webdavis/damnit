@@ -4,6 +4,7 @@ use dam_application::ConfigError;
 
 use super::edit_text::{ByHandClause, ByHandText, cannot_edit, named, would_break};
 use super::misread_text::{MisreadText, PlaceText};
+use super::setting_text::setting_reason;
 
 pub(super) struct ConfigText<'a>(pub(super) &'a ConfigError);
 
@@ -95,6 +96,7 @@ impl fmt::Display for ConfigReason<'_> {
                 entry,
                 fault,
             } => would_break(f, *table, entry, *fault),
+            other => setting_reason(f, other),
         }
     }
 }
