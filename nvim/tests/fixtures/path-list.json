@@ -1,0 +1,12 @@
+{
+  "paths": [
+    {
+      "path": "home/",
+      "count": 1
+    },
+    {
+      "path": "work/",
+      "count": 2
+    }
+  ]
+}
