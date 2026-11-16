@@ -7,7 +7,7 @@ impl Field {
         match self {
             Field::Subject => x.subject == y.subject,
             Field::Body => x.body == y.body,
-            Field::Path => x.path == y.path,
+            Field::Path => x.path == y.path && x.parent == y.parent,
             Field::Labels => x.labels == y.labels,
             Field::Depends => x.depends == y.depends,
             Field::Reminders => x.reminders == y.reminders,
@@ -41,7 +41,10 @@ impl Field {
         match self {
             Field::Subject => t.subject = f.subject.clone(),
             Field::Body => t.body = f.body.clone(),
-            Field::Path => t.path = f.path.clone(),
+            Field::Path => {
+                t.path = f.path.clone();
+                t.parent = f.parent.clone();
+            }
             Field::Labels => t.labels = f.labels.clone(),
             Field::Depends => t.depends = f.depends.clone(),
             Field::Reminders => t.reminders = f.reminders.clone(),

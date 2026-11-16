@@ -28,6 +28,7 @@ fn as_pulled(oid: &str, path: &str, subject: &str) -> WireObject {
         depends: vec![],
         reminders: vec![],
         recurrence: None,
+        parent: None,
         task: Some(WireTask {
             done: false,
             completed_at: None,

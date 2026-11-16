@@ -67,3 +67,51 @@ fn a_mutation_carries_the_container_it_names() {
     });
     assert_eq!(sent.container_remote_id.as_deref(), Some("i:r2"));
 }
+
+fn oid(b: u8) -> Oid {
+    Oid::generate(&mut |x: &mut [u8]| x.fill(b))
+}
+
+fn task_inside(parent: Option<Oid>) -> Object {
+    let mut t = Task::new(oid(1), "milk");
+    t.base.parent = parent;
+    Object::Task(t)
+}
+
+#[test]
+fn the_stored_form_keeps_the_parent_under_its_own_key() {
+    let object = task_inside(Some(oid(2)));
+    let row = serde_json::to_value(to_wire(&object, None)).unwrap();
+    assert_eq!(row["parent"], oid(2).to_string());
+    assert_eq!(from_wire(&to_wire(&object, None)).unwrap(), object);
+}
+
+#[test]
+fn an_object_with_no_parent_leaves_the_key_out_and_reads_back_as_none() {
+    let row = serde_json::to_value(to_wire(&task_inside(None), None)).unwrap();
+    assert!(row.get("parent").is_none());
+    let read: WireObject = serde_json::from_value(row).unwrap();
+    assert_eq!(from_wire(&read).unwrap(), task_inside(None));
+}
+
+#[test]
+fn a_parent_that_is_not_an_oid_is_refused() {
+    let mut wire = to_wire(&task_inside(None), None);
+    wire.parent = Some("nope".into());
+    assert!(from_wire(&wire).is_err());
+}
+
+#[test]
+fn a_parent_never_reaches_a_remote() {
+    let object = task_inside(Some(oid(2)));
+    let sent = mutation_to_wire(RemoteMutation {
+        op: MutationOp::Create,
+        oid: object.oid().clone(),
+        idempotency_key: "k".into(),
+        remote_id: None,
+        container_remote_id: None,
+        object: Some(object),
+        fields: vec![Field::Subject],
+    });
+    assert_eq!(sent.object.unwrap().parent, None);
+}

@@ -13,6 +13,7 @@ fn object(path: &str, done: bool) -> WireObject {
         depends: vec![],
         reminders: vec![],
         recurrence: None,
+        parent: None,
         task: Some(WireTask {
             done,
             completed_at: None,

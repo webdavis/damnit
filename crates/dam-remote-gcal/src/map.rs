@@ -81,6 +81,7 @@ pub(crate) fn map_event(listing: &Listing, event: &GoogleEvent) -> Result<Mapped
         depends: vec![],
         reminders: vec![],
         recurrence: None,
+        parent: None,
         task: None,
         event: Some(wire_event),
     };
