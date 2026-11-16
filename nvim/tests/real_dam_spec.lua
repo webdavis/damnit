@@ -39,7 +39,61 @@ local function made(app, args, cwd)
   return got.answer.oid
 end
 
+local function task_buffer(sandbox, due)
+  require("damnit").setup({ dam = dam_bin })
+  local oid = made(real_app(), { "new", "plant the tomatoes", "--due", due }, sandbox)
+  vim.cmd.lcd(sandbox)
+  vim.cmd("Dam task " .. oid)
+  wait_for(function()
+    return buffer.lines()[2] == "due: " .. due
+  end, 20000)
+  return oid
+end
+
+local function shown_due(oid, sandbox)
+  local got = helper.call(real_app(), { args = { "show", oid }, cwd = sandbox })
+  wait_for(function()
+    return got.done
+  end, 20000)
+  assert(not got.err, vim.inspect(got.err))
+  return got.answer.task.due
+end
+
 return {
+  ["writing a changed due line in the task buffer changes what dam show prints"] = function()
+    if vim.fn.executable(dam_bin) ~= 1 then
+      return ("no dam at %s; build it with cargo build -p damnit or set DAM_BIN"):format(dam_bin)
+    end
+    in_sandbox(function(sandbox)
+      local oid = task_buffer(sandbox, "2026-09-25")
+      vim.api.nvim_buf_set_lines(0, 1, 2, false, { "due: 2026-10-01" })
+      vim.cmd.write()
+      wait_for(function()
+        return not vim.bo.modified
+      end, 20000)
+      local due = shown_due(oid, sandbox)
+      assert(due == "2026-10-01", vim.inspect(due))
+    end)
+  end,
+
+  ["a refused write in the task buffer keeps it modified and shows dam's message"] = function()
+    if vim.fn.executable(dam_bin) ~= 1 then
+      return ("no dam at %s; build it with cargo build -p damnit or set DAM_BIN"):format(dam_bin)
+    end
+    in_sandbox(function(sandbox)
+      local oid = task_buffer(sandbox, "2026-09-25")
+      local notes = buffer.capture_notes()
+      vim.api.nvim_buf_set_lines(0, 1, 2, false, { "due: the twelfth of never" })
+      vim.cmd.write()
+      wait_for(function()
+        return #notes > 0
+      end, 20000)
+      assert(notes[1].level == vim.log.levels.ERROR and notes[1].text:find("twelfth", 1, true), vim.inspect(notes))
+      assert(vim.bo.modified, "no longer modified")
+      assert(shown_due(oid, sandbox) == "2026-09-25")
+    end)
+  end,
+
   ["a task made with dam new appears in :Dam list, its child indented under it"] = function()
     if vim.fn.executable(dam_bin) ~= 1 then
       return ("no dam at %s; build it with cargo build -p damnit or set DAM_BIN"):format(dam_bin)
