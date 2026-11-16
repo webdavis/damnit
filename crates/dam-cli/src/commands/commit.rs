@@ -16,7 +16,7 @@ pub(crate) fn run_commit(ctx: &Context, args: CommitArgs) -> Result<Report, CliE
 }
 
 pub(crate) fn run_log(ctx: &Context) -> Result<Report, CliError> {
-    let records = ctx.store.log()?;
+    let records = ctx.dam().seen_log()?;
     report(&Log {
         commits: records.iter().map(|r| CommitDoc::new(r, ctx)).collect(),
     })

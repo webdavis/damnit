@@ -211,6 +211,9 @@ failed push or unpushed change you cannot see is there, it ends with the same se
 When it changed or kept an object you cannot see, it says `some changes you cannot see came in
 too` and carries `"unseen_pulled": true`.
 
+`dam log` shows only the changes you may read, as they stood and as they stand, and only commits
+holding one. A commit that also holds a change you cannot see shows no message.
+
 ## Taking your task back
 
 `dam rm --id <id>` takes back the task you sent with `dam new --id <id>`. Pass the same
