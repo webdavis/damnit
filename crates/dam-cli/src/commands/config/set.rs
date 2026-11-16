@@ -88,5 +88,6 @@ fn kind_text(kind: SettingKind) -> &'static str {
         SettingKind::Interval => "a duration of at least 1m",
         SettingKind::Flag => "true or false",
         SettingKind::List => "a list of items separated by commas",
+        SettingKind::Count => "a whole number",
     }
 }

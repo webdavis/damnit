@@ -88,6 +88,7 @@ fn lua_literal(value: &SettingValue) -> String {
     match value {
         SettingValue::Text(text) => string_literal(text),
         SettingValue::Flag(flag) => flag.to_string(),
+        SettingValue::Count(count) => count.to_string(),
         SettingValue::List(items) => list_literal(items),
     }
 }

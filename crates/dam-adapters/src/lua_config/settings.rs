@@ -5,9 +5,17 @@ use super::filter::read_filter;
 use super::hook::HOOK;
 use super::remote::read_remote;
 use super::strict::StrictMap;
+use super::whole_number::whole_number;
 
-pub(crate) const SETTINGS: [&str; 6] =
-    ["owner", "done", "progress", "remote", "category", "filter"];
+pub(crate) const SETTINGS: [&str; 7] = [
+    "owner",
+    "done",
+    "progress",
+    "confirm_above",
+    "remote",
+    "category",
+    "filter",
+];
 pub(crate) const DONE: [&str; 1] = ["interactive"];
 pub(crate) const CATEGORY: [&str; 2] = ["values", "exclusive"];
 const SECRETS: [&str; 2] = ["token", "schema"];
@@ -55,6 +63,7 @@ pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
         owner: root.string("owner")?,
         done_interactive,
         progress: root.bool("progress")?,
+        confirm_above: whole_number(root, "confirm_above")?,
         remotes,
         categories,
         categories_writing_exclusive,

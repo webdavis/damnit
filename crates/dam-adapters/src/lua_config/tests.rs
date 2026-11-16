@@ -4,6 +4,7 @@ mod beyond_ascii;
 mod can_add_token;
 mod config_file;
 mod config_file_port;
+mod confirm_above;
 mod credential_source;
 mod edit_checks;
 mod edit_files;

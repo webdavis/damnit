@@ -1,9 +1,10 @@
-use dam_application::{Config, CredentialSpec, FilterConfig, RemoteConfig, RemoteSync};
+use dam_application::{Config, FilterConfig};
 use dam_domain::Category;
 
 use super::hook_settings::hooks;
 use super::match_function::MatchFunction;
-use super::setting::{Credential, Setting, Value};
+use super::remote_settings::remote;
+use super::setting::{Setting, Value};
 use super::token_settings::token;
 
 pub(super) fn settings(config: &Config) -> Setting {
@@ -37,6 +38,12 @@ pub(super) fn settings(config: &Config) -> Setting {
             )]),
         ),
         flag("progress", config.progress.is_some(), config.progress()),
+        (
+            "confirm_above".to_string(),
+            config
+                .confirm_above
+                .map_or_else(Setting::unset, |count| Setting::set(Value::Count(count))),
+        ),
     ];
     entries.extend(
         groups
@@ -45,57 +52,6 @@ pub(super) fn settings(config: &Config) -> Setting {
             .map(|(group, named)| (group.to_string(), Setting::part(named))),
     );
     Setting::part(entries)
-}
-
-fn remote(remote: &RemoteConfig) -> (String, Setting) {
-    let deadline = match &remote.deadline {
-        Some(deadline) => Setting::set(Value::Text(deadline.text.clone())),
-        None => Setting::by_default(Value::Text(RemoteConfig::DEFAULT_DEADLINE.to_string())),
-    };
-    let mut fields = vec![
-        text("url", &remote.url),
-        ("deadline".to_string(), deadline),
-        sync(&remote.sync),
-        optional("path", remote.path.as_ref().map(|path| path.as_str())),
-        except(&remote.except),
-    ];
-    let credentials: Vec<_> = remote.credentials.iter().map(credential).collect();
-    if !credentials.is_empty() {
-        fields.push(named("credential", credentials));
-    }
-    named(&remote.name.0, fields)
-}
-
-fn except(paths: &[dam_domain::Path]) -> (String, Setting) {
-    let setting = match paths {
-        [] => Setting::unset(),
-        _ => Setting::set(Value::List(
-            paths.iter().map(|p| p.as_str().to_string()).collect(),
-        )),
-    };
-    ("except".to_string(), setting)
-}
-
-fn sync(sync: &RemoteSync) -> (String, Setting) {
-    let interval = match &sync.interval {
-        Some(interval) => Setting::set(Value::Text(interval.text.clone())),
-        None => Setting::by_default(Value::Text(RemoteSync::DEFAULT_INTERVAL.to_string())),
-    };
-    named(
-        "sync",
-        vec![
-            ("interval".to_string(), interval),
-            flag("allowed", sync.allowed.is_some(), sync.allowed()),
-        ],
-    )
-}
-
-fn credential(credential: &CredentialSpec) -> (String, Setting) {
-    let hidden = match credential {
-        CredentialSpec::Literal { .. } => Credential::Text,
-        CredentialSpec::Computed { .. } => Credential::Function,
-    };
-    (credential.name().to_string(), Setting::Hidden(hidden))
 }
 
 fn category(category: &Category, written: bool) -> (String, Setting) {
@@ -120,25 +76,25 @@ fn filter(filter: &FilterConfig) -> (String, Setting) {
     named(&filter.name, fields)
 }
 
-fn named(name: &str, fields: Vec<(String, Setting)>) -> (String, Setting) {
+pub(super) fn named(name: &str, fields: Vec<(String, Setting)>) -> (String, Setting) {
     (name.to_string(), Setting::part(fields))
 }
 
-fn text(name: &str, value: &str) -> (String, Setting) {
+pub(super) fn text(name: &str, value: &str) -> (String, Setting) {
     (
         name.to_string(),
         Setting::set(Value::Text(value.to_string())),
     )
 }
 
-fn optional(name: &str, value: Option<&str>) -> (String, Setting) {
+pub(super) fn optional(name: &str, value: Option<&str>) -> (String, Setting) {
     match value {
         Some(value) => text(name, value),
         None => (name.to_string(), Setting::unset()),
     }
 }
 
-fn flag(name: &str, written: bool, value: bool) -> (String, Setting) {
+pub(super) fn flag(name: &str, written: bool, value: bool) -> (String, Setting) {
     let setting = match written {
         true => Setting::set(Value::Flag(value)),
         false => Setting::by_default(Value::Flag(value)),

@@ -28,6 +28,7 @@ pub struct Config {
     pub owner: Option<String>,
     pub done_interactive: Option<bool>,
     pub progress: Option<bool>,
+    pub confirm_above: Option<usize>,
     pub remotes: Vec<RemoteConfig>,
     pub categories: Categories,
     pub categories_writing_exclusive: BTreeSet<String>,

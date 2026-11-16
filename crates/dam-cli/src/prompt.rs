@@ -1,34 +1,19 @@
 use std::cell::OnceCell;
-use std::io::{BufRead, Write};
+use std::io::{BufRead, IsTerminal, Write};
 use std::sync::mpsc::{Receiver, RecvTimeoutError, channel};
 use std::time::Duration;
 
 use dam_adapters::Interrupt;
-use dam_application::Refusal;
 
 use crate::error::CliError;
+pub(crate) use refusing::RefusingPrompt;
 
 const INTERRUPT_RECHECK_INTERVAL: Duration = Duration::from_millis(25);
 
 pub(crate) trait Prompt {
     fn choose(&self, question: &str, options: &[&str]) -> Result<usize, CliError>;
     fn text(&self, question: &str) -> Result<String, CliError>;
-}
-
-pub(crate) struct RefusingPrompt;
-
-impl Prompt for RefusingPrompt {
-    fn choose(&self, _question: &str, _options: &[&str]) -> Result<usize, CliError> {
-        Err(refused())
-    }
-
-    fn text(&self, _question: &str) -> Result<String, CliError> {
-        Err(refused())
-    }
-}
-
-fn refused() -> CliError {
-    Refusal::NeedsAnAnswer.into()
+    fn can_ask(&self) -> bool;
 }
 
 pub(crate) struct TerminalPrompt {
@@ -105,6 +90,10 @@ impl Prompt for TerminalPrompt {
             .trim()
             .to_string())
     }
+
+    fn can_ask(&self) -> bool {
+        std::io::stdin().is_terminal()
+    }
 }
 
 fn choose_asking_once(
@@ -140,5 +129,6 @@ fn one_of_the_numbers(count: usize) -> String {
     }
 }
 
+mod refusing;
 #[cfg(test)]
 mod tests;

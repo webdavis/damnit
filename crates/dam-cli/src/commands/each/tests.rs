@@ -1,3 +1,4 @@
+mod confirm;
 mod requests;
 mod schema;
 mod verbs;

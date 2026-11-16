@@ -3,7 +3,7 @@ use dam_application::{
 };
 
 use crate::args::DoneArgs;
-use crate::commands::each::{one_object, report_set, run_of, selector};
+use crate::commands::each::{one_object, report_set, set_of};
 use crate::commands::hooked::hooked;
 use crate::commands::sent::report_landed;
 use crate::context::Context;
@@ -52,7 +52,7 @@ fn run_on_a_set(ctx: &Context, args: &DoneArgs) -> Result<Report, CliError> {
             "done --interactive takes one oid; name what happens with --children and --depends instead".into(),
         ));
     }
-    let selector = selector(ctx, &args.oid, &args.set)?;
+    let (selector, run) = set_of(ctx, &args.oid, &args.set)?;
     let force = match args.force {
         true => Force::With(
             dispositions_answered_on_the_command_line_over_any_config(args).unwrap_or_default(),
@@ -60,9 +60,7 @@ fn run_on_a_set(ctx: &Context, args: &DoneArgs) -> Result<Report, CliError> {
         false => Force::No,
     };
     let tracked = |oid: &Oid| tracked_by_a_remote(ctx, oid).unwrap_or(Tracked::No);
-    let changes = ctx
-        .dam()
-        .complete_each(&selector, force, &tracked, run_of(&args.set))?;
+    let changes = ctx.dam().complete_each(&selector, force, &tracked, run)?;
     report_set(ctx, &changes)
 }
 

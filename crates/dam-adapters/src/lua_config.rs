@@ -21,6 +21,7 @@ mod shape;
 mod strict;
 mod task_template;
 mod token;
+mod whole_number;
 mod write;
 
 pub use create::STARTER_CONFIG;

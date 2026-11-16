@@ -5,7 +5,7 @@ use dam_application::{Named, Removal};
 
 use self::answer::Answer;
 use crate::args::RmArgs;
-use crate::commands::each::{one_object, report_set, run_of, selector};
+use crate::commands::each::{one_object, report_set, set_of};
 use crate::commands::follow_ons::FollowOns;
 use crate::commands::settled::Settled;
 use crate::context::Context;
@@ -34,8 +34,8 @@ pub(crate) fn run(ctx: &Context, args: RmArgs) -> Result<Report, CliError> {
         return report_removal(&ctx.dam().remove_by_id(id)?);
     }
     let Some(named) = one_object(&args.oid, &args.set) else {
-        let selector = selector(ctx, &args.oid, &args.set)?;
-        return report_set(ctx, &ctx.dam().remove_each(&selector, run_of(&args.set))?);
+        let (selector, run) = set_of(ctx, &args.oid, &args.set)?;
+        return report_set(ctx, &ctx.dam().remove_each(&selector, run)?);
     };
     let removal = match ctx.dam().resolve_named(named)? {
         Named::Object(oid) => ctx.dam().remove_or_send(&oid)?,

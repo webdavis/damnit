@@ -3,6 +3,7 @@ mod hook_settings;
 mod listing;
 mod match_function;
 mod print_default;
+mod remote_settings;
 mod set;
 mod setting;
 mod settings;

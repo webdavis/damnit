@@ -41,6 +41,10 @@ return {
   -- With progress = false, a slow step shows its progress line only under --progress.
   --progress = false,
 
+  -- With confirm_above = 10, a --query or --filter run of edit, done, mv or rm over more than 10
+  -- objects asks first, and needs --expect without a terminal. Default: never ask.
+  --confirm_above = 10,
+
   -- A remote dam pulls from and pushes to, run by the dam-remote-<helper> program on PATH.
   -- url is <helper>::<address>, a helper name being letters, digits, - and _. deadline is the
   -- longest the helper may stay silent, 60s by default, a whole number then s, m or h. path limits

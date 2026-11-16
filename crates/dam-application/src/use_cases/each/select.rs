@@ -6,7 +6,7 @@ use crate::service::Dam;
 use crate::use_cases::load::no_such_object;
 
 impl Dam<'_> {
-    pub(super) fn select(&self, selector: &Selector) -> Result<Vec<Oid>, UseCaseError> {
+    pub fn select(&self, selector: &Selector) -> Result<Vec<Oid>, UseCaseError> {
         let listed = match selector {
             Selector::Oids(oids) => return self.seen_oids(oids),
             Selector::Query(text) => self.list_matching(Some(text), None)?,

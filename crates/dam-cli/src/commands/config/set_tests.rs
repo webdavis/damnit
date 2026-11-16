@@ -21,6 +21,17 @@ fn a_set_setting_is_what_get_reads() {
 }
 
 #[test]
+fn confirm_above_is_set_as_a_whole_number_and_unset_until_then() {
+    let (_dir, file) = config_folder();
+    let unset = super::get::run(&file, "confirm_above").unwrap();
+    assert_eq!(unset.data["value"], serde_json::Value::Null);
+    super::set::run(&file, "confirm_above", Some("10")).unwrap();
+    let got = super::get::run(&file, "confirm_above").unwrap();
+    assert_eq!(got.data, serde_json::json!({"value": 10, "default": false}));
+    assert!(super::set::run(&file, "confirm_above", Some("many")).is_err());
+}
+
+#[test]
 fn quiet_prints_nothing_for_a_set() {
     let (_dir, file) = config_folder();
     let report = super::set::run(&file, "owner", Some("Grace")).unwrap();

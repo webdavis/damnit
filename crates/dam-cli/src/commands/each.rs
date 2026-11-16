@@ -6,6 +6,7 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 use crate::view::report;
+use confirm::confirmed;
 use view::SetView;
 
 pub(crate) fn one_object<'a>(oids: &'a [String], set: &SetArgs) -> Option<&'a str> {
@@ -15,11 +16,21 @@ pub(crate) fn one_object<'a>(oids: &'a [String], set: &SetArgs) -> Option<&'a st
     }
 }
 
-pub(crate) fn selector(
+pub(crate) fn set_of(
     ctx: &Context,
     oids: &[String],
     set: &SetArgs,
-) -> Result<Selector, CliError> {
+) -> Result<(Selector, SetRun), CliError> {
+    let selector = selector(ctx, oids, set)?;
+    let run = SetRun {
+        preview: set.preview,
+        expect: set.expect,
+    };
+    let run = confirmed(ctx, &selector, run)?;
+    Ok((selector, run))
+}
+
+fn selector(ctx: &Context, oids: &[String], set: &SetArgs) -> Result<Selector, CliError> {
     Ok(match (&set.query, &set.filter) {
         (Some(query), _) => Selector::Query(query.clone()),
         (_, Some(filter)) => Selector::Filter(filter.clone()),
@@ -34,13 +45,6 @@ pub(crate) fn selector(
                 .collect::<Result<_, _>>()?,
         ),
     })
-}
-
-pub(crate) fn run_of(set: &SetArgs) -> SetRun {
-    SetRun {
-        preview: set.preview,
-        expect: set.expect,
-    }
 }
 
 pub(crate) fn report_set(ctx: &Context, changes: &SetChanges) -> Result<Report, CliError> {
@@ -65,6 +69,7 @@ pub(crate) fn report_preview(
     report_set(ctx, &previewed)
 }
 
+mod confirm;
 mod view;
 
 #[cfg(test)]
