@@ -454,6 +454,12 @@ for: a first pull, a task a hook failed on, a task older than the rule. A rule t
 and after does nothing here, a hook with a side effect fires once per task, and nothing retries by
 itself. It answers `ran`, `changed`, `failed` and `not_reached`.
 
+A project may ship hooks in `.damhooks/`. They stay off, never loaded, until you turn them on:
+`dam config set project.hooks true` inside the project for this clone, or
+`dam config set --global project.hooks true` for every project. Turning them on runs that
+repository's code as you, now and after every pull. They run after yours, only for tasks under the
+project's path and only for commands run inside it. `docs/lua.md` says more.
+
 ## Reading it from a program
 
 A flag is named after the key it writes: a value `dam show --json` prints under `due` goes back
