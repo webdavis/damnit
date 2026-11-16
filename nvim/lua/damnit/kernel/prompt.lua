@@ -19,6 +19,7 @@ local M = {}
 ---@field read_first? boolean
 ---@field closed? fun(sent: boolean) runs once the prompt closes
 ---@field reads_blank? boolean an empty line is read and sent like any other
+---@field keys? table<string, fun(session: damnit.PromptSession)> more insert-mode keys
 ---@field flags? damnit.Flag[] the command's flags; a word at the cursor that begins one is not read yet
 
 ---@class damnit.Prompts

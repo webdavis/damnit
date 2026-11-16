@@ -1,4 +1,5 @@
 local argv = require("damnit.kernel.argv")
+local float = require("damnit.kernel.float")
 local view = require("damnit.list.view")
 local words = require("damnit.kernel.words")
 
@@ -112,7 +113,41 @@ function FilterBar:filter(buf)
     complete = function(line, col)
       return words.at(line, col, with_shapes(flags, refused), self.app.vocab:words(list.call.cwd))
     end,
+    keys = {
+      ["<C-s>"] = function(session)
+        self:save_filter(buf, session, flags, restore)
+      end,
+    },
   })
+end
+
+---@param buf integer
+---@param session damnit.PromptSession
+---@param flags damnit.Flag[]
+---@param restore fun()
+function FilterBar:save_filter(buf, session, flags, restore)
+  local list = self.shown[buf]
+  session.asking = true
+  vim.ui.input({ prompt = "save as filter: " }, function(name)
+    session.asking = false
+    if not name or vim.trim(name) == "" then
+      return
+    end
+    local args = vim.list_extend({ "filter", "create", vim.trim(name) }, argv.args(session:text(), flags))
+    self.app.dam:write({ args = args, cwd = list.call.cwd, placed = true }, function(answer, err)
+      if err then
+        return float.footer(session.win, err.message, "DiagnosticError")
+      end
+      self.app.say:info("saved filter " .. answer.name)
+      session:close(true)
+      restore()
+      self:open(answer.name, list.call.cwd)
+      local now = self.shown[vim.api.nvim_get_current_buf()]
+      if now then
+        now.marked = list.marked
+      end
+    end)
+  end)
 end
 
 return FilterBar

@@ -820,7 +820,8 @@ with the view's path, `o` with `--parent` set to the task under the cursor.
 
 `f` in a list, or `:Dam filter`, opens the view's conditions as `dam list` flags in a prompt at the
 top of the window. The list shows dam's answer after each pause. `<CR>` keeps the conditions,
-marked `*` in the winbar, and `<Esc>` puts the view back. In a view of sections the prompt opens
+marked `*` in the winbar, `<Esc>` puts the view back, and `<C-s>` saves them with
+`dam filter create NAME` and shows that filter. In a view of sections the prompt opens
 empty and shows one list.
 
 Keys on list rows act on the visual selection, else the marked rows, else [count] rows, else
