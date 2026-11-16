@@ -17,5 +17,14 @@ pub fn nearest_parents<'a>(path: &Path, objects: impl IntoIterator<Item = &'a Ob
         .collect()
 }
 
+pub fn unsettled(objects: &[Object]) -> Vec<(&Object, Vec<Oid>)> {
+    objects
+        .iter()
+        .filter(|object| object.base().parent.is_none())
+        .map(|object| (object, nearest_parents(&object.base().path, objects)))
+        .filter(|(_, could_hold)| !could_hold.is_empty())
+        .collect()
+}
+
 #[cfg(test)]
 mod tests;

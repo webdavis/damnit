@@ -61,6 +61,10 @@ impl Check {
         }
     }
 
+    pub(crate) fn listing(self, rows: Vec<Row>) -> Check {
+        Check { rows, ..self }
+    }
+
     pub(crate) fn reading(self, files: ConfigFiles) -> Check {
         Check {
             files: Some(files),

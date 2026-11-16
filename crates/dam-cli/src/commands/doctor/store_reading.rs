@@ -3,9 +3,10 @@ use std::path::{Path, PathBuf};
 
 use dam_adapters::{OpenError, ReadOnly, SqliteStore};
 use dam_application::{
-    AcceptedKindsRepository, AttemptRepository, CommitRepository, RemoteConfig, StoreError,
-    UseCaseError,
+    AcceptedKindsRepository, AttemptRepository, CommitRepository, ObjectRepository, RemoteConfig,
+    RemoteTrackingRepository, StoreError, UseCaseError,
 };
+use dam_domain::{Object, Oid, unsettled};
 
 use crate::error::UseCaseText;
 
@@ -18,6 +19,13 @@ pub(super) enum Store {
 pub(super) struct Reading {
     pub(super) version: u32,
     pub(super) owed: Vec<Result<Owed, String>>,
+    pub(super) unsettled: Result<Vec<Unsettled>, String>,
+}
+
+pub(super) struct Unsettled {
+    pub(super) object: Object,
+    pub(super) could_hold: Vec<Oid>,
+    pub(super) pulled: bool,
 }
 
 pub(super) struct Owed {
@@ -32,14 +40,44 @@ pub(super) fn read(path: &Path, remotes: &[RemoteConfig]) -> Result<Store, OpenE
         ReadOnly::Opened(store) => store,
     };
     let version = store.schema_version()?;
-    let owed = match version == SqliteStore::SCHEMA_VERSION {
+    let current = version == SqliteStore::SCHEMA_VERSION;
+    let owed = match current {
         true => remotes
             .iter()
             .map(|remote| owed(&store, remote).map_err(said))
             .collect(),
         false => Vec::new(),
     };
-    Ok(Store::Read(Reading { version, owed }))
+    let unsettled = match current {
+        true => unsettled_in(&store, remotes).map_err(said),
+        false => Ok(Vec::new()),
+    };
+    Ok(Store::Read(Reading {
+        version,
+        owed,
+        unsettled,
+    }))
+}
+
+fn unsettled_in(
+    store: &SqliteStore,
+    remotes: &[RemoteConfig],
+) -> Result<Vec<Unsettled>, StoreError> {
+    let objects = store.all()?;
+    unsettled(&objects)
+        .into_iter()
+        .map(|(object, could_hold)| {
+            let mut pulled = false;
+            for remote in remotes {
+                pulled |= store.remote_id(&remote.name, object.oid())?.is_some();
+            }
+            Ok(Unsettled {
+                object: object.clone(),
+                could_hold,
+                pulled,
+            })
+        })
+        .collect()
 }
 
 fn owed(store: &SqliteStore, remote: &RemoteConfig) -> Result<Owed, StoreError> {
