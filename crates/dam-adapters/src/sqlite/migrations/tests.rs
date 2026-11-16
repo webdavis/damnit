@@ -1,3 +1,4 @@
+use super::parents_tests::a_stored_task;
 use super::*;
 
 #[test]
@@ -62,11 +63,12 @@ fn a_version_three_update_with_no_before_reads_as_the_create_it_is() {
     conn.execute_batch(V2).unwrap();
     conn.execute_batch(V3).unwrap();
     conn.pragma_update(None, "user_version", 3u32).unwrap();
-    conn.execute_batch(
-        "INSERT INTO commit_changes VALUES ('c', 0, 'o', 'update', NULL, '{}');
-         INSERT INTO commit_changes VALUES ('c', 1, 'p', 'update', '{}', '{}');
-         INSERT INTO stage VALUES ('o', 'update', NULL, '{}');",
-    )
+    let task = a_stored_task();
+    conn.execute_batch(&format!(
+        "INSERT INTO commit_changes VALUES ('c', 0, 'o', 'update', NULL, '{task}');
+         INSERT INTO commit_changes VALUES ('c', 1, 'p', 'update', '{task}', '{task}');
+         INSERT INTO stage VALUES ('o', 'update', NULL, '{task}');",
+    ))
     .unwrap();
     migrate_above_user_version_in_one_transaction(&mut conn).unwrap();
     let ops = |table: &str| -> Vec<String> {
@@ -140,8 +142,8 @@ fn an_old_pull_update_with_no_before_takes_its_before_from_the_prior_commit() {
 fn the_unread_kind_column_leaves_objects_and_its_rows_stay() {
     let mut conn = store_at_version_three();
     conn.execute(
-        "INSERT INTO objects (oid, kind, path, json) VALUES ('o', 'task', 'work/', '{}')",
-        [],
+        "INSERT INTO objects (oid, kind, path, json) VALUES ('o', 'task', 'work/', ?1)",
+        [a_stored_task()],
     )
     .unwrap();
 

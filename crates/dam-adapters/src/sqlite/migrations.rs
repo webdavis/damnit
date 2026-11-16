@@ -1,10 +1,12 @@
 use rusqlite::Connection;
 
+mod parents;
 mod steps;
 
 use steps::*;
 
-pub(super) const VERSION: u32 = 15;
+pub(super) const VERSION: u32 = 16;
+const PARENTS_FILLED: u32 = 16;
 
 pub(super) fn migrate_above_user_version_in_one_transaction(
     conn: &mut Connection,
@@ -18,6 +20,9 @@ pub(super) fn migrate_above_user_version_in_one_transaction(
         if current < version {
             tx.execute_batch(batch)?;
         }
+    }
+    if current < PARENTS_FILLED {
+        parents::fill_every_parent(&tx)?;
     }
     tx.pragma_update(None, "user_version", VERSION)?;
     tx.commit()
@@ -40,3 +45,12 @@ mod upgrade_tests;
 
 #[cfg(test)]
 mod pull_failed_tests;
+
+#[cfg(test)]
+mod parents_tests;
+
+#[cfg(test)]
+mod parents_pending_tests;
+
+#[cfg(test)]
+mod parents_unreadable_tests;

@@ -62,7 +62,11 @@ fn a_store_at_each_earlier_version_runs_exactly_the_steps_it_lacks_in_order() {
 
         migrate_above_user_version_in_one_transaction(&mut conn).unwrap();
 
-        assert_eq!(what_the_later_steps_left(&conn), (15, 1, 1), "{version}");
+        assert_eq!(
+            what_the_later_steps_left(&conn),
+            (VERSION, 1, 1),
+            "{version}"
+        );
         assert_eq!(kinds_held(&conn), ["push_failed"], "{version}");
     }
 }

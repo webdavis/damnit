@@ -1,3 +1,4 @@
+use super::parents_tests::a_stored_task;
 use super::*;
 
 #[test]
@@ -7,11 +8,12 @@ fn a_version_six_change_gains_an_empty_author_that_reads_as_the_owner() {
         conn.execute_batch(batch).unwrap();
     }
     conn.pragma_update(None, "user_version", 6u32).unwrap();
-    conn.execute_batch(
+    let task = a_stored_task();
+    conn.execute_batch(&format!(
         "INSERT INTO commits (id, seq, message, at) VALUES ('c', 1, 'm', '1970-01-01T00:00:00Z');
-         INSERT INTO commit_changes (commit_id, ord, oid, op, before_json, after_json) VALUES ('c', 0, 'o', 'create', NULL, '{}');
-         INSERT INTO stage (oid, op, before_json, after_json) VALUES ('o', 'create', NULL, '{}');",
-    )
+         INSERT INTO commit_changes (commit_id, ord, oid, op, before_json, after_json) VALUES ('c', 0, 'o', 'create', NULL, '{task}');
+         INSERT INTO stage (oid, op, before_json, after_json) VALUES ('o', 'create', NULL, '{task}');",
+    ))
     .unwrap();
 
     migrate_above_user_version_in_one_transaction(&mut conn).unwrap();
