@@ -20,6 +20,7 @@ fn pulled_taking(matched: usize, kept: usize, confirmed: usize) -> crate::output
         values_kept: kept,
         deletes_confirmed: confirmed,
         task_pulled: None,
+        unseen_pulled: false,
     };
     report(&Pulled {
         remotes: vec![PullRow::new(&pulled)],

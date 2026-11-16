@@ -36,6 +36,7 @@ fn pulled_with(task_pulled: PulledHookRun) -> PullReport {
         values_kept: 0,
         deletes_confirmed: 0,
         task_pulled: Some(task_pulled),
+        unseen_pulled: false,
     }
 }
 

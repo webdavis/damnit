@@ -21,12 +21,14 @@ mod parents;
 mod removal;
 mod removed;
 mod skipped;
+mod tally;
 mod untouched;
 
 use classify::classify;
 use missing::record_missing;
 use removed::record_removals;
 use skipped::record_skipped;
+use tally::Tally;
 
 #[derive(Debug)]
 pub struct PullReport {
@@ -40,6 +42,7 @@ pub struct PullReport {
     pub values_kept: usize,
     pub deletes_confirmed: usize,
     pub task_pulled: Option<PulledHookRun>,
+    pub unseen_pulled: bool,
 }
 
 impl Dam<'_> {
@@ -64,7 +67,8 @@ impl Dam<'_> {
             let (mut report, pulled) =
                 self.apply_pulled(target, &caps, helper.as_ref(), response)?;
             if since.is_some() {
-                report.task_pulled = self.run_pulled_hook(&target.name, pulled)?;
+                let run = self.run_pulled_hook(&target.name, pulled)?;
+                report.task_pulled = run.filter(|_| self.access.token().is_none());
             }
             reports.push(report);
         }
@@ -79,18 +83,7 @@ impl Dam<'_> {
         mut response: PullOutcome,
     ) -> Result<(PullReport, Vec<PulledTask>), UseCaseError> {
         let store = self.store;
-        let mut report = PullReport {
-            remote: remote.name.clone(),
-            created: 0,
-            updated: 0,
-            conflicts: 0,
-            removed_upstream: 0,
-            unchanged: 0,
-            creates_matched: 0,
-            values_kept: 0,
-            deletes_confirmed: 0,
-            task_pulled: None,
-        };
+        let mut tally = Tally::default();
         let listed: HashSet<String> = response
             .objects
             .iter()
@@ -113,16 +106,16 @@ impl Dam<'_> {
                 helper,
                 (objects, std::mem::take(&mut response.container_remote_ids)),
                 self.random,
-                &mut report,
+                &mut tally,
             )?;
             for (oid, remote_id) in new_remote_id_mappings {
                 store.map_remote_id(&remote.name, &oid, &remote_id)?;
             }
-            pulled = self.land(remote, planned, &remote_paths, &mut report)?;
+            pulled = self.land(remote, planned, &remote_paths, &mut tally)?;
             let removed = std::mem::take(&mut response.removed);
             let removals = record_removals(store, remote, removed)?;
-            report.removed_upstream = removals.in_the_app;
-            report.deletes_confirmed = removals.dams_own;
+            tally.removed_upstream = removals.in_the_app;
+            tally.deletes_confirmed = removals.dams_own;
             if response.complete {
                 record_missing(store, remote, &listed)?;
             }
@@ -131,7 +124,7 @@ impl Dam<'_> {
             Ok(())
         };
         store.in_transaction(&mut land_everything_as_one_unit)?;
-        Ok((report, pulled))
+        Ok((self.counted(&remote.name, tally)?, pulled))
     }
 }
 

@@ -4,10 +4,10 @@ use dam_domain::{Field, Object, Oid, kind_change, merge_fields};
 
 use super::compare::{against_local, changed_in_the_app, settled};
 
-use super::PullReport;
 use super::adopt::creates_found;
 use super::ours::keep_what_we_sent;
 use super::parents::{Parents, RemotePaths, as_seen};
+use super::tally::Tally;
 use super::untouched::{AtThePull, Untouched};
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
@@ -32,7 +32,7 @@ pub(super) fn classify(
     helper: &dyn RemoteHelper,
     (objects, container_remote_ids): (Vec<IncomingObject>, BTreeMap<String, String>),
     random: &dyn Randomness,
-    report: &mut PullReport,
+    tally: &mut Tally,
 ) -> Result<Classified, UseCaseError> {
     let staged: Vec<Oid> = store
         .staged()?
@@ -41,7 +41,7 @@ pub(super) fn classify(
         .collect();
     let record = store.attempts(&remote.name)?;
     let adopted = creates_found(store, remote, helper, caps, &record, &objects)?;
-    report.creates_matched += adopted.len();
+    tally.creates_matched.extend(adopted.values().cloned());
     let mut notices = store.notices()?;
     let mut planned = Vec::new();
     let mut new_remote_id_mappings = Vec::new();
@@ -112,7 +112,7 @@ pub(super) fn classify(
             (None, Some(l)) => {
                 let attempts = record.get(&oid).map_or(&[][..], Vec::as_slice);
                 let (theirs, kept) = keep_what_we_sent(helper, caps, &l, theirs, attempts)?;
-                report.values_kept += kept;
+                tally.values_kept.push((oid.clone(), kept));
                 against_local(store, remote, l, theirs, &remote_paths)?
             }
         };
