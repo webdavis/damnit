@@ -1,0 +1,73 @@
+{
+  "preview": true,
+  "count": 3,
+  "oids": [
+    "1111111111111111111111111111111111111111",
+    "2222222222222222222222222222222222222222",
+    "<id-1>"
+  ],
+  "changes": [
+    {
+      "oid": "1111111111111111111111111111111111111111",
+      "op": "update",
+      "fields": [
+        "due"
+      ],
+      "kind": "task",
+      "subject": "buy oat milk",
+      "path": "home/",
+      "labels": [
+        "errand"
+      ],
+      "done": false,
+      "completed_at": null,
+      "priority": 2,
+      "due": "2026-11-20",
+      "from": null,
+      "key_id": null,
+      "channel": null,
+      "author": "owner",
+      "details": null
+    },
+    {
+      "oid": "2222222222222222222222222222222222222222",
+      "op": "update",
+      "fields": [
+        "due"
+      ],
+      "kind": "task",
+      "subject": "call mom",
+      "path": "",
+      "labels": [],
+      "done": false,
+      "completed_at": null,
+      "priority": 4,
+      "due": "2026-11-20",
+      "from": null,
+      "key_id": null,
+      "channel": null,
+      "author": "owner",
+      "details": null
+    },
+    {
+      "oid": "<id-1>",
+      "op": "update",
+      "fields": [
+        "due"
+      ],
+      "kind": "task",
+      "subject": "pay rent",
+      "path": "",
+      "labels": [],
+      "done": false,
+      "completed_at": null,
+      "priority": 4,
+      "due": "2026-11-20",
+      "from": null,
+      "key_id": null,
+      "channel": null,
+      "author": "owner",
+      "details": null
+    }
+  ]
+}

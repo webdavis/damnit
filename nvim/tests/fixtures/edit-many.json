@@ -1,0 +1,51 @@
+{
+  "preview": false,
+  "count": 3,
+  "oids": [
+    "1111111111111111111111111111111111111111",
+    "2222222222222222222222222222222222222222",
+    "<id-1>"
+  ],
+  "changes": [
+    {
+      "oid": "2222222222222222222222222222222222222222",
+      "op": "update",
+      "fields": [
+        "priority"
+      ],
+      "kind": "task",
+      "subject": "call mom",
+      "path": "",
+      "labels": [],
+      "done": true,
+      "completed_at": "<now>",
+      "priority": 2,
+      "due": null,
+      "from": null,
+      "key_id": null,
+      "channel": null,
+      "author": "owner",
+      "details": null
+    },
+    {
+      "oid": "<id-1>",
+      "op": "update",
+      "fields": [
+        "priority"
+      ],
+      "kind": "task",
+      "subject": "pay rent",
+      "path": "",
+      "labels": [],
+      "done": false,
+      "completed_at": null,
+      "priority": 2,
+      "due": "2026-09-30",
+      "from": null,
+      "key_id": null,
+      "channel": null,
+      "author": "owner",
+      "details": null
+    }
+  ]
+}

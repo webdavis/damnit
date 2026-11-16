@@ -1,0 +1,12 @@
+{
+  "error": {
+    "kind": "usage",
+    "rule": null,
+    "message": "--due cannot be \"the twelfth of never\"; a date to set is one day or instant: 2026-11-20, 2026-11-20T09:00, today, today+3, now+2h, or a word such as tomorrow, fri, next mon, in 3 days; run it with --due today",
+    "oids": [],
+    "usage": {
+      "problem": "other",
+      "word": null
+    }
+  }
+}

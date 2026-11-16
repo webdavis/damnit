@@ -1,0 +1,11 @@
+{
+  "error": {
+    "kind": "refused",
+    "rule": "blocked",
+    "message": "1111111 has 1 open child: <id-1>; pass --force to complete it anyway",
+    "oids": [
+      "1111111111111111111111111111111111111111",
+      "<id-1>"
+    ]
+  }
+}
