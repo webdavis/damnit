@@ -1,4 +1,5 @@
 mod build;
+mod due;
 mod wire;
 
 use super::*;
@@ -20,6 +21,7 @@ fn sync() -> SyncResponse {
                     date: "2026-09-25".into(),
                     is_recurring: true,
                     string: "every week".into(),
+                    timezone: None,
                 }),
                 labels: vec!["errand".into()],
                 ..item("i1", "milk").under("p1").in_section("s1")

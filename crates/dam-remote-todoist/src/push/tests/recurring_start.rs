@@ -25,7 +25,8 @@ fn a_repeating_task_starts_in_todoist_on_its_own_due_date_and_time() {
             sent_due(op, Some("2026-12-04T20:00:00-05:00[America/New_York]")),
             serde_json::json!({
                 "string": "every mon, fri at 20:00 until 2027-06-30 starting 4 Dec 2026",
-                "lang": "en"
+                "lang": "en",
+                "timezone": "America/New_York"
             }),
             "{op}"
         );

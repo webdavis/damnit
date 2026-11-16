@@ -42,13 +42,13 @@ fn sent_string(rule: &str, due: &str) -> String {
     string.as_str().unwrap().to_string()
 }
 
-fn pulled(string: &str, date: &str) -> (Option<String>, Option<String>) {
+fn pulled(string: &str, (date, zone): (&str, Option<&str>)) -> (Option<String>, Option<String>) {
     let todoist = FakeTodoist::new(json!({
         "sync_token": "t1", "full_sync": true,
         "projects": [{"id": "p1", "name": "Work"}],
         "sections": [],
         "items": [{"id": "i1", "content": "all hands", "project_id": "p1", "checked": false,
-            "due": {"date": date, "is_recurring": true, "string": string}}]
+            "due": {"date": date, "timezone": zone, "is_recurring": true, "string": string}}]
     }));
     let object = pull(&todoist, None)
         .unwrap()
@@ -63,17 +63,17 @@ fn pulled(string: &str, date: &str) -> (Option<String>, Option<String>) {
 fn every_rule_shape_with_a_date_or_a_date_and_time_comes_back_as_the_same_rule_and_due() {
     let ends = ["", " until 2027-06-30"];
     let dues = [
-        ("2026-12-04", "2026-12-04"),
+        ("2026-12-04", ("2026-12-04", None)),
         (
             "2026-12-04T20:00:00-05:00[America/New_York]",
-            "2026-12-04T20:00:00",
+            ("2026-12-05T01:00:00.000000Z", Some("America/New_York")),
         ),
     ];
     for rule in RULES
         .iter()
         .flat_map(|r| ends.map(|end| format!("{r}{end}")))
     {
-        for (dam_due, todoist_date) in dues {
+        for (dam_due, stored) in dues {
             let string = sent_string(&rule, dam_due);
             assert!(string.ends_with(" starting 4 Dec 2026"), "{string}");
             assert_eq!(
@@ -82,8 +82,8 @@ fn every_rule_shape_with_a_date_or_a_date_and_time_comes_back_as_the_same_rule_a
                 "{string}"
             );
             assert_eq!(
-                pulled(&string, todoist_date),
-                (Some(rule.clone()), Some(todoist_date.to_string())),
+                pulled(&string, stored),
+                (Some(rule.clone()), Some(dam_due.to_string())),
                 "{string}"
             );
         }

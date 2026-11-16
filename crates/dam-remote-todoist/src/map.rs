@@ -107,12 +107,14 @@ mod added;
 mod by_id;
 mod by_path;
 mod changes;
+mod due;
 mod holdings;
 mod identity;
 mod open;
 mod wire;
 
 pub use by_path::Several;
+pub use due::{dam_due, todoist_due, zone_name};
 pub use identity::{RemoteId, api_priority, dam_priority};
 pub use wire::{item_to_wire, project_to_wire, section_to_wire};
 

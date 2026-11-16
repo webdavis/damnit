@@ -384,6 +384,7 @@ dependencies = [
  "dam-domain",
  "dam-helper",
  "dam-protocol",
+ "jiff",
  "serde",
  "serde_json",
  "tempfile",

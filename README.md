@@ -223,7 +223,8 @@ more months between weekdays of the month, such as `every 2 months on 1tue`, or 
 the last weekday, such as `-2fri`, fails that one object.
 
 The task's due date and time travel in the same text, such as
-`every mon, fri at 20:00 starting 4 Dec 2026`, so Todoist starts the rule on dam's date.
+`every mon, fri at 20:00 starting 4 Dec 2026`, so Todoist starts the rule on dam's date. A due with
+a time goes as that instant with its time zone, so Todoist keeps the clock time in that zone.
 
 ## Every day
 
