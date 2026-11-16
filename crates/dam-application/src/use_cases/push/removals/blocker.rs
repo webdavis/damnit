@@ -1,9 +1,8 @@
 use std::collections::BTreeSet;
 
-use dam_domain::{Oid, Path};
+use dam_domain::{Object, Oid, Path, nearest_parents};
 
 use super::Removals;
-use super::release::Unreleased;
 use crate::remote::{MutationOp, RemoteMutation};
 
 pub(super) enum Blocker {
@@ -13,8 +12,13 @@ pub(super) enum Blocker {
 
 pub(super) struct Unsent {
     oids: BTreeSet<Oid>,
-    landings: Vec<(Oid, Path)>,
-    owned_folders: Vec<Path>,
+    landings: Vec<(Oid, Option<Oid>, Path)>,
+}
+
+enum Holding {
+    Held,
+    MaybeHeld(Vec<Oid>),
+    PlaceNotKnown,
 }
 
 impl Unsent {
@@ -23,11 +27,10 @@ impl Unsent {
             oids: pending.iter().map(|m| m.oid.clone()).collect(),
             landings: pending
                 .iter()
-                .filter_map(|m| Some((m.oid.clone(), m.object.as_ref()?.base().path.clone())))
-                .collect(),
-            owned_folders: pending
-                .iter()
-                .filter_map(|m| m.object.as_ref()?.base().owned_folder())
+                .filter_map(|m| {
+                    let base = m.object.as_ref()?.base();
+                    Some((m.oid.clone(), base.parent.clone(), base.path.clone()))
+                })
                 .collect(),
         }
     }
@@ -35,84 +38,105 @@ impl Unsent {
 
 impl Removals {
     pub(super) fn blocker(&self, mutation: &RemoteMutation, unsent: &Unsent) -> Option<Blocker> {
-        if mutation.op != MutationOp::Delete {
+        if mutation.op != MutationOp::Delete || !self.removing.contains(&mutation.oid) {
             return None;
         }
-        let folder = self.folders.get(&mutation.oid)?;
+        let removed = &mutation.oid;
+        if !self.upstream.contains_key(removed) {
+            return Some(Blocker::Stuck(format!(
+                "what {} holds upstream is not known; run: dam pull, then dam push",
+                removed.short()
+            )));
+        }
         let held_under = self
             .upstream
-            .iter()
-            .filter(|(_, held)| held.path.is_within(folder))
-            .map(|(oid, _)| oid);
+            .values()
+            .filter(|held| held.oid() != removed)
+            .filter_map(|held| Some((held.oid(), self.holding(held, removed)?)));
+        let folder = self
+            .upstream
+            .get(removed)
+            .and_then(|o| o.base().owned_folder());
         let landing_under = unsent
             .landings
             .iter()
-            .filter(|(_, path)| path.is_within(folder))
-            .map(|(oid, _)| oid);
-        let under: Vec<&Oid> = held_under.chain(landing_under).collect();
+            .filter(|(_, parent, path)| match parent {
+                Some(parent) => parent == removed,
+                None => folder.as_ref().is_none_or(|folder| path.is_within(folder)),
+            })
+            .map(|(oid, ..)| (oid, Holding::Held));
+        let under: Vec<(&Oid, Holding)> = held_under.chain(landing_under).collect();
         if under.is_empty() {
             return None;
         }
-        let still_to_be_sent = under.iter().any(|oid| unsent.oids.contains(*oid));
-        let Some(stuck) = under.into_iter().find(|oid| !unsent.oids.contains(*oid)) else {
-            return Some(Blocker::StillToBeSent);
-        };
-        if unsent.owned_folders.contains(folder) {
-            return Some(Blocker::StillToBeSent);
-        }
-        match self.namesake(&mutation.oid, folder) {
-            Some(_) if self.remote_removes_only_empty_containers && still_to_be_sent => {
-                Some(Blocker::StillToBeSent)
-            }
-            Some(namesake) if self.remote_removes_only_empty_containers => {
-                let stuck: Vec<&Oid> = self.stuck_under(folder, unsent).collect();
-                let unreleased = stuck.into_iter().find_map(|o| self.unreleased(o, folder))?;
-                Some(Blocker::Stuck(match unreleased {
-                    Unreleased::LeftUnplaced(o) => same_name(o, namesake),
-                    Unreleased::MovedWithoutTellingUpstream(o) => self.why_held(o),
-                }))
-            }
-            Some(namesake) => Some(Blocker::Stuck(same_name(stuck, namesake))),
-            None => Some(Blocker::Stuck(self.why_held(stuck))),
+        match under.iter().find(|(oid, _)| !unsent.oids.contains(*oid)) {
+            None => Some(Blocker::StillToBeSent),
+            Some((stuck, holding)) => Some(Blocker::Stuck(self.why_held(stuck, holding))),
         }
     }
 
-    fn stuck_under<'a>(
-        &'a self,
-        folder: &'a Path,
-        unsent: &'a Unsent,
-    ) -> impl Iterator<Item = &'a Oid> {
-        self.upstream
-            .iter()
-            .filter(move |(oid, held)| held.path.is_within(folder) && !unsent.oids.contains(*oid))
-            .map(|(oid, _)| oid)
+    fn holding(&self, held: &Object, removed: &Oid) -> Option<Holding> {
+        let mut at = held;
+        for _ in 0..=self.upstream.len() {
+            match &at.base().parent {
+                Some(parent) if parent == removed => return Some(Holding::Held),
+                Some(parent) => match self.upstream.get(parent) {
+                    Some(next) => at = next,
+                    None => return self.inside_the_folder_of(removed, &held.base().path),
+                },
+                None => {
+                    let could_hold = nearest_parents(&at.base().path, self.upstream.values());
+                    return match could_hold.as_slice() {
+                        [only] if only == removed => Some(Holding::Held),
+                        several if several.contains(removed) => {
+                            Some(Holding::MaybeHeld(could_hold))
+                        }
+                        _ => None,
+                    };
+                }
+            }
+        }
+        Some(Holding::PlaceNotKnown)
     }
 
-    fn namesake(&self, removed: &Oid, folder: &Path) -> Option<&Oid> {
-        self.upstream
-            .iter()
-            .filter(|(oid, _)| *oid != removed && !self.folders.contains_key(*oid))
-            .find(|(_, held)| held.owned_folder().as_ref() == Some(folder))
-            .map(|(oid, _)| oid)
+    fn inside_the_folder_of(&self, removed: &Oid, path: &Path) -> Option<Holding> {
+        let folder = self
+            .upstream
+            .get(removed)
+            .and_then(|o| o.base().owned_folder());
+        match folder {
+            Some(folder) if !path.is_within(&folder) => None,
+            _ => Some(Holding::PlaceNotKnown),
+        }
     }
 
-    pub(super) fn why_held(&self, stuck: &Oid) -> String {
+    fn why_held(&self, stuck: &Oid, holding: &Holding) -> String {
         let short = stuck.short();
+        if let Holding::PlaceNotKnown = holding {
+            return format!(
+                "where {short} sits is not known upstream; run: dam pull, then dam push"
+            );
+        }
+        if let Holding::MaybeHeld(could_hold) = holding {
+            let shorts: Vec<&str> = could_hold.iter().map(Oid::short).collect();
+            let (last, rest) = shorts.split_last().unwrap_or((&"", &[]));
+            return format!(
+                "{short} may be held by {} or {last} upstream; run: dam pull, then dam push",
+                rest.join(", ")
+            );
+        }
         if self.tried.contains(stuck) {
             format!("waits on {short} leaving it upstream, which this push did not do")
+        } else if self.moved_without_a_commit.contains(stuck) {
+            format!(
+                "{short} is still under it upstream, and its move out is not committed; \
+                 run: dam add {short}, then dam commit and dam push"
+            )
         } else {
             format!(
                 "{short} is still under it upstream and this push does not move it; \
-                 move {short} back inside this remote's path, then push"
+                 run: dam mv {short} PATH inside this remote's path, then dam push"
             )
         }
     }
-}
-
-fn same_name(stuck: &Oid, namesake: &Oid) -> String {
-    let (stuck, namesake) = (stuck.short(), namesake.short());
-    format!(
-        "{namesake} has the same name in the same place, and dam cannot tell which of the two \
-         holds {stuck} upstream; rename {namesake}, then push"
-    )
 }
