@@ -12,7 +12,7 @@ pub fn request_file(sb: &Sandbox, document: &str) -> String {
 
 pub fn by_request(sb: &Sandbox, command: &[&str], document: &Value) -> std::process::Output {
     let path = request_file(sb, &document.to_string());
-    sb.output(&[command, &["--json", "--request", &path]].concat())
+    sb.output(&[command, &["-o", "json", "--request", &path]].concat())
 }
 
 pub fn fed(sb: &Sandbox, args: &[&str], input: &str) -> std::process::Output {

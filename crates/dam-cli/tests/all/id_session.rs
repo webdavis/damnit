@@ -5,7 +5,9 @@ use support::tokens::{answer, grant, grant_to};
 
 fn send(sb: &Sandbox, held: &str, subject: &str, session: &str) -> serde_json::Value {
     let meta = format!("session={session}");
-    let line = ["new", subject, "--id", "build", "--meta", &meta, "--json"];
+    let line = [
+        "new", subject, "--id", "build", "--meta", &meta, "-o", "json",
+    ];
     answer(&sb.output_holding(held, &line), "sent.schema.json")
 }
 

@@ -3,7 +3,7 @@ use crate::support;
 use support::sandbox::Sandbox;
 
 fn subjects(sb: &Sandbox, query: &str) -> Vec<String> {
-    let (ok, out, err) = sb.dam(&["ls", query, "--json"]);
+    let (ok, out, err) = sb.dam(&["ls", query, "-o", "json"]);
     assert!(ok, "{err}");
     let listed: serde_json::Value = serde_json::from_str(&out).unwrap();
     listed["objects"]
@@ -15,7 +15,7 @@ fn subjects(sb: &Sandbox, query: &str) -> Vec<String> {
 }
 
 fn estimate(sb: &Sandbox, oid: &str) -> serde_json::Value {
-    let (ok, out, err) = sb.dam(&["show", oid, "--json"]);
+    let (ok, out, err) = sb.dam(&["show", oid, "-o", "json"]);
     assert!(ok, "{err}");
     serde_json::from_str::<serde_json::Value>(&out).unwrap()["task"]["estimate"].clone()
 }

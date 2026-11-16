@@ -50,7 +50,7 @@ fn no_config_lists_the_defaults_and_creates_nothing() {
     let _guard = support::guard("no_config_lists_the_defaults_and_creates_nothing");
     let sb = Sandbox::new();
     let folder = sb.dir.path().join("fresh");
-    for format in [&[][..], &["--json"], &["--toon"]] {
+    for format in [&[][..], &["-o", "json"], &["-o", "toon"]] {
         let out = sb
             .command(&[&["config", "list"][..], format].concat())
             .env("DAM_CONFIG", folder.join("config.lua"))
@@ -95,7 +95,7 @@ fn a_broken_config_lua_gives_validates_error_and_the_next_step() {
         .unwrap();
     let expected = format!("dam: config: {reason}; run dam doctor\n");
     assert_eq!(String::from_utf8(listed.stderr).unwrap(), expected);
-    let listed = sb.output(&["config", "list", "--json"]);
+    let listed = sb.output(&["config", "list", "-o", "json"]);
     assert_eq!(kind_of(&listed), "parse");
 }
 
@@ -104,7 +104,7 @@ fn a_token_is_refused_before_the_config_is_read() {
     let _guard = support::guard("a_token_is_refused_before_the_config_is_read");
     let sb = Sandbox::new();
     sb.write_config_lua("return {\n");
-    let out = sb.output_holding("damk_v1_whatever", &["config", "list", "--json"]);
+    let out = sb.output_holding("damk_v1_whatever", &["config", "list", "-o", "json"]);
     assert_eq!(out.status.code(), Some(4), "{out:?}");
     assert!(out.stdout.is_empty());
     assert_eq!(error_document(&out)["error"]["rule"], "not_open_to_tokens");

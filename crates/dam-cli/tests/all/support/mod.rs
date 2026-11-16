@@ -22,6 +22,7 @@ pub mod schema;
 pub mod small_config;
 pub mod token_table;
 pub mod tokens;
+pub mod yaml;
 
 use std::time::{Duration, Instant};
 

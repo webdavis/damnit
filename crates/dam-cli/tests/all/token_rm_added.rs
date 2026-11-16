@@ -6,7 +6,7 @@ use support::tokens::{answer, grant, grant_to};
 fn added_from_tool(allow: &[&str]) -> (Sandbox, String, String) {
     let sb = Sandbox::new();
     let held = grant_to(&sb, "tool", 1, vec![grant(allow)]);
-    let line = ["new", "Call the dentist", "--json"];
+    let line = ["new", "Call the dentist", "-o", "json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     let oid = sent["oid"].as_str().unwrap().to_string();
     for step in [&["add", &oid][..], &["commit", "-m", "dentist"]] {
@@ -18,13 +18,13 @@ fn added_from_tool(allow: &[&str]) -> (Sandbox, String, String) {
 
 fn removal(sb: &Sandbox, held: &str, oid: &str) -> serde_json::Value {
     answer(
-        &sb.output_holding(held, &["rm", oid, "--json"]),
+        &sb.output_holding(held, &["rm", oid, "-o", "json"]),
         "rm.schema.json",
     )
 }
 
 fn listed(sb: &Sandbox) -> usize {
-    let (ok, out, err) = sb.dam(&["ls", "--json"]);
+    let (ok, out, err) = sb.dam(&["ls", "-o", "json"]);
     assert!(ok, "{err}");
     let ls: serde_json::Value = serde_json::from_str(&out).unwrap();
     ls["objects"].as_array().unwrap().len()
@@ -40,7 +40,7 @@ fn a_tokens_rm_of_an_added_task_waits_once_until_the_owner_adds_it() {
     assert_eq!(first["answer"], "waiting");
     assert_eq!(first["oid"], oid.as_str());
     assert_eq!(removal(&sb, &held, &oid), first);
-    let status = support::status_json(&sb, &["--json"]);
+    let status = support::status_json(&sb, &["-o", "json"]);
     let waiting = status["waiting"].as_array().unwrap();
     assert_eq!(waiting.len(), 1);
     assert_eq!(waiting[0]["hash"], first["item"]);
@@ -50,7 +50,7 @@ fn a_tokens_rm_of_an_added_task_waits_once_until_the_owner_adds_it() {
     let (ok, _, err) = sb.dam(&["add", first["item"].as_str().unwrap()]);
     assert!(ok, "{err}");
     assert_eq!(listed(&sb), 0);
-    let status = support::status_json(&sb, &["--json"]);
+    let status = support::status_json(&sb, &["-o", "json"]);
     assert_eq!(status["staged"][0]["op"], "delete");
     assert_eq!(status["staged"][0]["from"], "tool");
 }

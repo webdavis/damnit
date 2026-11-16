@@ -14,7 +14,7 @@ fn hooked(task_new: &str) -> Sandbox {
 fn an_edit_the_rules_refuse_with_refuse_changes_nothing_and_exits_4() {
     let _guard = support::guard("an_edit_the_rules_refuse_with_refuse_changes_nothing_and_exits_4");
     let sb = hooked("{ run = function() return { no_done = true } end, on_failure = 'refuse' }");
-    let out = sb.output(&["new", "buy milk", "--json"]);
+    let out = sb.output(&["new", "buy milk", "-o", "json"]);
     assert_eq!(out.status.code(), Some(4), "{out:?}");
     let document = error_document(&out);
     assert_eq!(document["error"]["rule"], "hook_refused");
@@ -26,7 +26,7 @@ fn an_edit_the_rules_refuse_with_refuse_changes_nothing_and_exits_4() {
             ),
         "{message}"
     );
-    let (ok, out, err) = sb.dam(&["ls", "--json"]);
+    let (ok, out, err) = sb.dam(&["ls", "-o", "json"]);
     assert!(ok, "{err}");
     let listing: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_eq!(listing["objects"], serde_json::json!([]));

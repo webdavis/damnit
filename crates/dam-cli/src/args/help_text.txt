@@ -1,10 +1,9 @@
 dam: about = Track tasks and events, staged and committed like git
-dam json: help = Print JSON, and a failure as one error document on stderr; dam doctor, dam test and dam config validate print only their report, to stdout
-dam toon: help = Print TOON, a compact form for language models; errors as --json
+dam output: help = Print json, toon or yaml, and a failure as one error document in that format on stderr; toon is a compact form for language models; dam doctor, dam test and dam config validate print only their report, to stdout
 dam config: help = Read the config from FILE; secrets.lua beside it holds the secrets. Default: ${XDG_CONFIG_HOME:-~/.config}/dam/config.lua
 dam store: help = Open the store at FILE. Default: ${XDG_DATA_HOME:-~/.local/share}/dam/dam.db
 dam no_color: help = Print without color; color is also off under NO_COLOR or when not a terminal
-dam quiet: help = Print only errors; --json and --toon still print their answer
+dam quiet: help = Print only errors; -o still prints its answer
 dam progress: help = Show the progress of slow steps on stderr, even when it is not a terminal
 dam no_progress: help = Hide the progress of slow steps
 dam meta: help = State a detail of this request, such as session=abc123, kept with each change it makes. Repeatable
@@ -121,7 +120,7 @@ It refuses a commit that dam pull made.
 Examples:
   dam revert 1a2b3c4
   dam revert 1a2b3c4 5d6e7f8
-  dam revert 1a2b3c4 --json
+  dam revert 1a2b3c4 -o json
 dam revert commit: help = Pick the commit by id, full or prefixed
 dam revert oids: help = Set back only these objects' changes in the commit, by oid or prefix
 dam commit: about = Record the stage as a commit
@@ -130,10 +129,10 @@ dam log: about = List commits, newest first
 dam show: about = Show one object or one commit
 dam show id: help = Pick an object by oid or a commit by id, full or prefixed
 dam status: about = Show what changed, what is staged and what a remote reported
-dam status full: help = Embed the whole object before and after each change, in --json and --toon
+dam status full: help = Embed the whole object before and after each change, under -o
 dam diff: about = Show unstaged changes, or staged ones with --staged
 dam diff staged: help = Show the staged changes instead of the unstaged ones
-dam diff full: help = Embed the whole object before and after each change, in --json and --toon
+dam diff full: help = Embed the whole object before and after each change, under -o
 dam ls: about = List objects, optionally by query or saved filter
 dam ls query: help = Narrow the list by a query, such as due:today, or a saved filter's name
 dam ls by: help = List what you made, what tokens made, or all of it
@@ -191,7 +190,7 @@ It contacts no remote. Read the changes with dam diff; dam restore undoes them.
 Examples:
   dam hook run task_changed
   dam hook run task_pulled @waiting
-  dam hook run task_new today --json
+  dam hook run task_new today -o json
 dam hook run hook: help = Name the hook to run by its event
 dam hook run query: help = Narrow the tasks by a query or saved filter, read the way `ls` reads one
 dam remote: about = Manage remotes
@@ -218,7 +217,7 @@ and the push goes on past it.
 
 Examples:
   dam sync run todoist
-  dam sync run todoist --json
+  dam sync run todoist -o json
   dam sync run todoist --when-due
 dam sync run remote: help = Sync this remote
 dam sync run when_due: help = Sync only when the interval has passed since the last sync; otherwise do nothing
@@ -254,7 +253,7 @@ dam token revoke name: help = Name the token to remove
 dam config: about = Show and check the config
 dam config: after_help = Examples:
   dam config list
-  dam config get remote.todoist.deadline --json
+  dam config get remote.todoist.deadline -o json
   dam config validate
 dam config list: about = List where the config files are and every setting dam is using, its own defaults marked, never a secret
 dam config list: after_help = It runs the top-level code of secrets.lua and calls no credential function.
@@ -262,14 +261,14 @@ Inside a project it also lists each setting from .dam.lua, marked as the project
 
 Examples:
   dam config list
-  dam config list --json
+  dam config list -o json
 dam config get: about = Print one setting, or every setting in one part, by its key
 dam config get: after_help = It runs the top-level code of secrets.lua and calls no credential function.
 
 Examples:
   dam config get remote.todoist.deadline
   dam config get remote.todoist
-  dam config get remote.todoist --json
+  dam config get remote.todoist -o json
 dam config get key: help = Name the setting by the key dam config list shows, such as remote.todoist.deadline
 dam config set: about = Write one setting into config.lua, or into .dam.lua inside a project, keeping the rest of the file
 dam config set: after_help = A list takes its items separated by commas. A secret, a function or a hook is refused.
@@ -303,7 +302,7 @@ It exits 1 when the check finds an issue, and prints the report to stdout either
 
 Examples:
   dam config validate
-  dam config validate --json
+  dam config validate -o json
 dam doctor: about = Read this machine, say what is wrong and how to fix it, and contact nothing
 dam doctor: after_help = An error raised in secrets.lua is shown as that file wrote it.
 It runs the top-level code of config.lua and secrets.lua and calls no credential function.
@@ -315,7 +314,7 @@ Examples:
   dam doctor
   dam doctor config
   dam doctor sync
-  dam doctor --json
+  dam doctor -o json
   dam doctor --fix
   dam doctor --fix database
 dam doctor checks: help = Run only these checks. Default: every check
@@ -330,5 +329,5 @@ Examples:
   dam test
   dam test credentials
   dam test filters
-  dam test --json
+  dam test -o json
 dam test parts: help = Test only these parts. Default: every part

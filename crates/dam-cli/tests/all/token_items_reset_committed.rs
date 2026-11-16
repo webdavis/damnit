@@ -13,7 +13,7 @@ fn owner(sb: &Sandbox, args: &[&str]) {
 
 fn sent(sb: &Sandbox, held: &str, line: &[&str]) -> Value {
     let mut line = line.to_vec();
-    line.push("--json");
+    line.extend(["-o", "json"]);
     let out = sb.output_holding(held, &line);
     assert!(out.status.success(), "{out:?}");
     serde_json::from_slice(&out.stdout).unwrap()
@@ -53,7 +53,7 @@ fn reset_of_a_committed_new_items_object_still_unstages_the_owners_edit() {
     assert!(ok, "{err}");
     assert_eq!(out.trim_end(), format!("unstaged {}", &dentist[..7]));
 
-    let status = support::status_json(&sb, &["--json"]);
+    let status = support::status_json(&sb, &["-o", "json"]);
     assert_eq!(status["staged"], json!([]));
     assert_eq!(status["unstaged"][0]["fields"], json!(["body"]));
 }

@@ -12,18 +12,18 @@ fn run(sb: &Sandbox, args: &[&str]) {
 fn commit(sb: &Sandbox, message: &str) -> String {
     run(sb, &["add", "-A"]);
     run(sb, &["commit", "-m", message]);
-    let (_, log, _) = sb.dam(&["log", "--json"]);
+    let (_, log, _) = sb.dam(&["log", "-o", "json"]);
     let log: Value = serde_json::from_str(&log).unwrap();
     log["commits"][0]["id"].as_str().unwrap().to_string()
 }
 
 fn revert(sb: &Sandbox, args: &[&str]) -> Value {
-    let line = [&["revert"], args, &["--json"]].concat();
+    let line = [&["revert"], args, &["-o", "json"]].concat();
     answer(&sb.output(&line), "revert.schema.json")
 }
 
 fn subject(sb: &Sandbox, oid: &str) -> Option<String> {
-    let out = sb.output(&["show", oid, "--json"]);
+    let out = sb.output(&["show", oid, "-o", "json"]);
     let shown: Value = serde_json::from_slice(&out.stdout).ok()?;
     shown["subject"].as_str().map(str::to_string)
 }
@@ -104,11 +104,11 @@ fn a_token_is_refused() {
     let added = commit(&sb, "add");
     let held = grant_to(&sb, "tool", 1, vec![grant(&["task:read", "history:read"])]);
 
-    let out = sb.output_holding(&held, &["revert", &added, "--json"]);
+    let out = sb.output_holding(&held, &["revert", &added, "-o", "json"]);
 
     assert_eq!(refused(&out), "not_open_to_tokens");
     assert_eq!(
-        support::status_json(&sb, &["--json"])["unstaged"],
+        support::status_json(&sb, &["-o", "json"])["unstaged"],
         json!([])
     );
 }

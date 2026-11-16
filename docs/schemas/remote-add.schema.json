@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/remote-add.schema.json",
   "title": "dam remote add answer",
-  "description": "What dam remote add prints with --json or --toon.",
+  "description": "What dam remote add prints with -o.",
   "type": "object",
   "required": [
     "name",

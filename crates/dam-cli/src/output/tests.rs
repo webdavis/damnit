@@ -73,20 +73,26 @@ fn quiet_shows_nothing_for_a_human_but_keeps_a_requested_document() {
         colored: None,
         standard_error_lines: vec!["note".into()],
     };
-    let quiet = Format::of(false, false).quieted(true);
+    let quiet = Format::Human.quieted(true);
     assert_eq!(quiet, Format::Quiet);
     assert_eq!(shown(quiet, false, Some(80), &report).unwrap(), None);
-    let json = Format::of(true, false).quieted(true);
-    assert_eq!(
-        shown(json, false, Some(80), &report).unwrap().as_deref(),
-        Some("{\n  \"a\": 1\n}")
-    );
-    assert_eq!(Format::of(false, false).quieted(false), Format::Human);
+    for (format, answer) in [
+        (Format::Json, "{\n  \"a\": 1\n}"),
+        (Format::Toon, "a: 1"),
+        (Format::Yaml, "a: 1\n"),
+    ] {
+        let kept = format.quieted(true);
+        assert_eq!(
+            shown(kept, false, Some(80), &report).unwrap().as_deref(),
+            Some(answer)
+        );
+    }
+    assert_eq!(Format::Human.quieted(false), Format::Human);
 }
 
 #[test]
 fn a_report_of_nothing_prints_nothing_in_any_format() {
-    for format in [Format::Human, Format::Json, Format::Toon] {
+    for format in [Format::Human, Format::Json, Format::Toon, Format::Yaml] {
         assert_eq!(
             shown(format, false, None, &Report::nothing()).unwrap(),
             None

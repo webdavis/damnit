@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/hook-list.schema.json",
   "title": "dam hook list answer",
-  "description": "What dam hook list prints with --json or --toon: each .lua file in the hooks folder beside config.lua, then inside a project each in its .damhooks folder, marked project, in the order task_new, task_changed, task_done, task_pulled, then files named for no event. hook is the event the file is named for, or null. A hook that loads carries on_failure, or changes for task_pulled, each the value dam uses, written or by default. A hook that does not load carries error, why. A project's hook file while project hooks are off carries off and is never loaded.",
+  "description": "What dam hook list prints with -o: each .lua file in the hooks folder beside config.lua, then inside a project each in its .damhooks folder, marked project, in the order task_new, task_changed, task_done, task_pulled, then files named for no event. hook is the event the file is named for, or null. A hook that loads carries on_failure, or changes for task_pulled, each the value dam uses, written or by default. A hook that does not load carries error, why. A project's hook file while project hooks are off carries off and is never loaded.",
   "type": "object",
   "required": [
     "hooks"

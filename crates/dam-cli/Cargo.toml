@@ -27,4 +27,5 @@ toml.workspace = true
 [dev-dependencies]
 dam-application = { path = "../dam-application", features = ["testing"] }
 jsonschema = { version = "0.30", default-features = false }
+yaml-rust2 = "0.11"
 rusqlite.workspace = true

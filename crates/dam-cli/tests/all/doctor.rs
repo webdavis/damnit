@@ -61,7 +61,7 @@ fn a_token_warning_shows_under_a_warning_row() {
     );
     assert_eq!(document["needs_attention"], serde_json::json!([row]));
 
-    let answer = sb.doctor(&["doctor", "config", "--toon"]);
+    let answer = sb.doctor(&["doctor", "config", "-o", "toon"]);
     assert!(answer.out.contains("warnings[1]"), "{}", answer.out);
 }
 
@@ -135,7 +135,7 @@ fn a_token_is_refused_before_the_config_is_read() {
     let _guard = support::guard("a_token_is_refused_before_the_config_is_read");
     let sb = Sandbox::new();
     sb.write_config_lua("return {\n");
-    let out = sb.output_holding("damk_v1_whatever", &["doctor", "--json"]);
+    let out = sb.output_holding("damk_v1_whatever", &["doctor", "-o", "json"]);
     assert_eq!(out.status.code(), Some(4), "{out:?}");
     assert!(out.stdout.is_empty());
     assert_eq!(error_document(&out)["error"]["rule"], "not_open_to_tokens");

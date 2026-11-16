@@ -33,7 +33,7 @@ fn a_token_is_refused_before_anything_is_read_or_written() {
     let sb = Sandbox::new();
     let config = fresh_config(&sb);
     let out = sb
-        .command(&["config", "print-default", "--json"])
+        .command(&["config", "print-default", "-o", "json"])
         .env("DAM_CONFIG", &config)
         .env("DAM_TOKEN", "damk_v1_whatever")
         .output()

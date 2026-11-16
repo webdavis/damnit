@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use clap::Parser;
 
 use super::{Command, values};
+use crate::output::Format;
 use crate::progress::Asked;
 
 #[derive(Parser, Debug)]
@@ -14,18 +15,14 @@ use crate::progress::Asked;
 )]
 pub(crate) struct Cli {
     #[arg(
+        short,
         long,
         global = true,
-        conflicts_with = "toon",
-        help = "Print JSON, and a failure as one error document on stderr; dam doctor, dam test and dam config validate print only their report, to stdout"
+        value_name = "FORMAT",
+        value_parser = Format::chosen,
+        help = "Print json, toon or yaml, and a failure as one error document in that format on stderr; toon is a compact form for language models; dam doctor, dam test and dam config validate print only their report, to stdout"
     )]
-    pub(crate) json: bool,
-    #[arg(
-        long,
-        global = true,
-        help = "Print TOON, a compact form for language models; errors as --json"
-    )]
-    pub(crate) toon: bool,
+    pub(crate) output: Option<Format>,
     #[arg(
         long,
         global = true,
@@ -54,7 +51,7 @@ pub(crate) struct Cli {
         short,
         long,
         global = true,
-        help = "Print only errors; --json and --toon still print their answer"
+        help = "Print only errors; -o still prints its answer"
     )]
     pub(crate) quiet: bool,
     #[arg(

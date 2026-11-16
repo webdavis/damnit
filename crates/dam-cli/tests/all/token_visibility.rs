@@ -42,10 +42,10 @@ fn a_token_never_sees_the_oid_of_a_hidden_dependency_or_attached_event() {
     let report = sb.new_object(&["report", "--path", "work"]);
     let (ok, _, err) = sb.dam(&["edit", &report, "--depends", &diary, "--attach", &dentist]);
     assert!(ok, "{err}");
-    let (_, owner_view, _) = sb.dam(&["show", &report, "--json"]);
+    let (_, owner_view, _) = sb.dam(&["show", &report, "-o", "json"]);
     assert!(owner_view.contains(&diary) && owner_view.contains(&dentist));
 
-    for format in [vec!["--json"], vec!["--toon"], vec![]] {
+    for format in [vec!["-o", "json"], vec!["-o", "toon"], vec![]] {
         for read in [vec!["ls"], vec!["show", &report]] {
             let args = [read, format.clone()].concat();
             let out = sb.output_holding(&held, &args);

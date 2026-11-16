@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/commit.schema.json",
   "title": "dam commit document",
-  "description": "What dam commit and dam show <commit> print with --json or --toon. Each change names the token that made it, or null for the owner.",
+  "description": "What dam commit and dam show <commit> print with -o. Each change names the token that made it, or null for the owner.",
   "type": "object",
   "required": ["id", "at", "message", "changes"],
   "additionalProperties": false,

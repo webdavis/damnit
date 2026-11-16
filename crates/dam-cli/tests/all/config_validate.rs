@@ -9,7 +9,7 @@ use support::token_table::TokenTable;
 const DOCTOR_CONFIG: &[&str] = &["doctor", "config"];
 
 fn answers_as_doctor_config_does(sb: &Sandbox) {
-    for format in [&[][..], &["--json"], &["--toon"]] {
+    for format in [&[][..], &["-o", "json"], &["-o", "toon"]] {
         let validate = sb.output(&[&["config", "validate"][..], format].concat());
         let doctor = sb.output(&[DOCTOR_CONFIG, format].concat());
         assert_eq!(validate.status.code(), doctor.status.code(), "{format:?}");
@@ -20,7 +20,7 @@ fn answers_as_doctor_config_does(sb: &Sandbox) {
             "{format:?}"
         );
     }
-    let out = sb.output(&["config", "validate", "--json"]);
+    let out = sb.output(&["config", "validate", "-o", "json"]);
     let answer: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_matches_schema(&answer, "config-validate.schema.json");
     assert_eq!(answer["command"], "config validate");
@@ -63,7 +63,7 @@ fn a_token_is_refused_before_the_config_is_read() {
     let _guard = support::guard("a_token_is_refused_before_the_config_is_read");
     let sb = Sandbox::new();
     sb.write_config_lua("return {\n");
-    let out = sb.output_holding("damk_v1_whatever", &["config", "validate", "--json"]);
+    let out = sb.output_holding("damk_v1_whatever", &["config", "validate", "-o", "json"]);
     assert_eq!(out.status.code(), Some(4), "{out:?}");
     assert!(out.stdout.is_empty());
     assert_eq!(error_document(&out)["error"]["rule"], "not_open_to_tokens");

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/init.schema.json",
   "title": "dam init answer",
-  "description": "What dam init prints with --json or --toon: the project file, the path it sets, whether it wrote the file, the task it created, how many tasks were already under the path when it joined a place that was there, and each standard section it created. Where .dam.lua was already there, path is null when nothing was missing.",
+  "description": "What dam init prints with -o: the project file, the path it sets, whether it wrote the file, the task it created, how many tasks were already under the path when it joined a place that was there, and each standard section it created. Where .dam.lua was already there, path is null when nothing was missing.",
   "type": "object",
   "required": ["file", "path", "created", "task", "tasks_already_there", "sections_created"],
   "additionalProperties": false,

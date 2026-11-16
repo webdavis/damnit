@@ -18,12 +18,12 @@ fn owner(sb: &Sandbox, args: &[&str]) {
 
 fn sent(sb: &Sandbox, held: &str, line: &[&str]) -> serde_json::Value {
     let mut line = line.to_vec();
-    line.push("--json");
+    line.extend(["-o", "json"]);
     answer(&sb.output_holding(held, &line), "sent.schema.json")
 }
 
 fn taken_back(sb: &Sandbox, held: &str, named: &str) -> serde_json::Value {
-    let out = sb.output_holding(held, &["rm", named, "--json"]);
+    let out = sb.output_holding(held, &["rm", named, "-o", "json"]);
     let document = answer(&out, "rm.schema.json");
     answer(&out, "removal.schema.json");
     document
@@ -67,7 +67,7 @@ fn a_change_or_removal_item_named_by_hash_is_withdrawn_with_its_task() {
     let removal = taken_back(&sb, &held, &oid);
     let hash = removal["item"].as_str().unwrap();
     assert_eq!(taken_back(&sb, &held, hash), withdrawn(hash, &oid));
-    let status = support::status_json(&sb, &["--json"]);
+    let status = support::status_json(&sb, &["-o", "json"]);
     assert_eq!(status["waiting"], serde_json::json!([]));
 }
 
@@ -94,7 +94,7 @@ fn parallel_withdraws_of_one_item_all_exit_0_and_one_says_withdrawn() {
     sent(&sb, &held, &["new", "Fix the build", "--id", "w"]);
     let racers: Vec<_> = (0..12)
         .map(|_| {
-            sb.command(&["rm", "--id", "w", "--json"])
+            sb.command(&["rm", "--id", "w", "-o", "json"])
                 .env("DAM_TOKEN", &held)
                 .stdin(std::process::Stdio::null())
                 .stdout(std::process::Stdio::piped())

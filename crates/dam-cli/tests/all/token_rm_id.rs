@@ -19,7 +19,8 @@ fn send(sb: &Sandbox, held: &str, session: &str) -> String {
         "build",
         "--meta",
         &meta,
-        "--json",
+        "-o",
+        "json",
     ];
     let sent = answer(&sb.output_holding(held, &line), "sent.schema.json");
     sent["oid"].as_str().unwrap().to_string()
@@ -27,7 +28,7 @@ fn send(sb: &Sandbox, held: &str, session: &str) -> String {
 
 fn take_back(sb: &Sandbox, held: &str, session: &str) -> serde_json::Value {
     let meta = format!("session={session}");
-    let line = ["rm", "--id", "build", "--meta", &meta, "--json"];
+    let line = ["rm", "--id", "build", "--meta", &meta, "-o", "json"];
     answer(&sb.output_holding(held, &line), "rm.schema.json")
 }
 
@@ -54,12 +55,12 @@ fn an_oid_and_an_id_together_or_neither_is_a_usage_error() {
     let oid = sb.new_object(&["Fix the build"]);
     for (line, problem, word) in [
         (
-            &["rm", &oid, "--id", "build", "--json"][..],
+            &["rm", &oid, "--id", "build", "-o", "json"][..],
             "conflict",
             serde_json::json!("--id"),
         ),
         (
-            &["rm", "--json"],
+            &["rm", "-o", "json"],
             "missing_argument",
             serde_json::Value::Null,
         ),

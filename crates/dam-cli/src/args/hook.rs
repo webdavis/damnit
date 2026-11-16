@@ -27,7 +27,7 @@ It contacts no remote. Read the changes with dam diff; dam restore undoes them.
 Examples:
   dam hook run task_changed
   dam hook run task_pulled @waiting
-  dam hook run task_new today --json"
+  dam hook run task_new today -o json"
     )]
     Run(HookRunArgs),
 }

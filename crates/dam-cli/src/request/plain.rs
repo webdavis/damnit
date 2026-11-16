@@ -22,7 +22,19 @@ pub(super) fn parse(line: Vec<OsString>) -> Result<Cli, Refused> {
 }
 
 fn format_given(line: &[OsString]) -> Format {
-    let flags: Vec<&OsString> = line.iter().take_while(|word| *word != "--").collect();
-    let given = |flag: &str| flags.iter().any(|word| *word == flag);
-    Format::of(given("--json"), given("--toon"))
+    let words: Vec<&str> = line
+        .iter()
+        .take_while(|word| *word != "--")
+        .filter_map(|word| word.to_str())
+        .collect();
+    let value_at = |at: usize| match words[at] {
+        "-o" | "--output" => words.get(at + 1).copied(),
+        word => word
+            .strip_prefix("--output=")
+            .or_else(|| word.strip_prefix("-o"))
+            .map(|value| value.strip_prefix('=').unwrap_or(value)),
+    };
+    (0..words.len())
+        .find_map(|at| value_at(at).and_then(|value| Format::chosen(value).ok()))
+        .unwrap_or(Format::Human)
 }

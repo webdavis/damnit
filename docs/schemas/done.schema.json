@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/done.schema.json",
   "title": "dam done answer",
-  "description": "What dam done prints with --json or --toon: the task and what became of it, or the item it sent when DAM_TOKEN is set.",
+  "description": "What dam done prints with -o: the task and what became of it, or the item it sent when DAM_TOKEN is set.",
   "oneOf": [
     {
       "type": "object",

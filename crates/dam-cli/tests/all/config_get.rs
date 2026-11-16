@@ -7,7 +7,7 @@ use support::schema::assert_matches_schema;
 use support::small_config::small_config;
 
 fn json_of(sb: &Sandbox, args: &[&str]) -> Value {
-    let out = sb.output(&[args, &["--json"]].concat());
+    let out = sb.output(&[args, &["-o", "json"]].concat());
     assert!(out.status.success(), "{args:?}: {out:?}");
     serde_json::from_slice(&out.stdout).unwrap()
 }
@@ -82,7 +82,7 @@ fn a_key_that_names_nothing_is_refused_with_the_key() {
         let said = String::from_utf8(out.stderr).unwrap();
         let message = format!("no setting named {key}; run dam config list to see the keys");
         assert_eq!(said, format!("dam: {message}\n"));
-        let out = sb.output(&["config", "get", key, "--json"]);
+        let out = sb.output(&["config", "get", key, "-o", "json"]);
         assert_eq!(out.status.code(), Some(4), "{key}: {out:?}");
         let document = error_document(&out);
         assert_matches_schema(&document, "error.schema.json");
@@ -97,7 +97,7 @@ fn a_key_that_names_nothing_is_refused_with_the_key() {
 fn an_empty_key_is_a_usage_error() {
     let _guard = support::guard("an_empty_key_is_a_usage_error");
     let sb = small_config();
-    let out = sb.output(&["config", "get", "", "--json"]);
+    let out = sb.output(&["config", "get", "", "-o", "json"]);
     assert_eq!(out.status.code(), Some(2), "{out:?}");
     assert_eq!(error_document(&out)["error"]["kind"], "usage");
     assert!(!String::from_utf8_lossy(&out.stderr).contains("no setting named"));
@@ -121,7 +121,7 @@ fn a_part_answers_as_it_sits_in_the_whole_document() {
         let part = json_of(&sb, &["config", "get", key]);
         assert_matches_schema(&part, "config-get.schema.json");
         assert_eq!(&part, whole.pointer(pointer).unwrap(), "{key}");
-        let (ok, out, err) = sb.dam(&["config", "get", key, "--toon"]);
+        let (ok, out, err) = sb.dam(&["config", "get", key, "-o", "toon"]);
         assert!(ok, "{err}");
         assert_eq!(toon_format::decode_default::<Value>(&out).unwrap(), part);
     }
@@ -132,7 +132,10 @@ fn a_token_is_refused_before_the_config_is_read() {
     let _guard = support::guard("a_token_is_refused_before_the_config_is_read");
     let sb = Sandbox::new();
     sb.write_config_lua("return {\n");
-    let out = sb.output_holding("damk_v1_whatever", &["config", "get", "owner", "--json"]);
+    let out = sb.output_holding(
+        "damk_v1_whatever",
+        &["config", "get", "owner", "-o", "json"],
+    );
     assert_eq!(out.status.code(), Some(4), "{out:?}");
     assert!(out.stdout.is_empty());
     assert_eq!(error_document(&out)["error"]["rule"], "not_open_to_tokens");

@@ -34,7 +34,7 @@ impl Fresh {
     }
 
     fn created(&self, args: &[&str]) -> serde_json::Value {
-        let (code, out) = self.run(&[args, &["--json"]].concat());
+        let (code, out) = self.run(&[args, &["-o", "json"]].concat());
         assert_eq!(code, Some(0), "{out}");
         let document: serde_json::Value = serde_json::from_str(&out).unwrap();
         assert_matches_schema(&document, "doctor.schema.json");
@@ -94,7 +94,7 @@ fn the_json_names_each_created_file_and_a_second_fix_creates_nothing() {
 fn without_fix_the_report_has_no_created_key() {
     let _guard = support::guard("without_fix_the_report_has_no_created_key");
     let fresh = Fresh::new();
-    let (_, out) = fresh.run(&["doctor", "--json"]);
+    let (_, out) = fresh.run(&["doctor", "-o", "json"]);
     let document: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert!(document.get("created").is_none(), "{document}");
     assert!(!fresh.config.exists() && !fresh.store.exists());

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/category-migrate.schema.json",
   "title": "dam category migrate answer",
-  "description": "What dam category migrate prints with --json or --toon: the changes document for the objects that carried an old label, plus config, each place in config.lua that names an old label.",
+  "description": "What dam category migrate prints with -o: the changes document for the objects that carried an old label, plus config, each place in config.lua that names an old label.",
   "type": "object",
   "required": [
     "preview",

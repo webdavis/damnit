@@ -4,7 +4,7 @@ use support::sandbox::Sandbox;
 use support::tokens::{answer, grant, grant_to, refused};
 
 fn objects(sb: &Sandbox) -> Vec<serde_json::Value> {
-    let (ok, out, err) = sb.dam(&["ls", "--json"]);
+    let (ok, out, err) = sb.dam(&["ls", "-o", "json"]);
     assert!(ok, "{err}");
     serde_json::from_str::<serde_json::Value>(&out).unwrap()["objects"]
         .as_array()
@@ -15,7 +15,7 @@ fn objects(sb: &Sandbox) -> Vec<serde_json::Value> {
 fn owner_new(sb: &Sandbox, args: &[&str]) -> serde_json::Value {
     let mut line = vec!["new"];
     line.extend_from_slice(args);
-    line.push("--json");
+    line.extend(["-o", "json"]);
     let (ok, out, err) = sb.dam(&line);
     assert!(ok, "{err}");
     serde_json::from_str(&out).unwrap()
@@ -50,7 +50,7 @@ fn the_owners_ids_are_kept_apart_from_a_tokens() {
     let sb = Sandbox::new();
     let held = grant_to(&sb, "tool", 1, vec![grant(&["task:read", "task:create"])]);
     let mine = owner_new(&sb, &["Call dentist", "--id", "dentist"]);
-    let line = ["new", "Call the dentist", "--id", "dentist", "--json"];
+    let line = ["new", "Call the dentist", "--id", "dentist", "-o", "json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     assert_eq!(sent["answer"], "new");
     assert_ne!(sent["oid"], mine["oid"]);
@@ -96,7 +96,8 @@ fn the_owners_repeat_into_its_own_folder_is_refused_as_mv_is() {
         "plan",
         "--path",
         "work/Plan/x",
-        "--json",
+        "-o",
+        "json",
     ];
     assert_eq!(refused(&sb.output(&line)), "move_inside_itself");
     assert_eq!(objects(&sb)[0]["path"], "work/");

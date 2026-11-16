@@ -5,7 +5,7 @@ use std::os::unix::fs::PermissionsExt;
 use support::sandbox::Sandbox;
 
 fn listed_key_id(sb: &Sandbox) -> String {
-    let (ok, out, err) = sb.dam(&["token", "list", "--json"]);
+    let (ok, out, err) = sb.dam(&["token", "list", "-o", "json"]);
     assert!(ok, "{err}");
     let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
     answer["tokens"][0]["key_id"].as_str().unwrap().to_string()

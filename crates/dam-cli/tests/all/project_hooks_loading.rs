@@ -32,7 +32,7 @@ fn dam_in(sb: &Sandbox, folder: &PathBuf, args: &[&str]) -> String {
 }
 
 fn created(sb: &Sandbox, folder: &PathBuf, args: &[&str]) -> serde_json::Value {
-    let mut line = vec!["new", "--json"];
+    let mut line = vec!["new", "-o", "json"];
     line.extend_from_slice(args);
     serde_json::from_str(&dam_in(sb, folder, &line)).unwrap()
 }

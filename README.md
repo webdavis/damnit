@@ -50,7 +50,7 @@ A filter's `match` and a hook's `run` show as `function`, never their source, an
 `file` names its file. A token shows
 each of its settings by the key `secrets.lua` uses, never its value, or `disabled`. A setting with
 no value and no default shows `not set`.
-`docs/schemas/config-list.schema.json` is the schema of its `--json` answer.
+`docs/schemas/config-list.schema.json` is the schema of its `-o json` answer.
 `dam config get <key>` prints the rows of one setting, or of every setting in one part, by the key
 `dam config list` shows, such as `remote.todoist.deadline` or `remote.todoist`. A name may hold a
 dot, and a key that can be read two ways is refused with both readings.
@@ -88,7 +88,7 @@ Its `sync` check says whether background sync runs now, starts at login, how oft
 last run ended. A failed last run, or an enabled remote not run for three intervals, is an issue.
 `helpers`, `credentials`, `pushes` and `sync` list one row for each remote under their own row.
 `dam doctor` exits 1 when a check finds an issue.
-`docs/schemas/doctor.schema.json` is the schema of its `--json` answer.
+`docs/schemas/doctor.schema.json` is the schema of its `-o json` answer.
 `dam config validate` prints what `dam doctor config` prints, with `command` set to
 `config validate`.
 
@@ -100,7 +100,7 @@ Its `filters` part runs each saved filter once over the store, as `dam ls <name>
 changes nothing. A failing filter names the object and the line of `config.lua` it failed on.
 `dam test` prints the report `dam doctor` prints, with `command` set to `test`.
 It exits 1 when a part finds an issue.
-`docs/schemas/test.schema.json` is the schema of its `--json` answer.
+`docs/schemas/test.schema.json` is the schema of its `-o json` answer.
 
 `deadline` (default `"60s"`) is the longest the helper may stay silent; past it `dam` kills the
 helper and exits 1. A pull answers at once, so the deadline bounds the whole pull. Ctrl-C kills the
@@ -119,7 +119,7 @@ pulls from one remote, then pushes its committed changes. A conflict is left for
 `sync = { interval = "15m", allowed = false }` on a remote sets background sync: `interval`
 defaults to `15m` and is at least `1m`; `allowed = false` keeps it from ever starting. Nothing
 syncs by itself.
-`dam sync run` ignores `allowed`. `docs/schemas/sync-run.schema.json` is its `--json` schema.
+`dam sync run` ignores `allowed`. `docs/schemas/sync-run.schema.json` is its `-o json` schema.
 `dam sync run todoist --when-due` syncs only when `interval` has passed since the last sync, and
 never when `allowed = false`; otherwise it prints nothing. `--interval 5m` replaces `interval`.
 Each `dam sync run` notes when it ran and how it ended in the `background` folder beside the
@@ -134,7 +134,7 @@ Each names one remote and is safe to repeat. `start` and `enable` refuse when `a
 A token cannot run them. macOS uses launchd. Linux uses a systemd user timer; without
 `loginctl enable-linger` it runs only while you are logged in. There, `start` refuses settings
 other than an enabled remote's, which systemd would keep in force; disable it first. With
-neither, `dam` refuses and prints the crontab line to add by hand. `docs/schemas/sync-start.schema.json` and its three siblings are their `--json` schemas.
+neither, `dam` refuses and prints the crontab line to add by hand. `docs/schemas/sync-start.schema.json` and its three siblings are their `-o json` schemas.
 
 ## Google Calendar
 
@@ -240,7 +240,7 @@ comment header naming the oid and kind, then one `key = value` line per field, w
 string means none. Emptying an optional field clears it, a key the object's kind does not have is
 refused, and saving the template untouched cancels. A save that does not parse reopens the template
 once with the error on its first line; a second one exits 2 and names the file that keeps your
-edit. Under `--json` or `--toon` it refuses instead of opening an editor.
+edit. Under `-o` it refuses instead of opening an editor.
 
 `dam edit`, `dam done`, `dam mv` and `dam rm` take several oids, `--query TEXT` or `--filter NAME`
 in place of one oid, and change the whole set or nothing:
@@ -280,12 +280,12 @@ It refuses a commit `dam pull` made, rule `pulled_commit`, and an oid it did not
 `dam done` records when it ran, as `completed_at` on the task: RFC 3339 in UTC, null on an open
 task, and cleared again by `--no-done`. A task completed in Todoist comes in with Todoist's time.
 
-`dam status`, `dam diff`, `dam log` and `dam show` read the way their git namesakes do. `--json`
-and `--toon` on any read give a program the same answer. A change's minus line is red and its plus
-line green, unless output is not a terminal, `NO_COLOR` is set or `--no-color` is given.
+`dam status`, `dam diff`, `dam log` and `dam show` read the way their git namesakes do. `-o json`,
+`-o toon` and `-o yaml` on any read give a program the same answer. A change's minus line is red
+and its plus line green, unless output is not a terminal, `NO_COLOR` is set or `--no-color` is given.
 
 `dam remote list` names every remote with when it was last pulled and last pushed: `pulled 4m ago`
-in the line, `last_pull` and `last_push` as RFC 3339 under `--json`, null until that verb has
+in the line, `last_pull` and `last_push` as RFC 3339 under `-o json`, null until that verb has
 reached the remote once.
 
 `dam ls`, `dam show`, `dam agenda` and `dam reminders` read only the local store and never reach a
@@ -297,7 +297,7 @@ remote.
     dam ls estimate:max:5m
     dam edit 3f2a9c1 --focus today
     dam ls completed_at:today
-    dam reminders --json
+    dam reminders -o json
 
 `--focus DAY` marks a task to work on first that day and records who set it and when. A day holds
 three marks; a fourth exits 4, rule `focus_full`. `dam ls` lists today's marks first, in the order
@@ -326,7 +326,7 @@ it. When the path is already there, `dam init` joins it and says how many tasks 
 `.dam.lua` is already there, as in a fresh clone, `dam init` creates what is missing, the project's
 task and each of its `sections`, and says what it created; when nothing is missing it changes nothing. Inside another project's folder it makes a project of
 its own: the nearest `.dam.lua` at or above where you stand is the one `dam` follows.
-`docs/schemas/init.schema.json` is its `--json` schema.
+`docs/schemas/init.schema.json` is its `-o json` schema.
 
 Inside a project, `dam new` puts the task under the project's path: `dam new "x" --path cli/` in a
 project at `app/` lands at `app/cli/`. With `--parent` and no `--path` the task goes where its
@@ -346,10 +346,10 @@ project, with `--global` and `--project` as on `dam new`.
 `--project <path>` on those four commands works from any folder, in a project or not, and stands in
 for the project you are in: `dam ls --project pns/hooks/`, `dam new "x" --project pns/ --path cli/`.
 It takes a path of any depth. `--global` and `--project` together are a usage error. When no task
-holds that path yet, `dam new --project` creates it first and says so on standard error; with `--json`
+holds that path yet, `dam new --project` creates it first and says so on standard error; with `-o json`
 the answer carries `project_created`, its `oid` and `path`.
 `dam config list` inside a project shows the project's `.dam.lua` and each setting it holds,
-marked `(from the project)`; with `--json` they are under `project`.
+marked `(from the project)`; with `-o json` they are under `project`.
 Inside a project, `dam config set` writes a key `.dam.lua` holds into `.dam.lua`, and
 `dam config unset` removes one but `path`, keeping the rest of the file, and refuses a value that would leave the file unable to load. A key only your `config.lua`
 holds is refused there; `--global` writes `config.lua` instead. `project.hooks` never goes into
@@ -423,7 +423,7 @@ inside them `\"` is a quote and `\\` a backslash. Saved filters live under `filt
 `dam category list` prints the label categories with their values and whether each is exclusive:
 `{"filters": [{"name": "today", "kind": "query", "query": "due:today | overdue"}]}` and
 `{"categories": [{"name": "effort", "values": ["light", "admin", "deep"], "exclusive": true}]}`
-under `--json`, an empty array when nothing is declared.
+under `-o json`, an empty array when nothing is declared.
 
 `dam filter create <name> --query '<query>'` saves a filter, and `dam filter remove <name>`
 removes one. `dam category create <name> --values a,b --exclusive` and `dam category remove <name>`
@@ -476,10 +476,13 @@ project's path and only for commands run inside it. `docs/lua.md` says more.
 
 ## Reading it from a program
 
-A flag is named after the key it writes: a value `dam show --json` prints under `due` goes back
+`-o` (`--output`) prints the answer as `json`, `toon` or `yaml`, the same data in three forms;
+`toon` is compact for language models.
+
+A flag is named after the key it writes: a value `dam show -o json` prints under `due` goes back
 through `dam edit --due`, and `--no-due` clears it.
 
-`--quiet` (`-q`) prints only errors; under `--json` or `--toon` the answer still prints.
+`--quiet` (`-q`) prints only errors; under `-o` the answer still prints.
 
 A slow step shows a progress line on standard error when it is a terminal. `--progress` shows it
 even when it is not, as one start and one finished record per step; `--no-progress` hides it.
@@ -496,11 +499,11 @@ These steps report progress:
 
 A wait the remote asks for to slow down shows as the pull or push step it belongs to.
 
-Every time under `--json` and `--toon` is RFC 3339 with its offset, such as
+Every time under `-o` is RFC 3339 with its offset, such as
 `2026-09-25T09:00:00-04:00`, and every all-day date is a plain `YYYY-MM-DD`.
 
-Every answer has a JSON Schema in `docs/schemas/`, named after its command: `dam remote list`
-answers by `remote-list.schema.json`. A command that writes also publishes
+Every answer has a JSON Schema in `docs/schemas/`, named after its command, and it describes the
+answer in all three forms: `dam remote list` answers by `remote-list.schema.json`. A command that writes also publishes
 `<command>.request.schema.json`, whose keys are its flags without the dashes.
 `object.schema.json` is a task or an event.
 
@@ -518,7 +521,7 @@ open an editor from a request.
     dam token create --request - <<< '{"name": "tool", "allow": ["task:read"], "require": ["session"]}'
     dam day set --request day.json
 
-`dam status --json` and `dam diff --json` answer in change documents, one per change:
+`dam status -o json` and `dam diff -o json` answer in change documents, one per change:
 
     {"oid": "98d878...", "op": "update", "fields": ["subject", "due"], "kind": "task",
      "subject": "buy oat milk", "path": "work/", "labels": ["errand"], "done": false,
@@ -553,7 +556,7 @@ standard output and exits 4, rule `stale_remote`, with one sentence on standard 
 pull never counts as fresh. A program that polls with `dam pull gcal` scheduled every five minutes
 runs:
 
-    dam agenda --json --max-age gcal=15m
+    dam agenda -o json --max-age gcal=15m
 
 Repeat the flag to bound more than one remote.
 
@@ -581,7 +584,7 @@ one grant and prints the token once. `--labels`, `--own`, `--remotes`, `--expire
 `--require` set the keys of the same name. dam edits only a token table written out in full, and
 refuses before it makes a token when it cannot. `dam token list` shows each token's key id,
 grants, conditions and standing, never its value. `dam token revoke tool` removes its table and
-leaves the rest of the file as it was. The schemas of their `--json` answers are
+leaves the rest of the file as it was. The schemas of their `-o json` answers are
 `docs/schemas/token-create.schema.json`, `token-list.schema.json` and `token-revoke.schema.json`.
 
 A grant allows only what `allow` lists, and only on objects under one of `paths`, carrying one of
@@ -644,7 +647,7 @@ Every task and event has an `author`: the name of the token that made it, or you
 `owner = "Ada"` in `config.lua`. A request states its details with a repeatable
 `--meta key=value`, such as harness, session, model, effort and version; any key is kept as given.
 Each change keeps them with the host, working directory, repo, branch, time and channel. `dam show
-<oid>` prints the author and the details of the change that made it, and `--json` and `--toon` carry
+<oid>` prints the author and the details of the change that made it, and `-o` carries
 them as `author` and `details` on every object in `ls` and `show` and every change in `status`,
 `diff` and `log`. A token reads the details of its own changes only. `dam ls --by mine`, `--by
 agents` or `--by all` lists what you made, what tokens made, or both. damnit takes these values as
@@ -679,7 +682,7 @@ every token. `dam status` warns about each.
 
 ## Errors
 
-With `--json` or `--toon` a failure prints one document on standard error and nothing on standard
+With `-o` a failure prints one document on standard error and nothing on standard
 output:
 
     {"error": {"kind": "refused", "rule": "blocked",

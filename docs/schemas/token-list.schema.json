@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/token-list.schema.json",
   "title": "dam token list answer",
-  "description": "What dam token list prints on standard output with --json or --toon. It never holds a token's value. A disabled token carries why and no terms.",
+  "description": "What dam token list prints on standard output with -o. It never holds a token's value. A disabled token carries why and no terms.",
   "type": "object",
   "required": ["tokens", "warnings"],
   "additionalProperties": false,

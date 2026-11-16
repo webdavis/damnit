@@ -38,7 +38,7 @@ fn new_add_commit_push_pull_and_ls_work_across_processes() {
     assert!(ok, "{err}");
     assert!(out.contains("✓ fake: 1 new, 1 unchanged"), "{out}");
 
-    let (ok, out, _) = sb.dam(&["ls", "--json"]);
+    let (ok, out, _) = sb.dam(&["ls", "-o", "json"]);
     assert!(ok);
     let json: serde_json::Value = serde_json::from_str(&out).unwrap();
     let subjects: Vec<&str> = json["objects"]
@@ -50,7 +50,7 @@ fn new_add_commit_push_pull_and_ls_work_across_processes() {
     assert!(subjects.contains(&"buy oat milk"));
     assert!(subjects.contains(&"from upstream"));
 
-    let (ok, out, _) = sb.dam(&["ls", "--toon"]);
+    let (ok, out, _) = sb.dam(&["ls", "-o", "toon"]);
     assert!(ok);
     assert!(out.starts_with("objects[2]"), "{out}");
 
@@ -63,7 +63,7 @@ fn new_add_commit_push_pull_and_ls_work_across_processes() {
 
     let (ok, _, err) = sb.dam(&["done", &oid[..7]]);
     assert!(ok, "{err}");
-    let (ok, out, _) = sb.dam(&["ls", "done", "--json"]);
+    let (ok, out, _) = sb.dam(&["ls", "done", "-o", "json"]);
     assert!(ok);
     assert_eq!(
         serde_json::from_str::<serde_json::Value>(&out).unwrap()["objects"]
@@ -86,7 +86,7 @@ fn every_recurrence_the_parser_refuses_reports_one_code_and_kind() {
         "every month on 40",
         "every day until soon",
     ] {
-        let out = sb.output(&["edit", &oid, "--recurrence", rule, "--json"]);
+        let out = sb.output(&["edit", &oid, "--recurrence", rule, "-o", "json"]);
         assert_eq!(out.status.code(), Some(1), "{rule}");
         let said = String::from_utf8_lossy(&out.stderr);
         let document: serde_json::Value = serde_json::from_str(&said)

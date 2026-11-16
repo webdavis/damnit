@@ -24,7 +24,8 @@ fn a_request_carrying_every_required_detail_is_served() {
         &held,
         &[
             "ls",
-            "--json",
+            "-o",
+            "json",
             "--meta",
             "session=s1",
             "--meta",
@@ -58,7 +59,7 @@ fn token_create_writes_what_the_token_requires() {
         "model",
     ]);
     assert!(ok, "{err}");
-    let (ok, out, err) = sb.dam(&["token", "list", "--json"]);
+    let (ok, out, err) = sb.dam(&["token", "list", "-o", "json"]);
     assert!(ok, "{err}");
     let listed: serde_json::Value = serde_json::from_str(&out).unwrap();
     let claude = &listed["tokens"][0];

@@ -13,7 +13,7 @@ fn committed_task(sb: &Sandbox, subject: &str) -> String {
 }
 
 fn shown(sb: &Sandbox, oid: &str) -> serde_json::Value {
-    let (ok, out, err) = sb.dam(&["show", oid, "--json"]);
+    let (ok, out, err) = sb.dam(&["show", oid, "-o", "json"]);
     assert!(ok, "{err}");
     serde_json::from_str(&out).unwrap()
 }
@@ -24,7 +24,7 @@ fn a_tokens_estimate_waits_as_an_item_the_owner_adds() {
     let sb = Sandbox::new();
     let oid = committed_task(&sb, "File taxes");
     let held = grant_to(&sb, "tool", 1, vec![grant(&["task:read", "task:change"])]);
-    let line = ["edit", &oid, "--estimate", "30", "--json"];
+    let line = ["edit", &oid, "--estimate", "30", "-o", "json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     assert_eq!(sent["answer"], "changed");
     assert_eq!(
@@ -43,9 +43,9 @@ fn a_token_cannot_mark_a_task_as_the_owners_focus() {
     let sb = Sandbox::new();
     let oid = committed_task(&sb, "File taxes");
     let held = grant_to(&sb, "tool", 1, vec![grant(&["task:read", "task:change"])]);
-    let out = sb.output_holding(&held, &["edit", &oid, "--focus", "today", "--json"]);
+    let out = sb.output_holding(&held, &["edit", &oid, "--focus", "today", "-o", "json"]);
     assert_eq!(refused(&out), "not_open_to_tokens");
-    let (ok, status, err) = sb.dam(&["status", "--json"]);
+    let (ok, status, err) = sb.dam(&["status", "-o", "json"]);
     assert!(ok, "{err}");
     let status: serde_json::Value = serde_json::from_str(&status).unwrap();
     assert_eq!(status["waiting"], serde_json::json!([]));

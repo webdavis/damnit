@@ -27,7 +27,7 @@ fn hooked(hooks: &[(&str, &str)]) -> Sandbox {
 }
 
 fn listed(sb: &Sandbox) -> serde_json::Value {
-    let (ok, out, err) = sb.dam(&["ls", "--json"]);
+    let (ok, out, err) = sb.dam(&["ls", "-o", "json"]);
     assert!(ok, "{err}");
     let listing: serde_json::Value = serde_json::from_str(&out).unwrap();
     listing["objects"].clone()
@@ -37,7 +37,7 @@ fn listed(sb: &Sandbox) -> serde_json::Value {
 fn hooks_run_on_new_edit_and_done_and_print_to_standard_error() {
     let _guard = support::guard("hooks_run_on_new_edit_and_done_and_print_to_standard_error");
     let sb = hooked(PRINTING);
-    let out = sb.output(&["new", "buy milk", "--json"]);
+    let out = sb.output(&["new", "buy milk", "-o", "json"]);
     assert!(out.status.success(), "{out:?}");
     let created: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_eq!(String::from_utf8_lossy(&out.stderr), "new buy milk\n");
@@ -54,7 +54,7 @@ fn hooks_run_on_new_edit_and_done_and_print_to_standard_error() {
 fn a_failing_hook_warns_and_the_change_stands() {
     let _guard = support::guard("a_failing_hook_warns_and_the_change_stands");
     let sb = hooked(&[("task_new", "function() error('no bell') end")]);
-    let out = sb.output(&["new", "buy milk", "--json"]);
+    let out = sb.output(&["new", "buy milk", "-o", "json"]);
     assert!(out.status.success(), "{out:?}");
     let hook = sb.hook_path("task_new").display().to_string();
     assert_eq!(
@@ -71,7 +71,7 @@ fn a_failing_hook_that_refuses_changes_nothing_and_exits_4() {
         "task_new",
         "{ run = function() return 1 end, on_failure = 'refuse' }",
     )]);
-    let out = sb.output(&["new", "buy milk", "--json"]);
+    let out = sb.output(&["new", "buy milk", "-o", "json"]);
     assert_eq!(out.status.code(), Some(4), "{out:?}");
     assert!(out.stdout.is_empty(), "{out:?}");
     let document = error_document(&out);

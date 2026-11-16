@@ -11,7 +11,7 @@ fn without_ages(stdout: &[u8]) -> serde_json::Value {
 }
 
 fn full_status_alike_once_removed(h: &Hidden, held: &str, hidden: &str) {
-    let line = ["status", "--full", "--json"];
+    let line = ["status", "--full", "-o", "json"];
     let while_hidden = h.sb.output_holding(held, &line);
     assert!(while_hidden.status.success(), "{while_hidden:?}");
     assert!(!text(&while_hidden.stdout).contains(hidden));

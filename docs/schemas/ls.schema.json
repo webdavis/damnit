@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/ls.schema.json",
   "title": "dam ls answer",
-  "description": "What dam ls prints with --json or --toon: the objects that match.",
+  "description": "What dam ls prints with -o: the objects that match.",
   "type": "object",
   "required": [
     "objects"

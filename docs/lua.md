@@ -175,7 +175,7 @@ A token caller has `match` run only over the objects it may read. For a token wi
 
 ## What match receives
 
-`task` has the fields `dam show --json` prints, except `author`, `details` and `id`. Those three
+`task` has the fields `dam show -o json` prints, except `author`, `details` and `id`. Those three
 come from dam's records of who made the object and the id a caller gave it, not from the object
 itself. `dam.history(task)` gives the `author` and `details` of each change. A filter cannot read
 `id`. An optional field is `nil` when it holds nothing.
@@ -224,7 +224,7 @@ itself. `dam.history(task)` gives the `author` and `details` of each change. A f
 
 ## What dam.history returns
 
-A list of commits, newest first, as `dam log --json` prints them. Each commit holds only this
+A list of commits, newest first, as `dam log -o json` prints them. Each commit holds only this
 object's changes. A change shows the object as of that change. `changes[].details` is what the
 request stated, and `nil` when it is not shown to the caller.
 
@@ -281,7 +281,7 @@ dam applies it to the task within the same command, by the rules `dam edit` appl
 The change a hook makes runs no hook.
 The command's answer lists each task a hook changed under `changed_by_hook`, as its `oid` and
 the `hook`'s event. In plain text it says `dam: hook task_new changed <oid>` on standard error.
-`dam log` names the hook beside the sender, as `you, hook task_new`, and `--json` holds it
+`dam log` names the hook beside the sender, as `you, hook task_new`, and `-o json` holds it
 under `details.meta.hook`. When several hooks change a task before your `dam add`, the record
 names the last one. When your own edit and a hook's edit land in one staged change, the record
 says a hook changed it, not which fields the hook set. `dam restore` or `dam rm` of the task

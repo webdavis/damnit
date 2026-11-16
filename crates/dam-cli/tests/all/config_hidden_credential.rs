@@ -14,7 +14,7 @@ fn with_credentials(remotes: &str, credentials: &str) -> Sandbox {
 }
 
 fn listed(sb: &Sandbox) -> Value {
-    let out = sb.output(&["config", "list", "--json"]);
+    let out = sb.output(&["config", "list", "-o", "json"]);
     assert!(out.status.success(), "{out:?}");
     let answer = serde_json::from_slice(&out.stdout).unwrap();
     assert_matches_schema(&answer, "config-list.schema.json");

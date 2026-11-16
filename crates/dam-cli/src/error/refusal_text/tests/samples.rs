@@ -139,11 +139,11 @@ fn refusals_by_object_rules() -> Vec<(Refusal, &'static str)> {
         (Refusal::NothingToCommit, "nothing to commit"),
         (
             Refusal::NeedsAnAnswer,
-            "a question needs an answer; drop --json/--toon to answer interactively",
+            "a question needs an answer; drop -o to answer interactively",
         ),
         (
             Refusal::NeedsAnEditor,
-            "-e opens an editor; drop --json/--toon to use it",
+            "-e opens an editor; drop -o to use it",
         ),
         (
             Refusal::MissingCredential {

@@ -13,7 +13,7 @@ fn written(config_lua: &str) -> Sandbox {
 fn listed(sb: &Sandbox) -> (String, serde_json::Value) {
     let (ok, text, err) = sb.dam(&["config", "list"]);
     assert!(ok, "{err}");
-    let out = sb.output(&["config", "list", "--json"]);
+    let out = sb.output(&["config", "list", "-o", "json"]);
     assert!(out.status.success(), "{out:?}");
     (text, serde_json::from_slice(&out.stdout).unwrap())
 }

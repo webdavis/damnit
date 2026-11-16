@@ -13,7 +13,7 @@ fn a_tokens_text_answer_to_an_edit_names_the_item_and_the_task_it_changes() {
     let held = grant_to(&sb, "tool", 1, vec![grant(&["task:read", "task:change"])]);
     let edit = ["edit", &rent, "--subject", "Pay the rent"];
     let said = text(&sb.output_holding(&held, &edit).stdout);
-    let json = sb.output_holding(&held, &[&edit[..], &["--json"]].concat());
+    let json = sb.output_holding(&held, &[&edit[..], &["-o", "json"]].concat());
     let sent: serde_json::Value = serde_json::from_slice(&json.stdout).unwrap();
     let hash = sent["hash"].as_str().unwrap();
     assert_eq!(

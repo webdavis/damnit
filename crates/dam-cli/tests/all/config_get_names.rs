@@ -48,7 +48,7 @@ fn a_setting_with_no_value_gets_a_row_saying_so() {
     let (ok, out, err) = sb.dam(&["config", "get", "remote.todoist.path"]);
     assert!(ok, "{err}");
     assert_eq!(out, "  remote.todoist.path  not set\n");
-    let out = sb.output(&["config", "get", "remote.todoist.path", "--json"]);
+    let out = sb.output(&["config", "get", "remote.todoist.path", "-o", "json"]);
     assert!(out.status.success(), "{out:?}");
     let answer: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_eq!(answer, serde_json::json!({"value": null, "default": true}));
@@ -60,7 +60,7 @@ fn parts_named_value_and_default_still_match_the_schema() {
     let _guard = support::guard("parts_named_value_and_default_still_match_the_schema");
     let sb =
         with_config("return { remote = { value = { url = 'a::' }, default = { url = 'b::' } } }\n");
-    let out = sb.output(&["config", "get", "remote", "--json"]);
+    let out = sb.output(&["config", "get", "remote", "-o", "json"]);
     assert!(out.status.success(), "{out:?}");
     let answer: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_matches_schema(&answer, "config-get.schema.json");

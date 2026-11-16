@@ -57,7 +57,7 @@ pub(crate) struct ShowArgs {
 pub(crate) struct StatusArgs {
     #[arg(
         long,
-        help = "Embed the whole object before and after each change, in --json and --toon"
+        help = "Embed the whole object before and after each change, under -o"
     )]
     pub(crate) full: bool,
 }
@@ -68,7 +68,7 @@ pub(crate) struct DiffArgs {
     pub(crate) staged: bool,
     #[arg(
         long,
-        help = "Embed the whole object before and after each change, in --json and --toon"
+        help = "Embed the whole object before and after each change, under -o"
     )]
     pub(crate) full: bool,
 }
@@ -84,4 +84,4 @@ It refuses a commit that dam pull made.
 Examples:
   dam revert 1a2b3c4
   dam revert 1a2b3c4 5d6e7f8
-  dam revert 1a2b3c4 --json";
+  dam revert 1a2b3c4 -o json";

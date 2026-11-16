@@ -35,7 +35,7 @@ fn assert_warned_on_stderr_only(sb: &Sandbox, args: &[&str]) -> String {
 fn assert_json_keeps_warnings_and_stderr_empty(sb: &Sandbox, args: &[&str]) {
     loosened(sb);
     let mut args = args.to_vec();
-    args.push("--json");
+    args.extend(["-o", "json"]);
     let (ok, out, err) = sb.dam(&args);
     assert!(ok, "{err}");
     assert!(err.is_empty(), "{err}");
@@ -49,7 +49,7 @@ fn token_create_prints_only_a_token_that_authenticates() {
     let sb = Sandbox::new();
     let token =
         assert_warned_on_stderr_only(&sb, &["token", "create", "tool", "--allow", "task:read"]);
-    let out = sb.output_holding(&token, &["ls", "--json"]);
+    let out = sb.output_holding(&token, &["ls", "-o", "json"]);
     assert!(out.status.success(), "{out:?}");
 }
 

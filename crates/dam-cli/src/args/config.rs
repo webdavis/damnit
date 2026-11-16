@@ -10,12 +10,12 @@ pub(crate) struct ConfigArgs {
 pub(crate) enum ConfigCommand {
     #[command(
         about = "List where the config files are and every setting dam is using, its own defaults marked, never a secret",
-        after_help = "It runs the top-level code of secrets.lua and calls no credential function.\nInside a project it also lists each setting from .dam.lua, marked as the project's.\n\nExamples:\n  dam config list\n  dam config list --json"
+        after_help = "It runs the top-level code of secrets.lua and calls no credential function.\nInside a project it also lists each setting from .dam.lua, marked as the project's.\n\nExamples:\n  dam config list\n  dam config list -o json"
     )]
     List,
     #[command(
         about = "Print one setting, or every setting in one part, by its key",
-        after_help = "It runs the top-level code of secrets.lua and calls no credential function.\n\nExamples:\n  dam config get remote.todoist.deadline\n  dam config get remote.todoist\n  dam config get remote.todoist --json"
+        after_help = "It runs the top-level code of secrets.lua and calls no credential function.\n\nExamples:\n  dam config get remote.todoist.deadline\n  dam config get remote.todoist\n  dam config get remote.todoist -o json"
     )]
     Get {
         #[arg(
@@ -67,7 +67,7 @@ Examples:
     PrintDefault,
     #[command(
         about = "Check the config as dam doctor config does; an error raised in secrets.lua is shown as that file wrote it",
-        after_help = "It runs the top-level code of config.lua and secrets.lua and calls no credential function.\nIt exits 1 when the check finds an issue, and prints the report to stdout either way.\n\nExamples:\n  dam config validate\n  dam config validate --json"
+        after_help = "It runs the top-level code of config.lua and secrets.lua and calls no credential function.\nIt exits 1 when the check finds an issue, and prints the report to stdout either way.\n\nExamples:\n  dam config validate\n  dam config validate -o json"
     )]
     Validate,
 }

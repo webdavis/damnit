@@ -2,6 +2,6 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/test.schema.json",
   "title": "dam test answer",
-  "description": "What dam test prints with --json or --toon: the report of dam doctor, with command test and one entry for each part it tested.",
+  "description": "What dam test prints with -o: the report of dam doctor, with command test and one entry for each part it tested.",
   "$ref": "doctor.schema.json"
 }

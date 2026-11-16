@@ -23,9 +23,9 @@ fn a_word_a_token_warning_is_about_reaches_no_stream_of_list_or_get() {
     assert!(doctor.out.contains(NAME), "{}", doctor.out);
     for line in [
         &["config", "list"][..],
-        &["config", "list", "--json"],
+        &["config", "list", "-o", "json"],
         &["config", "get", "token.tool"],
-        &["config", "get", "token.tool", "--toon"],
+        &["config", "get", "token.tool", "-o", "toon"],
     ] {
         let out = sb.output(line);
         assert!(out.status.success(), "{line:?}: {out:?}");

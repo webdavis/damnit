@@ -46,7 +46,7 @@ pub(crate) fn parse(line: Vec<OsString>) -> Result<Cli, Refused> {
     }) else {
         return plain::parse(line);
     };
-    let format = Format::of(given.get_flag("json"), given.get_flag("toon"));
+    let format = Format::given(&given);
     with_request(line, &given, &source).map_err(|error| Refused { format, error })
 }
 

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/config-print-default.schema.json",
   "title": "dam config print-default answer",
-  "description": "What dam config print-default prints on standard output with --json or --toon.",
+  "description": "What dam config print-default prints on standard output with -o.",
   "type": "object",
   "required": ["text"],
   "additionalProperties": false,

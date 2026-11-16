@@ -30,52 +30,52 @@ fn each_problem_the_command_line_can_have_names_itself_and_its_word() {
     let sb = Sandbox::new();
     let lines: [(&[&str], &str, Value); 10] = [
         (
-            &["agenda", "--bogus", "--json"],
+            &["agenda", "--bogus", "-o", "json"],
             "unknown_flag",
             json!("--bogus"),
         ),
         (
-            &["agenda", "--bogus=3", "--json"],
+            &["agenda", "--bogus=3", "-o", "json"],
             "unknown_flag",
             json!("--bogus"),
         ),
         (
-            &["nosuchcommand", "--json"],
+            &["nosuchcommand", "-o", "json"],
             "unknown_subcommand",
             json!("nosuchcommand"),
         ),
         (
-            &["new", "milk", "extra", "--json"],
+            &["new", "milk", "extra", "-o", "json"],
             "unexpected_argument",
             json!("extra"),
         ),
         (
-            &["new", "--json", "--", "milk", "-x"],
+            &["new", "-o", "json", "--", "milk", "-x"],
             "unexpected_argument",
             json!("-x"),
         ),
         (
-            &["new", "milk", "--due", "--json"],
+            &["new", "milk", "--due", "-o", "json"],
             "missing_value",
             json!("--due"),
         ),
         (
-            &["new", "milk", "--priority", "9", "--json"],
+            &["new", "milk", "--priority", "9", "-o", "json"],
             "bad_value",
             json!("--priority"),
         ),
         (
-            &["token", "create", "tool", "--json"],
+            &["token", "create", "tool", "-o", "json"],
             "missing_argument",
             json!("--allow"),
         ),
         (
-            &["edit", "1111", "--due", "today", "--no-due", "--json"],
+            &["edit", "1111", "--due", "today", "--no-due", "-o", "json"],
             "conflict",
             json!("--due"),
         ),
         (
-            &["agenda", "--no-color=yes", "--json"],
+            &["agenda", "--no-color=yes", "-o", "json"],
             "other",
             Value::Null,
         ),
@@ -93,7 +93,11 @@ fn each_problem_the_command_line_can_have_names_itself_and_its_word() {
 fn a_missing_word_or_subcommand_has_no_word_to_name() {
     let _guard = support::guard("a_missing_word_or_subcommand_has_no_word_to_name");
     let sb = Sandbox::new();
-    for line in [&["new", "--json"][..], &["--json"], &["token", "--json"]] {
+    for line in [
+        &["new", "-o", "json"][..],
+        &["-o", "json"],
+        &["token", "-o", "json"],
+    ] {
         assert_eq!(
             usage_part(&sb, line),
             json!({"problem": "missing_argument", "word": null}),
@@ -106,7 +110,7 @@ fn a_missing_word_or_subcommand_has_no_word_to_name() {
 fn the_message_is_the_sentence_without_the_usage_block() {
     let _guard = support::guard("the_message_is_the_sentence_without_the_usage_block");
     let sb = Sandbox::new();
-    let document = usage_document(&sb, &["agenda", "--bogus", "--json"]);
+    let document = usage_document(&sb, &["agenda", "--bogus", "-o", "json"]);
     assert_eq!(
         document["error"]["message"],
         "unexpected argument '--bogus' found"
@@ -127,7 +131,8 @@ fn a_usage_error_dam_raises_itself_says_other() {
                 "2026-01-01",
                 "--from",
                 "2026-01-02",
-                "--json"
+                "-o",
+                "json"
             ]
         ),
         json!({"problem": "other", "word": null})
@@ -156,7 +161,7 @@ fn help_and_version_are_not_errors_under_json() {
     let sb = Sandbox::new();
     for line in [&["agenda", "--help"][..], &["--version"]] {
         let plain = sb.output(line);
-        let json = sb.output(&[line, &["--json"]].concat());
+        let json = sb.output(&[line, &["-o", "json"]].concat());
         assert!(json.status.success(), "{line:?}");
         assert_eq!(json.stdout, plain.stdout, "{line:?}");
         assert!(json.stderr.is_empty(), "{line:?}");

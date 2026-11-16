@@ -26,7 +26,7 @@ fn a_tokens_dependency_that_closes_a_cycle_through_a_hidden_task_is_sent_like_an
     );
     let h = Hidden::new();
     let (plan, diary) = plan_through_a_hidden_diary_to_the_report(&h);
-    let line = ["edit", &h.report, "--depends", &plan, "--json"];
+    let line = ["edit", &h.report, "--depends", &plan, "-o", "json"];
     let while_hidden = h.holding(&line);
     let sent = answer(&while_hidden, "sent.schema.json");
     assert_eq!(sent["answer"], "changed");
@@ -50,18 +50,18 @@ fn the_owner_cannot_add_a_tokens_dependency_that_closes_a_cycle() {
     let (plan, diary) = plan_through_a_hidden_diary_to_the_report(&h);
     h.owner(&["add", "-A"]);
     h.owner(&["commit", "-m", "seed"]);
-    let line = ["edit", &h.report, "--depends", &plan, "--json"];
+    let line = ["edit", &h.report, "--depends", &plan, "-o", "json"];
     let sent = answer(&h.holding(&line), "sent.schema.json");
     let hash = sent["hash"].as_str().unwrap();
 
-    let out = h.sb.output(&["add", hash, "--json"]);
+    let out = h.sb.output(&["add", hash, "-o", "json"]);
     assert_eq!(refused(&out), "item_cycle");
     let said = text(&h.sb.output(&["add", hash]).stderr);
     assert!(said.contains(&diary[..7]), "{said}");
     assert!(said.contains(&format!("dam rm {}", &hash[..7])), "{said}");
 
     h.owner(&["add", "-A"]);
-    let (ok, status, err) = h.sb.dam(&["status", "--json"]);
+    let (ok, status, err) = h.sb.dam(&["status", "-o", "json"]);
     assert!(ok, "{err}");
     let status: serde_json::Value = serde_json::from_str(&status).unwrap();
     assert_eq!(status["waiting"][0]["hash"], hash);

@@ -5,7 +5,7 @@ use support::config_tokens::config_tokens;
 use support::schema::assert_matches_schema;
 
 fn json_of(sb: &support::sandbox::Sandbox, args: &[&str]) -> Value {
-    let out = sb.output(&[args, &["--json"]].concat());
+    let out = sb.output(&[args, &["-o", "json"]].concat());
     assert!(out.status.success(), "{args:?}: {out:?}");
     serde_json::from_slice(&out.stdout).unwrap()
 }
@@ -125,8 +125,8 @@ warning: token off is disabled; run dam doctor to see why\n";
     for (line, on_standard_error) in [
         (&["config", "list"][..], warning),
         (&["config", "get", "owner"], warning),
-        (&["config", "list", "--json"], ""),
-        (&["config", "get", "token", "--toon"], ""),
+        (&["config", "list", "-o", "json"], ""),
+        (&["config", "get", "token", "-o", "toon"], ""),
     ] {
         let out = tokens.sb.output(line);
         assert!(out.status.success(), "{line:?}: {out:?}");

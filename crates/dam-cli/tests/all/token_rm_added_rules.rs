@@ -12,7 +12,7 @@ fn owner(sb: &Sandbox, args: &[&str]) {
 
 fn added_from(sb: &Sandbox, held: &str, line: &[&str]) -> String {
     let mut line = line.to_vec();
-    line.push("--json");
+    line.extend(["-o", "json"]);
     let sent = answer(&sb.output_holding(held, &line), "sent.schema.json");
     let oid = sent["oid"].as_str().unwrap().to_string();
     owner(sb, &["add", &oid]);
@@ -22,7 +22,7 @@ fn added_from(sb: &Sandbox, held: &str, line: &[&str]) -> String {
 
 fn removal(sb: &Sandbox, held: &str, oid: &str) -> serde_json::Value {
     answer(
-        &sb.output_holding(held, &["rm", oid, "--json"]),
+        &sb.output_holding(held, &["rm", oid, "-o", "json"]),
         "rm.schema.json",
     )
 }
@@ -43,7 +43,7 @@ fn removing_an_added_event_needs_event_remove() {
     let sb = Sandbox::new();
     let held = grant_to(&sb, "tool", 1, vec![grant(&["event:create", "event:read"])]);
     let oid = added_from(&sb, &held, &MEETING);
-    let out = sb.output_holding(&held, &["rm", &oid, "--json"]);
+    let out = sb.output_holding(&held, &["rm", &oid, "-o", "json"]);
     assert_eq!(refused(&out), "not_permitted");
     let rights = ["event:create", "event:read", "event:remove"];
     let held = grant_to(&sb, "tool", 1, vec![grant(&rights)]);

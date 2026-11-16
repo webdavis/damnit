@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/removal.schema.json",
   "title": "dam rm answer for a token",
-  "description": "What dam rm prints with --json or --toon when a token takes a task or event back by --id, oid or hash, and when dam rm --id finds nothing. withdrawn: the item it sent was still waiting and is gone; for a new item, oid equals item. waiting: a removal item waits for the owner; a repeat names the same item. declined: the owner declined that removal and it is not sent again. nothing: nothing of the caller's is there under that id.",
+  "description": "What dam rm prints with -o when a token takes a task or event back by --id, oid or hash, and when dam rm --id finds nothing. withdrawn: the item it sent was still waiting and is gone; for a new item, oid equals item. waiting: a removal item waits for the owner; a repeat names the same item. declined: the owner declined that removal and it is not sent again. nothing: nothing of the caller's is there under that id.",
   "type": "object",
   "required": ["answer", "item", "oid"],
   "additionalProperties": false,

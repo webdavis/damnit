@@ -22,13 +22,6 @@ fn new_with_flags_parses() {
 }
 
 #[test]
-fn json_and_toon_are_global_and_exclusive() {
-    let cli = Cli::try_parse_from(["dam", "ls", "--json"]).unwrap();
-    assert!(cli.json);
-    assert!(Cli::try_parse_from(["dam", "ls", "--json", "--toon"]).is_err());
-}
-
-#[test]
 fn resolve_needs_exactly_one_side() {
     assert!(Cli::try_parse_from(["dam", "resolve", "abc", "--ours"]).is_ok());
     assert!(Cli::try_parse_from(["dam", "resolve", "abc", "--theirs"]).is_ok());

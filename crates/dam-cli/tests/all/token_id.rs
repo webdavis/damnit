@@ -17,7 +17,7 @@ fn tool() -> (Sandbox, String) {
 fn send(sb: &Sandbox, held: &str, args: &[&str]) -> serde_json::Value {
     let mut line = vec!["new"];
     line.extend_from_slice(args);
-    line.push("--json");
+    line.extend(["-o", "json"]);
     answer(&sb.output_holding(held, &line), "sent.schema.json")
 }
 
@@ -28,7 +28,7 @@ fn owner(sb: &Sandbox, args: &[&str]) -> String {
 }
 
 fn shown(sb: &Sandbox, oid: &str) -> serde_json::Value {
-    serde_json::from_str(&owner(sb, &["show", oid, "--json"])).unwrap()
+    serde_json::from_str(&owner(sb, &["show", oid, "-o", "json"])).unwrap()
 }
 
 #[test]
@@ -99,7 +99,7 @@ fn a_declined_task_sent_again_under_its_id_is_refused_and_a_different_one_is_new
     let (sb, held) = tool();
     let first = send(&sb, &held, &["Call dentist", "--id", "dentist"]);
     owner(&sb, &["rm", first["hash"].as_str().unwrap()]);
-    let line = ["new", "Call dentist", "--id", "dentist", "--json"];
+    let line = ["new", "Call dentist", "--id", "dentist", "-o", "json"];
     assert_eq!(refused(&sb.output_holding(&held, &line)), "item_declined");
     let other = send(&sb, &held, &["Call the dentist", "--id", "dentist"]);
     assert_eq!(other["answer"], "new");
@@ -132,7 +132,8 @@ fn a_repeat_of_a_task_as_an_event_is_refused() {
         "2026-09-25T14:00",
         "--end",
         "2026-09-25T15:00",
-        "--json",
+        "-o",
+        "json",
     ];
     assert_eq!(refused(&sb.output_holding(&held, &line)), "not_an_event");
 }
@@ -155,7 +156,8 @@ fn a_repeat_that_moves_the_task_is_refused_as_mv_is() {
         "dentist",
         "--path",
         "inbox",
-        "--json",
+        "-o",
+        "json",
     ];
     assert_eq!(
         refused(&sb.output_holding(&mover, &line)),

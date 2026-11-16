@@ -28,7 +28,8 @@ fn sent_by_claude(sb: &Sandbox, held: &str) -> String {
         &[
             "new",
             "Call the dentist",
-            "--json",
+            "-o",
+            "json",
             "--meta",
             "session=s1",
             "--meta",
@@ -50,7 +51,7 @@ fn a_tokens_change_keeps_the_details_it_stated_and_those_of_the_process() {
     let sb = Sandbox::new();
     let held = claude(&sb);
     sent_by_claude(&sb, &held);
-    let status = json(&sb.output(&["status", "--json"]));
+    let status = json(&sb.output(&["status", "-o", "json"]));
     let waiting = &status["waiting"][0];
     assert_eq!(waiting["author"], "claude");
     let details = &waiting["details"];
@@ -81,7 +82,7 @@ fn a_commit_keeps_each_senders_details_and_names_the_owner_from_the_config() {
     assert!(ok, "{err}");
     let (ok, _, err) = sb.dam(&["commit", "-m", "both"]);
     assert!(ok, "{err}");
-    let log = json(&sb.output(&["log", "--json"]));
+    let log = json(&sb.output(&["log", "-o", "json"]));
     let changes = log["commits"][0]["changes"].as_array().unwrap();
     let by = |author: &str| changes.iter().find(|c| c["author"] == author).unwrap();
     assert_eq!(by("claude")["details"]["meta"]["session"], "s1");
@@ -98,13 +99,13 @@ fn the_repo_and_branch_are_those_of_the_working_directory() {
     std::fs::write(repo.join(".git/HEAD"), "ref: refs/heads/topic\n").unwrap();
     let held = claude(&sb);
     let out = sb
-        .command(&["new", "Fix the build", "--json"])
+        .command(&["new", "Fix the build", "-o", "json"])
         .current_dir(repo.join("src"))
         .env("DAM_TOKEN", &held)
         .output()
         .unwrap();
     assert!(out.status.success(), "{out:?}");
-    let status = json(&sb.output(&["status", "--json"]));
+    let status = json(&sb.output(&["status", "-o", "json"]));
     let details = &status["waiting"][0]["details"];
     assert_eq!(details["branch"], "topic");
     let said = std::fs::canonicalize(details["repo"].as_str().unwrap()).unwrap();

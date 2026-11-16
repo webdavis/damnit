@@ -20,11 +20,11 @@ fn what_secrets_lua_prints_reaches_neither_stream_of_list_or_get() {
     let sb = printing_secrets();
     for line in [
         &["config", "list"][..],
-        &["config", "list", "--json"],
-        &["config", "list", "--toon"],
+        &["config", "list", "-o", "json"],
+        &["config", "list", "-o", "toon"],
         &["config", "get", "owner"],
-        &["config", "get", "owner", "--json"],
-        &["config", "get", "owner", "--toon"],
+        &["config", "get", "owner", "-o", "json"],
+        &["config", "get", "owner", "-o", "toon"],
     ] {
         let out = sb.output(line);
         assert!(out.status.success(), "{line:?}: {out:?}");
@@ -32,7 +32,7 @@ fn what_secrets_lua_prints_reaches_neither_stream_of_list_or_get() {
             let text = String::from_utf8_lossy(stream);
             assert!(!text.contains(MARKER), "{line:?}: {text}");
         }
-        if line.contains(&"--json") {
+        if line.contains(&"json") {
             serde_json::from_slice::<serde_json::Value>(&out.stdout).unwrap();
         }
     }
@@ -64,7 +64,7 @@ fn what_a_finalizer_in_secrets_lua_prints_is_kept_off_standard_output() {
     sb.write_secrets_lua(&format!(
         "setmetatable({{}}, {{ __gc = function() print(\"{MARKER}-gc\") end }})\n{secrets}"
     ));
-    let listed = sb.output(&["config", "list", "--json"]);
+    let listed = sb.output(&["config", "list", "-o", "json"]);
     assert!(listed.status.success(), "{listed:?}");
     serde_json::from_slice::<serde_json::Value>(&listed.stdout).unwrap();
     assert!(!String::from_utf8_lossy(&listed.stderr).contains(MARKER));
