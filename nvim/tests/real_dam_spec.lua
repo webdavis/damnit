@@ -94,9 +94,11 @@ return {
       vim.api.nvim_buf_set_lines(0, 1, 2, false, { "due: the twelfth of never" })
       vim.cmd.write()
       wait_for(function()
-        return #notes > 0
+        return #vim.diagnostic.get(0) > 0
       end, 20000)
-      assert(notes[1].level == vim.log.levels.ERROR and notes[1].text:find("twelfth", 1, true), vim.inspect(notes))
+      local shown = vim.diagnostic.get(0)[1]
+      assert(shown.lnum == 1 and shown.message:find("twelfth", 1, true), vim.inspect(shown))
+      assert(#notes == 0, vim.inspect(notes))
       assert(vim.bo.modified, "no longer modified")
       assert(shown_due(oid, sandbox) == "2026-09-25")
     end)

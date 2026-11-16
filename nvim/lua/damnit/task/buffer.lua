@@ -1,3 +1,4 @@
+local diagnostics = require("damnit.kernel.diagnostics")
 local edit_flags = require("damnit.task.edit_flags")
 local errors = require("damnit.kernel.error")
 local facts = require("damnit.task.facts")
@@ -91,11 +92,16 @@ function Tasks:write(buf)
     vim.bo[buf].modified = false
     return
   end
-  local call = { args = vim.list_extend({ "edit", task.oid }, flags), cwd = task.cwd }
+  local call = { args = vim.list_extend({ "edit", task.oid }, flags), cwd = task.cwd, placed = true }
   self.app.dam:write(call, function(answer, err)
-    if not err then
-      self:answered(buf, after, answer)
+    if not vim.api.nvim_buf_is_valid(buf) then
+      return
     end
+    if err then
+      return diagnostics.show(buf, err, { diagnostics.header_line(err, vim.api.nvim_buf_get_lines(buf, 0, -1, false)) })
+    end
+    diagnostics.clear(buf)
+    self:answered(buf, after, answer)
   end)
 end
 
