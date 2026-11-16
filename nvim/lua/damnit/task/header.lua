@@ -7,8 +7,6 @@ local M = {}
 
 local TASK_KEYS = { "subject", "due", "deadline", "priority", "labels", "category", "estimate", "recurrence" }
 local EVENT_KEYS = { "subject", "start", "end", "location", "labels", "category" }
-local DERIVED = { "oid", "path", "parent", "author" }
-local FLAGGED = { "overdue", "blocked" }
 local RULE = "---"
 
 local function values_of(held)
@@ -56,23 +54,8 @@ local function texts_of(object)
   }
 end
 
-local function virtual_lines(object)
-  local virt = {}
-  for _, key in ipairs(DERIVED) do
-    if object[key] then
-      table.insert(virt, key .. ": " .. object[key])
-    end
-  end
-  for _, key in ipairs(FLAGGED) do
-    if object[key] then
-      table.insert(virt, key .. ": true")
-    end
-  end
-  return virt
-end
-
 ---@param object damnit.Object
----@return string[] lines, string[] virt
+---@return string[] lines
 function M.lines(object)
   local texts = texts_of(object)
   local lines = {}
@@ -84,7 +67,7 @@ function M.lines(object)
   if (object.body or "") ~= "" then
     vim.list_extend(lines, vim.split(object.body, "\n", { plain = true }))
   end
-  return lines, virtual_lines(object)
+  return lines
 end
 
 local function list_of(text)

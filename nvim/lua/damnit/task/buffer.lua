@@ -1,5 +1,6 @@
 local edit_flags = require("damnit.task.edit_flags")
 local errors = require("damnit.kernel.error")
+local facts = require("damnit.task.facts")
 local header = require("damnit.task.header")
 
 local NAME = "dam://task/"
@@ -11,7 +12,7 @@ local M = {}
 
 ---@param app damnit.App
 function M.new(app)
-  local tasks = setmetatable({ app = app, shown = {}, namespace = vim.api.nvim_create_namespace("damnit.task") }, Tasks)
+  local tasks = setmetatable({ app = app, shown = {} }, Tasks)
   local group = vim.api.nvim_create_augroup("damnit.task", { clear = true })
   local events = {
     BufReadCmd = Tasks.read,
@@ -37,27 +38,14 @@ function Tasks:task_of(buf)
   return self.shown[buf]
 end
 
-function Tasks:draw_virtual(buf, virt)
-  vim.api.nvim_buf_clear_namespace(buf, self.namespace, 0, -1)
-  local virt_lines = vim.tbl_map(function(text)
-    return { { text, "Comment" } }
-  end, virt)
-  vim.api.nvim_buf_set_extmark(buf, self.namespace, 0, 0, { virt_lines = virt_lines, virt_lines_above = true })
-  for _, win in ipairs(vim.fn.win_findbuf(buf)) do
-    vim.api.nvim_win_call(win, function()
-      vim.fn.winrestview({ topline = 1, topfill = #virt })
-    end)
-  end
-end
-
 ---@param buf integer
 ---@param object damnit.Object
 function Tasks:draw(buf, object)
-  local lines, virt = header.lines(object)
+  local lines = header.lines(object)
   self:task_of(buf).before = header.parse(lines)
   self.app.screen:draw(buf, lines, {})
   vim.bo[buf].modifiable = true
-  self:draw_virtual(buf, virt)
+  self.app.screen:window(buf, { winbar = self.app.screen.bar(facts.chunks(object)) })
 end
 
 ---@param buf integer
