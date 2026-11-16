@@ -9,6 +9,9 @@ fn a_helper_that_times_out_leaves_the_store_as_it_was() {
     s.store
         .set_accepted_kinds(&todoist(), &task_caps().kinds)
         .unwrap();
+    s.store
+        .set_accepted_fields(&todoist(), &task_caps().fields)
+        .unwrap();
     let before = s.store.clone();
     let timeout = HelperError::Timeout {
         helper: "todoist".into(),

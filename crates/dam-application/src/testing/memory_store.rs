@@ -26,6 +26,7 @@ struct Inner {
     last_pulls: BTreeMap<RemoteName, Timestamp>,
     last_pushes: BTreeMap<RemoteName, Timestamp>,
     accepted_kinds: BTreeMap<RemoteName, Vec<Kind>>,
+    accepted_fields: BTreeMap<RemoteName, Vec<dam_domain::Field>>,
     answers: BTreeMap<(RemoteName, Oid), u64>,
     attempts: BTreeMap<(RemoteName, Oid), Vec<crate::ports::Attempt>>,
     days: BTreeMap<dam_domain::Date, dam_domain::Day>,

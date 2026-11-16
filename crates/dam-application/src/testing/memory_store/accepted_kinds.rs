@@ -1,4 +1,4 @@
-use dam_domain::Kind;
+use dam_domain::{Field, Kind};
 
 use crate::ports::{AcceptedKindsRepository, RemoteName, StoreError};
 
@@ -13,6 +13,16 @@ impl AcceptedKindsRepository for MemoryStore {
             .borrow_mut()
             .accepted_kinds
             .insert(remote.clone(), kinds.to_vec());
+        Ok(())
+    }
+    fn accepted_fields(&self, remote: &RemoteName) -> Result<Option<Vec<Field>>, StoreError> {
+        Ok(self.0.borrow().accepted_fields.get(remote).cloned())
+    }
+    fn set_accepted_fields(&self, remote: &RemoteName, fields: &[Field]) -> Result<(), StoreError> {
+        self.0
+            .borrow_mut()
+            .accepted_fields
+            .insert(remote.clone(), fields.to_vec());
         Ok(())
     }
 }
