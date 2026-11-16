@@ -19,6 +19,7 @@ Hooks live in their own files in a `hooks` folder beside them.
 | `remote.<name>.sync.interval` | A duration of at least `1m`. How often background sync runs, read on every tick. Default: `15m`. |
 | `remote.<name>.sync.allowed` | `false` makes `dam sync start` and `dam sync enable` refuse and every tick do nothing. Default: `true`. |
 | `remote.<name>.path` | A push sends only the objects under this path. |
+| `remote.<name>.except` | A list of paths. A push never sends the objects under these paths, and the task that holds each path. `except` wins over `path`. |
 | `category` | A table of label categories by name. |
 | `category.<name>.values` | A list of labels. Required. |
 | `category.<name>.exclusive` | `true` allows one value per object. |
@@ -27,6 +28,13 @@ Hooks live in their own files in a `hooks` folder beside them.
 | `filter.<name>.match` | A function that returns `true` to keep an object. |
 
 A duration is a whole number followed by `s`, `m` or `h`.
+
+`except` never removes anything from a remote. A task under an excepted path, or the task that holds
+it, is not sent when the remote never held it. A task the remote already holds stays there as it is,
+with no update and no delete, when its path is excepted, when it moves into an excepted path, and
+when you remove it here. A parent the remote holds is not removed while an excepted child still sits
+under it there. A task whose parent is excepted and not on the remote is held until you move it. A
+pull still brings in everything the remote has.
 
 `dam config set <key> <value>` and `dam config unset <key>` change one key of this table.
 

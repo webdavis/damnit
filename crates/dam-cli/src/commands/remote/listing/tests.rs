@@ -17,6 +17,7 @@ fn remote_list_reports_the_last_pull_and_push_as_rfc_3339_a_phrase_or_null() {
         deadline: None,
         sync: Default::default(),
         path: None,
+        except: Vec::new(),
     });
     let never = listed(&ctx);
     assert_eq!(
@@ -72,5 +73,35 @@ fn a_clock_gone_backwards_reads_as_just_now_rather_than_the_future() {
     assert_eq!(
         ago_to_one_unit_and_never_in_the_future(now, later),
         "just now"
+    );
+}
+
+#[test]
+fn remote_list_shows_the_paths_a_remote_never_receives_beside_its_path() {
+    let mut ctx = context();
+    ctx.config.remotes.push(RemoteConfig {
+        name: RemoteName("t".into()),
+        helper: "t".into(),
+        url: "t::".into(),
+        credentials: vec![],
+        deadline: None,
+        sync: Default::default(),
+        path: Some(dam_domain::Path::parse("home").unwrap()),
+        except: vec![
+            dam_domain::Path::parse("home/kitchen").unwrap(),
+            dam_domain::Path::parse("home/journal").unwrap(),
+        ],
+    });
+    let report = listed(&ctx);
+    assert_eq!(
+        report.data["remotes"][0]["except"],
+        serde_json::json!(["home/kitchen/", "home/journal/"])
+    );
+    assert!(
+        report
+            .human
+            .contains("path home/  except home/kitchen/, home/journal/"),
+        "{}",
+        report.human
     );
 }

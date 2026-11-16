@@ -18,6 +18,7 @@ pub fn config() -> Config {
             deadline: None,
             sync: Default::default(),
             path: None,
+            except: Vec::new(),
         }],
         ..Config::default()
     }

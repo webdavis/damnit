@@ -5,6 +5,7 @@
       "helper": "fake",
       "url": "fake::",
       "path": null,
+      "except": [],
       "last_pull": "<now>",
       "last_push": "<now>"
     }

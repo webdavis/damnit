@@ -12,6 +12,7 @@ pub struct RemoteConfig {
     pub deadline: Option<ConfiguredDuration>,
     pub sync: RemoteSync,
     pub path: Option<Path>,
+    pub except: Vec<Path>,
 }
 
 impl RemoteConfig {

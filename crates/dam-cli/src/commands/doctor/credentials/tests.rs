@@ -27,6 +27,7 @@ fn answer(credentials: Vec<CredentialSpec>, asked_for: &[&str]) -> Answer {
             deadline: None,
             sync: Default::default(),
             path: None,
+            except: Vec::new(),
         },
         capabilities: Ok(capabilities),
     }

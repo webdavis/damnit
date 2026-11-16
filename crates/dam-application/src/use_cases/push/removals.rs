@@ -2,13 +2,16 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use dam_domain::{Change, Object, Oid};
 
+use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
-use crate::ports::{RemoteName, Store};
+use crate::ports::Store;
 use crate::remote::RemoteMutation;
 use crate::use_cases::last_seen::LastSeen;
 use crate::use_cases::push::owed::OwedChanges;
+use crate::use_cases::push::owed::excepted::is_excepted;
 use crate::use_cases::push::reconcile::Settlement;
 use blocker::{Blocker, Unsent};
+use hint::Hint;
 
 #[derive(Default)]
 pub(super) struct Removals {
@@ -16,6 +19,7 @@ pub(super) struct Removals {
     upstream: BTreeMap<Oid, Object>,
     moved_without_a_commit: BTreeSet<Oid>,
     tried: BTreeSet<Oid>,
+    hint: Hint,
 }
 
 #[derive(Default)]
@@ -31,7 +35,7 @@ const NOTHING_IT_WAITS_ON_WAS_SENT: &str =
 impl Removals {
     pub(super) fn new(
         store: &dyn Store,
-        remote: &RemoteName,
+        remote: &RemoteConfig,
         changes: &OwedChanges,
     ) -> Result<Removals, UseCaseError> {
         let mut removals = Removals {
@@ -40,6 +44,7 @@ impl Removals {
                 .filter(|(_, change)| matches!(change, Change::Delete { .. }))
                 .map(|(oid, _)| oid.clone())
                 .collect(),
+            hint: Hint::for_remote(remote),
             ..Removals::default()
         };
         if removals.removing.is_empty() {
@@ -48,10 +53,13 @@ impl Removals {
         let kept = store.all()?.into_iter().map(|o| o.oid().clone());
         let known: BTreeSet<Oid> = kept.chain(changes.keys().cloned()).collect();
         for oid in known {
+            if let Some(object) = store.committed(&oid)?.filter(|o| is_excepted(remote, o)) {
+                removals.hint.excepted.insert(object.oid().clone());
+            }
             if moved_since_its_commit(store.get(&oid)?, store.committed(&oid)?) {
                 removals.moved_without_a_commit.insert(oid.clone());
             }
-            if let Some(held) = LastSeen::held(store, remote, &oid)? {
+            if let Some(held) = LastSeen::held(store, &remote.name, &oid)? {
                 removals.upstream.insert(oid, held);
             }
         }
@@ -97,6 +105,7 @@ fn moved_since_its_commit(working: Option<Object>, committed: Option<Object>) ->
 }
 
 mod blocker;
+mod hint;
 
 #[cfg(test)]
 mod tests;

@@ -62,5 +62,6 @@ pub(super) fn remote() -> RemoteConfig {
         deadline: None,
         sync: Default::default(),
         path: None,
+        except: Vec::new(),
     }
 }

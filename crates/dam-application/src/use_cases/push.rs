@@ -88,7 +88,7 @@ impl Dam<'_> {
         let Owed { changes, held } = owed;
         let record = self.store.attempts(&remote.name)?;
         let dropped = creates_no_longer_sent(self.store, remote, caps, unpushed, &record)?;
-        let removals = Removals::new(self.store, &remote.name, &changes)?;
+        let removals = Removals::new(self.store, remote, &changes)?;
         let Plan {
             mut mutations,
             skipped,

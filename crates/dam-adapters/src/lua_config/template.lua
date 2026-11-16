@@ -44,8 +44,9 @@ return {
   -- A remote dam pulls from and pushes to, run by the dam-remote-<helper> program on PATH.
   -- url is <helper>::<address>, a helper name being letters, digits, - and _. deadline is the
   -- longest the helper may stay silent, 60s by default, a whole number then s, m or h. path limits
-  -- a push to the objects under that path. sync.interval is how often background sync runs, 15m
-  -- by default and 1m at least. sync.allowed = false means background sync may never start here.
+  -- a push to the objects under that path. except lists paths a push never sends, nor the task that
+  -- holds each, and wins over path. sync.interval is how often background sync runs, 15m by default
+  -- and 1m at least. sync.allowed = false means background sync may never start here.
   -- Nothing syncs by itself; dam sync run syncs a remote now.
   --remote = {
     --todoist = {
@@ -53,6 +54,7 @@ return {
       --deadline = "60s",
       --sync = { interval = "15m", allowed = true },
       --path = "work",
+      --except = { "work/private" },
     --},
   --},
 

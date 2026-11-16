@@ -6,6 +6,9 @@ use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
 use crate::ports::{Attempts, RemoteName, Store};
 use crate::use_cases::last_seen::LastSeen;
+use excepted::removals_kept_by_except;
+
+pub(super) mod excepted;
 
 pub(super) type OwedChanges = BTreeMap<Oid, Change>;
 
@@ -19,6 +22,7 @@ pub(super) fn changes_to_send(
     owed.extend(store.push_retries(&remote.name)?);
     owed.extend(record.keys().cloned());
     let mut changes = declare_since_the_remote_snapshot(store, &remote.name, owed)?;
+    removals_kept_by_except(remote, unpushed, &mut changes);
     owe_a_write_for_each_object_attempted(store, record, &mut changes)?;
     Ok(changes)
 }

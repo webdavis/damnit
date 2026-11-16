@@ -31,6 +31,7 @@ mod project_support;
 mod pulled_hook_runs;
 mod pulled_hook_tables;
 mod read_only;
+mod remote_except;
 mod remove_token;
 mod secrets_file;
 mod secrets_kept;

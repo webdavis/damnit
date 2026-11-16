@@ -5,7 +5,7 @@ use dam_domain::Path;
 
 use super::strict::StrictMap;
 
-pub(crate) const SETTINGS: [&str; 4] = ["url", "deadline", "sync", "path"];
+pub(crate) const SETTINGS: [&str; 5] = ["url", "deadline", "sync", "path", "except"];
 pub(crate) const SYNC: [&str; 2] = ["interval", "allowed"];
 
 pub(super) fn read_remote(name: &str, remote: &StrictMap) -> Result<RemoteConfig, ConfigError> {
@@ -46,7 +46,24 @@ pub(super) fn read_remote(name: &str, remote: &StrictMap) -> Result<RemoteConfig
         deadline: duration(remote, "deadline")?,
         sync: sync(remote)?,
         path,
+        except: except(remote)?,
     })
+}
+
+fn except(remote: &StrictMap) -> Result<Vec<Path>, Misread> {
+    let mut at = remote.place();
+    at.table = at.table.map(|table| format!("{table}.except"));
+    let texts = remote.strings("except")?.unwrap_or_default();
+    texts
+        .into_iter()
+        .map(|text| {
+            Path::parse(&text).map_err(|why| Misread::NotAPath {
+                text,
+                at: at.clone(),
+                why,
+            })
+        })
+        .collect()
 }
 
 fn names_a_program(helper: &str) -> bool {

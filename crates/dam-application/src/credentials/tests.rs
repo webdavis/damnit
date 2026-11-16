@@ -12,6 +12,7 @@ fn remote(specs: Vec<CredentialSpec>) -> RemoteConfig {
         deadline: None,
         sync: Default::default(),
         path: None,
+        except: Vec::new(),
     }
 }
 

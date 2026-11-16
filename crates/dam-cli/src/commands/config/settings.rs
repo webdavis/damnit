@@ -57,12 +57,23 @@ fn remote(remote: &RemoteConfig) -> (String, Setting) {
         ("deadline".to_string(), deadline),
         sync(&remote.sync),
         optional("path", remote.path.as_ref().map(|path| path.as_str())),
+        except(&remote.except),
     ];
     let credentials: Vec<_> = remote.credentials.iter().map(credential).collect();
     if !credentials.is_empty() {
         fields.push(named("credential", credentials));
     }
     named(&remote.name.0, fields)
+}
+
+fn except(paths: &[dam_domain::Path]) -> (String, Setting) {
+    let setting = match paths {
+        [] => Setting::unset(),
+        _ => Setting::set(Value::List(
+            paths.iter().map(|p| p.as_str().to_string()).collect(),
+        )),
+    };
+    ("except".to_string(), setting)
 }
 
 fn sync(sync: &RemoteSync) -> (String, Setting) {

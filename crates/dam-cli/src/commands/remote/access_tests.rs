@@ -14,6 +14,7 @@ fn remote(name: &str) -> RemoteConfig {
         deadline: None,
         sync: Default::default(),
         path: None,
+        except: Vec::new(),
     }
 }
 
