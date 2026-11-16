@@ -1,6 +1,6 @@
 use dam_domain::Path;
 
-use crate::args::{Command, LabelCommand};
+use crate::args::{Command, LabelCommand, PathCommand};
 use crate::commands::catalogue_write;
 use crate::commands::dispatch_a_verb_that_opens_the_store;
 use crate::commands::mv::with_the_path_named;
@@ -102,6 +102,11 @@ pub(crate) fn dispatch_in(
             let LabelCommand::List(list) = &mut a.command;
             list.place = standing.place(&list.scope)?;
             Command::Label(a)
+        }
+        Command::Path(mut a) => {
+            let PathCommand::List(list) = &mut a.command;
+            list.place = standing.place(&list.scope)?;
+            Command::Path(a)
         }
         Command::Reminders(mut a) => {
             a.place = standing.place(&a.scope)?;

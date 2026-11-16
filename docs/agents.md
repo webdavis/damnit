@@ -37,9 +37,9 @@ answer carries `project_created`. The path `dam mv` moves objects to starts from
 same way. Inside a project, `--filter` on `dam edit`, `dam done`, `dam mv` and `dam rm` picks
 only the project's tasks the token sees, as `dam list` lists them; `--global`, or
 `"global": true` in a request, picks from every task. Oids, typed or piped in, are never narrowed.
-`dam list`, `dam agenda`, `dam reminders` and `dam label list` there list only what the token
-sees under the project. `dam config list -o json` carries every setting the project's `.dam.lua` holds under
-`project`, as the file sets it.
+`dam list`, `dam agenda`, `dam reminders`, `dam label list` and `dam path list` there list only
+what the token sees under the project. `dam config list -o json` carries every setting the
+project's `.dam.lua` holds under `project`, as the file sets it.
 
 When a template renders `secrets.lua`, the template writes the token's table with the value
 `dam token create` printed.
@@ -269,6 +269,7 @@ dam show <oid> -o json
 dam agenda -o json
 dam reminders -o json
 dam label list -o json
+dam path list -o json
 ```
 
 `dam list --author NAME` lists what NAME made, by the name each row prints in `author`;
