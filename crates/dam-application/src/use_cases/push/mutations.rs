@@ -4,42 +4,54 @@ use dam_domain::{Change, Field, Object, Oid, changed_fields};
 
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
-use crate::ports::{Attempt, Attempts, RemoteHelper, RemoteTrackingRepository};
+use crate::ports::{Attempt, Attempts, RemoteHelper, RemoteTrackingRepository, Store};
 use crate::remote::{MutationOp, RemoteCapabilities, RemoteMutation};
 use crate::use_cases::push::attempting::differing;
+use crate::use_cases::push::containers::{Containers, Placement, places};
 use crate::use_cases::push::owed::OwedChanges;
-use crate::use_cases::push::refiles::{Refiled, Refiles};
 use crate::use_cases::push::sending_order::turn;
 
 pub(super) struct Plan {
     pub(super) mutations: Vec<RemoteMutation>,
     pub(super) skipped: usize,
     pub(super) unused: Vec<Oid>,
+    pub(super) unplaced: Vec<(Oid, String)>,
 }
 
 pub(super) fn plan(
-    remote_tracking: &dyn RemoteTrackingRepository,
+    store: &dyn Store,
     helper: &dyn RemoteHelper,
     caps: &RemoteCapabilities,
     remote: &RemoteConfig,
-    mut changes: OwedChanges,
-    refiles: &Refiles,
+    changes: OwedChanges,
     record: &Attempts,
 ) -> Result<Plan, UseCaseError> {
+    let remote_tracking: &dyn RemoteTrackingRepository = store;
+    let containers = Containers::new(store, &changes)?;
     let mut plan = Plan {
         mutations: Vec::new(),
         skipped: 0,
         unused: Vec::new(),
+        unplaced: Vec::new(),
     };
-    refiles.owe(&mut changes);
     let mut owed: Vec<Change> = changes.into_values().collect();
     owed.sort_by_key(turn);
     for change in owed {
-        let refiled = refiles.refiled(remote_tracking, &remote.name, change.oid())?;
         let earlier = record.get(change.oid()).map_or(&[][..], Vec::as_slice);
         let differing = differing(helper, caps, change.after(), earlier)?;
-        match mutation_for(remote_tracking, caps, remote, &change, refiled, &differing)? {
-            Some(mutation) => plan.mutations.push(mutation),
+        match mutation_for(remote_tracking, caps, remote, &change, &differing)? {
+            Some(mut mutation) => {
+                if let (true, Some(object)) = (places(&mutation), &mutation.object) {
+                    match containers.place(remote_tracking, &remote.name, object)? {
+                        Placement::Named(container) => mutation.container_remote_id = container,
+                        Placement::Held(why) => {
+                            plan.unplaced.push((mutation.oid, why));
+                            continue;
+                        }
+                    }
+                }
+                plan.mutations.push(mutation);
+            }
             None if nothing_will_use(remote_tracking, caps, remote, &change, earlier)? => {
                 plan.unused.push(change.oid().clone());
             }
@@ -74,7 +86,6 @@ fn mutation_for(
     caps: &RemoteCapabilities,
     remote: &RemoteConfig,
     change: &Change,
-    refiled: Option<Refiled>,
     differing: &BTreeSet<Field>,
 ) -> Result<Option<RemoteMutation>, UseCaseError> {
     if !goes_to(remote, caps, change.object()) {
@@ -90,11 +101,7 @@ fn mutation_for(
             let changed = changed_fields(before, after);
             let declared: Vec<Field> = Field::ALL
                 .into_iter()
-                .filter(|f| {
-                    changed.contains(f)
-                        || differing.contains(f)
-                        || (refiled.is_some() && *f == Field::Path)
-                })
+                .filter(|f| changed.contains(f) || differing.contains(f))
                 .filter(|f| caps.fields.contains(f))
                 .collect();
             if declared.is_empty() {
@@ -111,7 +118,7 @@ fn mutation_for(
         oid: change.oid().clone(),
         idempotency_key: String::new(),
         remote_id,
-        container_remote_id: refiled.and_then(|r| r.container_remote_id),
+        container_remote_id: None,
         object: change.after().cloned(),
         fields,
     }))

@@ -89,18 +89,20 @@ impl Dam<'_> {
         let record = self.store.attempts(&remote.name)?;
         let dropped = creates_no_longer_sent(self.store, remote, caps, unpushed, &record)?;
         let removals = Removals::new(self.store, &remote.name, caps, &changes)?;
-        let refiles = Refiles::new(self.store, &remote.name, caps, &changes)?;
         let Plan {
             mut mutations,
             skipped,
             unused,
-        } = plan(self.store, helper, caps, remote, changes, &refiles, &record)?;
+            unplaced,
+        } = plan(self.store, helper, caps, remote, changes, &record)?;
         let attempting = attempting(self.store, helper, &remote.name, &record, &mut mutations)?;
         let record = |ready: &[RemoteMutation]| {
             record_before_the_call(self.store, &remote.name, ready, &attempting)
         };
         let mut sent = self.sending(helper, &remote.name, removals, mutations, &record)?;
         sent.skipped = skipped;
+        sent.held += unplaced.len();
+        sent.settlement.failed.extend(unplaced);
         sent.settlement.held = held;
         sent.settlement.dropped = dropped;
         sent.settlement.dropped.unused.extend(unused);
@@ -122,13 +124,13 @@ impl Dam<'_> {
 mod attempting;
 mod attempts;
 mod conflict_holds;
+mod containers;
 mod dropped;
 mod failure_notices;
 mod idempotency;
 mod mutations;
 mod owed;
 mod reconcile;
-mod refiles;
 mod removals;
 mod sending;
 mod sending_order;
@@ -141,7 +143,6 @@ use conflict_holds::{Owed, hold_for_conflicts};
 use dropped::creates_no_longer_sent;
 use mutations::{Plan, plan};
 use owed::{changes_to_send, follow_ups};
-use refiles::Refiles;
 use removals::Removals;
 use waves::Sent;
 
