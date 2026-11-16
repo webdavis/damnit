@@ -15,7 +15,9 @@ impl Dam<'_> {
         completing: &[Oid],
         work: impl FnOnce() -> Result<T, UseCaseError>,
     ) -> Result<T, UseCaseError> {
-        if self.access.token().is_some() || self.config.hooks.is_empty() {
+        if self.access.token().is_some()
+            || (self.config.hooks.is_empty() && self.project_hooks.is_none())
+        {
             return work();
         }
         let before = tasks_by_oid(self.store)?;
@@ -39,6 +41,24 @@ impl Dam<'_> {
     }
 
     fn run_hook(&self, event: HookEvent, task: Object) -> Result<(), UseCaseError> {
+        let oid = task.oid().clone();
+        self.run_one_hook(event, task)?;
+        let Some(project) = self.project_hooks else {
+            return Ok(());
+        };
+        match self.store.get(&oid)? {
+            Some(now) if now.base().path.is_within(project.within) => Dam {
+                config: project.config,
+                hooks: project.hooks,
+                project_hooks: None,
+                ..*self
+            }
+            .run_one_hook(event, now),
+            _ => Ok(()),
+        }
+    }
+
+    fn run_one_hook(&self, event: HookEvent, task: Object) -> Result<(), UseCaseError> {
         let Some(hook) = self.config.hook(event) else {
             return Ok(());
         };
