@@ -434,6 +434,10 @@ reports it.
   `--depends drop|keep` answers that question on the command line, for a client with no terminal.
 - Labels can be grouped into categories in `config.lua`; an exclusive category allows one value per
   object.
+- `--category effort=deep` on `dam new` and `dam edit` gives the object the label `deep` of the
+  group `effort`, and `--category effort=none` takes the group's label off. A group or label not
+  declared where the command runs is refused. A second label of an exclusive group is refused, as
+  with `--labels`; take the first off with `--category effort=none` in the same command.
 - A pull never overwrites work you have not committed, and never deletes on your behalf: an
   upstream removal shows in `dam status` until you `dam rm` it.
 - When the remote changed an object you changed or removed and have not committed, the pull marks a

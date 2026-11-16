@@ -83,6 +83,7 @@ mod request_schemas;
 mod revert;
 mod sandbox_schedulers;
 mod secrets_unreadable;
+mod set_and_print;
 mod stale_setting_gone;
 mod status_change_lines;
 mod status_color;

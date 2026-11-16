@@ -39,6 +39,7 @@ dam new attached: help = Attach the task to the event with this oid
 dam new location: help = Set the event's location
 dam new estimate: help = Set how long the task should take: minutes, such as 5, or 5m or 2h
 dam new focus: help = Mark the task to work on first on DAY, after the ones marked before it. 3 a day
+dam new category: help = Give it LABEL of the label group GROUP; GROUP=none takes the group's label off. Repeatable
 dam new preview: help = Show the change and write nothing
 dam new global: help = Reach every task, not only the project this folder is in; a path starts from the root
 dam new project: help = Work in the project at PATH, such as pns/hooks/, from any folder
@@ -78,6 +79,7 @@ dam edit attached: help = Attach the task to the event with this oid
 dam edit location: help = Set the event's location
 dam edit estimate: help = Set how long the task should take: minutes, such as 5, or 5m or 2h
 dam edit focus: help = Mark the task to work on first on DAY, after the ones marked before it. 3 a day
+dam edit category: help = Give it LABEL of the label group GROUP; GROUP=none takes the group's label off. Repeatable
 dam edit no_recurrence: help = Stop the task repeating
 dam edit no_attached: help = Detach the task from its event
 dam edit start: help = Move the event's start, read the way --due reads one

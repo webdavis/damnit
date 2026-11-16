@@ -1,6 +1,6 @@
 use clap::Args;
 
-use crate::args::values::estimate_arg;
+use crate::args::values::{category_arg, estimate_arg};
 
 #[derive(Args, Debug, Default)]
 pub(crate) struct FieldArgs {
@@ -34,6 +34,13 @@ pub(crate) struct FieldArgs {
         help = "Mark the task to work on first on DAY, after the ones marked before it. 3 a day"
     )]
     pub(crate) focus: Option<String>,
+    #[arg(
+        long,
+        value_name = "GROUP=LABEL",
+        value_parser = category_arg,
+        help = "Give it LABEL of the label group GROUP; GROUP=none takes the group's label off. Repeatable"
+    )]
+    pub(crate) category: Vec<(String, String)>,
 }
 
 impl FieldArgs {

@@ -50,6 +50,15 @@ pub(super) fn max_age_arg(text: &str) -> Result<(RemoteName, Duration), String> 
 #[cfg(test)]
 mod tests;
 
+pub(crate) fn category_arg(text: &str) -> Result<(String, String), String> {
+    match text.split_once('=').map(|(g, l)| (g.trim(), l.trim())) {
+        Some((group, label)) if !group.is_empty() && !label.is_empty() => {
+            Ok((group.to_string(), label.to_string()))
+        }
+        _ => Err("a category is GROUP=LABEL, such as effort=deep, or GROUP=none".to_string()),
+    }
+}
+
 pub(super) fn label_arg(text: &str) -> Result<String, String> {
     match text.trim() {
         "" => Err(
