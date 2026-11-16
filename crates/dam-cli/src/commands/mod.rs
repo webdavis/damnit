@@ -12,7 +12,9 @@ pub(crate) mod doctor;
 mod done;
 pub(crate) mod edit;
 mod follow_ons;
+mod hook_error_row;
 mod hook_list;
+mod hook_run;
 mod hooked;
 pub(crate) mod init;
 mod ls;
@@ -36,6 +38,7 @@ pub(crate) mod token;
 mod token_warnings;
 
 use crate::args::Command;
+use crate::args::hook::{HookArgs, HookCommand};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
@@ -80,6 +83,9 @@ fn run_a_verb(ctx: &Context, command: Command) -> Result<Report, CliError> {
         Command::Sync(a) => sync::run_sync(ctx, a),
         Command::Category(a) => catalogue_write::run_category(ctx, a.command),
         Command::Filter(a) => catalogue_write::run_filter(ctx, a.command),
+        Command::Hook(HookArgs {
+            command: Some(HookCommand::Run(a)),
+        }) => hook_run::run(ctx, a),
         Command::Init(_)
         | Command::Hook(_)
         | Command::Token(_)

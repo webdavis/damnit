@@ -7,7 +7,6 @@ mod notice;
 mod progress;
 mod runs;
 mod skips;
-mod slow;
 mod warnings;
 
 use dam_domain::{Completion, Object, Oid, Task};

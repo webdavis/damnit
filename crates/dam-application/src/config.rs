@@ -74,6 +74,13 @@ impl Config {
     pub fn hook(&self, event: HookEvent) -> Option<&HookConfig> {
         self.hooks.iter().find(|h| h.event == event)
     }
+
+    pub fn declares(&self, event: HookEvent) -> bool {
+        match event {
+            HookEvent::TaskPulled => self.task_pulled.is_some(),
+            local => self.hook(local).is_some(),
+        }
+    }
 }
 
 #[cfg(test)]

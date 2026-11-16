@@ -256,7 +256,7 @@ every rule.
 A hook in the `hooks` folder beside `config.lua` runs on the owner's `dam new`, `dam edit`,
 `dam done` and `dam add`.
 A token's command runs no hook; its item runs one when the owner's `dam add` takes it.
-A token cannot run `dam hook`, which is the owner's alone.
+A token cannot run `dam hook list` or `dam hook run`, which are the owner's alone.
 A hook may return a `dam edit --request` document for its task, which the same command applies.
 The answer of `new` and `edit` then shows the task as the hook left it. The answer of `new`,
 `edit`, `done` and `add` carries `changed_by_hook`: each task a hook changed, as `oid` and `hook`.

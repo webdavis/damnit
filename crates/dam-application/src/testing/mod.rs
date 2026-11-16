@@ -13,6 +13,7 @@ mod progress;
 mod remote_fixture;
 mod scenario;
 mod settings_file;
+mod slow_hooks;
 
 pub use debug_form::each_field_in_its_debug_form;
 pub use doubles::{
@@ -35,6 +36,7 @@ pub use progress::{FakeProgress, Said};
 pub use remote_fixture::{config, todoist};
 pub use scenario::{Scenario, event, task, task_in};
 pub use settings_file::{FakeSettingsFile, Written};
+pub use slow_hooks::SlowHooks;
 
 pub mod prelude {
     pub use crate::ports::{

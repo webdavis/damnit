@@ -40,6 +40,11 @@ pub(super) fn every_refusal_with_its_text() -> Vec<(Refusal, &'static str)> {
         "hook task_new started this dam, and a hook cannot run dam",
     ));
     samples.extend(super::parent_samples::parent_refusals_with_their_text());
+    samples.push((
+        Refusal::HookNotDeclared(HookEvent::TaskPulled),
+        "there is no task_pulled hook; write it in hooks/task_pulled.lua beside config.lua, \
+         and dam hook list shows the hooks you have",
+    ));
     samples
 }
 

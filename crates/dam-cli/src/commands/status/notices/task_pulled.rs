@@ -1,7 +1,7 @@
 use dam_application::{FunctionFailure, RemoteName};
 use serde::Serialize;
 
-use crate::error::FaultText;
+use crate::commands::hook_error_row::HookErrorRow;
 
 #[derive(Serialize)]
 pub(in crate::commands::status) struct TaskPulledFailedRow<'a> {
@@ -9,13 +9,6 @@ pub(in crate::commands::status) struct TaskPulledFailedRow<'a> {
     failed: usize,
     not_reached: usize,
     error: Option<HookErrorRow>,
-}
-
-#[derive(Serialize)]
-struct HookErrorRow {
-    file: String,
-    line: Option<u32>,
-    message: String,
 }
 
 impl<'a> TaskPulledFailedRow<'a> {
@@ -29,11 +22,7 @@ impl<'a> TaskPulledFailedRow<'a> {
             remote: &remote.0,
             failed,
             not_reached,
-            error: error.map(|failure| HookErrorRow {
-                file: failure.file.display().to_string(),
-                line: failure.line,
-                message: FaultText(&failure.fault).to_string(),
-            }),
+            error: error.map(HookErrorRow::of),
         }
     }
 
@@ -42,13 +31,9 @@ impl<'a> TaskPulledFailedRow<'a> {
             "task_pulled on the last pull from {}: {} failed, {} not reached",
             self.remote, self.failed, self.not_reached
         );
-        let Some(error) = &self.error else {
-            return counts;
-        };
-        let at = match error.line {
-            Some(line) => format!("{}:{line}", error.file),
-            None => error.file.clone(),
-        };
-        format!("{counts}; first error at {at}: {}", error.message)
+        match &self.error {
+            Some(error) => format!("{counts}; {}", error.line()),
+            None => counts,
+        }
     }
 }

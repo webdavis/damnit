@@ -7,14 +7,14 @@ use crate::config::HookEvent;
 use crate::ports::{Clock, EditRequest, FunctionFailure, Histories, Hooks, Pull};
 use crate::testing::FakeHooks;
 
-pub(super) struct SlowHooks<'a> {
-    pub(super) hooks: &'a FakeHooks,
-    pub(super) now: Cell<Timestamp>,
-    pub(super) each_call: SignedDuration,
+pub struct SlowHooks<'a> {
+    pub hooks: &'a FakeHooks,
+    pub now: Cell<Timestamp>,
+    pub each_call: SignedDuration,
 }
 
 impl<'a> SlowHooks<'a> {
-    pub(super) fn taking(hooks: &'a FakeHooks, seconds: i64) -> SlowHooks<'a> {
+    pub fn taking(hooks: &'a FakeHooks, seconds: i64) -> SlowHooks<'a> {
         SlowHooks {
             hooks,
             now: Cell::new(Timestamp::UNIX_EPOCH),
@@ -30,6 +30,7 @@ impl Hooks for SlowHooks<'_> {
         task: &Object,
         histories: &dyn Histories,
     ) -> Result<Option<EditRequest>, FunctionFailure> {
+        self.later();
         self.hooks.run(event, task, histories)
     }
 
@@ -39,9 +40,15 @@ impl Hooks for SlowHooks<'_> {
         before: Option<&Object>,
         pull: &Pull,
     ) -> Result<Option<EditRequest>, FunctionFailure> {
-        let later = self.now.get().checked_add(self.each_call).unwrap();
-        self.now.set(later);
+        self.later();
         self.hooks.pulled(task, before, pull)
+    }
+}
+
+impl SlowHooks<'_> {
+    fn later(&self) {
+        let later = self.now.get().checked_add(self.each_call);
+        self.now.set(later.unwrap_or(Timestamp::MAX));
     }
 }
 

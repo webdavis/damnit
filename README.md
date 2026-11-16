@@ -399,6 +399,12 @@ It has 60 seconds in total for one pull, and Ctrl-C stops it and keeps the pull.
 `dam hook list` prints each hook file with its event and its `on_failure` or `changes`, and warns
 why a file does not load.
 
+`dam hook run <hook> [query]` calls one hook for each task `dam ls [query]` lists, as if each were
+new, and leaves its changes as working changes to read in `dam diff`. Use it for tasks no hook ran
+for: a first pull, a task a hook failed on, a task older than the rule. A rule that compares before
+and after does nothing here, a hook with a side effect fires once per task, and nothing retries by
+itself. It answers `ran`, `changed`, `failed` and `not_reached`.
+
 ## Reading it from a program
 
 A flag is named after the key it writes: a value `dam show --json` prints under `due` goes back
@@ -413,7 +419,7 @@ These steps report progress:
 - reading a credential that a function in `secrets.lua` computes
 - waiting for each remote's answer in a pull
 - sending changes to each remote in a push
-- the `task_new`, `task_changed`, `task_done` and `task_pulled` hooks
+- the `task_new`, `task_changed`, `task_done` and `task_pulled` hooks, and `dam hook run`
 - signing in to each remote in `dam test credentials`
 - trying each saved filter in `dam test filters`
 - each helper check in `dam doctor`

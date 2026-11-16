@@ -57,4 +57,5 @@ pub trait HookEdits {
 
 pub trait HookWarnings {
     fn warn(&self, failure: &HookFailure);
+    fn warn_change_dropped(&self, failure: &HookFailure);
 }

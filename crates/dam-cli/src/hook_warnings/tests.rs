@@ -1,6 +1,6 @@
 use dam_application::{FunctionFailure, FunctionFault, HookEvent, HookFailure};
 
-use super::{HookWarningsOnStandardError, warning};
+use super::{HookWarningsOnStandardError, dropped, warning};
 use crate::output::Format;
 
 #[test]
@@ -62,4 +62,23 @@ fn under_quiet_it_warns_of_nothing_but_says_it_otherwise() {
     assert_eq!(quiet.line(&failure), None);
     let json = HookWarningsOnStandardError::for_format(Format::Json);
     assert_eq!(json.line(&failure), Some(warning(&failure)));
+}
+
+#[test]
+fn a_hook_run_by_hand_warns_that_the_task_it_failed_on_is_left_as_it_was() {
+    let failure = HookFailure {
+        event: HookEvent::TaskChanged,
+        failure: FunctionFailure {
+            file: "/home/hooks/task_changed.lua".into(),
+            line: Some(3),
+            fault: FunctionFault::Raised {
+                message: "no bell".into(),
+            },
+        },
+    };
+    assert_eq!(
+        dropped(&failure),
+        "warning: hook task_changed failed at /home/hooks/task_changed.lua:3: no bell; \
+         that task is left as it was"
+    );
 }

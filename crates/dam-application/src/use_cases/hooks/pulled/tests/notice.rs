@@ -1,8 +1,8 @@
+use crate::testing::SlowHooks;
 use std::path::PathBuf;
 
 use dam_domain::Permission::RemotePull;
 
-use super::slow::SlowHooks;
 use super::*;
 use crate::ports::{FunctionFailure, FunctionFault, Notice, NoticeRepository};
 use crate::service::Dam;

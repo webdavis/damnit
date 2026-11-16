@@ -90,7 +90,9 @@ fn tasks_by_oid(objects: &dyn ObjectRepository) -> Result<BTreeMap<Oid, Task>, U
 
 mod details;
 mod edit_request;
+pub(crate) mod listed;
 pub(crate) mod pulled;
+mod run_time;
 
 #[cfg(test)]
 mod tests;

@@ -155,6 +155,12 @@ impl fmt::Display for RefusalText<'_> {
                     "hook {event} started this dam, and a hook cannot run dam"
                 )
             }
+            Refusal::HookNotDeclared(event) => write!(
+                f,
+                "there is no {0} hook; write it in hooks/{0}.lua beside config.lua, \
+                 and dam hook list shows the hooks you have",
+                event.as_str()
+            ),
             Refusal::Item(refusal) => write!(f, "{}", ItemText(refusal)),
             Refusal::PulledCommit(id) => pulled_commit(f, id),
             Refusal::NotInCommit { commit, text } => not_in_commit(f, commit, text),

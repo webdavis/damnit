@@ -244,7 +244,7 @@ pull, which is nil for a new task. Both have the shape `match` gets.
 went from open to done.
 It does not run for a task the pull found unchanged, held as a conflict, left alone for your
 newer work, or removed, nor for an event.
-It does not run on the first pull from a remote, so the tasks of that pull never get it.
+It does not run on the first pull from a remote; `dam hook run task_pulled` reaches those tasks.
 It may return a table of fields, as the other hooks do.
 With `changes = "committed"`, the default, dam commits those changes in one commit of their own
 right after the pull's commit: `task_pulled after pull from <remote>`, by you, each change's
@@ -279,6 +279,36 @@ The pull's answer counts what it did under `task_pulled`: `ran`, `changed`, `fai
 When a remote rewrites what dam pushed, the task comes back changed and the hook runs on it once
 more. A hook that changes a task each time it runs changes it once per push and pull, never in a
 loop.
+
+`dam hook run <hook> [query]` calls one hook for each task that `dam ls [query]` lists, a saved
+filter or a function filter included. Events are skipped, and it contacts no remote.
+It reaches tasks no hook ran for: the tasks of a first pull, tasks a hook failed on or did not
+reach, and tasks older than your rule.
+Each task comes to the hook as new: `run(task, dam)` with the task as it is, or for `task_pulled`
+`run(task, nil, pull)` with `pull.remote` the remote the task is tracked on and `pull.change` set
+to `new`. `task_pulled` skips a task tracked on no remote and counts it as not reached.
+What the hook returns becomes your working changes, whatever `changes` says: read them in
+`dam status` and `dam diff`, and `dam restore` undoes them. Nothing is committed or pushed.
+`dam log` names the hook once you commit them. It runs no other hook.
+One call has 5 seconds and the run 60 in total; Ctrl-C stops it, keeps the changes made, and
+exits 3. A terminal shows its progress on standard error, unless `--quiet` is given.
+A failure on one task drops that task's change and the run goes on; `on_failure` is not read.
+The first failure warns on standard error:
+
+    warning: hook task_changed failed at /home/ada/.config/dam/hooks/task_changed.lua:3: no bell; that task is left as it was
+
+It answers `hook`, the counts `ran`, `changed`, `failed` and `not_reached`, and `error`, the first
+error's `file`, `line` and `message`, or null. In plain text it is one line such as
+`task_changed: 3 ran, 2 changed, 1 failed, 0 not reached`. It exits 0 whatever the counts.
+A hook with no file in the hooks folder exits 4, rule `hook_not_declared`.
+It has three costs:
+
+1. The arguments are made up. Nothing happened to these tasks, so a rule that compares before and
+   after does nothing here; only a rule that looks at the task as it is works.
+2. A hook with a side effect, such as one that prints, sends a notice or runs a program, fires
+   once for each listed task.
+3. Nothing retries by itself. A task the hook failed on or did not reach stays as it is until you
+   run it again, on a narrower listing if need be.
 
 Tasks you complete, written to a file, in `hooks/task_done.lua`:
 

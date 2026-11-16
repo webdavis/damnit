@@ -37,6 +37,7 @@ impl Refusal {
             Refusal::NoSuchSetting(_) => "no_such_setting",
             Refusal::HookRefused(_) => "hook_refused",
             Refusal::StartedByHook(_) => "started_by_hook",
+            Refusal::HookNotDeclared(_) => "hook_not_declared",
             Refusal::Item(refusal) => refusal.name(),
             Refusal::PulledCommit(_) => "pulled_commit",
             Refusal::NotInCommit { .. } => "not_in_commit",

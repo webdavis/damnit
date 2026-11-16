@@ -139,8 +139,24 @@ dam filter list: about = List saved filters with their kinds and queries
 dam filter create: about = Save a filter in config.lua
 dam filter create query: help = The query the filter runs, such as due:today
 dam filter remove: about = Remove a saved filter from config.lua
-dam hook: about = Read the hooks in the hooks folder
+dam hook: about = List the hooks in the hooks folder, or run one over listed tasks
 dam hook list: about = List the hooks in the hooks folder, each with its file, setting and whether it loads
+dam hook run: about = Run a hook once for each task a listing holds, leaving its changes as working changes
+dam hook run: after_help = Each task is handed to the hook as new: task_pulled gets no before and change = new.
+Nothing happened to these tasks, so a rule that compares before and after does nothing here;
+only a rule that looks at the task as it is works.
+A hook that prints, sends a notice or runs a program does so once for each listed task.
+Nothing retries by itself: a task the hook failed on or did not reach stays as it is until you
+run this again, on a narrower listing if need be.
+task_pulled runs only for tasks tracked on a remote; the others count as not reached.
+It contacts no remote. Read the changes with dam diff; dam restore undoes them.
+
+Examples:
+  dam hook run task_changed
+  dam hook run task_pulled @waiting
+  dam hook run task_new today --json
+dam hook run hook: help = Name the hook to run by its event
+dam hook run query: help = Narrow the tasks by a query or saved filter, read the way `ls` reads one
 dam remote: about = Manage remotes
 dam remote add: about = Add a remote to config.lua
 dam remote add name: help = Name the remote, such as todoist

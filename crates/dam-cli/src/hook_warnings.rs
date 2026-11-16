@@ -25,6 +25,19 @@ impl HookWarnings for HookWarningsOnStandardError {
             eprintln!("{line}");
         }
     }
+
+    fn warn_change_dropped(&self, failure: &HookFailure) {
+        if self.shown {
+            eprintln!("{}", dropped(failure));
+        }
+    }
+}
+
+fn dropped(failure: &HookFailure) -> String {
+    format!(
+        "warning: {}; that task is left as it was",
+        HookText(failure)
+    )
 }
 
 fn warning(failure: &HookFailure) -> String {

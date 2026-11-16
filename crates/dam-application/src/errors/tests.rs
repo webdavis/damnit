@@ -12,7 +12,7 @@ use hook_samples::hook_samples;
 use item_samples::item_samples;
 use parent_samples::parent_samples;
 
-const HAND_COUNTED_RULES: usize = 54;
+const HAND_COUNTED_RULES: usize = 55;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -70,6 +70,7 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::PathOutsideParent { .. } => 51,
         Refusal::SeveralHoldThePath { .. } => 52,
         Refusal::SyncNotAllowed(_) => 53,
+        Refusal::HookNotDeclared(_) => 54,
     }
 }
 

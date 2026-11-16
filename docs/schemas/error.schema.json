@@ -128,6 +128,7 @@
         "no_such_setting",
         "hook_refused",
         "started_by_hook",
+        "hook_not_declared",
         "nothing_changed",
         "item_declined",
         "item_not_an_object",
