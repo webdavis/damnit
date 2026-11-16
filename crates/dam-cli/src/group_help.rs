@@ -1,5 +1,6 @@
 use clap::CommandFactory;
 
+use crate::args::hook::HookArgs;
 use crate::args::{Cli, Command, ConfigArgs, SyncArgs};
 use crate::error::CliError;
 
@@ -20,6 +21,7 @@ pub(crate) fn bare(command: &Command) -> Option<&'static str> {
     match command {
         Command::Config(ConfigArgs { command: None }) => Some("config"),
         Command::Sync(SyncArgs { command: None }) => Some("sync"),
+        Command::Hook(HookArgs { command: None }) => Some("hook"),
         _ => None,
     }
 }

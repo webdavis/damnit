@@ -20,7 +20,7 @@ mod started_by_hook;
 mod style;
 mod view;
 
-use dam_adapters::{Interrupt, LuaConfigFile, OsRandom, ProcessLauncher, SystemClock};
+use dam_adapters::{Interrupt, LuaConfigFile, ProcessLauncher, SystemClock};
 use dam_application::{Clock, ConfigFile};
 
 use crate::args::{Cli, Command, ConfigArgs};
@@ -106,14 +106,11 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     if presented_token.is_none() {
         first_run::create_the_owners_config_when_missing(&config_file, &config_path, format);
     }
-    if let Command::Token(args) = cli.command {
-        return output::print(
-            format,
-            color,
-            &commands::token::run(&config_file, &OsRandom, SystemClock.now(), args)?,
-        );
-    }
-    if commands::catalogue::only_reads(&cli.command) {
+    let command = match commands::config_files::answer(&config_file, cli.command)? {
+        Ok(report) => return output::print(format, color, &report),
+        Err(command) => command,
+    };
+    if commands::catalogue::only_reads(&command) {
         let config = config_file.load()?.config;
         let now = SystemClock.now();
         let access = caller(
@@ -121,8 +118,8 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
             now,
             &meta,
         );
-        gate::admit(access.as_ref(), &cli.command)?;
-        let report = commands::catalogue::run(&config, cli.command)?;
+        gate::admit(access.as_ref(), &command)?;
+        let report = commands::catalogue::run(&config, command)?;
         return output::print(format, color, &report);
     }
     let standing = run.standing();
@@ -137,7 +134,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         context::invocation_of(&config_path, &store_path),
     )?
     .with_templates(templates);
-    let report = match cli.command {
+    let report = match command {
         Command::Init(args) => commands::init::run(&ctx, args, (&run).into())?,
         command => commands::scoped::dispatch_in(&ctx, command, standing)?,
     };

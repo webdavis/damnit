@@ -3,6 +3,7 @@ mod dispositions;
 mod doctor;
 mod editing;
 mod global_flags;
+pub(crate) mod hook;
 mod init;
 mod new;
 mod planning;
@@ -88,6 +89,8 @@ pub(crate) enum Command {
     Category(CategoryArgs),
     #[command(about = "List, create and remove the saved filters config.lua declares")]
     Filter(FilterArgs),
+    #[command(about = "Read the hooks in the hooks folder")]
+    Hook(hook::HookArgs),
     #[command(about = "Manage remotes")]
     Remote(RemoteArgs),
     #[command(about = "Send unpushed commits to a remote, or to every remote")]
@@ -110,19 +113,7 @@ pub(crate) enum Command {
     Config(ConfigArgs),
     #[command(
         about = "Read this machine, say what is wrong and how to fix it, and contact nothing",
-        after_help = "An error raised in secrets.lua is shown as that file wrote it.
-It runs the top-level code of config.lua and secrets.lua and calls no credential function.
-It exits 1 when a check finds an issue, and prints the report to stdout either way.
---fix creates the starter config.lua and the store where each is missing, then runs the checks.
-It changes no file that exists. With checks named, it creates only what those checks cover.
-
-Examples:
-  dam doctor
-  dam doctor config
-  dam doctor sync
-  dam doctor --json
-  dam doctor --fix
-  dam doctor --fix database"
+        after_help = doctor::DOCTOR_HELP
     )]
     Doctor(DoctorArgs),
     #[command(

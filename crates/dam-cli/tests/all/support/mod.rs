@@ -10,6 +10,7 @@ pub mod golden;
 pub mod help_flags;
 pub mod helper_scripts;
 pub mod hidden;
+pub mod hook_answers;
 pub mod init_answer;
 pub mod own;
 pub mod page_examples;
