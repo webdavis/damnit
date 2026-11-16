@@ -41,4 +41,17 @@ return {
     assert(#notes == 1 and notes[1].text:find("no object matches", 1, true), vim.inspect(notes))
     assert(notes[1].level == vim.log.levels.ERROR)
   end,
+
+  ["a placed write keeps its refusal for :Dam messages and announces nothing"] = function()
+    local app, fake = helper.new()
+    fake.reply("show", fixtures.refusal("error-refused.json", EXIT_REFUSED))
+    local notes = buffer.capture_notes()
+    local got = helper.call(app, { args = { "show", "0000000" }, cwd = "/", placed = true }, "write")
+    buffer.wait_for(function()
+      return got.done
+    end)
+    vim.wait(20)
+    assert(#notes == 0, vim.inspect(notes))
+    assert(#app.say:log() == 1 and got.err == app.say:log()[1], vim.inspect(app.say:log()))
+  end,
 }

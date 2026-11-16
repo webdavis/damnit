@@ -19,8 +19,13 @@ function Say:warn(text)
 end
 
 ---@param err damnit.Error
-function Say:error(err)
+function Say:keep(err)
   table.insert(self.errors, err)
+end
+
+---@param err damnit.Error
+function Say:error(err)
+  self:keep(err)
   vim.notify(errors.text(err), vim.log.levels.ERROR, { title = "dam" })
 end
 
