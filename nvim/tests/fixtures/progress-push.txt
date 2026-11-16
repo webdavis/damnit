@@ -1,0 +1,2 @@
+{"step":"push","stage":"started","done":0,"total":2,"seconds":0,"remote":"fake"}
+{"step":"push","stage":"finished","done":2,"total":2,"seconds":0,"remote":"fake"}

@@ -1,0 +1,10 @@
+{"step":"push","stage":"started","done":0,"total":2,"seconds":0,"remote":"fake"}
+{"step":"push","stage":"failed","done":2,"total":2,"seconds":0,"remote":"fake"}
+{
+  "error": {
+    "kind": "helper",
+    "rule": null,
+    "message": "the remote refused: fake is rate limiting this account; retry after 42s",
+    "oids": []
+  }
+}
