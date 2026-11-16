@@ -7,6 +7,7 @@ use dam_application::{BackgroundJob, BackgroundSync, Change, ScheduleError, labe
 
 use super::ProgramRunner;
 use super::files::{ran, remove_each_present, write_when_changed};
+use super::runner::RunFailure;
 
 pub struct Launchd<R: ProgramRunner> {
     pub runner: R,
@@ -31,13 +32,24 @@ impl<R: ProgramRunner> Launchd<R> {
         Ok(format!("{}/{}", self.domain()?, label_of(remote)))
     }
 
-    fn loaded(&self, service: &str) -> bool {
-        self.runner.run("launchctl", &["print", service]).is_ok()
+    fn loaded(&self, service: &str) -> Result<bool, ScheduleError> {
+        match self.runner.run("launchctl", &["print", service]) {
+            Ok(()) => Ok(true),
+            Err(failure) if says_not_loaded(&failure) => Ok(false),
+            Err(failure) => ran("launchctl", "print", Err(failure)).map(|()| false),
+        }
     }
 
     fn launchctl(&self, args: &[&str]) -> Result<(), ScheduleError> {
         ran("launchctl", args[0], self.runner.run("launchctl", args))
     }
+}
+
+const SERVICE_NOT_FOUND: i32 = 113;
+const COULD_NOT_FIND: &str = "Could not find service";
+
+fn says_not_loaded(failure: &RunFailure) -> bool {
+    failure.code == Some(SERVICE_NOT_FOUND) || failure.message.contains(COULD_NOT_FIND)
 }
 
 fn agent_in(folder: &Path, remote: &str) -> PathBuf {
@@ -56,7 +68,7 @@ impl<R: ProgramRunner> BackgroundSync for Launchd<R> {
         let path = agent_in(&self.state, &job.remote);
         let rewritten = write_when_changed(&path, &plist::plist(job))?;
         let service = self.service(&job.remote)?;
-        let loaded = self.loaded(&service);
+        let loaded = self.loaded(&service)?;
         if loaded && !rewritten {
             return Ok(Change::Already);
         }
@@ -70,7 +82,7 @@ impl<R: ProgramRunner> BackgroundSync for Launchd<R> {
 
     fn stop(&self, remote: &str) -> Result<Change, ScheduleError> {
         let service = self.service(remote)?;
-        if !self.loaded(&service) {
+        if !self.loaded(&service)? {
             return Ok(Change::Already);
         }
         self.launchctl(&["bootout", &service])?;
