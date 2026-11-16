@@ -1,4 +1,4 @@
-use dam_application::{ConfigError, ProjectRuleFault, TaskTemplate};
+use dam_application::{ConfigError, ProjectRuleFault, RequiredField, TaskTemplate};
 use dam_domain::Priority;
 
 use super::project_support::ProjectFolder;
@@ -49,4 +49,30 @@ fn defaults_of_the_wrong_shape_are_refused_naming_only_the_file() {
         "return { path = 'a/', new_task = { labels = 'x' } }",
         "new_task",
     );
+}
+
+#[test]
+fn the_required_fields_are_read() {
+    let folder = ProjectFolder::with(
+        "return { path = 'a/', required = { 'due', 'labels', 'priority', 'body', 'deadline' } }",
+    );
+    assert_eq!(
+        folder.read().unwrap().required,
+        [
+            RequiredField::Due,
+            RequiredField::Labels,
+            RequiredField::Priority,
+            RequiredField::Body,
+            RequiredField::Deadline,
+        ]
+    );
+}
+
+#[test]
+fn a_required_field_dam_does_not_know_is_refused_naming_only_the_file() {
+    refused_as_misshapen(
+        "return { path = 'a/', required = { 'colour' } }",
+        "required",
+    );
+    refused_as_misshapen("return { path = 'a/', required = 'due' }", "required");
 }

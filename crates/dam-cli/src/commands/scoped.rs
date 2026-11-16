@@ -2,6 +2,7 @@ use dam_domain::Path;
 
 use crate::args::Command;
 use crate::commands::dispatch_a_verb_that_opens_the_store;
+use crate::commands::new::required::holds_each;
 use crate::commands::new::templated::{filled, from_template};
 use crate::context::Context;
 use crate::error::CliError;
@@ -21,7 +22,11 @@ pub(crate) fn dispatch_in(
             let to_the_owner = ctx.access.token().is_none();
             let a = from_template(ctx.templates.as_ref(), a, to_the_owner)?;
             Command::New(match standing.rules(&a.scope) {
-                Some(rules) => filled(a, rules.new_task.clone()),
+                Some(rules) => {
+                    let a = filled(a, rules.new_task.clone());
+                    holds_each(&a, &rules.required)?;
+                    a
+                }
                 None => a,
             })
         }

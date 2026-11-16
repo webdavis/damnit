@@ -39,7 +39,9 @@ pub use ports::{
     StageRepository, Step, Store, StoreError, TaskTemplate, TaskTemplates, TemplateName,
     TemplateOwner, Transactional, Uneditable, label_of, waited_on,
 };
-pub use project::{PROJECT_FILE, Project, ProjectFolders, ProjectSettings, find_project};
+pub use project::{
+    PROJECT_FILE, Project, ProjectFolders, ProjectSettings, RequiredField, find_project,
+};
 pub use remote::{
     IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, PushOutcome,
     RejectedObject, RemoteCapabilities, RemoteMutation,

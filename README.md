@@ -323,7 +323,8 @@ the answer carries `project_created`, its `oid` and `path`.
 
 `.dam.lua` may hold more rules for the project; `docs/lua.md` lists them. They apply only to
 commands run inside the project without `--global` or `--project`.
-`new_task = { labels = { "app" }, priority = 2 }` fills what a flag and the template leave unset. With
+`new_task = { labels = { "app" }, priority = 2 }` fills what a flag and the template leave unset.
+With `required = { "due" }`, `dam new` refuses a task without a due date and names `--due`. With
 `minimum_dam = "0.3.0"` an older `dam` refuses the file and names the version it needs.
 
 `dam new --template bug "crash on pull"` starts the task from a template: the project's
