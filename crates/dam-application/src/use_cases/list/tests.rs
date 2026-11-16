@@ -81,3 +81,19 @@ fn a_bad_query_is_a_query_error_naming_what_was_typed() {
     let err = s.dam().list(Some("(due:today")).unwrap_err();
     assert_eq!(err, UseCaseError::Query(QueryError::Unclosed));
 }
+
+#[test]
+fn a_saved_filter_reads_a_quoted_value() {
+    let config = Config {
+        filters: vec![FilterConfig {
+            name: "kitchen".into(),
+            rule: FilterRule::Query("path:\"kitchen remodel/\"".into()),
+        }],
+        ..Config::default()
+    };
+    let s = Scenario::default().configured(config);
+    let mut t = Task::new(oid(1), "get quotes");
+    t.base.path = Path::parse("kitchen remodel").unwrap();
+    s.working(Object::Task(t));
+    assert_eq!(s.dam().list(Some("kitchen")).unwrap().len(), 1);
+}

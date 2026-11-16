@@ -1,5 +1,7 @@
 use std::fmt;
 
+use super::QueryError;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) enum Tok {
     And,
@@ -23,7 +25,7 @@ impl fmt::Display for Tok {
     }
 }
 
-pub(super) fn lex(text: &str) -> Vec<Tok> {
+pub(super) fn lex(text: &str) -> Result<Vec<Tok>, QueryError> {
     let mut out = Vec::new();
     let mut word = String::new();
     let flush = |word: &mut String, out: &mut Vec<Tok>| {
@@ -31,8 +33,11 @@ pub(super) fn lex(text: &str) -> Vec<Tok> {
             out.push(Tok::Word(std::mem::take(word)));
         }
     };
-    for c in text.chars() {
+    let mut chars = text.char_indices();
+    while let Some((at, c)) = chars.next() {
         match c {
+            '"' => quoted(&mut chars, &mut word)
+                .ok_or_else(|| QueryError::UnclosedQuote(text[at..].to_string()))?,
             '&' => {
                 flush(&mut word, &mut out);
                 out.push(Tok::And)
@@ -58,5 +63,15 @@ pub(super) fn lex(text: &str) -> Vec<Tok> {
         }
     }
     flush(&mut word, &mut out);
-    out
+    Ok(out)
+}
+
+fn quoted(chars: &mut std::str::CharIndices, word: &mut String) -> Option<()> {
+    loop {
+        match chars.next()?.1 {
+            '"' => return Some(()),
+            '\\' => word.push(chars.next()?.1),
+            c => word.push(c),
+        }
+    }
 }

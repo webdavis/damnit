@@ -15,7 +15,7 @@ struct Parser<'c> {
 }
 
 pub fn parse(text: &str, categories: &Categories) -> Result<Expr, QueryError> {
-    let toks = lex(text);
+    let toks = lex(text)?;
     if toks.is_empty() {
         return Err(QueryError::Empty);
     }
