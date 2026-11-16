@@ -6,7 +6,7 @@ use super::refusal::ItemRefusal;
 use crate::errors::{Refusal, UseCaseError};
 use crate::service::Dam;
 use crate::use_cases::parents::placed;
-use crate::use_cases::subtree::replace_carrying_folder;
+use crate::use_cases::subtree::{put_adopting, replace_carrying_folder};
 
 mod answer;
 
@@ -69,7 +69,7 @@ impl Dam<'_> {
         let Author::Token(author) = self.access.author() else {
             match before {
                 Some(before) => replace_carrying_folder(self.store, before, &after)?,
-                None => self.store.put(&after)?,
+                None => put_adopting(self.store, &after)?,
             }
             return Ok(Landed::Written(after));
         };

@@ -6,7 +6,7 @@ use super::load_task;
 use crate::errors::UseCaseError;
 use crate::ports::{ObjectRepository, Randomness};
 use crate::use_cases::parents::with_nearest_parent;
-use crate::use_cases::subtree::move_into;
+use crate::use_cases::subtree::{move_into, put_adopting};
 
 pub(super) fn apply_dispositions(
     objects: &dyn ObjectRepository,
@@ -29,7 +29,7 @@ pub(super) fn apply_dispositions(
                 .base
                 .owned_folder()
                 .ok_or_else(|| UseCaseError::Parse(format!("{name:?} cannot name a folder")))?;
-            objects.put(&with_nearest_parent(objects, Object::Task(group))?)?;
+            put_adopting(objects, &with_nearest_parent(objects, Object::Task(group))?)?;
             Some((folder, Some(group_oid)))
         }
     };
