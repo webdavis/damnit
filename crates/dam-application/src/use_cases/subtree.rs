@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use dam_domain::{Object, Oid, Path, nearest_parents};
+use dam_domain::{Object, Oid, Path};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
@@ -11,21 +11,10 @@ pub(crate) fn contents(
     objects: &dyn ObjectRepository,
     owner: &Object,
 ) -> Result<Vec<Object>, UseCaseError> {
-    Ok(objects
-        .all()?
+    Ok(settled_around(objects.all()?, owner)?
         .into_iter()
         .filter(|o| o.base().parent.as_ref() == Some(owner.oid()))
         .collect())
-}
-
-pub(crate) fn holds_objects(
-    objects: &dyn ObjectRepository,
-    owner: &Oid,
-) -> Result<bool, UseCaseError> {
-    Ok(objects
-        .all()?
-        .iter()
-        .any(|o| o.base().parent.as_ref() == Some(owner)))
 }
 
 pub(crate) fn is_held_by(
@@ -65,7 +54,7 @@ pub(crate) fn loses_a_held_folder(
 ) -> Result<bool, UseCaseError> {
     Ok(
         match (before.base().owned_folder(), after.base().owned_folder()) {
-            (Some(_), None) => holds_objects(objects, before.oid())?,
+            (Some(_), None) => !contents(objects, before)?.is_empty(),
             _ => false,
         },
     )
@@ -124,51 +113,13 @@ fn put_carrying_folder(
     put_adopting(objects, after)
 }
 
-pub(crate) fn put_adopting(
-    objects: &dyn ObjectRepository,
-    holder: &Object,
-) -> Result<(), UseCaseError> {
-    objects.put(holder)?;
-    let Some(folder) = holder.base().owned_folder() else {
-        return Ok(());
-    };
-    let all = objects.all()?;
-    for mut held in all.iter().cloned() {
-        let adopted = held.oid() != holder.oid()
-            && held.base().parent == holder.base().parent
-            && held.base().path.is_within(&folder)
-            && nearest_parents(&held.base().path, &all) == [holder.oid().clone()];
-        if adopted {
-            held.base_mut().parent = Some(holder.oid().clone());
-            objects.put(&held)?;
-        }
-    }
-    Ok(())
-}
+mod adopt;
+mod chain;
+mod unsettled;
 
-fn held_chain(objects: &dyn ObjectRepository, owner: &Object) -> Result<Vec<Object>, UseCaseError> {
-    let all = objects.all()?;
-    let mut holders = BTreeSet::from([owner.oid().clone()]);
-    let mut chain = Vec::new();
-    loop {
-        let found: Vec<Object> = all
-            .iter()
-            .filter(|o| !holders.contains(o.oid()))
-            .filter(|o| {
-                o.base()
-                    .parent
-                    .as_ref()
-                    .is_some_and(|p| holders.contains(p))
-            })
-            .cloned()
-            .collect();
-        if found.is_empty() {
-            return Ok(chain);
-        }
-        holders.extend(found.iter().map(|o| o.oid().clone()));
-        chain.extend(found);
-    }
-}
+pub(crate) use adopt::put_adopting;
+use chain::held_chain;
+use unsettled::settled_around;
 
 #[cfg(test)]
 mod tests;

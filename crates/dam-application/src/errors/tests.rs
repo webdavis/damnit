@@ -9,10 +9,12 @@ fn commit_id() -> dam_domain::CommitId {
 
 mod hook_samples;
 mod item_samples;
+mod parent_samples;
 use hook_samples::hook_samples;
 use item_samples::item_samples;
+use parent_samples::parent_samples;
 
-const HAND_COUNTED_RULES: usize = 50;
+const HAND_COUNTED_RULES: usize = 51;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -66,6 +68,7 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::NotInCommit { .. } => 47,
         Refusal::HookRefused(_) => 48,
         Refusal::StartedByHook(_) => 49,
+        Refusal::ParentNotKnown { .. } => 50,
     }
 }
 
@@ -141,6 +144,7 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
     ]
     .into_iter()
     .chain(hook_samples())
+    .chain(parent_samples())
     .chain(item_samples().into_iter().map(Refusal::Item))
     .collect()
 }

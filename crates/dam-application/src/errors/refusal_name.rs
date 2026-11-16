@@ -39,6 +39,7 @@ impl Refusal {
             Refusal::Item(refusal) => refusal.name(),
             Refusal::PulledCommit(_) => "pulled_commit",
             Refusal::NotInCommit { .. } => "not_in_commit",
+            Refusal::ParentNotKnown { .. } => "parent_not_known",
         }
     }
 }

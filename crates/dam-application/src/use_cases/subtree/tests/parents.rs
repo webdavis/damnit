@@ -143,3 +143,24 @@ fn a_renamed_object_adopts_only_what_its_parent_holds_in_its_new_folder() {
     assert_eq!(parent_of(&s, &oid(3)), Some(oid(1)));
     assert_eq!(parent_of(&s, &oid(6)), Some(oid(2)));
 }
+
+#[test]
+fn a_command_on_contents_dam_cannot_place_is_refused_naming_the_namesakes() {
+    let s = two_errands();
+    s.store
+        .put(&dam_domain::Object::Task(task_in(
+            9,
+            "bins",
+            "Home/errands",
+        )))
+        .unwrap();
+    let refused = crate::errors::Refusal::ParentNotKnown {
+        oid: oid(1),
+        unsettled: vec![oid(9)],
+        namesakes: vec![oid(2)],
+        folder: dam_domain::Path::parse("Home/errands").unwrap(),
+        held_by_a_remote: false,
+    };
+    assert_eq!(s.dam().remove(&oid(1)), Err(refused.into()));
+    assert_eq!(s.path_of(&oid(3)), "Home/errands/");
+}

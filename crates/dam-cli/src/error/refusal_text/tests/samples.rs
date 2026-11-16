@@ -39,6 +39,7 @@ pub(super) fn every_refusal_with_its_text() -> Vec<(Refusal, &'static str)> {
         Refusal::StartedByHook("task_new".into()),
         "hook task_new started this dam, and a hook cannot run dam",
     ));
+    samples.extend(super::parent_samples::parent_refusals_with_their_text());
     samples
 }
 

@@ -22,6 +22,7 @@ pub(crate) mod push;
 pub(crate) mod relocate;
 pub(crate) mod reminders;
 pub(crate) mod remote_access;
+pub(crate) mod remote_holds;
 pub(crate) mod remove;
 pub(crate) mod resolve;
 pub(crate) mod restore;

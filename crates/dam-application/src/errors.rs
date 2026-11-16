@@ -1,6 +1,8 @@
 mod refusal_name;
 
-use dam_domain::{Blockers, CommitId, Date, LabelViolation, Oid, Permission, QueryError, Tracked};
+use dam_domain::{
+    Blockers, CommitId, Date, LabelViolation, Oid, Path, Permission, QueryError, Tracked,
+};
 
 use crate::access::TokenRefusal;
 use crate::ports::{CredentialError, FunctionFailure, HelperError, HookFailure, StoreError};
@@ -71,6 +73,13 @@ pub enum Refusal {
     NotInCommit {
         commit: CommitId,
         text: String,
+    },
+    ParentNotKnown {
+        oid: Oid,
+        unsettled: Vec<Oid>,
+        namesakes: Vec<Oid>,
+        folder: Path,
+        held_by_a_remote: bool,
     },
 }
 
