@@ -34,7 +34,9 @@ token is checked on the full path; `--global`, or `"global": true` in a request,
 the root, and `--project <path>`, or `"project"` in a request, starts it from that path from any
 folder. A missing task for that path is created first; that needs `task:create` there, and the
 answer carries `project_created`. The path `dam mv` moves objects to starts from the project the
-same way; its oids, `--query` and `--filter` still pick from every task. `dam ls`, `dam agenda` and `dam reminders` there list only what the token sees under the
+same way. Inside a project, `--query` and `--filter` on `dam edit`, `dam done`, `dam mv` and
+`dam rm` pick only the project's tasks the token sees, as `dam ls` lists them; `--global`, or
+`"global": true` in a request, picks from every task. Oids are never narrowed. `dam ls`, `dam agenda` and `dam reminders` there list only what the token sees under the
 project. `dam config list -o json` carries every setting the project's `.dam.lua` holds under
 `project`, as the file sets it.
 

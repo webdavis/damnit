@@ -10,6 +10,7 @@ pub(super) fn config() -> Config {
         confirm_above: None,
         remotes: vec![],
         categories: Categories::default(),
+        project_categories: None,
         categories_writing_exclusive: Default::default(),
         filters: vec![],
         hooks: vec![],

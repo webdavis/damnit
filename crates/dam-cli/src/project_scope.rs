@@ -94,7 +94,7 @@ impl Standing {
         }
     }
 
-    pub(crate) fn place(self, scope: &ScopeArgs) -> Result<Path, CliError> {
+    pub(crate) fn place(&self, scope: &ScopeArgs) -> Result<Path, CliError> {
         if let Some(project) = &scope.project {
             return Ok(project.clone());
         }
@@ -109,7 +109,7 @@ impl Standing {
                     project.file().display()
                 ))
             }),
-            Standing::Unreadable(e) => Err(CliError::Config(e)),
+            Standing::Unreadable(e) => Err(CliError::Config(e.clone())),
         }
     }
 }

@@ -81,6 +81,7 @@ pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
         confirm_above: whole_number(root, "confirm_above")?,
         remotes,
         categories,
+        project_categories: None,
         categories_writing_exclusive,
         filters,
         hooks: Vec::new(),

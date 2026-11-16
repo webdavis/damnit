@@ -7,7 +7,7 @@ use crate::errors::UseCaseError;
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct RemoteName(pub String);
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RemoteNameError {
     Empty,
     OutsideTheAlphabet(String),

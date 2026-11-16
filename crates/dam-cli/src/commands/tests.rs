@@ -17,6 +17,7 @@ fn removing_one_of_two_errands_over(ctx: &Context) -> String {
         oid: vec![oid(1).as_str().into()],
         set: Default::default(),
         id: None,
+        scope: Default::default(),
     });
     dispatch_a_verb_that_opens_the_store(ctx, rm)
         .unwrap_err()

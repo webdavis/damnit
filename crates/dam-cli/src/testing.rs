@@ -37,6 +37,7 @@ pub(crate) fn context() -> Context {
             confirm_above: None,
             remotes: vec![],
             categories: Categories::new(vec![]).unwrap_or_else(|_| unreachable!()),
+            project_categories: None,
             categories_writing_exclusive: Default::default(),
             filters: vec![],
             hooks: vec![],

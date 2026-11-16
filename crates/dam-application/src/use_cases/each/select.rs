@@ -9,13 +9,13 @@ impl Dam<'_> {
     pub fn select(&self, selector: &Selector) -> Result<Vec<Oid>, UseCaseError> {
         let listed = match selector {
             Selector::Oids(oids) => return self.seen_oids(oids),
-            Selector::Query(text) => self.list_matching(Some(text), None)?,
-            Selector::Filter(name) => {
+            Selector::Query(text, place) => self.list_matching(Some(text), None, place)?,
+            Selector::Filter(name, place) => {
                 let filter = self
                     .config
                     .filter(name)
                     .ok_or_else(|| Refusal::NoSuchFilter(name.clone()))?;
-                self.list_matching(filter.rule.query(), Some(filter))?
+                self.list_matching(filter.rule.query(), Some(filter), place)?
             }
         };
         Ok(listed.into_iter().map(|o| o.oid().clone()).collect())

@@ -1,8 +1,8 @@
 use clap::Args;
 use dam_domain::Priority;
 
-use super::SetArgs;
 use super::values::{estimate_arg, label_arg, priority_arg};
+use super::{ScopeArgs, SetArgs};
 
 #[derive(Args, Debug)]
 pub(crate) struct EditArgs {
@@ -121,4 +121,6 @@ pub(crate) struct EditArgs {
     pub(crate) focus: Option<String>,
     #[arg(long, help = "Clear the task's focus mark")]
     pub(crate) no_focus: bool,
+    #[command(flatten)]
+    pub(crate) scope: ScopeArgs,
 }

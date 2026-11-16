@@ -83,4 +83,6 @@ pub(crate) struct RmArgs {
         help = "Take back the task or event you gave this id with dam new --id in the same session"
     )]
     pub(crate) id: Option<CallerId>,
+    #[command(flatten)]
+    pub(crate) scope: ScopeArgs,
 }

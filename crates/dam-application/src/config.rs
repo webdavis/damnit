@@ -8,7 +8,7 @@ mod remote_sync;
 
 use std::collections::BTreeSet;
 
-use dam_domain::Categories;
+use dam_domain::{Categories, Path};
 
 use crate::errors::Refusal;
 use crate::tokens::Tokens;
@@ -31,6 +31,7 @@ pub struct Config {
     pub confirm_above: Option<usize>,
     pub remotes: Vec<RemoteConfig>,
     pub categories: Categories,
+    pub project_categories: Option<(Path, Categories)>,
     pub categories_writing_exclusive: BTreeSet<String>,
     pub filters: Vec<FilterConfig>,
     pub hooks: Vec<HookConfig>,
@@ -40,6 +41,13 @@ pub struct Config {
 }
 
 impl Config {
+    pub fn categories_at(&self, path: &Path) -> &Categories {
+        match &self.project_categories {
+            Some((place, categories)) if path.is_within(place) => categories,
+            _ => &self.categories,
+        }
+    }
+
     pub fn owner_name(&self) -> &str {
         self.owner.as_deref().unwrap_or("owner")
     }

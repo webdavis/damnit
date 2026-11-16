@@ -6,7 +6,7 @@ use super::misread::{Misread, Place};
 use super::project_rule::ProjectRuleFault;
 use crate::ports::RemoteNameError;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ConfigError {
     NotLua(PathBuf),
     Unreadable {

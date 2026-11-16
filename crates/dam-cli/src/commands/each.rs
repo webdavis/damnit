@@ -38,8 +38,8 @@ pub(crate) fn set_of(
 
 fn selector(ctx: &Context, oids: &[String], set: &SetArgs) -> Result<Selector, CliError> {
     Ok(match (&set.query, &set.filter) {
-        (Some(query), _) => Selector::Query(query.clone()),
-        (_, Some(filter)) => Selector::Filter(filter.clone()),
+        (Some(query), _) => Selector::Query(query.clone(), set.place.clone()),
+        (_, Some(filter)) => Selector::Filter(filter.clone(), set.place.clone()),
         _ if oids.is_empty() => {
             return Err(CliError::Usage(
                 "name the objects: give oids, --query TEXT or --filter NAME".into(),

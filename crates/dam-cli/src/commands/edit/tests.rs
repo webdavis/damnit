@@ -36,6 +36,7 @@ pub(super) fn args(oid: &Oid) -> EditArgs {
         no_estimate: false,
         focus: None,
         no_focus: false,
+        scope: Default::default(),
     }
 }
 
