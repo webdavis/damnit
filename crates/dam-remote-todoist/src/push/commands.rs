@@ -2,6 +2,7 @@ use dam_protocol::WireObject;
 use serde::Serialize;
 
 use crate::map::api_priority;
+use crate::rule_words::with_start;
 
 const COMMAND_ORDINALS_IN_ONE_HEX_DIGIT: usize = 16;
 
@@ -106,7 +107,10 @@ pub fn item_args(object: &WireObject, write: ItemWrite) -> Args {
         args.insert(
             "due".into(),
             match (&object.recurrence, &task.due) {
-                (Some(rule), _) => serde_json::json!({ "string": rule }),
+                (Some(rule), due) => serde_json::json!({
+                    "string": due.as_deref().map_or_else(|| rule.clone(), |d| with_start(rule, d)),
+                    "lang": "en",
+                }),
                 (None, Some(date)) => serde_json::json!({ "date": date }),
                 (None, None) => serde_json::Value::Null,
             },

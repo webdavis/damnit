@@ -1,7 +1,9 @@
+use super::start::without_start;
 use super::{ORDINALS, is_month_day, is_weekday};
 
 pub fn from_todoist(text: &str) -> String {
-    dam_rule(text).unwrap_or_else(|| text.to_string())
+    let rule = without_start(text);
+    dam_rule(&rule).unwrap_or(rule)
 }
 
 fn dam_rule(text: &str) -> Option<String> {

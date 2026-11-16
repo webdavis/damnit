@@ -10,6 +10,7 @@ mod moved_containers;
 mod moves;
 mod named_containers;
 mod reasons;
+mod recurring_start;
 mod refusals;
 mod renames;
 mod retries;
