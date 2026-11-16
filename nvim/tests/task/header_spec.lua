@@ -37,18 +37,8 @@ return {
     equal(lines, TASK_LINES)
   end,
 
-  ["derived fields show as virtual text and are not in the buffer lines"] = function()
-    local object = fixtures.decoded("show.json")
-    object.parent = "1111111111111111111111111111111111111111"
-    local lines, virt = header.lines(object)
-    equal(virt, {
-      "oid: <id-1>",
-      "path: home/",
-      "parent: 1111111111111111111111111111111111111111",
-      "author: owner",
-      "overdue: true",
-    })
-    for _, line in ipairs(lines) do
+  ["the read-only facts are not in the buffer lines"] = function()
+    for _, line in ipairs(header.lines(fixtures.decoded("show.json"))) do
       assert(not line:find("^oid:") and not line:find("^path:") and not line:find("^overdue:"), line)
     end
   end,

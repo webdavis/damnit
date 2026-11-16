@@ -26,11 +26,12 @@ local function shown(command)
 end
 
 local function virtual_lines()
-  local namespace = vim.api.nvim_get_namespaces()["damnit.task"]
   local texts = {}
-  for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(0, namespace, 0, -1, { details = true })) do
-    for _, chunks in ipairs(mark[4].virt_lines or {}) do
-      table.insert(texts, chunks[1][1])
+  for _, namespace in pairs(vim.api.nvim_get_namespaces()) do
+    for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(0, namespace, 0, -1, { details = true })) do
+      for _, chunks in ipairs(mark[4].virt_lines or {}) do
+        table.insert(texts, chunks[1][1])
+      end
     end
   end
   return texts
@@ -47,14 +48,30 @@ return {
     assert(not vim.bo.modified, "a freshly read task is modified")
   end,
 
-  ["the task buffer shows oid, path and author as virtual text above the header"] = function()
+  ["the task buffer shows its short oid, path, author and overdue in the winbar, not above line 1"] = function()
     opened()
     shown()
-    local texts = virtual_lines()
-    assert(
-      vim.deep_equal(texts, { "oid: <id-1>", "path: home/", "author: owner", "overdue: true" }),
-      vim.inspect(texts)
-    )
+    local winbar = require("helpers.grid").row(1)
+    assert(vim.startswith(winbar, " <id-1> · home/ · by owner · overdue "), winbar)
+    assert(require("helpers.grid").row(2):find("^subject: plant the tomatoes"), require("helpers.grid").row(2))
+    assert(vim.deep_equal(virtual_lines(), {}), vim.inspect(virtual_lines()))
+  end,
+
+  ["a narrow task window keeps the oid and path in its winbar"] = function()
+    opened()
+    shown()
+    vim.cmd("vertical 16split")
+    local winbar = require("helpers.grid").row(1, 16)
+    assert(vim.startswith(winbar, " <id-1> · home/"), winbar)
+  end,
+
+  ["the winbar stays when the task is shown again"] = function()
+    opened()
+    shown()
+    local buf = vim.api.nvim_get_current_buf()
+    vim.cmd.enew()
+    vim.api.nvim_win_set_buf(0, buf)
+    assert(vim.startswith(require("helpers.grid").row(1), " <id-1> · home/"), require("helpers.grid").row(1))
   end,
 
   ["the task buffer runs dam in the folder it was opened from"] = function()
