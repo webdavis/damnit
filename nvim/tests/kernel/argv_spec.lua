@@ -34,9 +34,12 @@ return {
     same(argv.words([[buy "oat milk]]), { "buy", "oat milk" })
   end,
 
-  ["tokens say where each word starts and whether the line ends inside a word"] = function()
+  ["tokens say where each word starts, whether it was quoted and whether the line ends inside a word"] = function()
     local tokens, open = argv.tokens([[buy "oat milk" --due]])
-    same(tokens, { { text = "buy", from = 1 }, { text = "oat milk", from = 5 }, { text = "--due", from = 16 } })
+    same(
+      tokens,
+      { { text = "buy", from = 1 }, { text = "oat milk", from = 5, quoted = true }, { text = "--due", from = 16 } }
+    )
     assert(open == true)
     local _, after_space = argv.tokens("buy ")
     assert(after_space == false)

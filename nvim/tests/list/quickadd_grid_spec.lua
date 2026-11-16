@@ -45,13 +45,13 @@ return {
     shows(bottom, '─ task "buy oat milk" · due 2026%-11%-20 · errand · home/ ╯ *$')
   end,
 
-  ["a refusal shows dam's whole words under the line and their start in the bottom border"] = function()
+  ["a refusal shows dam's whole words once, under the line, and the bottom border stays empty"] = function()
     local top, line = opened(fixtures.refusal("error-new-preview-due.json", EXIT_USAGE))
-    prompt.footer_reads(fixtures.decoded("error-new-preview-due.json").error.message)
+    prompt.below_reads(fixtures.decoded("error-new-preview-due.json").error.message)
     shows(line + 1, '│%-%-due cannot be "the twelfth of never"; a date to set is one day or instant:')
     shows(line + 2, "│2026%-11%-20, 2026%-11%-20T09:00, today, today%+3, now%+2h, or a word such as")
     local bottom = top + vim.api.nvim_win_get_height(assert(prompt.window())) + 1
-    shows(bottom, '╰.- %-%-due cannot be "the twelfth of never"; .*… ╯')
+    shows(bottom, "╰[^%w]*╯ *$")
   end,
 
   ["from a list the float spans the list window's bottom rows, above its status line"] = function()

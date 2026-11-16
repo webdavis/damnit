@@ -4,13 +4,6 @@ local function padded(text)
   return text == "" and "" or (" %s "):format(text)
 end
 
-local function fitted(text, room)
-  if vim.fn.strdisplaywidth(text) <= room then
-    return text
-  end
-  return vim.fn.strcharpart(text, 0, room - 1) .. "…"
-end
-
 local function wrapped(text, width)
   local lines, line = {}, ""
   for word in text:gmatch("%S+") do
@@ -109,23 +102,25 @@ end
 ---@param win integer
 ---@param text string
 ---@param group string
-function M.footer(win, text, group)
+---@param more? string[] lines shown under the input
+function M.footer(win, text, group, more)
   if not vim.api.nvim_win_is_valid(win) then
     return
   end
   local buf, width = vim.api.nvim_win_get_buf(win), vim.api.nvim_win_get_width(win)
   local namespace = vim.api.nvim_create_namespace("damnit.prompt")
   vim.api.nvim_buf_clear_namespace(buf, namespace, 0, -1)
-  local room = width - 4
-  local below = vim.fn.strdisplaywidth(text) > room and wrapped(text, width) or {}
-  if #below > 0 then
-    vim.api.nvim_buf_set_extmark(buf, namespace, 0, 0, {
-      virt_lines = vim.tbl_map(function(line)
-        return { { line, group } }
-      end, below),
-    })
+  local long = vim.fn.strdisplaywidth(text) > width - 4
+  local below = vim.tbl_map(function(line)
+    return { { line, group } }
+  end, long and wrapped(text, width) or {})
+  for _, line in ipairs(more or {}) do
+    table.insert(below, { { line } })
   end
-  local footer = text == "" and "" or { { padded(fitted(text, room)), group } }
+  if #below > 0 then
+    vim.api.nvim_buf_set_extmark(buf, namespace, 0, 0, { virt_lines = below })
+  end
+  local footer = (text == "" or long) and "" or { { padded(text), group } }
   vim.api.nvim_win_set_config(win, { footer = footer, footer_pos = "right", height = 1 + #below })
 end
 

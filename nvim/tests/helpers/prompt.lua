@@ -40,6 +40,37 @@ function M.line()
   return vim.api.nvim_buf_get_lines(vim.api.nvim_win_get_buf(win), 0, -1, false)[1]
 end
 
+---@return string[][][] each line under the input, as chunks
+function M.below_chunks()
+  local win = assert(M.window(), "no prompt is open")
+  local buf = vim.api.nvim_win_get_buf(win)
+  local lines = {}
+  for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(buf, -1, 0, -1, { details = true })) do
+    vim.list_extend(lines, mark[4].virt_lines or {})
+  end
+  return lines
+end
+
+---@return string[] each line under the input
+function M.below()
+  return vim.tbl_map(function(chunks)
+    return table.concat(vim.tbl_map(function(chunk)
+      return chunk[1]
+    end, chunks))
+  end, M.below_chunks())
+end
+
+---@param text string
+---@param ms? integer
+function M.below_reads(text, ms)
+  assert(
+    vim.wait(ms or 2000, function()
+      return M.window() and table.concat(M.below(), " ") == text
+    end, 5),
+    ("the lines under the input never read %q; they read %q"):format(text, table.concat(M.below(), " "))
+  )
+end
+
 local function reads(text)
   local footer = M.footer()
   local start = footer:match("^(.*)…$")

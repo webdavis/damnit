@@ -1,5 +1,6 @@
 local float = require("damnit.kernel.float")
 local history = require("damnit.kernel.history")
+local words = require("damnit.kernel.words")
 
 local Session = {}
 Session.__index = Session
@@ -12,7 +13,7 @@ local M = {}
 ---@field spec damnit.PromptSpec
 ---@field judge damnit.Judge
 
----@param fields { win: integer, buf: integer, spec: damnit.PromptSpec, entries: string[], judge: damnit.Judge }
+---@param fields { win: integer, buf: integer, spec: damnit.PromptSpec, say: damnit.Say, entries: string[], judge: damnit.Judge }
 ---@return damnit.PromptSession
 function M.new(fields)
   fields.browse = history.browse(fields.entries)
@@ -59,7 +60,8 @@ function Session:changed()
     return
   end
   local text = self:text()
-  if vim.trim(text) == "" then
+  local col = vim.api.nvim_win_get_cursor(self.win)[2]
+  if vim.trim(text) == "" or words.unfinished(text, col, self.spec.flags or {}) then
     return self:clear()
   end
   self.judge:soon(text)
@@ -72,6 +74,9 @@ function Session:submit(stay)
     return stay or self:close()
   end
   self.judge:now(text, function(refused)
+    if type(refused) == "table" then
+      self.say:keep(refused)
+    end
     if refused or text ~= self:text() then
       return
     end

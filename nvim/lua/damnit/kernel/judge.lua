@@ -12,8 +12,8 @@ local PAUSE_MS = 120
 
 ---@param queue damnit.Queue
 ---@param lane string
----@param read fun(text: string, done: fun(answer: string, refused: boolean)): damnit.Handle
----@param show fun(answer: string, refused: boolean)
+---@param read fun(text: string, done: fun(answer: string, refused: boolean|damnit.Error, below?: string[])): damnit.Handle
+---@param show fun(answer: string, refused: boolean|damnit.Error, below?: string[])
 ---@return damnit.Judge
 function M.new(queue, lane, read, show)
   return setmetatable(
@@ -26,13 +26,13 @@ function Judge:run(text, after)
   self.timer:stop()
   self.waiting, self.asked = nil, text
   self.queue:submit(self.lane, function(finish)
-    return self.read(text, function(answer, refused)
+    return self.read(text, function(answer, refused, below)
       finish()
       if self.asked ~= text then
         return
       end
       self.judged = { text = text, refused = refused }
-      self.show(answer, refused)
+      self.show(answer, refused, below)
       if after then
         after(refused)
       end

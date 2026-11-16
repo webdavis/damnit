@@ -3,9 +3,10 @@ local argv = require("damnit.kernel.argv")
 local M = {}
 
 ---@param text string
+---@param flags damnit.Flag[] dam new's flags
 ---@return string[]
-function M.args(text)
-  local subject, rest = argv.subject(argv.words(text))
+function M.args(text, flags)
+  local subject, rest = argv.subject(argv.args(text, flags))
   local args = { "new" }
   if subject ~= "" then
     table.insert(args, subject)
