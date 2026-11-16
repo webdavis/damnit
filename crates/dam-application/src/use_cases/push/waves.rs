@@ -1,5 +1,5 @@
 use crate::errors::UseCaseError;
-use crate::ports::{HelperError, RemoteHelper};
+use crate::ports::{HelperError, Progress, RemoteHelper};
 use crate::remote::{MutationVerdict, PushOutcome, RemoteMutation};
 use crate::use_cases::push::reconcile::{Settlement, reconcile};
 use crate::use_cases::push::removals::Removals;
@@ -31,6 +31,7 @@ pub(super) fn send_in_waves(
     mut removals: Removals,
     mut pending: Vec<RemoteMutation>,
     record_before_the_call: &dyn Fn(&[RemoteMutation]) -> Result<(), UseCaseError>,
+    progress: &dyn Progress,
 ) -> Result<Sent, UseCaseError> {
     let mut sent = Sent::default();
     while !pending.is_empty() {
@@ -51,6 +52,7 @@ pub(super) fn send_in_waves(
         sent.stopped_before_any_answer =
             answer.stopped_by.is_some() && sent.mutations == 0 && !answered_anything(&answer);
         sent.mutations += wave.ready.len();
+        progress.advance(sent.mutations);
         let settled = reconcile(&wave.ready, answer.outcomes);
         sent.answered += wave.ready.len().saturating_sub(settled.unanswered.len());
         removals.record(&wave.ready, &settled);

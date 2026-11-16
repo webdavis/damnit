@@ -19,6 +19,7 @@ mod namesakes;
 mod newer_value_wins;
 mod order;
 mod partial_stops;
+mod progress;
 mod read_only;
 mod reconcile;
 mod refile_holds;

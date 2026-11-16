@@ -100,7 +100,9 @@ impl Dam<'_> {
         let record = |ready: &[RemoteMutation]| {
             record_before_the_call(self.store, &remote.name, ready, &attempting)
         };
-        let mut sent = send_in_waves(helper, removals, mutations, &record)?;
+        let mut sent = self.sending(&remote.name, mutations.len(), |progress| {
+            send_in_waves(helper, removals, mutations, &record, progress)
+        })?;
         sent.skipped = skipped;
         sent.settlement.held = held;
         sent.settlement.dropped = dropped;
@@ -131,6 +133,7 @@ mod owed;
 mod reconcile;
 mod refiles;
 mod removals;
+mod sending;
 mod sending_order;
 mod settle;
 mod waves;
