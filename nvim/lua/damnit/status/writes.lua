@@ -58,8 +58,10 @@ function M.new(app)
 
   local function remote_call(verb, summary)
     return function(cwd, remote)
-      writes.send({ verb, remote }, cwd, function(answer)
-        app.say:info(summary(answer))
+      app.dam:write({ args = { verb, remote }, cwd = cwd, progress = true }, function(answer)
+        if answer then
+          app.say:info(summary(answer))
+        end
       end)
     end
   end
