@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/category-migrate.schema.json",
+  "title": "dam category migrate answer",
+  "description": "What dam category migrate prints with --json or --toon: the changes document for the objects that carried an old label, plus config, each place in config.lua that names an old label.",
+  "type": "object",
+  "required": [
+    "preview",
+    "count",
+    "oids",
+    "changes",
+    "config"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "preview": {
+      "$ref": "changes.schema.json#/properties/preview"
+    },
+    "count": {
+      "$ref": "changes.schema.json#/properties/count"
+    },
+    "oids": {
+      "$ref": "changes.schema.json#/properties/oids"
+    },
+    "changes": {
+      "$ref": "changes.schema.json#/properties/changes"
+    },
+    "config": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "key",
+          "written"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "The setting, such as category.effort.values, filter.today.query, or filter.today for a filter that runs a match function."
+          },
+          "value": {
+            "type": [
+              "string",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "What the setting is, or would be, with each old label replaced."
+          },
+          "by_hand": {
+            "const": true,
+            "description": "The filter runs a match function, so dam leaves it to edit by hand."
+          },
+          "written": {
+            "type": "boolean",
+            "description": "True when --update-config wrote the value into config.lua."
+          }
+        }
+      }
+    }
+  }
+}

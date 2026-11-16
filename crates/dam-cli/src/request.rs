@@ -20,7 +20,8 @@ use crate::args::{Cli, Command, DayArgs, DayCommand};
 use crate::error::CliError;
 use crate::output::Format;
 
-const TAKING_FLAGS: [&[&str]; 6] = [
+const TAKING_FLAGS: [&[&str]; 7] = [
+    &["category", "migrate"],
     &["new"],
     &["edit"],
     &["done"],
@@ -64,7 +65,7 @@ fn with_request(line: Vec<OsString>, given: &ArgMatches, source: &Path) -> Resul
     }
     if !TAKING_FLAGS.contains(&words.as_slice()) {
         return Err(CliError::Usage(
-            "--request applies to new, edit, done, mv, rm, token create and day set".into(),
+            "--request applies to new, edit, done, mv, rm, category migrate, token create and day set".into(),
         ));
     }
     let fields: Map<String, Value> =

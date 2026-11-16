@@ -38,6 +38,7 @@ pub(crate) fn need(command: &Command) -> Need {
             CategoryCommand::List => Need::Whole(&[ConfigRead]),
             CategoryCommand::Create { .. } => Need::OwnerOnly("category create"),
             CategoryCommand::Remove { .. } => Need::OwnerOnly("category remove"),
+            CategoryCommand::Migrate { .. } => Need::OwnerOnly("category migrate"),
         },
         Command::Filter(a) => match a.command {
             FilterCommand::List => Need::Whole(&[ConfigRead]),

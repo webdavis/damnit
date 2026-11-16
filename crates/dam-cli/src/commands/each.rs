@@ -7,7 +7,7 @@ use crate::error::CliError;
 use crate::output::Report;
 use crate::view::report;
 use confirm::confirmed;
-use view::SetView;
+pub(crate) use view::SetView;
 
 pub(crate) fn one_object<'a>(oids: &'a [String], set: &SetArgs) -> Option<&'a str> {
     match oids {

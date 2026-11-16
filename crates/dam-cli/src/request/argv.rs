@@ -38,6 +38,11 @@ pub(super) fn tokens(
                         flags.push(format!("--{long}={}", scalar(arg, key, item)?));
                     }
                 }
+                Value::Object(pairs) => {
+                    for (old, new) in pairs {
+                        flags.push(format!("--{long}={old}={}", scalar(arg, key, new)?));
+                    }
+                }
                 _ => return Err(wrong(key, "an array")),
             },
             _ => flags.push(format!("--{long}={}", scalar(arg, key, value)?)),

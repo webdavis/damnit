@@ -174,6 +174,11 @@ refuses if the set changed since. A request carries `oid` as a string or an arra
 the set, and each change in `changes` carries its `item` and `answer`. `dam new --preview` answers
 the same document for the item it would send, and sends nothing.
 
+`dam category migrate` is the owner's alone; a token is refused, rule `not_open_to_tokens`. Its
+request is `{"map": {"quick": "light"}, "preview": true, "expect": 3, "update_config": true}`
+(`category-migrate-request.schema.json`), and its answer is `category-migrate.schema.json`: the
+changes document plus `config`, each place in `config.lua` that names an old label, with `written`.
+
 ## Taking your task back
 
 `dam rm --id <id>` takes back the task you sent with `dam new --id <id>`. Pass the same

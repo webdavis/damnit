@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/category-migrate-request.schema.json",
+  "title": "dam category migrate request",
+  "description": "The document dam category migrate --request reads.",
+  "type": "object",
+  "required": ["map"],
+  "additionalProperties": false,
+  "properties": {
+    "map": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "string", "minLength": 1 },
+      "description": "Each old label with the new label it becomes."
+    },
+    "preview": { "type": "boolean" },
+    "expect": { "type": "integer", "minimum": 0 },
+    "update_config": { "type": "boolean" },
+    "meta": true
+  }
+}
