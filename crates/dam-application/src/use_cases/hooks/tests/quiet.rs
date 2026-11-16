@@ -5,14 +5,12 @@ use dam_domain::{CallerId, Object, Path, When};
 use jiff::civil::date;
 
 use super::{every_hook, new_task, ran, retitled};
-use crate::ports::Conflict;
 use crate::service::Dam;
 use crate::testing::prelude::*;
-use crate::testing::{allowed, holder, oid, task_in, todoist};
+use crate::testing::{allowed, holder, oid, task_in};
 use crate::use_cases::items::land::Landed;
 use crate::use_cases::new_object::NewEvent;
 use crate::use_cases::prefix::Named;
-use crate::use_cases::resolve::Side;
 
 #[test]
 fn a_tokens_own_command_runs_no_hook() {
@@ -70,21 +68,6 @@ fn reset_of_an_added_item_runs_no_hook_for_the_task_it_sets_back() {
     s.dam().add(&[Named::Item(sent.item.hash.clone())]).unwrap();
     s.fixture.hooks.ran.borrow_mut().clear();
     s.dam().reopen(&sent.item.hash).unwrap();
-    assert_eq!(ran(&s), []);
-}
-
-#[test]
-fn resolve_runs_no_hook() {
-    let s = every_hook();
-    s.store
-        .mark_conflict(&Conflict {
-            remote: todoist(),
-            oid: oid(1),
-            ours: s.store.get(&oid(1)).unwrap(),
-            theirs: Object::Task(task_in(1, "pay the rent", "home")),
-        })
-        .unwrap();
-    s.dam().resolve(&oid(1), Side::Theirs).unwrap();
     assert_eq!(ran(&s), []);
 }
 

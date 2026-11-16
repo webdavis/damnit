@@ -4,6 +4,7 @@ mod events;
 mod failures;
 mod progress;
 mod quiet;
+mod resolving;
 
 use std::path::PathBuf;
 

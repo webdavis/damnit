@@ -34,7 +34,7 @@ impl Dam<'_> {
             let target = self.waiting_item(hash)?.target().clone();
             match side {
                 Side::Theirs => {
-                    self.take(hash, OnClash::TakeTheirs)?;
+                    self.entering(None, || self.take(hash, OnClash::TakeTheirs))?;
                 }
                 Side::Ours => {
                     let declined = Outcome::Declined(self.clock.now());

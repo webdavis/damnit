@@ -13,6 +13,10 @@
     "oid": {
       "$ref": "object.schema.json#/$defs/oid"
     },
+    "changed_by_hook": {
+      "$ref": "object.schema.json#/$defs/changed_by_hook",
+      "description": "Each task a hook changed as dam resolve --theirs took a token's item, with that hook's event; left out when none did."
+    },
     "side": {
       "enum": [
         "ours",
