@@ -92,6 +92,7 @@ character anywhere in the file, a wrong type or an unknown key refuses the file.
 | Key | Holds | Effect inside the project |
 | --- | --- | --- |
 | `path` | a path such as `"app/"` | where `dam new` starts a task's `--path`, and what `dam ls`, `dam agenda` and `dam reminders` list |
+| `new_task` | `labels`, `priority`, `due`, `deadline` | what `dam new` gives a task the flags and the template leave unset |
 | `minimum_dam` | a version such as `"0.3.0"` | an older `dam` refuses the file before it reads any other key |
 
 Inside the folder, `path` is where `dam new` starts a task's `--path`, and `dam ls`, `dam agenda`

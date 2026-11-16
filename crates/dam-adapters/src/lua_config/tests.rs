@@ -26,6 +26,7 @@ mod lua_page;
 mod printing_restored;
 mod project_control;
 mod project_escapes;
+mod project_rules;
 mod project_settings;
 mod project_support;
 mod project_version;

@@ -13,6 +13,7 @@ fn inside() -> Standing {
         folder: "/work/damnit".into(),
         settings: ProjectSettings {
             path: "damnit".into(),
+            ..Default::default()
         },
     })
 }

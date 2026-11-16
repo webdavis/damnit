@@ -46,7 +46,7 @@ pub(super) fn template_in(file: &Path, value: &Value) -> Result<TaskTemplate, Co
     })
 }
 
-fn priority(root: &StrictMap) -> Result<Option<Priority>, ConfigError> {
+pub(super) fn priority(root: &StrictMap) -> Result<Option<Priority>, ConfigError> {
     let Some(value) = root.get("priority") else {
         return Ok(None);
     };

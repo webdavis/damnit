@@ -321,7 +321,9 @@ the answer carries `project_created`, its `oid` and `path`.
 `dam config list` inside a project shows the project's `.dam.lua` and its `path`, marked
 `(from the project)`; with `--json` they are under `project`.
 
-`.dam.lua` may hold more rules for the project; `docs/lua.md` lists them. With
+`.dam.lua` may hold more rules for the project; `docs/lua.md` lists them. They apply only to
+commands run inside the project without `--global` or `--project`.
+`new_task = { labels = { "app" }, priority = 2 }` fills what a flag and the template leave unset. With
 `minimum_dam = "0.3.0"` an older `dam` refuses the file and names the version it needs.
 
 `dam new --template bug "crash on pull"` starts the task from a template: the project's

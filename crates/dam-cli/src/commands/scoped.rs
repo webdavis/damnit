@@ -2,7 +2,7 @@ use dam_domain::Path;
 
 use crate::args::Command;
 use crate::commands::dispatch_a_verb_that_opens_the_store;
-use crate::commands::new::templated::from_template;
+use crate::commands::new::templated::{filled, from_template};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
@@ -19,7 +19,11 @@ pub(crate) fn dispatch_in(
     let command = match command {
         Command::New(a) => {
             let to_the_owner = ctx.access.token().is_none();
-            Command::New(from_template(ctx.templates.as_ref(), a, to_the_owner)?)
+            let a = from_template(ctx.templates.as_ref(), a, to_the_owner)?;
+            Command::New(match standing.rules(&a.scope) {
+                Some(rules) => filled(a, rules.new_task.clone()),
+                None => a,
+            })
         }
         other => other,
     };
@@ -59,6 +63,8 @@ pub(crate) fn dispatch_in(
 mod listing_tests;
 #[cfg(test)]
 mod project_created_tests;
+#[cfg(test)]
+mod rule_tests;
 #[cfg(test)]
 mod template_tests;
 #[cfg(test)]

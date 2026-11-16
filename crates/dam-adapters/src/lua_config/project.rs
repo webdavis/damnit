@@ -1,5 +1,7 @@
 mod control;
 mod locked;
+mod new_task;
+mod rule;
 mod template;
 mod version;
 mod written;
@@ -20,7 +22,7 @@ use locked::locked_lua;
 pub(super) use template::read_project_template;
 pub use written::{FileSystemProjectFolders, write_project_file};
 
-const PROJECT_SETTINGS: [&str; 2] = ["path", "minimum_dam"];
+const PROJECT_SETTINGS: [&str; 3] = ["path", "minimum_dam", "new_task"];
 const PERSONAL_SETTINGS: [&str; 9] = [
     "owner",
     "remote",
@@ -76,5 +78,6 @@ pub fn read_project_file(file: &Path, this_dam: &str) -> Result<ProjectSettings,
     })?;
     Ok(ProjectSettings {
         path: path.as_str().to_string(),
+        new_task: new_task::new_task(file, &root)?,
     })
 }
