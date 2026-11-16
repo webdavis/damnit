@@ -17,6 +17,7 @@ mod stretch;
 mod table;
 mod values;
 mod want;
+mod window_edge;
 
 pub use closest::closest_field;
 pub use condition::Condition;
@@ -30,6 +31,7 @@ pub use filter::Filter;
 pub use order::Order;
 pub use sort::Sort;
 pub use table::{FilterTable, TableValue};
+pub use window_edge::WindowEdge;
 
 #[cfg(test)]
 mod tests;
