@@ -2,20 +2,11 @@ use dam_domain::{CommitRecord, Oid, Permission, Subject};
 
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
-use crate::ports::{RemoteHelper, RemoteName};
+use crate::ports::RemoteHelper;
 use crate::remote::{RemoteCapabilities, RemoteMutation};
 use crate::service::{Dam, Remotes};
+use crate::use_cases::as_it_stands::wire_of;
 use crate::use_cases::atomically::atomically;
-
-#[derive(Debug)]
-pub struct PushReport {
-    pub remote: RemoteName,
-    pub sent: usize,
-    pub succeeded: usize,
-    pub failed: Vec<(Oid, String)>,
-    pub skipped: usize,
-    pub held: Option<usize>,
-}
 
 impl Dam<'_> {
     pub fn push(
@@ -94,15 +85,15 @@ impl Dam<'_> {
             skipped,
             unused,
             unplaced,
-        } = plan(self.store, helper, caps, remote, changes, &record)?;
+        } = plan(self.store, &wire_of(helper), caps, remote, changes, &record)?;
         let attempting = attempting(self.store, helper, &remote.name, &record, &mut mutations)?;
         let record = |ready: &[RemoteMutation]| {
             record_before_the_call(self.store, &remote.name, ready, &attempting)
         };
         let mut sent = self.sending(helper, &remote.name, removals, mutations, &record)?;
-        sent.skipped = skipped;
+        sent.skipped = skipped.len();
         sent.held += unplaced.len();
-        sent.settlement.failed.extend(unplaced);
+        sent.settlement.failed.extend(reasons(unplaced));
         sent.settlement.held = held;
         sent.settlement.dropped = dropped;
         sent.settlement.dropped.unused.extend(unused);
@@ -127,24 +118,33 @@ mod conflict_holds;
 mod containers;
 mod dropped;
 mod failure_notices;
+pub(crate) mod hold;
 mod idempotency;
 mod mutations;
 mod owed;
+mod preview;
 mod reconcile;
 mod removals;
+mod report;
 mod sending;
 mod sending_order;
 mod settle;
+mod skip;
 mod waves;
 
 use attempting::attempting;
 use attempts::record_before_the_call;
 use conflict_holds::{Owed, hold_for_conflicts};
 use dropped::creates_no_longer_sent;
+use hold::reasons;
 use mutations::{Plan, plan};
 use owed::{changes_to_send, follow_ups};
 use removals::Removals;
 use waves::Sent;
+
+pub use preview::{PlannedPush, PushPreview};
+pub use report::PushReport;
+pub use skip::Skip;
 
 #[cfg(test)]
 mod tests;

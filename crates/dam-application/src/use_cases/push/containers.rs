@@ -2,23 +2,26 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use dam_domain::{Field, Object, Oid, nearest_parents};
 
+use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
 use crate::ports::{RemoteName, RemoteTrackingRepository, Store};
 use crate::remote::{MutationOp, RemoteMutation};
+use crate::use_cases::push::hold::Hold;
 use crate::use_cases::push::owed::OwedChanges;
+use crate::use_cases::push::owed::excepted::parent_left_out;
 
 #[derive(Default)]
 pub(super) struct Containers {
     unsettled: BTreeMap<Oid, Vec<Oid>>,
 }
 
-pub(super) enum Placement {
+enum Placement {
     Named(Option<String>),
     CreatedThisPush(Oid),
-    Held(String),
+    Held(String, Vec<Oid>),
 }
 
-pub(super) fn places(mutation: &RemoteMutation) -> bool {
+fn places(mutation: &RemoteMutation) -> bool {
     mutation.op == MutationOp::Create || mutation.fields.contains(&Field::Path)
 }
 
@@ -51,7 +54,30 @@ impl Containers {
         Ok(containers)
     }
 
-    pub(super) fn place(
+    pub(super) fn file(
+        &self,
+        store: &dyn Store,
+        remote: &RemoteConfig,
+        mutation: &mut RemoteMutation,
+        creating: &BTreeSet<Oid>,
+    ) -> Result<Option<Hold>, UseCaseError> {
+        let (true, Some(object)) = (places(mutation), mutation.object.clone()) else {
+            return Ok(None);
+        };
+        let oid = mutation.oid.clone();
+        if let Some(why) = parent_left_out(store, remote, &object)? {
+            let waits_on = object.base().parent.iter().cloned().collect();
+            return Ok(Some(Hold { oid, why, waits_on }));
+        }
+        match self.place(store, &remote.name, &object, creating)? {
+            Placement::Named(container) => mutation.container_remote_id = container,
+            Placement::CreatedThisPush(parent) => mutation.container_oid = Some(parent),
+            Placement::Held(why, waits_on) => return Ok(Some(Hold { oid, why, waits_on })),
+        }
+        Ok(None)
+    }
+
+    fn place(
         &self,
         remote_tracking: &dyn RemoteTrackingRepository,
         remote: &RemoteName,
@@ -59,7 +85,10 @@ impl Containers {
         creating: &BTreeSet<Oid>,
     ) -> Result<Placement, UseCaseError> {
         if let Some(could_hold) = self.unsettled.get(object.oid()) {
-            return Ok(Placement::Held(not_known(object.oid(), could_hold)));
+            return Ok(Placement::Held(
+                not_known(object.oid(), could_hold),
+                could_hold.clone(),
+            ));
         }
         let Some(parent) = &object.base().parent else {
             return Ok(Placement::Named(None));

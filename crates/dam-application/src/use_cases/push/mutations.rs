@@ -4,24 +4,26 @@ use dam_domain::{Change, Field, Object, Oid, changed_fields};
 
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
-use crate::ports::{Attempt, Attempts, RemoteHelper, RemoteTrackingRepository, Store};
+use crate::ports::{Attempt, Attempts, RemoteTrackingRepository, Store};
 use crate::remote::{MutationOp, RemoteCapabilities, RemoteMutation};
+use crate::use_cases::as_it_stands::Wire;
 use crate::use_cases::push::attempting::differing;
-use crate::use_cases::push::containers::{Containers, Placement, places};
+use crate::use_cases::push::containers::Containers;
+use crate::use_cases::push::hold::Hold;
 use crate::use_cases::push::owed::OwedChanges;
-use crate::use_cases::push::owed::excepted::{is_excepted, parent_left_out};
 use crate::use_cases::push::sending_order::turn;
+use crate::use_cases::push::skip::{Skip, not_going};
 
 pub(super) struct Plan {
     pub(super) mutations: Vec<RemoteMutation>,
-    pub(super) skipped: usize,
+    pub(super) skipped: Vec<(Oid, Skip)>,
     pub(super) unused: Vec<Oid>,
-    pub(super) unplaced: Vec<(Oid, String)>,
+    pub(super) unplaced: Vec<Hold>,
 }
 
 pub(super) fn plan(
     store: &dyn Store,
-    helper: &dyn RemoteHelper,
+    wire: Wire<'_>,
     caps: &RemoteCapabilities,
     remote: &RemoteConfig,
     changes: OwedChanges,
@@ -32,7 +34,7 @@ pub(super) fn plan(
     let mut creating = BTreeSet::new();
     let mut plan = Plan {
         mutations: Vec::new(),
-        skipped: 0,
+        skipped: Vec::new(),
         unused: Vec::new(),
         unplaced: Vec::new(),
     };
@@ -40,32 +42,22 @@ pub(super) fn plan(
     owed.sort_by_key(turn);
     for change in owed {
         let earlier = record.get(change.oid()).map_or(&[][..], Vec::as_slice);
-        let differing = differing(helper, caps, change.after(), earlier)?;
+        let differing = differing(wire, caps, change.after(), earlier)?;
         match mutation_for(remote_tracking, caps, remote, &change, &differing)? {
-            Some(mut mutation) => {
-                if let (true, Some(object)) = (places(&mutation), &mutation.object) {
-                    if let Some(why) = parent_left_out(store, remote, object)? {
-                        plan.unplaced.push((mutation.oid, why));
-                        continue;
-                    }
-                    match containers.place(remote_tracking, &remote.name, object, &creating)? {
-                        Placement::Named(container) => mutation.container_remote_id = container,
-                        Placement::CreatedThisPush(parent) => mutation.container_oid = Some(parent),
-                        Placement::Held(why) => {
-                            plan.unplaced.push((mutation.oid, why));
-                            continue;
-                        }
-                    }
+            Ok(mut mutation) => {
+                if let Some(hold) = containers.file(store, remote, &mut mutation, &creating)? {
+                    plan.unplaced.push(hold);
+                    continue;
                 }
                 if mutation.op == MutationOp::Create {
                     creating.insert(mutation.oid.clone());
                 }
                 plan.mutations.push(mutation);
             }
-            None if nothing_will_use(remote_tracking, caps, remote, &change, earlier)? => {
+            Err(_) if nothing_will_use(remote_tracking, caps, remote, &change, earlier)? => {
                 plan.unused.push(change.oid().clone());
             }
-            None => plan.skipped += 1,
+            Err(skip) => plan.skipped.push((change.oid().clone(), skip)),
         }
     }
     Ok(plan)
@@ -97,9 +89,9 @@ fn mutation_for(
     remote: &RemoteConfig,
     change: &Change,
     differing: &BTreeSet<Field>,
-) -> Result<Option<RemoteMutation>, UseCaseError> {
-    if !goes_to(remote, caps, change.object()) {
-        return Ok(None);
+) -> Result<Result<RemoteMutation, Skip>, UseCaseError> {
+    if let Some(skip) = not_going(remote, caps, change.object()) {
+        return Ok(Err(skip));
     }
     let remote_id = remote_tracking.remote_id(&remote.name, change.oid())?;
     let the_remote_holds_it = remote_id.is_some();
@@ -115,15 +107,15 @@ fn mutation_for(
                 .filter(|f| caps.fields.contains(f))
                 .collect();
             if declared.is_empty() {
-                return Ok(None);
+                return Ok(Err(Skip::NoFieldItTakes));
             }
             (MutationOp::Update, declared)
         }
     };
     if op == MutationOp::Delete && !the_remote_holds_it {
-        return Ok(None);
+        return Ok(Err(Skip::NeverSent));
     }
-    Ok(Some(RemoteMutation {
+    Ok(Ok(RemoteMutation {
         op,
         oid: change.oid().clone(),
         idempotency_key: String::new(),
@@ -136,9 +128,5 @@ fn mutation_for(
 }
 
 pub(super) fn goes_to(remote: &RemoteConfig, caps: &RemoteCapabilities, object: &Object) -> bool {
-    let within_its_path = remote
-        .path
-        .as_ref()
-        .is_none_or(|scope| object.base().path.is_within(scope));
-    caps.kinds.contains(&object.kind()) && within_its_path && !is_excepted(remote, object)
+    not_going(remote, caps, object).is_none()
 }
