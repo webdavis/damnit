@@ -90,7 +90,9 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     let store_path = cli.store.unwrap_or_else(dam_adapters::default_store_path);
     if let Command::Test(args) = &cli.command {
         let launcher = ProcessLauncher::from_env(interrupt.clone());
-        return commands::test::print(&args.parts, &config_file, &launcher, format, color);
+        let progress = context::progress_without_a_context(&config_file, asked, format);
+        let parts = &args.parts;
+        return commands::test::print(parts, &config_file, &launcher, &progress, format, color);
     }
     if let Some(asked) = commands::doctor::asked(&cli.command) {
         let launcher = ProcessLauncher::from_env(interrupt.clone());

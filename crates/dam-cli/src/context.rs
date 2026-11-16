@@ -103,6 +103,16 @@ impl Context {
     }
 }
 
+pub(crate) fn progress_without_a_context(
+    config_file: &dyn ConfigFile,
+    asked: Asked,
+    format: Format,
+) -> ProgressOnStandardError {
+    let config = config_file.load().map(|loaded| loaded.config);
+    let terminal = std::io::stderr().is_terminal();
+    progress_for(&config.unwrap_or_default(), asked, format, terminal)
+}
+
 pub(crate) fn progress_for(
     config: &Config,
     asked: Asked,
