@@ -49,7 +49,14 @@ fn push_sends_unpushed_commits_and_reports_counts() {
         },
     )
     .unwrap();
-    let report = run_push(&ctx, PushArgs { remote: None }).unwrap();
+    let report = run_push(
+        &ctx,
+        PushArgs {
+            remote: None,
+            preview: false,
+        },
+    )
+    .unwrap();
     assert!(report.human.contains("t: 1 sent, 1 ok"), "{}", report.human);
     assert_eq!(report.data["remotes"][0]["succeeded"], 1);
     assert!(
@@ -82,7 +89,14 @@ fn conflicted_after_a_pull() -> (Context, Oid) {
         },
     )
     .unwrap();
-    run_push(&ctx, PushArgs { remote: None }).unwrap();
+    run_push(
+        &ctx,
+        PushArgs {
+            remote: None,
+            preview: false,
+        },
+    )
+    .unwrap();
     let mut mine = Task::new(oid.clone(), "mine, edited");
     mine.base.subject = "mine, edited".into();
     ctx.store.put(&Object::Task(mine)).unwrap();

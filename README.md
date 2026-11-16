@@ -216,6 +216,10 @@ characters before `dam status` shows it.
     dam commit -m "morning triage"
     dam push
 
+`dam push --preview [remote]` shows what a push would send, hold and skip for each remote, and
+starts no helper and writes nothing. It needs one `dam pull` or `dam push` with that remote after
+upgrading; until then it says the remote is not known.
+
 `--due`, `--deadline`, `--start` and `--end` all read the same words, in any case: `today`,
 `tomorrow`, a weekday (`mon` or `monday`, meaning its next occurrence after today, so naming today's
 own weekday is a week out), `next mon` for that same day, `in 3 days`, `in 2 weeks`, `in 1 month`,

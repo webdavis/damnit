@@ -180,6 +180,10 @@ request is `{"map": {"quick": "light"}, "preview": true, "expect": 3, "update_co
 (`category-migrate-request.schema.json`), and its answer is `category-migrate.schema.json`: the
 changes document plus `config`, each place in `config.lua` that names an old label, with `written`.
 
+If your token may push, `dam push --preview [remote]` shows what a push would send, hold and skip,
+listing only the objects you may read, and contacts nothing. In a data format it answers
+`push-preview.schema.json`.
+
 ## Taking your task back
 
 `dam rm --id <id>` takes back the task you sent with `dam new --id <id>`. Pass the same

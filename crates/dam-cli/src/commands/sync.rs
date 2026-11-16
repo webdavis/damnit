@@ -6,11 +6,14 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 use crate::view::report;
+use dam_application::{HelperError, RemoteMutation};
+use push_preview_view::PushPreviewView;
 
 mod background_view;
 mod failure_reason;
 mod pull_view;
 mod pulled_hook_view;
+mod push_preview_view;
 mod sync_view;
 mod view;
 
@@ -22,6 +25,13 @@ use sync_view::Synced;
 use view::{PushRow, Pushed, Resolved};
 
 pub(crate) fn run_push(ctx: &Context, args: PushArgs) -> Result<Report, CliError> {
+    if args.preview {
+        let wire = |m: &RemoteMutation| {
+            dam_adapters::declared_on_the_wire(m).map_err(|e| HelperError::Protocol(e.to_string()))
+        };
+        let previews = ctx.dam().push_preview(args.remote.as_deref(), &wire)?;
+        return report(&PushPreviewView::of(&previews));
+    }
     let reports = ctx.dam().push(ctx.remotes(), args.remote.as_deref())?;
     report(&Pushed {
         remotes: reports.iter().map(PushRow::new).collect(),
@@ -124,6 +134,8 @@ mod failure_kind_tests;
 mod pull_counts_tests;
 #[cfg(test)]
 mod pull_text_tests;
+#[cfg(test)]
+mod push_preview_tests;
 #[cfg(test)]
 mod run_record_tests;
 #[cfg(test)]
