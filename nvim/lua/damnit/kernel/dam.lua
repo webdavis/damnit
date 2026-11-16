@@ -1,5 +1,6 @@
 local errors = require("damnit.kernel.error")
 local handshake = require("damnit.kernel.handshake")
+local spawn = require("damnit.kernel.spawn")
 
 local Dam = {}
 Dam.__index = Dam
@@ -12,11 +13,8 @@ local M = {}
 ---@param say damnit.Say
 ---@return damnit.Dam
 function M.new(options, process, queue, say)
-  local dam = setmetatable({ options = options, process = process, queue = queue, say = say, reads = 0 }, Dam)
-  dam.handshake = handshake.new(function(...)
-    return dam:spawn(...)
-  end)
-  return dam
+  local spawned = spawn.new(options, process)
+  return setmetatable({ spawn = spawned, handshake = handshake.new(spawned), queue = queue, say = say, reads = 0 }, Dam)
 end
 
 local function answer_of(exit, err)
@@ -33,44 +31,6 @@ local function answer_of(exit, err)
   return nil, errors.not_json(exit.stderr)
 end
 
-function Dam:spawn(args, cwd, stdin, on_exit)
-  local timer = assert(vim.uv.new_timer())
-  local settled = false
-  local function settle()
-    if settled then
-      return false
-    end
-    settled = true
-    timer:stop()
-    timer:close()
-    return true
-  end
-  local argv = vim.list_extend({ self.options.dam }, args)
-  local process = self.process.run(argv, { cwd = cwd, stdin = stdin }, function(exit)
-    if settle() then
-      on_exit(exit, exit.missing and errors.missing(self.options.dam) or nil)
-    end
-  end)
-  local ms = self.options.timeout_ms
-  timer:start(
-    ms,
-    0,
-    vim.schedule_wrap(function()
-      if settle() then
-        process.kill()
-        on_exit({}, errors.plugin(("dam %s took longer than %d ms and was stopped"):format(args[1], ms)))
-      end
-    end)
-  )
-  return {
-    cancel = function()
-      if settle() then
-        process.kill()
-      end
-    end,
-  }
-end
-
 function Dam:call(call, done)
   local cancelled, spawned = false, nil
   self.handshake.wait(call.cwd, function(err)
@@ -81,7 +41,7 @@ function Dam:call(call, done)
       return done(nil, err)
     end
     local args = vim.list_extend(vim.list_extend({}, call.args), { "-o", "json" })
-    spawned = self:spawn(args, call.cwd, call.stdin, function(exit, spawn_err)
+    spawned = self.spawn(args, call.cwd, call.stdin, function(exit, spawn_err)
       done(answer_of(exit, spawn_err))
     end)
   end)
