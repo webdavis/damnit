@@ -36,6 +36,14 @@
       "properties": {
         "url": { "type": "string", "pattern": "^[A-Za-z0-9_-]+::" },
         "deadline": { "$ref": "#/$defs/duration" },
+        "sync": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "interval": { "$ref": "#/$defs/duration" },
+            "allowed": { "type": "boolean" }
+          }
+        },
         "path": { "type": "string" }
       }
     },

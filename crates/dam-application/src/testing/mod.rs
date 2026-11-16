@@ -10,6 +10,7 @@ mod interruption;
 mod launchers;
 mod memory_store;
 mod progress;
+mod remote_fixture;
 mod scenario;
 mod settings_file;
 
@@ -31,7 +32,8 @@ pub use launchers::{
 };
 pub use memory_store::MemoryStore;
 pub use progress::{FakeProgress, Said};
-pub use scenario::{Scenario, config, event, task, task_in, todoist};
+pub use remote_fixture::{config, todoist};
+pub use scenario::{Scenario, event, task, task_in};
 pub use settings_file::{FakeSettingsFile, Written};
 
 pub mod prelude {

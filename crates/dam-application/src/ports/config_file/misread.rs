@@ -57,6 +57,12 @@ pub enum Misread {
         text: String,
         at: Place,
     },
+    ShorterThanFloor {
+        key: String,
+        text: String,
+        floor: &'static str,
+        at: Place,
+    },
     AlwaysWarns {
         key: String,
         at: Place,

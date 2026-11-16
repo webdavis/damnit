@@ -44,9 +44,16 @@ return {
   -- A remote dam pulls from and pushes to, run by the dam-remote-<helper> program on PATH.
   -- url is <helper>::<address>, a helper name being letters, digits, - and _. deadline is the
   -- longest the helper may stay silent, 60s by default, a whole number then s, m or h. path limits
-  -- a push to the objects under that path.
+  -- a push to the objects under that path. sync.interval is how often background sync runs, 15m
+  -- by default. sync.allowed = false means background sync may never start for this remote.
+  -- Nothing syncs by itself.
   --remote = {
-    --todoist = { url = "todoist::", deadline = "60s", path = "work" },
+    --todoist = {
+      --url = "todoist::",
+      --deadline = "60s",
+      --sync = { interval = "15m", allowed = true },
+      --path = "work",
+    --},
   --},
 
   -- A label category groups labels so a query can say effort:deep. With exclusive = true an

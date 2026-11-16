@@ -27,6 +27,7 @@ fn with_remote(credentials: Vec<CredentialSpec>) -> Context {
         url: "t::".into(),
         credentials,
         deadline: None,
+        sync: Default::default(),
         path: None,
     });
     ctx

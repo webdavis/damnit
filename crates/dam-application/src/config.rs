@@ -3,6 +3,7 @@ mod duration;
 mod filter;
 mod hook;
 mod remote;
+mod remote_sync;
 
 use std::collections::BTreeSet;
 
@@ -18,6 +19,7 @@ pub use hook::{
     HookConfig, HookEvent, OnFailure, PulledChanges, PulledHook, STARTED_BY_HOOK_VARIABLE,
 };
 pub use remote::RemoteConfig;
+pub use remote_sync::RemoteSync;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Config {

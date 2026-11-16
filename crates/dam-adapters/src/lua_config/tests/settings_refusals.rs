@@ -65,7 +65,9 @@ fn a_credential_on_a_remote_is_refused_as_belonging_in_secrets_lua() {
         Misread::UnknownRemoteKey {
             key: "api_token".into(),
             at: in_table("remote.todoist", "config.lua"),
-            takes: ["url", "deadline", "path"].map(String::from).to_vec(),
+            takes: ["url", "deadline", "sync", "path"]
+                .map(String::from)
+                .to_vec(),
         }
         .into()
     );

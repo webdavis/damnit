@@ -110,3 +110,21 @@ fn a_symlinked_config_lua_is_followed_and_stays_a_link() {
         "return {\n  owner = \"Grace\",\n}\n"
     );
 }
+
+#[test]
+fn a_sync_setting_goes_into_the_sync_table_of_its_remote() {
+    let folder = config("return {\n  remote = {\n    work = { url = \"work::\" },\n  },\n}\n");
+    set(&folder, "remote.work.sync.interval", "5m");
+    set(&folder, "remote.work.sync.allowed", "false");
+    let sync = folder.load().unwrap().remote("work").unwrap().sync.clone();
+    assert_eq!(sync.interval.unwrap().text, "5m");
+    assert_eq!(sync.allowed, Some(false));
+    assert_eq!(
+        unset(&folder, "remote.work.sync.allowed").old.as_deref(),
+        Some("false")
+    );
+    assert_eq!(
+        folder.text("config.lua"),
+        "return {\n  remote = {\n    work = { url = \"work::\", sync = { interval = \"5m\" } },\n  },\n}\n"
+    );
+}

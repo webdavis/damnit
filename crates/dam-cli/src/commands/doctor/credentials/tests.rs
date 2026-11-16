@@ -25,6 +25,7 @@ fn answer(credentials: Vec<CredentialSpec>, asked_for: &[&str]) -> Answer {
             url: "fake::".into(),
             credentials,
             deadline: None,
+            sync: Default::default(),
             path: None,
         },
         capabilities: Ok(capabilities),

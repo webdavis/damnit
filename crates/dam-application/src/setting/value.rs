@@ -1,5 +1,5 @@
 use super::key::{SettingKey, SettingKind};
-use crate::ConfiguredDuration;
+use crate::{ConfiguredDuration, RemoteSync};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SettingValue {
@@ -25,6 +25,10 @@ impl SettingKey {
         match self.kind {
             SettingKind::Text => Ok(SettingValue::Text(text.to_string())),
             SettingKind::Duration => ConfiguredDuration::parse(text)
+                .map(|_| SettingValue::Text(text.to_string()))
+                .ok_or_else(bad),
+            SettingKind::Interval => ConfiguredDuration::parse(text)
+                .filter(|d| d.value >= RemoteSync::FLOOR)
                 .map(|_| SettingValue::Text(text.to_string()))
                 .ok_or_else(bad),
             SettingKind::Flag => text.parse().map(SettingValue::Flag).map_err(|_| bad()),

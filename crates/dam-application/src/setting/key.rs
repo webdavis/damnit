@@ -2,6 +2,7 @@
 pub enum SettingKind {
     Text,
     Duration,
+    Interval,
     Flag,
     List,
 }
@@ -23,6 +24,18 @@ impl SettingKey {
     pub fn parse(key: &str) -> Result<SettingKey, KeyRefusal> {
         let (group, rest) = key.split_once('.').unwrap_or((key, ""));
         let named = rest.rsplit_once('.').filter(|(name, _)| !name.is_empty());
+        if let Some((remote, field)) = remote_sync(group, named) {
+            return Ok(SettingKey {
+                path: ["remote", remote, "sync", field]
+                    .map(str::to_string)
+                    .to_vec(),
+                kind: match field {
+                    "interval" => SettingKind::Interval,
+                    "allowed" => SettingKind::Flag,
+                    _ => return Err(KeyRefusal::Unknown(key.to_string())),
+                },
+            });
+        }
         let kind = match (group, rest, named.map(|(_, field)| field)) {
             ("owner", "", _) => Ok(SettingKind::Text),
             ("done", "interactive", _) | ("progress", "", _) => Ok(SettingKind::Flag),
@@ -53,4 +66,12 @@ impl SettingKey {
     pub fn dotted(&self) -> String {
         self.path.join(".")
     }
+}
+
+fn remote_sync<'a>(group: &str, named: Option<(&'a str, &'a str)>) -> Option<(&'a str, &'a str)> {
+    let (name, field) = named.filter(|_| group == "remote")?;
+    let remote = name
+        .strip_suffix(".sync")
+        .filter(|remote| !remote.is_empty())?;
+    Some((remote, field))
 }

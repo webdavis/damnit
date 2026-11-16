@@ -67,3 +67,48 @@ fn a_value_is_read_as_the_type_of_its_setting() {
     );
     assert!(value("category.p.exclusive", "yes").is_err());
 }
+
+#[test]
+fn the_sync_table_of_a_remote_takes_an_interval_and_allowed() {
+    let key = |key: &str| SettingKey::parse(key).unwrap();
+    assert_eq!(
+        key("remote.todoist.sync.interval").path,
+        ["remote", "todoist", "sync", "interval"]
+    );
+    assert_eq!(
+        key("remote.todoist.sync.interval").value("15m"),
+        Ok(SettingValue::Text("15m".into()))
+    );
+    assert!(key("remote.todoist.sync.interval").value("soon").is_err());
+    assert_eq!(
+        key("remote.todoist.sync.allowed").value("false"),
+        Ok(SettingValue::Flag(false))
+    );
+    assert!(key("remote.todoist.sync.allowed").value("never").is_err());
+}
+
+#[test]
+fn a_sync_interval_shorter_than_a_minute_is_refused() {
+    let key = SettingKey::parse("remote.todoist.sync.interval").unwrap();
+    assert_eq!(
+        key.value("30s"),
+        Err(BadValue {
+            key: "remote.todoist.sync.interval".into(),
+            value: "30s".into(),
+            expected: SettingKind::Interval
+        })
+    );
+    assert_eq!(key.value("60s"), Ok(SettingValue::Text("60s".into())));
+}
+
+#[test]
+fn sync_every_and_stale_are_refused_like_a_remote_credential() {
+    let refused = |key: &str| SettingKey::parse(key).unwrap_err();
+    for key in ["remote.todoist.sync_every", "remote.todoist.stale"] {
+        assert_eq!(refused(key), KeyRefusal::Secret(key.into()));
+    }
+    assert_eq!(
+        refused("remote.todoist.sync.every"),
+        KeyRefusal::Unknown("remote.todoist.sync.every".into())
+    );
+}

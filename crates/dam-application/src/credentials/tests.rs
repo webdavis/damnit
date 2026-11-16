@@ -10,6 +10,7 @@ fn remote(specs: Vec<CredentialSpec>) -> RemoteConfig {
         url: "todoist::".into(),
         credentials: specs,
         deadline: None,
+        sync: Default::default(),
         path: None,
     }
 }

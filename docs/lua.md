@@ -14,6 +14,9 @@ key dam does not know is an error. A `<name>` in a key is a name you choose.
 | `remote` | A table of remotes by name. |
 | `remote.<name>.url` | `<helper>::<address>`. Required. |
 | `remote.<name>.deadline` | A duration. The longest the helper may stay silent. Default: `60s`. |
+| `remote.<name>.sync` | A table. |
+| `remote.<name>.sync.interval` | A duration of at least `1m`. How often background sync runs. Default: `15m`. |
+| `remote.<name>.sync.allowed` | `false` means background sync may never start for this remote. Default: `true`. |
 | `remote.<name>.path` | A push sends only the objects under this path. |
 | `category` | A table of label categories by name. |
 | `category.<name>.values` | A list of labels. Required. |

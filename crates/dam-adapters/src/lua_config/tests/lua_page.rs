@@ -44,6 +44,7 @@ fn the_page_names_every_key_config_lua_takes_and_no_other() {
         &settings::DONE[..],
         &settings::CATEGORY[..],
         &remote::SETTINGS[..],
+        &remote::SYNC[..],
         &filter::FILTER[..],
         &hook::HOOK[..],
         &hook::HOOK_TABLE[..],
