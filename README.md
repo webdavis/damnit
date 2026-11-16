@@ -760,8 +760,8 @@ every token. `dam status` warns about each.
 
 ## Neovim
 
-The Neovim plugin lives in `nvim/` and is being built. Today it gives `:Dam list [view]`,
-`:Dam messages`, which shows each error dam gave with the command it suggests, and
+The Neovim plugin lives in `nvim/` and is being built. Today it gives `:Dam` (the status window),
+`:Dam list [view]`, `:Dam messages`, which shows each error dam gave with the command it suggests, and
 `:Dam cancel`, which stops every running dam call.
 
 `:Dam list` shows what `dam list` lists in the window's folder; `r` reads it again and `g?`
@@ -784,6 +784,14 @@ a saved filter.
 `field: value` line each, then `---` and the body. Change a line and `:w` sends `dam edit`
 with what changed; an emptied line clears that field. dam reads each value and shows its error
 when it refuses one.
+
+`:Dam` or `:Dam status` shows what `dam status` shows in the window's folder: conflicts, waiting
+items and sets, unstaged and staged changes, unpushed commits, notices and warnings. Its keys:
+`s` stages a change, or everything on the Unstaged or Waiting header; `u` unstages; `a` accepts a
+waiting item or set and `x` declines it after asking; `c` commits; `P` pushes; `F` pulls; `<CR>`
+opens the task; `r` reads it again. `:Dam commit [message]`, `:Dam push [remote]` and
+`:Dam pull [remote]` do the same from anywhere; `:Dam cancel` stops a slow push or pull. A
+conflict is settled with `dam resolve` in a terminal.
 
 With lazy.nvim from a checkout:
 
