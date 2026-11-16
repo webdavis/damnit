@@ -1,8 +1,10 @@
 mod unit;
 
+pub(super) use unit::unit_name;
+
 use std::path::{Path, PathBuf};
 
-use dam_application::{BackgroundJob, BackgroundSync, Change, ScheduleError};
+use dam_application::{BackgroundJob, BackgroundState, BackgroundSync, Change, ScheduleError};
 
 use super::ProgramRunner;
 use super::files::{ran, remove_each_present, write_when_changed};
@@ -34,6 +36,22 @@ impl<R: ProgramRunner> Systemd<R> {
         }
     }
 
+    fn refuse_what_the_enabled_units_overrule(
+        &self,
+        job: &BackgroundJob,
+    ) -> Result<(), ScheduleError> {
+        let enabled = self
+            .enabled_folder()
+            .join(unit_name(&job.remote, "service"));
+        match std::fs::read_to_string(enabled) {
+            Ok(held) if held != unit::service(job) => Err(ScheduleError::Failed(format!(
+                "{0} starts at login with other settings, which systemd keeps in force over these; run dam sync disable {0} first",
+                job.remote
+            ))),
+            _ => Ok(()),
+        }
+    }
+
     fn systemctl(&self, verb: &str, unit: Option<&str>) -> Result<(), ScheduleError> {
         let args: Vec<&str> = ["--user", verb].into_iter().chain(unit).collect();
         ran("systemctl", verb, self.runner.run("systemctl", &args))
@@ -56,22 +74,6 @@ fn units_in(folder: &Path, remote: &str) -> [PathBuf; 2] {
     ["timer", "service"].map(|kind| folder.join(unit_name(remote, kind)))
 }
 
-pub(super) fn unit_name(remote: &str, kind: &str) -> String {
-    let allowed = |c: char| c.is_ascii_alphanumeric() || ":_.-".contains(c);
-    let escaped: String = remote
-        .chars()
-        .map(|c| match allowed(c) {
-            true => c.to_string(),
-            false => c
-                .to_string()
-                .bytes()
-                .map(|b| format!(r"\x{b:02x}"))
-                .collect(),
-        })
-        .collect();
-    format!("dam-sync-{escaped}.{kind}")
-}
-
 fn changed(now: bool) -> Change {
     match now {
         true => Change::Now,
@@ -81,6 +83,7 @@ fn changed(now: bool) -> Change {
 
 impl<R: ProgramRunner> BackgroundSync for Systemd<R> {
     fn start(&self, job: &BackgroundJob) -> Result<Change, ScheduleError> {
+        self.refuse_what_the_enabled_units_overrule(job)?;
         let rewritten = write_units(&self.started_folder(), job)?;
         if rewritten {
             self.systemctl("daemon-reload", None)?;
@@ -119,7 +122,16 @@ impl<R: ProgramRunner> BackgroundSync for Systemd<R> {
         remove_each_present(&units)?;
         Ok(Change::Now)
     }
+
+    fn state(&self, remote: &str) -> Result<BackgroundState, ScheduleError> {
+        Ok(BackgroundState {
+            running: self.active(&unit_name(remote, "timer"))?,
+            at_login: units_in(&self.enabled_folder(), remote)[0].exists(),
+        })
+    }
 }
 
+#[cfg(test)]
+mod state_tests;
 #[cfg(test)]
 mod tests;

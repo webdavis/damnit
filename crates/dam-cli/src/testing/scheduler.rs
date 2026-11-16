@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use dam_application::{BackgroundJob, BackgroundSync, Change, ScheduleError};
+use dam_application::{BackgroundJob, BackgroundState, BackgroundSync, Change, ScheduleError};
 
 #[derive(Default)]
 pub(crate) struct RecordingScheduler {
@@ -26,5 +26,8 @@ impl BackgroundSync for RecordingScheduler {
     }
     fn disable(&self, remote: &str) -> Result<Change, ScheduleError> {
         self.record(format!("disable {remote}"))
+    }
+    fn state(&self, _: &str) -> Result<BackgroundState, ScheduleError> {
+        Ok(BackgroundState::default())
     }
 }

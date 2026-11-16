@@ -29,6 +29,12 @@ impl dam_application::BackgroundSync for Shared {
     fn disable(&self, r: &str) -> Result<dam_application::Change, dam_application::ScheduleError> {
         self.0.disable(r)
     }
+    fn state(
+        &self,
+        r: &str,
+    ) -> Result<dam_application::BackgroundState, dam_application::ScheduleError> {
+        self.0.state(r)
+    }
 }
 
 fn with_todoist(scheduler: &Rc<RecordingScheduler>) -> Context {

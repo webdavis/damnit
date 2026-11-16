@@ -1,11 +1,10 @@
-use std::cell::RefCell;
-use std::time::Duration;
-
 use super::*;
 use crate::config::RemoteSync;
 use crate::errors::Refusal;
-use crate::ports::{BackgroundJob, ScheduleError};
+use crate::ports::{BackgroundJob, BackgroundState, ScheduleError};
 use crate::testing::{Scenario, config};
+use std::cell::RefCell;
+use std::time::Duration;
 
 #[derive(Default)]
 struct FakeScheduler {
@@ -39,6 +38,9 @@ impl BackgroundSync for FakeScheduler {
     }
     fn disable(&self, remote: &str) -> Result<Change, ScheduleError> {
         self.record(format!("disable {remote}"), None)
+    }
+    fn state(&self, _: &str) -> Result<BackgroundState, ScheduleError> {
+        unreachable!()
     }
 }
 
@@ -183,6 +185,9 @@ fn a_scheduler_failure_is_reported() {
             unreachable!()
         }
         fn disable(&self, _: &str) -> Result<Change, ScheduleError> {
+            unreachable!()
+        }
+        fn state(&self, _: &str) -> Result<BackgroundState, ScheduleError> {
             unreachable!()
         }
     }
