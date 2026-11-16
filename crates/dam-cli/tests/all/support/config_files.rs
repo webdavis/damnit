@@ -22,13 +22,6 @@ impl Remote {
         Remote::at("fake::").api_token("tok-123")
     }
 
-    pub fn deadline(self, silence: &str) -> Remote {
-        Remote {
-            deadline: Some(silence.to_string()),
-            ..self
-        }
-    }
-
     pub fn api_token(self, value: &str) -> Remote {
         Remote {
             api_token: Some(value.to_string()),
