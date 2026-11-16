@@ -40,6 +40,10 @@
       "minimum": 0,
       "description": "Refuse, changing nothing, unless the set holds exactly this many objects."
     },
+    "as_one": {
+      "type": "boolean",
+      "description": "For a token: the changes wait as one set the owner takes or declines whole."
+    },
     "force": {
       "type": "boolean"
     },

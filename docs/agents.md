@@ -176,6 +176,9 @@ refuses if the set changed since. A request carries `oid` as a string or an arra
 the set, and each change in `changes` carries its `item` and `answer`. `dam new --preview` answers
 the same document for the item it would send, and sends nothing.
 
+Add `--as-one` to make the whole set wait as one set of items instead. The answer's `set` is its
+hash; the owner takes or declines the set whole, by that hash. `--as-one` from the owner exits 2.
+
 `dam category migrate` is the owner's alone; a token is refused, rule `not_open_to_tokens`. Its
 request is `{"map": {"quick": "light"}, "preview": true, "expect": 3, "update_config": true}`
 (`category-migrate-request.schema.json`), and its answer is `category-migrate.schema.json`: the

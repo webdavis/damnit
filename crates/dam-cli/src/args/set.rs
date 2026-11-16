@@ -22,10 +22,19 @@ pub(crate) struct SetArgs {
         help = "Refuse, changing nothing, unless the set holds exactly N objects"
     )]
     pub(crate) expect: Option<usize>,
+    #[arg(
+        long,
+        help = "For a token: the changes wait as one set the owner takes or declines whole"
+    )]
+    pub(crate) as_one: bool,
 }
 
 impl SetArgs {
     pub(crate) fn is_plain(&self) -> bool {
-        self.query.is_none() && self.filter.is_none() && !self.preview && self.expect.is_none()
+        self.query.is_none()
+            && self.filter.is_none()
+            && !self.preview
+            && self.expect.is_none()
+            && !self.as_one
     }
 }

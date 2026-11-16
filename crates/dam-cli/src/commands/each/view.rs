@@ -12,6 +12,11 @@ pub(crate) struct SetView<'a> {
     #[serde(serialize_with = "displays")]
     oids: &'a [Oid],
     changes: Vec<ChangeView<'a>>,
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "optional_hash"
+    )]
+    set: Option<&'a ItemHash>,
     #[serde(skip)]
     owner: &'a str,
 }
@@ -50,6 +55,10 @@ impl<'a> SetView<'a> {
                 .iter()
                 .map(|c| ChangeView::of(c, owner))
                 .collect(),
+            set: changes
+                .changes
+                .iter()
+                .find_map(|c| c.sent.as_ref()?.item.set.as_ref()),
             owner,
         }
     }
@@ -91,6 +100,9 @@ impl View for SetView<'_> {
             ),
             false => format!("changed {changed} of {}", self.count),
         }));
+        if let Some(set) = self.set {
+            lines.push(Line::Whole(format!("waiting as one set {}", set.short())));
+        }
         Human::Mixed(lines)
     }
 }
