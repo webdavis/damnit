@@ -65,6 +65,7 @@ mod hook_run;
 mod hook_started;
 mod hooks;
 mod id_session;
+mod in_use;
 mod interrupts;
 mod list_project_default;
 mod list_request;
