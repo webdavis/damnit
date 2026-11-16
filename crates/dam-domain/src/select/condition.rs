@@ -84,6 +84,10 @@ impl Condition {
         Ok(())
     }
 
+    pub fn saved_filters(&self) -> impl Iterator<Item = &str> {
+        self.wants.iter().filter_map(Want::saved_filter)
+    }
+
     pub(crate) fn is_one_value(&self) -> bool {
         !self.negated && matches!(self.wants.as_slice(), [want] if want.is_one_value())
     }

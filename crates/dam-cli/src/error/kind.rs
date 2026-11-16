@@ -30,7 +30,9 @@ impl CliError {
             CliError::UseCase(UseCaseError::Parse(_))
             | CliError::UseCase(UseCaseError::Query(_))
             | CliError::Config(_) => "parse",
-            CliError::Usage(_) | CliError::CommandLine(_) => KIND_USAGE,
+            CliError::Usage(_)
+            | CliError::CommandLine(_)
+            | CliError::UseCase(UseCaseError::Select(_)) => KIND_USAGE,
             CliError::Cancelled => "cancelled",
             CliError::Internal(_) | CliError::Reported => "internal",
         }

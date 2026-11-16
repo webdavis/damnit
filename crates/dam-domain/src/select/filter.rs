@@ -65,6 +65,18 @@ impl Filter {
         &self.any
     }
 
+    pub fn saved_filters(&self) -> Vec<&str> {
+        let mut names: Vec<&str> = Vec::new();
+        let own = self.conditions.iter().flat_map(Condition::saved_filters);
+        let nested = self.any.iter().flat_map(Filter::saved_filters);
+        for name in own.chain(nested) {
+            if !names.contains(&name) {
+                names.push(name);
+            }
+        }
+        names
+    }
+
     pub fn check(&self, categories: &Categories) -> Result<(), FilterError> {
         self.conditions
             .iter()

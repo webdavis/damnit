@@ -42,3 +42,7 @@ pub(crate) fn reminders(o: &Object, _: &dyn Context) -> Values {
 pub(crate) fn own_id(o: &Object, _: &dyn Context) -> Values {
     Values::of([Item::Id(o.oid().clone())])
 }
+
+pub(crate) fn author(o: &Object, c: &dyn Context) -> Values {
+    Values::texts([c.author(o.oid())])
+}

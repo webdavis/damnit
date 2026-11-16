@@ -111,6 +111,7 @@ impl fmt::Display for UseCaseText<'_> {
             UseCaseError::Filter(e) => write!(f, "{}", FilterText(e)),
             UseCaseError::Parse(s) => write!(f, "{s}"),
             UseCaseError::Query(e) => write!(f, "{e}"),
+            UseCaseError::Select(_) => f.write_str("the selection cannot be read"),
             UseCaseError::Schedule(ScheduleError::Failed(why)) => {
                 write!(f, "the scheduler refused the change: {why}")
             }

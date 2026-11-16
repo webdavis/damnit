@@ -41,6 +41,14 @@ impl Want {
         }
     }
 
+    pub(crate) fn saved_filter(&self) -> Option<&str> {
+        match self {
+            Want::ListedBy(name) => Some(name),
+            Want::Date(date) => date.saved_filter(),
+            _ => None,
+        }
+    }
+
     pub(crate) fn is_one_value(&self) -> bool {
         match self {
             Want::Is(_) | Want::Under(_) | Want::Id(_) | Want::Yes(_) => true,

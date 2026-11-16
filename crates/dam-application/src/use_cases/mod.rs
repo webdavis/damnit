@@ -33,6 +33,7 @@ pub(crate) mod remove;
 pub(crate) mod resolve;
 pub(crate) mod restore;
 pub(crate) mod revert;
+pub(crate) mod selected;
 pub(crate) mod sight;
 pub(crate) mod stage;
 pub(crate) mod status;

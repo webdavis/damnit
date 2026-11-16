@@ -38,6 +38,7 @@ fn every_field_of_the_design_has_one_row() {
         "response",
         "organizer.email",
         "attendees.email",
+        "author",
     ] {
         assert!(unique.contains(key), "{key} has no row");
     }
