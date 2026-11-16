@@ -1,0 +1,9 @@
+{
+  "error": {
+    "kind": "refused",
+    "rule": "no_such_object",
+    "message": "no object matches \"<id-1>\"",
+    "oids": [],
+    "prefix": "<id-1>"
+  }
+}

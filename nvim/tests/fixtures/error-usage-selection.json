@@ -1,0 +1,25 @@
+{
+  "error": {
+    "kind": "usage",
+    "rule": null,
+    "message": "--priority cannot be \"urgent\"; it takes N, N,M, N..M, ..M, N.., not:N; run dam list --priority 1",
+    "oids": [],
+    "usage": {
+      "problem": "bad_value",
+      "word": "--priority"
+    },
+    "selection": {
+      "field": "priority",
+      "value": "urgent",
+      "shapes": [
+        "N",
+        "N,M",
+        "N..M",
+        "..M",
+        "N..",
+        "not:N"
+      ],
+      "command": "dam list --priority 1"
+    }
+  }
+}
