@@ -1,11 +1,7 @@
-use std::ops::Range;
-
+use super::Expr;
 use super::term::term;
-use super::{Expr, Term};
 use crate::Categories;
 use lex::{Tok, lex};
-
-pub use error::QueryError;
 
 const MAX_RECURSIVE_DESCENT_DEPTH: usize = 64;
 
@@ -16,43 +12,15 @@ struct Parser<'c> {
     categories: &'c Categories,
 }
 
-pub fn parse(text: &str, categories: &Categories) -> Result<Expr, QueryError> {
-    let toks: Vec<Tok> = lex(text)?.into_iter().map(|(tok, _)| tok).collect();
-    if toks.is_empty() {
-        return Err(QueryError::Empty);
-    }
+pub(super) fn parse(text: &str, categories: &Categories) -> Option<Expr> {
     let mut p = Parser {
-        toks,
+        toks: lex(text)?,
         at: 0,
         depth: 0,
         categories,
     };
     let expr = p.or()?;
-    match p.peek() {
-        None => Ok(expr),
-        Some(Tok::Close) => Err(QueryError::Unexpected(")".into())),
-        Some(t) => Err(QueryError::MissingOperator(t.to_string())),
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct LabelTerm {
-    pub label: String,
-    pub at: Range<usize>,
-}
-
-pub fn label_terms(text: &str, categories: &Categories) -> Result<Vec<LabelTerm>, QueryError> {
-    parse(text, categories)?;
-    Ok(lex(text)?
-        .into_iter()
-        .filter_map(|(tok, at)| match tok {
-            Tok::Word(word) => match term(&word, categories) {
-                Ok(Term::Label(label)) => Some(LabelTerm { label, at }),
-                _ => None,
-            },
-            _ => None,
-        })
-        .collect())
+    p.peek().is_none().then_some(expr)
 }
 
 impl Parser<'_> {
@@ -66,40 +34,40 @@ impl Parser<'_> {
         t
     }
 
-    fn or(&mut self) -> Result<Expr, QueryError> {
+    fn or(&mut self) -> Option<Expr> {
         let mut left = self.and()?;
         while self.peek() == Some(&Tok::Or) {
             self.next();
             let right = self.and()?;
             left = Expr::Or(Box::new(left), Box::new(right));
         }
-        Ok(left)
+        Some(left)
     }
 
-    fn and(&mut self) -> Result<Expr, QueryError> {
+    fn and(&mut self) -> Option<Expr> {
         let mut left = self.not()?;
         while self.peek() == Some(&Tok::And) {
             self.next();
             let right = self.not()?;
             left = Expr::And(Box::new(left), Box::new(right));
         }
-        Ok(left)
+        Some(left)
     }
 
-    fn not(&mut self) -> Result<Expr, QueryError> {
+    fn not(&mut self) -> Option<Expr> {
         if self.peek() == Some(&Tok::Not) {
             self.next();
-            return self.descend_one_level(|p| Ok(Expr::Not(Box::new(p.not()?))));
+            return self.descend_one_level(|p| Some(Expr::Not(Box::new(p.not()?))));
         }
         self.atom()
     }
 
     fn descend_one_level(
         &mut self,
-        inner: impl FnOnce(&mut Parser) -> Result<Expr, QueryError>,
-    ) -> Result<Expr, QueryError> {
+        inner: impl FnOnce(&mut Parser) -> Option<Expr>,
+    ) -> Option<Expr> {
         if self.depth == MAX_RECURSIVE_DESCENT_DEPTH {
-            return Err(QueryError::TooDeep);
+            return None;
         }
         self.depth += 1;
         let out = inner(self);
@@ -107,21 +75,16 @@ impl Parser<'_> {
         out
     }
 
-    fn atom(&mut self) -> Result<Expr, QueryError> {
-        match self.next() {
-            Some(Tok::Open) => self.descend_one_level(|p| {
+    fn atom(&mut self) -> Option<Expr> {
+        match self.next()? {
+            Tok::Open => self.descend_one_level(|p| {
                 let inner = p.or()?;
-                match p.next() {
-                    Some(Tok::Close) => Ok(inner),
-                    _ => Err(QueryError::Unclosed),
-                }
+                (p.next()? == Tok::Close).then_some(inner)
             }),
-            Some(Tok::Word(w)) => term(&w, self.categories).map(Expr::Term),
-            Some(other) => Err(QueryError::Unexpected(other.to_string())),
-            None => Err(QueryError::EndsEarly),
+            Tok::Word(w) => term(&w, self.categories).map(Expr::Term),
+            _ => None,
         }
     }
 }
 
-mod error;
 mod lex;

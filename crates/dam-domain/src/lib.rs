@@ -47,10 +47,7 @@ pub use object::{
 pub use oid::{Oid, OidError};
 pub use path::{Path, PathError};
 pub use priority::{Priority, PriorityError};
-pub use query::{
-    DateSel, EstimateSel, Expr, LabelTerm, QueryError, Term, label_terms, matches,
-    parse as parse_query, query_table,
-};
+pub use query::query_table;
 pub use recurrence::{Anchor, Freq, Recurrence, Rule, RuleError, roll_forward};
 pub use select::{
     Command, Condition, Context, DateTest, DefaultsError, FieldType, Filter, FilterError,

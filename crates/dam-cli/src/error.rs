@@ -71,7 +71,6 @@ impl CliError {
             | CliError::Config(ConfigError::ProjectSettingWouldNotLoad { .. })
             | CliError::UseCase(UseCaseError::Refused(Refusal::AmbiguousPrefix { .. }))
             | CliError::UseCase(UseCaseError::NotAnOid(_))
-            | CliError::UseCase(UseCaseError::Query(_))
             | CliError::UseCase(UseCaseError::Select(_)) => EXIT_USAGE_AS_CLAP_EXITS,
             CliError::Cancelled
             | CliError::UseCase(UseCaseError::PushStopped {
