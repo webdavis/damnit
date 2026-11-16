@@ -70,6 +70,7 @@ mod list_project_default;
 mod list_request;
 mod lua_page_example;
 mod new_id;
+mod nvim_fixtures;
 mod object_author;
 mod output_flag;
 mod piped_ids;
