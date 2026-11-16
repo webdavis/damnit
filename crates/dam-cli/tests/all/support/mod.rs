@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 pub mod answers;
 pub mod commands;
 pub mod config_files;
@@ -17,7 +15,6 @@ pub mod request;
 pub mod sandbox;
 pub mod schema;
 pub mod small_config;
-pub mod tested;
 pub mod token_table;
 pub mod tokens;
 
