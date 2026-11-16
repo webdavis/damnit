@@ -53,4 +53,26 @@ return {
     local bottom = top + vim.api.nvim_win_get_height(assert(prompt.window())) + 1
     shows(bottom, '╰.- %-%-due cannot be "the twelfth of never"; .*… ╯')
   end,
+
+  ["from a list the float spans the list window's bottom rows, above its status line"] = function()
+    local _, fake = helper.new()
+    require("damnit.command").define(_, { require("damnit.list").new(_) })
+    for _, verb in ipairs({ "filter", "category", "remote", "label", "path" }) do
+      fake.reply(verb, fixtures.refusal("error-unknown-subcommand.json", EXIT_USAGE))
+    end
+    fake.reply("config", fixtures.answer("config-list-project.json"))
+    fake.reply("list", fixtures.answer("list.json"))
+    fake.reply("new", fixtures.answer("new-preview.json"))
+    vim.cmd("Dam list")
+    local list = vim.api.nvim_get_current_win()
+    require("helpers.buffer").wait_for(function()
+      return #require("helpers.buffer").lines() > 1
+    end)
+    prompt.type("abuy oat milk")
+    prompt.footer_reads('task "buy oat milk" · due 2026-11-20 · errand · home/')
+    local last = vim.fn.win_screenpos(list)[1] + vim.api.nvim_win_get_height(list) - 1
+    shows(last - 2, "^╭ dam new ─.*╮$")
+    shows(last - 1, "^│buy oat milk +│$")
+    shows(last, '^╰─.* task "buy oat milk" · due 2026%-11%-20 · errand · home/ ╯$')
+  end,
 }

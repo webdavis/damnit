@@ -39,6 +39,25 @@ return {
     assert(prompt.line() == "buy milk --path home/", prompt.line())
   end,
 
+  ["anchored to a window the float spans its bottom edge, its title at the left"] = function()
+    local anchor = vim.api.nvim_get_current_win()
+    opened({ anchor = anchor })
+    local config = vim.api.nvim_win_get_config(assert(prompt.window()))
+    assert(config.relative == "win" and config.win == anchor and config.anchor == "SW", vim.inspect(config))
+    assert(config.row == vim.api.nvim_win_get_height(anchor) - 1 and config.col == 0, vim.inspect(config))
+    assert(config.width == vim.api.nvim_win_get_width(anchor) - 2, vim.inspect(config))
+    assert(config.title_pos == "left", vim.inspect(config))
+  end,
+
+  ["with no window to anchor to the float is centred in the editor"] = function()
+    opened()
+    local config = vim.api.nvim_win_get_config(assert(prompt.window()))
+    local left = config.col
+    local right = vim.o.columns - (config.col + config.width + 2)
+    assert(config.relative == "editor" and math.abs(left - right) <= 1, vim.inspect(config))
+    assert(config.title_pos == "left", vim.inspect(config))
+  end,
+
   ["after a pause the read runs once with the line and its answer is the footer"] = function()
     local seen = opened({}, "buy")
     prompt.more(" milk")

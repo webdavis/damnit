@@ -25,8 +25,17 @@ end
 
 local notify = vim.notify
 
+local function closed_floats()
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    if vim.api.nvim_win_get_config(win).relative ~= "" then
+      vim.api.nvim_win_close(win, true)
+    end
+  end
+end
+
 local function fresh_editor()
   vim.notify = notify
+  closed_floats()
   vim.cmd("silent! %bwipeout!")
   vim.api.nvim_create_augroup("DamSpec", { clear = true })
 end

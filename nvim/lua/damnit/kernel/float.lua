@@ -25,23 +25,41 @@ local function wrapped(text, width)
   return lines
 end
 
+local function placed(anchor)
+  if anchor and vim.api.nvim_win_is_valid(anchor) then
+    local width = math.max(vim.api.nvim_win_get_width(anchor) - 2, 20)
+    return {
+      relative = "win",
+      win = anchor,
+      anchor = "SW",
+      row = vim.api.nvim_win_get_height(anchor) - 1,
+      col = 0,
+      width = width,
+    }
+  end
+  local width = math.max(math.min(vim.o.columns - 4, 100), 20)
+  local col = math.floor((vim.o.columns - width - 2) / 2)
+  return { relative = "editor", row = math.floor((vim.o.lines - 3) / 4), col = col, width = width }
+end
+
 ---@param buf integer
 ---@param title string
+---@param anchor? integer
 ---@return integer win
-function M.input(buf, title)
-  local width = math.max(math.min(vim.o.columns - 4, 100), 20)
-  return vim.api.nvim_open_win(buf, true, {
-    relative = "editor",
-    row = math.floor((vim.o.lines - 3) / 4),
-    col = math.floor((vim.o.columns - width - 2) / 2),
-    width = width,
-    height = 1,
-    style = "minimal",
-    border = "rounded",
-    title = padded(title),
-    footer = "",
-    footer_pos = "right",
-  })
+function M.input(buf, title, anchor)
+  return vim.api.nvim_open_win(
+    buf,
+    true,
+    vim.tbl_extend("force", placed(anchor), {
+      height = 1,
+      style = "minimal",
+      border = "rounded",
+      title = padded(title),
+      title_pos = "left",
+      footer = "",
+      footer_pos = "right",
+    })
+  )
 end
 
 ---@param win integer

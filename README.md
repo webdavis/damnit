@@ -793,8 +793,8 @@ A list open in two windows fits its columns to the narrower one.
 --labels errand`. It completes flag names, labels, paths and categories, and after each pause
 shows how dam reads the line, or dam's refusal. `<CR>` creates the task, `<C-j>` creates it and
 keeps the prompt open, `<Up>` and `<Down>` recall earlier lines, `<Esc>` cancels. `:Dam new
-<words>` creates it at once. In a list, `a` opens the prompt with the view's path and `o` with
-`--parent` set to the task under the cursor.
+<words>` creates it at once. In a list the prompt opens along the list window's bottom: `a`
+with the view's path, `o` with `--parent` set to the task under the cursor.
 
 `:Dam task <oid>`, or `<CR>` on a row of the list, opens the task as `dam show` prints it: one
 `field: value` line each, then `---` and the body. Change a line and `:w` sends `dam edit`

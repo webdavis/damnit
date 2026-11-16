@@ -15,6 +15,7 @@ local M = {}
 ---@field read fun(text: string, done: fun(answer: string, refused: boolean)): damnit.Handle
 ---@field submit fun(text: string)
 ---@field complete? fun(line: string, col: integer): integer, damnit.Candidate[]
+---@field anchor? integer
 
 ---@class damnit.Prompts
 ---@field open fun(self, spec: damnit.PromptSpec)
@@ -59,7 +60,7 @@ end
 function Prompts:open(spec)
   local buf = vim.api.nvim_create_buf(false, true)
   vim.bo[buf].bufhidden = "wipe"
-  local win = float.input(buf, spec.title)
+  local win = float.input(buf, spec.title, spec.anchor)
   vim.bo[buf].filetype = "damprompt"
   self.histories[spec.title] = self.histories[spec.title] or {}
   local show = function(answer, refused)
