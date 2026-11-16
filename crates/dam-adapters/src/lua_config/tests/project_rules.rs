@@ -76,3 +76,23 @@ fn a_required_field_dam_does_not_know_is_refused_naming_only_the_file() {
     );
     refused_as_misshapen("return { path = 'a/', required = 'due' }", "required");
 }
+
+#[test]
+fn the_default_listing_is_read() {
+    let folder = ProjectFolder::with("return { path = 'a/', ls = '@cli & p1' }");
+    assert_eq!(folder.read().unwrap().ls.as_deref(), Some("@cli & p1"));
+}
+
+#[test]
+fn a_default_listing_that_is_not_a_query_is_refused_naming_only_the_file() {
+    let folder = ProjectFolder::with("return { path = 'a/', ls = '@cli &' }");
+    assert_eq!(
+        folder.read(),
+        Err(ConfigError::ProjectRule {
+            file: folder.file(),
+            key: "ls",
+            fault: ProjectRuleFault::NotAQuery,
+        })
+    );
+    refused_as_misshapen("return { path = 'a/', ls = 3 }", "ls");
+}

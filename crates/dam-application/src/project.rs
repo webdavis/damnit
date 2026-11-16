@@ -13,6 +13,7 @@ pub struct ProjectSettings {
     pub path: String,
     pub new_task: TaskTemplate,
     pub required: Vec<RequiredField>,
+    pub ls: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
