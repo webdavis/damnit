@@ -2,6 +2,8 @@ use std::path::{Path, PathBuf};
 
 use dam_application::ScheduleError;
 
+use super::runner::RunFailure;
+
 pub(super) fn write_when_changed(path: &Path, text: &str) -> Result<bool, ScheduleError> {
     if std::fs::read_to_string(path).is_ok_and(|held| held == text) {
         return Ok(false);
@@ -25,9 +27,9 @@ pub(super) fn remove_each_present(paths: &[PathBuf]) -> Result<Vec<PathBuf>, Sch
 pub(super) fn ran(
     program: &str,
     verb: &str,
-    outcome: Result<(), String>,
+    outcome: Result<(), RunFailure>,
 ) -> Result<(), ScheduleError> {
-    outcome.map_err(|why| ScheduleError::Failed(format!("{program} {verb}: {why}")))
+    outcome.map_err(|why| ScheduleError::Failed(format!("{program} {verb}: {}", why.message)))
 }
 
 fn failure(verb: &str, path: &Path, e: std::io::Error) -> ScheduleError {

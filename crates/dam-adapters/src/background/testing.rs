@@ -2,12 +2,14 @@ use std::cell::{Cell, RefCell};
 
 use dam_application::BackgroundJob;
 
-use super::ProgramRunner;
+use super::runner::{ProgramRunner, RunFailure};
 
 #[derive(Default)]
 pub(super) struct RecordingRunner {
     calls: RefCell<Vec<String>>,
     pub(super) loaded: Cell<bool>,
+    pub(super) broken: Cell<Option<&'static str>>,
+    pub(super) says_not_loaded_as: Cell<Option<(i32, &'static str)>>,
 }
 
 impl RecordingRunner {
@@ -17,14 +19,22 @@ impl RecordingRunner {
 }
 
 impl ProgramRunner for RecordingRunner {
-    fn run(&self, program: &str, args: &[&str]) -> Result<(), String> {
+    fn run(&self, program: &str, args: &[&str]) -> Result<(), RunFailure> {
         let line = std::iter::once(program).chain(args.iter().copied());
         self.calls
             .borrow_mut()
             .push(line.collect::<Vec<_>>().join(" "));
+        if self
+            .broken
+            .get()
+            .is_some_and(|verb| args.first() == Some(&verb))
+        {
+            return Err(exited(1, "refused"));
+        }
         match args {
             ["print", ..] | ["--user", "is-active", ..] if !self.loaded.get() => {
-                Err("not loaded".into())
+                let (code, message) = self.says_not_loaded_as.get().unwrap_or((113, "not loaded"));
+                Err(exited(code, message))
             }
             ["bootstrap", ..] | ["--user", "start", ..] => {
                 self.loaded.set(true);
@@ -47,5 +57,12 @@ pub(super) fn job() -> BackgroundJob {
         store: "/home/someone/dam.db".into(),
         search_path: "/usr/bin:/bin".into(),
         interval: None,
+    }
+}
+
+fn exited(code: i32, message: &str) -> RunFailure {
+    RunFailure {
+        code: Some(code),
+        message: message.to_string(),
     }
 }

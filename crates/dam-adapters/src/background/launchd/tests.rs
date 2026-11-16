@@ -1,7 +1,7 @@
 use std::os::unix::fs::MetadataExt;
 use std::time::Duration;
 
-use dam_application::{BackgroundSync, Change};
+use dam_application::{BackgroundSync, Change, ScheduleError};
 
 use super::Launchd;
 use crate::background::testing::{RecordingRunner, job};
@@ -120,4 +120,49 @@ fn disable_removes_the_agent_and_stops_nothing() {
     assert!(!m.enabled_agent().exists());
     assert!(launchd.runner.loaded.get());
     assert_eq!(launchd.disable("todoist"), Ok(Change::Already));
+}
+
+#[test]
+fn a_print_that_says_it_could_not_find_the_service_means_not_loaded_whatever_its_exit_code() {
+    let m = Machine::new();
+    let launchd = m.launchd();
+    launchd.runner.says_not_loaded_as.replace(Some((
+        64,
+        "Could not find service \"dam-sync.todoist\" in domain for user gui: 501",
+    )));
+    assert_eq!(launchd.start(&job()), Ok(Change::Now));
+    assert_eq!(launchd.runner.calls().len(), 2);
+}
+
+#[test]
+fn a_failing_print_is_reported_and_loads_nothing() {
+    let m = Machine::new();
+    let launchd = m.launchd();
+    launchd.runner.broken.replace(Some("print"));
+    assert!(matches!(
+        launchd.start(&job()),
+        Err(ScheduleError::Failed(_))
+    ));
+    assert!(matches!(
+        launchd.stop("todoist"),
+        Err(ScheduleError::Failed(_))
+    ));
+    let calls = launchd.runner.calls();
+    assert!(
+        calls.iter().all(|c| c.starts_with("launchctl print")),
+        "{calls:?}"
+    );
+}
+
+#[test]
+fn a_failing_bootout_is_reported() {
+    let m = Machine::new();
+    let launchd = m.launchd();
+    launchd.start(&job()).unwrap();
+    launchd.runner.broken.replace(Some("bootout"));
+    let failed = launchd.stop("todoist");
+    assert_eq!(
+        failed,
+        Err(ScheduleError::Failed("launchctl bootout: refused".into()))
+    );
 }
