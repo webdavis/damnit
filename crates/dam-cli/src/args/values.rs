@@ -49,3 +49,13 @@ pub(super) fn max_age_arg(text: &str) -> Result<(RemoteName, Duration), String> 
 
 #[cfg(test)]
 mod tests;
+
+pub(super) fn label_arg(text: &str) -> Result<String, String> {
+    match text.trim() {
+        "" => Err(
+            "a label cannot be empty; separate labels with one comma, such as bug,urgent"
+                .to_string(),
+        ),
+        label => Ok(label.to_string()),
+    }
+}
