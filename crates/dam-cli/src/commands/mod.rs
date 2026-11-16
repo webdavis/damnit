@@ -72,6 +72,7 @@ fn run_a_verb(ctx: &Context, command: Command) -> Result<Report, CliError> {
         Command::Push(a) => sync::run_push(ctx, a),
         Command::Pull(a) => sync::run_pull(ctx, a),
         Command::Resolve(a) => sync::run_resolve(ctx, a),
+        Command::Sync(a) => sync::run_sync(ctx, a),
         Command::Category(_)
         | Command::Filter(_)
         | Command::Token(_)

@@ -2,6 +2,8 @@ use dam_application::PushReport;
 use dam_domain::Oid;
 use serde::Serialize;
 
+use crate::layout::counted;
+use crate::style::{Mark, Paint, advice, row};
 use crate::view::{Human, View, display};
 
 #[derive(Serialize)]
@@ -40,6 +42,47 @@ impl<'a> PushRow<'a> {
                 .map(|(oid, why)| FailedPush { oid, why })
                 .collect(),
         }
+    }
+
+    pub(super) fn lines(&self, paint: Paint, name: &str) -> Vec<String> {
+        let held = self.held.unwrap_or(0);
+        let counts = [
+            (self.sent, "sent"),
+            (self.failed.len(), "failed"),
+            (self.skipped, "skipped"),
+            (held, "held"),
+        ];
+        let shown: Vec<String> = counts
+            .into_iter()
+            .filter(|(n, _)| *n > 0)
+            .map(|(n, word)| counted(n, word, word))
+            .collect();
+        let text = match shown.is_empty() {
+            true => "nothing to send".to_string(),
+            false => shown.join(", "),
+        };
+        let mark = match (self.failed.is_empty(), held) {
+            (false, _) => Mark::Bad,
+            (true, 0) => Mark::Good,
+            (true, _) => Mark::Warn,
+        };
+        let mut lines = vec![row(paint, mark, 2, &format!("{name}: {text}"))];
+        if held > 0 {
+            lines.push(advice(
+                paint,
+                4,
+                "see dam status, settle each with dam resolve",
+            ));
+        }
+        lines.extend(self.failed.iter().map(|f| {
+            row(
+                paint,
+                Mark::Bad,
+                4,
+                &format!("{}: {}", f.oid.short(), f.why),
+            )
+        }));
+        lines
     }
 
     fn line(&self) -> String {

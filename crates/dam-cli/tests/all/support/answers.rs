@@ -146,6 +146,7 @@ pub fn answers(command: &str) -> Option<Vec<serde_json::Value>> {
         "remote list" => vec![json_of(&fixture::pulled_and_pushed(), &["remote", "list"])],
         "push" => vec![json_of(&fixture::committed(), &["push"])],
         "pull" => vec![json_of(&fixture::committed(), &["pull"])],
+        "sync run" => vec![json_of(&fixture::committed(), &["sync", "run", "fake"])],
         "resolve" => vec![json_of(&in_conflict(), &["resolve", &milk, "--theirs"])],
         "token create" => vec![json_of(
             &Sandbox::new(),

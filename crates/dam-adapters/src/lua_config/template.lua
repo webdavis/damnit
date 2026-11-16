@@ -45,8 +45,8 @@ return {
   -- url is <helper>::<address>, a helper name being letters, digits, - and _. deadline is the
   -- longest the helper may stay silent, 60s by default, a whole number then s, m or h. path limits
   -- a push to the objects under that path. sync.interval is how often background sync runs, 15m
-  -- by default. sync.allowed = false means background sync may never start for this remote.
-  -- Nothing syncs by itself.
+  -- by default and 1m at least. sync.allowed = false means background sync may never start here.
+  -- Nothing syncs by itself; dam sync run syncs a remote now.
   --remote = {
     --todoist = {
       --url = "todoist::",

@@ -20,6 +20,30 @@ pub(crate) enum RemoteCommand {
 }
 
 #[derive(Args, Debug)]
+pub(crate) struct SyncArgs {
+    #[command(subcommand)]
+    pub(crate) command: Option<SyncCommand>,
+}
+
+#[derive(Subcommand, Debug)]
+pub(crate) enum SyncCommand {
+    #[command(
+        about = "Pull from one remote, then push its committed changes, now",
+        after_help = "It runs whatever sync.allowed says: a sync you type is not background sync.
+Newer or uncommitted work is never replaced. A conflict is left for dam status and dam resolve,
+and the push goes on past it.
+
+Examples:
+  dam sync run todoist
+  dam sync run todoist --json"
+    )]
+    Run {
+        #[arg(help = "Sync this remote")]
+        remote: String,
+    },
+}
+
+#[derive(Args, Debug)]
 pub(crate) struct PushArgs {
     #[arg(help = "Push to this remote alone. Default: every remote")]
     pub(crate) remote: Option<String>,
