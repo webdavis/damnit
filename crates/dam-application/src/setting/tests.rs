@@ -136,3 +136,25 @@ fn project_hooks_is_a_flag_in_the_project_part() {
     assert_eq!(key.path, ["project", "hooks"]);
     assert_eq!(key.kind, SettingKind::Flag);
 }
+
+#[test]
+fn the_keys_of_a_project_file_are_settings_of_their_type() {
+    let kind = |key: &str| SettingKey::parse(key).unwrap().kind;
+    for key in [
+        "path",
+        "minimum_dam",
+        "ls",
+        "new_task.due",
+        "new_task.deadline",
+        "done_children",
+    ] {
+        assert_eq!(kind(key), SettingKind::Text, "{key}");
+    }
+    for key in ["required", "sections", "new_task.labels"] {
+        assert_eq!(kind(key), SettingKind::List, "{key}");
+    }
+    assert_eq!(kind("new_task.priority"), SettingKind::Count);
+    assert_eq!(kind("branch_label"), SettingKind::Flag);
+    assert_eq!(path("new_task.labels"), ["new_task", "labels"]);
+    assert!(SettingKey::parse("new_task.body").is_err());
+}

@@ -4,6 +4,7 @@ mod insert;
 mod lines;
 mod locate;
 mod lua_text;
+mod project_setting;
 mod remote_entry;
 mod remove;
 mod replace;
@@ -15,6 +16,7 @@ mod token_entry;
 
 pub(super) use edit::Change;
 pub(in crate::lua_config) use lua_text::string_literal;
+pub use project_setting::ProjectSettingsFile;
 pub(super) use remote_entry::remote_entry;
 pub(super) use replace::folder_of;
 pub(super) use token_entry::{bare_token_entry, token_entry};

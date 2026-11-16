@@ -297,6 +297,9 @@ A token cannot run `dam hook list` or `dam hook run`, which are the owner's alon
 A project's hooks in `.damhooks/` run only once the owner turns them on with `dam config set
 project.hooks true`, which no token can run; then they run after the owner's, for tasks under the
 project's path. A token's command runs no hook at all, the owner's or a project's.
+Inside a project, the owner's `dam config set` writes a key `.dam.lua` takes into `.dam.lua`, and
+`--global` writes `config.lua`; in a data format the answer's `file` names the file written,
+`.dam.lua` relative to the project's folder. No token can run it.
 A hook may return a `dam edit --request` document for its task, which the same command applies.
 The answer of `new` and `edit` then shows the task as the hook left it. The answer of `new`,
 `edit`, `done` and `add` carries `changed_by_hook`: each task a hook changed, as `oid` and `hook`.

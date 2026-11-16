@@ -12,7 +12,7 @@ fn config_folder() -> (tempfile::TempDir, LuaConfigFile) {
 #[test]
 fn a_set_setting_is_what_get_reads() {
     let (_dir, file) = config_folder();
-    super::set::run(&file, "progress", Some("false")).unwrap();
+    super::set::run(&file, "config.lua", "progress", Some("false")).unwrap();
     let got = super::get::run(&file, "progress").unwrap();
     assert_eq!(
         got.data,
@@ -25,16 +25,16 @@ fn confirm_above_is_set_as_a_whole_number_and_unset_until_then() {
     let (_dir, file) = config_folder();
     let unset = super::get::run(&file, "confirm_above").unwrap();
     assert_eq!(unset.data["value"], serde_json::Value::Null);
-    super::set::run(&file, "confirm_above", Some("10")).unwrap();
+    super::set::run(&file, "config.lua", "confirm_above", Some("10")).unwrap();
     let got = super::get::run(&file, "confirm_above").unwrap();
     assert_eq!(got.data, serde_json::json!({"value": 10, "default": false}));
-    assert!(super::set::run(&file, "confirm_above", Some("many")).is_err());
+    assert!(super::set::run(&file, "config.lua", "confirm_above", Some("many")).is_err());
 }
 
 #[test]
 fn quiet_prints_nothing_for_a_set() {
     let (_dir, file) = config_folder();
-    let report = super::set::run(&file, "owner", Some("Grace")).unwrap();
+    let report = super::set::run(&file, "config.lua", "owner", Some("Grace")).unwrap();
     assert_eq!(shown(Format::Quiet, false, None, &report).unwrap(), None);
     assert!(report.standard_error_lines.is_empty());
 }
@@ -42,7 +42,7 @@ fn quiet_prints_nothing_for_a_set() {
 #[test]
 fn the_sync_settings_of_a_remote_show_their_defaults_and_are_set_and_unset_by_key() {
     let (_dir, file) = config_folder();
-    super::set::run(&file, "remote.todoist.url", Some("todoist::")).unwrap();
+    super::set::run(&file, "config.lua", "remote.todoist.url", Some("todoist::")).unwrap();
     let got = |key: &str| super::get::run(&file, key).unwrap().data;
     assert_eq!(
         got("remote.todoist.sync"),
@@ -51,8 +51,20 @@ fn the_sync_settings_of_a_remote_show_their_defaults_and_are_set_and_unset_by_ke
             "allowed": {"value": true, "default": true},
         })
     );
-    super::set::run(&file, "remote.todoist.sync.interval", Some("5m")).unwrap();
-    super::set::run(&file, "remote.todoist.sync.allowed", Some("false")).unwrap();
+    super::set::run(
+        &file,
+        "config.lua",
+        "remote.todoist.sync.interval",
+        Some("5m"),
+    )
+    .unwrap();
+    super::set::run(
+        &file,
+        "config.lua",
+        "remote.todoist.sync.allowed",
+        Some("false"),
+    )
+    .unwrap();
     assert_eq!(
         got("remote.todoist.sync.interval"),
         serde_json::json!({"value": "5m", "default": false})
@@ -61,7 +73,7 @@ fn the_sync_settings_of_a_remote_show_their_defaults_and_are_set_and_unset_by_ke
         got("remote.todoist.sync.allowed"),
         serde_json::json!({"value": false, "default": false})
     );
-    super::set::run(&file, "remote.todoist.sync.allowed", None).unwrap();
+    super::set::run(&file, "config.lua", "remote.todoist.sync.allowed", None).unwrap();
     assert_eq!(
         got("remote.todoist.sync.allowed"),
         serde_json::json!({"value": true, "default": true})
@@ -70,7 +82,7 @@ fn the_sync_settings_of_a_remote_show_their_defaults_and_are_set_and_unset_by_ke
 
 fn refusal(key: &str, value: &str) -> String {
     let (_dir, file) = config_folder();
-    match super::set::run(&file, key, Some(value)) {
+    match super::set::run(&file, "config.lua", key, Some(value)) {
         Err(CliError::Usage(text)) => text,
         _ => panic!("{key} = {value} was not refused"),
     }

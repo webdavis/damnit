@@ -2,13 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/config-set.schema.json",
   "title": "dam config set answer",
-  "description": "What dam config set prints with --json or --toon: the key, its value before and its value after, null where it was or is not set.",
+  "description": "What dam config set prints with --json or --toon: the key, its value before and its value after, null where it was or is not set, and the file written: .dam.lua inside a project, relative to its folder, config.lua otherwise, or null when project.hooks is kept for this clone only.",
   "type": "object",
-  "required": ["key", "old", "new"],
+  "required": ["key", "old", "new", "file"],
   "additionalProperties": false,
   "properties": {
     "key": { "type": "string" },
     "old": { "type": ["string", "null"] },
-    "new": { "type": ["string", "null"] }
+    "new": { "type": ["string", "null"] },
+    "file": { "enum": [".dam.lua", "config.lua", null] }
   }
 }

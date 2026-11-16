@@ -25,8 +25,8 @@ pub(crate) enum ConfigCommand {
         key: String,
     },
     #[command(
-        about = "Write one setting into config.lua, keeping the rest of the file as it is",
-        after_help = "A list takes its items separated by commas. A secret, a function or a hook is refused.\nInside a project, project.hooks is kept for this clone only, outside the repository; --global writes it into config.lua for every project.\n\nExamples:\n  dam config set remote.todoist.deadline 15m\n  dam config set category.priority.values high,low\n  dam config set project.hooks true\n  dam config set --global project.hooks true"
+        about = "Write one setting into config.lua, or into .dam.lua inside a project, keeping the rest of the file",
+        after_help = "A list takes its items separated by commas. A secret, a function or a hook is refused.\nInside a project, a key .dam.lua takes is written into .dam.lua, and a key only config.lua takes is refused; --global writes config.lua instead.\nInside a project, project.hooks is kept for this clone only, outside the repository; --global writes it into config.lua for every project.\n\nExamples:\n  dam config set remote.todoist.deadline 15m\n  dam config set category.priority.values high,low\n  dam config set project.hooks true\n  dam config set --global project.hooks true"
     )]
     Set {
         #[arg(
@@ -37,7 +37,7 @@ pub(crate) enum ConfigCommand {
         value: String,
         #[arg(
             long,
-            help = "Write project.hooks into config.lua for every project, not for this clone only"
+            help = "Write config.lua inside a project, not .dam.lua or this clone's project.hooks"
         )]
         global: bool,
     },

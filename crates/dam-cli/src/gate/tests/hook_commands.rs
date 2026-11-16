@@ -39,6 +39,8 @@ fn no_token_turns_project_hooks_on_or_off_whatever_it_holds() {
     for (line, verb) in [
         ("config set project.hooks true", "config set"),
         ("config set --global project.hooks true", "config set"),
+        ("config set ls label:app", "config set"),
+        ("config set --global owner Grace", "config set"),
         ("config unset project.hooks", "config unset"),
     ] {
         assert_eq!(

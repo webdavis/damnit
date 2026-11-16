@@ -25,6 +25,10 @@ pub(super) fn setting_reason(f: &mut fmt::Formatter<'_>, error: &ConfigError) ->
             f,
             "cannot write {key}: config.lua is read-only; make it writable, or change it by hand: {by_hand}"
         ),
+        ConfigError::ProjectSettingWouldNotLoad { key, .. } => write!(
+            f,
+            "cannot set {key}: .dam.lua would not load with that value, so nothing was changed; docs/lua.md lists what {key} takes"
+        ),
         _ => Ok(()),
     }
 }
