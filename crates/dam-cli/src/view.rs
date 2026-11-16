@@ -1,6 +1,7 @@
 mod filter_table;
 mod objects;
 mod serialize;
+mod worked_out;
 
 use serde::Serialize;
 
@@ -13,6 +14,7 @@ use crate::style::Paint;
 pub(crate) use filter_table::{flags_of, table_json};
 pub(crate) use objects::{ObjectList, ObjectRow};
 pub(crate) use serialize::{display, displays, document, optional_display, optional_wire, wire};
+pub(crate) use worked_out::{category, stamp_worked_out};
 
 pub(crate) enum Human {
     Table(Vec<Vec<String>>),

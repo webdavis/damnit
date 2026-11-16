@@ -24,7 +24,8 @@
           "start",
           "end",
           "busy",
-          "attendees"
+          "attendees",
+          "category"
         ],
         "additionalProperties": false,
         "properties": {
@@ -80,6 +81,9 @@
           },
           "conference": {
             "$ref": "object.schema.json#/$defs/event/properties/conference"
+          },
+          "category": {
+            "$ref": "object.schema.json#/$defs/category"
           }
         }
       }

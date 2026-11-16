@@ -24,6 +24,7 @@ mod table_under;
 mod values;
 mod want;
 mod window_edge;
+mod worked_out;
 
 pub use chain::chain_to_itself;
 pub use closest::closest_field;
@@ -41,6 +42,7 @@ pub use saved_name::{NameFault, filter_name_fault};
 pub use sort::Sort;
 pub use table::{FilterTable, TableValue};
 pub use window_edge::WindowEdge;
+pub use worked_out::{WorkedOut, worked_out};
 
 #[cfg(test)]
 mod tests;

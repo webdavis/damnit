@@ -53,3 +53,26 @@ fn a_task_hidden_from_a_token_never_shows_as_holding_one_up() {
         .unwrap();
     assert_eq!(subjects(&owner), ["laundry"]);
 }
+
+#[test]
+fn a_row_shows_blocked_only_by_a_task_its_reader_may_see() {
+    let s = home_waits_on_work();
+    let token = holder(vec![allowed(&[TaskRead], Some(&["home"]))]);
+    let dam = Dam {
+        access: &token,
+        ..s.dam()
+    };
+    let everything = filter(&[("path", "home")]);
+    let seen = dam
+        .list_selected_noting(&everything, &Order::default(), &Path::root(), &[])
+        .unwrap()
+        .0;
+    assert_eq!(seen.worked_out[0].blocked, Some(false));
+    let owner = s
+        .dam()
+        .list_selected_noting(&everything, &Order::default(), &Path::root(), &[])
+        .unwrap()
+        .0;
+    assert_eq!(subjects(&owner.objects), ["laundry"]);
+    assert_eq!(owner.worked_out[0].blocked, Some(true));
+}

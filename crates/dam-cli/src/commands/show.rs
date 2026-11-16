@@ -6,6 +6,7 @@ use crate::args::ShowArgs;
 use crate::commands::authorship::Authorship;
 use crate::commands::caller_id::with_caller_id;
 use crate::commands::commit::CommitDoc;
+use crate::commands::printed::printed_worked_out;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::gate::may;
@@ -28,6 +29,7 @@ pub(crate) fn run_show(ctx: &Context, args: ShowArgs) -> Result<Report, CliError
             parent_line(ctx, &object)?,
         ))?;
         authorship.stamp(object.oid(), &mut shown.data)?;
+        let shown = printed_worked_out(ctx, &object, shown)?;
         return Ok(with_caller_id(shown, id.as_ref()));
     }
     if !may(ctx.access.as_ref(), Permission::HistoryRead) {

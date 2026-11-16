@@ -22,7 +22,10 @@
         "branch": null,
         "at": "<now>",
         "channel": "local"
-      }
+      },
+      "category": {},
+      "overdue": false,
+      "blocked": false
     },
     {
       "oid": "1111111111111111111111111111111111111111",
@@ -49,7 +52,12 @@
         "branch": null,
         "at": "<now>",
         "channel": "local"
-      }
+      },
+      "category": {
+        "context": "errand"
+      },
+      "overdue": true,
+      "blocked": false
     },
     {
       "oid": "4444444444444444444444444444444444444444",
@@ -81,6 +89,9 @@
         "branch": null,
         "at": "<now>",
         "channel": "local"
+      },
+      "category": {
+        "effort": "deep"
       }
     },
     {
@@ -111,7 +122,8 @@
         "branch": null,
         "at": "<now>",
         "channel": "local"
-      }
+      },
+      "category": {}
     }
   ]
 }

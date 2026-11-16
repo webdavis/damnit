@@ -6,6 +6,7 @@ use crate::commands::each::one_object;
 use crate::commands::fields::{fields_set, oid_of};
 use crate::commands::hooked::{as_it_is_now, hooked};
 use crate::commands::parsing::{deadline_flag, when_flag};
+use crate::commands::printed::printed_worked_out;
 use crate::commands::sent::report_landed;
 use crate::context::Context;
 use crate::error::CliError;
@@ -30,7 +31,7 @@ pub(crate) fn run(ctx: &Context, args: EditArgs) -> Result<Report, CliError> {
     let landed = ctx.dam().edit(&oid, fields)?;
     report_landed(&landed, |object| {
         let now = as_it_is_now(ctx, object)?;
-        report(&hooked(ctx, ObjectRow(&now, &ctx.tz)))
+        printed_worked_out(ctx, &now, report(&hooked(ctx, ObjectRow(&now, &ctx.tz)))?)
     })
 }
 

@@ -1,4 +1,4 @@
-use dam_domain::{Command, Filter, Object, Order, Path, Scope, scope};
+use dam_domain::{Command, Filter, Object, Order, Path, Scope, WorkedOut, scope, worked_out};
 
 use crate::config::FilterConfig;
 use crate::errors::UseCaseError;
@@ -7,6 +7,7 @@ use crate::service::Dam;
 mod error;
 mod event_days;
 mod facts;
+mod from_object;
 mod pulled;
 mod saved;
 
@@ -20,6 +21,11 @@ pub(crate) enum Defaults {
     Fixed(Scope),
 }
 
+pub struct Listed {
+    pub objects: Vec<Object>,
+    pub worked_out: Vec<WorkedOut>,
+}
+
 impl<'a> Dam<'a> {
     pub fn list_selected(
         &self,
@@ -28,7 +34,10 @@ impl<'a> Dam<'a> {
         place: &Path,
         local: &[FilterConfig],
     ) -> Result<Vec<Object>, UseCaseError> {
-        Ok(self.list_selected_noting(filter, order, place, local)?.0)
+        Ok(self
+            .list_selected_noting(filter, order, place, local)?
+            .0
+            .objects)
     }
 
     pub fn list_selected_noting(
@@ -37,10 +46,16 @@ impl<'a> Dam<'a> {
         order: &Order,
         place: &Path,
         local: &[FilterConfig],
-    ) -> Result<(Vec<Object>, Option<BeyondPulled>), UseCaseError> {
+    ) -> Result<(Listed, Option<BeyondPulled>), UseCaseError> {
         let (listed, facts) = self.selected(filter, Command::List, place, local)?;
         let beyond = facts.beyond_pulled(filter);
-        Ok((order.arrange(listed, &facts), beyond))
+        let objects = order.arrange(listed, &facts);
+        let worked_out = objects.iter().map(|o| worked_out(o, &facts)).collect();
+        let listed = Listed {
+            objects,
+            worked_out,
+        };
+        Ok((listed, beyond))
     }
 
     pub(crate) fn selected(
@@ -103,6 +118,8 @@ mod access_tests;
 mod defaults_once_tests;
 #[cfg(test)]
 mod event_days_tests;
+#[cfg(test)]
+mod from_object_tests;
 #[cfg(test)]
 mod order_tests;
 #[cfg(test)]

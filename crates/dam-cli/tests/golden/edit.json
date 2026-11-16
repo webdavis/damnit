@@ -16,5 +16,9 @@
     "priority": 2,
     "due": "2026-09-25",
     "deadline": "2026-09-30"
-  }
+  },
+  "category": {
+    "context": "home"
+  },
+  "overdue": true
 }
