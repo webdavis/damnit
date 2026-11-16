@@ -40,7 +40,9 @@ function Edits:send(buf, key, oids, answer)
     if err then
       return self:refused(buf, err)
     end
-    diagnostics.clear(buf)
+    if vim.api.nvim_buf_is_valid(buf) then
+      diagnostics.clear(buf)
+    end
     if self.shown[buf] then
       self:keep_cursor(buf, oid, row)
     end
