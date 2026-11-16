@@ -47,17 +47,5 @@ pub(crate) fn put_earlier_copy(
     Ok(objects.put(copy)?)
 }
 
-pub(crate) fn keep_parents_in_step(
-    objects: &dyn ObjectRepository,
-    oids: &[Oid],
-) -> Result<(), UseCaseError> {
-    for oid in oids {
-        if let Some(object) = objects.get(oid)? {
-            objects.put(&with_nearest_parent(objects, object)?)?;
-        }
-    }
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests;
