@@ -10,6 +10,13 @@ local UNITS = { "day", "week" }
 ---@return damnit.Feature
 function M.new(app, show)
   local agenda = buffer.new(show)
+  app.keys:everywhere({
+    lhs = "ga",
+    desc = "open this week's agenda",
+    run = function()
+      agenda.open("week", 0, vim.fn.getcwd())
+    end,
+  })
   return {
     commands = {
       agenda = function(args, cmd)
