@@ -4,7 +4,7 @@ use std::path::Path;
 use dam_adapters::SqliteStore;
 use dam_application::testing::task;
 use dam_application::{
-    CommitRepository, HelperError, HelperLauncher, RemoteConfig, RemoteHelper, Secret,
+    CommitRepository, HelperError, HelperLauncher, NoProgress, RemoteConfig, RemoteHelper, Secret,
 };
 use dam_domain::{Authored, Change, CommitId, CommitRecord, Timestamp};
 
@@ -48,7 +48,7 @@ fn side_files(folder: &Path) -> Vec<String> {
 
 fn owed_once_a_helper_started(files: &Files, launcher: &dyn HelperLauncher) -> Vec<String> {
     let store = files.store_path();
-    let machine = Machine::new(&files.config, &store, launcher);
+    let machine = Machine::new(&files.config, &store, launcher, &NoProgress);
     assert!(machine.answers().is_some());
     rows_of(&CheckReport::new(
         "doctor",

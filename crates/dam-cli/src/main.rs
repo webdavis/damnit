@@ -94,10 +94,12 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         let parts = &args.parts;
         return commands::test::print(parts, &config_file, &launcher, &progress, format, color);
     }
-    if let Some(asked) = commands::doctor::asked(&cli.command) {
+    if let Some(checks) = commands::doctor::asked(&cli.command) {
         let launcher = ProcessLauncher::from_env(interrupt.clone());
-        let machine = commands::doctor::Machine::new(&config_file, &store_path, &launcher);
-        return commands::doctor::print(asked, &machine, format, color);
+        let progress = context::progress_without_a_context(&config_file, asked, format);
+        let machine =
+            commands::doctor::Machine::new(&config_file, &store_path, &launcher, &progress);
+        return commands::doctor::print(checks, &machine, format, color);
     }
     config_file.ends_in_lua()?;
     if let Command::Config(args) = cli.command {
