@@ -19,7 +19,8 @@ fn a_machine_format_writes_nothing_to_stderr_but_the_document() {
         "second",
         "--allow",
         "task:read",
-        "--json",
+        "-o",
+        "json",
     ]);
     assert_eq!(added.status.code(), Some(0));
     assert_eq!(
@@ -39,7 +40,15 @@ fn a_machine_format_writes_nothing_to_stderr_but_the_document() {
     assert!(said.contains("644"), "{said}");
     assert!(!said.contains('/'), "the advisory carries a path: {said}");
 
-    let quiet = sb.output(&["token", "create", "third", "--allow", "task:read", "--json"]);
+    let quiet = sb.output(&[
+        "token",
+        "create",
+        "third",
+        "--allow",
+        "task:read",
+        "-o",
+        "json",
+    ]);
     let answer: serde_json::Value = serde_json::from_slice(&quiet.stdout).unwrap();
     assert_eq!(
         answer["warnings"],
@@ -53,7 +62,8 @@ fn a_machine_format_writes_nothing_to_stderr_but_the_document() {
         "second",
         "--allow",
         "task:read",
-        "--json",
+        "-o",
+        "json",
     ]);
     let err = String::from_utf8_lossy(&failed.stderr);
     serde_json::from_str::<serde_json::Value>(&err)
@@ -79,7 +89,7 @@ fn an_editor_is_refused_under_a_machine_format_and_its_death_is_its_own_failure(
     let dies = "false";
 
     let refused = sb
-        .command(&["edit", &oid, "-e", "--json"])
+        .command(&["edit", &oid, "-e", "-o", "json"])
         .env("EDITOR", dies)
         .env("VISUAL", dies)
         .output()

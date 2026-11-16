@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/settled.schema.json",
   "title": "dam rm answer for an item",
-  "description": "What dam rm <hash> prints with --json or --toon. The owner declines an item, which is never offered again; a token withdraws its own.",
+  "description": "What dam rm <hash> prints with -o. The owner declines an item, which is never offered again; a token withdraws its own.",
   "type": "object",
   "required": ["hash", "outcome", "at", "oid", "item", "subject", "from"],
   "additionalProperties": false,

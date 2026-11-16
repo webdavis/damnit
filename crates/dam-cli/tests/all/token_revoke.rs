@@ -17,7 +17,7 @@ fn secrets_of(sb: &Sandbox) -> String {
 }
 
 fn revoked(sb: &Sandbox, name: &str) -> serde_json::Value {
-    let (ok, out, err) = sb.dam(&["token", "revoke", name, "--json"]);
+    let (ok, out, err) = sb.dam(&["token", "revoke", name, "-o", "json"]);
     assert!(ok, "{err}");
     let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_matches_schema(&answer, "token-revoke.schema.json");
@@ -49,7 +49,7 @@ fn revoking_removes_the_token_and_leaves_every_other_byte() {
         .permissions()
         .mode();
     assert_eq!(mode & 0o777, 0o600);
-    let out = sb.output_holding(&token(1), &["ls", "--json"]);
+    let out = sb.output_holding(&token(1), &["ls", "-o", "json"]);
     assert_eq!(out.status.code(), Some(5), "{out:?}");
     assert_eq!(error_document(&out)["error"]["rule"], "unknown_token");
 }
@@ -79,7 +79,7 @@ fn text_and_toon_name_the_revoked_token() {
     let (ok, out, err) = sb.dam(&["token", "revoke", "a"]);
     assert!(ok, "{err}");
     assert!(out.ends_with("revoked token a\n"), "{out}");
-    let (ok, out, err) = sb.dam(&["token", "revoke", "b", "--toon"]);
+    let (ok, out, err) = sb.dam(&["token", "revoke", "b", "-o", "toon"]);
     assert!(ok, "{err}");
     assert!(out.contains("name: b"), "{out}");
 }

@@ -34,7 +34,8 @@ fn a_tokens_request_with_meta_is_sent_as_its_flags_are() {
         "inbox",
         "--meta",
         "session=s1",
-        "--json",
+        "-o",
+        "json",
     ];
     let flags_answer = sent(&by_flags.output_holding(&held, &line));
 
@@ -44,7 +45,8 @@ fn a_tokens_request_with_meta_is_sent_as_its_flags_are() {
         &by_file,
         &json!({"subject": "bread", "path": "inbox", "meta": {"session": "s1"}}).to_string(),
     );
-    let file_answer = sent(&by_file.output_holding(&held, &["new", "--json", "--request", &path]));
+    let file_answer =
+        sent(&by_file.output_holding(&held, &["new", "-o", "json", "--request", &path]));
     assert_eq!(file_answer, flags_answer);
 }
 
@@ -55,7 +57,7 @@ fn a_tokens_request_without_the_required_meta_is_refused_as_its_flags_are() {
     let sb = Sandbox::new();
     let held = requiring_a_session(&sb);
     let path = request_file(&sb, r#"{"subject": "bread"}"#);
-    let out = sb.output_holding(&held, &["new", "--json", "--request", &path]);
+    let out = sb.output_holding(&held, &["new", "-o", "json", "--request", &path]);
     assert_eq!(out.status.code(), Some(5), "{out:?}");
     assert_eq!(error_document(&out)["error"]["rule"], "missing_details");
 }

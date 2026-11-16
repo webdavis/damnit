@@ -12,7 +12,7 @@ fn the_catalogue_answers_although_the_store_will_not_open() {
     let a_directory_where_the_store_file_goes = sb.dir.path().join("dam.db");
     std::fs::create_dir(&a_directory_where_the_store_file_goes).unwrap();
 
-    let broken = sb.output(&["ls", "--json"]);
+    let broken = sb.output(&["ls", "-o", "json"]);
     assert_eq!(
         broken.status.code(),
         Some(1),
@@ -21,8 +21,8 @@ fn the_catalogue_answers_although_the_store_will_not_open() {
     );
 
     for (args, key, name) in [
-        (["category", "list", "--json"], "categories", "effort"),
-        (["filter", "list", "--json"], "filters", "today"),
+        (["category", "list", "-o", "json"], "categories", "effort"),
+        (["filter", "list", "-o", "json"], "filters", "today"),
     ] {
         let out = sb.output(&args);
         assert_eq!(

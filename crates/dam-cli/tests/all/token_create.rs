@@ -14,7 +14,7 @@ fn secrets_of(sb: &Sandbox) -> String {
 fn created(sb: &Sandbox, args: &[&str]) -> serde_json::Value {
     let mut line = vec!["token", "create"];
     line.extend_from_slice(args);
-    line.push("--json");
+    line.extend(["-o", "json"]);
     let (ok, out, err) = sb.dam(&line);
     assert!(ok, "{err}");
     let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
@@ -83,7 +83,7 @@ fn a_created_token_lets_its_holder_run_what_the_grant_allows() {
         .permissions()
         .mode();
     assert_eq!(mode & 0o777, 0o600);
-    let out = sb.output_holding(value, &["ls", "--json"]);
+    let out = sb.output_holding(value, &["ls", "-o", "json"]);
     assert!(out.status.success(), "{out:?}");
 }
 
@@ -118,7 +118,7 @@ fn a_taken_name_a_bad_name_and_a_bad_permission_change_nothing() {
     for (args, code, kind, rule) in cases {
         let mut line = vec!["token", "create"];
         line.extend_from_slice(args);
-        line.push("--json");
+        line.extend(["-o", "json"]);
         let out = sb.output(&line);
         assert_eq!(out.status.code(), Some(code), "{args:?}: {out:?}");
         assert_matches_schema(&error_document(&out), "error.schema.json");
@@ -142,7 +142,7 @@ fn own_narrows_the_grant_to_what_the_token_made() {
     assert_eq!(answer["grants"][0]["own"], true);
     assert!(secrets_of(&sb).contains("own = true"));
     let value = answer["value"].as_str().unwrap();
-    let out = sb.output_holding(value, &["ls", "--json"]);
+    let out = sb.output_holding(value, &["ls", "-o", "json"]);
     let listed: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_eq!(listed["objects"], serde_json::json!([]));
 }

@@ -5,7 +5,7 @@ use support::tokens::{answer, grant, grant_to, refused};
 
 fn owner(sb: &Sandbox, args: &[&str], schema: &str) -> serde_json::Value {
     let mut line = args.to_vec();
-    line.push("--json");
+    line.extend(["-o", "json"]);
     answer(&sb.output(&line), schema)
 }
 
@@ -25,7 +25,7 @@ fn seeded_with_rent() -> (Sandbox, String, String) {
 
 fn send(sb: &Sandbox, held: &str, args: &[&str]) -> String {
     let mut line = args.to_vec();
-    line.push("--json");
+    line.extend(["-o", "json"]);
     let sent = answer(&sb.output_holding(held, &line), "sent.schema.json");
     sent["hash"].as_str().unwrap().to_string()
 }
@@ -92,7 +92,7 @@ fn reset_refuses_to_drop_the_owners_edit_of_a_tokens_new_object() {
     assert!(ok, "{err}");
 
     assert_eq!(
-        refused(&sb.output(&["reset", "--json"])),
+        refused(&sb.output(&["reset", "-o", "json"])),
         "item_edited_since_added"
     );
     let status = owner(&sb, &["status"], "status.schema.json");

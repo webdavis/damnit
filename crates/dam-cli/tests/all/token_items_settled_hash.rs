@@ -12,7 +12,7 @@ fn committed_task_from_tool() -> Hidden {
         1,
         vec![grant(&["task:read", "task:create"]).paths(&["work"])],
     );
-    let line = ["new", "Call the dentist", "--path", "work", "--json"];
+    let line = ["new", "Call the dentist", "--path", "work", "-o", "json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     let dentist = sent["oid"].as_str().unwrap().to_string();
     let h = Hidden {

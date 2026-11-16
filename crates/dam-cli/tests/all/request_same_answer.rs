@@ -5,7 +5,7 @@ use support::request::{answered, by_request, fed, without_oids_hashes_or_times};
 use support::sandbox::Sandbox;
 
 fn stored(sb: &Sandbox) -> Value {
-    let (ok, out, err) = sb.dam(&["status", "--json", "--full"]);
+    let (ok, out, err) = sb.dam(&["status", "-o", "json", "--full"]);
     assert!(ok, "{err}");
     let mut status: Value = serde_json::from_str(&out).unwrap();
     for section in ["staged", "unstaged"] {
@@ -27,7 +27,7 @@ fn same_as_flags(flags: &[&str], command: &[&str], request: impl Fn(&str) -> Val
         .iter()
         .map(|w| if *w == "OID" { &oid } else { *w })
         .collect();
-    let flags_answer = answered(&by_flags.output(&[&line[..], &["--json"]].concat()));
+    let flags_answer = answered(&by_flags.output(&[&line[..], &["-o", "json"]].concat()));
 
     let by_file = Sandbox::new();
     let oid = a_task(&by_file);
@@ -100,7 +100,7 @@ fn done_mv_and_rm_requests_answer_and_store_what_their_flags_do() {
 }
 
 fn tokens(sb: &Sandbox) -> Value {
-    let (ok, out, err) = sb.dam(&["token", "list", "--json"]);
+    let (ok, out, err) = sb.dam(&["token", "list", "-o", "json"]);
     assert!(ok, "{err}");
     let mut listed: Value = serde_json::from_str(&out).unwrap();
     listed["tokens"][0]["key_id"] = Value::Null;
@@ -123,7 +123,8 @@ fn a_token_create_request_makes_the_token_its_flags_do() {
         "2999-05-11T00:00:00Z",
         "--require",
         "session",
-        "--json",
+        "-o",
+        "json",
     ]));
     let by_file = Sandbox::new();
     let request = json!({"name": "tool", "allow": ["task:read"], "paths": ["work"],
@@ -141,13 +142,18 @@ fn a_token_create_request_makes_the_token_its_flags_do() {
 fn a_request_on_standard_input_and_in_toon_is_read_the_same() {
     let _guard = support::guard("a_request_on_standard_input_and_in_toon_is_read_the_same");
     let by_flags = Sandbox::new();
-    let flags_answer = answered(&by_flags.output(&["new", "bread", "--labels", "home", "--json"]));
+    let flags_answer =
+        answered(&by_flags.output(&["new", "bread", "--labels", "home", "-o", "json"]));
     for document in [
         json!({"subject": "bread", "labels": ["home"]}).to_string(),
         "subject: bread\nlabels[1]: home\n".to_string(),
     ] {
         let by_stdin = Sandbox::new();
-        let out = fed(&by_stdin, &["new", "--json", "--request", "-"], &document);
+        let out = fed(
+            &by_stdin,
+            &["new", "-o", "json", "--request", "-"],
+            &document,
+        );
         assert_eq!(answered(&out), flags_answer, "{document}");
         assert_eq!(stored(&by_stdin), stored(&by_flags));
     }

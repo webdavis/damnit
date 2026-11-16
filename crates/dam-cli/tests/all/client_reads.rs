@@ -17,7 +17,16 @@ fn every_date_flag_accepts_the_words_and_refuses_anything_else() {
         "in 2 months",
     ] {
         let oid = sb.new_object(&["a task", "--due", word, "--deadline", word]);
-        let (ok, out, err) = sb.dam(&["edit", &oid, "--due", word, "--deadline", word, "--json"]);
+        let (ok, out, err) = sb.dam(&[
+            "edit",
+            &oid,
+            "--due",
+            word,
+            "--deadline",
+            word,
+            "-o",
+            "json",
+        ]);
         assert!(ok, "{word}: {err}");
         let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
         assert!(answer["task"]["due"].is_string(), "{word}: {answer}");
@@ -31,11 +40,11 @@ fn every_date_flag_accepts_the_words_and_refuses_anything_else() {
         "--end",
         "in 1 week",
     ]);
-    let (ok, _, err) = sb.dam(&["show", &oid, "--json"]);
+    let (ok, _, err) = sb.dam(&["show", &oid, "-o", "json"]);
     assert!(ok, "{err}");
 
     for flag in ["--due", "--deadline", "--start", "--end"] {
-        let out = sb.output(&["edit", &oid, flag, "someday", "--json"]);
+        let out = sb.output(&["edit", &oid, flag, "someday", "-o", "json"]);
         assert_eq!(out.status.code(), Some(2), "{flag} read a word it cannot");
         let said = String::from_utf8_lossy(&out.stderr);
         let document: serde_json::Value = serde_json::from_str(&said).unwrap();

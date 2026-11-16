@@ -5,7 +5,7 @@ use support::request::{by_request, request_file, usage_refusal};
 use support::sandbox::Sandbox;
 
 fn nothing_stored(sb: &Sandbox) {
-    let (ok, out, err) = sb.dam(&["status", "--json"]);
+    let (ok, out, err) = sb.dam(&["status", "-o", "json"]);
     assert!(ok, "{err}");
     let status: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_eq!(status["unstaged"], json!([]), "{status}");
@@ -78,9 +78,9 @@ fn a_request_that_is_not_an_object_is_a_usage_error() {
     let sb = Sandbox::new();
     for document in ["[1]", "{not json", "\"milk\""] {
         let path = request_file(&sb, document);
-        usage_refusal(&sb.output(&["new", "--json", "--request", &path]));
+        usage_refusal(&sb.output(&["new", "-o", "json", "--request", &path]));
     }
-    usage_refusal(&sb.output(&["new", "--json", "--request", "missing.json"]));
+    usage_refusal(&sb.output(&["new", "-o", "json", "--request", "missing.json"]));
 }
 
 #[test]
@@ -93,7 +93,7 @@ fn a_field_in_the_request_and_on_the_command_line_is_a_usage_error_naming_it() {
         r#"{"subject": "milk", "due": "today", "meta": {"a": "b"}}"#,
     );
     for flag in [&["--due", "today"][..], &["--meta", "a=c"]] {
-        let line = [&["new", "--json", "--request", &path][..], flag].concat();
+        let line = [&["new", "-o", "json", "--request", &path][..], flag].concat();
         let message = usage_refusal(&sb.output(&line));
         assert!(message.contains(&flag[0][2..]), "{message}");
     }
@@ -106,11 +106,11 @@ fn beside_a_request_only_global_flags_are_taken() {
     let sb = Sandbox::new();
     let path = request_file(&sb, r#"{"subject": "milk"}"#);
     for beside in [&["--body", "oat"][..], &["-p", "1"], &["bread"]] {
-        let line = [&["new", "--json", "--request", &path][..], beside].concat();
+        let line = [&["new", "-o", "json", "--request", &path][..], beside].concat();
         usage_refusal(&sb.output(&line));
     }
     nothing_stored(&sb);
-    let out = sb.output(&["--no-color", "new", "--json", "--request", &path]);
+    let out = sb.output(&["--no-color", "new", "-o", "json", "--request", &path]);
     assert!(out.status.success(), "{out:?}");
 }
 
@@ -120,6 +120,6 @@ fn a_request_for_a_command_without_a_request_schema_is_a_usage_error() {
         support::guard("a_request_for_a_command_without_a_request_schema_is_a_usage_error");
     let sb = Sandbox::new();
     let path = request_file(&sb, "{}");
-    let message = usage_refusal(&sb.output(&["ls", "--json", "--request", &path]));
+    let message = usage_refusal(&sb.output(&["ls", "-o", "json", "--request", &path]));
     assert!(message.contains("--request"), "{message}");
 }

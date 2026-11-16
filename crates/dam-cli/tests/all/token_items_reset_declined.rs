@@ -13,7 +13,7 @@ fn owner(sb: &Sandbox, args: &[&str]) {
 
 fn sent(sb: &Sandbox, held: &str, line: &[&str]) -> Value {
     let mut line = line.to_vec();
-    line.push("--json");
+    line.extend(["-o", "json"]);
     let out = sb.output_holding(held, &line);
     assert!(out.status.success(), "{out:?}");
     serde_json::from_slice(&out.stdout).unwrap()
@@ -43,7 +43,7 @@ fn item_of_kind(kind: &str) -> (Sandbox, String, String, Vec<String>) {
 }
 
 fn waiting_hashes(sb: &Sandbox) -> Vec<Value> {
-    let status = support::status_json(sb, &["--json"]);
+    let status = support::status_json(sb, &["-o", "json"]);
     status["waiting"]
         .as_array()
         .unwrap()
@@ -59,7 +59,7 @@ fn reset_puts_a_declined_item_of_each_kind_back_to_waiting() {
         let (sb, held, hash, line) = item_of_kind(kind);
         owner(&sb, &["rm", &hash]);
         let reset = answer(
-            &sb.output(&["reset", &hash[..named], "--json"]),
+            &sb.output(&["reset", &hash[..named], "-o", "json"]),
             "reset.schema.json",
         );
         assert_eq!(reset, json!({"unstaged": [], "waiting": [hash]}), "{kind}");
@@ -89,7 +89,7 @@ fn reset_of_a_withdrawn_item_is_refused_and_leaves_it_withdrawn() {
     let out = sb.output_holding(&held, &["rm", &hash]);
     assert!(out.status.success(), "{out:?}");
     assert_eq!(
-        refused(&sb.output(&["reset", &hash, "--json"])),
+        refused(&sb.output(&["reset", &hash, "-o", "json"])),
         "item_not_waiting"
     );
     assert!(waiting_hashes(&sb).is_empty());
@@ -104,7 +104,7 @@ fn reset_of_an_added_change_or_removal_by_its_hash_sends_it_back_to_waiting() {
         owner(&sb, &["add", &hash]);
         owner(&sb, &["reset", &hash]);
         assert_eq!(waiting_hashes(&sb), vec![json!(hash)], "{kind}");
-        let status = support::status_json(&sb, &["--json"]);
+        let status = support::status_json(&sb, &["-o", "json"]);
         assert_eq!(status["staged"], json!([]), "{kind}");
     }
 }

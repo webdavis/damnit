@@ -27,7 +27,7 @@ fn owner(sb: &Sandbox, args: &[&str]) -> String {
 }
 
 fn full(sb: &Sandbox, short: &str) -> String {
-    let show: Value = serde_json::from_str(&owner(sb, &["show", short, "--json"])).unwrap();
+    let show: Value = serde_json::from_str(&owner(sb, &["show", short, "-o", "json"])).unwrap();
     show["oid"].as_str().unwrap().to_string()
 }
 
@@ -35,7 +35,7 @@ fn sent_by_tool_and_tied(sent: &[&str], tie: impl Fn(&Sandbox, &str) -> String) 
     let sb = Sandbox::new();
     let held = grant_to(&sb, "tool", 1, vec![grant(&RIGHTS).paths(&["work"])]);
     let mut line = sent.to_vec();
-    line.extend(["--path", "work", "--json"]);
+    line.extend(["--path", "work", "-o", "json"]);
     let target = answer(&sb.output_holding(&held, &line), "sent.schema.json")["oid"]
         .as_str()
         .unwrap()
@@ -56,7 +56,7 @@ impl Removal {
     fn sent(&self) -> String {
         let out = self
             .sb
-            .output_holding(&self.held, &["rm", &self.target, "--json"]);
+            .output_holding(&self.held, &["rm", &self.target, "-o", "json"]);
         answer(&out, "removal.schema.json")["item"]
             .as_str()
             .unwrap()
@@ -64,16 +64,16 @@ impl Removal {
     }
 
     fn waiting_row(&self) -> Value {
-        support::status_json(&self.sb, &["--json"])["waiting"][0].clone()
+        support::status_json(&self.sb, &["-o", "json"])["waiting"][0].clone()
     }
 
     fn added(&self, item: &str) -> Value {
-        let out = self.sb.output(&["add", item, "--json"]);
+        let out = self.sb.output(&["add", item, "-o", "json"]);
         answer(&out, "add.schema.json")
     }
 
     fn staged_by_author(&self) -> Vec<(String, Value, Value)> {
-        let status = support::status_json(&self.sb, &["--json"]);
+        let status = support::status_json(&self.sb, &["-o", "json"]);
         let mut rows: Vec<(String, Value, Value)> = status["staged"]
             .as_array()
             .unwrap()
@@ -93,7 +93,7 @@ impl Removal {
     }
 
     fn other_as_owner_sees_it(&self) -> Value {
-        serde_json::from_str(&owner(&self.sb, &["show", &self.other, "--json"])).unwrap()
+        serde_json::from_str(&owner(&self.sb, &["show", &self.other, "-o", "json"])).unwrap()
     }
 }
 
@@ -107,7 +107,7 @@ fn adding_a_removal_drops_the_dependency_on_it_as_the_owners_change() {
     });
     let item = r.sent();
     assert_eq!(r.waiting_row()["removes"]["dependents"], json!([r.other]));
-    let held = r.sb.output_holding(&r.held, &["status", "--json"]);
+    let held = r.sb.output_holding(&r.held, &["status", "-o", "json"]);
     let held: Value = serde_json::from_slice(&held.stdout).unwrap();
     assert_eq!(held["waiting"][0]["hash"], item.as_str());
     assert_eq!(held["waiting"][0].get("removes"), None);
@@ -121,7 +121,7 @@ fn adding_a_removal_drops_the_dependency_on_it_as_the_owners_change() {
             (r.other.clone(), json!("update"), Value::Null),
         ])
     );
-    let held = r.sb.output_holding(&r.held, &["status", "--json"]);
+    let held = r.sb.output_holding(&r.held, &["status", "-o", "json"]);
     let held = String::from_utf8_lossy(&held.stdout).into_owned();
     assert!(!held.contains(&r.other), "{held}");
 }

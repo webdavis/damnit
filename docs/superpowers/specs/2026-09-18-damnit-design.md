@@ -273,13 +273,13 @@ with no commit behind it is refused, naming it, because there is nothing to go b
 removes such an object instead. An oid neither layer knows, which is what a committed delete leaves
 behind, is refused as no such object rather than sent to `dam rm`. An object that already matches
 its commit is a no-op that says so. Every named oid is read before any is written, so one refusal
-leaves the others as they were, and a repeated oid answers once. Under `--json` the document lists
+leaves the others as they were, and a repeated oid answers once. Under `-o json` the document lists
 the restored oids and the unchanged ones.
 
 An oid prefix is resolved against the working layer, here as in every verb, so an object `dam rm`
 took out of it is named by its full oid and the refusal on a prefix says which layer it read.
 
-`dam remote add --json` answers with the remote's name and url and a `warnings` list, empty in the
+`dam remote add -o json` answers with the remote's name and url and a `warnings` list, empty in the
 ordinary case. It carries one sentence when the config file had been readable by someone other than
 its owner, which `dam` tightens as it writes: the file is the documented home of a literal
 credential, so a client driving `remote add` is told rather than left to notice.
@@ -295,7 +295,7 @@ records its time once the run reached the remote and came back with an answer, t
 already records its own: a mutation the remote refused is a notice against that object rather than a
 failed run, so a push whose mutations were partly refused still records the time. A push with
 nothing to send records it too, on the strength of the capabilities exchange that opened the
-connection, so a remote that is entirely up to date does not read as never pushed. `--json` carries
+connection, so a remote that is entirely up to date does not read as never pushed. `-o json` carries
 `last_pull` and `last_push` as RFC 3339 timestamps, null for a verb that has not reached that remote
 yet; the human line says `pulled 4m ago` and `pushed 2h ago`, or `never pulled` and `never pushed`.
 Both are kept in the store beside the sync token, one row per remote.
@@ -303,12 +303,12 @@ Both are kept in the store beside the sync token, one row per remote.
 ### Reading
 
 ```
-dam ls [<query>] [--json|--toon] [--no-pull]
+dam ls [<query>] [-o <FORMAT>] [--no-pull]
 dam ls today                a saved filter from config
-dam show <oid> [--json|--toon] [--no-pull]
-dam status [--json|--toon] [--full]
-dam category list [--json|--toon]
-dam filter list [--json|--toon]
+dam show <oid> [-o <FORMAT>] [--no-pull]
+dam status [-o <FORMAT>] [--full]
+dam category list [-o <FORMAT>]
+dam filter list [-o <FORMAT>]
 ```
 
 `--no-pull` answers from the local store: the reads that would otherwise pull a stale remote first,
@@ -321,7 +321,7 @@ the read local, and reads `remote list` when it wants to say how fresh the answe
 command line that was wrong, exit 2, naming the flag. `dam pull --no-pull` is refused like the rest
 rather than read as a contradiction.
 
-`--json` is the answer as JSON. `--toon` is the same answer in TOON (Token-Oriented Object
+`-o json` is the answer as JSON. `-o toon` is the same answer in TOON (Token-Oriented Object
 Notation), a compact form that costs a language model fewer tokens when it reads a list; the
 helper protocol and the store stay JSON, because no model reads those.
 
@@ -360,11 +360,11 @@ a filter. Neither verb reads the store or a remote, so both refuse `--no-pull` l
 verb that never pulls, and neither opens a store at all: a store that will not open fails the verbs
 that read one and never a listing of what config declares.
 
-Every read command takes `--json` and prints one JSON document on stdout. This is the interface
+Every read command takes `-o json` and prints one JSON document on stdout. This is the interface
 the clients use.
 
 ```
-dam agenda [<query>] [--from <when>] [--to <when>] [--max-age <remote>=<duration>]... [--json|--toon] [--no-pull]
+dam agenda [<query>] [--from <when>] [--to <when>] [--max-age <remote>=<duration>]... [-o <FORMAT>] [--no-pull]
 ```
 
 `dam agenda` lists the events a window overlaps as intervals, for a program that schedules around
@@ -380,7 +380,7 @@ instances, as `dam-remote-gcal` does, has each instance listed. An all-day event
 midnight where `dam` runs. With no flags the window opens now and closes 24 hours later. Keys are
 only ever added; none is renamed, removed or retyped.
 
-A program that reads on a deadline runs `dam agenda --json --no-pull`, so the answer never waits on
+A program that reads on a deadline runs `dam agenda -o json --no-pull`, so the answer never waits on
 a pull, and keeps the store fresh with a separately scheduled `dam pull <remote>`, run where the
 remote's credential commands work without a terminal. `--max-age <remote>=<duration>` then guards
 that schedule: when the remote's last successful pull is older than the duration, or it has never
@@ -668,7 +668,7 @@ Storage is `~/.local/share/dam/dam.db`, one SQLite file in WAL mode, mode 0600.
 
 Reads are local SQLite queries. The targets, measured on a store of ten thousand objects:
 
-- `dam ls <query> --json`: under 20 ms wall clock, process start included
+- `dam ls <query> -o json`: under 20 ms wall clock, process start included
 - `dam status`: under 30 ms
 - `dam pull` against Todoist with a sync token: bounded by the network, one request
 
@@ -676,7 +676,7 @@ The size ceiling is 16 MiB, one protocol line. A helper reads at most that much 
 answer and refuses a larger one by name, because an account whose full sync exceeds a line cannot be
 delivered to `dam` at all.
 
-The clients spawn `dam ... --json` per render and read the result. No daemon and no socket in
+The clients spawn `dam ... -o json` per render and read the result. No daemon and no socket in
 version one; the process start cost is measured before that is reconsidered.
 
 ## Errors
@@ -687,7 +687,7 @@ and reopens. No error message contains a token.
 
 ### The error document
 
-`--json` and `--toon` replace the plain line on standard error with one document, so a client reads
+`-o` replaces the plain line on standard error with one document, so a client reads
 the reason instead of matching substrings. Standard output stays empty on a failure.
 
 ```json
@@ -719,12 +719,12 @@ names them: for a blocked completion the task and then each blocker, for a cycle
 the chain, for an ambiguous prefix every object it matched, and empty for a failure that names
 none.
 
-Under `--json` or `--toon`, standard error carries exactly that one document and nothing else, so a
+Under `-o`, standard error carries exactly that one document and nothing else, so a
 client parses the whole stream rather than hunting a line in it. A run that succeeds writes nothing
 there. A warning `dam` would print for the operator, such as a config file it had to tighten, is
 returned as data and reaches the human answer instead.
 
-Without `--json` or `--toon` nothing changes: the plain `dam: <message>` line, and the same exit
+Without `-o` nothing changes: the plain `dam: <message>` line, and the same exit
 code. An argument clap rejects before `dam` runs prints clap's own usage text and exits 2, whatever
 the format flag says.
 

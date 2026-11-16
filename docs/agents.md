@@ -35,7 +35,7 @@ the root, and `--project <path>`, or `"project"` in a request, starts it from th
 folder. A missing task for that path is created first; that needs `task:create` there, and the
 answer carries `project_created`. The path `dam mv` moves objects to starts from the project the
 same way; its oids, `--query` and `--filter` still pick from every task. `dam ls`, `dam agenda` and `dam reminders` there list only what the token sees under the
-project. `dam config list --json` carries every setting the project's `.dam.lua` holds under
+project. `dam config list -o json` carries every setting the project's `.dam.lua` holds under
 `project`, as the file sets it.
 
 When a template renders `secrets.lua`, the template writes the token's table with the value
@@ -56,7 +56,7 @@ dam new --request task.json
 ```
 
 The document's keys are the flags without their dashes, plus `subject`. Only global flags, such as
-`--json`, may come beside `--request`. The schema is `docs/schemas/new.request.schema.json`;
+`-o json`, may come beside `--request`. The schema is `docs/schemas/new.request.schema.json`;
 `edit.request.schema.json`, `done.request.schema.json` and `rm.request.schema.json` cover the other
 writing commands.
 
@@ -101,7 +101,7 @@ A token's `require` names details every request must pass. A request without one
 `missing_details`, and the message names the missing `--meta`:
 
 ```sh example as=tool exit=5 rule=missing_details
-dam new "Renew the passport" --path inbox/ --json
+dam new "Renew the passport" --path inbox/ -o json
 ```
 
 ```sh example as=tool
@@ -111,7 +111,7 @@ dam new "Renew the passport" --path inbox/ --meta session=7f3c
 ## What comes back
 
 ```sh example as=agent
-dam new "Fix the flaky login test" --path work/ --id flaky-login --json
+dam new "Fix the flaky login test" --path work/ --id flaky-login -o json
 ```
 
 ```json
@@ -123,19 +123,19 @@ dam new "Fix the flaky login test" --path work/ --id flaky-login --json
 
 `answer` is `new`, `changed` or `duplicate`. `duplicate` stores nothing and names the item that
 already says the same. `hash` names the item. `oid` is the task it makes or changes; for a new item
-it equals `hash`. `--toon` gives the same document in TOON. The schema is
+it equals `hash`. `-o toon` gives the same document in TOON. The schema is
 `docs/schemas/sent.schema.json`.
 
 A token's write never touches the owner's tasks. It waits as an item until the owner adds it.
-Meanwhile `dam status --json` lists the token's own items under `waiting`, `dam ls` leaves the
+Meanwhile `dam status -o json` lists the token's own items under `waiting`, `dam ls` leaves the
 task out, and `dam show` refuses the item's hash with rule `item_not_an_object`:
 
 ```sh example as=agent exit=4 rule=item_not_an_object
-dam show <hash> --json
+dam show <hash> -o json
 ```
 
 ```sh example as=agent
-dam status --json
+dam status -o json
 ```
 
 The owner takes the item:
@@ -151,7 +151,7 @@ dam commit -m "take the agent's task"
 Before the owner adds the task, repeat `dam new` with its `--id` instead.
 
 ```sh example as=agent
-dam edit <oid> --due mon --json
+dam edit <oid> --due mon -o json
 ```
 
 `dam rm <hash>` withdraws an item of yours that is still waiting:
@@ -223,7 +223,7 @@ holding one. A commit that also holds a change you cannot see shows no message.
 `--meta session=...` you passed to `dam new`; another session's id names another task.
 
 ```sh example as=agent
-dam rm --id flaky-login --json
+dam rm --id flaky-login -o json
 ```
 
 ```json
@@ -255,16 +255,16 @@ the same hash. In a request document the key is `id`. The schema is
 ## Reading
 
 ```sh example as=agent
-dam ls --json
-dam ls 'due:today | overdue' --json
-dam ls --by agents --json
-dam show <oid> --json
-dam agenda --json
-dam reminders --json
+dam ls -o json
+dam ls 'due:today | overdue' -o json
+dam ls --by agents -o json
+dam show <oid> -o json
+dam agenda -o json
+dam reminders -o json
 ```
 
 `dam ls --by mine`, `--by agents` and `--by all` list what the owner made, what tokens made, or
-both. A grant with `--own` lists only events the token made. Each `dam agenda --json` row carries
+both. A grant with `--own` lists only events the token made. Each `dam agenda -o json` row carries
 the event's `attendees`, and its `organizer`, `location` and `conference` when it has them. An
 object outside the token's grants answers like a missing one: left out of lists, and exit 4, rule
 `no_such_object`, when named.
@@ -276,7 +276,7 @@ here a remote named `calendar`. A token needs `remote:read` on that remote, or i
 `no_such_remote`:
 
 ```sh example exit=4 rule=stale_remote
-dam agenda --json --max-age calendar=15m
+dam agenda -o json --max-age calendar=15m
 ```
 
 ## Exit codes and errors
@@ -290,7 +290,7 @@ dam agenda --json --max-age calendar=15m
 | 4 | Refused by a rule; the error names it. | Only `stale_remote`, once the remote has pulled |
 | 5 | The token was refused; the error names the rule. | No |
 
-With `--json` or `--toon`, a failure prints one document on standard error and nothing on standard
+With `-o`, a failure prints one document on standard error and nothing on standard
 output:
 
 ```json

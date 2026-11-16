@@ -49,6 +49,6 @@ Examples:
   dam doctor
   dam doctor config
   dam doctor sync
-  dam doctor --json
+  dam doctor -o json
   dam doctor --fix
   dam doctor --fix database";

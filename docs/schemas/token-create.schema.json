@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/token-create.schema.json",
   "title": "dam token create answer",
-  "description": "What dam token create prints on standard output with --json or --toon. value is the token itself and appears nowhere else.",
+  "description": "What dam token create prints on standard output with -o. value is the token itself and appears nowhere else.",
   "type": "object",
   "required": ["name", "key_id", "value", "expires", "via", "require", "grants", "warnings"],
   "additionalProperties": false,

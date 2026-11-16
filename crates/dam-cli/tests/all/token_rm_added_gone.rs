@@ -13,12 +13,12 @@ fn removal_of_a_task_the_owner_then_removed(committed: bool) -> (Sandbox, String
     let sb = Sandbox::new();
     let rights = ["task:create", "task:read", "task:remove"];
     let held = grant_to(&sb, "tool", 1, vec![grant(&rights)]);
-    let line = ["new", "Call the dentist", "--json"];
+    let line = ["new", "Call the dentist", "-o", "json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     let oid = sent["oid"].as_str().unwrap().to_string();
     owner(&sb, &["add", &oid]);
     owner(&sb, &["commit", "-m", "dentist"]);
-    let removal = sb.output_holding(&held, &["rm", &oid, "--json"]);
+    let removal = sb.output_holding(&held, &["rm", &oid, "-o", "json"]);
     let item = answer(&removal, "removal.schema.json")["item"]
         .as_str()
         .unwrap()
@@ -36,13 +36,13 @@ fn adding_a_removal_of_a_task_already_gone_settles_it_and_says_so() {
     let _guard = support::guard("adding_a_removal_of_a_task_already_gone_settles_it_and_says_so");
     for committed in [true, false] {
         let (sb, item, oid) = removal_of_a_task_the_owner_then_removed(committed);
-        let added = answer(&sb.output(&["add", &item, "--json"]), "add.schema.json");
+        let added = answer(&sb.output(&["add", &item, "-o", "json"]), "add.schema.json");
         assert_eq!(
             added["gone"],
             serde_json::json!([{"item": item, "oid": oid}]),
             "{committed}"
         );
-        let status = support::status_json(&sb, &["--json"]);
+        let status = support::status_json(&sb, &["-o", "json"]);
         assert_eq!(status["waiting"], serde_json::json!([]), "{committed}");
         assert!(
             status["staged"]
@@ -73,6 +73,6 @@ fn the_text_says_the_task_is_already_gone() {
 fn declining_a_removal_of_a_task_already_gone_still_declines_it() {
     let _guard = support::guard("declining_a_removal_of_a_task_already_gone_still_declines_it");
     let (sb, item, _) = removal_of_a_task_the_owner_then_removed(true);
-    let out = sb.output(&["rm", &item, "--json"]);
+    let out = sb.output(&["rm", &item, "-o", "json"]);
     assert_eq!(answer(&out, "settled.schema.json")["outcome"], "declined");
 }

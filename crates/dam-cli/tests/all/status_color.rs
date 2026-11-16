@@ -57,11 +57,11 @@ fn a_pipe_no_color_and_the_no_color_flag_each_turn_color_off() {
 }
 
 #[test]
-fn json_and_toon_are_never_painted() {
-    let _guard = support::guard("json_and_toon_are_never_painted");
+fn a_data_format_is_never_painted() {
+    let _guard = support::guard("a_data_format_is_never_painted");
     let sb = retitled();
-    for format in ["--json", "--toon"] {
-        let out = forced(&sb, &["status", format], "");
+    for format in ["json", "toon", "yaml"] {
+        let out = forced(&sb, &["status", "-o", format], "");
         assert!(!out.contains('\x1b'), "{out:?}");
     }
 }

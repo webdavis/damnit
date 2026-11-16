@@ -2,6 +2,6 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/config-validate.schema.json",
   "title": "dam config validate answer",
-  "description": "What dam config validate prints with --json or --toon: the report of dam doctor config, with command config validate.",
+  "description": "What dam config validate prints with -o: the report of dam doctor config, with command config validate.",
   "$ref": "doctor.schema.json"
 }

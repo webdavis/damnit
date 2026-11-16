@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/sent.schema.json",
   "title": "dam sent answer",
-  "description": "What dam new, dam edit and dam done print with --json or --toon when DAM_TOKEN is set. The item waits for the owner. A refusal is an error document instead.",
+  "description": "What dam new, dam edit and dam done print with -o when DAM_TOKEN is set. The item waits for the owner. A refusal is an error document instead.",
   "type": "object",
   "required": ["answer", "hash", "oid", "item", "kind", "subject", "path", "from", "key_id", "channel", "created"],
   "additionalProperties": false,

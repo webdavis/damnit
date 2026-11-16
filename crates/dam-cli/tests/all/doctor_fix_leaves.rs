@@ -77,7 +77,7 @@ fn a_config_path_not_ending_in_lua_is_not_created() {
     let sb = Sandbox::new();
     let config = sb.dir.path().join("fresh/config.toml");
     let out = sb
-        .command(&["doctor", "--fix", "config", "--json"])
+        .command(&["doctor", "--fix", "config", "-o", "json"])
         .env("DAM_CONFIG", &config)
         .output()
         .unwrap();

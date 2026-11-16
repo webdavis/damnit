@@ -82,7 +82,7 @@ fn hook_list_never_prints_a_damhooks_name_holding_a_control_character() {
                 .status
                 .success()
         );
-        for args in [&["hook", "list"][..], &["hook", "list", "--json"]] {
+        for args in [&["hook", "list"][..], &["hook", "list", "-o", "json"]] {
             let out = run(args);
             let printed = format!(
                 "{}{}",
@@ -99,7 +99,7 @@ fn hook_list_never_prints_a_damhooks_name_holding_a_control_character() {
             }
         }
         let json: serde_json::Value =
-            serde_json::from_slice(&run(&["hook", "list", "--json"]).stdout).unwrap();
+            serde_json::from_slice(&run(&["hook", "list", "-o", "json"]).stdout).unwrap();
         assert_eq!(json["unshown_files"], 2);
         support::schema::assert_matches_schema(&json, "hook-list.schema.json");
     }

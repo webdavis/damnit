@@ -31,7 +31,7 @@ fn creates_run_at_once_each_keep_their_token() {
     let secrets = std::fs::read_to_string(&secrets).unwrap();
     for (name, value) in names.iter().zip(&values) {
         assert!(secrets.contains(&format!("{name} = {{")), "{secrets}");
-        let out = sb.output_holding(value, &["ls", "--json"]);
+        let out = sb.output_holding(value, &["ls", "-o", "json"]);
         assert!(out.status.success(), "{name}: {out:?}");
     }
 }

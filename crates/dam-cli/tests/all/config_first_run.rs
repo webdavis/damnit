@@ -54,8 +54,8 @@ fn a_machine_reader_gets_clean_streams_on_the_first_run() {
     let _guard = support::guard("a_machine_reader_gets_clean_streams_on_the_first_run");
     let sb = Sandbox::new();
     let config = fresh_config(&sb);
-    for flag in ["--json", "--toon"] {
-        let out = run(&sb, &config, &["filter", "list", flag]);
+    for format in ["json", "toon", "yaml"] {
+        let out = run(&sb, &config, &["filter", "list", "-o", format]);
         assert!(out.status.success(), "{out:?}");
         assert!(out.stderr.is_empty(), "{out:?}");
         assert!(String::from_utf8(out.stdout).unwrap().contains("filters"));
@@ -102,7 +102,7 @@ fn a_token_caller_creates_nothing() {
     let sb = Sandbox::new();
     let config = fresh_config(&sb);
     let out = sb
-        .command(&["ls", "--json"])
+        .command(&["ls", "-o", "json"])
         .env("DAM_CONFIG", &config)
         .env("DAM_TOKEN", "damk_v1_whatever")
         .output()

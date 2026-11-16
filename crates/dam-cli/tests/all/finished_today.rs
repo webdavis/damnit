@@ -3,7 +3,7 @@ use crate::support;
 use support::sandbox::Sandbox;
 
 fn subjects(sb: &Sandbox, query: &str) -> Vec<String> {
-    let (ok, out, err) = sb.dam(&["ls", query, "--json"]);
+    let (ok, out, err) = sb.dam(&["ls", query, "-o", "json"]);
     assert!(ok, "{err}");
     let listed: serde_json::Value = serde_json::from_str(&out).unwrap();
     listed["objects"]

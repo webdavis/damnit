@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/agenda.schema.json",
   "title": "dam agenda answer",
-  "description": "What dam agenda prints with --json or --toon: the events in the window, earliest first. An all-day event has dates for start and end.",
+  "description": "What dam agenda prints with -o: the events in the window, earliest first. An all-day event has dates for start and end.",
   "type": "object",
   "required": [
     "events"

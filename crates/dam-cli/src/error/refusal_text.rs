@@ -99,12 +99,10 @@ impl fmt::Display for RefusalText<'_> {
                     shorts.join(", ")
                 )
             }
-            Refusal::NeedsAnAnswer => f.write_str(
-                "a question needs an answer; drop --json/--toon to answer interactively",
-            ),
-            Refusal::NeedsAnEditor => {
-                f.write_str("-e opens an editor; drop --json/--toon to use it")
+            Refusal::NeedsAnAnswer => {
+                f.write_str("a question needs an answer; drop -o to answer interactively")
             }
+            Refusal::NeedsAnEditor => f.write_str("-e opens an editor; drop -o to use it"),
             Refusal::MissingCredential { remote, name } => {
                 write!(
                     f,

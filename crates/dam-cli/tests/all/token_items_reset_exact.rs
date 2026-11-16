@@ -14,7 +14,7 @@ const RIGHTS: [&str; 5] = [
 
 fn owner(sb: &Sandbox, args: &[&str]) -> Value {
     let mut line = args.to_vec();
-    line.push("--json");
+    line.extend(["-o", "json"]);
     let (ok, out, err) = sb.dam(&line);
     assert!(ok, "{args:?}: {err}");
     serde_json::from_str(&out).unwrap_or(Value::Null)
@@ -56,7 +56,7 @@ fn trip_with_a_child_and_a_dependent() -> Trip {
 
 fn send(t: &Trip, args: &[&str]) -> String {
     let mut line = args.to_vec();
-    line.push("--json");
+    line.extend(["-o", "json"]);
     let out = t.sb.output_holding(&t.held, &line);
     assert!(out.status.success(), "{out:?}");
     let sent: Value = serde_json::from_slice(&out.stdout).unwrap();
@@ -81,7 +81,7 @@ fn reset_names_a_task_changed_since_the_add_and_leaves_it_as_it_is() {
     owner(&t.sb, &["add", &hash]);
     owner(&t.sb, &["edit", &t.pack, "--body", "light"]);
 
-    let out = t.sb.output(&["reset", &hash, "--json"]);
+    let out = t.sb.output(&["reset", &hash, "-o", "json"]);
 
     let said = answer(&out, "reset.schema.json");
     assert_eq!(said["kept"], json!([t.pack]));
@@ -96,7 +96,7 @@ fn reset_names_a_task_changed_since_the_add_and_leaves_it_as_it_is() {
 #[test]
 fn reset_names_the_kept_task_in_its_plain_line_and_toon() {
     let _guard = support::guard("reset_names_the_kept_task_in_its_plain_line_and_toon");
-    for format in ["plain", "--toon"] {
+    for format in ["plain", "toon"] {
         let t = trip_with_a_child_and_a_dependent();
         let hash = item_of_kind(&t, "removal");
         owner(&t.sb, &["add", &hash]);
@@ -104,7 +104,7 @@ fn reset_names_the_kept_task_in_its_plain_line_and_toon() {
 
         let mut line = vec!["reset", hash.as_str()];
         if format != "plain" {
-            line.push(format);
+            line.extend(["-o", format]);
         }
         let (ok, out, err) = t.sb.dam(&line);
 

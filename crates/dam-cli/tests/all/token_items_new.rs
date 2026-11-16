@@ -4,7 +4,7 @@ use support::sandbox::Sandbox;
 use support::tokens::{answer, grant, grant_to, token};
 
 fn owner_objects(sb: &Sandbox) -> serde_json::Value {
-    let (ok, out, err) = sb.dam(&["ls", "--json"]);
+    let (ok, out, err) = sb.dam(&["ls", "-o", "json"]);
     assert!(ok, "{err}");
     serde_json::from_str::<serde_json::Value>(&out).unwrap()["objects"].clone()
 }
@@ -15,7 +15,7 @@ fn a_tokens_new_task_answers_new_with_the_oid_it_will_have_and_waits() {
         support::guard("a_tokens_new_task_answers_new_with_the_oid_it_will_have_and_waits");
     let sb = Sandbox::new();
     let held = grant_to(&sb, "tool", 1, vec![grant(&["task:create"])]);
-    let line = ["new", "Call the dentist", "--path", "inbox", "--json"];
+    let line = ["new", "Call the dentist", "--path", "inbox", "-o", "json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     assert_eq!(sent["answer"], "new");
     assert_eq!(sent["item"], "new");
@@ -35,7 +35,7 @@ fn a_tokens_new_task_answers_new_with_the_oid_it_will_have_and_waits() {
     );
     let toon = sb.output_holding(
         &held,
-        &["new", "Call the dentist", "--path", "inbox", "--toon"],
+        &["new", "Call the dentist", "--path", "inbox", "-o", "toon"],
     );
     assert!(String::from_utf8_lossy(&toon.stdout).contains(hash));
 }

@@ -1,6 +1,6 @@
 use serde_json::json;
 
-use crate::output::Format;
+use crate::output::{Format, yaml};
 
 const SPINNER: [char; 10] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
@@ -29,6 +29,7 @@ pub(crate) fn line(moment: &Moment<'_>, stage: Stage, format: Format) -> String 
         Format::Human | Format::Quiet => text(moment, stage),
         Format::Json => record(moment, stage).to_string(),
         Format::Toon => toon_format::encode_default(&record(moment, stage)).unwrap_or_default(),
+        Format::Yaml => format!("---\n{}", yaml::encode(&record(moment, stage)).trim_end()),
     }
 }
 

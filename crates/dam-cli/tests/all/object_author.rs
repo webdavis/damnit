@@ -16,7 +16,7 @@ fn agent(sb: &Sandbox, name: &str, fill: u8) -> String {
 
 fn accepted(sb: &Sandbox, held: &str, subject: &str, session: &str) -> String {
     let meta = format!("session={session}");
-    let out = sb.output_holding(held, &["new", subject, "--json", "--meta", &meta]);
+    let out = sb.output_holding(held, &["new", subject, "-o", "json", "--meta", &meta]);
     let hash = answer(&out, "sent.schema.json")["hash"]
         .as_str()
         .unwrap()
@@ -27,7 +27,7 @@ fn accepted(sb: &Sandbox, held: &str, subject: &str, session: &str) -> String {
 }
 
 fn shown(sb: &Sandbox, held: Option<&str>, oid: &str) -> Value {
-    let args = ["show", oid, "--json"];
+    let args = ["show", oid, "-o", "json"];
     let out = match held {
         Some(held) => sb.output_holding(held, &args),
         None => sb.output(&args),
@@ -55,7 +55,7 @@ fn an_object_names_its_author_and_the_details_of_the_request_that_made_it() {
     assert!(ok, "{err}");
     assert!(human.contains("author: claude"), "{human}");
     assert!(human.contains("session: s1"), "{human}");
-    let (ok, toon, err) = sb.dam(&["show", &dentist, "--toon"]);
+    let (ok, toon, err) = sb.dam(&["show", &dentist, "-o", "toon"]);
     assert!(ok, "{err}");
     assert!(
         toon.contains("author: claude") && toon.contains("session: s1"),
@@ -85,10 +85,10 @@ fn ls_shows_the_author_and_filters_by_mine_agents_or_all() {
     accepted(&sb, &claude, "Call the dentist", "s1");
     sb.new_object(&["Pay rent"]);
     let subjects = |by: &str, format: &str| -> Vec<String> {
-        let out = sb.output(&["ls", "--by", by, format]);
+        let out = sb.output(&["ls", "--by", by, "-o", format]);
         assert!(out.status.success(), "{out:?}");
         let text = String::from_utf8(out.stdout).unwrap();
-        if format == "--toon" {
+        if format == "toon" {
             return ["Call the dentist", "Pay rent"]
                 .into_iter()
                 .filter(|s| text.contains(s))
@@ -104,14 +104,14 @@ fn ls_shows_the_author_and_filters_by_mine_agents_or_all() {
             .map(|o| format!("{} by {}", o["subject"].as_str().unwrap(), o["author"]))
             .collect()
     };
-    assert_eq!(subjects("mine", "--json"), ["Pay rent by \"Ada\""]);
+    assert_eq!(subjects("mine", "json"), ["Pay rent by \"Ada\""]);
     assert_eq!(
-        subjects("agents", "--json"),
+        subjects("agents", "json"),
         ["Call the dentist by \"claude\""]
     );
-    assert_eq!(subjects("all", "--json").len(), 2);
-    assert_eq!(subjects("agents", "--toon"), ["Call the dentist"]);
-    assert_eq!(subjects("mine", "--toon"), ["Pay rent"]);
+    assert_eq!(subjects("all", "json").len(), 2);
+    assert_eq!(subjects("agents", "toon"), ["Call the dentist"]);
+    assert_eq!(subjects("mine", "toon"), ["Pay rent"]);
     let (ok, human, err) = sb.dam(&["ls"]);
     assert!(ok, "{err}");
     let dentist = human

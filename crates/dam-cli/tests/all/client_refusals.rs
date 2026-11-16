@@ -8,15 +8,15 @@ fn every_failure_class_names_itself_under_json() {
     let _guard = support::guard("every_failure_class_names_itself_under_json");
     let sb = Sandbox::new();
     assert_eq!(
-        kind_of(&sb.output(&["show", "0000000", "--json"])),
+        kind_of(&sb.output(&["show", "0000000", "-o", "json"])),
         "refused"
     );
-    assert_eq!(kind_of(&sb.output(&["ls", "due:", "--json"])), "parse");
-    assert_eq!(kind_of(&sb.output(&["done", "zz", "--json"])), "usage");
+    assert_eq!(kind_of(&sb.output(&["ls", "due:", "-o", "json"])), "parse");
+    assert_eq!(kind_of(&sb.output(&["done", "zz", "-o", "json"])), "usage");
 
     std::fs::create_dir(sb.dir.path().join("wrong")).unwrap();
     let unopenable = sb
-        .command(&["ls", "--json"])
+        .command(&["ls", "-o", "json"])
         .env("DAM_STORE", sb.dir.path().join("wrong"))
         .output()
         .unwrap();
@@ -25,7 +25,7 @@ fn every_failure_class_names_itself_under_json() {
     let a_folder = sb.dir.path().join("folder.lua");
     std::fs::create_dir(&a_folder).unwrap();
     let unreadable_config = sb
-        .command(&["ls", "--json"])
+        .command(&["ls", "-o", "json"])
         .env("DAM_CONFIG", &a_folder)
         .output()
         .unwrap();
@@ -39,9 +39,9 @@ fn toon_carries_the_same_error_document() {
     let parent = sb.new_object(&["parent"]);
     let child = sb.new_object(&["child", "--path", "parent/"]);
 
-    let as_json = error_document(&sb.output(&["done", &parent, "--json"]))["error"].clone();
+    let as_json = error_document(&sb.output(&["done", &parent, "-o", "json"]))["error"].clone();
     let as_toon =
-        String::from_utf8_lossy(&sb.output(&["done", &parent, "--toon"]).stderr).into_owned();
+        String::from_utf8_lossy(&sb.output(&["done", &parent, "-o", "toon"]).stderr).into_owned();
     assert!(as_toon.contains("kind: refused"), "{as_toon}");
     assert!(as_toon.contains("rule: blocked"), "{as_toon}");
     assert!(as_toon.contains("oids[2]"), "{as_toon}");
@@ -77,7 +77,7 @@ fn every_refusal_exits_four_whatever_the_rule() {
     ];
     let mut named = Vec::new();
     for (rule, mut args) in refusals {
-        args.push("--json");
+        args.extend(["-o", "json"]);
         let out = sb.output(&args);
         assert_eq!(out.status.code(), Some(4), "{rule}: {args:?}");
         assert_eq!(kind_of(&out), "refused", "{rule}");

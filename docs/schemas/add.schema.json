@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/add.schema.json",
   "title": "dam add document",
-  "description": "What dam add prints with --json or --toon: each change it staged. A waiting item it took is staged as the change of the token that sent it. Adding a removal item also stages, as your own, the changes dam rm makes to other tasks; removed names them. gone names removal items whose task you had already removed; each is settled with nothing staged.",
+  "description": "What dam add prints with -o: each change it staged. A waiting item it took is staged as the change of the token that sent it. Adding a removal item also stages, as your own, the changes dam rm makes to other tasks; removed names them. gone names removal items whose task you had already removed; each is settled with nothing staged.",
   "type": "object",
   "required": ["staged"],
   "additionalProperties": false,

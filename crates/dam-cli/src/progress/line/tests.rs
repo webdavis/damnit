@@ -53,6 +53,13 @@ fn a_record_under_toon_is_the_toon_form() {
     assert!(record.contains("stage: started"), "{record}");
 }
 
+#[test]
+fn a_record_under_yaml_is_a_document_of_its_own_in_the_stream() {
+    let record = line(&moment(3, 1), Stage::Started, Format::Yaml);
+    assert!(record.starts_with("---\nstep: task_pulled\n"), "{record}");
+    assert!(record.contains("stage: started"), "{record}");
+}
+
 fn waiting(seconds: u64) -> Moment<'static> {
     Moment {
         name: "pull",

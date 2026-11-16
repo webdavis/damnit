@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/sync-stop.schema.json",
   "title": "dam sync stop answer",
-  "description": "What dam sync stop prints with --json or --toon: each step taken and whether it changed anything.",
+  "description": "What dam sync stop prints with -o: each step taken and whether it changed anything.",
   "type": "object",
   "required": [
     "remote",

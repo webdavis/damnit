@@ -25,7 +25,7 @@ fn changing() -> Sandbox {
 }
 
 fn json_of(sb: &Sandbox, args: &[&str]) -> serde_json::Value {
-    let out = sb.output(&[args, &["--json"]].concat());
+    let out = sb.output(&[args, &["-o", "json"]].concat());
     assert!(out.status.success(), "{args:?}: {out:?}");
     serde_json::from_slice(&out.stdout).unwrap()
 }

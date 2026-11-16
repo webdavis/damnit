@@ -13,6 +13,6 @@ pub(crate) fn terminal_pair_for_a_human_and_refusals_for_a_machine(
             Box::new(TerminalPrompt::new(interrupt.clone())),
             Some(Box::new(EnvEditor::from_env())),
         ),
-        Format::Json | Format::Toon => (Box::new(RefusingPrompt), None),
+        Format::Json | Format::Toon | Format::Yaml => (Box::new(RefusingPrompt), None),
     }
 }

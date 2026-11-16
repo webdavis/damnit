@@ -11,7 +11,8 @@ fn send(sb: &Sandbox, held: &str, id: &str) -> serde_json::Value {
         "work",
         "--id",
         id,
-        "--json",
+        "-o",
+        "json",
     ];
     answer(&sb.output_holding(held, &line), "sent.schema.json")
 }
@@ -69,7 +70,9 @@ fn moved_plan(with_hidden_child: bool) -> std::process::Output {
         1,
         vec![grant(&["task:read", "task:create", "task:change", "task:move"]).labels(&["tool"])],
     );
-    let line = ["new", "Plan", "--id", "plan", "--label", "tool", "--json"];
+    let line = [
+        "new", "Plan", "--id", "plan", "--label", "tool", "-o", "json",
+    ];
     let oid = answer(&sb.output_holding(&held, &line), "sent.schema.json")["oid"]
         .as_str()
         .unwrap()
@@ -79,7 +82,7 @@ fn moved_plan(with_hidden_child: bool) -> std::process::Output {
     if with_hidden_child {
         owner(&sb, &["new", "Step", "--path", "Plan"]);
     }
-    let moving = [&line[..6], &["--path", "inbox", "--json"]].concat();
+    let moving = [&line[..6], &["--path", "inbox", "-o", "json"]].concat();
     sb.output_holding(&held, &moving)
 }
 

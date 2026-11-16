@@ -6,8 +6,8 @@ use support::tokens::{grant, grant_to};
 const LINES: [&[&str]; 4] = [
     &["status"],
     &["status", "--full"],
-    &["status", "--json"],
-    &["status", "--full", "--json"],
+    &["status", "-o", "json"],
+    &["status", "--full", "-o", "json"],
 ];
 
 fn answers(h: &Hidden, held: &str) -> Vec<(Option<i32>, String, String)> {

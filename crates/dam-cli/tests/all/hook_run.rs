@@ -15,7 +15,7 @@ fn hook_run_calls_a_real_hook_file_and_leaves_its_change_as_a_working_change_the
         "task_changed",
         "function(task) return { subject = task.subject .. ' today' } end",
     )]);
-    let out = sb.output(&["hook", "run", "task_changed", "--json"]);
+    let out = sb.output(&["hook", "run", "task_changed", "-o", "json"]);
     assert!(out.status.success(), "{out:?}");
     let answer: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_matches_schema(&answer, "hook-run.schema.json");
@@ -27,7 +27,7 @@ fn hook_run_calls_a_real_hook_file_and_leaves_its_change_as_a_working_change_the
     assert!(ok, "{err}{out}");
     let (ok, _, err) = sb.dam(&["commit", "-m", "hooked"]);
     assert!(ok, "{err}");
-    let (ok, out, err) = sb.dam(&["log", "--json"]);
+    let (ok, out, err) = sb.dam(&["log", "-o", "json"]);
     assert!(ok, "{err}");
     assert!(out.contains("buy milk today"), "{out}");
     let log: serde_json::Value = serde_json::from_str(&out).unwrap();

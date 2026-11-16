@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/sync-run.schema.json",
   "title": "dam sync run answer",
-  "description": "What dam sync run prints with --json or --toon: the counts of the pull, then of the push.",
+  "description": "What dam sync run prints with -o: the counts of the pull, then of the push.",
   "type": "object",
   "required": [
     "remote",

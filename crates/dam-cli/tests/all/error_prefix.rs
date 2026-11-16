@@ -32,27 +32,27 @@ fn an_error_about_a_typed_id_names_the_text_as_given() {
     let sb = with_two_objects_starting_abab();
     let cases: [(&[&str], i32, &str, Value, &str); 4] = [
         (
-            &["done", "abab", "--json"],
+            &["done", "abab", "-o", "json"],
             2,
             "usage",
             json!("ambiguous_prefix"),
             "abab",
         ),
         (
-            &["show", "0000000", "--json"],
+            &["show", "0000000", "-o", "json"],
             4,
             "refused",
             json!("no_such_object"),
             "0000000",
         ),
         (
-            &["done", "0000000", "--json"],
+            &["done", "0000000", "-o", "json"],
             4,
             "refused",
             json!("no_working_object"),
             "0000000",
         ),
-        (&["done", "zz", "--json"], 2, "usage", Value::Null, "zz"),
+        (&["done", "zz", "-o", "json"], 2, "usage", Value::Null, "zz"),
     ];
     for (line, exit, kind, rule, prefix) in cases {
         let error = error_of(&sb, line, exit);
@@ -70,7 +70,7 @@ fn a_whole_id_that_matches_nothing_is_named_by_its_first_seven_characters() {
     let sb = Sandbox::new();
     let whole = format!("1234567{}", "0".repeat(33));
 
-    let error = error_of(&sb, &["done", &whole, "--json"], 4);
+    let error = error_of(&sb, &["done", &whole, "-o", "json"], 4);
 
     assert_eq!(error["prefix"], "1234567", "{error}");
     let message = error["message"].as_str().unwrap();
@@ -83,7 +83,7 @@ fn a_refusal_about_no_typed_id_has_no_prefix() {
     let sb = Sandbox::new();
     let parent = sb.new_object(&["parent"]);
     sb.new_object(&["child", "--path", "parent/"]);
-    let error = error_of(&sb, &["done", &parent, "--json"], 4);
+    let error = error_of(&sb, &["done", &parent, "-o", "json"], 4);
     assert_eq!(error["rule"], "blocked");
     assert_eq!(error.get("prefix"), None, "{error}");
 }

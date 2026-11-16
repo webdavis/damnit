@@ -67,6 +67,7 @@ mod interrupts;
 mod lua_page_example;
 mod new_id;
 mod object_author;
+mod output_flag;
 mod project_hooks_loading;
 mod project_hooks_messages;
 mod reads_only_read;

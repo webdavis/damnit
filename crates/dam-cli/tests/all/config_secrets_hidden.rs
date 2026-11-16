@@ -17,12 +17,12 @@ fn no_secret_reaches_any_stream() {
     let token = token_value(&sb);
     for line in [
         &["config", "list"][..],
-        &["config", "list", "--json"],
-        &["config", "list", "--toon"],
+        &["config", "list", "-o", "json"],
+        &["config", "list", "-o", "toon"],
         &["config", "get", "remote.todoist"],
-        &["config", "get", "remote.todoist", "--json"],
-        &["config", "get", "remote.todoist.credential", "--json"],
-        &["config", "get", "token.tool", "--json"],
+        &["config", "get", "remote.todoist", "-o", "json"],
+        &["config", "get", "remote.todoist.credential", "-o", "json"],
+        &["config", "get", "token.tool", "-o", "json"],
     ] {
         let out = sb.output(line);
         assert!(out.status.success(), "{line:?}: {out:?}");

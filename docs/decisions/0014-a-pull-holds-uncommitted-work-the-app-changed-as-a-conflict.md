@@ -17,7 +17,7 @@ with no conflict. When the remote already holds what the working copy holds, the
 usual.
 
 A conflict over an object removed here has no side of ours. `dam status` prints it as
-`ours: removed`, and `--json` gives `ours` as null. `dam resolve --ours` commits the removal, and
+`ours: removed`, and `-o json` gives `ours` as null. `dam resolve --ours` commits the removal, and
 `--theirs` brings back what the remote holds and commits it. The store keeps that side as the JSON
 document `null`, so the conflicts table needs no migration.
 

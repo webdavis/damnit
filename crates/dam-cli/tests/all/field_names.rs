@@ -5,7 +5,7 @@ use support::help_flags::own_flags;
 use support::sandbox::Sandbox;
 
 fn shown(sb: &Sandbox, oid: &str) -> Value {
-    let (ok, out, err) = sb.dam(&["show", oid, "--json"]);
+    let (ok, out, err) = sb.dam(&["show", oid, "-o", "json"]);
     assert!(ok, "{err}");
     serde_json::from_str(&out).unwrap()
 }
@@ -91,19 +91,19 @@ fn every_edit_flag_is_named_after_a_key_that_show_prints() {
     let sb = Sandbox::new();
     let (task, event) = every_field_set(&sb);
     let (task, event) = (shown(&sb, &task), shown(&sb, &event));
-    let (ok, toon, err) = sb.dam(&["show", task["oid"].as_str().unwrap(), "--toon"]);
+    let (ok, toon, err) = sb.dam(&["show", task["oid"].as_str().unwrap(), "-o", "toon"]);
     assert!(ok, "{err}");
     for flag in edit_flags(&sb) {
         let key = key_of(&flag);
         assert!(
             field(&task, key).or_else(|| field(&event, key)).is_some(),
-            "--{} names no key in show --json",
+            "--{} names no key in show -o json",
             flag.replace('_', "-")
         );
         if field(&task, key).is_some() {
             assert!(
                 toon.contains(&format!("{key}:")) || toon.contains(&format!("{key}[")),
-                "--{flag} names no key in show --toon: {toon}"
+                "--{flag} names no key in show -o toon: {toon}"
             );
         }
     }
@@ -162,13 +162,13 @@ fn the_id_flag_of_new_names_the_key_that_new_and_show_print() {
     let _guard = support::guard("the_id_flag_of_new_names_the_key_that_new_and_show_print");
     let sb = Sandbox::new();
     assert!(own_flags(&sb, &["new"]).contains(&"id".to_string()));
-    let (ok, out, err) = sb.dam(&["new", "report", "--id", "weekly", "--json"]);
+    let (ok, out, err) = sb.dam(&["new", "report", "--id", "weekly", "-o", "json"]);
     assert!(ok, "{err}");
     let made: Value = serde_json::from_str(&out).unwrap();
     assert_eq!(made["id"], "weekly");
     let oid = made["oid"].as_str().unwrap();
     assert_eq!(shown(&sb, oid)["id"], "weekly");
-    let (ok, toon, err) = sb.dam(&["show", oid, "--toon"]);
+    let (ok, toon, err) = sb.dam(&["show", oid, "-o", "toon"]);
     assert!(ok, "{err}");
     assert!(toon.contains("id: weekly"), "{toon}");
 }

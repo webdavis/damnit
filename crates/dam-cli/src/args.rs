@@ -110,7 +110,7 @@ pub(crate) enum Command {
     Token(TokenArgs),
     #[command(
         about = "Show and check the config",
-        after_help = "Examples:\n  dam config list\n  dam config get remote.todoist.deadline --json\n  dam config validate"
+        after_help = "Examples:\n  dam config list\n  dam config get remote.todoist.deadline -o json\n  dam config validate"
     )]
     Config(ConfigArgs),
     #[command(
@@ -129,13 +129,15 @@ Examples:
   dam test
   dam test credentials
   dam test filters
-  dam test --json"
+  dam test -o json"
     )]
     Test(TestArgs),
 }
 
 #[cfg(test)]
 mod help_text_tests;
+#[cfg(test)]
+mod output_flag_tests;
 #[cfg(test)]
 mod parent_tests;
 #[cfg(test)]

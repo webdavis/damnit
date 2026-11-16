@@ -17,7 +17,7 @@ fn a_name_with_nothing_to_test_is_a_usage_error_naming_the_parts() {
             "{said}"
         );
     }
-    let out = sb.output(&["test", "config", "--json"]);
+    let out = sb.output(&["test", "config", "-o", "json"]);
     assert_eq!(out.status.code(), Some(2), "{out:?}");
     assert_eq!(error_document(&out)["error"]["kind"], "usage");
 }
@@ -31,7 +31,7 @@ fn a_token_holder_is_refused_before_anything_is_read() {
         "io.open({:?}, 'a'):write('x')\nreturn {{ schema = 1 }}\n",
         calls.display().to_string()
     ));
-    let out = sb.output_holding("damk_v1_whatever", &["test", "--json"]);
+    let out = sb.output_holding("damk_v1_whatever", &["test", "-o", "json"]);
     assert_eq!(out.status.code(), Some(4), "{out:?}");
     assert!(out.stdout.is_empty(), "{out:?}");
     assert_eq!(error_document(&out)["error"]["rule"], "not_open_to_tokens");

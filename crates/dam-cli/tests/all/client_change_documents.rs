@@ -44,5 +44,5 @@ fn commit_everything(sb: &Sandbox, message: &str) {
 }
 
 fn unstaged_fields(sb: &Sandbox) -> serde_json::Value {
-    status_json(sb, &["--json"])["unstaged"][0]["fields"].clone()
+    status_json(sb, &["-o", "json"])["unstaged"][0]["fields"].clone()
 }

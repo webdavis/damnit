@@ -9,8 +9,8 @@ fn config_alone_prints_the_help_of_its_commands() {
     let asked = sb.output(&["config", "--help"]);
     for line in [
         &["config"][..],
-        &["config", "--json"],
-        &["--json", "config"],
+        &["config", "-o", "json"],
+        &["-o", "json", "config"],
     ] {
         let alone = sb.output(line);
         assert_eq!(alone.status.code(), Some(0), "{line:?}: {alone:?}");

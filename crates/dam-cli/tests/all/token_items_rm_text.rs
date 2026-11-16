@@ -8,7 +8,7 @@ fn rent_and_a_retitle_from_tool() -> (Sandbox, String, String) {
     let sb = Sandbox::new();
     let rent = full_oid(&sb, &sb.new_object(&["Pay rent"]));
     let held = grant_to(&sb, "tool", 1, vec![grant(&["task:read", "task:change"])]);
-    let line = ["edit", &rent, "--subject", "Pay the rent", "--json"];
+    let line = ["edit", &rent, "--subject", "Pay the rent", "-o", "json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     (sb, rent, sent["hash"].as_str().unwrap().to_string())
 }
@@ -33,7 +33,7 @@ fn declining_a_new_object_names_its_hash_once_and_who_sent_it() {
     let sb = Sandbox::new();
     let held = grant_to(&sb, "tool", 1, vec![grant(&["task:create"])]);
     let sent = answer(
-        &sb.output_holding(&held, &["new", "Call the dentist", "--json"]),
+        &sb.output_holding(&held, &["new", "Call the dentist", "-o", "json"]),
         "sent.schema.json",
     );
     let hash = sent["hash"].as_str().unwrap();

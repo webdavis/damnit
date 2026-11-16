@@ -9,7 +9,7 @@ pub fn own_grant() -> Grant {
 
 pub fn send(sb: &Sandbox, held: &str, args: &[&str]) -> serde_json::Value {
     let mut line = args.to_vec();
-    line.push("--json");
+    line.extend(["-o", "json"]);
     answer(&sb.output_holding(held, &line), "sent.schema.json")
 }
 
@@ -35,7 +35,7 @@ pub fn own_hidden(grant: Grant) -> Hidden {
 }
 
 pub fn listed(h: &Hidden, args: &[&str]) -> Vec<String> {
-    let mut line = vec!["ls", "--json"];
+    let mut line = vec!["ls", "-o", "json"];
     line.extend_from_slice(args);
     let out = h.holding(&line);
     assert!(out.status.success(), "{out:?}");

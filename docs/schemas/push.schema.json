@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/push.schema.json",
   "title": "dam push answer",
-  "description": "What dam push prints with --json or --toon, one row per remote.",
+  "description": "What dam push prints with -o, one row per remote.",
   "type": "object",
   "required": [
     "remotes"

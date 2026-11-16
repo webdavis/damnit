@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/resolve.schema.json",
   "title": "dam resolve answer",
-  "description": "What dam resolve prints with --json or --toon: the object and the side kept.",
+  "description": "What dam resolve prints with -o: the object and the side kept.",
   "type": "object",
   "required": [
     "oid",

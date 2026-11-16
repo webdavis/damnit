@@ -67,7 +67,7 @@ fn check(command: &str, at: &str, value: &Value, times: &mut usize) {
 }
 
 fn times_in(sb: &Sandbox, args: &[&str]) -> usize {
-    let mut full = vec!["--json"];
+    let mut full = vec!["-o", "json"];
     full.extend_from_slice(args);
     let (ok, out, err) = sb.dam(&full);
     assert!(ok, "{args:?}: {err}");
@@ -82,7 +82,7 @@ fn prints_times(sb: &Sandbox, args: &[&str]) {
 }
 
 fn shown(sb: &Sandbox, byte: u8, key: &str) -> String {
-    let (ok, out, err) = sb.dam(&["--json", "show", &short(byte)]);
+    let (ok, out, err) = sb.dam(&["-o", "json", "show", &short(byte)]);
     assert!(ok, "{err}");
     let object: Value = serde_json::from_str(&out).unwrap();
     object["event"][key].as_str().unwrap().to_string()

@@ -12,7 +12,7 @@ struct Rent {
 
 fn owner(sb: &Sandbox, args: &[&str], schema: &str) -> Value {
     let mut line = args.to_vec();
-    line.push("--json");
+    line.extend(["-o", "json"]);
     answer(&sb.output(&line), schema)
 }
 
@@ -23,7 +23,7 @@ fn retitled_by_tool_and_made_to_wait_on_keys_by_the_owner() -> Rent {
     owner(&sb, &["add", "-A"], "add.schema.json");
     owner(&sb, &["commit", "-m", "seed"], "commit.schema.json");
     let held = grant_to(&sb, "tool", 1, vec![grant(&["task:read", "task:change"])]);
-    let line = ["edit", &rent, "--subject", "Pay the rent", "--json"];
+    let line = ["edit", &rent, "--subject", "Pay the rent", "-o", "json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     let (ok, _, err) = sb.dam(&["edit", &rent, "--depends", &keys]);
     assert!(ok, "{err}");

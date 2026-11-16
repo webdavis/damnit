@@ -8,10 +8,10 @@ fn neither_listing_names_a_staleness_setting() {
     let sb = Sandbox::new();
 
     for line in [
-        ["config", "list", "--json"],
-        ["remote", "list", "--json"],
-        ["config", "list", "--toon"],
-        ["remote", "list", "--toon"],
+        ["config", "list", "-o", "json"],
+        ["remote", "list", "-o", "json"],
+        ["config", "list", "-o", "toon"],
+        ["remote", "list", "-o", "toon"],
     ] {
         let (ok, out, err) = sb.dam(&line);
         assert!(ok, "{line:?}: {err}");

@@ -62,7 +62,10 @@ fn what_match_prints_goes_to_standard_error_and_leaves_json_whole() {
            return true\n\
          end }",
     );
-    for line in [&["ls", "loud", "--json"][..], &["agenda", "loud", "--json"]] {
+    for line in [
+        &["ls", "loud", "-o", "json"][..],
+        &["agenda", "loud", "-o", "json"],
+    ] {
         let out = sb.output(line);
         assert!(out.status.success(), "{line:?}: {out:?}");
         serde_json::from_slice::<serde_json::Value>(&out.stdout)

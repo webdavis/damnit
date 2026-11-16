@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/restore.schema.json",
   "title": "dam restore answer",
-  "description": "What dam restore prints with --json or --toon. unchanged lists the objects that already matched their last commit.",
+  "description": "What dam restore prints with -o. unchanged lists the objects that already matched their last commit.",
   "type": "object",
   "required": [
     "restored",

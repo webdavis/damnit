@@ -37,7 +37,7 @@ fn an_unknown_check_is_a_usage_error_naming_the_valid_ones() {
     let said = String::from_utf8_lossy(&out.stderr);
     assert!(said.contains("bogus") && said.contains("config"), "{said}");
 
-    let out = sb.output(&["doctor", "bogus", "--json"]);
+    let out = sb.output(&["doctor", "bogus", "-o", "json"]);
     assert_eq!(out.status.code(), Some(2), "{out:?}");
     assert_eq!(error_document(&out)["error"]["kind"], "usage");
 }

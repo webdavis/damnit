@@ -7,12 +7,12 @@ use support::golden::{assert_golden, assert_golden_output, normalize};
 
 #[test]
 fn push_prints_the_golden_document() {
-    assert_golden_output(&fixture::committed(), &["--json", "push"], "push.json");
+    assert_golden_output(&fixture::committed(), &["-o", "json", "push"], "push.json");
 }
 
 #[test]
 fn pull_prints_the_golden_document() {
-    assert_golden_output(&fixture::committed(), &["--json", "pull"], "pull.json");
+    assert_golden_output(&fixture::committed(), &["-o", "json", "pull"], "pull.json");
 }
 
 #[test]
@@ -31,7 +31,7 @@ fn resolve_prints_the_golden_document() {
     theirs["subject"] = "buy rice milk".into();
     std::fs::write(&kept, theirs.to_string()).unwrap();
     run(&sb, &["pull"]);
-    let args = ["--json", "resolve", &short(OAT_MILK), "--theirs"];
+    let args = ["-o", "json", "resolve", &short(OAT_MILK), "--theirs"];
     assert_golden_output(&sb, &args, "resolve.json");
 }
 
@@ -39,14 +39,14 @@ fn resolve_prints_the_golden_document() {
 fn remote_add_prints_the_golden_document() {
     let sb = fixture::seeded();
     std::fs::set_permissions(sb.config_path(), std::fs::Permissions::from_mode(0o644)).unwrap();
-    let args = ["--json", "remote", "add", "calendar", "gcal::primary"];
+    let args = ["-o", "json", "remote", "add", "calendar", "gcal::primary"];
     assert_golden_output(&sb, &args, "remote_add.json");
 }
 
 #[test]
 fn a_refusal_prints_the_golden_error_document_on_stderr() {
     let sb = fixture::committed();
-    let out = sb.output(&["--json", "show", "9999"]);
+    let out = sb.output(&["-o", "json", "show", "9999"]);
     assert_eq!(out.status.code(), Some(4));
     assert!(out.stdout.is_empty());
     let stderr = String::from_utf8(out.stderr).unwrap();

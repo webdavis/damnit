@@ -71,10 +71,10 @@ fn machine_answers_hold_no_color_when_it_is_forced() {
     let _guard = support::guard("machine_answers_hold_no_color_when_it_is_forced");
     let sb = small_config();
     for line in [
-        &["config", "list", "--json"][..],
-        &["config", "list", "--toon"],
-        &["config", "get", "owner", "--json"],
-        &["config", "get", "owner", "--toon"],
+        &["config", "list", "-o", "json"][..],
+        &["config", "list", "-o", "toon"],
+        &["config", "get", "owner", "-o", "json"],
+        &["config", "get", "owner", "-o", "toon"],
     ] {
         let out = forced(&sb, line, &[]);
         assert!(out.status.success(), "{out:?}");

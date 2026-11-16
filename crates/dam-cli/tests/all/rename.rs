@@ -3,7 +3,7 @@ use crate::support;
 use support::sandbox::Sandbox;
 
 fn path_of(sb: &Sandbox, oid: &str) -> String {
-    let (ok, out, err) = sb.dam(&["show", &oid[..7], "--json"]);
+    let (ok, out, err) = sb.dam(&["show", &oid[..7], "-o", "json"]);
     assert!(ok, "{err}");
     let json: serde_json::Value = serde_json::from_str(&out).unwrap();
     json["path"].as_str().unwrap().to_string()
@@ -48,11 +48,11 @@ fn a_subject_that_cannot_name_a_folder_is_refused_while_the_folder_holds_objects
             )
         );
     }
-    let refused = sb.output(&["edit", &parent[..7], "--subject", ".", "--json"]);
+    let refused = sb.output(&["edit", &parent[..7], "--subject", ".", "-o", "json"]);
     let document: serde_json::Value = serde_json::from_slice(&refused.stderr).unwrap();
     assert_eq!(document["error"]["rule"], "subject_names_no_folder");
 
-    let (ok, out, err) = sb.dam(&["show", &parent[..7], "--json"]);
+    let (ok, out, err) = sb.dam(&["show", &parent[..7], "-o", "json"]);
     assert!(ok, "{err}");
     let shown: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_eq!(shown["subject"], "parent");

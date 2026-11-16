@@ -20,7 +20,7 @@ fn same_answer_whatever_the_labels(sb: &Sandbox, held: &str, line: &[&str]) {
         .into_iter()
         .map(|[first, second]| {
             let mut args = line.to_vec();
-            args.extend(["--label", first, "--label", second, "--json"]);
+            args.extend(["--label", first, "--label", second, "-o", "json"]);
             let out = sb.output_holding(held, &args);
             (out.status.code(), out.stdout, out.stderr)
         })

@@ -4,33 +4,6 @@ use crate::error::CliError;
 use crate::layout::{fit, terminal_width};
 use crate::paint::{Tint, painted};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Format {
-    Human,
-    Quiet,
-    Json,
-    Toon,
-}
-
-impl Format {
-    pub(crate) fn of(json: bool, toon: bool) -> Format {
-        if json {
-            Format::Json
-        } else if toon {
-            Format::Toon
-        } else {
-            Format::Human
-        }
-    }
-
-    pub(crate) fn quieted(self, quiet: bool) -> Format {
-        match self {
-            Format::Human if quiet => Format::Quiet,
-            _ => self,
-        }
-    }
-}
-
 #[derive(Debug)]
 pub(crate) struct Report {
     pub(crate) human: String,
@@ -63,6 +36,7 @@ pub(crate) fn render(format: Format, report: &Report) -> Result<String, CliError
         Format::Toon => {
             toon_format::encode_default(&report.data).map_err(|e| CliError::Internal(e.to_string()))
         }
+        Format::Yaml => Ok(yaml::encode(&report.data)),
     }
 }
 
@@ -72,7 +46,7 @@ pub(crate) fn print_error(format: Format, error: &CliError) {
     }
     let line = match format {
         Format::Human | Format::Quiet => format!("dam: {error}"),
-        Format::Json | Format::Toon => {
+        Format::Json | Format::Toon | Format::Yaml => {
             let report = Report {
                 human: String::new(),
                 data: error.document(),
@@ -81,7 +55,9 @@ pub(crate) fn print_error(format: Format, error: &CliError) {
                 colored: None,
                 standard_error_lines: Vec::new(),
             };
-            render(format, &report).unwrap_or_else(|_| format!("dam: {error}"))
+            render(format, &report)
+                .map(|text| text.trim_end().to_string())
+                .unwrap_or_else(|_| format!("dam: {error}"))
         }
     };
     eprintln!("{line}");
@@ -140,8 +116,11 @@ pub(crate) fn fitted(report: &Report, width: usize) -> String {
 }
 
 mod cells;
+mod format;
+pub(crate) mod yaml;
 
 pub(crate) use cells::{local_time, object_cells};
+pub(crate) use format::Format;
 
 #[cfg(test)]
 mod tests;

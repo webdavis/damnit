@@ -38,7 +38,7 @@ and the push goes on past it.
 
 Examples:
   dam sync run todoist
-  dam sync run todoist --json
+  dam sync run todoist -o json
   dam sync run todoist --when-due"
     )]
     Run {

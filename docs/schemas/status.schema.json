@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/status.schema.json",
   "title": "dam status document",
-  "description": "What dam status prints with --json or --toon. A token sees staged with stage:read, unstaged with working:read, its own waiting items, and other senders' waiting items with pending:read.",
+  "description": "What dam status prints with -o. A token sees staged with stage:read, unstaged with working:read, its own waiting items, and other senders' waiting items with pending:read.",
   "type": "object",
   "required": ["staged", "unstaged", "waiting", "sets", "conflicts", "notices", "unpushed", "warnings"],
   "additionalProperties": false,

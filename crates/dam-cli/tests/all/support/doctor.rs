@@ -22,7 +22,7 @@ impl Sandbox {
     }
 
     pub fn doctor_json(&self, args: &[&str]) -> (Option<i32>, serde_json::Value) {
-        let answer = self.doctor(&[args, &["--json"]].concat());
+        let answer = self.doctor(&[args, &["-o", "json"]].concat());
         let document: serde_json::Value = serde_json::from_str(&answer.out).unwrap();
         assert_matches_schema(&document, "doctor.schema.json");
         (answer.code, document)

@@ -3,7 +3,7 @@ use crate::support;
 use support::sandbox::Sandbox;
 use support::tokens::{answer, grant, grant_to, refused};
 
-const DENTIST: [&str; 3] = ["new", "Call the dentist", "--json"];
+const DENTIST: [&str; 4] = ["new", "Call the dentist", "-o", "json"];
 
 fn dentist_from_tool() -> (Sandbox, String, String) {
     let sb = Sandbox::new();
@@ -24,7 +24,7 @@ fn a_token_withdraws_its_own_item_and_cannot_remove_another_senders() {
         vec![grant(&["pending:read", "task:read"])],
     );
     assert_eq!(
-        refused(&sb.output_holding(&claude, &["rm", &hash, "--json"])),
+        refused(&sb.output_holding(&claude, &["rm", &hash, "-o", "json"])),
         "not_your_item"
     );
     let out = sb.output_holding(&held, &["rm", &hash[..7]]);

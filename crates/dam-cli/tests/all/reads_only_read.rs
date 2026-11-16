@@ -16,10 +16,10 @@ fn a_remote_never_pulled_that_marks_each_contact(sb: &Sandbox) -> [std::path::Pa
     [resolved, sb.dir.path().join("token.txt")]
 }
 
-fn read_line<'a>(read: &'a str, oid: &'a str, format: &'a str) -> Vec<&'a str> {
+fn read_line<'a>(read: &'a str, oid: &'a str, flags: &[&'a str]) -> Vec<&'a str> {
     match read {
-        "show" => vec![read, oid, format],
-        _ => vec![read, format],
+        "show" => [&[read, oid][..], flags].concat(),
+        _ => [&[read][..], flags].concat(),
     }
 }
 
@@ -31,7 +31,7 @@ fn a_read_never_starts_a_helper_or_resolves_a_credential() {
     let marks = a_remote_never_pulled_that_marks_each_contact(&sb);
 
     for read in READS {
-        let (ok, _, err) = sb.dam(&read_line(read, &oid, "--json"));
+        let (ok, _, err) = sb.dam(&read_line(read, &oid, &["-o", "json"]));
         assert!(ok, "{read}: {err}");
         for mark in &marks {
             assert!(
@@ -50,7 +50,7 @@ fn no_pull_is_an_unknown_flag_on_every_read() {
     let oid = sb.new_object(&["buy oat milk"]);
 
     for read in READS {
-        let out = sb.output(&read_line(read, &oid, "--no-pull"));
+        let out = sb.output(&read_line(read, &oid, &["--no-pull"]));
         assert_eq!(out.status.code(), Some(2), "{read} took --no-pull");
         let said = String::from_utf8_lossy(&out.stderr);
         assert!(

@@ -37,7 +37,7 @@ fn sandbox_with_four_tokens() -> Sandbox {
 fn the_list_names_each_token_its_key_id_terms_and_standing() {
     let _guard = support::guard("the_list_names_each_token_its_key_id_terms_and_standing");
     let sb = sandbox_with_four_tokens();
-    let (ok, out, err) = sb.dam(&["token", "list", "--json"]);
+    let (ok, out, err) = sb.dam(&["token", "list", "-o", "json"]);
     assert!(ok, "{err}");
     let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_matches_schema(&answer, "token-list.schema.json");
@@ -70,7 +70,7 @@ fn the_list_names_each_token_its_key_id_terms_and_standing() {
 fn no_format_prints_a_secret_and_each_carries_the_same_tokens() {
     let _guard = support::guard("no_format_prints_a_secret_and_each_carries_the_same_tokens");
     let sb = sandbox_with_four_tokens();
-    for format in [None, Some("--json"), Some("--toon")] {
+    for format in [&[][..], &["-o", "json"], &["-o", "toon"]] {
         let mut line = vec!["token", "list"];
         line.extend(format);
         let out = sb.command(&line).env("COLUMNS", "300").output().unwrap();
@@ -98,7 +98,7 @@ fn no_format_prints_a_secret_and_each_carries_the_same_tokens() {
 fn a_config_without_tokens_lists_none() {
     let _guard = support::guard("a_config_without_tokens_lists_none");
     let sb = Sandbox::new();
-    let (ok, out, err) = sb.dam(&["token", "list", "--json"]);
+    let (ok, out, err) = sb.dam(&["token", "list", "-o", "json"]);
     assert!(ok, "{err}");
     let answer: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_eq!(answer, serde_json::json!({"tokens": [], "warnings": []}));

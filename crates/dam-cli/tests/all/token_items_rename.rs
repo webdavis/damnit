@@ -9,7 +9,7 @@ fn dam(sb: &Sandbox, line: &[&str]) {
 }
 
 fn path_of(sb: &Sandbox, oid: &str) -> String {
-    let (ok, out, err) = sb.dam(&["show", &oid[..7], "--json"]);
+    let (ok, out, err) = sb.dam(&["show", &oid[..7], "-o", "json"]);
     assert!(ok, "{err}");
     let json: serde_json::Value = serde_json::from_str(&out).unwrap();
     json["path"].as_str().unwrap().to_string()
@@ -17,7 +17,7 @@ fn path_of(sb: &Sandbox, oid: &str) -> String {
 
 fn renamed_by_tool(sb: &Sandbox, oid: &str, subject: &str) -> String {
     let held = grant_to(sb, "tool", 1, vec![grant(&["task:read", "task:change"])]);
-    let line = ["edit", oid, "--subject", subject, "--json"];
+    let line = ["edit", oid, "--subject", subject, "-o", "json"];
     let sent = answer(&sb.output_holding(&held, &line), "sent.schema.json");
     sent["hash"].as_str().unwrap().to_string()
 }
@@ -55,11 +55,11 @@ fn adding_a_tokens_rename_that_cannot_name_a_folder_is_refused_once_the_task_has
     let child = sb.new_object(&["child", "--path", "parent/"]);
 
     assert_eq!(
-        refused(&sb.output(&["add", &hash, "--json"])),
+        refused(&sb.output(&["add", &hash, "-o", "json"])),
         "item_subject_names_no_folder"
     );
     assert_eq!(path_of(&sb, &child), "parent/");
-    let (_, status, _) = sb.dam(&["status", "--json"]);
+    let (_, status, _) = sb.dam(&["status", "-o", "json"]);
     let status: serde_json::Value = serde_json::from_str(&status).unwrap();
     assert_eq!(status["waiting"][0]["hash"], hash.as_str());
 }

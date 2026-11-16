@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/remote-list.schema.json",
   "title": "dam remote list answer",
-  "description": "What dam remote list prints with --json or --toon. A null holds no value: no path, or never pulled or pushed. except lists the paths the remote never receives.",
+  "description": "What dam remote list prints with -o. A null holds no value: no path, or never pulled or pushed. except lists the paths the remote never receives.",
   "type": "object",
   "required": [
     "remotes"

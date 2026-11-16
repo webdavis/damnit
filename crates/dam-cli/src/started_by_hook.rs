@@ -15,9 +15,9 @@ pub(crate) fn refuse_a_dam_a_hook_started(line: &[OsString]) -> Result<(), Refus
         .ignore_errors(true)
         .try_get_matches_from(line)
         .ok();
-    let flag = |name| given.as_ref().is_some_and(|given| given.get_flag(name));
+    let format = given.as_ref().map_or(Format::Human, Format::given);
     Err(Refused {
-        format: Format::of(flag("json"), flag("toon")),
+        format,
         error: Refusal::StartedByHook(event.to_string_lossy().into_owned()).into(),
     })
 }

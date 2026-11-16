@@ -5,7 +5,7 @@ pub fn init_in_a_folder_of_its_own() -> serde_json::Value {
     let project = sb.dir.path().join("app");
     std::fs::create_dir_all(&project).unwrap();
     let out = sb
-        .command(&["init", "--json"])
+        .command(&["init", "-o", "json"])
         .current_dir(project)
         .output()
         .unwrap();
