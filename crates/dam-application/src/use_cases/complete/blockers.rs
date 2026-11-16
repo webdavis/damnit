@@ -29,7 +29,8 @@ impl Dam<'_> {
                 dependencies.push(dep.clone());
             }
         }
-        let children: Vec<Oid> = contents(self.store, &Object::Task(task.clone()))?
+        let children: Vec<Oid> = self
+            .unless_it_names_the_unseen(contents(self.store, &Object::Task(task.clone())))?
             .iter()
             .filter(|c| c.as_task().is_some_and(|t| !t.completion.is_done()))
             .filter(|c| self.access.sees(c))
