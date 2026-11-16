@@ -18,7 +18,8 @@ fn mv_relocates() {
     run(
         &ctx,
         MvArgs {
-            oid: oid.as_str().into(),
+            oid: vec![oid.as_str().into()],
+            set: Default::default(),
             path: Some(Path::parse("work/").unwrap()),
             parent: None,
         },
@@ -38,7 +39,8 @@ fn mv_files_it_under_the_parent_a_prefix_names() {
     run(
         &ctx,
         MvArgs {
-            oid: oid.as_str().into(),
+            oid: vec![oid.as_str().into()],
+            set: Default::default(),
             path: None,
             parent: Some("0202".into()),
         },
@@ -56,7 +58,8 @@ fn mv_with_neither_a_path_nor_a_parent_names_both() {
     let err = run(
         &ctx,
         MvArgs {
-            oid: oid.as_str().into(),
+            oid: vec![oid.as_str().into()],
+            set: Default::default(),
             path: None,
             parent: None,
         },

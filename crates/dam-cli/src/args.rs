@@ -10,10 +10,11 @@ mod planning;
 mod reading;
 mod remotes;
 mod scope;
+mod set;
 mod staging;
 mod test;
 mod tokens;
-mod values;
+pub(crate) mod values;
 mod writing;
 
 use clap::Subcommand;
@@ -32,6 +33,7 @@ pub(crate) use remotes::{
     PullArgs, PushArgs, RemoteArgs, RemoteCommand, ResolveArgs, SyncArgs, SyncCommand,
 };
 pub(crate) use scope::ScopeArgs;
+pub(crate) use set::SetArgs;
 pub(crate) use staging::{
     AddArgs, CommitArgs, DiffArgs, ResetArgs, RestoreArgs, RevertArgs, ShowArgs, StatusArgs,
 };

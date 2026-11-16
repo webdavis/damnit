@@ -34,7 +34,7 @@ fn a_hooks_request_is_refused_by_the_same_reader_as_dam_edit_request() {
 #[test]
 fn a_hooks_request_reads_into_the_flags_of_dam_edit_for_its_task() {
     let args = hook_edit_args(&task(), r#"{"labels": ["errand"], "no_due": true}"#).unwrap();
-    assert_eq!(args.oid, task().to_string());
+    assert_eq!(args.oid, [task().to_string()]);
     assert_eq!(args.labels, ["errand"]);
     assert!(args.no_due);
 }

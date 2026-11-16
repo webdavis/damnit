@@ -5,7 +5,7 @@ use super::{ChangeRow, what_changed};
 use crate::view::Line;
 
 impl ChangeRow<'_> {
-    pub(in crate::commands::status) fn own_lines(&self, indent: &str, owner: &str) -> Vec<Line> {
+    pub(crate) fn own_lines(&self, indent: &str, owner: &str) -> Vec<Line> {
         self.lines(indent, self.oid.short(), owner, &[])
     }
 

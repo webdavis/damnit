@@ -46,6 +46,11 @@ pub(super) fn tokens(
     flags.push("--".into());
     for arg in command.get_arguments().filter(|arg| arg.is_positional()) {
         match fields.get(arg.get_id().as_str()) {
+            Some(Value::Array(items)) => {
+                for item in items {
+                    flags.push(scalar(arg, arg.get_id().as_str(), item)?);
+                }
+            }
             Some(value) => flags.push(scalar(arg, arg.get_id().as_str(), value)?),
             None if arg.is_required_set() => {
                 return Err(CliError::Usage(format!(
@@ -60,9 +65,13 @@ pub(super) fn tokens(
 }
 
 fn scalar(arg: &Arg, key: &str, value: &Value) -> Result<String, CliError> {
-    let takes_a_number = [TypeId::of::<Priority>(), TypeId::of::<u32>()]
-        .iter()
-        .any(|number| arg.get_value_parser().type_id() == *number);
+    let takes_a_number = [
+        TypeId::of::<Priority>(),
+        TypeId::of::<u32>(),
+        TypeId::of::<usize>(),
+    ]
+    .iter()
+    .any(|number| arg.get_value_parser().type_id() == *number);
     match value {
         Value::String(text) => Ok(text.clone()),
         Value::Number(number) if takes_a_number && number.is_u64() => Ok(number.to_string()),

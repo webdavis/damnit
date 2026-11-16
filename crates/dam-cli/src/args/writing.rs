@@ -1,13 +1,19 @@
 use clap::Args;
 use dam_domain::{CallerId, ChildDisposition, DependencyDisposition, Path};
 
+use super::SetArgs;
 use super::dispositions::{child_disposition, dependency_disposition};
 use super::values::{caller_id_arg, path_arg};
 
 #[derive(Args, Debug)]
 pub(crate) struct DoneArgs {
-    #[arg(help = "Pick the task by oid, or by a prefix of 4 or more hex characters")]
-    pub(crate) oid: String,
+    #[arg(
+        help = "Pick the tasks by oid, or by a prefix of 4 or more hex characters",
+        required_unless_present_any = ["query", "filter"]
+    )]
+    pub(crate) oid: Vec<String>,
+    #[command(flatten)]
+    pub(crate) set: SetArgs,
     #[arg(
         long,
         help = "Complete it even though something it waits on is still open"
@@ -41,21 +47,32 @@ pub(crate) struct DoneArgs {
 
 #[derive(Args, Debug)]
 pub(crate) struct MvArgs {
-    #[arg(help = "Pick the object by oid, or by a prefix of 4 or more hex characters")]
-    pub(crate) oid: String,
-    #[arg(value_parser = path_arg, help = "Move it under PATH, such as work/clients/")]
+    #[arg(
+        value_name = "OID... PATH",
+        help = "Pick the objects by oid, or by a prefix of 4 or more hex characters, then the PATH to move them under, such as work/clients/",
+        required_unless_present_any = ["query", "filter"]
+    )]
+    pub(crate) oid: Vec<String>,
+    #[command(flatten)]
+    pub(crate) set: SetArgs,
+    #[arg(long, value_parser = path_arg, help = "Move them under PATH instead of naming it last")]
     pub(crate) path: Option<Path>,
     #[arg(long, help = "Put it in the object with this oid or prefix")]
     pub(crate) parent: Option<String>,
 }
 
 #[derive(Args, Debug)]
-#[group(required = true, multiple = false)]
 pub(crate) struct RmArgs {
-    #[arg(help = "Pick the object by oid, or by a prefix of 4 or more hex characters")]
-    pub(crate) oid: Option<String>,
+    #[arg(
+        help = "Pick the objects by oid, or by a prefix of 4 or more hex characters",
+        required_unless_present_any = ["query", "filter", "id"]
+    )]
+    pub(crate) oid: Vec<String>,
+    #[command(flatten)]
+    pub(crate) set: SetArgs,
     #[arg(
         long,
+        conflicts_with_all = ["oid", "query", "filter", "preview", "expect"],
         value_parser = caller_id_arg,
         help = "Take back the task or event you gave this id with dam new --id in the same session"
     )]

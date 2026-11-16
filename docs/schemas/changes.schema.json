@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/changes.schema.json",
+  "title": "dam edit, done, mv and rm answer for a set",
+  "description": "What dam edit, done, mv and rm print with --json or --toon when given several oids, --query, --filter or --preview. count and oids are what the selector listed; changes holds one change per object that changed.",
+  "type": "object",
+  "required": ["preview", "count", "oids", "changes"],
+  "additionalProperties": false,
+  "properties": {
+    "preview": {
+      "type": "boolean",
+      "description": "True when nothing was written."
+    },
+    "count": { "type": "integer", "minimum": 0 },
+    "oids": {
+      "type": "array",
+      "items": { "$ref": "status.schema.json#/$defs/id" }
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          { "$ref": "status.schema.json#/$defs/change" },
+          {
+            "properties": {
+              "item": {
+                "$ref": "status.schema.json#/$defs/id",
+                "description": "The item a token's change waits as."
+              },
+              "answer": {
+                "enum": ["new", "changed", "duplicate"],
+                "description": "Whether a token's item is new, changed or a duplicate of one already waiting."
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

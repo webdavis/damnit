@@ -3,7 +3,7 @@ use std::time::Duration;
 use dam_application::{ConfiguredDuration, RemoteName};
 use dam_domain::{CallerId, Kind, Path, PathError, Priority, parse_minutes};
 
-pub(super) fn path_arg(text: &str) -> Result<Path, String> {
+pub(crate) fn path_arg(text: &str) -> Result<Path, String> {
     Path::parse(text).map_err(|e| match e {
         PathError::EmptySegment => "a path has an empty segment".to_string(),
         other => other.to_string(),

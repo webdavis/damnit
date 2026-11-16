@@ -3,6 +3,7 @@ use dam_application::{
 };
 
 use crate::args::DoneArgs;
+use crate::commands::each::{one_object, report_set, run_of, selector};
 use crate::commands::hooked::hooked;
 use crate::commands::sent::report_landed;
 use crate::context::Context;
@@ -27,7 +28,10 @@ impl View for Finished<'_> {
 }
 
 pub(crate) fn run(ctx: &Context, args: DoneArgs) -> Result<Report, CliError> {
-    let oid = ctx.dam().resolve_object(&args.oid)?;
+    let Some(oid) = one_object(&args.oid, &args.set) else {
+        return run_on_a_set(ctx, &args);
+    };
+    let oid = ctx.dam().resolve_object(oid)?;
     let plan = ctx.dam().plan_complete(&oid)?;
     let force = how_far_this_run_forces(ctx, &args, &plan.blockers)?;
     let (outcome, landed) = ctx
@@ -40,6 +44,26 @@ pub(crate) fn run(ctx: &Context, args: DoneArgs) -> Result<Report, CliError> {
     report_landed(&landed, |_| {
         report(&hooked(ctx, Finished { oid: &oid, result }))
     })
+}
+
+fn run_on_a_set(ctx: &Context, args: &DoneArgs) -> Result<Report, CliError> {
+    if args.interactive {
+        return Err(CliError::Usage(
+            "done --interactive takes one oid; name what happens with --children and --depends instead".into(),
+        ));
+    }
+    let selector = selector(ctx, &args.oid, &args.set)?;
+    let force = match args.force {
+        true => Force::With(
+            dispositions_answered_on_the_command_line_over_any_config(args).unwrap_or_default(),
+        ),
+        false => Force::No,
+    };
+    let tracked = |oid: &Oid| tracked_by_a_remote(ctx, oid).unwrap_or(Tracked::No);
+    let changes = ctx
+        .dam()
+        .complete_each(&selector, force, &tracked, run_of(&args.set))?;
+    report_set(ctx, &changes)
 }
 
 fn tracked_by_a_remote(ctx: &Context, oid: &Oid) -> Result<Tracked, CliError> {
