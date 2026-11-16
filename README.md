@@ -619,12 +619,15 @@ Add `--full` to either command for `before` and `after`, the whole object on eac
 
 `dam agenda` lists events as intervals, for a program that schedules around busy time:
 
-    {"events": [{"oid": "98d878...", "subject": "standup", "path": "me@example.com/",
+    {"from": "2026-09-25", "to": "2026-09-25",
+     "events": [{"oid": "98d878...", "subject": "standup", "path": "me@example.com/",
      "labels": [], "status": "confirmed", "transparency": "busy", "all_day": false,
      "start": "2026-09-25T09:00:00-04:00", "end": "2026-09-25T09:30:00-04:00", "busy": true,
      "attendees": [{"email": "ada@example.com", "response": "accepted"}],
-     "organizer": {"email": "ada@example.com"}}]}
+     "organizer": {"email": "ada@example.com"}, "day": "2026-09-25", "weekday": "fri"}]}
 
+`from` and `to` are the first and last day of the window. `day` is the day a row is listed under,
+an event's start day or a task's due day, and `weekday` its weekday, both in the local zone.
 `start` and `end` are times in the local zone, or dates for an all-day event, `end` exclusive;
 `busy` says whether the event holds time: not cancelled, shown busy, and not declined by the
 attendee that stands for the calendar the event came from. `attendees`, `organizer`, `location` and

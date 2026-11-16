@@ -10,8 +10,9 @@ use crate::commands::window_edge::{Side, edge};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
-use crate::view::{Human, View, report};
+use crate::view::{Human, View, display, report};
 use event::AgendaEvent;
+use jiff::civil::Date;
 use task::AgendaTask;
 
 const DEFAULT_SPAN: SignedDuration = SignedDuration::from_hours(24);
@@ -35,7 +36,10 @@ pub(crate) fn run_agenda(ctx: &Context, args: AgendaArgs) -> Result<Report, CliE
         .dam()
         .agenda(&filter, &args.place, &args.project_filters, window, &ctx.tz)
         .map_err(|e| asked.refused(e))?;
+    let (first, last) = window.days(&ctx.tz);
     report(&Agenda {
+        from: first,
+        to: last,
         events: found
             .events
             .iter()
@@ -73,6 +77,10 @@ fn window(ctx: &Context, args: &AgendaArgs) -> Result<Window, CliError> {
 
 #[derive(Serialize)]
 struct Agenda<'a> {
+    #[serde(serialize_with = "display")]
+    from: Date,
+    #[serde(serialize_with = "display")]
+    to: Date,
     events: Vec<AgendaEvent<'a>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     tasks: Option<Vec<AgendaTask>>,
@@ -111,6 +119,8 @@ mod task;
 
 #[cfg(test)]
 mod category_tests;
+#[cfg(test)]
+mod days_tests;
 #[cfg(test)]
 mod people_tests;
 #[cfg(test)]

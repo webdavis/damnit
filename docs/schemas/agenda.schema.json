@@ -5,15 +5,29 @@
   "description": "What dam agenda prints with -o: the events in the window, earliest first, and with --kind task or any the tasks not done whose due falls on a day of the window, by day. An all-day event has dates for start and end.",
   "type": "object",
   "required": [
+    "from",
+    "to",
     "events"
   ],
   "additionalProperties": false,
   "properties": {
+    "from": {
+      "$ref": "object.schema.json#/$defs/day",
+      "description": "The first day of the window, in the person's zone."
+    },
+    "to": {
+      "$ref": "object.schema.json#/$defs/day",
+      "description": "The last day of the window, in the person's zone."
+    },
     "tasks": {
       "description": "Present when --kind task or any, or a task field, asks for tasks; in the order dam list gives within each day.",
       "type": "array",
       "items": {
         "$ref": "object.schema.json",
+        "required": [
+          "day",
+          "weekday"
+        ],
         "properties": {
           "kind": {
             "const": "task"
@@ -37,7 +51,9 @@
           "end",
           "busy",
           "attendees",
-          "category"
+          "category",
+          "day",
+          "weekday"
         ],
         "additionalProperties": false,
         "properties": {
@@ -96,6 +112,13 @@
           },
           "category": {
             "$ref": "object.schema.json#/$defs/category"
+          },
+          "day": {
+            "$ref": "object.schema.json#/$defs/day",
+            "description": "The day of its start in the person's zone; an event over several days is listed once, under this day."
+          },
+          "weekday": {
+            "$ref": "object.schema.json#/$defs/weekday"
           }
         }
       }
