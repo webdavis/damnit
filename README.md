@@ -315,7 +315,9 @@ given to `dam mv` is a full path.
 
 `--project <path>` on those four commands works from any folder, in a project or not, and stands in
 for the project you are in: `dam ls --project pns/hooks/`, `dam new "x" --project pns/ --path cli/`.
-It takes a path of any depth. `--global` and `--project` together are a usage error.
+It takes a path of any depth. `--global` and `--project` together are a usage error. When no task
+holds that path yet, `dam new --project` creates it first and says so on standard error; with `--json`
+the answer carries `project_created`, its `oid` and `path`.
 
 ## The rules it keeps
 

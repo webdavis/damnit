@@ -7,6 +7,8 @@ use crate::error::CliError;
 use crate::output::Report;
 use crate::project_scope::Standing;
 
+mod project_created;
+
 pub(crate) fn dispatch_in(
     ctx: &Context,
     command: Command,
@@ -15,8 +17,14 @@ pub(crate) fn dispatch_in(
     crate::gate::admit(ctx.access.as_ref(), &command)?;
     let command = match command {
         Command::New(mut a) if a.parent.is_none() || a.path != Path::root() => {
-            a.path = a.path.under(&standing.place(&a.scope)?);
-            Command::New(a)
+            let place = standing.place(&a.scope)?;
+            let created = match &a.scope.project {
+                Some(project) => ctx.dam().hold_project(project)?,
+                None => None,
+            };
+            a.path = a.path.under(&place);
+            let made = dispatch_a_verb_that_opens_the_store(ctx, Command::New(a))?;
+            return Ok(project_created::told(made, created.as_ref(), &place));
         }
         Command::Ls(mut a) => {
             a.place = standing.place(&a.scope)?;
@@ -37,5 +45,7 @@ pub(crate) fn dispatch_in(
 
 #[cfg(test)]
 mod listing_tests;
+#[cfg(test)]
+mod project_created_tests;
 #[cfg(test)]
 mod tests;

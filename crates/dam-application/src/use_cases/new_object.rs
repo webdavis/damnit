@@ -9,6 +9,7 @@ use crate::use_cases::items::land::Landed;
 use crate::use_cases::placement::Placement;
 
 mod by_id;
+mod project_task;
 
 pub struct NewTask {
     pub parent: Option<Oid>,
@@ -102,5 +103,7 @@ impl Dam<'_> {
     }
 }
 
+#[cfg(test)]
+mod project_task_tests;
 #[cfg(test)]
 mod tests;

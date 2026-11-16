@@ -7,6 +7,13 @@
   "required": ["answer", "hash", "oid", "item", "kind", "subject", "path", "from", "key_id", "channel", "created"],
   "additionalProperties": false,
   "properties": {
+    "project_created": {
+      "description": "The task dam new --project sent to hold the project, only when it sent one.",
+      "type": "object",
+      "required": ["oid", "path"],
+      "additionalProperties": false,
+      "properties": { "oid": { "type": "string", "pattern": "^[0-9a-f]{40}$" }, "path": { "type": "string" } }
+    },
     "answer": {
       "description": "new and changed store an item; duplicate stores nothing and names the item that already says the same.",
       "enum": ["new", "changed", "duplicate"]

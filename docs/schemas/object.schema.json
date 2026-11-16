@@ -20,6 +20,7 @@
     "id": { "type": "string", "description": "The caller's own id for it, given with dam new --id." },
     "author": { "type": "string", "description": "Who made it: the token's name, or the owner's from the config. dam ls and dam show always carry it." },
     "details": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/details" }], "description": "The details of the change that made it; null until that change is staged, and for another sender's object read with a token. dam ls and dam show always carry it." },
+    "project_created": { "type": "object", "required": ["oid", "path"], "additionalProperties": false, "properties": { "oid": { "$ref": "#/$defs/oid" }, "path": { "type": "string" } }, "description": "The task dam new --project created to hold the project, only when it made one." },
     "changed_by_hook": { "$ref": "#/$defs/changed_by_hook", "description": "Each task a hook changed within this command, with that hook's event; dam new and dam edit carry it only then." },
     "task": { "$ref": "#/$defs/task" },
     "event": { "$ref": "#/$defs/event" }
