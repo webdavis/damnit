@@ -43,10 +43,10 @@ impl Dam<'_> {
     }
 
     fn is_a_committed_new_item(&self, oid: &Oid) -> Result<bool, UseCaseError> {
-        let added = self
-            .store
-            .item(&ItemHash::new(oid.clone()))?
-            .is_some_and(|item| matches!(item.outcome, Outcome::Added(_)) && self.sees_item(&item));
+        let added = match self.store.item(&ItemHash::new(oid.clone()))? {
+            Some(item) => matches!(item.outcome, Outcome::Added(_)) && self.sees_item(&item)?,
+            None => false,
+        };
         let staged = self.store.staged()?.iter().any(|s| s.change.oid() == oid);
         Ok(added && !staged)
     }

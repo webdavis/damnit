@@ -53,7 +53,7 @@ impl Dam<'_> {
     pub fn seen_staged(&self) -> Result<Vec<Authored>, UseCaseError> {
         let mut seen = Vec::new();
         for mut authored in self.store.staged()? {
-            if self.permits_change(Permission::StageRead, &authored.change) {
+            if self.permits_change(Permission::StageRead, &authored.change)? {
                 authored.change = self.as_seen_change(authored.change)?;
                 seen.push(authored);
             }
@@ -64,7 +64,7 @@ impl Dam<'_> {
     pub fn diff_working(&self) -> Result<Vec<Change>, UseCaseError> {
         let mut seen = Vec::new();
         for change in working_changes(self.store)? {
-            if self.permits_change(Permission::WorkingRead, &change) {
+            if self.permits_change(Permission::WorkingRead, &change)? {
                 seen.push(self.as_seen_change(change)?);
             }
         }
@@ -102,6 +102,8 @@ fn working_changes(store: &dyn Store) -> Result<Vec<Change>, UseCaseError> {
 mod seen;
 mod unpushed;
 
+#[cfg(test)]
+mod rows_tests;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]

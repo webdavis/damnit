@@ -1,4 +1,4 @@
-use dam_domain::{Change, CommitRecord, Object, Oid};
+use dam_domain::CommitRecord;
 
 use crate::errors::UseCaseError;
 use crate::service::Dam;
@@ -29,20 +29,6 @@ impl Dam<'_> {
             seen.push(record);
         }
         Ok(seen)
-    }
-
-    fn reads_change(&self, change: &Change) -> Result<bool, UseCaseError> {
-        let every_state_seen = change
-            .before()
-            .into_iter()
-            .chain(change.after())
-            .all(|object| self.access.sees(object));
-        Ok(every_state_seen && !self.hidden_now(change.oid())?)
-    }
-
-    fn hidden_now(&self, oid: &Oid) -> Result<bool, UseCaseError> {
-        let unseen = |object: Option<Object>| object.is_some_and(|o| !self.access.sees(&o));
-        Ok(unseen(self.store.get(oid)?) || unseen(self.store.committed(oid)?))
     }
 }
 

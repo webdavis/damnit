@@ -54,14 +54,21 @@ impl Dam<'_> {
         Ok(object)
     }
 
-    pub(crate) fn permits_change(&self, permission: Permission, change: &Change) -> bool {
+    pub(crate) fn permits_change(
+        &self,
+        permission: Permission,
+        change: &Change,
+    ) -> Result<bool, UseCaseError> {
         let touched: Vec<Subject<'_>> = change
             .before()
             .into_iter()
             .chain(change.after())
             .map(Subject::Object)
             .collect();
-        self.access.permits(permission, &touched)
+        if !self.access.permits(permission, &touched) {
+            return Ok(false);
+        }
+        Ok(self.access.token().is_none() || self.reads_change(change)?)
     }
 
     pub(crate) fn as_seen_change(&self, change: Change) -> Result<Change, StoreError> {

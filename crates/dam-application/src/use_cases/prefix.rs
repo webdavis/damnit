@@ -64,8 +64,12 @@ impl Dam<'_> {
     fn named_in_full(&self, oid: Oid) -> Result<Named, UseCaseError> {
         let hash = ItemHash::new(oid.clone());
         let item = self.store.item(&hash)?;
+        let seen = match &item {
+            Some(item) => item.is_waiting() && self.sees_item(item)?,
+            None => false,
+        };
         Ok(match item {
-            Some(item) if item.is_waiting() && self.sees_item(&item) => Named::Item(hash),
+            Some(_) if seen => Named::Item(hash),
             _ if self.waiting_set(&hash).is_ok() => Named::Set(hash),
             _ => Named::Object(oid),
         })

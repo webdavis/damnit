@@ -7,7 +7,7 @@ impl Dam<'_> {
     pub fn waiting_items(&self) -> Result<Vec<Item>, UseCaseError> {
         let mut seen = Vec::new();
         for mut item in self.store.items()? {
-            if item.is_waiting() && self.sees_item(&item) {
+            if item.is_waiting() && self.sees_item(&item)? {
                 item.change = self.as_seen_change(item.change)?;
                 seen.push(item);
             }
@@ -15,9 +15,9 @@ impl Dam<'_> {
         Ok(seen)
     }
 
-    pub(crate) fn sees_item(&self, item: &Item) -> bool {
+    pub(crate) fn sees_item(&self, item: &Item) -> Result<bool, UseCaseError> {
         if self.access.token() == Some(item.author.name.as_str()) {
-            return true;
+            return Ok(true);
         }
         self.permits_change(Permission::PendingRead, &item.change)
     }
