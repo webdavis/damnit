@@ -817,6 +817,26 @@ keeps the prompt open, `<Up>` and `<Down>` recall earlier lines, `<Esc>` cancels
 <words>` creates it at once. In a list the prompt opens along the list window's bottom: `a`
 with the view's path, `o` with `--parent` set to the task under the cursor.
 
+Keys on list rows act on the visual selection, else the marked rows, else [count] rows, else
+the row. Two or more rows go as one dam call after a float shows dam's preview; `y` sends it.
+`.` repeats the last key on the rows under the cursor.
+
+| Key | Does |
+| --- | --- |
+| `x`, `X` | `dam done`; reopen |
+| `gx` | `dam done` with the flags you type, such as `--force` |
+| `p1` to `p4` | set the priority |
+| `cd`, `cD`, `cl`, `cL`, `cg`, `ce`, `cr` | a prompt for `--due`, `--deadline`, `--labels`, `--unlabels`, `--category`, `--estimate` or `--recurrence`, showing each row's before and after |
+| `cs` | change the subject of one row |
+| `cm`, `cP` | `dam mv` to a `--path` or under a `--parent` |
+| `cc` | any `dam edit` flags |
+| `dd`, `d` in visual mode | `dam rm`, after the float |
+| `U` | `dam restore` to the last commit, after the float |
+| `s` | `dam add` |
+| `m`, `M` | mark or unmark; unmark all |
+
+A refusal shows as an error on the rows dam names.
+
 `:Dam task <oid>`, or `<CR>` on a row of the list, opens the task as `dam show` prints it: one
 `field: value` line each, then `---` and the body. Change a line and `:w` sends `dam edit`
 with what changed; an emptied line clears that field. dam reads each value and shows its error
@@ -824,9 +844,10 @@ when it refuses one.
 
 `:Dam` or `:Dam status` shows what `dam status` shows in the window's folder: conflicts, waiting
 items and sets, unstaged and staged changes, unpushed commits, notices and warnings. Its keys:
-`s` stages a change, or everything on the Unstaged or Waiting header; `u` unstages; `a` accepts a
-waiting item or set and `x` declines it after asking; `c` commits; `P` pushes; `F` pulls; `<CR>`
-opens the task; `r` reads it again. `:Dam commit [message]`, `:Dam push [remote]` and
+`s` stages a change, or everything on the Unstaged or Waiting header; `S` stages everything; `u`
+unstages; `a` accepts a waiting item or set and `dd` declines it after a float; `U` sets a change
+back to its last commit after a float; `cc` commits; `P` shows what a push would send, then
+pushes; `F` pulls; `<CR>` opens the task; `r` reads it again. `:Dam commit [message]`, `:Dam push [remote]` and
 `:Dam pull [remote]` do the same from anywhere; `:Dam cancel` stops a slow push or pull. A
 conflict is settled with `dam resolve` in a terminal.
 A push or pull shows each step dam reports as a Neovim progress message while it runs.

@@ -1,12 +1,18 @@
 local buffer = require("helpers.buffer")
 local status = require("helpers.status")
-local ui = require("helpers.ui")
 
 local MOM = ("2"):rep(40)
 local UNSTAGED = "  update  call mom back"
 local STAGED = "  create  water the plants"
 local ITEM = "  new       call the plumber"
 local SET = "  set of 2"
+
+local function confirming(keys)
+  buffer.feed(keys)
+  buffer.wait_for(function()
+    return vim.bo.filetype == "damconfirm"
+  end)
+end
 
 return {
   ["s on a change stages it"] = function()
@@ -37,27 +43,44 @@ return {
     assert(vim.deep_equal(status.sent(fake, "add"), { "add", "<id-2>" }), vim.inspect(status.sent(fake, "add")))
   end,
 
-  ["x on a waiting item declines it only after a yes"] = function()
+  ["dd on a waiting item shows it in the confirm float and declines it only after y"] = function()
     local _, fake = status.opened()
     status.on(ITEM)
-    ui.answering({ select = "keep" }, function(prompts)
-      buffer.feed("x")
-      assert(prompts[1] == "decline new call the plumber?", vim.inspect(prompts))
-    end)
+    confirming("dd")
+    assert(
+      vim.deep_equal(buffer.lines(), { "new  call the plumber  from tool", "", "1 waiting item would be declined" })
+    )
+    buffer.feed("n")
     status.nothing_sent(fake, "rm")
-    ui.answering({ select = "decline" }, function()
-      buffer.feed("x")
-    end)
+    confirming("dd")
+    buffer.feed("y")
     assert(vim.deep_equal(status.sent(fake, "rm"), { "rm", "<id-2>" }), vim.inspect(status.sent(fake, "rm")))
   end,
 
-  ["x on a set declines the set after a yes"] = function()
+  ["dd on a set declines the set after y"] = function()
     local _, fake = status.opened()
     status.on(SET)
-    ui.answering({ select = "decline" }, function()
-      buffer.feed("x")
-    end)
+    confirming("dd")
+    assert(buffer.lines()[3] == "a set of 2 would be declined", vim.inspect(buffer.lines()))
+    buffer.feed("y")
     assert(vim.deep_equal(status.sent(fake, "rm"), { "rm", "<id-3>" }), vim.inspect(status.sent(fake, "rm")))
+  end,
+
+  ["S stages everything from any row"] = function()
+    local _, fake = status.opened()
+    status.on(STAGED)
+    buffer.feed("S")
+    assert(vim.deep_equal(status.sent(fake, "add"), { "add", "-A" }), vim.inspect(status.sent(fake, "add")))
+  end,
+
+  ["U on a change shows dam restore --preview, then sets it back after y"] = function()
+    local _, fake = status.opened()
+    status.on(UNSTAGED)
+    confirming("U")
+    local preview = fake.of("restore")[1].argv
+    assert(vim.deep_equal(preview, { "dam", "restore", MOM, "--preview", "-o", "json" }), vim.inspect(preview))
+    buffer.feed("y")
+    assert(vim.deep_equal(status.sent(fake, "restore"), { "restore", MOM }), vim.inspect(fake.of("restore")))
   end,
 
   ["a key on a row it does not fit warns and sends nothing"] = function()
@@ -87,5 +110,32 @@ return {
     status.on("  fake  2 commits")
     buffer.feed("<CR>")
     assert(#notes == 1 and notes[1].level == vim.log.levels.WARN, vim.inspect(notes))
+  end,
+
+  ["a refused stage lands as an error in the window, once: no notification, one entry in the log"] = function()
+    local app, fake = status.opened()
+    fake.reply("add", require("helpers.fixtures").refusal("error-expect.json", 4))
+    local notes = buffer.capture_notes()
+    status.on(UNSTAGED)
+    buffer.feed("s")
+    buffer.wait_for(function()
+      return #vim.diagnostic.get(0) > 0
+    end)
+    vim.wait(20)
+    assert(#vim.diagnostic.get(0) == 1 and vim.diagnostic.get(0)[1].lnum == 0, vim.inspect(vim.diagnostic.get(0)))
+    assert(#notes == 0 and #app.say:log() == 1, vim.inspect({ notes, app.say:log() }))
+  end,
+
+  ["a refusal that names a change's oid lands on that change's row"] = function()
+    local _, fake = status.opened()
+    local refusal = require("helpers.fixtures").decoded("error-expect.json")
+    refusal.error.oids = { MOM }
+    fake.reply("add", { code = 4, stdout = "", stderr = vim.json.encode(refusal) })
+    status.on(UNSTAGED)
+    buffer.feed("s")
+    buffer.wait_for(function()
+      return #vim.diagnostic.get(0) > 0
+    end)
+    assert(vim.diagnostic.get(0)[1].lnum == vim.api.nvim_win_get_cursor(0)[1] - 1, vim.inspect(vim.diagnostic.get(0)))
   end,
 }

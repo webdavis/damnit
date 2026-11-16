@@ -30,24 +30,49 @@ local KEYS = {
     fits = "a accepts a waiting item or set",
     rows = { ["waiting:waiting"] = on_row("add"), ["set:waiting"] = on_row("add") },
   },
-  x = {
-    fits = "x declines a waiting item or set",
+  dd = {
+    fits = "dd declines a waiting item or set",
     rows = { ["waiting:waiting"] = on_row("rm"), ["set:waiting"] = on_row("rm") },
+  },
+  U = {
+    fits = "U sets an unstaged or staged change back to its last commit",
+    rows = { ["change:unstaged"] = on_row("restore"), ["change:staged"] = on_row("restore") },
   },
 }
 
+---@alias damnit.StatusKey "s"|"u"|"a"|"dd"|"U"
+
 ---@param target damnit.StatusTarget|nil
----@param key "s"|"u"|"a"|"x"
+---@param key damnit.StatusKey
 ---@return string[]|nil
 function M.argv(target, key)
   local build = target and KEYS[key].rows[target.kind .. ":" .. target.section]
   return build and build(target) or nil
 end
 
----@param key "s"|"u"|"a"|"x"
+---@param key damnit.StatusKey
 ---@return string
 function M.fits(key)
   return KEYS[key].fits
+end
+
+---@param doc damnit.StatusDoc
+---@param target damnit.StatusTarget
+---@return damnit.ConfirmRow[] rows, string summary
+function M.declined(doc, target)
+  for _, item in ipairs(doc.waiting) do
+    if item.hash == target.id then
+      return { { op = item.item, subject = item.subject, detail = "from " .. item.from } },
+        "1 waiting item would be declined"
+    end
+  end
+  for _, set in ipairs(doc.sets) do
+    if set.set == target.id then
+      local summary = ("a set of %d would be declined"):format(set.count)
+      return { { op = ("set of %d"):format(set.count), subject = "", detail = "from " .. set.from } }, summary
+    end
+  end
+  return {}, "nothing would be declined"
 end
 
 return M

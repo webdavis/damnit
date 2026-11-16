@@ -41,7 +41,7 @@ local function staged_and_committed_in_status(sandbox)
     return vim.deep_equal(buffer.lines(), { "Staged (1)", row })
   end, 20000)
   ui.answering({ input = "plant" }, function()
-    buffer.feed("c")
+    buffer.feed("cc")
   end)
   wait_for(function()
     return vim.deep_equal(buffer.lines(), { "nothing changed, staged, waiting or unpushed" })
@@ -102,7 +102,7 @@ return {
     end)
   end,
 
-  ["status shows a change made with dam new; s stages it and c commits it, and the section empties"] = function()
+  ["status shows a change made with dam new; s stages it and cc commits it, and the section empties"] = function()
     return with_real_dam(staged_and_committed_in_status)
   end,
 

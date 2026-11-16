@@ -25,8 +25,12 @@ local function pulled(answer)
     )
 end
 
+---@class damnit.RefusalPlace
+---@field show fun(err: damnit.Error)
+---@field clear fun()
+
 ---@class damnit.StatusWrites
----@field send fun(args: string[], cwd: string, done?: fun(answer: table|nil))
+---@field send fun(args: string[], cwd: string, done?: fun(answer: table|nil), place?: damnit.RefusalPlace)
 ---@field commit fun(cwd: string, message?: string)
 ---@field push fun(cwd: string, remote?: string)
 ---@field pull fun(cwd: string, remote?: string)
@@ -36,8 +40,13 @@ end
 function M.new(app)
   local writes = {}
 
-  function writes.send(args, cwd, done)
-    app.dam:write({ args = args, cwd = cwd }, function(answer)
+  function writes.send(args, cwd, done, place)
+    app.dam:write({ args = args, cwd = cwd, placed = place ~= nil }, function(answer, err)
+      if place and err then
+        return place.show(err)
+      elseif place then
+        return place.clear()
+      end
       if answer and done then
         done(answer)
       end
