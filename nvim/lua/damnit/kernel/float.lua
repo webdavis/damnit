@@ -79,6 +79,33 @@ function M.input(buf, title, anchor)
   )
 end
 
+---@param buf integer
+---@param title string
+---@param footer string
+---@return integer win
+function M.sheet(buf, title, footer)
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  local widest = math.max(vim.fn.strdisplaywidth(title), vim.fn.strdisplaywidth(footer)) + 4
+  for _, line in ipairs(lines) do
+    widest = math.max(widest, vim.fn.strdisplaywidth(line) + 2)
+  end
+  local width = math.min(widest, vim.o.columns - 4)
+  local height = math.min(#lines, vim.o.lines - 6)
+  return vim.api.nvim_open_win(buf, true, {
+    relative = "editor",
+    row = math.floor((vim.o.lines - height - 2) / 2),
+    col = math.floor((vim.o.columns - width - 2) / 2),
+    width = width,
+    height = height,
+    style = "minimal",
+    border = "rounded",
+    title = padded(title),
+    title_pos = "left",
+    footer = padded(footer),
+    footer_pos = "right",
+  })
+end
+
 ---@param win integer
 ---@param text string
 ---@param group string
