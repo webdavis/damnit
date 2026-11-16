@@ -4,10 +4,9 @@ use dam_domain::{Object, Oid, Task};
 
 use crate::config::{HookEvent, OnFailure};
 use crate::errors::{Refusal, UseCaseError};
-use crate::ports::{HookFailure, ObjectRepository};
+use crate::ports::{HookFailure, ObjectRepository, Step};
 use crate::service::Dam;
 use crate::use_cases::list::log_by_object::LogByObject;
-use crate::use_cases::waiting::Words;
 use edit_request::Edited;
 
 impl Dam<'_> {
@@ -44,11 +43,15 @@ impl Dam<'_> {
             return Ok(());
         };
         let histories = LogByObject::new(self);
-        let words = Words {
+        let step = Step {
+            name: event.as_str(),
+            remote: None,
             doing: &format!("running {}", event.as_str()),
             did: &format!("ran {}", event.as_str()),
+            unit: "",
+            total: None,
         };
-        let ran = self.waiting_on(words, || self.hooks.run(event, &task, &histories));
+        let ran = self.waiting_on(step, || self.hooks.run(event, &task, &histories));
         histories.unread()?;
         let failure = match ran {
             Ok(None) => return Ok(()),

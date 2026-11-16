@@ -33,7 +33,7 @@ pub use ports::{
     ObjectRepository, ObjectState, OriginRepository, Place, Progress, Pull, PulledChange,
     Randomness, RemoteHelper, RemoteName, RemoteNameError, RemoteTrackingRepository,
     SecretsTightened, SettingChange, SettingsFile, StageRepository, Step, Store, StoreError,
-    Transactional, Uneditable,
+    Transactional, Uneditable, waited_on,
 };
 pub use remote::{
     IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, PushOutcome,

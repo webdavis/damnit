@@ -35,7 +35,7 @@ pub use ids::IdRepository;
 pub use items::ItemRepository;
 pub use notices::{DroppedBecause, MissingTask, Notice, NoticeRepository};
 pub use origins::OriginRepository;
-pub use progress::{NoProgress, Progress, Step};
+pub use progress::{NoProgress, Progress, Step, waited_on};
 pub use pulled::{Pull, PulledChange};
 pub use repositories::Store;
 pub use settings_file::{SettingChange, SettingsFile};

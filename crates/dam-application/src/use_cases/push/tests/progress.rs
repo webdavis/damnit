@@ -6,7 +6,10 @@ use crate::testing::{
 };
 
 fn sending_to_todoist(total: usize) -> Said {
-    Said::Started("sending to todoist changes".into(), Some(total))
+    Said::Started(
+        "push@todoist: sending to todoist changes".into(),
+        Some(total),
+    )
 }
 
 #[test]

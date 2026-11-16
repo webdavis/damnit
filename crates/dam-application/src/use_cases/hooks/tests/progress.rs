@@ -10,7 +10,7 @@ fn a_task_new_hook_is_a_step_that_finishes() {
     assert_eq!(
         *s.fixture.progress.said.borrow(),
         [
-            Said::Started("running task_new ".into(), None),
+            Said::Started("task_new: running task_new ".into(), None),
             Said::Finished
         ]
     );
@@ -24,7 +24,7 @@ fn a_failing_task_changed_hook_ends_its_step_as_failed() {
     assert_eq!(
         *s.fixture.progress.said.borrow(),
         [
-            Said::Started("running task_changed ".into(), None),
+            Said::Started("task_changed: running task_changed ".into(), None),
             Said::Failed
         ]
     );
