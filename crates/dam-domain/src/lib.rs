@@ -39,7 +39,7 @@ pub use item::{
 pub use object::{
     Attachment, Attendee, Base, Completion, Conference, Event, EventStatus, EventType,
     FOCUS_PER_DAY, Focus, Kind, Object, Person, Reminder, ResponseStatus, Task, Transparency,
-    Visibility,
+    Visibility, nearest_parents,
 };
 pub use oid::{Oid, OidError};
 pub use path::{Path, PathError};

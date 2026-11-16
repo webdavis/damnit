@@ -1,5 +1,6 @@
 mod event;
 mod folder;
+mod parent;
 mod task;
 
 use std::collections::BTreeSet;
@@ -11,6 +12,7 @@ pub use event::{
     Attachment, Attendee, Conference, Event, EventStatus, EventType, Person, ResponseStatus,
     Transparency, Visibility,
 };
+pub use parent::nearest_parents;
 pub use task::{Completion, FOCUS_PER_DAY, Focus, Task};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
