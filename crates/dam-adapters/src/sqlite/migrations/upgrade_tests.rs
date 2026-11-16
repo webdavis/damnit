@@ -67,3 +67,22 @@ fn a_second_upgrade_changes_nothing() {
     assert_eq!(schema_and_version(&conn), first);
     assert_eq!(rows_in(&conn, "remote_ids"), 1);
 }
+
+#[test]
+fn an_upgraded_store_holds_items_outside_any_set() {
+    let mut conn = a_version_ten_store_holding_a_remote_id();
+    conn.execute(
+        "INSERT INTO items (hash, token, key_id, channel, op, target, created, outcome) VALUES ('h', 't', 'k', 'local', 'delete', 'o', 'c', 'waiting')",
+        [],
+    )
+    .unwrap();
+
+    migrate_above_user_version_in_one_transaction(&mut conn).unwrap();
+
+    let set: Option<String> = conn
+        .query_row("SELECT set_hash FROM items WHERE hash = 'h'", [], |r| {
+            r.get(0)
+        })
+        .unwrap();
+    assert_eq!(set, None);
+}

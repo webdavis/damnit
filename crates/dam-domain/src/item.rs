@@ -1,37 +1,9 @@
-use std::fmt;
-
 mod clash;
+mod hash;
 mod proposal;
 
 use crate::vocabulary::vocabulary;
 use crate::{Change, Details, Oid, Op, Timestamp, TokenAuthor};
-
-#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct ItemHash(Oid);
-
-impl ItemHash {
-    pub fn new(oid: Oid) -> ItemHash {
-        ItemHash(oid)
-    }
-
-    pub fn oid(&self) -> &Oid {
-        &self.0
-    }
-
-    pub fn short(&self) -> &str {
-        self.0.short()
-    }
-
-    pub fn as_str(&self) -> &str {
-        self.0.as_str()
-    }
-}
-
-impl fmt::Display for ItemHash {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
-    }
-}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ItemKind {
@@ -90,6 +62,7 @@ pub struct Item {
     pub created: Timestamp,
     pub outcome: Outcome,
     pub details: Option<Details>,
+    pub set: Option<ItemHash>,
 }
 
 impl Item {
@@ -104,18 +77,26 @@ impl Item {
             Change::Update { .. } | Change::Delete { .. } => Oid::generate(fill_with_entropy),
         };
         Item {
-            hash: ItemHash(hash),
+            hash: ItemHash::new(hash),
             author,
             change,
             created,
             outcome: Outcome::Waiting,
             details: None,
+            set: None,
         }
     }
 
     pub fn with_details(self, details: Option<&Details>) -> Item {
         Item {
             details: details.cloned(),
+            ..self
+        }
+    }
+
+    pub fn in_set(self, set: ItemHash) -> Item {
+        Item {
+            set: Some(set),
             ..self
         }
     }
@@ -138,6 +119,7 @@ impl Item {
 }
 
 pub use clash::{clashing_fields, fields_the_owner_moved};
+pub use hash::ItemHash;
 pub use proposal::same_proposal;
 
 #[cfg(test)]

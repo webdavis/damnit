@@ -8,7 +8,7 @@ use super::codec::change_from_row;
 use super::details_json::{details_from_json, details_to_json};
 use super::objects::sql;
 
-const COLUMNS: &str = "hash, token, key_id, channel, op, before_json, after_json, created, outcome, outcome_at, details_json";
+const COLUMNS: &str = "hash, token, key_id, channel, op, before_json, after_json, created, outcome, outcome_at, details_json, set_hash";
 
 impl ItemRepository for SqliteStore {
     fn put_item(&self, item: &Item) -> Result<(), StoreError> {
@@ -16,7 +16,7 @@ impl ItemRepository for SqliteStore {
         let token = token_columns(&item.author);
         self.conn
             .execute(
-                &format!("INSERT INTO items ({COLUMNS}, target) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)"),
+                &format!("INSERT INTO items ({COLUMNS}, target) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)"),
                 params![
                     item.hash.as_str(),
                     token.token,
@@ -29,6 +29,7 @@ impl ItemRepository for SqliteStore {
                     item.outcome.as_str(),
                     item.outcome.at().map(|at| at.to_string()),
                     details_to_json(item.details.as_ref())?,
+                    item.set.as_ref().map(ItemHash::as_str),
                     item.target().as_str(),
                 ],
             )
@@ -85,6 +86,7 @@ struct Raw {
     outcome: String,
     outcome_at: Option<String>,
     details: Option<String>,
+    set: Option<String>,
 }
 
 fn raw(r: &Row<'_>) -> rusqlite::Result<Raw> {
@@ -100,6 +102,7 @@ fn raw(r: &Row<'_>) -> rusqlite::Result<Raw> {
         outcome: r.get(8)?,
         outcome_at: r.get(9)?,
         details: r.get(10)?,
+        set: r.get(11)?,
     })
 }
 
@@ -110,12 +113,19 @@ fn item_from(raw: Raw) -> Result<Item, StoreError> {
     };
     let outcome_at = raw.outcome_at.as_deref().map(at).transpose()?;
     Ok(Item {
-        hash: ItemHash::new(Oid::parse(&raw.hash).map_err(|e| StoreError::Failed(e.to_string()))?),
+        hash: hash(&raw.hash)?,
         author: token_from_columns(raw.token, &raw.key_id, &raw.channel)?,
         change: change_from_row(&raw.op, raw.before, raw.after)?,
         created: at(&raw.created)?,
         outcome: Outcome::from_parts(&raw.outcome, outcome_at)
             .ok_or_else(|| StoreError::Failed(format!("stored item outcome {:?}", raw.outcome)))?,
         details: details_from_json(raw.details)?,
+        set: raw.set.as_deref().map(hash).transpose()?,
     })
+}
+
+fn hash(text: &str) -> Result<ItemHash, StoreError> {
+    Oid::parse(text)
+        .map(ItemHash::new)
+        .map_err(|e| StoreError::Failed(e.to_string()))
 }
