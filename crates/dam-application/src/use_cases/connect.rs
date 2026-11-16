@@ -32,6 +32,7 @@ impl Dam<'_> {
             .into());
         }
         self.store.set_accepted_kinds(&remote.name, &caps.kinds)?;
+        self.store.set_accepted_fields(&remote.name, &caps.fields)?;
         Ok((helper, caps))
     }
 }

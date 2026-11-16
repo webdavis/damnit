@@ -1,4 +1,4 @@
-use dam_domain::{Authored, CommitId, CommitRecord, Kind, Oid};
+use dam_domain::{Authored, CommitId, CommitRecord, Field, Kind, Oid};
 
 use crate::ports::{
     AcceptedKindsRepository, CommitRepository, RemoteName, StageRepository, StoreError,
@@ -70,5 +70,11 @@ impl AcceptedKindsRepository for FaultyStore {
     }
     fn set_accepted_kinds(&self, remote: &RemoteName, kinds: &[Kind]) -> Result<(), StoreError> {
         self.inner.set_accepted_kinds(remote, kinds)
+    }
+    fn accepted_fields(&self, remote: &RemoteName) -> Result<Option<Vec<Field>>, StoreError> {
+        self.inner.accepted_fields(remote)
+    }
+    fn set_accepted_fields(&self, remote: &RemoteName, fields: &[Field]) -> Result<(), StoreError> {
+        self.inner.set_accepted_fields(remote, fields)
     }
 }

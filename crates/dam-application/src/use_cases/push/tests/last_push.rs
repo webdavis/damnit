@@ -50,6 +50,9 @@ fn a_record_of_the_attempt_that_cannot_be_written_stops_the_push_before_the_call
     s.store
         .set_accepted_kinds(&todoist(), &task_caps().kinds)
         .unwrap();
+    s.store
+        .set_accepted_fields(&todoist(), &task_caps().fields)
+        .unwrap();
     let store = FaultyStore::new(s.store.clone());
     store.fail_at_write(0);
     let (l, pushed) = pushing(accepting_all(Some("r1")));
@@ -68,6 +71,9 @@ fn push_bookkeeping_that_fails_midway_records_nothing_but_the_attempt() {
     s.committed(task(1));
     s.store
         .set_accepted_kinds(&todoist(), &task_caps().kinds)
+        .unwrap();
+    s.store
+        .set_accepted_fields(&todoist(), &task_caps().fields)
         .unwrap();
     let (l, _) = pushing(accepting_all(Some("r1")));
     for failing in 1.. {

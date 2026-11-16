@@ -1,6 +1,6 @@
 use std::fmt;
 
-use dam_domain::{Authored, CommitId, CommitRecord, Kind, Object, Oid, Timestamp};
+use dam_domain::{Authored, CommitId, CommitRecord, Field, Kind, Object, Oid, Timestamp};
 
 use crate::errors::UseCaseError;
 
@@ -134,6 +134,8 @@ pub trait Transactional {
 pub trait AcceptedKindsRepository {
     fn accepted_kinds(&self, remote: &RemoteName) -> Result<Option<Vec<Kind>>, StoreError>;
     fn set_accepted_kinds(&self, remote: &RemoteName, kinds: &[Kind]) -> Result<(), StoreError>;
+    fn accepted_fields(&self, remote: &RemoteName) -> Result<Option<Vec<Field>>, StoreError>;
+    fn set_accepted_fields(&self, remote: &RemoteName, fields: &[Field]) -> Result<(), StoreError>;
 }
 
 #[cfg(test)]

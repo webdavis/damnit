@@ -1,5 +1,5 @@
 use dam_application::{AcceptedKindsRepository, RemoteName, StoreError};
-use dam_domain::Kind;
+use dam_domain::{Field, Kind};
 use rusqlite::{OptionalExtension, params};
 
 use super::SqliteStore;
@@ -36,6 +36,43 @@ impl AcceptedKindsRepository for SqliteStore {
             .execute(
                 "INSERT INTO accepted_kinds (remote, kinds) VALUES (?1, ?2) \
                  ON CONFLICT (remote) DO UPDATE SET kinds = excluded.kinds",
+                params![remote.0, words.join(",")],
+            )
+            .map(|_| ())
+            .map_err(sql)
+    }
+
+    fn accepted_fields(&self, remote: &RemoteName) -> Result<Option<Vec<Field>>, StoreError> {
+        let words: Option<Option<String>> = self
+            .conn
+            .query_row(
+                "SELECT fields FROM accepted_kinds WHERE remote = ?1",
+                params![remote.0],
+                |r| r.get(0),
+            )
+            .optional()
+            .map_err(sql)?;
+        words
+            .flatten()
+            .map(|words| {
+                words
+                    .split(',')
+                    .filter(|word| !word.is_empty())
+                    .map(|word| {
+                        Field::parse(word)
+                            .ok_or_else(|| StoreError::Failed(format!("unknown field {word:?}")))
+                    })
+                    .collect()
+            })
+            .transpose()
+    }
+
+    fn set_accepted_fields(&self, remote: &RemoteName, fields: &[Field]) -> Result<(), StoreError> {
+        let words: Vec<&str> = fields.iter().map(|f| f.as_str()).collect();
+        self.conn
+            .execute(
+                "INSERT INTO accepted_kinds (remote, kinds, fields) VALUES (?1, '', ?2) \
+                 ON CONFLICT (remote) DO UPDATE SET fields = excluded.fields",
                 params![remote.0, words.join(",")],
             )
             .map(|_| ())

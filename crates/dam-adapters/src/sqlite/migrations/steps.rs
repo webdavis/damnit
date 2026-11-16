@@ -102,7 +102,11 @@ pub(super) const V17: &str = r#"
 CREATE TABLE hook_marks (oid TEXT PRIMARY KEY, event TEXT NOT NULL);
 "#;
 
-pub(super) const BATCHES: [(u32, &str); 16] = [
+pub(super) const V18: &str = r#"
+ALTER TABLE accepted_kinds ADD COLUMN fields TEXT;
+"#;
+
+pub(super) const BATCHES: [(u32, &str); 17] = [
     (1, V1),
     (2, V2),
     (3, V3),
@@ -119,4 +123,5 @@ pub(super) const BATCHES: [(u32, &str); 16] = [
     (14, V14),
     (15, V15),
     (17, V17),
+    (18, V18),
 ];

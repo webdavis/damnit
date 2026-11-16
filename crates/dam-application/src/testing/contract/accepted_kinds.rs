@@ -1,4 +1,4 @@
-use dam_domain::Kind;
+use dam_domain::{Field, Kind};
 
 use super::remote;
 use crate::ports::AcceptedKindsRepository;
@@ -21,4 +21,18 @@ pub fn accepted_kinds_repository_contract(store: &dyn AcceptedKindsRepository) {
         store.accepted_kinds(&todoist).unwrap(),
         Some(vec![Kind::Task, Kind::Event])
     );
+    assert_eq!(store.accepted_fields(&gcal).unwrap(), None);
+    store
+        .set_accepted_fields(&todoist, &[Field::Subject, Field::Due])
+        .unwrap();
+    assert_eq!(
+        store.accepted_fields(&todoist).unwrap(),
+        Some(vec![Field::Subject, Field::Due])
+    );
+    assert_eq!(
+        store.accepted_kinds(&todoist).unwrap(),
+        Some(vec![Kind::Task, Kind::Event])
+    );
+    store.set_accepted_fields(&gcal, &[]).unwrap();
+    assert_eq!(store.accepted_fields(&gcal).unwrap(), Some(vec![]));
 }
