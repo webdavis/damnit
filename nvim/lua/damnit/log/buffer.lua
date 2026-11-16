@@ -2,7 +2,7 @@ local rows = require("damnit.log.rows")
 
 local NAME = "dam://log"
 
-local Log = {}
+local Log = vim.tbl_extend("error", {}, require("damnit.log.revert"))
 Log.__index = Log
 
 local M = {}
@@ -100,6 +100,14 @@ function Log:bind(buf)
       group = "log",
       run = function()
         self:toggle()
+      end,
+    },
+    {
+      lhs = "R",
+      desc = "revert the commit, after the confirm float",
+      group = "log",
+      run = function()
+        self:revert()
       end,
     },
   })
