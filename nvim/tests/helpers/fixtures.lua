@@ -12,6 +12,12 @@ function M.read(name)
 end
 
 ---@param name string
+---@return table
+function M.decoded(name)
+  return vim.json.decode(M.read(name), { luanil = { object = true, array = true } })
+end
+
+---@param name string
 function M.answer(name)
   return { code = 0, stdout = M.read(name), stderr = "" }
 end
