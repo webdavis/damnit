@@ -45,3 +45,47 @@ fn the_nearest_of_two_nested_objects_wins() {
     let objects = [task(1, "errands", "Home"), task(2, "shop", "Home/errands")];
     assert_eq!(nearest("Home/errands/shop/later", &objects), vec![oid(2)]);
 }
+
+fn parented(b: u8, subject: &str, path: &str, parent: u8) -> Object {
+    let mut object = task(b, subject, path);
+    object.base_mut().parent = Some(oid(parent));
+    object
+}
+
+#[test]
+fn objects_whose_parents_are_known_are_settled() {
+    let objects = [
+        task(1, "errands", "Home"),
+        parented(2, "milk", "Home/errands", 1),
+    ];
+    assert!(unsettled(&objects).is_empty());
+}
+
+#[test]
+fn an_object_under_two_same_named_objects_is_unsettled() {
+    let objects = [
+        task(1, "errands", "Home"),
+        task(2, "errands", "Home"),
+        task(3, "milk", "Home/errands"),
+    ];
+    let found: Vec<_> = unsettled(&objects)
+        .into_iter()
+        .map(|(object, could_hold)| (object.oid().clone(), could_hold))
+        .collect();
+    assert_eq!(found, vec![(oid(3), vec![oid(1), oid(2)])]);
+}
+
+#[test]
+fn an_object_no_folder_holds_is_settled_without_a_parent() {
+    let objects = [task(1, "errands", "Home"), task(2, "milk", "Home")];
+    assert!(unsettled(&objects).is_empty());
+}
+
+#[test]
+fn an_object_in_a_plain_place_below_its_parent_is_settled() {
+    let objects = [
+        task(1, "errands", "Home"),
+        parented(2, "milk", "Home/errands/later", 1),
+    ];
+    assert!(unsettled(&objects).is_empty());
+}

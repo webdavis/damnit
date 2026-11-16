@@ -70,8 +70,8 @@ It prints one row per check, then what needs attention, and creates no file.
 `dam doctor --fix` creates the starter `config.lua` and the store where each is missing.
 It changes no file that exists, and the report names each file it created.
 `dam doctor --fix <check>...` creates only what the named checks cover.
-`dam doctor <check>...` runs only the named checks: `config`, `database`, `helpers`, `credentials`
-and `pushes`.
+`dam doctor <check>...` runs only the named checks: `config`, `database`, `helpers`, `credentials`,
+`pushes` and `parents`.
 Its `config` check reads both files in full and lists each token warning under its row.
 That row may quote an error raised in `secrets.lua`. Elsewhere only a credential function's own
 error reaches you, and only when you run the command without `DAM_TOKEN`.
@@ -81,6 +81,8 @@ Its `helpers` check starts each remote's helper with no credential and asks only
 Its `credentials` check finds each credential the helper asks for in `secrets.lua`, and calls no
 credential function.
 Its `pushes` check warns of changes still owed to a remote, or sent without an answer.
+Its `parents` check lists each object that sits under two same-named objects and does not know
+which one is its parent.
 `helpers`, `credentials` and `pushes` list one row for each remote under their own row.
 `dam doctor` exits 1 when a check finds an issue.
 `docs/schemas/doctor.schema.json` is the schema of its `--json` answer.
