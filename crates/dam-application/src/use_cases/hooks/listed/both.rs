@@ -1,4 +1,4 @@
-use dam_domain::{Object, Oid};
+use dam_domain::{Command, Filter, Object, Oid, Path};
 
 use super::ListedHookRun;
 use crate::config::HookEvent;
@@ -9,7 +9,7 @@ impl Dam<'_> {
     pub fn run_hook_over_listed(
         &self,
         hook: HookEvent,
-        query: Option<&str>,
+        filter: &Filter,
     ) -> Result<ListedHookRun, UseCaseError> {
         let project = self.project_hooks.filter(|p| p.config.declares(hook));
         let personal = self.config.declares(hook);
@@ -17,7 +17,8 @@ impl Dam<'_> {
             return Err(Refusal::HookNotDeclared(hook).into());
         }
         let listed: Vec<Oid> = self
-            .list(query)?
+            .selected(filter, Command::HookRun, &Path::root(), &[])?
+            .0
             .into_iter()
             .filter_map(|object| match object {
                 Object::Task(task) => Some(task.base.oid),

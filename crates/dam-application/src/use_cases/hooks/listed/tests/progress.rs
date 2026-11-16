@@ -5,7 +5,9 @@ use crate::testing::Said;
 #[test]
 fn the_run_is_one_step_counted_task_by_task_that_finishes() {
     let s = every_hook();
-    s.dam().run_hook_over_listed(TaskDone, None).unwrap();
+    s.dam()
+        .run_hook_over_listed(TaskDone, &Filter::default())
+        .unwrap();
     assert_eq!(
         *s.fixture.progress.said.borrow(),
         [

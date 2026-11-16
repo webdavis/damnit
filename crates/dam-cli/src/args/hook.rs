@@ -1,6 +1,8 @@
 use clap::{Args, Subcommand, ValueEnum};
 use dam_application::HookEvent;
 
+use super::selection::SelectArgs;
+
 #[derive(Args, Debug)]
 pub(crate) struct HookArgs {
     #[command(subcommand)]
@@ -26,8 +28,8 @@ It contacts no remote. Read the changes with dam diff; dam restore undoes them.
 
 Examples:
   dam hook run task_changed
-  dam hook run task_pulled @waiting
-  dam hook run task_new today -o json"
+  dam hook run task_pulled --labels waiting
+  dam hook run task_new --due today --done false -o json"
     )]
     Run(HookRunArgs),
 }
@@ -36,8 +38,8 @@ Examples:
 pub(crate) struct HookRunArgs {
     #[arg(value_enum, help = "Name the hook to run by its event")]
     pub(crate) hook: HookName,
-    #[arg(help = "Narrow the tasks by a query, such as due:today, or a saved filter's name")]
-    pub(crate) query: Option<String>,
+    #[command(flatten)]
+    pub(crate) selection: SelectArgs,
 }
 
 #[derive(Clone, Copy, Debug, ValueEnum)]

@@ -14,7 +14,9 @@ fn the_hook_is_called_for_no_more_tasks_after_sixty_seconds() {
         hooks: &slow,
         ..s.dam()
     };
-    let run = dam.run_hook_over_listed(TaskNew, None).unwrap();
+    let run = dam
+        .run_hook_over_listed(TaskNew, &Filter::default())
+        .unwrap();
     assert_eq!((run.ran, run.not_reached), (2, 1));
     assert_eq!(ran(&s).len(), 2);
 }
@@ -52,7 +54,7 @@ fn ctrl_c_stops_the_run_and_keeps_the_change_made() {
         ..s.dam()
     };
     assert_eq!(
-        dam.run_hook_over_listed(TaskNew, None),
+        dam.run_hook_over_listed(TaskNew, &Filter::default()),
         Err(UseCaseError::Helper(HelperError::Cancelled))
     );
     assert_eq!(ran(&s).len(), 1);

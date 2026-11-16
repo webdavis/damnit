@@ -39,3 +39,28 @@ fn hook_run_calls_a_real_hook_file_and_leaves_its_change_as_a_working_change_the
         .collect();
     assert_eq!(hooks, [&serde_json::json!("task_changed")], "{out}");
 }
+
+#[test]
+fn hook_run_calls_the_hook_only_for_the_tasks_a_selection_flag_selects() {
+    let _guard =
+        support::guard("hook_run_calls_the_hook_only_for_the_tasks_a_selection_flag_selects");
+    let sb = Sandbox::new();
+    sb.new_object(&["buy milk", "--labels", "errand"]);
+    sb.new_object(&["call Ann"]);
+    sb.write_hooks(&[(
+        "task_changed",
+        "function(task) return { subject = task.subject .. ' today' } end",
+    )]);
+    let out = sb.output(&[
+        "hook",
+        "run",
+        "task_changed",
+        "--labels",
+        "errand",
+        "-o",
+        "json",
+    ]);
+    assert!(out.status.success(), "{out:?}");
+    let answer: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!((&answer["ran"], &answer["changed"]), (&1.into(), &1.into()));
+}

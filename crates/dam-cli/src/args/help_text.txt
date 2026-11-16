@@ -266,10 +266,41 @@ It contacts no remote. Read the changes with dam diff; dam restore undoes them.
 
 Examples:
   dam hook run task_changed
-  dam hook run task_pulled @waiting
-  dam hook run task_new today -o json
+  dam hook run task_pulled --labels waiting
+  dam hook run task_new --due today --done false -o json
 dam hook run hook: help = Name the hook to run by its event
-dam hook run query: help = Narrow the tasks by a query, such as due:today, or a saved filter's name
+dam hook run kind: help = One of task, event, any; a,b for either
+dam hook run subject: help = Holds this text, ignoring case
+dam hook run body: help = Holds this text, ignoring case; none for empty
+dam hook run path: help = At or under this folder; a/,b/ for either
+dam hook run labels: help = Exactly this value; a,b for either; none for empty
+dam hook run category: help = A label group, or GROUP=LABEL; GROUP=a,b for either; none for empty
+dam hook run parent: help = This id, a list of ids, or in:FILTER; none for empty
+dam hook run depends: help = This id, a list of ids, or in:FILTER; none for empty
+dam hook run reminders: help = A length or a span: 30m, 30m..2h, ..5m; none for empty
+dam hook run filter: help = Listed by this saved filter; a,b for either
+dam hook run author: help = Exactly this value; a,b for either
+dam hook run done: help = true, false or any; the bare flag means true
+dam hook run overdue: help = true, false or any; the bare flag means true
+dam hook run blocked: help = true, false or any; the bare flag means true
+dam hook run priority: help = A number from 1 to 4, a list 1,2 or a span ..2
+dam hook run due: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty
+dam hook run deadline: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty
+dam hook run focus.day: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty
+dam hook run completed_at: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty
+dam hook run estimate: help = A length or a span: 30m, 30m..2h, ..5m; none for empty
+dam hook run attached: help = This id, a list of ids, or in:FILTER; none for empty
+dam hook run start: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu
+dam hook run end: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu
+dam hook run location: help = Holds this text, ignoring case; none for empty
+dam hook run status: help = One of confirmed, tentative, cancelled; a,b for either
+dam hook run transparency: help = One of busy, free; a,b for either
+dam hook run visibility: help = One of default, public, private, confidential; a,b for either
+dam hook run event_type: help = One of default, focus_time, out_of_office, working_location, birthday; a,b for either
+dam hook run response: help = One of needs_action, accepted, declined, tentative; a,b for either; none for empty
+dam hook run organizer.email: help = Exactly this value; a,b for either; none for empty
+dam hook run attendees.email: help = Exactly this value; a,b for either; none for empty
+dam hook run any: help = Hold at least one of the --any conditions, as well as every other flag
 dam remote: about = Manage remotes
 dam remote add: about = Add a remote to config.lua
 dam remote add name: help = Name the remote, such as todoist
