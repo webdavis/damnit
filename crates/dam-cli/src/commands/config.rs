@@ -15,7 +15,7 @@ mod warnings;
 
 use dam_adapters::LuaConfigFile;
 use dam_application::ProjectHookSwitches;
-use route::{PERSONAL_FILE, Written};
+use route::Written;
 
 use crate::args::ConfigCommand;
 use crate::error::CliError;
@@ -43,7 +43,7 @@ pub(crate) fn run(
         ConfigCommand::Unset { key, global } => {
             match project_hooks::this_clone(&key, global, standing) {
                 Some(clone) => project_hooks::set(switches, clone, None),
-                None => set::run(file, PERSONAL_FILE, &key, None),
+                None => written(file, &key, None, global, standing),
             }
         }
         ConfigCommand::PrintDefault => print_default::run(),
@@ -60,10 +60,17 @@ fn written(
     global: bool,
     standing: &Standing,
 ) -> Result<Report, CliError> {
-    let written = route::written(key, global, standing, "config set")?;
+    let verb = match value {
+        Some(_) => "config set",
+        None => "config unset",
+    };
+    let written = route::written(key, global, standing, verb)?;
     let named = written.name();
     match written {
         Written::Personal => set::run(file, named, key, value),
+        Written::Project(_) if value.is_none() && key == "path" => Err(CliError::Usage(
+            "a project needs its path; change it with dam config set path <path>".into(),
+        )),
         Written::Project(project) => set::run(&project, named, key, value),
     }
 }

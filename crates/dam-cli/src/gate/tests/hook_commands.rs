@@ -42,6 +42,7 @@ fn no_token_turns_project_hooks_on_or_off_whatever_it_holds() {
         ("config set ls label:app", "config set"),
         ("config set --global owner Grace", "config set"),
         ("config unset project.hooks", "config unset"),
+        ("config unset ls", "config unset"),
     ] {
         assert_eq!(
             refuse_any_token_to_an_owner_only_verb(true, &command(line)),
