@@ -26,7 +26,7 @@ impl Outcome {
 
 #[derive(Serialize)]
 pub(crate) struct Check {
-    pub(super) name: CheckName,
+    pub(super) name: &'static str,
     pub(super) result: Outcome,
     pub(super) detail: String,
     pub(super) advice: Option<String>,
@@ -44,6 +44,10 @@ pub(crate) struct ConfigFiles {
 
 impl Check {
     pub(crate) fn of(name: CheckName, result: Outcome, detail: impl Into<String>) -> Check {
+        Check::named(name.as_str(), result, detail)
+    }
+
+    pub(crate) fn named(name: &'static str, result: Outcome, detail: impl Into<String>) -> Check {
         Check {
             name,
             result,
@@ -73,6 +77,6 @@ impl Check {
     }
 
     pub(super) fn line(&self) -> String {
-        format!("{}: {}", self.name.as_str(), self.detail)
+        format!("{}: {}", self.name, self.detail)
     }
 }

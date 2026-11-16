@@ -91,8 +91,10 @@ which one is its parent.
 
 `dam test` makes each part do its real job once and says whether it worked.
 It contacts each remote and runs credential functions, which may prompt.
-`dam test <part>...` runs only the named parts. The one part today is `credentials`.
+`dam test <part>...` runs only the named parts: `credentials` and `filters`.
 Its `credentials` part signs in to each remote and writes nothing.
+Its `filters` part runs each saved filter once over the store, as `dam ls <name>` would, and
+changes nothing. A failing filter names the object and the line of `config.lua` it failed on.
 `dam test` prints the report `dam doctor` prints, with `command` set to `test`.
 It exits 1 when a part finds an issue.
 `docs/schemas/test.schema.json` is the schema of its `--json` answer.
@@ -340,6 +342,7 @@ These steps report progress:
 - sending changes to each remote in a push
 - the `task_new`, `task_changed`, `task_done` and `task_pulled` hooks
 - signing in to each remote in `dam test credentials`
+- trying each saved filter in `dam test filters`
 - each helper check in `dam doctor`
 - upgrading the store on the first run after a new version
 

@@ -4,15 +4,16 @@ use crate::args::PartName;
 #[test]
 fn a_login_that_works_is_signed_in() {
     let files = Files::new(FAKE, FAKE_TOKEN);
-    let report = files.report(&Helpers::default(), &[]);
+    let report = files.report(&Helpers::default(), &[PartName::Credentials]);
     assert_eq!(
         rows_of(&report),
         ["  ✓ credentials: 1 remote: 1 ok", "    ✓ fake: signed in"]
     );
     assert_eq!(attention_of(&report), ["  ✓ nothing needs attention"]);
     assert_eq!(json(&report)["checks"][0]["result"], "ok");
-    let asked = files.report(&Helpers::default(), &[PartName::Credentials]);
-    assert_eq!(json(&asked), json(&report));
+    let every = json(&files.report(&Helpers::default(), &[]));
+    assert_eq!(every["checks"][0], json(&report)["checks"][0]);
+    assert_eq!(every["checks"][1]["name"], "filters");
 }
 
 #[test]
@@ -20,7 +21,7 @@ fn a_refused_credential_shows_what_the_remote_said_and_never_the_credential() {
     let secrets =
         format!("return {{ schema = 1, remote = {{ fake = {{ api_token = {MARKER:?} }} }} }}\n");
     let files = Files::new(FAKE, &secrets);
-    let report = files.report(&Helpers::default(), &[]);
+    let report = files.report(&Helpers::default(), &[PartName::Credentials]);
     let said = "did not sign in: fake answered 401: token <api_token> is not valid";
     assert_eq!(
         rows_of(&report),
@@ -53,7 +54,7 @@ fn a_refused_credential_shows_what_the_remote_said_and_never_the_credential() {
 fn a_missing_credential_is_an_issue_naming_where_it_goes() {
     let files = Files::new(FAKE, "return { schema = 1 }\n");
     let helpers = Helpers::default();
-    let report = files.report(&helpers, &[]);
+    let report = files.report(&helpers, &[PartName::Credentials]);
     assert_eq!(
         rows_of(&report),
         [
@@ -75,7 +76,7 @@ fn a_credential_function_runs_exactly_once() {
         calls.display().to_string()
     );
     let files = Files::new(FAKE, &secrets);
-    let report = files.report(&Helpers::default(), &[]);
+    let report = files.report(&Helpers::default(), &[PartName::Credentials]);
     assert_eq!(rows_of(&report)[1], "    ✓ fake: signed in");
     assert_eq!(std::fs::read_to_string(calls).unwrap(), "x");
 }
@@ -84,7 +85,7 @@ fn a_credential_function_runs_exactly_once() {
 fn a_helper_not_installed_is_an_issue() {
     let config = "return { remote = { work = { url = \"tool::\" } } }\n";
     let secrets = "return { schema = 1, remote = { work = { api_token = \"tok\" } } }\n";
-    let report = Files::new(config, secrets).report(&Helpers::default(), &[]);
+    let report = Files::new(config, secrets).report(&Helpers::default(), &[PartName::Credentials]);
     assert_eq!(
         rows_of(&report)[1..],
         [
@@ -106,7 +107,7 @@ fn a_helper_that_cannot_test_a_login_is_a_warning_and_is_never_sent_one() {
         calls.display().to_string()
     );
     let helpers = Helpers::default();
-    let report = Files::new(config, &secrets).report(&helpers, &[]);
+    let report = Files::new(config, &secrets).report(&helpers, &[PartName::Credentials]);
     assert_eq!(
         rows_of(&report)[1..],
         [

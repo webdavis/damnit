@@ -9,6 +9,7 @@ pub struct FakeFilterFunctions {
     pub keeping: Vec<&'static str>,
     pub never_reading_history: bool,
     pub failing: RefCell<Option<FunctionFailure>>,
+    pub failing_on: Option<(&'static str, FunctionFailure)>,
     pub seen: RefCell<Vec<(String, Option<History>)>>,
 }
 
@@ -42,6 +43,11 @@ impl FilterFunctions for FakeFilterFunctions {
         self.seen.borrow_mut().extend(seen);
         if let Some(failure) = self.failing.borrow_mut().take() {
             return Err(failure);
+        }
+        if let Some((subject, failure)) = &self.failing_on
+            && objects.iter().any(|o| o.base().subject == *subject)
+        {
+            return Err(failure.clone());
         }
         Ok(objects
             .iter()

@@ -9,4 +9,5 @@ pub(crate) struct TestArgs {
 #[derive(clap::ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum PartName {
     Credentials,
+    Filters,
 }

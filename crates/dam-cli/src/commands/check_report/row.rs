@@ -38,6 +38,10 @@ impl Row {
 
 impl Check {
     pub(crate) fn of_rows(name: CheckName, rows: Vec<Row>) -> Check {
+        Check::counting(name.as_str(), "remote", rows)
+    }
+
+    pub(crate) fn counting(name: &'static str, each: &str, rows: Vec<Row>) -> Check {
         let counted = |outcome| rows.iter().filter(|row| row.result == outcome).count();
         let result = WORST_FIRST
             .iter()
@@ -52,14 +56,14 @@ impl Check {
                 n => Some(format!("{n} {many}")),
             })
             .collect();
-        let remotes = match rows.len() {
-            1 => "1 remote".to_string(),
-            n => format!("{n} remotes"),
+        let counted_rows = match rows.len() {
+            1 => format!("1 {each}"),
+            n => format!("{n} {each}s"),
         };
-        let detail = format!("{remotes}: {}", counts.join(", "));
+        let detail = format!("{counted_rows}: {}", counts.join(", "));
         Check {
             rows,
-            ..Check::of(name, result, detail)
+            ..Check::named(name, result, detail)
         }
     }
 
@@ -70,7 +74,7 @@ impl Check {
                 .into_iter()
                 .collect();
         }
-        let name = self.name.as_str();
+        let name = self.name;
         self.rows
             .iter()
             .filter(|row| row.result == outcome)

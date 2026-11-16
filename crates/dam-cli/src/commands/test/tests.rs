@@ -1,4 +1,6 @@
 mod credentials;
+mod filters;
+mod filters_wiring;
 mod progress;
 mod report;
 
@@ -109,8 +111,19 @@ impl Files {
         }
     }
 
+    fn store_path(&self) -> std::path::PathBuf {
+        self._dir.path().join("store.db")
+    }
+
     fn report(&self, launcher: &Helpers, asked: &[PartName]) -> CheckReport {
-        super::report(asked, &self.config, launcher, &self.progress)
+        let store_path = self.store_path();
+        let machine = super::Machine {
+            config_file: &self.config,
+            store_path: &store_path,
+            launcher,
+            progress: &self.progress,
+        };
+        super::report(asked, &machine)
     }
 }
 
