@@ -101,7 +101,7 @@ function M.render(doc)
       end
       local header = ("%s (%d)"):format(title, #rows)
       table.insert(lines, header)
-      table.insert(marks, { line = #lines - 1, col = 0, end_col = #header, group = "DamSection" })
+      table.insert(marks, { line = #lines - 1, col = 0, end_col = #header, group = "DamHeader" })
       targets[#lines] = { kind = "section", section = name }
       for _, row in ipairs(rows) do
         table.insert(lines, "  " .. row[1])

@@ -81,7 +81,7 @@ return {
         return lines[mark.line + 1]
       end,
       vim.tbl_filter(function(mark)
-        return mark.group == "DamSection"
+        return mark.group == "DamHeader"
       end, marks)
     )
     assert(vim.deep_equal(marked, headers(lines)), vim.inspect(marked))
