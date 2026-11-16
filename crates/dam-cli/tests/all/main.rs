@@ -1,5 +1,6 @@
 mod support;
 
+mod agenda_selection;
 mod agents_page;
 mod answer_schemas;
 mod change_details;

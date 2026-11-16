@@ -7,7 +7,7 @@ use super::saved::Saved;
 use crate::errors::UseCaseError;
 use crate::service::Dam;
 
-pub(super) struct Facts<'a> {
+pub(crate) struct Facts<'a> {
     now: Zoned,
     categories: &'a Categories,
     open: BTreeSet<Oid>,

@@ -1,5 +1,5 @@
 use dam_application::SelectError;
-use dam_domain::{FilterTable, select_field};
+use dam_domain::{FilterTable, Fix, select_field};
 
 use crate::args::selection::flag_of;
 
@@ -11,11 +11,14 @@ mod sort_fix;
 use command_line::command_line;
 pub(crate) use command_line::quoted;
 
+pub(crate) const LIST: &str = "dam list";
+
 #[derive(Debug)]
 pub(crate) struct Fault {
     pub(crate) error: SelectError,
     pub(crate) typed: FilterTable,
     pub(crate) sort: Vec<String>,
+    pub(crate) verb: String,
 }
 
 impl Fault {
@@ -43,7 +46,18 @@ impl Fault {
 
     pub(crate) fn command(&self) -> String {
         let sort = sort_fix::sorted(&self.error, &self.sort);
-        command_line(&fix::corrected(&self.error, &self.typed), &sort)
+        command_line(
+            self.run_as(),
+            &fix::corrected(&self.error, &self.typed),
+            &sort,
+        )
+    }
+
+    fn run_as(&self) -> &str {
+        match &self.error {
+            SelectError::Defaults(e) if e.fix() == Fix::UseList => LIST,
+            _ => &self.verb,
+        }
     }
 
     pub(crate) fn conflict(&self) -> bool {

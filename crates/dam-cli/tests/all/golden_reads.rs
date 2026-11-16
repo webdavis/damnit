@@ -58,7 +58,7 @@ fn agenda_prints_the_golden_document() {
         "--from",
         "2026-09-25",
         "--to",
-        "2026-09-26",
+        "2026-09-25",
     ];
     assert_golden_output(&fixture::committed(), &args, "agenda.json");
 }

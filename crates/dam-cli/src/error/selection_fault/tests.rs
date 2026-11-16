@@ -31,6 +31,7 @@ fn read(typed: FilterTable) -> CliError {
         error: SelectError::Value(error),
         typed,
         sort: Vec::new(),
+        verb: "dam list".into(),
     }))
 }
 
@@ -39,6 +40,7 @@ fn defaults(error: DefaultsError, typed: FilterTable) -> CliError {
         error: SelectError::Defaults(error),
         typed,
         sort: Vec::new(),
+        verb: "dam list".into(),
     }))
 }
 

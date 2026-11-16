@@ -18,6 +18,14 @@ Examples:
   dam list --kind event --start today
   dam list --path work/ --any labels=urgent --any due=..today";
 
+pub(crate) const AGENDA_HELP: &str =
+    "The selection flags narrow the events in the window, as they do for dam list.
+
+Examples:
+  dam agenda --to today
+  dam agenda --from week+1 --to week+1 --labels work
+  dam agenda --response not:declined --to now+4h";
+
 #[derive(Clone, Debug, Default)]
 pub(crate) struct SelectArgs {
     pub(crate) typed: FilterTable,

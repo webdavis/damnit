@@ -33,11 +33,12 @@ fn a_raising_filter_tells_a_token_its_name_and_nothing_from_the_file() {
     let held = grant_to(&sb, "tool", 1, vec![grant(&["task:read", "event:read"])]);
     let agenda = [
         "agenda",
+        "--filter",
         "broken",
         "--from",
         "2030-01-07",
         "--to",
-        "2030-01-08",
+        "2030-01-07",
     ];
     for line in [&["list", "--filter", "broken"][..], &agenda] {
         let out = sb.output_holding(&held, line);
@@ -64,7 +65,7 @@ fn what_match_prints_goes_to_standard_error_and_leaves_json_whole() {
     );
     for line in [
         &["list", "--filter", "loud", "-o", "json"][..],
-        &["agenda", "loud", "-o", "json"],
+        &["agenda", "--filter", "loud", "-o", "json"],
     ] {
         let out = sb.output(line);
         assert!(out.status.success(), "{line:?}: {out:?}");

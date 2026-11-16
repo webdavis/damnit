@@ -27,11 +27,13 @@ fn every_selection_fault_document_matches_the_published_error_schema() {
             error: SelectError::Value(bad.clone()),
             typed: typed("due", "tomorow"),
             sort: Vec::new(),
+            verb: "dam list".into(),
         })),
         CliError::Selection(Box::new(Fault {
             error: SelectError::Defaults(conflict),
             typed: typed("kind", "task"),
             sort: Vec::new(),
+            verb: "dam list".into(),
         })),
         CliError::UseCase(UseCaseError::Select(SelectError::Value(bad))),
     ];

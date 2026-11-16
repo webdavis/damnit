@@ -7,8 +7,15 @@ use crate::error::CliError;
 const ANY: &str = "any";
 const ORDER_KEYS: [&str; 3] = ["sort", "limit", "offset"];
 
-pub(super) fn table(fields: &Map<String, Value>) -> Result<FilterTable, CliError> {
-    group(fields, |key| ORDER_KEYS.contains(&key))
+pub(super) fn table(fields: &Map<String, Value>, verb: &str) -> Result<FilterTable, CliError> {
+    group(fields, verb, |key| ORDER_KEYS.contains(&key))
+}
+
+pub(super) fn refuse_order(fields: &Map<String, Value>, verb: &str) -> Result<(), CliError> {
+    match ORDER_KEYS.iter().find(|key| fields.contains_key(**key)) {
+        Some(key) => Err(refuse(&format!("{key} is not a key {verb} takes"))),
+        None => Ok(()),
+    }
 }
 
 pub(super) fn order(fields: &Map<String, Value>) -> Result<OrderArgs, CliError> {
@@ -22,22 +29,23 @@ pub(super) fn order(fields: &Map<String, Value>) -> Result<OrderArgs, CliError> 
 
 fn group(
     fields: &Map<String, Value>,
+    verb: &str,
     skipped: impl Fn(&str) -> bool,
 ) -> Result<FilterTable, CliError> {
     let mut table = FilterTable::default();
     for (key, given) in fields.iter().filter(|(key, _)| !skipped(key)) {
         if key == ANY {
-            table.any = groups(given)?;
+            table.any = groups(given, verb)?;
         } else if select_field(key).is_some() {
             table.fields.insert(key.clone(), value(key, given)?);
         } else {
-            return Err(unknown(key));
+            return Err(unknown(key, verb));
         }
     }
     Ok(table)
 }
 
-fn groups(given: &Value) -> Result<Vec<FilterTable>, CliError> {
+fn groups(given: &Value, verb: &str) -> Result<Vec<FilterTable>, CliError> {
     let refused = || {
         refuse(
             r#"any must be a list of tables, such as [{"labels": "urgent"}, {"due": "..today"}]"#,
@@ -49,7 +57,7 @@ fn groups(given: &Value) -> Result<Vec<FilterTable>, CliError> {
     items
         .iter()
         .map(|item| match item {
-            Value::Object(fields) => group(fields, |_| false),
+            Value::Object(fields) => group(fields, verb, |_| false),
             _ => Err(refused()),
         })
         .collect()
@@ -89,12 +97,12 @@ fn count(fields: &Map<String, Value>, key: &str) -> Result<Option<usize>, CliErr
         .transpose()
 }
 
-fn unknown(key: &str) -> CliError {
+fn unknown(key: &str, verb: &str) -> CliError {
     let hint = match closest_field(key) {
         Some(closest) => format!("the closest is {closest}"),
-        None => "dam list --help shows the fields".into(),
+        None => format!("{verb} --help shows the fields"),
     };
-    refuse(&format!("{key} is not a key dam list takes; {hint}"))
+    refuse(&format!("{key} is not a key {verb} takes; {hint}"))
 }
 
 fn refuse(why: &str) -> CliError {

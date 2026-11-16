@@ -148,9 +148,8 @@ fn text_mode_prints_what_clap_prints() {
     assert!(out.stdout.is_empty());
     assert_eq!(
         String::from_utf8_lossy(&out.stderr),
-        "error: unexpected argument '--bogus' found\n\n  \
-         tip: to pass '--bogus' as a value, use '-- --bogus'\n\n\
-         Usage: dam agenda [OPTIONS] [QUERY]\n\n\
+        "error: unexpected argument '--bogus' found\n\n\
+         Usage: dam agenda [OPTIONS]\n\n\
          For more information, try '--help'.\n"
     );
 }

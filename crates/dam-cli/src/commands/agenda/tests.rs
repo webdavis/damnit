@@ -3,7 +3,7 @@ use dam_domain::{Attendee, Event, Object, Oid, ResponseStatus, When};
 use super::*;
 use crate::testing::context;
 
-fn standup() -> Event {
+pub(super) fn standup() -> Event {
     let start = "2026-09-18T14:00:00+00:00[UTC]".parse().unwrap();
     let end = "2026-09-18T14:30:00+00:00[UTC]".parse().unwrap();
     let mut e = Event::new(
@@ -39,7 +39,7 @@ fn the_agenda_document_keeps_its_contract() {
     );
 }
 
-fn timed(fill: u8, subject: &str, start: &str, end: &str) -> Object {
+pub(super) fn timed(fill: u8, subject: &str, start: &str, end: &str) -> Object {
     Object::Event(Event::new(
         Oid::generate(&mut |b: &mut [u8]| b.fill(fill)),
         subject,
@@ -48,7 +48,7 @@ fn timed(fill: u8, subject: &str, start: &str, end: &str) -> Object {
     ))
 }
 
-fn subjects(report: &Report) -> Vec<&str> {
+pub(super) fn subjects(report: &Report) -> Vec<&str> {
     let events = report.data["events"].as_array().unwrap();
     events
         .iter()
@@ -88,23 +88,6 @@ fn with_no_flags_the_window_is_now_to_a_day_later() {
 }
 
 #[test]
-fn the_query_narrows_the_events() {
-    let ctx = context();
-    ctx.store.put(&Object::Event(standup())).unwrap();
-    ctx.store
-        .put(&timed(
-            5,
-            "lunch",
-            "2026-09-18T16:00:00+00:00[UTC]",
-            "2026-09-18T17:00:00+00:00[UTC]",
-        ))
-        .unwrap();
-    let mut narrowed = args(None, None);
-    narrowed.query = Some("@work".into());
-    assert_eq!(subjects(&run_agenda(&ctx, narrowed).unwrap()), ["standup"]);
-}
-
-#[test]
 fn a_declined_meeting_is_listed_as_not_busy() {
     let ctx = context();
     let mut declined = standup();
@@ -129,7 +112,11 @@ fn a_window_that_closes_before_it_opens_is_a_usage_error() {
     let past = run_agenda(&ctx, args(None, Some("2026-09-17"))).unwrap_err();
     assert_eq!(past.exit_code(), 2);
     assert_eq!(past.to_string(), "--to must be later than now");
-    let empty = run_agenda(&ctx, args(Some("2026-09-20"), Some("2026-09-20"))).unwrap_err();
+    let empty = run_agenda(
+        &ctx,
+        args(Some("2026-09-20T09:00"), Some("2026-09-20T09:00")),
+    )
+    .unwrap_err();
     assert_eq!(empty.exit_code(), 2);
 }
 

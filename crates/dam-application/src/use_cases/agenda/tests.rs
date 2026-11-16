@@ -3,7 +3,7 @@ use jiff::tz::TimeZone;
 
 use super::*;
 use crate::testing::{FixedClock, Scenario, oid};
-use dam_domain::{EventStatus, Object, Path, Task, When};
+use dam_domain::{EventStatus, Filter, FilterTable, Object, Path, TableValue, Task, When};
 
 fn at(text: &str) -> Timestamp {
     text.parse().unwrap()
@@ -20,11 +20,24 @@ fn on_the_25th() -> Scenario {
     s
 }
 
-fn run(s: &Scenario, query: Option<&str>, from: &str, to: &str) -> Vec<Scheduled> {
+fn selecting(fields: &[(&str, &str)]) -> Filter {
+    let fields = fields
+        .iter()
+        .map(|(k, v)| (k.to_string(), TableValue::One(v.to_string())))
+        .collect();
+    Filter::read(&FilterTable {
+        fields,
+        any: Vec::new(),
+    })
+    .unwrap()
+}
+
+fn run(s: &Scenario, fields: &[(&str, &str)], from: &str, to: &str) -> Vec<Scheduled> {
     s.dam()
         .agenda(
-            query,
+            &selecting(fields),
             &dam_domain::Path::root(),
+            &[],
             Window {
                 from: at(from),
                 to: at(to),
@@ -50,7 +63,7 @@ fn an_event_in_progress_when_the_window_opens_is_listed() {
         "2026-09-25T09:00:00Z",
         "2026-09-25T11:00:00Z",
     )));
-    let found = run(&s, None, "2026-09-25T10:00:00Z", "2026-09-26T10:00:00Z");
+    let found = run(&s, &[], "2026-09-25T10:00:00Z", "2026-09-26T10:00:00Z");
     assert_eq!(subjects(&found), vec!["running"]);
     assert_eq!(
         (found[0].start, found[0].end, found[0].busy),
@@ -73,7 +86,7 @@ fn the_window_is_half_open_on_both_sides() {
         "2026-09-26T10:00:00Z",
         "2026-09-26T11:00:00Z",
     )));
-    assert!(run(&s, None, "2026-09-25T10:00:00Z", "2026-09-26T10:00:00Z").is_empty());
+    assert!(run(&s, &[], "2026-09-25T10:00:00Z", "2026-09-26T10:00:00Z").is_empty());
 }
 
 #[test]
@@ -88,7 +101,7 @@ fn events_are_ordered_by_start_and_a_cancelled_one_is_listed_as_not_busy() {
         "2026-09-25T12:00:00Z",
         "2026-09-25T13:00:00Z",
     )));
-    let found = run(&s, None, "2026-09-25T00:00:00Z", "2026-09-26T00:00:00Z");
+    let found = run(&s, &[], "2026-09-25T00:00:00Z", "2026-09-26T00:00:00Z");
     assert_eq!(subjects(&found), vec!["first", "gone"]);
     assert!(found[0].busy && !found[1].busy);
 }
@@ -111,7 +124,7 @@ fn tasks_are_never_listed_and_a_query_narrows_the_events() {
     assert_eq!(
         subjects(&run(
             &s,
-            None,
+            &[],
             "2026-09-25T00:00:00Z",
             "2026-09-26T00:00:00Z"
         )),
@@ -120,7 +133,7 @@ fn tasks_are_never_listed_and_a_query_narrows_the_events() {
     assert_eq!(
         subjects(&run(
             &s,
-            Some("path:work/"),
+            &[("path", "work/")],
             "2026-09-25T00:00:00Z",
             "2026-09-26T00:00:00Z"
         )),
@@ -145,10 +158,37 @@ fn an_all_day_event_runs_midnight_to_midnight_in_the_zone_given() {
     let zone = TimeZone::fixed(jiff::tz::offset(-4));
     let found = s
         .dam()
-        .agenda(None, &dam_domain::Path::root(), window, &zone)
+        .agenda(
+            &Filter::default(),
+            &dam_domain::Path::root(),
+            &[],
+            window,
+            &zone,
+        )
         .unwrap();
     assert_eq!(
         (found[0].start, found[0].end),
         (at("2026-09-25T04:00:00Z"), at("2026-09-26T04:00:00Z"))
     );
+}
+
+#[test]
+fn a_task_field_is_refused_naming_list() {
+    let s = on_the_25th();
+    let refused = s.dam().agenda(
+        &selecting(&[("due", "today")]),
+        &Path::root(),
+        &[],
+        Window {
+            from: at("2026-09-25T00:00:00Z"),
+            to: at("2026-09-26T00:00:00Z"),
+        },
+        &TimeZone::UTC,
+    );
+    assert!(matches!(
+        refused,
+        Err(crate::UseCaseError::Select(crate::SelectError::Defaults(
+            dam_domain::DefaultsError::TaskFieldInAgenda { field: "due" }
+        )))
+    ));
 }

@@ -1,10 +1,11 @@
-use dam_application::{SelectError, UseCaseError};
-use dam_domain::{Filter, Object, Order, Sort};
+use dam_application::SelectError;
+use dam_domain::{Object, Order, Sort};
 
 use crate::args::ListArgs;
+use crate::commands::asked::Asked;
 use crate::commands::authorship::Authorship;
 use crate::context::Context;
-use crate::error::{CliError, Fault};
+use crate::error::CliError;
 use crate::output::Report;
 use crate::view::{ObjectList, report};
 
@@ -32,26 +33,20 @@ fn listed(ctx: &Context, args: &ListArgs) -> Result<Vec<Object>, CliError> {
         }
         return Ok(ctx.dam().list_within(Some(query), &args.place)?);
     }
-    let typed = &args.selection.typed;
-    let fault = |error| {
-        CliError::Selection(Box::new(Fault {
-            error,
-            typed: typed.clone(),
-            sort: args.order.sort.clone(),
-        }))
+    let asked = Asked {
+        verb: "dam list".into(),
+        typed: &args.selection.typed,
+        sort: &args.order.sort,
     };
-    let filter = Filter::read(typed).map_err(|e| fault(SelectError::Value(e)))?;
+    let filter = asked.filter()?;
     let order = Order {
-        sort: Sort::read(&args.order.sort).map_err(|e| fault(SelectError::Sort(e)))?,
+        sort: Sort::read(&args.order.sort).map_err(|e| asked.fault(SelectError::Sort(e)))?,
         offset: args.order.offset.unwrap_or(0),
         limit: args.order.limit,
     };
-    let dam = ctx.dam();
-    let listed = dam.list_selected(&filter, &order, &args.place, &args.project_filters);
-    listed.map_err(|e| match e {
-        UseCaseError::Select(error) => fault(error),
-        e => e.into(),
-    })
+    ctx.dam()
+        .list_selected(&filter, &order, &args.place, &args.project_filters)
+        .map_err(|e| asked.refused(e))
 }
 
 mod order_beside_default;

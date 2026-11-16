@@ -11,10 +11,9 @@ fn every_failure_class_names_itself_under_json() {
         kind_of(&sb.output(&["show", "0000000", "-o", "json"])),
         "refused"
     );
-    assert_eq!(
-        kind_of(&sb.output(&["agenda", "due:", "-o", "json"])),
-        "parse"
-    );
+    let broken = Sandbox::new();
+    broken.write_config_lua("return {\n  owner = ,\n}\n");
+    assert_eq!(kind_of(&broken.output(&["list", "-o", "json"])), "parse");
     assert_eq!(kind_of(&sb.output(&["done", "zz", "-o", "json"])), "usage");
 
     std::fs::create_dir(sb.dir.path().join("wrong")).unwrap();

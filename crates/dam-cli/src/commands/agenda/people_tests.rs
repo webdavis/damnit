@@ -50,14 +50,7 @@ fn design_review() -> Event {
 fn an_agenda_row_names_the_people_place_and_link_of_its_meeting() {
     let ctx = context();
     ctx.store.put(&Object::Event(design_review())).unwrap();
-    let args = AgendaArgs {
-        scope: Default::default(),
-        place: Default::default(),
-        query: None,
-        from: None,
-        to: None,
-        max_age: vec![],
-    };
+    let args = AgendaArgs::default();
     let document = run_agenda(&ctx, args).unwrap().data;
     let object: serde_json::Value = serde_json::from_str(OBJECT).unwrap();
     let id = object["$id"].as_str().unwrap().to_string();

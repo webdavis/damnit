@@ -14,7 +14,7 @@ fn value_shape(ty: FieldType) -> Value {
     }
 }
 
-fn fields() -> Map<String, Value> {
+pub(super) fn fields() -> Map<String, Value> {
     let mut fields: Map<String, Value> = select_fields()
         .iter()
         .map(|f| {

@@ -119,6 +119,7 @@ impl fmt::Display for UseCaseText<'_> {
                     error: e.clone(),
                     typed: Default::default(),
                     sort: Vec::new(),
+                    verb: "dam list".into(),
                 }
             ),
             UseCaseError::Schedule(ScheduleError::Failed(why)) => {
