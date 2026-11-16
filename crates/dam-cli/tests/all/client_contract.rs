@@ -76,14 +76,12 @@ fn an_editor_is_refused_under_a_machine_format_and_its_death_is_its_own_failure(
     );
     let sb = Sandbox::new();
     let oid = sb.new_object(&["buy oat milk"]);
-    let dies = sb.dir.path().join("bin/dies");
-    std::fs::write(&dies, "#!/bin/sh\nexit 1\n").unwrap();
-    std::fs::set_permissions(&dies, std::os::unix::fs::PermissionsExt::from_mode(0o755)).unwrap();
+    let dies = "false";
 
     let refused = sb
         .command(&["edit", &oid, "-e", "--json"])
-        .env("EDITOR", &dies)
-        .env("VISUAL", &dies)
+        .env("EDITOR", dies)
+        .env("VISUAL", dies)
         .output()
         .unwrap();
     assert_eq!(refused.status.code(), Some(4));
@@ -93,8 +91,8 @@ fn an_editor_is_refused_under_a_machine_format_and_its_death_is_its_own_failure(
 
     let died = sb
         .command(&["edit", &oid, "-e"])
-        .env("EDITOR", &dies)
-        .env("VISUAL", &dies)
+        .env("EDITOR", dies)
+        .env("VISUAL", dies)
         .output()
         .unwrap();
     assert_eq!(

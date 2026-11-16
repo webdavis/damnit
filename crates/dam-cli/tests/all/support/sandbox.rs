@@ -1,6 +1,4 @@
 use std::cell::RefCell;
-use std::os::unix::fs::PermissionsExt;
-use std::path::Path;
 use std::process::Command;
 
 use super::config_files::ConfigFiles;
@@ -13,20 +11,13 @@ pub struct Sandbox {
 impl Sandbox {
     pub fn new() -> Sandbox {
         let dir = tempfile::tempdir().unwrap();
-        let bin = dir.path().join("bin");
-        std::fs::create_dir_all(&bin).unwrap();
-        let helper = bin.join("dam-remote-fake");
-        std::fs::copy(
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fake_helper.sh"),
-            &helper,
-        )
-        .unwrap();
-        std::fs::set_permissions(&helper, std::fs::Permissions::from_mode(0o755)).unwrap();
+        std::fs::create_dir_all(dir.path().join("bin")).unwrap();
         let sandbox = Sandbox {
             dir,
             files: RefCell::new(ConfigFiles::with_the_fake_remote()),
         };
         sandbox.write_config_files();
+        sandbox.install_helper("fake", include_str!("../../fake_helper.sh"));
         sandbox
     }
 
@@ -48,8 +39,9 @@ impl Sandbox {
 
     fn environ(&self, mut command: Command) -> Command {
         let path = format!(
-            "{}:{}",
+            "{}:{}:{}",
             self.dir.path().join("bin").display(),
+            self.dir.path().join("helpers").display(),
             std::env::var("PATH").unwrap_or_default()
         );
         command
