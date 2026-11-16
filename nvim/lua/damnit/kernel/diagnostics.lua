@@ -12,15 +12,24 @@ end
 
 ---@param err damnit.Error
 ---@param oids table<integer, string> each line's oid
+---@param targets? string[] the oids the change was sent for; they show it too when dam names none of them
 ---@return integer[] lines counted from 0
-function M.rows_of(err, oids)
+function M.rows_of(err, oids, targets)
   local named = {}
   for _, oid in ipairs(err.oids or {}) do
     named[oid] = true
   end
+  local shown = vim.deepcopy(named)
+  if not vim.iter(targets or {}):any(function(oid)
+    return named[oid]
+  end) then
+    for _, oid in ipairs(targets or {}) do
+      shown[oid] = true
+    end
+  end
   local lines = {}
   for line, oid in pairs(oids) do
-    if named[oid] then
+    if shown[oid] then
       table.insert(lines, line - 1)
     end
   end

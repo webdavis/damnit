@@ -842,7 +842,8 @@ the row. Two or more rows go as one dam call after a float shows dam's preview; 
 | `s` | `dam add` |
 | `m`, `M` | mark or unmark; unmark all |
 
-A refusal shows as an error on the rows dam names.
+A refusal shows as an error on the rows dam names, and on the rows you changed when dam names
+none of them.
 
 `:Dam task <oid>`, or `<CR>` on a row of the list, opens the task as `dam show` prints it: one
 `field: value` line each, then `---` and the body. Change a line and `:w` sends `dam edit`
