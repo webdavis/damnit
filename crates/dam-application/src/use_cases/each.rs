@@ -20,6 +20,7 @@ pub enum Selector {
 pub struct SetRun {
     pub preview: bool,
     pub expect: Option<usize>,
+    pub as_one: bool,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -58,7 +59,13 @@ impl Dam<'_> {
             rehearsed(self.store, work)?
         } else {
             let completing = if completing { &oids[..] } else { &[] };
-            atomically(self.store, || self.entering(completing, &mut work))?
+            atomically(self.store, || {
+                let changes = self.entering(completing, &mut work)?;
+                match run.as_one {
+                    true => self.gathered(changes),
+                    false => Ok(changes),
+                }
+            })?
         };
         Ok(SetChanges {
             preview: run.preview,
@@ -126,6 +133,7 @@ pub(crate) fn sent(landed: Landed) -> Option<Sent> {
     }
 }
 
+mod as_one;
 pub(crate) mod rehearsal;
 mod select;
 mod verbs;
