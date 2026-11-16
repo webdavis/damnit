@@ -4,7 +4,7 @@ use super::fixture::{self, CALL_MOM, OAT_MILK, STANDUP, run, short};
 use super::sandbox::Sandbox;
 use super::small_config::small_config;
 
-fn json_of(sb: &Sandbox, args: &[&str]) -> serde_json::Value {
+pub(super) fn json_of(sb: &Sandbox, args: &[&str]) -> serde_json::Value {
     let out = sb.output(&[args, &["--json"]].concat());
     assert!(out.status.success(), "{args:?}: {out:?}");
     serde_json::from_slice(&out.stdout).unwrap()
@@ -139,26 +139,6 @@ pub fn answers(command: &str) -> Option<Vec<serde_json::Value>> {
         "day list" => vec![json_of(&Sandbox::new(), &["day", "list"])],
         "category list" => vec![json_of(&fixture::seeded(), &["category", "list"])],
         "filter list" => vec![json_of(&fixture::seeded(), &["filter", "list"])],
-        "category create" => vec![json_of(
-            &Sandbox::new(),
-            &[
-                "category",
-                "create",
-                "place",
-                "--values",
-                "home,work",
-                "--exclusive",
-            ],
-        )],
-        "category remove" => vec![json_of(
-            &fixture::seeded(),
-            &["category", "remove", "effort"],
-        )],
-        "filter create" => vec![json_of(
-            &Sandbox::new(),
-            &["filter", "create", "soon", "--query", "due:today"],
-        )],
-        "filter remove" => vec![json_of(&fixture::seeded(), &["filter", "remove", "today"])],
         "remote add" => vec![json_of(
             &Sandbox::new(),
             &["remote", "add", "cal", "gcal::primary"],
@@ -195,6 +175,9 @@ pub fn answers(command: &str) -> Option<Vec<serde_json::Value>> {
         "config validate" => vec![json_of(&with_token(), &["config", "validate"])],
         "config print-default" => vec![json_of(&Sandbox::new(), &["config", "print-default"])],
         "token revoke" => vec![json_of(&with_token(), &["token", "revoke", "tool"])],
-        _ => return super::hook_answers::answer(command),
+        _ => {
+            return super::catalogue_answers::answer(command)
+                .or_else(|| super::hook_answers::answer(command));
+        }
     })
 }

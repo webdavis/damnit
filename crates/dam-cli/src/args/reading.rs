@@ -79,6 +79,29 @@ pub(crate) enum CategoryCommand {
     },
     #[command(about = "Remove a category from config.lua; labels on tasks stay as free labels")]
     Remove { name: String },
+    #[command(about = "Rename labels on every task and event that carries them, as one change")]
+    Migrate {
+        #[arg(
+            long,
+            value_name = "OLD=NEW",
+            help = "Rename the label OLD to NEW. Repeatable"
+        )]
+        map: Vec<String>,
+        #[arg(long, help = "Show the changes and write nothing")]
+        preview: bool,
+        #[arg(
+            long,
+            value_name = "N",
+            help = "Refuse, changing nothing, unless exactly N objects carry an old label"
+        )]
+        expect: Option<usize>,
+        #[arg(
+            long,
+            help = "Also rewrite each category's values and saved filter's query in config.lua; \
+                    dam cannot see inside a match function, so that filter is left to edit by hand"
+        )]
+        update_config: bool,
+    },
 }
 
 #[derive(Args, Debug)]

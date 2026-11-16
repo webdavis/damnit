@@ -1,5 +1,6 @@
 pub mod answers;
 pub mod background_sync;
+pub mod catalogue_answers;
 pub mod commands;
 pub mod config_files;
 pub mod config_tokens;

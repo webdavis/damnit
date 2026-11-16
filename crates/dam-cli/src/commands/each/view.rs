@@ -6,7 +6,7 @@ use crate::commands::status::ChangeRow;
 use crate::view::{Human, Line, View, display, displays};
 
 #[derive(Serialize)]
-pub(super) struct SetView<'a> {
+pub(crate) struct SetView<'a> {
     preview: bool,
     count: usize,
     #[serde(serialize_with = "displays")]
@@ -40,7 +40,7 @@ fn optional_hash<S: serde::Serializer>(
 }
 
 impl<'a> SetView<'a> {
-    pub(super) fn of(changes: &'a SetChanges, owner: &'a str) -> SetView<'a> {
+    pub(crate) fn of(changes: &'a SetChanges, owner: &'a str) -> SetView<'a> {
         SetView {
             preview: changes.preview,
             count: changes.oids.len(),
@@ -64,6 +64,12 @@ impl<'a> ChangeView<'a> {
             item: sent.map(|s| &s.item.hash),
             answer: sent.map(|s| s.answer.as_str()),
         }
+    }
+}
+
+impl SetView<'_> {
+    pub(crate) fn is_preview(&self) -> bool {
+        self.preview
     }
 }
 

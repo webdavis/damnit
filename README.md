@@ -404,6 +404,11 @@ removes one. `dam category create <name> --values a,b --exclusive` and `dam cate
 do the same for a category. A removed category's labels stay on tasks as free labels. A filter
 with a `match` function is changed by hand in `config.lua`.
 
+`dam category migrate --map quick=light --map hard=deep` renames labels on every task and event
+that carries them, all or none, and takes `--preview` and `--expect N`. It leaves `config.lua` as
+it is and lists each category and saved filter that still names an old label, with the
+`dam config set` command that fixes it. `--update-config` also writes those into `config.lua`.
+
 ## Hooks
 
 A hook runs when your `dam new`, `dam edit`, `dam done`, `dam add` or `dam resolve --theirs`

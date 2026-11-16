@@ -30,6 +30,9 @@ Hooks live in their own files in a `hooks` folder beside them.
 
 A duration is a whole number followed by `s`, `m` or `h`.
 
+`dam category migrate --map old=new --update-config` rewrites `values` and each saved filter's
+`query` that names `old`.
+
 `except` never removes anything from a remote. A task under an excepted path, or the task that holds
 it, is not sent when the remote never held it. A task the remote already holds stays there as it is,
 with no update and no delete, when its path is excepted, when it moves into an excepted path, and
