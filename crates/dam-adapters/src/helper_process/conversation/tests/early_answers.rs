@@ -10,6 +10,8 @@ use super::super::super::testing::{install, install_listening_to, remote};
 use super::until_the_helper_has_complained;
 use crate::Interrupt;
 
+mod steady;
+
 const ASKED: &str =
     "read -r line\ncase \"$line\" in *'\"early_answers\":true'*) ;; *) exit 3 ;; esac\n";
 
@@ -35,18 +37,21 @@ fn oid(n: u8) -> Oid {
 }
 
 fn three_deletes() -> Vec<RemoteMutation> {
-    (1..=3)
-        .map(|n| RemoteMutation {
-            op: MutationOp::Delete,
-            oid: oid(n),
-            idempotency_key: format!("k{n}"),
-            remote_id: Some(format!("r{n}")),
-            container_remote_id: None,
-            container_oid: None,
-            object: None,
-            fields: vec![],
-        })
-        .collect()
+    deletes(1..=3)
+}
+
+fn deletes(oids: std::ops::RangeInclusive<u8>) -> Vec<RemoteMutation> {
+    oids.map(|n| RemoteMutation {
+        op: MutationOp::Delete,
+        oid: oid(n),
+        idempotency_key: format!("k{n}"),
+        remote_id: Some(format!("r{n}")),
+        container_remote_id: None,
+        container_oid: None,
+        object: None,
+        fields: vec![],
+    })
+    .collect()
 }
 
 fn accepted(n: u8) -> MutationOutcome {
@@ -151,48 +156,6 @@ fn a_helper_that_answers_once_is_read_as_before() {
         helper.push(three_deletes()).unwrap(),
         PushOutcome {
             outcomes: vec![accepted(1)],
-            stopped_by: None,
-        }
-    );
-}
-
-#[test]
-fn a_helper_answering_steadily_is_not_cut_off_when_the_whole_call_outlasts_the_deadline() {
-    let dir = tempfile::tempdir().unwrap();
-    let pause = "sleep 0.15\n";
-    let results: Vec<String> = (1..=3)
-        .map(|n| {
-            format!(
-                "{{\"oid\":\"{}\",\"ok\":true,\"remote_id\":\"r{n}\"}}",
-                format!("{n:02}").repeat(20)
-            )
-        })
-        .collect();
-    let reply = format!("printf '{{\"results\":[{}]}}\\n'\n", results.join(","));
-    let steps = [
-        pause,
-        &early(1),
-        pause,
-        &early(2),
-        pause,
-        &early(3),
-        pause,
-        &reply,
-    ];
-    let launcher = install(dir.path(), &script_that_says_it_is_up(&steps));
-    let mut helper = launcher.spawn(&silent_for_at_most(400), &[]).unwrap();
-    until_the_helper_has_complained(&helper);
-    let started = Instant::now();
-    let pushed = helper.push(three_deletes()).unwrap();
-    assert!(
-        started.elapsed() > Duration::from_millis(400),
-        "{:?}",
-        started.elapsed()
-    );
-    assert_eq!(
-        pushed,
-        PushOutcome {
-            outcomes: vec![accepted(1), accepted(2), accepted(3)],
             stopped_by: None,
         }
     );
