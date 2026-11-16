@@ -8,7 +8,7 @@ use jiff::tz::TimeZone;
 use crate::weekday::week_start;
 use crate::{Date, Kind, Object, Oid, Path, Priority, Transparency};
 
-pub use parse::{QueryError, parse};
+pub use parse::{LabelTerm, QueryError, label_terms, parse};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DateSel {
@@ -138,6 +138,8 @@ fn in_week(d: Date, monday: Date) -> bool {
 mod completed_tests;
 #[cfg(test)]
 mod field_name_terms_tests;
+#[cfg(test)]
+mod label_terms_tests;
 #[cfg(test)]
 mod quoted_value_tests;
 #[cfg(test)]

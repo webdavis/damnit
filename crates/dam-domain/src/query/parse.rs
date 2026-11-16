@@ -1,5 +1,7 @@
-use super::Expr;
+use std::ops::Range;
+
 use super::term::term;
+use super::{Expr, Term};
 use crate::Categories;
 use lex::{Tok, lex};
 
@@ -15,7 +17,7 @@ struct Parser<'c> {
 }
 
 pub fn parse(text: &str, categories: &Categories) -> Result<Expr, QueryError> {
-    let toks = lex(text)?;
+    let toks: Vec<Tok> = lex(text)?.into_iter().map(|(tok, _)| tok).collect();
     if toks.is_empty() {
         return Err(QueryError::Empty);
     }
@@ -31,6 +33,26 @@ pub fn parse(text: &str, categories: &Categories) -> Result<Expr, QueryError> {
         Some(Tok::Close) => Err(QueryError::Unexpected(")".into())),
         Some(t) => Err(QueryError::MissingOperator(t.to_string())),
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LabelTerm {
+    pub label: String,
+    pub at: Range<usize>,
+}
+
+pub fn label_terms(text: &str, categories: &Categories) -> Result<Vec<LabelTerm>, QueryError> {
+    parse(text, categories)?;
+    Ok(lex(text)?
+        .into_iter()
+        .filter_map(|(tok, at)| match tok {
+            Tok::Word(word) => match term(&word, categories) {
+                Ok(Term::Label(label)) => Some(LabelTerm { label, at }),
+                _ => None,
+            },
+            _ => None,
+        })
+        .collect())
 }
 
 impl Parser<'_> {
