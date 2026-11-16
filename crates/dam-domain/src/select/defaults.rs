@@ -97,7 +97,7 @@ pub fn scope(filter: &Filter, command: Command) -> Result<Scope, DefaultsError> 
     if let (Some(field), Some((false, _))) = (task_field, kind) {
         return Err(DefaultsError::KindContradicts { field });
     }
-    if let (Some(field), Some((_, true))) = (completed, done) {
+    if let (Some(field), Some((false, true))) = (completed, done) {
         return Err(DefaultsError::DoneContradicts { field });
     }
     if let (Some(field), Some((yes, no))) = (event_field, done)

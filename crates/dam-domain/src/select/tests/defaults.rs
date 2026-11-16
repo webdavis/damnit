@@ -74,6 +74,7 @@ fn a_typed_kind_or_done_that_contradicts_a_field_exits_with_the_flag_to_drop() {
     let kind = ls(&[("kind", "task"), ("start", "today")]).unwrap_err();
     assert_eq!(kind, DefaultsError::KindContradicts { field: "start" });
     assert_eq!(kind.fix(), Fix::Drop("kind"));
+    assert!(ls(&[("done", "any"), ("completed_at", "today")]).is_ok());
     let done = ls(&[("done", "false"), ("completed_at", "today")]).unwrap_err();
     assert_eq!(
         done,
