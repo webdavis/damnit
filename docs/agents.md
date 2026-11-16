@@ -178,6 +178,11 @@ the same document for the item it would send, and sends nothing.
 
 Add `--as-one` to make the whole set wait as one set of items instead. The answer's `set` is its
 hash; the owner takes or declines the set whole, by that hash. `--as-one` from the owner exits 2.
+`dam add <set hash>` takes every item in the set or none: if one no longer applies, nothing is
+taken. `dam add -A` takes each set whole or leaves it waiting. `dam rm <set hash>` declines the set,
+or withdraws it when its token runs it. `dam resolve <set hash> --theirs` takes the set whole and
+`--ours` declines it. An item in a set is never taken or declined alone; the refusal names the set.
+A token finds a set only when it sent it or can see every item in it.
 
 `dam category migrate` is the owner's alone; a token is refused, rule `not_open_to_tokens`. Its
 request is `{"map": {"quick": "light"}, "preview": true, "expect": 3, "update_config": true}`

@@ -25,6 +25,13 @@ impl fmt::Display for ItemText<'_> {
                 "{} was added and committed; dam reset undoes only what is staged, and dam revert sets back a commit",
                 hash.short()
             ),
+            ItemRefusal::InASet(set) => write!(
+                f,
+                "this item waits in set {}, taken or declined whole; dam add {} or dam rm {}",
+                set.short(),
+                set.short(),
+                set.short()
+            ),
             ItemRefusal::NotYours(hash) => write!(
                 f,
                 "{} was sent by another token; a token may remove only its own items",

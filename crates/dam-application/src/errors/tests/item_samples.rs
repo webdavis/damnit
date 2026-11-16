@@ -14,6 +14,7 @@ pub(super) fn item_samples() -> Vec<ItemRefusal> {
         ItemRefusal::NotAnObject(hash()),
         ItemRefusal::AlreadyCommitted(hash()),
         ItemRefusal::NotYours(hash()),
+        ItemRefusal::InASet(hash()),
         ItemRefusal::NotWaiting {
             hash: hash(),
             outcome: "added",

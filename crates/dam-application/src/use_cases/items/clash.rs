@@ -11,6 +11,7 @@ impl Dam<'_> {
     pub fn settle(&self, named: &Named, side: Side) -> Result<Oid, UseCaseError> {
         let oid = match named {
             Named::Item(hash) => return self.settle_item(hash, side),
+            Named::Set(set) => return self.settle_set(set, side),
             Named::Object(oid) => oid,
         };
         if self.store.conflicts()?.iter().any(|c| c.oid == *oid) {
@@ -30,6 +31,7 @@ impl Dam<'_> {
     }
 
     fn settle_item(&self, hash: &ItemHash, side: Side) -> Result<Oid, UseCaseError> {
+        self.alone(hash)?;
         atomically(self.store, || {
             let target = self.waiting_item(hash)?.target().clone();
             match side {
@@ -43,6 +45,18 @@ impl Dam<'_> {
             }
             Ok(target)
         })
+    }
+
+    fn settle_set(&self, set: &ItemHash, side: Side) -> Result<Oid, UseCaseError> {
+        match side {
+            Side::Theirs => {
+                self.entering(&[], || self.take_set(set, OnClash::TakeTheirs))?;
+            }
+            Side::Ours => {
+                self.dismiss_set(set)?;
+            }
+        }
+        Ok(set.oid().clone())
     }
 
     fn items_clashing_on(&self, oid: &Oid) -> Result<Vec<ItemHash>, UseCaseError> {

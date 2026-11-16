@@ -7,6 +7,7 @@ pub enum ItemRefusal {
     NotAnObject(ItemHash),
     AlreadyCommitted(ItemHash),
     NotYours(ItemHash),
+    InASet(ItemHash),
     NotWaiting {
         hash: ItemHash,
         outcome: &'static str,
@@ -61,6 +62,7 @@ impl ItemRefusal {
             ItemRefusal::NotAnObject(_) => "item_not_an_object",
             ItemRefusal::AlreadyCommitted(_) => "item_already_committed",
             ItemRefusal::NotYours(_) => "not_your_item",
+            ItemRefusal::InASet(_) => "item_in_a_set",
             ItemRefusal::NotWaiting { .. } => "item_not_waiting",
             ItemRefusal::TargetGone { .. } => "item_target_gone",
             ItemRefusal::TargetNotCommitted { .. } => "target_not_committed",

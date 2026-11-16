@@ -262,6 +262,9 @@ answer is `docs/schemas/changes.schema.json`.
 3. Without a terminal it needs `--expect 42` instead. Named oids, `--preview`, `--expect` and
 tokens are never asked.
 
+A token's set run waits as one item per object. With `--as-one` it waits as one set: `dam add
+<set hash>` takes it whole or not at all, and `dam rm <set hash>` declines it whole.
+
 `dam edit <oid> --no-done` reopens a task you completed by mistake, and
 `dam restore <oid>...` throws a working change away, back to the last commit and out of the stage;
 `--preview` shows what it would throw away and writes nothing.
