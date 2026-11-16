@@ -1,0 +1,7 @@
+[Unit]
+Description=dam sync run todoist
+
+[Service]
+Type=oneshot
+Environment="PATH=/usr/bin:/bin"
+ExecStart="/opt/dam/bin/dam" "--quiet" "--config" "/home/someone/config.lua" "--store" "/home/someone/dam.db" "sync" "run" "todoist" "--when-due"

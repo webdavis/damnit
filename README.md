@@ -127,8 +127,9 @@ never when `allowed = false`; otherwise it prints nothing. `--interval 5m` repla
     dam sync disable todoist    # no longer at login; --now also stops it
 
 Each names one remote and is safe to repeat. `start` and `enable` refuse when `allowed = false`.
-A token cannot run them. macOS uses launchd; elsewhere `dam` refuses and prints the crontab line
-to add by hand. `docs/schemas/sync-start.schema.json` and its three siblings are their `--json` schemas.
+A token cannot run them. macOS uses launchd. Linux uses a systemd user timer; without
+`loginctl enable-linger` it runs only while you are logged in. With neither, `dam` refuses and
+prints the crontab line to add by hand. `docs/schemas/sync-start.schema.json` and its three siblings are their `--json` schemas.
 
 ## Google Calendar
 

@@ -1,0 +1,8 @@
+[Unit]
+Description=dam sync run todoist every minute
+
+[Timer]
+OnCalendar=minutely
+
+[Install]
+WantedBy=timers.target
