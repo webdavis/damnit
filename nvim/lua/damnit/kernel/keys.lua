@@ -6,7 +6,7 @@ local M = {}
 ---@param screen damnit.Screen
 ---@return damnit.Keys
 function M.new(screen)
-  return setmetatable({ screen = screen, task_keys = {}, tasks_at = {} }, Keys)
+  return setmetatable({ screen = screen, task_keys = {}, tasks_at = {}, every = {} }, Keys)
 end
 
 ---@param specs damnit.KeySpec[]
@@ -61,10 +61,15 @@ function Keys:help(specs)
   vim.api.nvim_create_autocmd("WinLeave", { buffer = buf, once = true, callback = close })
 end
 
+---@param spec damnit.KeySpec a key every dam window binds, shown under "every window"
+function Keys:everywhere(spec)
+  table.insert(self.every, spec)
+end
+
 ---@param buf integer
 ---@param specs damnit.KeySpec[]
 function Keys:bind(buf, specs)
-  local all = vim.list_slice(specs)
+  local all = vim.list_extend(vim.list_slice(specs), self.every)
   table.insert(all, {
     lhs = "g?",
     desc = "list these keys",

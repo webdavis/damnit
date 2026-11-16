@@ -62,7 +62,7 @@ function Keys:bind(buf)
       call("F", "pull from every remote", function()
         self.writes.pull(self.cwd)
       end),
-      call("<CR>", "open the task", function()
+      call("<CR>", "open the task, or the log at a Recent commit", function()
         self:open_target_task()
       end),
       call("r", "read the status again", function()

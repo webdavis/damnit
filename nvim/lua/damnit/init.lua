@@ -3,6 +3,18 @@ local M = {}
 local running
 local statusline
 
+---@param app damnit.App
+---@param open_task fun(oid: string, cwd: string)
+---@return damnit.Feature status, damnit.Feature log
+local function status_and_log(app, open_task)
+  local status
+  local log = require("damnit.log").new(app, function(cwd)
+    status.open(cwd)
+  end)
+  status = require("damnit.status").new(app, open_task, log.open)
+  return status, log
+end
+
 ---@param opts? table
 ---@return damnit.App
 function M.setup(opts)
@@ -16,11 +28,13 @@ function M.setup(opts)
   local handoff = require("damnit.handoff").new(running)
   local task = require("damnit.task").new(running)
   statusline = require("damnit.statusline").new(running)
+  local status, log = status_and_log(running, task.open)
   require("damnit.command").define(running, {
     require("damnit.messages").new(running),
     require("damnit.list").new(running, task.open),
     task,
-    require("damnit.status").new(running, task.open),
+    status,
+    log,
     require("damnit.capture").new(running),
     handoff,
   })
