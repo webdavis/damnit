@@ -50,3 +50,57 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Build and test
         run: just build test
+  nvim-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install just
+        uses: taiki-e/install-action@4cef1412cce204788f482e778a0b9187f9626a29 # v2.87.21
+        with:
+          tool: just
+      - name: Install stylua
+        env:
+          STYLUA_VERSION: "2.5.2"
+          STYLUA_SHA256: "bcb0d855e91f102f28a370e850f8566b3b44b79e6274d806ea5246837c0fd5ab"
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/stylua.zip" "https://github.com/JohnnyMorganz/StyLua/releases/download/v${STYLUA_VERSION}/stylua-linux-x86_64.zip"
+          printf '%s  %s\n' "$STYLUA_SHA256" "$RUNNER_TEMP/stylua.zip" | shasum -a 256 -c -
+          unzip -q "$RUNNER_TEMP/stylua.zip" -d "$RUNNER_TEMP"
+          sudo install -m 0755 "$RUNNER_TEMP/stylua" /usr/local/bin/stylua
+      - name: Install luacheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y luarocks
+          sudo luarocks install luacheck
+      - name: Lint the plugin
+        run: just nvim-lint
+  nvim-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install just
+        uses: taiki-e/install-action@4cef1412cce204788f482e778a0b9187f9626a29 # v2.87.21
+        with:
+          tool: just
+      - name: Keep built dependencies between runs
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Install Neovim
+        env:
+          NVIM_VERSION: "v0.12.5"
+          NVIM_SHA256: "bce0f56eda1f1b1db6eee8f4133d7a38813ea07933837dd1777411ca384c6875"
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/nvim.tar.gz" "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-linux-x86_64.tar.gz"
+          printf '%s  %s\n' "$NVIM_SHA256" "$RUNNER_TEMP/nvim.tar.gz" | shasum -a 256 -c -
+          tar xzf "$RUNNER_TEMP/nvim.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/nvim-linux-x86_64/bin" >> "$GITHUB_PATH"
+      - name: Build dam for the real-dam spec
+        run: cargo build -p damnit --bin dam --locked
+      - name: Run the plugin's specs
+        run: just nvim-test

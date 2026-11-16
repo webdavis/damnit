@@ -758,6 +758,30 @@ every token. `dam status` warns about each.
 3. Track `secrets.lua`, or have your template write it with that value.
 4. Give the tool the same value as `DAM_TOKEN`.
 
+## Neovim
+
+The Neovim plugin lives in `nvim/` and is being built. Today it gives `:Dam messages`, which
+shows each error dam gave with the command it suggests, and `:Dam cancel`, which stops every
+running dam call.
+
+With lazy.nvim from a checkout:
+
+```lua
+{ dir = "/path/to/damnit/nvim", main = "damnit", opts = {} }
+```
+
+From GitHub:
+
+```lua
+{
+  "webdavis/damnit",
+  config = function(plugin)
+    vim.opt.rtp:append(plugin.dir .. "/nvim")
+    require("damnit").setup({})
+  end,
+}
+```
+
 ## Errors
 
 With `-o` a failure prints one document on standard error and nothing on standard

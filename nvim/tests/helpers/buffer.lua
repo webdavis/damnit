@@ -12,8 +12,9 @@ function M.feed(keys)
 end
 
 ---@param check fun():boolean
-function M.wait_for(check)
-  assert(vim.wait(2000, check, 5), "waited 2s and it never happened")
+---@param ms? integer
+function M.wait_for(check, ms)
+  assert(vim.wait(ms or 2000, check, 5), ("waited %d ms and it never happened"):format(ms or 2000))
 end
 
 ---@return string[] notes
