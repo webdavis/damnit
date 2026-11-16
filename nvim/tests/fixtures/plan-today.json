@@ -1,0 +1,29 @@
+{
+  "objects": [
+    {
+      "oid": "<id-1>",
+      "kind": "task",
+      "subject": "pay rent",
+      "body": "",
+      "path": "",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4,
+        "focus": {
+          "day": "<today>",
+          "set_by": "owner",
+          "set_at": "<now>"
+        }
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": false,
+      "children_open": 0
+    }
+  ]
+}

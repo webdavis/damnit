@@ -1,0 +1,12 @@
+{
+  "error": {
+    "kind": "refused",
+    "rule": "focus_full",
+    "message": "<today> already has 3 focus tasks: <id-1>, <id-2>, <id-3>; clear one with --no-focus first",
+    "oids": [
+      "<id-1>",
+      "<id-2>",
+      "<id-3>"
+    ]
+  }
+}

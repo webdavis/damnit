@@ -1,0 +1,46 @@
+{
+  "from": "<today>",
+  "to": "<today>",
+  "events": [
+    {
+      "oid": "<id-1>",
+      "subject": "lunch",
+      "path": "",
+      "labels": [],
+      "status": "confirmed",
+      "transparency": "busy",
+      "all_day": false,
+      "start": "<today>T12:00:00+00:00",
+      "end": "<today>T13:00:00+00:00",
+      "busy": true,
+      "attendees": [],
+      "category": {},
+      "day": "<today>",
+      "weekday": "<today>"
+    }
+  ],
+  "tasks": [
+    {
+      "oid": "<id-2>",
+      "kind": "task",
+      "subject": "call the bank",
+      "body": "",
+      "path": "",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4,
+        "due": "<today>"
+      },
+      "category": {},
+      "overdue": false,
+      "blocked": false,
+      "days_until_due": "<days>",
+      "children_open": 0,
+      "day": "<today>",
+      "weekday": "<today>"
+    }
+  ]
+}
