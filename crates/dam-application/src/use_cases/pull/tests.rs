@@ -1,4 +1,5 @@
 mod accepted_kinds;
+mod authorship;
 mod both_sides_changed;
 mod cancellations;
 mod cancelled_conflicts;
