@@ -69,7 +69,11 @@ fn the_personal_config_folder_is_never_a_project_whatever_form_its_path_takes() 
     let linked = root.path().join("linked");
     std::os::unix::fs::symlink(&config, &linked).unwrap();
     let canonical = std::fs::canonicalize(&config).unwrap();
-    let run = super::RunFolders::new(canonical, &linked.join("config.lua"));
+    let run = super::RunFolders::new(
+        canonical,
+        &linked.join("config.lua"),
+        &root.path().join("dam.db"),
+    );
     let standing = Standing::of(&run.folder, &run.personal_config);
     assert!(matches!(standing, Standing::Outside), "{standing:?}");
 }
