@@ -1,5 +1,5 @@
-use dam_application::{BeyondPulled, SelectError};
-use dam_domain::{Object, Order, Sort};
+use dam_application::{BeyondPulled, Listed, SelectError};
+use dam_domain::{Order, Sort};
 
 use crate::args::ListArgs;
 use crate::commands::asked::Asked;
@@ -7,10 +7,16 @@ use crate::commands::authorship::Authorship;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
-use crate::view::{ObjectList, report};
+use crate::view::{ObjectList, report, stamp_worked_out};
 
 pub(crate) fn run_list(ctx: &Context, args: ListArgs) -> Result<Report, CliError> {
-    let (objects, beyond) = listed(ctx, &args)?;
+    let (
+        Listed {
+            objects,
+            worked_out,
+        },
+        beyond,
+    ) = listed(ctx, &args)?;
     let authorship = Authorship::read(ctx)?;
     let authors: Vec<&str> = objects.iter().map(|o| authorship.author(o.oid())).collect();
     let mut listed = report(&ObjectList {
@@ -22,13 +28,16 @@ pub(crate) fn run_list(ctx: &Context, args: ListArgs) -> Result<Report, CliError
         for (row, object) in rows.iter_mut().zip(&objects) {
             authorship.stamp(object.oid(), row)?;
         }
+        for (row, worked) in rows.iter_mut().zip(&worked_out) {
+            stamp_worked_out(row, worked);
+        }
     }
     let notes = beyond.iter().map(beyond_pulled::warning);
     listed.standard_error_lines = notes.chain(listed.standard_error_lines).collect();
     Ok(listed)
 }
 
-fn listed(ctx: &Context, args: &ListArgs) -> Result<(Vec<Object>, Option<BeyondPulled>), CliError> {
+fn listed(ctx: &Context, args: &ListArgs) -> Result<(Listed, Option<BeyondPulled>), CliError> {
     let asked = Asked {
         verb: "dam list".into(),
         typed: &args.selection.typed,
@@ -51,3 +60,5 @@ mod beyond_pulled;
 mod order_tests;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod worked_out_tests;

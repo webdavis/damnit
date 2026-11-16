@@ -24,6 +24,7 @@ mod list;
 pub(crate) mod mv;
 mod new;
 mod parsing;
+mod printed;
 mod reminders;
 mod remote;
 mod restore;
@@ -103,5 +104,7 @@ fn run_a_verb(ctx: &Context, command: Command) -> Result<Report, CliError> {
 
 #[cfg(test)]
 mod comma_label_tests;
+#[cfg(test)]
+mod printed_object_tests;
 #[cfg(test)]
 mod tests;

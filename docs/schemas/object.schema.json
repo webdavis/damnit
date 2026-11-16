@@ -22,6 +22,9 @@
     "details": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/details" }], "description": "The details of the change that made it; null until that change is staged, and for another sender's object read with a token. dam ls and dam show always carry it." },
     "project_created": { "type": "object", "required": ["oid", "path"], "additionalProperties": false, "properties": { "oid": { "$ref": "#/$defs/oid" }, "path": { "type": "string" } }, "description": "The task dam new --project created to hold the project, only when it made one." },
     "changed_by_hook": { "$ref": "#/$defs/changed_by_hook", "description": "Each task a hook changed within this command, with that hook's event; dam new and dam edit carry it only then." },
+    "category": { "$ref": "#/$defs/category" },
+    "overdue": { "type": "boolean", "description": "A task that is not done and was due before today, as dam list --overdue selects it. dam list, dam show, dam new and dam edit carry it on every task." },
+    "blocked": { "type": "boolean", "description": "A task that waits on a task not done that the reader may see, as dam list --blocked selects it. dam list carries it on every task; the commands that print one object leave it out." },
     "task": { "$ref": "#/$defs/task" },
     "event": { "$ref": "#/$defs/event" }
   },
@@ -30,6 +33,7 @@
     { "properties": { "kind": { "const": "event" } }, "required": ["event"], "not": { "required": ["task"] } }
   ],
   "$defs": {
+    "category": { "type": "object", "additionalProperties": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" }, "minItems": 2 }] }, "description": "Each label group the object holds a label of, to that label, as dam list --category selects it; a group that is not exclusive holding several gives them as an array. dam list, dam agenda, dam show, dam new and dam edit carry it." },
     "changed_by_hook": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["oid", "hook"], "additionalProperties": false, "properties": { "oid": { "$ref": "#/$defs/oid" }, "hook": { "enum": ["task_new", "task_changed", "task_done"] } } } },
     "details": {
       "description": "What a request stated with --meta, kept as given, and what dam knew of its own process: the host, the working directory, the repo and branch of that directory, the time and the channel.",

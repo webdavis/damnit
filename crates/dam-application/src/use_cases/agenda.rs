@@ -1,4 +1,4 @@
-use dam_domain::{Command, Event, Filter, Object, Path, Timestamp};
+use dam_domain::{Command, Event, Filter, Object, Path, Timestamp, WorkedOut, worked_out};
 
 use crate::config::FilterConfig;
 
@@ -17,6 +17,7 @@ pub struct Scheduled {
     pub start: Timestamp,
     pub end: Timestamp,
     pub busy: bool,
+    pub worked_out: WorkedOut,
 }
 
 impl Dam<'_> {
@@ -28,14 +29,15 @@ impl Dam<'_> {
         window: Window,
         zone: &jiff::tz::TimeZone,
     ) -> Result<Vec<Scheduled>, UseCaseError> {
-        let mut found: Vec<Scheduled> = self
-            .selected(filter, Command::Agenda, place, local)?
-            .0
+        let (selected, facts) = self.selected(filter, Command::Agenda, place, local)?;
+        let mut found: Vec<Scheduled> = selected
             .into_iter()
-            .filter_map(|o| match o {
+            .map(|o| (worked_out(&o, &facts), o))
+            .filter_map(|(worked_out, o)| match o {
                 Object::Event(event) => {
                     let (start, end) = event.span(zone)?;
                     (start < window.to && end > window.from).then(|| Scheduled {
+                        worked_out,
                         busy: event.holds_time(),
                         event,
                         start,

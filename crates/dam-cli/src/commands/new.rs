@@ -5,6 +5,7 @@ use crate::commands::caller_id::with_caller_id;
 use crate::commands::fields::fields_set;
 use crate::commands::hooked::{as_it_is_now, hooked};
 use crate::commands::parsing::{deadline_flag, when_flag};
+use crate::commands::printed::printed_worked_out;
 use crate::commands::sent::report_landed;
 use crate::context::Context;
 use crate::error::CliError;
@@ -42,7 +43,7 @@ pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
     let landed = land(&ctx.dam(), made(ctx, args)?)?;
     report_landed(&landed, |object| {
         let now = as_it_is_now(ctx, object)?;
-        report(&hooked(ctx, Created(&now)))
+        printed_worked_out(ctx, &now, report(&hooked(ctx, Created(&now)))?)
     })
     .map(|answer| with_caller_id(answer, id.as_ref()))
 }

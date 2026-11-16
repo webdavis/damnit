@@ -23,5 +23,9 @@
     "branch": null,
     "at": "<now>",
     "channel": "local"
-  }
+  },
+  "category": {
+    "context": "errand"
+  },
+  "overdue": true
 }

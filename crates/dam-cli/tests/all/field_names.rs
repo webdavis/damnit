@@ -38,7 +38,15 @@ fn flag_values(value: &Value) -> Vec<String> {
     match value {
         Value::String(s) => vec![s.clone()],
         Value::Array(items) => items.iter().flat_map(flag_values).collect(),
-        Value::Object(focus) => flag_values(&focus["day"]),
+        Value::Object(focus) if focus.contains_key("day") => flag_values(&focus["day"]),
+        Value::Object(groups) => groups
+            .iter()
+            .flat_map(|(group, labels)| {
+                flag_values(labels)
+                    .into_iter()
+                    .map(move |label| format!("{group}={label}"))
+            })
+            .collect(),
         other => vec![other.to_string()],
     }
 }

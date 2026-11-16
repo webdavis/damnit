@@ -5,8 +5,9 @@ use dam_application::Scheduled;
 use dam_domain::{Oid, Timestamp, When};
 use jiff::tz::TimeZone;
 use serde::Serialize;
+use serde_json::Value;
 
-use crate::view::display;
+use crate::view::{category, display};
 
 #[derive(Serialize)]
 pub(super) struct AgendaEvent<'a> {
@@ -30,6 +31,7 @@ pub(super) struct AgendaEvent<'a> {
     organizer: Option<WirePerson>,
     #[serde(skip_serializing_if = "Option::is_none")]
     conference: Option<WireConference>,
+    category: Value,
 }
 
 impl<'a> AgendaEvent<'a> {
@@ -61,6 +63,7 @@ impl<'a> AgendaEvent<'a> {
             attendees: wire.attendees,
             organizer: wire.organizer,
             conference: wire.conference,
+            category: category(&s.worked_out.category),
         }
     }
 

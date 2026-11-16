@@ -73,6 +73,21 @@ impl Facts<'_> {
     }
 }
 
+impl<'a> Facts<'a> {
+    pub(super) fn unread(dam: &Dam<'a>, categories: &'a Categories) -> Facts<'a> {
+        Facts {
+            now: dam.clock.now().to_zoned(dam.clock.zone()),
+            categories,
+            open: BTreeSet::new(),
+            origins: BTreeMap::new(),
+            owner: dam.config.owner_name(),
+            saved: Saved::default(),
+            pulled: Pulled::of(&[], &dam.clock.zone()),
+            unplaced: (0, 0),
+        }
+    }
+}
+
 impl Context for Facts<'_> {
     fn now(&self) -> &Zoned {
         &self.now
