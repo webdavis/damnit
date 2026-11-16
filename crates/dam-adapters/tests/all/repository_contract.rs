@@ -92,3 +92,8 @@ fn it_keeps_the_origin_repository_contract() {
 fn it_keeps_the_parent_repository_contract() {
     contract::parent_repository_contract(&store());
 }
+
+#[test]
+fn it_keeps_the_hook_mark_repository_contract() {
+    contract::hook_mark_repository_contract(&store());
+}

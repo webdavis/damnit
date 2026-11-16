@@ -49,7 +49,9 @@ impl Dam<'_> {
             return Err(Refusal::NotOpenToTokens("rm").into());
         }
         atomically(self.store, || {
-            carry_out(self.store, &load(self.store, oid)?)
+            let plan = carry_out(self.store, &load(self.store, oid)?)?;
+            self.store.forget_hooked(oid)?;
+            Ok(plan)
         })
     }
 }

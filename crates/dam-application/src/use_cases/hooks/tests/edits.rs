@@ -23,14 +23,14 @@ fn request() -> EditRequest {
     }
 }
 
-fn labelled(label: &str) -> EditFields {
+pub(super) fn labelled(label: &str) -> EditFields {
     EditFields {
         add_labels: vec![label.into()],
         ..EditFields::default()
     }
 }
 
-fn hook_returns(s: &Scenario, read: Result<EditFields, String>) {
+pub(super) fn hook_returns(s: &Scenario, read: Result<EditFields, String>) {
     *s.fixture.hooks.requesting.borrow_mut() = Some(request());
     *s.fixture.edit_requests.reading.borrow_mut() = Some(read);
 }

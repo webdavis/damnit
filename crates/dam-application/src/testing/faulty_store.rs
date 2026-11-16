@@ -10,6 +10,7 @@ mod answers;
 mod attempts;
 mod follow_ons;
 mod history;
+mod hook_marks;
 mod ids;
 mod items;
 mod origins;

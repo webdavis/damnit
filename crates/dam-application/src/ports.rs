@@ -6,6 +6,7 @@ mod environment;
 mod filter_functions;
 mod follow_ons;
 mod helper;
+mod hook_marks;
 mod hooks;
 mod ids;
 mod items;
@@ -30,6 +31,7 @@ pub use follow_ons::{FollowOn, FollowOnRepository, ObjectState};
 pub use helper::{
     ComputeFailure, CredentialError, CredentialSource, HelperError, HelperLauncher, RemoteHelper,
 };
+pub use hook_marks::HookMarkRepository;
 pub use hooks::{EditRequest, EditRequests, HookEdits, HookFailure, HookWarnings, Hooks};
 pub use ids::IdRepository;
 pub use items::ItemRepository;

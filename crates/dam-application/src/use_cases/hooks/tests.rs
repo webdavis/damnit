@@ -2,6 +2,7 @@ mod accepting;
 mod edits;
 mod events;
 mod failures;
+mod marks;
 mod progress;
 mod quiet;
 mod resolving;

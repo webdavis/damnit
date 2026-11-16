@@ -15,6 +15,13 @@ impl HookEvent {
         HookEvent::TaskDone,
     ];
 
+    pub const ALL: [HookEvent; 4] = [
+        HookEvent::TaskNew,
+        HookEvent::TaskChanged,
+        HookEvent::TaskDone,
+        HookEvent::TaskPulled,
+    ];
+
     pub const fn as_str(self) -> &'static str {
         match self {
             HookEvent::TaskNew => "task_new",

@@ -34,6 +34,7 @@ impl Dam<'_> {
                     self.store
                         .put(&placed(self.store, Some(&object), object.clone())?)?;
                     self.store.unstage(oid)?;
+                    self.store.forget_hooked(oid)?;
                 }
                 restored.push(Restored {
                     oid: oid.clone(),
