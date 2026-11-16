@@ -22,7 +22,7 @@ use clap::Subcommand;
 
 pub(crate) use config::{ConfigArgs, ConfigCommand};
 pub(crate) use doctor::{CheckName, DoctorArgs};
-pub(crate) use editing::EditArgs;
+pub(crate) use editing::{EditArgs, FieldArgs};
 pub(crate) use global_flags::Cli;
 pub(crate) use init::InitArgs;
 pub(crate) use new::NewArgs;

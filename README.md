@@ -219,6 +219,8 @@ characters before `dam status` shows it.
     dam push
 
 `--labels errand,home` adds two labels; the flag also repeats.
+`dam new` takes every field `dam edit` sets: `--recurrence`, `--estimate`, `--depends`,
+`--attached` and `--focus` for a task, `--location` for an event.
 
 `dam list` lists the tasks that are not done. Each field is a flag of the same name, such as
 `--due`, `--labels`, `--completed-at` or `--start`; `dam list --help` lists them all. Every flag

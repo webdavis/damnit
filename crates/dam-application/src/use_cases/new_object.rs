@@ -5,6 +5,7 @@ use dam_domain::{CallerId, Date, Event, Object, Oid, Path, Permission, Priority,
 use crate::errors::{Refusal, Retry, UseCaseError};
 use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
+use crate::use_cases::edit::EditFields;
 use crate::use_cases::items::land::Landed;
 use crate::use_cases::placement::Placement;
 
@@ -36,6 +37,14 @@ pub struct NewEvent {
 
 impl Dam<'_> {
     pub fn new_task(&self, input: NewTask) -> Result<Landed, UseCaseError> {
+        self.new_task_setting(input, EditFields::default())
+    }
+
+    pub fn new_task_setting(
+        &self,
+        input: NewTask,
+        set: EditFields,
+    ) -> Result<Landed, UseCaseError> {
         atomically(self.store, || {
             self.entering(&[], || {
                 let oid = Oid::generate(&mut |b| self.random.fill(b));
@@ -47,12 +56,21 @@ impl Dam<'_> {
                 task.deadline = input.deadline;
                 task.base.path = input.path;
                 task.base.parent = input.parent;
-                self.land_new(input.id.as_ref(), Object::Task(task))
+                let task = self.set_on(&Object::Task(task), &set)?;
+                self.land_new(input.id.as_ref(), task)
             })
         })
     }
 
     pub fn new_event(&self, input: NewEvent) -> Result<Landed, UseCaseError> {
+        self.new_event_setting(input, EditFields::default())
+    }
+
+    pub fn new_event_setting(
+        &self,
+        input: NewEvent,
+        set: EditFields,
+    ) -> Result<Landed, UseCaseError> {
         atomically(self.store, || {
             let oid = Oid::generate(&mut |b| self.random.fill(b));
             let mut event = Event::new(oid, input.subject, input.start, input.end);
@@ -60,7 +78,8 @@ impl Dam<'_> {
             event.base.body = input.body;
             event.base.path = input.path;
             event.base.parent = input.parent;
-            self.land_new(input.id.as_ref(), Object::Event(event))
+            let event = self.set_on(&Object::Event(event), &set)?;
+            self.land_new(input.id.as_ref(), event)
         })
     }
 

@@ -35,6 +35,7 @@ pub(crate) fn new_args(subject: &str, path: &str) -> NewArgs {
         template: None,
         preview: false,
         hold: None,
+        fields: Default::default(),
         scope: ScopeArgs::default(),
     }
 }
