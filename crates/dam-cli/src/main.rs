@@ -8,6 +8,7 @@ mod first_run;
 mod gate;
 mod group_help;
 mod hook_warnings;
+mod interrupted;
 mod layout;
 mod output;
 mod paint;
@@ -19,7 +20,7 @@ mod style;
 mod view;
 
 use dam_adapters::{Interrupt, LuaConfigFile, OsRandom, ProcessLauncher, SystemClock};
-use dam_application::{Clock, ConfigFile, HelperError, UseCaseError};
+use dam_application::{Clock, ConfigFile};
 
 use crate::args::{Cli, Command};
 use crate::caller::{authenticated, caller};
@@ -47,7 +48,8 @@ fn main() {
     match run(cli, format, &interrupt) {
         Ok(()) => {}
         Err(e) => {
-            let e = cancelled_when_interrupted_whatever_the_work_reported(e, &interrupt);
+            let e =
+                interrupted::cancelled_when_interrupted_whatever_the_work_reported(e, &interrupt);
             output::print_error(format, &e);
             std::process::exit(e.exit_code());
         }
@@ -57,23 +59,6 @@ fn main() {
 fn warn_a_human_that_ctrl_c_will_not_cancel_cleanly(format: Format) {
     if format == Format::Human {
         eprintln!("dam: could not install the interrupt handler; Ctrl-C will not cancel cleanly");
-    }
-}
-
-fn cancelled_when_interrupted_whatever_the_work_reported(
-    e: CliError,
-    interrupt: &Interrupt,
-) -> CliError {
-    match e {
-        _ if !interrupt.requested() => e,
-        CliError::UseCase(UseCaseError::PushStopped {
-            kept, unanswered, ..
-        }) => CliError::UseCase(UseCaseError::PushStopped {
-            by: HelperError::Cancelled,
-            kept,
-            unanswered,
-        }),
-        _ => CliError::Cancelled,
     }
 }
 
@@ -147,7 +132,5 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     output::print(format, color, &report)
 }
 
-#[cfg(test)]
-mod interrupt_tests;
 #[cfg(test)]
 mod testing;
