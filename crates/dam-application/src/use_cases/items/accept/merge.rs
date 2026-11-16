@@ -42,7 +42,11 @@ impl Dam<'_> {
             .into());
         }
         replace_carrying_folder(self.store, &working, &merged)?;
-        let staged = merge_fields(&committed, after, &fields);
+        let mut staged = merge_fields(&committed, after, &fields);
+        let working = self.store.get(item.target())?;
+        if let Some(working) = working.filter(|w| w.base().path == staged.base().path) {
+            staged.base_mut().parent = working.base().parent.clone();
+        }
         Ok(Change::between(Some(committed), Some(staged)))
     }
 }

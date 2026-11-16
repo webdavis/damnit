@@ -4,6 +4,7 @@ use super::accept::state;
 use crate::errors::UseCaseError;
 use crate::ports::ObjectState;
 use crate::service::Dam;
+use crate::use_cases::parents::put_earlier_copy;
 
 impl Dam<'_> {
     pub(super) fn set_back_what_followed(&self, item: &ItemHash) -> Result<Vec<Oid>, UseCaseError> {
@@ -40,7 +41,7 @@ impl Dam<'_> {
         for staged in before.owners_staged.into_iter().chain(sent) {
             self.store.put_staged(staged)?;
         }
-        self.store.put(&before.working)?;
+        put_earlier_copy(self.store, &before.working)?;
         Ok(())
     }
 }

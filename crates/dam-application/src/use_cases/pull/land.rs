@@ -10,6 +10,7 @@ use crate::service::Dam;
 use crate::use_cases::commit::record;
 use crate::use_cases::hooks::pulled::PulledTask;
 use crate::use_cases::last_seen::LastSeen;
+use crate::use_cases::parents::placed;
 
 impl Dam<'_> {
     pub(super) fn land(
@@ -77,6 +78,7 @@ fn take_theirs(
     oid: &Oid,
     theirs: Object,
 ) -> Result<Option<Change>, UseCaseError> {
+    let theirs = placed(store, store.get(oid)?.as_ref(), theirs)?;
     store.put(&theirs)?;
     LastSeen::now_holds(store, &remote.name, &theirs)?;
     let committed = store.committed(oid)?;

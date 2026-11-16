@@ -4,6 +4,7 @@ use crate::errors::{Refusal, UseCaseError};
 use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::commit::record;
+use crate::use_cases::parents::placed;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Side {
@@ -22,8 +23,9 @@ impl Dam<'_> {
                 .ok_or_else(|| Refusal::NoConflict(oid.clone()))?;
             let (word, before, after) = match side {
                 Side::Theirs => {
-                    self.store.put(&conflict.theirs)?;
-                    ("theirs", conflict.ours, Some(conflict.theirs))
+                    let theirs = placed(self.store, conflict.ours.as_ref(), conflict.theirs)?;
+                    self.store.put(&theirs)?;
+                    ("theirs", conflict.ours, Some(theirs))
                 }
                 Side::Ours => ("ours", Some(conflict.theirs), conflict.ours),
             };

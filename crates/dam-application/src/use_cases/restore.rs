@@ -7,6 +7,7 @@ use crate::ports::ObjectRepository;
 use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::load::no_such_object;
+use crate::use_cases::parents::placed;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Restored {
@@ -30,7 +31,8 @@ impl Dam<'_> {
                 let changed =
                     staged.contains(oid) || self.store.get(oid)?.as_ref() != Some(&object);
                 if changed {
-                    self.store.put(&object)?;
+                    self.store
+                        .put(&placed(self.store, Some(&object), object.clone())?)?;
                     self.store.unstage(oid)?;
                 }
                 restored.push(Restored {

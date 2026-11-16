@@ -5,6 +5,7 @@ use dam_domain::{
 use super::load_task;
 use crate::errors::UseCaseError;
 use crate::ports::{ObjectRepository, Randomness};
+use crate::use_cases::parents::with_nearest_parent;
 use crate::use_cases::subtree::move_into;
 
 pub(super) fn apply_dispositions(
@@ -28,7 +29,7 @@ pub(super) fn apply_dispositions(
                 .base
                 .owned_folder()
                 .ok_or_else(|| UseCaseError::Parse(format!("{name:?} cannot name a folder")))?;
-            objects.put(&Object::Task(group))?;
+            objects.put(&with_nearest_parent(objects, Object::Task(group))?)?;
             Some(folder)
         }
     };

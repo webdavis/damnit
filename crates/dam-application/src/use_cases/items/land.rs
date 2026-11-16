@@ -5,6 +5,7 @@ use dam_domain::{
 use super::refusal::ItemRefusal;
 use crate::errors::{Refusal, UseCaseError};
 use crate::service::Dam;
+use crate::use_cases::parents::placed;
 use crate::use_cases::subtree::replace_carrying_folder;
 
 mod answer;
@@ -64,6 +65,7 @@ impl Dam<'_> {
         related: &dyn Fn(&Item) -> bool,
     ) -> Result<Landed, UseCaseError> {
         self.refuse_unless_permitted(permission, before, &after)?;
+        let after = placed(self.store, before, after)?;
         let Author::Token(author) = self.access.author() else {
             match before {
                 Some(before) => replace_carrying_folder(self.store, before, &after)?,
