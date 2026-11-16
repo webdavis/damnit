@@ -13,10 +13,6 @@ local function answering(fake, labels, paths)
   fake.reply("path", paths or UNKNOWN)
 end
 
-local function json(document)
-  return { code = 0, stdout = vim.json.encode(document), stderr = "" }
-end
-
 local function read(app, cwd)
   local words = app.vocab:words(cwd)
   buffer.wait_for(function()
@@ -52,14 +48,12 @@ return {
 
   ["labels and paths come with their counts when dam lists them"] = function()
     local app, fake = helper.new()
-    answering(
-      fake,
-      json({ labels = { { name = "errand", count = 3 } } }),
-      json({ paths = { { path = "home/", count = 1 } } })
-    )
+    answering(fake, fixtures.answer("label-list.json"), fixtures.answer("path-list.json"))
     local words = read(app, "/tmp")
-    assert(vim.deep_equal(words.labels, { { word = "errand", menu = "label · 3" } }), vim.inspect(words.labels))
-    assert(vim.deep_equal(words.paths, { { word = "home/", menu = "path · 1" } }), vim.inspect(words.paths))
+    local labels = { { word = "deep", menu = "label · 1" }, { word = "errand", menu = "label · 1" } }
+    assert(vim.deep_equal(words.labels, labels), vim.inspect(words.labels))
+    local paths = { { word = "home/", menu = "path · 1" }, { word = "work/", menu = "path · 2" } }
+    assert(vim.deep_equal(words.paths, paths), vim.inspect(words.paths))
   end,
 
   ["a dam without label or path lists gives none of them and says nothing"] = function()

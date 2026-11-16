@@ -58,6 +58,16 @@ fn the_vocabulary_fixtures_are_what_dam_lists_for_completion() {
         "remote-list.json",
         &answer(&sb, &remotes, "remote-list.schema.json"),
     );
+    let labels = ["label", "list", "-o", "json"];
+    assert_fixture(
+        "label-list.json",
+        &answer(&sb, &labels, "label-list.schema.json"),
+    );
+    let paths = ["path", "list", "-o", "json"];
+    assert_fixture(
+        "path-list.json",
+        &answer(&sb, &paths, "path-list.schema.json"),
+    );
     let unknown = sb.output(&["nonesuch", "list", "-o", "json"]);
     assert_fixture(
         "error-unknown-subcommand.json",
