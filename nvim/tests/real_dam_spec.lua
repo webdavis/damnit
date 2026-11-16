@@ -110,9 +110,35 @@ local function listed_in_a_project(sandbox)
   assert(require("helpers.grid").row(1):find(" default · garden/ · 1 task · 1 overdue", 1, true))
 end
 
+local function quick_added(sandbox)
+  local prompt = require("helpers.prompt")
+  local app = real_app()
+  require("damnit.command").define(app, { require("damnit.list").new(app) })
+  local read = helper.call(app, { args = { "new", "buy oat milk", "--due", "fri", "--preview" }, cwd = sandbox })
+  wait_for(function()
+    return read.done
+  end, 20000)
+  local due = read.answer.changes[1].due
+  vim.cmd.lcd(sandbox)
+  vim.cmd("Dam list")
+  prompt.type("abuy oat milk --due fri")
+  prompt.footer_reads(('task "buy oat milk" · due %s'):format(due), 20000)
+  prompt.more("<CR>")
+  wait_for(function()
+    return vim.tbl_contains(buffer.lines(), "[ ] buy oat milk")
+  end, 20000)
+end
+
 return {
   ["in a project :Dam list shows the project in the winbar and the due at the window's right edge"] = function()
     return with_real_dam(listed_in_a_project)
+  end,
+
+  ["quick add with --due fri shows dam's date in the footer and the task appears in the list"] = function()
+    if vim.fn.executable(dam_bin) ~= 1 then
+      return ("no dam at %s; build it with cargo build -p damnit or set DAM_BIN"):format(dam_bin)
+    end
+    in_sandbox(quick_added)
   end,
 
   ["writing a changed due line in the task buffer changes what dam show prints"] = function()
