@@ -32,6 +32,8 @@ key dam does not know is an error. A `<name>` in a key is a name you choose.
 
 A duration is a whole number followed by `s`, `m` or `h`.
 
+`dam config set <key> <value>` and `dam config unset <key>` change one key of this table.
+
 ## secrets.lua
 
 | Key | Value |

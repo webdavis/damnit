@@ -50,6 +50,8 @@ pub(crate) fn need(command: &Command) -> Need {
             None => Need::Open,
             Some(ConfigCommand::List) => Need::OwnerOnly("config list"),
             Some(ConfigCommand::Get { .. }) => Need::OwnerOnly("config get"),
+            Some(ConfigCommand::Set { .. }) => Need::OwnerOnly("config set"),
+            Some(ConfigCommand::Unset { .. }) => Need::OwnerOnly("config unset"),
             Some(ConfigCommand::PrintDefault) => Need::OwnerOnly("config print-default"),
             Some(ConfigCommand::Validate) => Need::OwnerOnly("config validate"),
         },

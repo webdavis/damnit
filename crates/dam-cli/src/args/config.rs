@@ -25,6 +25,28 @@ pub(crate) enum ConfigCommand {
         key: String,
     },
     #[command(
+        about = "Write one setting into config.lua, keeping the rest of the file as it is",
+        after_help = "A list takes its items separated by commas. A secret, a function or a hook is refused.\n\nExamples:\n  dam config set remote.todoist.deadline 15m\n  dam config set category.priority.values high,low"
+    )]
+    Set {
+        #[arg(
+            help = "Name the setting by the key dam config list shows, such as remote.todoist.deadline"
+        )]
+        key: String,
+        #[arg(help = "The value, read as that setting's type")]
+        value: String,
+    },
+    #[command(
+        about = "Remove one setting from config.lua, keeping the rest of the file as it is",
+        after_help = "Examples:\n  dam config unset remote.todoist.deadline"
+    )]
+    Unset {
+        #[arg(
+            help = "Name the setting by the key dam config list shows, such as remote.todoist.deadline"
+        )]
+        key: String,
+    },
+    #[command(
         about = "Print the starter config.lua a first run writes, without writing a file",
         after_help = "Examples:\n  dam config print-default\n  dam config print-default > config.lua"
     )]
