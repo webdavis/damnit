@@ -3,7 +3,11 @@ use super::super::{from_todoist, with_start};
 #[test]
 fn the_due_date_is_the_start_written_as_day_month_and_year() {
     for (words, due, sent) in [
-        ("every other fri", "2026-12-04", "every other fri starting 4 Dec 2026"),
+        (
+            "every other fri",
+            "2026-12-04",
+            "every other fri starting 4 Dec 2026",
+        ),
         ("every day", "2027-01-31", "every day starting 31 Jan 2027"),
         (
             "every! 1st mon, last fri",
@@ -25,7 +29,10 @@ fn a_due_time_follows_the_days_and_the_start_comes_last() {
         "every mon, fri at 20:00 starting 4 Dec 2026"
     );
     assert_eq!(
-        with_start("every 1, 15 until 2027-06-30", "2026-12-04T07:30:00+00:00[UTC]"),
+        with_start(
+            "every 1, 15 until 2027-06-30",
+            "2026-12-04T07:30:00+00:00[UTC]"
+        ),
         "every 1, 15 at 07:30 until 2027-06-30 starting 4 Dec 2026"
     );
 }
@@ -38,9 +45,15 @@ fn a_due_that_is_not_a_date_leaves_the_words_alone() {
 #[test]
 fn the_start_and_time_dam_wrote_are_read_off_before_the_rule() {
     for (todoist, dam) in [
-        ("every other fri starting 4 Dec 2026", "every 2 weeks on fri"),
+        (
+            "every other fri starting 4 Dec 2026",
+            "every 2 weeks on fri",
+        ),
         ("every other fri from 4 Dec 2026", "every 2 weeks on fri"),
-        ("every mon, fri at 20:00 starting 4 Dec 2026", "every week on mon,fri"),
+        (
+            "every mon, fri at 20:00 starting 4 Dec 2026",
+            "every week on mon,fri",
+        ),
         (
             "every 1, 15 at 07:30 until 2027-06-30 starting 4 Dec 2026",
             "every month on 1,15 until 2027-06-30",
