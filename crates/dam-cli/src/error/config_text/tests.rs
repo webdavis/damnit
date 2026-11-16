@@ -4,6 +4,7 @@ use super::ConfigText;
 
 mod edits;
 mod hooks;
+mod project;
 mod reads;
 
 fn text(refusal: ConfigError) -> String {

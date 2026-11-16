@@ -44,6 +44,10 @@ pub enum ConfigError {
         key: String,
         at: Place,
     },
+    BelongsInPersonalConfig {
+        key: String,
+        file: PathBuf,
+    },
     BadRemoteName(RemoteNameError),
     BadCategories(CategoryError),
     UndeclaredRemote {
