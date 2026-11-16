@@ -760,9 +760,25 @@ every token. `dam status` warns about each.
 
 ## Neovim
 
-The Neovim plugin lives in `nvim/` and is being built. Today it gives `:Dam messages`, which
-shows each error dam gave with the command it suggests, and `:Dam cancel`, which stops every
-running dam call.
+The Neovim plugin lives in `nvim/` and is being built. Today it gives `:Dam list [view]`,
+`:Dam messages`, which shows each error dam gave with the command it suggests, and
+`:Dam cancel`, which stops every running dam call.
+
+`:Dam list` shows what `dam list` lists in the window's folder; `r` reads it again and `g?`
+shows the keys. A view is a saved filter's name, or a name from the `views` option:
+
+```lua
+require("damnit").setup({
+  views = {
+    soon = { due = "..today+3", sort = "due" },
+    everywhere = { global = true },
+    errands = "errands",
+  },
+})
+```
+
+A table is keyed like the flags of `dam list` and sent as `dam list --request -`; a text names
+a saved filter.
 
 With lazy.nvim from a checkout:
 
