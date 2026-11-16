@@ -6,13 +6,14 @@ use crate::testing::oid;
 mod commit_samples;
 mod hook_samples;
 mod item_samples;
+mod names;
 mod parent_samples;
 use commit_samples::commit_samples;
 use hook_samples::hook_samples;
 use item_samples::item_samples;
 use parent_samples::parent_samples;
 
-const HAND_COUNTED_RULES: usize = 55;
+const HAND_COUNTED_RULES: usize = 57;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -71,6 +72,8 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::SeveralHoldThePath { .. } => 52,
         Refusal::SyncNotAllowed(_) => 53,
         Refusal::HookNotDeclared(_) => 54,
+        Refusal::NoSuchFilter(_) => 55,
+        Refusal::CountMismatch { .. } => 56,
     }
 }
 
@@ -174,26 +177,4 @@ fn no_two_samples_share_a_hand_numbered_slot() {
         samples.len(),
         "a new rule reused an existing slot instead of taking a fresh one"
     );
-}
-
-#[test]
-fn every_rule_has_its_own_name() {
-    let refusals = one_sample_of_every_refusal();
-    let mut names: Vec<&str> = refusals.iter().map(Refusal::name).collect();
-    let count = names.len();
-    names.sort_unstable();
-    names.dedup();
-    assert_eq!(names.len(), count, "two rules share a name: {names:?}");
-}
-
-#[test]
-fn every_name_is_lower_snake_case_and_says_something() {
-    for refusal in one_sample_of_every_refusal() {
-        let name = refusal.name();
-        assert!(!name.is_empty(), "{refusal:?}");
-        assert!(
-            name.chars().all(|c| c.is_ascii_lowercase() || c == '_'),
-            "{name} is not snake_case"
-        );
-    }
 }

@@ -13,7 +13,7 @@ use crate::use_cases::prefix::Named;
 impl Dam<'_> {
     pub fn add(&self, named: &[Named]) -> Result<Added, UseCaseError> {
         atomically(self.store, || {
-            self.entering(None, || {
+            self.entering(&[], || {
                 let mut added = Added::default();
                 let mut oids = Vec::new();
                 for name in named {
@@ -33,7 +33,7 @@ impl Dam<'_> {
 
     pub fn add_all(&self) -> Result<Added, UseCaseError> {
         atomically(self.store, || {
-            self.entering(None, || {
+            self.entering(&[], || {
                 let mut added = self.accept_every_item_that_applies()?;
                 let list: Vec<Oid> = working_and_ever_committed_oids(self.store)?
                     .into_iter()

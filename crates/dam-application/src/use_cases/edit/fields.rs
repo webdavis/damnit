@@ -2,7 +2,7 @@ use dam_domain::{Completion, Date, Object, Oid, Priority, Recurrence, When};
 
 use crate::errors::{Refusal, UseCaseError};
 
-#[derive(Default, Debug, PartialEq, Eq)]
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
 pub struct EditFields {
     pub subject: Option<String>,
     pub body: Option<String>,

@@ -95,6 +95,11 @@ pub enum Refusal {
         folder: Path,
         path: Path,
     },
+    NoSuchFilter(String),
+    CountMismatch {
+        expected: usize,
+        count: usize,
+    },
     SeveralHoldThePath {
         namesakes: Vec<Oid>,
         folder: Path,

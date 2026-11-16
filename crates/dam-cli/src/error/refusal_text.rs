@@ -181,6 +181,14 @@ impl fmt::Display for RefusalText<'_> {
                 folder,
                 retry,
             } => several_hold_the_path(f, namesakes, folder, retry),
+            Refusal::NoSuchFilter(name) => write!(
+                f,
+                "no saved filter named {name:?}; dam filter list shows the filters"
+            ),
+            Refusal::CountMismatch { expected, count } => write!(
+                f,
+                "the set holds {count}, not the {expected} --expect names, so nothing changed; add --preview to see the set"
+            ),
         }
     }
 }

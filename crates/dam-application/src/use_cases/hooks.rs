@@ -12,7 +12,7 @@ use edit_request::Edited;
 impl Dam<'_> {
     pub(crate) fn entering<T>(
         &self,
-        completing: Option<&Oid>,
+        completing: &[Oid],
         work: impl FnOnce() -> Result<T, UseCaseError>,
     ) -> Result<T, UseCaseError> {
         if self.access.token().is_some() || self.config.hooks.is_empty() {
@@ -27,7 +27,7 @@ impl Dam<'_> {
             }
             let event = match earlier {
                 None => HookEvent::TaskNew,
-                Some(_) if completing == Some(&oid) => HookEvent::TaskDone,
+                Some(_) if completing.contains(&oid) => HookEvent::TaskDone,
                 Some(was) if !was.completion.is_done() && after.completion.is_done() => {
                     HookEvent::TaskDone
                 }

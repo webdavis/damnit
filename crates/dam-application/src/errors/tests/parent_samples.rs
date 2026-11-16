@@ -21,5 +21,10 @@ pub(super) fn parent_samples() -> Vec<Refusal> {
             folder: Path::parse("Home/errands").unwrap(),
             retry: Retry::New("buy milk".into()),
         },
+        Refusal::NoSuchFilter("today".into()),
+        Refusal::CountMismatch {
+            expected: 12,
+            count: 3,
+        },
     ]
 }
