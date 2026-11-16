@@ -5,6 +5,7 @@ use std::process::Output;
 
 use support::fixture::{self, OAT_MILK};
 use support::golden::normalize;
+use support::request::fed;
 use support::sandbox::Sandbox;
 use support::schema::assert_matches_schema;
 
@@ -37,6 +38,14 @@ fn answer(sb: &Sandbox, args: &[&str], schema: &str) -> String {
     assert!(out.status.success(), "{args:?}: {out:?}");
     let text = String::from_utf8(out.stdout).unwrap();
     assert_matches_schema(&serde_json::from_str(&text).unwrap(), schema);
+    text
+}
+
+fn fed_answer(sb: &Sandbox, args: &[&str], request: &str) -> String {
+    let out = fed(sb, args, request);
+    assert!(out.status.success(), "{args:?} {request}: {out:?}");
+    let text = String::from_utf8(out.stdout).unwrap();
+    assert_matches_schema(&serde_json::from_str(&text).unwrap(), "list.schema.json");
     text
 }
 
@@ -75,4 +84,44 @@ fn the_error_fixtures_are_what_dam_prints_when_it_says_no() {
     );
     let refused = sb.output(&["show", "0000000", "-o", "json"]);
     assert_fixture("error-refused.json", &error_document(refused, EXIT_REFUSED));
+}
+
+#[test]
+fn the_list_tree_fixture_is_what_a_list_view_answers() {
+    let _guard = support::guard("the_list_tree_fixture_is_what_a_list_view_answers");
+    let sb = fixture::seeded();
+    sb.new_object(&["pack the bag", "--parent", &fixture::oid(OAT_MILK)]);
+    sb.new_object(&["wait for the milk", "--depends", &fixture::oid(OAT_MILK)]);
+    sb.new_object(&["pay rent", "--path", "home/", "--due", "2026-09-30"]);
+    let done = sb.new_object(&["water the plants"]);
+    fixture::run(&sb, &["done", &done]);
+    let flags = answer(
+        &sb,
+        &["list", "--done", "any", "-o", "json"],
+        "list.schema.json",
+    );
+    assert_fixture("list-tree.json", &flags);
+    let view = r#"{"done":"any"}"#;
+    let sent = ["list", "--request", "-", "-o", "json"];
+    assert_fixture("list-tree.json", &fed_answer(&sb, &sent, view));
+    let global = r#"{"done":"any","global":true}"#;
+    assert_fixture("list-tree.json", &fed_answer(&sb, &sent, global));
+}
+
+#[test]
+fn the_filter_fixtures_are_what_dam_answers_for_saved_filters() {
+    let _guard = support::guard("the_filter_fixtures_are_what_dam_answers_for_saved_filters");
+    let sb = fixture::seeded();
+    let names = answer(
+        &sb,
+        &["filter", "list", "-o", "json"],
+        "filter-list.schema.json",
+    );
+    assert_fixture("filter-list.json", &names);
+    let today = answer(
+        &sb,
+        &["list", "--filter", "today", "-o", "json"],
+        "list.schema.json",
+    );
+    assert_fixture("list-filter-today.json", &today);
 }

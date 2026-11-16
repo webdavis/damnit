@@ -1,0 +1,128 @@
+{
+  "objects": [
+    {
+      "oid": "2222222222222222222222222222222222222222",
+      "kind": "task",
+      "subject": "call mom",
+      "body": "",
+      "path": "",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": false
+    },
+    {
+      "oid": "<id-1>",
+      "kind": "task",
+      "subject": "wait for the milk",
+      "body": "",
+      "path": "",
+      "labels": [],
+      "depends": [
+        "1111111111111111111111111111111111111111"
+      ],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": true
+    },
+    {
+      "oid": "<id-2>",
+      "kind": "task",
+      "subject": "water the plants",
+      "body": "",
+      "path": "",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": true,
+        "completed_at": "<now>",
+        "priority": 4
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": false
+    },
+    {
+      "oid": "1111111111111111111111111111111111111111",
+      "kind": "task",
+      "subject": "buy oat milk",
+      "body": "",
+      "path": "home/",
+      "labels": [
+        "errand"
+      ],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 2,
+        "due": "2026-09-25"
+      },
+      "author": "owner",
+      "details": null,
+      "category": {
+        "context": "errand"
+      },
+      "overdue": true,
+      "blocked": false
+    },
+    {
+      "oid": "<id-3>",
+      "kind": "task",
+      "subject": "pay rent",
+      "body": "",
+      "path": "home/",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4,
+        "due": "2026-09-30"
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": true,
+      "blocked": false
+    },
+    {
+      "oid": "<id-4>",
+      "kind": "task",
+      "subject": "pack the bag",
+      "body": "",
+      "path": "home/buy oat milk/",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "parent": "1111111111111111111111111111111111111111",
+      "task": {
+        "done": false,
+        "priority": 4
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": false
+    }
+  ]
+}

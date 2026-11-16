@@ -1,0 +1,10 @@
+{
+  "filters": [
+    {
+      "name": "today",
+      "table": {
+        "due": "..today"
+      }
+    }
+  ]
+}
