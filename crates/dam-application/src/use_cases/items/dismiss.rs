@@ -7,6 +7,11 @@ use crate::use_cases::atomically::atomically;
 
 impl Dam<'_> {
     pub fn dismiss(&self, hash: &ItemHash) -> Result<Item, UseCaseError> {
+        self.alone(hash)?;
+        self.dismiss_member(hash)
+    }
+
+    pub(crate) fn dismiss_member(&self, hash: &ItemHash) -> Result<Item, UseCaseError> {
         atomically(self.store, || {
             let mut item = self.waiting_item(hash)?;
             let now = self.clock.now();

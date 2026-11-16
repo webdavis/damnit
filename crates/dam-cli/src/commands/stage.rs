@@ -104,6 +104,12 @@ pub(crate) fn run_reset(ctx: &Context, args: ResetArgs) -> Result<Report, CliErr
         match name {
             Named::Object(oid) => oids.push(oid),
             Named::Item(hash) => hashes.push(hash),
+            Named::Set(set) => {
+                return Err(CliError::Usage(format!(
+                    "{} is a set still waiting; dam add or dam rm it",
+                    set.short()
+                )));
+            }
         }
     }
     let mut kept = Vec::new();

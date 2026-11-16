@@ -6,7 +6,7 @@ use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{ObjectRepository, Store};
 use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
-use crate::use_cases::items::accept::Added;
+use crate::use_cases::items::accept::{Added, OnClash};
 use crate::use_cases::load::no_such_object;
 use crate::use_cases::prefix::Named;
 
@@ -23,6 +23,7 @@ impl Dam<'_> {
                             oids.push(oid.clone());
                         }
                         Named::Item(hash) => added.extend(self.accept(hash)?),
+                        Named::Set(set) => added.extend(self.take_set(set, OnClash::Stop)?),
                     }
                 }
                 added.staged.extend(self.stage_each(&oids)?);
@@ -47,11 +48,12 @@ impl Dam<'_> {
     fn accept_every_item_that_applies(&self) -> Result<Added, UseCaseError> {
         let mut added = Added::default();
         for item in self.store.items()?.into_iter().filter(|i| i.is_waiting()) {
-            match self.accept(&item.hash) {
-                Ok(accepted) => added.extend(accepted),
-                Err(UseCaseError::Refused(Refusal::Item(_))) => {}
-                Err(e) => return Err(e),
+            if item.set.is_none() {
+                added.extend(applied_or_nothing(self.accept(&item.hash))?);
             }
+        }
+        for set in self.waiting_sets()? {
+            added.extend(applied_or_nothing(self.take_set(&set, OnClash::Stop))?);
         }
         Ok(added)
     }
@@ -110,6 +112,13 @@ impl Dam<'_> {
             }
         }
         Ok(staged)
+    }
+}
+
+fn applied_or_nothing(taken: Result<Added, UseCaseError>) -> Result<Added, UseCaseError> {
+    match taken {
+        Err(UseCaseError::Refused(Refusal::Item(_))) => Ok(Added::default()),
+        taken => taken,
     }
 }
 

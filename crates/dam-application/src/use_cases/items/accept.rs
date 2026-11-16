@@ -34,6 +34,7 @@ pub(crate) enum OnClash {
 
 impl Dam<'_> {
     pub(crate) fn accept(&self, hash: &ItemHash) -> Result<Added, UseCaseError> {
+        self.alone(hash)?;
         self.take(hash, OnClash::Stop)
     }
 

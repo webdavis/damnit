@@ -7,7 +7,7 @@ use self::answer::Answer;
 use crate::args::RmArgs;
 use crate::commands::each::{one_object, report_set, set_of};
 use crate::commands::follow_ons::FollowOns;
-use crate::commands::settled::Settled;
+use crate::commands::settled::{Settled, SettledSet};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
@@ -40,6 +40,7 @@ pub(crate) fn run(ctx: &Context, args: RmArgs) -> Result<Report, CliError> {
     let removal = match ctx.dam().resolve_named(named)? {
         Named::Object(oid) => ctx.dam().remove_or_send(&oid)?,
         Named::Item(hash) => ctx.dam().remove_item(&hash)?,
+        Named::Set(set) => return report(&SettledSet::new(&set, &ctx.dam().dismiss_set(&set)?)),
     };
     report_removal(&removal)
 }

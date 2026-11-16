@@ -10,13 +10,14 @@ pub const SHORTEST_OID_PREFIX: usize = 4;
 pub enum Named {
     Object(Oid),
     Item(ItemHash),
+    Set(ItemHash),
 }
 
 impl Named {
     fn id(&self) -> &Oid {
         match self {
             Named::Object(oid) => oid,
-            Named::Item(hash) => hash.oid(),
+            Named::Item(hash) | Named::Set(hash) => hash.oid(),
         }
     }
 }
@@ -25,7 +26,7 @@ impl Dam<'_> {
     pub fn resolve_object(&self, text: &str) -> Result<Oid, UseCaseError> {
         match self.resolve_named(text)? {
             Named::Object(oid) => Ok(oid),
-            Named::Item(hash) => Err(ItemRefusal::NotAnObject(hash).into()),
+            Named::Item(hash) | Named::Set(hash) => Err(ItemRefusal::NotAnObject(hash).into()),
         }
     }
 
@@ -33,7 +34,8 @@ impl Dam<'_> {
         let waiting = self
             .waiting_items()?
             .into_iter()
-            .map(|i| Named::Item(i.hash));
+            .map(|i| Named::Item(i.hash))
+            .chain(self.waiting_sets()?.into_iter().map(Named::Set));
         if let Ok(oid) = Oid::parse(text) {
             return self.named_in_full(oid);
         }
@@ -64,6 +66,7 @@ impl Dam<'_> {
         let item = self.store.item(&hash)?;
         Ok(match item {
             Some(item) if item.is_waiting() && self.sees_item(&item) => Named::Item(hash),
+            _ if self.waiting_set(&hash).is_ok() => Named::Set(hash),
             _ => Named::Object(oid),
         })
     }

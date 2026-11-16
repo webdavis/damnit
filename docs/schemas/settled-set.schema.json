@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/settled-set.schema.json",
+  "title": "dam rm answer for a set",
+  "description": "What dam rm <set hash> prints in a data format. Every item in the set is declined, or withdrawn by the token that sent it, together.",
+  "type": "object",
+  "required": ["set", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "set": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "items": { "type": "array", "items": { "$ref": "settled.schema.json" } }
+  }
+}
