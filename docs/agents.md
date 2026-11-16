@@ -285,7 +285,9 @@ token cannot see is not counted. The day counts and `children_open` cannot be se
 `children_open`. A grant with `--own` lists only events the token made. Each `dam agenda -o json` row carries
 the event's `category` and `attendees`, and its `organizer`, `location` and `conference` when it has them.
 `dam agenda --kind any` adds `tasks`, the tasks not done whose due falls on a day of the window, by
-day, each row as `dam list` prints it. An
+day, each row as `dam list` prints it. Every agenda row carries `day`, the day it is listed under in
+the person's zone, and `weekday`, `mon` to `sun`; the answer carries `from` and `to`, the first and
+last day of the window. An
 object outside the token's grants answers like a missing one: left out of lists, and exit 4, rule
 `no_such_object`, when named.
 

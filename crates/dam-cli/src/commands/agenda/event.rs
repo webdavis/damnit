@@ -2,7 +2,8 @@ use std::collections::BTreeSet;
 
 use dam_adapters::{WireAttendee, WireConference, WirePerson, event_to_wire};
 use dam_application::Scheduled;
-use dam_domain::{Oid, Timestamp, When};
+use dam_domain::{Oid, Timestamp, When, weekday_text};
+use jiff::civil::Date;
 use jiff::tz::TimeZone;
 use serde::Serialize;
 use serde_json::Value;
@@ -32,6 +33,9 @@ pub(super) struct AgendaEvent<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     conference: Option<WireConference>,
     category: Value,
+    #[serde(serialize_with = "display")]
+    day: Date,
+    weekday: &'static str,
 }
 
 impl<'a> AgendaEvent<'a> {
@@ -64,6 +68,8 @@ impl<'a> AgendaEvent<'a> {
             organizer: wire.organizer,
             conference: wire.conference,
             category: category_document(&s.worked_out.category),
+            day: s.day,
+            weekday: weekday_text(s.day.weekday()),
         }
     }
 

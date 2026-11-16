@@ -31,11 +31,11 @@ fn the_agenda_document_keeps_its_contract() {
     let report = run_agenda(&ctx, args(None, None)).unwrap();
     assert_eq!(
         report.data,
-        serde_json::json!({"events": [{
+        serde_json::json!({"from": "2026-09-18", "to": "2026-09-18", "events": [{
             "oid": "3f".repeat(20), "subject": "standup", "path": "", "labels": ["work"],
             "status": "confirmed", "transparency": "busy", "all_day": false, "attendees": [],
             "start": "2026-09-18T14:00:00+00:00", "end": "2026-09-18T14:30:00+00:00", "busy": true,
-            "category": {}
+            "category": {}, "day": "2026-09-18", "weekday": "fri"
         }]})
     );
 }
