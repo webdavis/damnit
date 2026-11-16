@@ -1,12 +1,18 @@
 use clap::Args;
 use dam_domain::Priority;
 
+use super::SetArgs;
 use super::values::{estimate_arg, priority_arg};
 
 #[derive(Args, Debug)]
 pub(crate) struct EditArgs {
-    #[arg(help = "Pick the object by oid, or by a prefix of 4 or more hex characters")]
-    pub(crate) oid: String,
+    #[arg(
+        help = "Pick the objects by oid, or by a prefix of 4 or more hex characters",
+        required_unless_present_any = ["query", "filter"]
+    )]
+    pub(crate) oid: Vec<String>,
+    #[command(flatten)]
+    pub(crate) set: SetArgs,
     #[arg(
         short = 'e',
         long,

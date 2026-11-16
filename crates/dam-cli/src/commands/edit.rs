@@ -2,6 +2,7 @@ use dam_application::{EditFields, Refusal};
 use dam_domain::Oid;
 
 use crate::args::EditArgs;
+use crate::commands::each::one_object;
 use crate::commands::hooked::{as_it_is_now, hooked};
 use crate::commands::parsing::{day_flag, deadline_flag, when_flag};
 use crate::commands::sent::report_landed;
@@ -9,12 +10,17 @@ use crate::context::Context;
 use crate::error::{CliError, UseCaseText};
 use crate::output::Report;
 use crate::view::{ObjectRow, report};
+use many::run_on_a_set;
 use template::{parse_template, render_template};
 
+mod many;
 mod template;
 
 pub(crate) fn run(ctx: &Context, args: EditArgs) -> Result<Report, CliError> {
-    let oid = ctx.dam().resolve_object(&args.oid)?;
+    let Some(oid) = one_object(&args.oid, &args.set) else {
+        return run_on_a_set(ctx, args);
+    };
+    let oid = ctx.dam().resolve_object(oid)?;
     let fields = if args.editor {
         through_editor(ctx, &oid)?
     } else {

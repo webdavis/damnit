@@ -21,14 +21,9 @@ fn a_path_with_an_empty_segment_is_refused_in_one_plain_line() {
 
 #[test]
 fn a_relative_segment_is_refused_by_its_name_not_a_rust_one() {
-    for argv in [
-        vec!["dam", "mv", "abcd", "../x"],
-        vec!["dam", "new", "x", "--path", "a/./b"],
-    ] {
-        let said = refusal(&argv);
-        assert!(said.contains("cannot be \".\" or \"..\""), "{said}");
-        assert!(!said.contains("Segment"), "{said}");
-    }
+    let said = refusal(&["dam", "new", "x", "--path", "a/./b"]);
+    assert!(said.contains("cannot be \".\" or \"..\""), "{said}");
+    assert!(!said.contains("Segment"), "{said}");
 }
 
 #[test]

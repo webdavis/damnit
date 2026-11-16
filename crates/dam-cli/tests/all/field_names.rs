@@ -19,7 +19,7 @@ fn field<'a>(object: &'a Value, key: &str) -> Option<&'a Value> {
 fn edit_flags(sb: &Sandbox) -> Vec<String> {
     own_flags(sb, &["edit"])
         .into_iter()
-        .filter(|flag| flag != "editor")
+        .filter(|flag| !["editor", "query", "filter", "preview", "expect"].contains(&flag.as_str()))
         .collect()
 }
 

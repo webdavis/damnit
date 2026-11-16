@@ -4,9 +4,6 @@
   "title": "dam mv request",
   "description": "The arguments dam mv takes.",
   "type": "object",
-  "required": [
-    "oid"
-  ],
   "anyOf": [
     {
       "required": [
@@ -22,9 +19,36 @@
   "additionalProperties": false,
   "properties": {
     "oid": {
+      "description": "An oid or prefix of 4 or more hex characters, or an array of them for several objects. With no path or parent, the last is the path.",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "query": {
       "type": "string",
-      "pattern": "^[0-9a-f]{4,40}$",
-      "description": "An oid, or a prefix of 4 or more hex characters."
+      "description": "Act on every object this query lists, across all tasks even inside a project."
+    },
+    "filter": {
+      "type": "string",
+      "description": "Act on every object this saved filter lists."
+    },
+    "preview": {
+      "type": "boolean",
+      "description": "Answer the changes and write nothing."
+    },
+    "expect": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Refuse, changing nothing, unless the set holds exactly this many objects."
     },
     "path": {
       "type": "string",
@@ -42,5 +66,22 @@
       },
       "description": "The request's details, as --meta KEY=VALUE passes them: harness, session, model, effort, version or any other key."
     }
-  }
+  },
+  "oneOf": [
+    {
+      "required": [
+        "oid"
+      ]
+    },
+    {
+      "required": [
+        "query"
+      ]
+    },
+    {
+      "required": [
+        "filter"
+      ]
+    }
+  ]
 }

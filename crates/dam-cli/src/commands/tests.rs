@@ -14,7 +14,8 @@ fn removing_one_of_two_errands_over(ctx: &Context) -> String {
         ctx.store.put(&Object::Task(task)).unwrap();
     }
     let rm = Command::Rm(RmArgs {
-        oid: Some(oid(1).as_str().into()),
+        oid: vec![oid(1).as_str().into()],
+        set: Default::default(),
         id: None,
     });
     dispatch_a_verb_that_opens_the_store(ctx, rm)

@@ -9,7 +9,8 @@ pub(super) fn oid(b: u8) -> Oid {
 
 pub(super) fn args(oid: &Oid) -> EditArgs {
     EditArgs {
-        oid: oid.as_str().into(),
+        oid: vec![oid.as_str().into()],
+        set: Default::default(),
         editor: false,
         subject: None,
         body: None,

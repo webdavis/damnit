@@ -10,6 +10,7 @@ pub(crate) mod config_files;
 mod day;
 pub(crate) mod doctor;
 mod done;
+pub(crate) mod each;
 pub(crate) mod edit;
 mod follow_ons;
 mod hook_error_row;

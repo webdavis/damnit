@@ -53,7 +53,8 @@ fn a_prompt_with_no_answers_so_any_question_cancels() -> ScriptedPrompt {
 
 pub(super) fn args(oid: &Oid, force: bool, interactive: bool) -> DoneArgs {
     DoneArgs {
-        oid: oid.as_str().into(),
+        oid: vec![oid.as_str().into()],
+        set: Default::default(),
         force,
         interactive,
         children: None,

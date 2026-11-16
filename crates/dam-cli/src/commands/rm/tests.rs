@@ -19,7 +19,8 @@ fn removing_a_parent_moves_its_child_up_and_says_so() {
     let report = run(
         &ctx,
         RmArgs {
-            oid: Some(oid(1).as_str().into()),
+            oid: vec![oid(1).as_str().into()],
+            set: Default::default(),
             id: None,
         },
     )
