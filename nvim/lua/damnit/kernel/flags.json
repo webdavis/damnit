@@ -648,6 +648,56 @@
       "help": "Exactly this value; a,b for either"
     },
     {
+      "name": "--done",
+      "value": true,
+      "help": "true, false or any; the bare flag means true"
+    },
+    {
+      "name": "--overdue",
+      "value": true,
+      "help": "true, false or any; the bare flag means true"
+    },
+    {
+      "name": "--blocked",
+      "value": true,
+      "help": "true, false or any; the bare flag means true"
+    },
+    {
+      "name": "--priority",
+      "value": true,
+      "help": "A number from 1 to 4, a list 1,2 or a span ..2"
+    },
+    {
+      "name": "--due",
+      "value": true,
+      "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty"
+    },
+    {
+      "name": "--deadline",
+      "value": true,
+      "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty"
+    },
+    {
+      "name": "--focus-day",
+      "value": true,
+      "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty"
+    },
+    {
+      "name": "--completed-at",
+      "value": true,
+      "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty"
+    },
+    {
+      "name": "--estimate",
+      "value": true,
+      "help": "A length or a span: 30m, 30m..2h, ..5m; none for empty"
+    },
+    {
+      "name": "--attached",
+      "value": true,
+      "help": "This id, a list of ids, or in:FILTER; none for empty"
+    },
+    {
       "name": "--start",
       "value": true,
       "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu"

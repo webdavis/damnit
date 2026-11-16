@@ -45,6 +45,7 @@ fn run(s: &Scenario, fields: &[(&str, &str)], from: &str, to: &str) -> Vec<Sched
             &TimeZone::UTC,
         )
         .unwrap()
+        .events
 }
 
 fn subjects(found: &[Scheduled]) -> Vec<&str> {
@@ -165,30 +166,10 @@ fn an_all_day_event_runs_midnight_to_midnight_in_the_zone_given() {
             window,
             &zone,
         )
-        .unwrap();
+        .unwrap()
+        .events;
     assert_eq!(
         (found[0].start, found[0].end),
         (at("2026-09-25T04:00:00Z"), at("2026-09-26T04:00:00Z"))
     );
-}
-
-#[test]
-fn a_task_field_is_refused_naming_list() {
-    let s = on_the_25th();
-    let refused = s.dam().agenda(
-        &selecting(&[("due", "today")]),
-        &Path::root(),
-        &[],
-        Window {
-            from: at("2026-09-25T00:00:00Z"),
-            to: at("2026-09-26T00:00:00Z"),
-        },
-        &TimeZone::UTC,
-    );
-    assert!(matches!(
-        refused,
-        Err(crate::UseCaseError::Select(crate::SelectError::Defaults(
-            dam_domain::DefaultsError::TaskFieldInAgenda { field: "due" }
-        )))
-    ));
 }

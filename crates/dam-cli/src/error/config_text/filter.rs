@@ -81,8 +81,7 @@ fn defaults_text(
         DefaultsError::DoneContradicts { field } => {
             write!(f, "names {field}, which done contradicts; drop done")
         }
-        DefaultsError::TaskFieldInAgenda { field }
-        | DefaultsError::EventFieldInHookRun { field } => {
+        DefaultsError::EventFieldInHookRun { field } => {
             write!(f, "names {field}, which this command refuses")
         }
     }

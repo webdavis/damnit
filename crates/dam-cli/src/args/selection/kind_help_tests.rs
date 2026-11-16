@@ -12,14 +12,12 @@ fn help(words: &[&str]) -> String {
 }
 
 #[test]
-fn agenda_help_shows_shared_and_event_fields_and_hides_task_fields() {
+fn agenda_help_shows_every_field_and_how_to_add_the_tasks_due() {
     let text = help(&["agenda"]);
-    for shown in ["--labels", "--start", "--location"] {
+    for shown in ["--labels", "--start", "--location", "--due", "--priority"] {
         assert!(text.contains(shown), "{shown}: {text}");
     }
-    for hidden in ["--due", "--done", "--priority"] {
-        assert!(!text.contains(hidden), "{hidden}: {text}");
-    }
+    assert!(text.contains("dam agenda --kind any"), "{text}");
 }
 
 #[test]

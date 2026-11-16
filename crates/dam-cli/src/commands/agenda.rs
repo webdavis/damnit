@@ -1,4 +1,5 @@
-use dam_application::Window;
+use dam_application::{Agenda as Found, Window};
+use dam_domain::Scope;
 use jiff::SignedDuration;
 use jiff::tz::TimeZone;
 use serde::Serialize;
@@ -11,6 +12,7 @@ use crate::error::CliError;
 use crate::output::Report;
 use crate::view::{Human, View, report};
 use event::AgendaEvent;
+use task::AgendaTask;
 
 const DEFAULT_SPAN: SignedDuration = SignedDuration::from_hours(24);
 const AGENDA: &str = "dam agenda";
@@ -34,7 +36,19 @@ pub(crate) fn run_agenda(ctx: &Context, args: AgendaArgs) -> Result<Report, CliE
         .agenda(&filter, &args.place, &args.project_filters, window, &ctx.tz)
         .map_err(|e| asked.refused(e))?;
     report(&Agenda {
-        events: found.iter().map(|s| AgendaEvent::new(s, &ctx.tz)).collect(),
+        events: found
+            .events
+            .iter()
+            .map(|s| AgendaEvent::new(s, &ctx.tz))
+            .collect(),
+        tasks: found.scope.tasks.then(|| {
+            found
+                .tasks
+                .iter()
+                .map(|d| AgendaTask::new(d, &ctx.tz))
+                .collect()
+        }),
+        found: &found,
         zone: &ctx.tz,
     })
 }
@@ -60,20 +74,40 @@ fn window(ctx: &Context, args: &AgendaArgs) -> Result<Window, CliError> {
 #[derive(Serialize)]
 struct Agenda<'a> {
     events: Vec<AgendaEvent<'a>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tasks: Option<Vec<AgendaTask>>,
+    #[serde(skip)]
+    found: &'a Found,
     #[serde(skip)]
     zone: &'a TimeZone,
 }
 
 impl View for Agenda<'_> {
     fn human(&self) -> Human {
-        Human::list(
-            self.events.iter().map(|e| e.cells(self.zone)).collect(),
-            "no events in the window",
-        )
+        let mut rows = Vec::new();
+        let printed = self.tasks.iter().flatten();
+        let mut tasks = self.found.tasks.iter().zip(printed).peekable();
+        for (scheduled, event) in self.found.events.iter().zip(&self.events) {
+            while let Some((_, task)) = tasks.next_if(|(due, _)| due.day < scheduled.day) {
+                rows.push(task.cells());
+            }
+            rows.push(event.cells(self.zone));
+        }
+        rows.extend(tasks.map(|(_, task)| task.cells()));
+        Human::list(rows, nothing(self.found.scope))
+    }
+}
+
+fn nothing(scope: Scope) -> &'static str {
+    match (scope.tasks, scope.events) {
+        (false, _) => "no events in the window",
+        (true, false) => "no tasks due in the window",
+        (true, true) => "no events or tasks due in the window",
     }
 }
 
 mod event;
+mod task;
 
 #[cfg(test)]
 mod category_tests;
@@ -81,5 +115,7 @@ mod category_tests;
 mod people_tests;
 #[cfg(test)]
 mod selection_tests;
+#[cfg(test)]
+mod tasks_tests;
 #[cfg(test)]
 mod tests;

@@ -45,10 +45,9 @@ pub(crate) fn need(command: &Command) -> Need {
             FilterCommand::Create { .. } => Need::OwnerOnly("filter create"),
             FilterCommand::Remove { .. } => Need::OwnerOnly("filter remove"),
         },
-        Command::List(_) | Command::Label(_) | Command::Path(_) => {
+        Command::List(_) | Command::Agenda(_) | Command::Label(_) | Command::Path(_) => {
             Need::NarrowedFrom(&[TaskRead, EventRead])
         }
-        Command::Agenda(_) => Need::NarrowedFrom(&[EventRead]),
         Command::Reminders(_) => Need::NarrowedFrom(&[TaskRead, EventRead]),
         Command::Show(_) => Need::NarrowedFrom(&[TaskRead, EventRead, HistoryRead]),
         Command::Hook(a) => match a.command {

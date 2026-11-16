@@ -23,7 +23,7 @@ const OPEN_TASKS: Scope = Scope {
 const EVENTS: Scope = Scope {
     tasks: false,
     events: true,
-    done: None,
+    done: Some(false),
 };
 
 #[test]
@@ -139,16 +139,13 @@ fn one_any_alone_is_the_same_as_the_plain_field() {
 }
 
 #[test]
-fn agenda_lists_events_and_sends_task_fields_to_list() {
+fn agenda_lists_events_unless_kind_or_a_task_field_asks_for_open_tasks() {
     assert_eq!(agenda(&[]), Ok(EVENTS));
     assert_eq!(agenda(&[("location", "x")]), Ok(EVENTS));
-    let task_field = agenda(&[("due", "today")]).unwrap_err();
-    assert_eq!(
-        task_field,
-        DefaultsError::TaskFieldInAgenda { field: "due" }
-    );
-    assert_eq!(task_field.fix(), Fix::UseList);
-    let kind = agenda(&[("kind", "task")]).unwrap_err();
-    assert_eq!(kind, DefaultsError::TaskFieldInAgenda { field: "kind" });
-    assert_eq!(agenda(&[("kind", "any")]).map(|s| s.tasks), Ok(true));
+    assert_eq!(agenda(&[("kind", "task")]), Ok(OPEN_TASKS));
+    assert_eq!(agenda(&[("due", "today")]), Ok(OPEN_TASKS));
+    let both = agenda(&[("kind", "any")]).map(|s| (s.tasks, s.events, s.done));
+    assert_eq!(both, Ok((true, true, Some(false))));
+    let done = agenda(&[("kind", "task"), ("done", "true")]).map(|s| s.done);
+    assert_eq!(done, Ok(Some(true)));
 }

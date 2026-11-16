@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use clap::{Args, Subcommand};
 use dam_application::{FilterConfig, RemoteName};
-use dam_domain::{Has, Path};
+use dam_domain::Path;
 
 use super::ScopeArgs;
 use super::selection::SelectArgs;
@@ -26,10 +26,7 @@ pub(crate) struct ListArgs {
 }
 
 #[derive(Args, Debug, Default)]
-#[command(
-    after_help = super::selection::AGENDA_HELP,
-    mut_args = super::selection::shown_for(Has::Event)
-)]
+#[command(after_help = super::selection::AGENDA_HELP)]
 pub(crate) struct AgendaArgs {
     #[command(flatten)]
     pub(crate) selection: SelectArgs,

@@ -51,17 +51,6 @@ fn a_day_as_to_counts_whole_and_an_instant_does_not() {
 }
 
 #[test]
-fn a_task_field_exits_2_and_points_at_list() {
-    let ctx = day_of_events();
-    let err = run_agenda(&ctx, agenda_args(&["--due", "today"])).unwrap_err();
-    assert_eq!(err.exit_code(), 2);
-    assert_eq!(
-        err.to_string(),
-        "--due holds only for tasks, and agenda lists events; run dam list --due today"
-    );
-}
-
-#[test]
 fn a_bad_selection_value_names_agenda_in_the_command_to_run() {
     let ctx = day_of_events();
     let err = run_agenda(&ctx, agenda_args(&["--start", "tomorow"])).unwrap_err();

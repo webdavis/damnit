@@ -67,7 +67,7 @@ impl<'a> Dam<'a> {
         self.chosen(filter, Defaults::Of(command), place, local, &[])
     }
 
-    fn chosen(
+    pub(crate) fn chosen(
         &self,
         filter: &Filter,
         defaults: Defaults,
@@ -95,7 +95,7 @@ impl<'a> Dam<'a> {
         Ok((listed, facts))
     }
 
-    fn scope_once(
+    pub(crate) fn scope_once(
         &self,
         filter: &Filter,
         command: Command,

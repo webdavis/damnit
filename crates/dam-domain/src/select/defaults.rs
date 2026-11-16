@@ -73,18 +73,10 @@ pub fn scope(filter: &Filter, command: Command) -> Result<Scope, DefaultsError> 
         return Err(DefaultsError::DoneContradicts { field });
     }
     let only = |kinds| kind.filter(|k| *k == kinds).map(|_| KIND.key);
-    match command {
-        Command::Agenda => {
-            if let Some(field) = task_field.or(only((true, false))) {
-                return Err(DefaultsError::TaskFieldInAgenda { field });
-            }
-        }
-        Command::HookRun => {
-            if let Some(field) = event_field.or(only((false, true))) {
-                return Err(DefaultsError::EventFieldInHookRun { field });
-            }
-        }
-        Command::List => {}
+    if command == Command::HookRun
+        && let Some(field) = event_field.or(only((false, true)))
+    {
+        return Err(DefaultsError::EventFieldInHookRun { field });
     }
     let (tasks, events) = match command {
         Command::HookRun => (true, false),
@@ -97,7 +89,7 @@ pub fn scope(filter: &Filter, command: Command) -> Result<Scope, DefaultsError> 
     let done = match (done, completed) {
         (Some((yes, no)), _) => (yes != no).then_some(yes),
         (None, Some(_)) => Some(true),
-        (None, None) => (command == Command::List).then_some(false),
+        (None, None) => (command != Command::HookRun).then_some(false),
     };
     Ok(Scope {
         tasks,
