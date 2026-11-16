@@ -1,13 +1,14 @@
 use std::collections::BTreeSet;
 
 use dam_domain::{Object, Oid, Path, nearest_parents};
+use reason::named_by;
 
 use super::Removals;
 use crate::remote::{MutationOp, RemoteMutation};
 
 pub(super) enum Blocker {
     StillToBeSent,
-    Stuck(String),
+    Stuck(String, Vec<Oid>),
 }
 
 pub(super) struct Unsent {
@@ -43,10 +44,13 @@ impl Removals {
         }
         let removed = &mutation.oid;
         if !self.upstream.contains_key(removed) {
-            return Some(Blocker::Stuck(format!(
-                "what {} holds upstream is not known; run: dam pull, then dam push",
-                removed.short()
-            )));
+            return Some(Blocker::Stuck(
+                format!(
+                    "what {} holds upstream is not known; run: dam pull, then dam push",
+                    removed.short()
+                ),
+                Vec::new(),
+            ));
         }
         let held_under = self
             .upstream
@@ -71,7 +75,10 @@ impl Removals {
         }
         match under.iter().find(|(oid, _)| !unsent.oids.contains(*oid)) {
             None => Some(Blocker::StillToBeSent),
-            Some((stuck, holding)) => Some(Blocker::Stuck(self.why_held(stuck, holding))),
+            Some((stuck, holding)) => Some(Blocker::Stuck(
+                self.why_held(stuck, holding),
+                named_by(stuck, holding),
+            )),
         }
     }
 
@@ -109,35 +116,6 @@ impl Removals {
             _ => Some(Holding::PlaceNotKnown),
         }
     }
-
-    fn why_held(&self, stuck: &Oid, holding: &Holding) -> String {
-        let short = stuck.short();
-        if let Holding::PlaceNotKnown = holding {
-            return format!(
-                "where {short} sits is not known upstream; run: dam pull, then dam push"
-            );
-        }
-        if let Holding::MaybeHeld(could_hold) = holding {
-            let shorts: Vec<&str> = could_hold.iter().map(Oid::short).collect();
-            let (last, rest) = shorts.split_last().unwrap_or((&"", &[]));
-            return format!(
-                "{short} may be held by {} or {last} upstream; run: dam pull, then dam push",
-                rest.join(", ")
-            );
-        }
-        if self.tried.contains(stuck) {
-            format!("waits on {short} leaving it upstream, which this push did not do")
-        } else if self.moved_without_a_commit.contains(stuck) {
-            format!(
-                "{short} is still under it upstream, and its move out is not committed; \
-                 run: dam add {short}, then dam commit and dam push"
-            )
-        } else {
-            format!(
-                "{short} is still under it upstream and this push does not move it; \
-                 run: dam mv {short} {}, then dam push",
-                self.hint.place_for(stuck)
-            )
-        }
-    }
 }
+
+mod reason;

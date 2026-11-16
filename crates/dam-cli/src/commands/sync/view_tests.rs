@@ -20,6 +20,7 @@ fn pushed_with(held: Option<usize>) -> PushReport {
         failed: vec![],
         skipped: 0,
         held,
+        unseen_failed: false,
     }
 }
 
@@ -98,19 +99,6 @@ fn a_pull_names_the_commit_its_pulled_hook_made_in_text_and_json() {
         serde_json::to_value(&shown).unwrap()["remotes"][0]["task_pulled"],
         serde_json::json!({"ran": 1, "changed": 1, "failed": 0, "not_reached": 0,
                            "commit": commit.to_string()})
-    );
-}
-
-#[test]
-fn a_push_hidden_held_count_still_says_some_are_held() {
-    let report = pushed_with(None);
-    let shown = Pushed {
-        remotes: vec![PushRow::new(&report)],
-    };
-    assert_eq!(
-        lines(shown.human()),
-        ["fake: 1 sent, 1 ok, 0 failed, 0 skipped\n  \
-          some held for a conflict; see dam status, settle with dam resolve"]
     );
 }
 

@@ -10,4 +10,5 @@ pub struct PushReport {
     pub failed: Vec<(Oid, String)>,
     pub skipped: usize,
     pub held: Option<usize>,
+    pub unseen_failed: bool,
 }

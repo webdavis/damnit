@@ -1,6 +1,9 @@
+use dam_domain::Oid;
+
 use crate::errors::UseCaseError;
 use crate::ports::{HelperError, Progress, RemoteHelper};
 use crate::remote::{MutationVerdict, PushOutcome, RemoteMutation};
+use crate::use_cases::push::hold::{Hold, reasons};
 use crate::use_cases::push::reconcile::{Settlement, reconcile};
 use crate::use_cases::push::removals::Removals;
 
@@ -9,8 +12,8 @@ pub(super) struct Sent {
     pub(super) settlement: Settlement,
     pub(super) mutations: usize,
     pub(super) answered: usize,
-    pub(super) held: usize,
-    pub(super) skipped: usize,
+    pub(super) holds: Vec<Hold>,
+    pub(super) skipped: Vec<Oid>,
     pub(super) stopped_by: Option<HelperError>,
     pub(super) stopped_before_any_answer: bool,
 }
@@ -20,9 +23,14 @@ impl Sent {
         self.settlement.absorb(later.settlement);
         self.mutations += later.mutations;
         self.answered += later.answered;
-        self.held += later.held;
-        self.skipped += later.skipped;
+        self.holds.extend(later.holds);
+        self.skipped.extend(later.skipped);
         self.stopped_by = later.stopped_by;
+    }
+
+    pub(super) fn hold(&mut self, holds: Vec<Hold>) {
+        self.settlement.failed.extend(reasons(holds.clone()));
+        self.holds.extend(holds);
     }
 }
 
@@ -36,8 +44,7 @@ pub(super) fn send_in_waves(
     let mut sent = Sent::default();
     while !pending.is_empty() {
         let wave = removals.wave(pending);
-        sent.held += wave.held.len();
-        sent.settlement.failed.extend(wave.held);
+        sent.hold(wave.held);
         pending = wave.waiting;
         if wave.ready.is_empty() {
             continue;

@@ -1,4 +1,4 @@
-use dam_domain::Permission::{ConflictRead, RemotePush};
+use dam_domain::Permission::{ConflictRead, RemotePush, TaskRead};
 use dam_domain::{Object, Permission, Task};
 
 use crate::ports::Conflict;
@@ -40,7 +40,7 @@ fn a_token_without_conflict_read_is_not_told_how_many_were_held() {
 #[test]
 fn a_token_with_conflict_read_is_told_how_many_were_held() {
     assert_eq!(
-        held_as_told_to(&one_conflict_owed(), &[RemotePush, ConflictRead]),
+        held_as_told_to(&one_conflict_owed(), &[RemotePush, ConflictRead, TaskRead]),
         Some(1)
     );
 }

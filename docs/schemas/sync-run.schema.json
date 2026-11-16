@@ -118,15 +118,18 @@
         },
         "sent": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "description": "For a token, counts only the objects it may read."
         },
         "succeeded": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "description": "For a token, counts only the objects it may read."
         },
         "skipped": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "description": "For a token, counts only the objects it may read."
         },
         "held": {
           "description": "Objects not sent because they, or an object they wait on, are in conflict. Null for a token without conflict:read when some were held.",
@@ -153,7 +156,12 @@
                 "type": "string"
               }
             }
-          }
+          },
+          "description": "For a token, only the objects it may read."
+        },
+        "unseen_failed": {
+          "description": "Present and true only for a token, when a change it cannot read failed or was held. It names nothing and counts nothing; the owner sees each in dam status.",
+          "const": true
         }
       }
     }

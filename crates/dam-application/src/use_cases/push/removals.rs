@@ -7,6 +7,7 @@ use crate::errors::UseCaseError;
 use crate::ports::Store;
 use crate::remote::RemoteMutation;
 use crate::use_cases::last_seen::LastSeen;
+use crate::use_cases::push::hold::Hold;
 use crate::use_cases::push::owed::OwedChanges;
 use crate::use_cases::push::owed::excepted::is_excepted;
 use crate::use_cases::push::reconcile::Settlement;
@@ -26,7 +27,7 @@ pub(super) struct Removals {
 pub(super) struct Wave {
     pub(super) ready: Vec<RemoteMutation>,
     pub(super) waiting: Vec<RemoteMutation>,
-    pub(super) held: Vec<(Oid, String)>,
+    pub(super) held: Vec<Hold>,
 }
 
 const NOTHING_IT_WAITS_ON_WAS_SENT: &str =
@@ -73,18 +74,26 @@ impl Removals {
             match self.blocker(&mutation, &unsent) {
                 None => wave.ready.push(mutation),
                 Some(Blocker::StillToBeSent) => wave.waiting.push(mutation),
-                Some(Blocker::Stuck(why)) => wave.held.push((mutation.oid, why)),
+                Some(Blocker::Stuck(why, waits_on)) => wave.held.push(Hold {
+                    oid: mutation.oid,
+                    why,
+                    waits_on,
+                }),
             }
         }
         if wave.ready.is_empty() && wave.held.is_empty() {
             let stalled = std::mem::take(&mut wave.waiting);
             wave.held = stalled
                 .into_iter()
-                .map(|m| (m.oid, NOTHING_IT_WAITS_ON_WAS_SENT.to_string()))
+                .map(|m| Hold {
+                    oid: m.oid,
+                    why: NOTHING_IT_WAITS_ON_WAS_SENT.to_string(),
+                    waits_on: Vec::new(),
+                })
                 .collect();
         }
         self.tried
-            .extend(wave.held.iter().map(|(oid, _)| oid.clone()));
+            .extend(wave.held.iter().map(|hold| hold.oid.clone()));
         wave
     }
 

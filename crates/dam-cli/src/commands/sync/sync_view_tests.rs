@@ -32,6 +32,7 @@ fn pushed(sent: usize, failed: Vec<(Oid, String)>, held: usize) -> PushReport {
         failed,
         skipped: 0,
         held: Some(held),
+        unseen_failed: false,
     }
 }
 

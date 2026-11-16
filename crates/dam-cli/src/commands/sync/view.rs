@@ -6,6 +6,9 @@ use crate::layout::counted;
 use crate::style::{Mark, Paint, advice, row};
 use crate::view::{Human, View, display};
 
+const UNSEEN_FAILED: &str =
+    "some changes you cannot see did not go through; ask the owner to run dam status";
+
 #[derive(Serialize)]
 pub(super) struct Pushed<'a> {
     pub(super) remotes: Vec<PushRow<'a>>,
@@ -19,6 +22,8 @@ pub(super) struct PushRow<'a> {
     skipped: usize,
     held: Option<usize>,
     failed: Vec<FailedPush<'a>>,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    unseen_failed: bool,
 }
 
 #[derive(Serialize)]
@@ -41,6 +46,7 @@ impl<'a> PushRow<'a> {
                 .iter()
                 .map(|(oid, why)| FailedPush { oid, why })
                 .collect(),
+            unseen_failed: r.unseen_failed,
         }
     }
 
@@ -61,7 +67,8 @@ impl<'a> PushRow<'a> {
             true => "nothing to send".to_string(),
             false => shown.join(", "),
         };
-        let mark = match (self.failed.is_empty(), held) {
+        let failed = !self.failed.is_empty() || self.unseen_failed;
+        let mark = match (!failed, held) {
             (false, _) => Mark::Bad,
             (true, 0) => Mark::Good,
             (true, _) => Mark::Warn,
@@ -82,6 +89,9 @@ impl<'a> PushRow<'a> {
                 &format!("{}: {}", f.oid.short(), f.why),
             )
         }));
+        if self.unseen_failed {
+            lines.push(row(paint, Mark::Bad, 4, UNSEEN_FAILED));
+        }
         lines
     }
 
@@ -97,14 +107,14 @@ impl<'a> PushRow<'a> {
         for f in &self.failed {
             line.push_str(&format!("\n  {}: {}", f.oid.short(), f.why));
         }
-        let held = match self.held {
-            Some(0) => return line,
-            Some(n) => format!("{n} held"),
-            None => "some held".to_string(),
-        };
-        line.push_str(&format!(
-            "\n  {held} for a conflict; see dam status, settle with dam resolve"
-        ));
+        if let Some(n @ 1..) = self.held {
+            line.push_str(&format!(
+                "\n  {n} held for a conflict; see dam status, settle with dam resolve"
+            ));
+        }
+        if self.unseen_failed {
+            line.push_str(&format!("\n  {UNSEEN_FAILED}"));
+        }
         line
     }
 }
