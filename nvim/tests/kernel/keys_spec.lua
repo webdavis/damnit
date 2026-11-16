@@ -25,4 +25,24 @@ return {
       assert(help:find(line, 1, true), help)
     end
   end,
+
+  ["g? lists the keys under their group's heading, each group once, in the order first bound"] = function()
+    local lines = require("damnit.kernel.keys").help_lines({
+      { lhs = "<CR>", desc = "open the task", group = "every window", run = function() end },
+      { lhs = "x", desc = "done", group = "task rows", run = function() end },
+      { lhs = "r", desc = "read again", group = "every window", run = function() end },
+    })
+    local want = { "every window", "  <CR>  open the task", "  r  read again", "task rows", "  x  done" }
+    assert(vim.deep_equal(lines, want), vim.inspect(lines))
+  end,
+
+  ["g? in a list groups every key as the design's key table does"] = function()
+    require("helpers.list").opened()
+    require("helpers.buffer").feed("g?")
+    local help = require("helpers.buffer").lines()
+    assert(help[1] == "every window", vim.inspect(help))
+    local rows = vim.fn.index(help, "task rows")
+    assert(rows > 0 and vim.tbl_contains(help, "  cd  change the due date"), vim.inspect(help))
+    assert(vim.fn.index(help, "  <CR>  open the task") < rows and vim.fn.index(help, "  a  new task") > rows)
+  end,
 }

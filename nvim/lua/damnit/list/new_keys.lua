@@ -30,6 +30,7 @@ function M.keys(app, quickadd, lists)
       {
         lhs = "a",
         desc = "new task",
+        group = "task rows",
         run = open(function(context)
           local path = view.single_path(context.view, app.options.views)
           return path and (" --path " .. path) or ""
@@ -38,6 +39,7 @@ function M.keys(app, quickadd, lists)
       {
         lhs = "o",
         desc = "new task under this one",
+        group = "task rows",
         run = open(function(context)
           if not context.oid then
             return app.say:warn("no task on this line to put the new one under")

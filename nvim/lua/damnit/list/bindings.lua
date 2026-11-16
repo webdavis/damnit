@@ -13,6 +13,7 @@ function Bindings:bind(buf)
     {
       lhs = "<CR>",
       desc = "open the task",
+      group = "every window",
       run = function()
         local list = self.shown[buf]
         local oid = list.oids[vim.api.nvim_win_get_cursor(0)[1]]
@@ -25,6 +26,7 @@ function Bindings:bind(buf)
     {
       lhs = "r",
       desc = "read the list again",
+      group = "every window",
       run = function()
         self:read(buf)
       end,
