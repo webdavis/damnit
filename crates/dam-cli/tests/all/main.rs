@@ -58,6 +58,7 @@ mod golden_remotes;
 mod golden_writes;
 mod hook_answers;
 mod hook_edits;
+mod hook_list;
 mod hook_started;
 mod hooks;
 mod id_session;

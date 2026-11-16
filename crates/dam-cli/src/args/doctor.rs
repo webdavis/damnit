@@ -37,3 +37,18 @@ impl CheckName {
         }
     }
 }
+
+pub(crate) const DOCTOR_HELP: &str =
+    "An error raised in secrets.lua is shown as that file wrote it.
+It runs the top-level code of config.lua and secrets.lua and calls no credential function.
+It exits 1 when a check finds an issue, and prints the report to stdout either way.
+--fix creates the starter config.lua and the store where each is missing, then runs the checks.
+It changes no file that exists. With checks named, it creates only what those checks cover.
+
+Examples:
+  dam doctor
+  dam doctor config
+  dam doctor sync
+  dam doctor --json
+  dam doctor --fix
+  dam doctor --fix database";

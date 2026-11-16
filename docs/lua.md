@@ -37,6 +37,10 @@ A hook file returns the hook: a function, or a table that holds the function as 
 Only files ending in `.lua` count. A `.lua` file named for no event is an error.
 A `hook` table in `config.lua` is an error that names the file each hook moves to.
 A hook file holds no secret, so others may read it.
+`dam hook list` shows each hook file, in the order `task_new`, `task_changed`, `task_done` and
+`task_pulled`, with its `on_failure` or `changes` and `(default)` where you wrote none. A file that
+does not load says `does not load`, and a warning on standard error says why. It reads the hooks
+folder alone, so a hook that does not load hides none of the others.
 
 | Event | Hook |
 | --- | --- |

@@ -396,6 +396,9 @@ It has 60 seconds in total for one pull, and Ctrl-C stops it and keeps the pull.
 `dam status` notes the tasks it failed on or did not reach.
 `dam pull` answers what it did under `task_pulled`.
 
+`dam hook list` prints each hook file with its event and its `on_failure` or `changes`, and warns
+why a file does not load.
+
 ## Reading it from a program
 
 A flag is named after the key it writes: a value `dam show --json` prints under `due` goes back
@@ -582,7 +585,7 @@ added gets a removal item. It answers `withdrawn`, `waiting`, `declined` or `not
 exit 0. Your own `dam rm --id` removes your task, or answers `nothing`.
 
 A token cannot run `mv`, `add`, `reset`, `restore`, `commit`, `remote add`, `resolve`, `day`,
-`config`, `token`, or `create` or `remove` under `filter` and `category`, or set `--focus`.
+`config`, `hook`, `token`, or `create` or `remove` under `filter` and `category`, or set `--focus`.
 
 An unknown permission is skipped. An unknown key, or a reserved name such as `config:change`,
 disables the token, and so does sharing a value with another token. A `schema` above 1 disables

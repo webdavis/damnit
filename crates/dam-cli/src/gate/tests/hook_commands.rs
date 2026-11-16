@@ -1,0 +1,31 @@
+use dam_application::{Owner, Refusal};
+use dam_domain::Permission;
+
+use super::{allowing, command, holding};
+use crate::gate::{Need, admit, need, refuse_any_token_to_an_owner_only_verb};
+
+#[test]
+fn only_the_owner_lists_or_runs_hooks_whatever_a_token_holds() {
+    for (line, verb) in [("hook list", "hook list")] {
+        assert_eq!(admit(&Owner, &command(line)), Ok(()), "{line}");
+        for token in [
+            holding(vec![]),
+            allowing(&[Permission::ConfigRead]),
+            allowing(&Permission::ALL),
+        ] {
+            assert_eq!(
+                admit(&token, &command(line)),
+                Err(Refusal::NotOpenToTokens(verb))
+            );
+        }
+        assert_eq!(
+            refuse_any_token_to_an_owner_only_verb(true, &command(line)),
+            Err(Refusal::NotOpenToTokens(verb))
+        );
+    }
+}
+
+#[test]
+fn bare_hook_only_prints_its_help() {
+    assert_eq!(need(&command("hook")), Need::Open);
+}

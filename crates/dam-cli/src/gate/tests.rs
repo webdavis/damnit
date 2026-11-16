@@ -187,3 +187,4 @@ fn sync_run_admits_a_token_holding_a_remote_permission_and_bare_sync_is_open() {
 }
 
 mod catalogue_writes;
+mod hook_commands;

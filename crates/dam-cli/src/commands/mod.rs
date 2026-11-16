@@ -6,11 +6,13 @@ mod catalogue_write;
 mod check_report;
 mod commit;
 pub(crate) mod config;
+pub(crate) mod config_files;
 mod day;
 pub(crate) mod doctor;
 mod done;
 pub(crate) mod edit;
 mod follow_ons;
+mod hook_list;
 mod hooked;
 pub(crate) mod init;
 mod ls;
@@ -79,6 +81,7 @@ fn run_a_verb(ctx: &Context, command: Command) -> Result<Report, CliError> {
         Command::Category(a) => catalogue_write::run_category(ctx, a.command),
         Command::Filter(a) => catalogue_write::run_filter(ctx, a.command),
         Command::Init(_)
+        | Command::Hook(_)
         | Command::Token(_)
         | Command::Config(_)
         | Command::Doctor(_)

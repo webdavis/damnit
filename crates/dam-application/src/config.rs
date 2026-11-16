@@ -2,6 +2,7 @@ mod credential;
 mod duration;
 mod filter;
 mod hook;
+mod hook_file;
 mod remote;
 mod remote_sync;
 
@@ -18,6 +19,7 @@ pub use filter::{FilterConfig, FilterRule};
 pub use hook::{
     HookConfig, HookEvent, OnFailure, PulledChanges, PulledHook, STARTED_BY_HOOK_VARIABLE,
 };
+pub use hook_file::{HookFile, HookSetting};
 pub use remote::RemoteConfig;
 pub use remote_sync::RemoteSync;
 

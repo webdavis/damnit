@@ -17,6 +17,7 @@ mod filter_support;
 mod filter_tables;
 mod fixture_fields;
 mod hook_files;
+mod hook_listing;
 mod hook_marker;
 mod hook_requests;
 mod hook_runs;

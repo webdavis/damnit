@@ -6,9 +6,8 @@ use mlua::{Lua, Table};
 
 use super::computed::ConfiguredCredentials;
 use super::evaluate::{ErrorText, evaluate, read_text, stopped_at_an_error};
-use super::functions::{LuaFunctions, limit_every_thread};
-use super::hook_folder::{HOOKS_FOLDER, KeptHook, configured, read_hook_folder};
-use super::hook_marker::mark_what_a_hook_starts;
+use super::functions::LuaFunctions;
+use super::hook_folder::{KeptHook, configured, read_hook_folder};
 use super::secrets::read_secrets;
 use super::settings::read_settings;
 use super::strict::StrictMap;
@@ -107,16 +106,13 @@ impl LuaConfigFile {
     }
 
     pub(super) fn settings_kept(&self, text: Option<&str>) -> Result<Kept, ConfigError> {
-        let lua = Lua::new();
-        limit_every_thread(&lua)
-            .and_then(|()| mark_what_a_hook_starts(&lua))
-            .map_err(|_| stopped_at_an_error(&self.config))?;
+        let lua = self.fenced_lua()?;
         let table = evaluate(&lua, &self.config, text, ErrorText::QuotesTheFile)?;
         let mut config = match &table {
             Some(table) => read_settings(&StrictMap::root(&file_name(&self.config), table)?)?,
             None => Config::default(),
         };
-        let hooks = read_hook_folder(&lua, &self.config.with_file_name(HOOKS_FOLDER))?;
+        let hooks = read_hook_folder(&lua, &self.hooks_folder())?;
         (config.hooks, config.task_pulled) = configured(&hooks);
         Ok(Kept {
             config,

@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/hook-list.schema.json",
+  "title": "dam hook list answer",
+  "description": "What dam hook list prints with --json or --toon: each .lua file in the hooks folder beside config.lua, in the order task_new, task_changed, task_done, task_pulled, then files named for no event. hook is the event the file is named for, or null. A hook that loads carries on_failure, or changes for task_pulled, each the value dam uses, written or by default. A hook that does not load carries error, why.",
+  "type": "object",
+  "required": [
+    "hooks"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "hooks": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "hook",
+              "file",
+              "loads",
+              "on_failure"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "hook": {
+                "enum": [
+                  "task_new",
+                  "task_changed",
+                  "task_done"
+                ]
+              },
+              "file": {
+                "type": "string"
+              },
+              "loads": {
+                "const": true
+              },
+              "on_failure": {
+                "enum": [
+                  "warn",
+                  "refuse"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "hook",
+              "file",
+              "loads",
+              "changes"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "hook": {
+                "const": "task_pulled"
+              },
+              "file": {
+                "type": "string"
+              },
+              "loads": {
+                "const": true
+              },
+              "changes": {
+                "enum": [
+                  "committed",
+                  "working"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "hook",
+              "file",
+              "loads",
+              "error"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "hook": {
+                "enum": [
+                  "task_new",
+                  "task_changed",
+                  "task_done",
+                  "task_pulled",
+                  null
+                ]
+              },
+              "file": {
+                "type": "string"
+              },
+              "loads": {
+                "const": false
+              },
+              "error": {
+                "type": "string"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
