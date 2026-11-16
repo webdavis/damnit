@@ -855,6 +855,9 @@ when it refuses one.
 In a task buffer `K` does the same for the oid under the cursor, `gd` opens it, and `gO` puts the
 parent, children and dependencies in the location list.
 
+`:Dam pick`, or `go` in any dam window, offers every view to open: `today`, the
+`views` option and dam's saved filters. `:Dam pick <view>` offers that view's tasks.
+
 `:Dam` or `:Dam status` shows what `dam status` shows in the window's folder: conflicts, waiting
 items and sets, unstaged and staged changes, unpushed commits, notices and warnings, then the
 last three commits under Recent. Its keys:

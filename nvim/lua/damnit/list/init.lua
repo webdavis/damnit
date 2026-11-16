@@ -44,6 +44,15 @@ function M.new(app, open_task)
       return lists
     end)
   )
+  local picker = require("damnit.list.pick").new(app, lists, open_task)
+  app.keys:everywhere({
+    lhs = "go",
+    desc = "pick a view to open",
+    mode = "n",
+    run = function()
+      picker.views(vim.fn.getcwd())
+    end,
+  })
   return {
     open = function(view, cwd, smods)
       lists:open(view, cwd, smods)
@@ -63,11 +72,17 @@ function M.new(app, open_task)
         end
         lists:filter(buf)
       end,
+      pick = function(args, cmd)
+        if args[1] then
+          return picker.rows(args[1], vim.fn.getcwd())
+        end
+        picker.views(vim.fn.getcwd(), cmd.smods)
+      end,
       today = function(_, cmd)
         lists:open("today", vim.fn.getcwd(), cmd.smods, views.TODAY)
       end,
     },
-    complete = { list = view_names(app) },
+    complete = { list = view_names(app), pick = view_names(app) },
   }
 end
 
