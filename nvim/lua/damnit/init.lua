@@ -6,6 +6,7 @@ local running
 ---@return damnit.App
 function M.setup(opts)
   local options = require("damnit.kernel.options").resolve(opts or {})
+  require("damnit.kernel.highlights").setup()
   if running then
     running.queue:cancel()
   end

@@ -7,7 +7,6 @@ local M = {}
 ---@param open_task fun(oid: string, cwd: string)
 ---@return damnit.Feature
 function M.new(app, open_task)
-  vim.api.nvim_set_hl(0, "DamSection", { link = "Title", default = true })
   local writes = writes_of.new(app)
   local status = buffer.new(app, writes, open_task)
   local function open(_, cmd)
