@@ -7,6 +7,10 @@ use crate::errors::{Refusal, UseCaseError};
 use crate::service::Dam;
 use crate::use_cases::subtree::replace_carrying_folder;
 
+mod answer;
+
+pub use answer::Answer;
+
 #[allow(
     clippy::large_enum_variant,
     reason = "a landed write is handed straight to the caller, never stored in bulk"
@@ -21,23 +25,6 @@ pub enum Landed {
 pub struct Sent {
     pub answer: Answer,
     pub item: Item,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Answer {
-    New,
-    Changed,
-    Duplicate,
-}
-
-impl Answer {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Answer::New => "new",
-            Answer::Changed => "changed",
-            Answer::Duplicate => "duplicate",
-        }
-    }
 }
 
 #[cfg(any(test, feature = "testing"))]
