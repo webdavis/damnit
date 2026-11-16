@@ -22,7 +22,7 @@ mod view;
 use dam_adapters::{Interrupt, LuaConfigFile, OsRandom, ProcessLauncher, SystemClock};
 use dam_application::{Clock, ConfigFile};
 
-use crate::args::{Cli, Command};
+use crate::args::{Cli, Command, ConfigArgs};
 use crate::caller::{authenticated, caller};
 use crate::context::Context;
 use crate::error::CliError;
@@ -87,15 +87,11 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         return commands::doctor::print(checks, &machine, format, color);
     }
     config_file.ends_in_lua()?;
-    if let Command::Config(args) = cli.command {
-        let Some(command) = args.command else {
-            return group_help::print("config");
-        };
-        return output::print(
-            format,
-            color,
-            &commands::config::run(&config_file, command)?,
-        );
+    if let Some(group) = group_help::bare(&cli.command) {
+        return group_help::print(group);
+    }
+    if let Command::Config(ConfigArgs { command: Some(c) }) = cli.command {
+        return output::print(format, color, &commands::config::run(&config_file, c)?);
     }
     if presented_token.is_none() {
         first_run::create_the_owners_config_when_missing(&config_file, &config_path, format);

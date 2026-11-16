@@ -1,6 +1,6 @@
 use dam_application::Side;
 
-use crate::args::{PullArgs, PushArgs, ResolveArgs};
+use crate::args::{PullArgs, PushArgs, ResolveArgs, SyncArgs, SyncCommand};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
@@ -8,9 +8,11 @@ use crate::view::report;
 
 mod pull_view;
 mod pulled_hook_view;
+mod sync_view;
 mod view;
 
 use pull_view::{PullRow, Pulled};
+use sync_view::Synced;
 use view::{PushRow, Pushed, Resolved};
 
 pub(crate) fn run_push(ctx: &Context, args: PushArgs) -> Result<Report, CliError> {
@@ -25,6 +27,15 @@ pub(crate) fn run_pull(ctx: &Context, args: PullArgs) -> Result<Report, CliError
     report(&Pulled {
         remotes: reports.iter().map(PullRow::new).collect(),
     })
+}
+
+pub(crate) fn run_sync(ctx: &Context, args: SyncArgs) -> Result<Report, CliError> {
+    let Some(SyncCommand::Run { remote }) = args.command else {
+        return Err(CliError::Internal(
+            "dam sync alone prints help before the store opens".into(),
+        ));
+    };
+    report(&Synced::new(&ctx.dam().sync_now(ctx.remotes(), &remote)?))
 }
 
 pub(crate) fn run_resolve(ctx: &Context, args: ResolveArgs) -> Result<Report, CliError> {
@@ -45,6 +56,8 @@ mod failure_kind_tests;
 mod pull_counts_tests;
 #[cfg(test)]
 mod pull_text_tests;
+#[cfg(test)]
+mod sync_view_tests;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]

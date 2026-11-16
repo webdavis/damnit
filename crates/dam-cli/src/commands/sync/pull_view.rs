@@ -42,8 +42,8 @@ impl<'a> PullRow<'a> {
         }
     }
 
-    fn lines(&self, paint: Paint) -> Vec<String> {
-        let mut lines = vec![row(paint, self.mark(), 2, &self.line())];
+    pub(super) fn lines(&self, paint: Paint, name: &str) -> Vec<String> {
+        let mut lines = vec![row(paint, self.mark(), 2, &self.line(name))];
         if self.conflicts > 0 {
             lines.push(advice(
                 paint,
@@ -79,7 +79,7 @@ impl<'a> PullRow<'a> {
         }
     }
 
-    fn line(&self) -> String {
+    fn line(&self, name: &str) -> String {
         let counts = [
             (self.created, "new", "new"),
             (self.updated, "updated", "updated"),
@@ -99,7 +99,7 @@ impl<'a> PullRow<'a> {
         if self.created + self.updated + self.conflicts + self.removed_upstream == 0 {
             shown.insert(0, "nothing new".to_string());
         }
-        format!("{}: {}", self.remote, shown.join(", "))
+        format!("{name}: {}", shown.join(", "))
     }
 }
 
@@ -109,7 +109,7 @@ impl View for Pulled<'_> {
             let mut lines = vec![heading(paint, "pull", "what each remote sent")];
             match self.remotes.as_slice() {
                 [] => lines.push(row(paint, Mark::Quiet, 2, "no remotes to pull from")),
-                remotes => lines.extend(remotes.iter().flat_map(|r| r.lines(paint))),
+                remotes => lines.extend(remotes.iter().flat_map(|r| r.lines(paint, r.remote))),
             }
             lines
         })

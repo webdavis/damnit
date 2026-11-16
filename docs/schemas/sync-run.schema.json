@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/sync-run.schema.json",
+  "title": "dam sync run answer",
+  "description": "What dam sync run prints with --json or --toon: the counts of the pull, then of the push.",
+  "type": "object",
+  "required": [
+    "remote",
+    "pulled",
+    "pushed"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "remote": {
+      "type": "string"
+    },
+    "pulled": {
+      "type": "object",
+      "required": [
+        "remote",
+        "created",
+        "updated",
+        "unchanged",
+        "conflicts",
+        "removed_upstream",
+        "creates_matched",
+        "values_kept",
+        "deletes_confirmed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "remote": {
+          "type": "string"
+        },
+        "created": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "updated": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unchanged": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "conflicts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "removed_upstream": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "creates_matched": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "values_kept": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "deletes_confirmed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "task_pulled": {
+          "description": "What hook.task_pulled did on this pull. Absent when no such hook is set or the pull brought it no task.",
+          "type": "object",
+          "required": [
+            "ran",
+            "changed",
+            "failed",
+            "not_reached"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "ran": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "changed": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "failed": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "not_reached": {
+              "description": "Tasks the hook was not called for once the pull's 60 seconds for it ran out.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "commit": {
+              "description": "The commit holding the hook's changes, when changes is committed and a change was made.",
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            }
+          }
+        }
+      }
+    },
+    "pushed": {
+      "type": "object",
+      "required": [
+        "remote",
+        "sent",
+        "succeeded",
+        "skipped",
+        "held",
+        "failed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "remote": {
+          "type": "string"
+        },
+        "sent": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "succeeded": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "skipped": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "held": {
+          "description": "Objects not sent because they, or an object they wait on, are in conflict. Null for a token without conflict:read when some were held.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "failed": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "oid",
+              "why"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "oid": {
+                "type": "string"
+              },
+              "why": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

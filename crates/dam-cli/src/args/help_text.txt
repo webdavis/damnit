@@ -124,6 +124,18 @@ dam resolve: about = Settle a conflict for one object
 dam resolve oid: help = Pick the conflicted object by oid, or by a prefix of 4 or more hex characters
 dam resolve ours: help = Keep the local side
 dam resolve theirs: help = Keep the remote's side
+dam sync: about = Sync a remote
+dam sync: after_help = Examples:
+  dam sync run todoist
+dam sync run: about = Pull from one remote, then push its committed changes, now
+dam sync run: after_help = It runs whatever sync.allowed says: a sync you type is not background sync.
+Newer or uncommitted work is never replaced. A conflict is left for dam status and dam resolve,
+and the push goes on past it.
+
+Examples:
+  dam sync run todoist
+  dam sync run todoist --json
+dam sync run remote: help = Sync this remote
 dam token: about = Manage the tokens tools and agents run dam with
 dam token create: about = Make a token with one grant, add it to secrets.lua and print it once
 dam token create name: help = Name the token, such as tool

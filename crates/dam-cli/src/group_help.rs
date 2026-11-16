@@ -1,6 +1,6 @@
 use clap::CommandFactory;
 
-use crate::args::Cli;
+use crate::args::{Cli, Command, ConfigArgs, SyncArgs};
 use crate::error::CliError;
 
 pub(crate) fn print(group: &str) -> Result<(), CliError> {
@@ -13,5 +13,13 @@ pub(crate) fn print(group: &str) -> Result<(), CliError> {
     match printed {
         Err(e) if e.kind() != std::io::ErrorKind::BrokenPipe => Err(CliError::Io(e.to_string())),
         _ => Ok(()),
+    }
+}
+
+pub(crate) fn bare(command: &Command) -> Option<&'static str> {
+    match command {
+        Command::Config(ConfigArgs { command: None }) => Some("config"),
+        Command::Sync(SyncArgs { command: None }) => Some("sync"),
+        _ => None,
     }
 }

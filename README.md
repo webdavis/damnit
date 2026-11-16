@@ -106,6 +106,16 @@ It prints how many it held as `held`. The next push after `dam resolve` sends th
 
     dam pull
 
+## Sync
+
+    dam sync run todoist
+
+pulls from one remote, then pushes its committed changes. A conflict is left for `dam status`.
+`sync = { interval = "15m", allowed = false }` on a remote sets background sync: `interval`
+defaults to `15m` and is at least `1m`; `allowed = false` keeps it from ever starting. Nothing
+syncs by itself.
+`dam sync run` ignores `allowed`. `docs/schemas/sync-run.schema.json` is its `--json` schema.
+
 ## Google Calendar
 
     cargo install --git https://github.com/webdavis/damnit dam-remote-gcal

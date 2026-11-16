@@ -167,3 +167,17 @@ fn narrowed_reads_need_one_of_their_permissions_in_any_grant() {
         Err(Refusal::NotPermitted(Permission::RemotePush))
     );
 }
+
+#[test]
+fn sync_run_admits_a_token_holding_a_remote_permission_and_bare_sync_is_open() {
+    let pulling = allowing(&[Permission::RemotePull]);
+    assert_eq!(admit(&pulling, &command("sync run todoist")), Ok(()));
+    assert_eq!(
+        admit(
+            &allowing(&[Permission::TaskRead]),
+            &command("sync run todoist")
+        ),
+        Err(Refusal::NotPermitted(Permission::RemotePull))
+    );
+    assert_eq!(need(&command("sync")), Need::Open);
+}
