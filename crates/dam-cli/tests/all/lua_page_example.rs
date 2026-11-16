@@ -42,7 +42,7 @@ fn the_pages_postponed_example_lists_a_task_whose_due_date_moved_three_times() {
         }
         committed(&sb, "postpone");
     }
-    let (ok, listed, err) = sb.dam(&["ls", "postponed"]);
+    let (ok, listed, err) = sb.dam(&["list", "--filter", "postponed"]);
     assert!(ok, "{err}");
     assert!(listed.contains("write the report"), "{listed}");
     assert!(!listed.contains("send the invoice"), "{listed}");

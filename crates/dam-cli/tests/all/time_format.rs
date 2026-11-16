@@ -98,7 +98,7 @@ fn every_command_prints_its_times_as_rfc_3339_or_a_plain_date() {
         short(OFFSITE),
     );
     let runs: [(&[&str], bool); 23] = [
-        (&["ls"], true),
+        (&["list"], true),
         (&["show", &oat_milk], true),
         (&["show", &standup], true),
         (&["show", &offsite], true),

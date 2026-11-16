@@ -11,12 +11,15 @@ fn every_failure_class_names_itself_under_json() {
         kind_of(&sb.output(&["show", "0000000", "-o", "json"])),
         "refused"
     );
-    assert_eq!(kind_of(&sb.output(&["ls", "due:", "-o", "json"])), "parse");
+    assert_eq!(
+        kind_of(&sb.output(&["agenda", "due:", "-o", "json"])),
+        "parse"
+    );
     assert_eq!(kind_of(&sb.output(&["done", "zz", "-o", "json"])), "usage");
 
     std::fs::create_dir(sb.dir.path().join("wrong")).unwrap();
     let unopenable = sb
-        .command(&["ls", "-o", "json"])
+        .command(&["list", "-o", "json"])
         .env("DAM_STORE", sb.dir.path().join("wrong"))
         .output()
         .unwrap();
@@ -25,7 +28,7 @@ fn every_failure_class_names_itself_under_json() {
     let a_folder = sb.dir.path().join("folder.lua");
     std::fs::create_dir(&a_folder).unwrap();
     let unreadable_config = sb
-        .command(&["ls", "-o", "json"])
+        .command(&["list", "-o", "json"])
         .env("DAM_CONFIG", &a_folder)
         .output()
         .unwrap();

@@ -52,7 +52,7 @@ fn each_kind_of_config_error() -> Vec<(Sandbox, &'static str, &'static str)> {
 fn every_config_error_points_to_doctor_except_doctor_s_own() {
     let _guard = support::guard("every_config_error_points_to_doctor_except_doctor_s_own");
     for (sb, why, doctor_why) in each_kind_of_config_error() {
-        let err = said_by(&sb, &["ls"]);
+        let err = said_by(&sb, &["list"]);
         assert!(err.contains(why), "{err}");
         assert_eq!(err.matches(HINT).count(), 1, "{err}");
         assert!(err.trim_end().ends_with(HINT), "{err}");

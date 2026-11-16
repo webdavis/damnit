@@ -23,7 +23,7 @@ fn a_request_carrying_every_required_detail_is_served() {
     let out = sb.output_holding(
         &held,
         &[
-            "ls",
+            "list",
             "-o",
             "json",
             "--meta",
@@ -39,7 +39,7 @@ fn a_request_carrying_every_required_detail_is_served() {
 fn a_meta_without_an_equals_sign_is_a_usage_error() {
     let _guard = support::guard("a_meta_without_an_equals_sign_is_a_usage_error");
     let sb = Sandbox::new();
-    let out = sb.output(&["ls", "--meta", "session"]);
+    let out = sb.output(&["list", "--meta", "session"]);
     assert_eq!(out.status.code(), Some(2), "{out:?}");
 }
 

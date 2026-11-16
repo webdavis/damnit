@@ -49,7 +49,7 @@ fn revoking_removes_the_token_and_leaves_every_other_byte() {
         .permissions()
         .mode();
     assert_eq!(mode & 0o777, 0o600);
-    let out = sb.output_holding(&token(1), &["ls", "-o", "json"]);
+    let out = sb.output_holding(&token(1), &["list", "-o", "json"]);
     assert_eq!(out.status.code(), Some(5), "{out:?}");
     assert_eq!(error_document(&out)["error"]["rule"], "unknown_token");
 }

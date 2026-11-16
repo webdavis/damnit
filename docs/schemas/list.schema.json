@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/webdavis/damnit/docs/schemas/ls.schema.json",
-  "title": "dam ls answer",
-  "description": "What dam ls prints with -o: the objects that match.",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/list.schema.json",
+  "title": "dam list answer",
+  "description": "What dam list prints with -o: the objects that match.",
   "type": "object",
   "required": [
     "objects"

@@ -4,8 +4,12 @@ use support::fixture::{self, OAT_MILK};
 use support::golden::assert_golden_output;
 
 #[test]
-fn ls_prints_the_golden_document() {
-    assert_golden_output(&fixture::committed(), &["-o", "json", "ls"], "ls.json");
+fn list_prints_the_golden_document() {
+    assert_golden_output(
+        &fixture::committed(),
+        &["-o", "json", "list", "--kind", "any"],
+        "list.json",
+    );
 }
 
 #[test]

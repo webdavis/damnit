@@ -83,7 +83,7 @@ fn a_created_token_lets_its_holder_run_what_the_grant_allows() {
         .permissions()
         .mode();
     assert_eq!(mode & 0o777, 0o600);
-    let out = sb.output_holding(value, &["ls", "-o", "json"]);
+    let out = sb.output_holding(value, &["list", "-o", "json"]);
     assert!(out.status.success(), "{out:?}");
 }
 
@@ -142,7 +142,7 @@ fn own_narrows_the_grant_to_what_the_token_made() {
     assert_eq!(answer["grants"][0]["own"], true);
     assert!(secrets_of(&sb).contains("own = true"));
     let value = answer["value"].as_str().unwrap();
-    let out = sb.output_holding(value, &["ls", "-o", "json"]);
+    let out = sb.output_holding(value, &["list", "-o", "json"]);
     let listed: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_eq!(listed["objects"], serde_json::json!([]));
 }

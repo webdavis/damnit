@@ -3,7 +3,7 @@ use crate::support;
 use support::config_files::Remote;
 use support::sandbox::Sandbox;
 
-const READS: [&str; 4] = ["ls", "show", "agenda", "reminders"];
+const READS: [&str; 4] = ["list", "show", "agenda", "reminders"];
 
 fn a_remote_never_pulled_that_marks_each_contact(sb: &Sandbox) -> [std::path::PathBuf; 2] {
     let resolved = sb.dir.path().join("credential-function-ran");

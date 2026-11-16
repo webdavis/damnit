@@ -3,13 +3,13 @@ use crate::support;
 use support::own::{listed, own_grant, own_hidden, send};
 
 #[test]
-fn a_tokens_ls_lists_only_what_it_made() {
-    let _guard = support::guard("a_tokens_ls_lists_only_what_it_made");
+fn a_tokens_list_lists_only_what_it_made() {
+    let _guard = support::guard("a_tokens_list_lists_only_what_it_made");
     let h = own_hidden(own_grant());
     h.task("diary", "work");
     assert_eq!(listed(&h, &[]), vec![h.report.clone()]);
-    assert_eq!(listed(&h, &["--by", "all"]), vec![h.report.clone()]);
-    assert_eq!(listed(&h, &["--by", "mine"]), Vec::<String>::new());
+    assert_eq!(listed(&h, &["--author", "tool"]), vec![h.report.clone()]);
+    assert_eq!(listed(&h, &["--author", "not:tool"]), Vec::<String>::new());
 }
 
 #[test]

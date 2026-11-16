@@ -13,7 +13,7 @@ fn a_listing_into_a_closed_pipe_exits_as_if_read_and_complains_of_nothing() {
     let _guard =
         support::guard("a_listing_into_a_closed_pipe_exits_as_if_read_and_complains_of_nothing");
     let sb = Sandbox::new();
-    for args in [&["ls"][..], &["ls", "-o", "json"]] {
+    for args in [&["list"][..], &["list", "-o", "json"]] {
         let out = into_a_closed_pipe(&sb, args);
         assert_eq!(out.status.code(), Some(0), "{args:?}: {out:?}");
         assert!(out.stderr.is_empty(), "{args:?}: {out:?}");

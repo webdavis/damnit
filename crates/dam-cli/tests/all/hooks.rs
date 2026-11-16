@@ -27,7 +27,7 @@ fn hooked(hooks: &[(&str, &str)]) -> Sandbox {
 }
 
 fn listed(sb: &Sandbox) -> serde_json::Value {
-    let (ok, out, err) = sb.dam(&["ls", "-o", "json"]);
+    let (ok, out, err) = sb.dam(&["list", "-o", "json"]);
     assert!(ok, "{err}");
     let listing: serde_json::Value = serde_json::from_str(&out).unwrap();
     listing["objects"].clone()

@@ -12,7 +12,7 @@ fn a_raising_filter_names_itself_its_file_and_its_line_to_the_owner() {
     let sb = Sandbox::new();
     sb.new_object(&["buy milk"]);
     sb.add_filter_written_as("broken", RAISING);
-    let out = sb.output(&["ls", "broken"]);
+    let out = sb.output(&["list", "--filter", "broken"]);
     assert_eq!(out.status.code(), Some(1), "{out:?}");
     let err = String::from_utf8_lossy(&out.stderr);
     let config = sb.config_path().display().to_string();
@@ -39,7 +39,7 @@ fn a_raising_filter_tells_a_token_its_name_and_nothing_from_the_file() {
         "--to",
         "2030-01-08",
     ];
-    for line in [&["ls", "broken"][..], &agenda] {
+    for line in [&["list", "--filter", "broken"][..], &agenda] {
         let out = sb.output_holding(&held, line);
         assert_eq!(out.status.code(), Some(1), "{line:?}: {out:?}");
         assert_eq!(
@@ -63,7 +63,7 @@ fn what_match_prints_goes_to_standard_error_and_leaves_json_whole() {
          end }",
     );
     for line in [
-        &["ls", "loud", "-o", "json"][..],
+        &["list", "--filter", "loud", "-o", "json"][..],
         &["agenda", "loud", "-o", "json"],
     ] {
         let out = sb.output(line);

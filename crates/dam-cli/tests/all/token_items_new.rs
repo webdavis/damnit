@@ -4,7 +4,7 @@ use support::sandbox::Sandbox;
 use support::tokens::{answer, grant, grant_to, token};
 
 fn owner_objects(sb: &Sandbox) -> serde_json::Value {
-    let (ok, out, err) = sb.dam(&["ls", "-o", "json"]);
+    let (ok, out, err) = sb.dam(&["list", "-o", "json"]);
     assert!(ok, "{err}");
     serde_json::from_str::<serde_json::Value>(&out).unwrap()["objects"].clone()
 }

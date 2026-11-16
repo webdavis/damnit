@@ -41,7 +41,7 @@ fn rule(document: &serde_json::Value) -> &str {
 fn a_well_formed_token_the_config_does_not_list_is_unknown() {
     let _guard = support::guard("a_well_formed_token_the_config_does_not_list_is_unknown");
     let sb = sandbox_with(vec![("tool", TokenTable::valued(&token(1)))]);
-    let document = refused(&sb, &token(2), &["ls", "-o", "json"]);
+    let document = refused(&sb, &token(2), &["list", "-o", "json"]);
     assert_eq!(rule(&document), "unknown_token");
 }
 

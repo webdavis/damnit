@@ -78,14 +78,14 @@ fn a_token_reads_the_details_of_its_own_objects_only() {
 }
 
 #[test]
-fn ls_shows_the_author_and_filters_by_mine_agents_or_all() {
-    let _guard = support::guard("ls_shows_the_author_and_filters_by_mine_agents_or_all");
+fn list_shows_the_author_and_selects_by_it() {
+    let _guard = support::guard("list_shows_the_author_and_selects_by_it");
     let sb = owned_by_ada();
     let claude = agent(&sb, "claude", 1);
     accepted(&sb, &claude, "Call the dentist", "s1");
     sb.new_object(&["Pay rent"]);
-    let subjects = |by: &str, format: &str| -> Vec<String> {
-        let out = sb.output(&["ls", "--by", by, "-o", format]);
+    let subjects = |author: &[&str], format: &str| -> Vec<String> {
+        let out = sb.output(&[&["list"], author, &["-o", format]].concat());
         assert!(out.status.success(), "{out:?}");
         let text = String::from_utf8(out.stdout).unwrap();
         if format == "toon" {
@@ -96,7 +96,7 @@ fn ls_shows_the_author_and_filters_by_mine_agents_or_all() {
                 .collect();
         }
         let listed: Value = serde_json::from_str(&text).unwrap();
-        support::schema::assert_matches_schema(&listed, "ls.schema.json");
+        support::schema::assert_matches_schema(&listed, "list.schema.json");
         listed["objects"]
             .as_array()
             .unwrap()
@@ -104,15 +104,21 @@ fn ls_shows_the_author_and_filters_by_mine_agents_or_all() {
             .map(|o| format!("{} by {}", o["subject"].as_str().unwrap(), o["author"]))
             .collect()
     };
-    assert_eq!(subjects("mine", "json"), ["Pay rent by \"Ada\""]);
     assert_eq!(
-        subjects("agents", "json"),
+        subjects(&["--author", "Ada"], "json"),
+        ["Pay rent by \"Ada\""]
+    );
+    assert_eq!(
+        subjects(&["--author", "not:Ada"], "json"),
         ["Call the dentist by \"claude\""]
     );
-    assert_eq!(subjects("all", "json").len(), 2);
-    assert_eq!(subjects("agents", "toon"), ["Call the dentist"]);
-    assert_eq!(subjects("mine", "toon"), ["Pay rent"]);
-    let (ok, human, err) = sb.dam(&["ls"]);
+    assert_eq!(subjects(&[], "json").len(), 2);
+    assert_eq!(
+        subjects(&["--author", "claude"], "toon"),
+        ["Call the dentist"]
+    );
+    assert_eq!(subjects(&["--author", "Ada"], "toon"), ["Pay rent"]);
+    let (ok, human, err) = sb.dam(&["list"]);
     assert!(ok, "{err}");
     let dentist = human
         .lines()

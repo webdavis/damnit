@@ -2,8 +2,8 @@ use crate::support;
 
 use support::sandbox::Sandbox;
 
-fn subjects(sb: &Sandbox, query: &str) -> Vec<String> {
-    let (ok, out, err) = sb.dam(&["ls", query, "-o", "json"]);
+fn subjects(sb: &Sandbox, flags: &[&str]) -> Vec<String> {
+    let (ok, out, err) = sb.dam(&[&["list"], flags, &["-o", "json"]].concat());
     assert!(ok, "{err}");
     let listed: serde_json::Value = serde_json::from_str(&out).unwrap();
     listed["objects"]
@@ -32,9 +32,12 @@ fn an_estimate_in_minutes_finds_the_tasks_that_fit_five_minutes() {
 
     assert_eq!(estimate(&sb, &quick), 5);
     assert_eq!(estimate(&sb, &long), 120);
-    assert_eq!(subjects(&sb, "estimate:max:5m"), vec!["water the plants"]);
-    assert_eq!(subjects(&sb, "estimate:min:1h"), vec!["file taxes"]);
-    assert_eq!(subjects(&sb, "estimate:none"), vec!["unestimated"]);
+    assert_eq!(
+        subjects(&sb, &["--estimate", "..5m"]),
+        vec!["water the plants"]
+    );
+    assert_eq!(subjects(&sb, &["--estimate", "1h.."]), vec!["file taxes"]);
+    assert_eq!(subjects(&sb, &["--estimate", "none"]), vec!["unestimated"]);
 
     assert!(sb.dam(&["edit", &long, "--no-estimate"]).0);
     assert_eq!(estimate(&sb, &long), serde_json::Value::Null);
