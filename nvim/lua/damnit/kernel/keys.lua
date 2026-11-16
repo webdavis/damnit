@@ -6,7 +6,7 @@ local M = {}
 ---@param screen damnit.Screen
 ---@return damnit.Keys
 function M.new(screen)
-  return setmetatable({ screen = screen }, Keys)
+  return setmetatable({ screen = screen, task_keys = {}, tasks_at = {} }, Keys)
 end
 
 ---@param specs damnit.KeySpec[]
@@ -75,6 +75,30 @@ function Keys:bind(buf, specs)
   })
   for _, spec in ipairs(all) do
     vim.keymap.set(spec.mode or "n", spec.lhs, spec.run, { buffer = buf, desc = spec.desc, nowait = true })
+  end
+end
+
+---@param make fun(at: damnit.TaskAt, group: string|nil): damnit.KeySpec
+function Keys:offer_task_key(make)
+  table.insert(self.task_keys, make)
+end
+
+---@param buf integer
+---@param group string|nil the g? heading the keys go under
+---@param at damnit.TaskAt
+---@return damnit.KeySpec[]
+function Keys:for_task(buf, group, at)
+  self.tasks_at[buf] = at
+  return vim.tbl_map(function(make)
+    return make(at, group)
+  end, self.task_keys)
+end
+
+---@return string|nil oid, string|nil cwd
+function Keys:task_here()
+  local at = self.tasks_at[vim.api.nvim_get_current_buf()]
+  if at then
+    return at()
   end
 end
 

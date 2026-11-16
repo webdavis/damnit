@@ -863,6 +863,13 @@ project. `:Dam capture!` creates it without the prompt. Map it yourself:
 vim.keymap.set({ "n", "x" }, "<leader>dc", "<Plug>(dam-capture)")
 ```
 
+`:Dam handoff [note]`, or `H` on a row of a list or the status window, hands the task under the
+cursor, or the open task, to an agent: the subject, short oid, path, labels, due, body, your note
+and the `dam show` line to read it again. `H` asks for the note. The `handoff` option picks where
+it goes: `host = "auto"` sends it to another pane when Neovim runs in Rex, else copies it to the
+clipboard; `"rex"` or `"clipboard"` picks one. When Rex refuses it, the brief is copied instead.
+The Rex host was written from Rex's help and sends the brief as one paste, then Enter.
+
 `require("damnit").statusline()` gives short counts for a statusline, such as `!2 ?1 M3 S1 ^2`:
 overdue, waiting, unstaged, staged and unpushed commits, using the `signs` characters. It is
 empty when all are zero. It never waits on dam: it reads again after a change, when Neovim gains

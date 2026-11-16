@@ -13,6 +13,7 @@ function M.setup(opts)
   end
   running = require("damnit.kernel.app").new(options, require("damnit.kernel.process"))
   require("damnit.kernel.refresh").new(running.say)
+  local handoff = require("damnit.handoff").new(running)
   local task = require("damnit.task").new(running)
   statusline = require("damnit.statusline").new(running)
   require("damnit.command").define(running, {
@@ -21,6 +22,7 @@ function M.setup(opts)
     task,
     require("damnit.status").new(running, task.open),
     require("damnit.capture").new(running),
+    handoff,
   })
   return running
 end

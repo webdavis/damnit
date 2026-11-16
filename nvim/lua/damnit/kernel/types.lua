@@ -15,6 +15,7 @@
 ---@field keys damnit.Keys
 ---@field say damnit.Say
 ---@field vocab damnit.VocabCache
+---@field process { run: fun(argv: string[], opts: damnit.ProcessOptions, on_exit: fun(exit: damnit.Exit)): damnit.Process }
 
 ---@class damnit.Feature
 ---@field commands table<string, fun(args: string[], cmd: table)>
@@ -68,8 +69,18 @@
 ---@field mode? string|string[]
 ---@field group? string the heading g? lists it under
 
+---@alias damnit.TaskAt fun(): string|nil, string the oid under the cursor and the folder dam runs in
+
 ---@class damnit.Keys
 ---@field bind fun(self, buf: integer, specs: damnit.KeySpec[])
+---@field offer_task_key fun(self, make: fun(at: damnit.TaskAt, group: string|nil): damnit.KeySpec)
+---@field for_task fun(self, buf: integer, group: string|nil, at: damnit.TaskAt): damnit.KeySpec[]
+---@field task_here fun(self): string|nil, string|nil
+
+---@class damnit.Host
+---@field name string
+---@field available fun(): boolean, string|nil
+---@field send fun(brief: string, done: fun(err: string|nil, said: string|nil))
 
 ---@class damnit.Say
 ---@field info fun(self, text: string)

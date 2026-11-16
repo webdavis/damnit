@@ -16,6 +16,7 @@ function M.new(options, process)
     keys = require("damnit.kernel.keys").new(screen),
     dam = dam,
     vocab = require("damnit.kernel.vocab").new(dam, say),
+    process = process,
   }
 end
 
