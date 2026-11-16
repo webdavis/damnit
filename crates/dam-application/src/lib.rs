@@ -69,6 +69,7 @@ pub use use_cases::new_object::{NewEvent, NewTask};
 pub use use_cases::prefix::{Named, SHORTEST_OID_PREFIX};
 pub use use_cases::pull::PullReport;
 pub use use_cases::push::PushReport;
+pub use use_cases::rehearse::Rehearsed;
 pub use use_cases::reminders::DueReminder;
 pub use use_cases::remote_holds::held_by_a_remote;
 pub use use_cases::remove::{ItemAndTask, Removal, RemovePlan};

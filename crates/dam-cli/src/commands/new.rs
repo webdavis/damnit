@@ -9,7 +9,7 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 use crate::view::{Human, View, report, wire};
-use dam_application::{NewEvent, NewTask};
+use dam_application::{Dam, Landed, NewEvent, NewTask, UseCaseError};
 use dam_domain::{Kind, Object};
 use serde::Serialize;
 
@@ -27,15 +27,40 @@ impl View for Created<'_> {
     }
 }
 
+pub(crate) enum Made {
+    Task(NewTask),
+    Event(NewEvent),
+}
+
 pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
-    let labels: BTreeSet<String> = args.labels.into_iter().collect();
     let id = args.id.clone();
+    if args.preview {
+        let hold = args.hold.clone();
+        return preview::run(ctx, hold, made(ctx, args)?);
+    }
+    let landed = land(&ctx.dam(), made(ctx, args)?)?;
+    report_landed(&landed, |object| {
+        let now = as_it_is_now(ctx, object)?;
+        report(&hooked(ctx, Created(&now)))
+    })
+    .map(|answer| with_caller_id(answer, id.as_ref()))
+}
+
+pub(crate) fn land(dam: &Dam<'_>, made: Made) -> Result<Landed, UseCaseError> {
+    match made {
+        Made::Task(task) => dam.new_task(task),
+        Made::Event(event) => dam.new_event(event),
+    }
+}
+
+fn made(ctx: &Context, args: NewArgs) -> Result<Made, CliError> {
+    let labels: BTreeSet<String> = args.labels.into_iter().collect();
     let parent = args
         .parent
         .as_deref()
         .map(|text| ctx.dam().resolve_object(text))
         .transpose()?;
-    let landed = if args.kind == Kind::Event {
+    if args.kind == Kind::Event {
         let start = when_flag(
             ctx,
             "start",
@@ -50,8 +75,8 @@ pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
                 .as_deref()
                 .ok_or_else(|| CliError::Usage("--kind event needs --start and --end".into()))?,
         )?;
-        ctx.dam().new_event(NewEvent {
-            parent: parent.clone(),
+        return Ok(Made::Event(NewEvent {
+            parent,
             subject: args.subject,
             path: args.path,
             start,
@@ -59,43 +84,37 @@ pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
             labels,
             body: args.body,
             id: args.id,
-        })?
-    } else {
-        if args.start.is_some() || args.end.is_some() {
-            return Err(CliError::Usage(
-                "--start and --end need --kind event".into(),
-            ));
-        }
-        let priority = args.priority.unwrap_or_default();
-        let due = args
-            .due
-            .as_deref()
-            .map(|d| when_flag(ctx, "due", d))
-            .transpose()?;
-        let deadline = args
-            .deadline
-            .as_deref()
-            .map(|d| deadline_flag(ctx, d))
-            .transpose()?;
-        ctx.dam().new_task(NewTask {
-            parent,
-            subject: args.subject,
-            path: args.path,
-            priority,
-            due,
-            deadline,
-            labels,
-            body: args.body,
-            id: args.id,
-        })?
-    };
-    report_landed(&landed, |object| {
-        let now = as_it_is_now(ctx, object)?;
-        report(&hooked(ctx, Created(&now)))
-    })
-    .map(|answer| with_caller_id(answer, id.as_ref()))
+        }));
+    }
+    if args.start.is_some() || args.end.is_some() {
+        return Err(CliError::Usage(
+            "--start and --end need --kind event".into(),
+        ));
+    }
+    let due = args
+        .due
+        .as_deref()
+        .map(|d| when_flag(ctx, "due", d))
+        .transpose()?;
+    let deadline = args
+        .deadline
+        .as_deref()
+        .map(|d| deadline_flag(ctx, d))
+        .transpose()?;
+    Ok(Made::Task(NewTask {
+        parent,
+        subject: args.subject,
+        path: args.path,
+        priority: args.priority.unwrap_or_default(),
+        due,
+        deadline,
+        labels,
+        body: args.body,
+        id: args.id,
+    }))
 }
 
+mod preview;
 pub(crate) mod required;
 pub(crate) mod templated;
 

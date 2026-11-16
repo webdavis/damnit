@@ -33,6 +33,8 @@ pub(crate) fn new_args(subject: &str, path: &str) -> NewArgs {
         end: None,
         id: None,
         template: None,
+        preview: false,
+        hold: None,
         scope: ScopeArgs::default(),
     }
 }

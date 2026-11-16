@@ -126,7 +126,7 @@ pub(crate) fn sent(landed: Landed) -> Option<Sent> {
     }
 }
 
-mod rehearsal;
+pub(crate) mod rehearsal;
 mod select;
 mod verbs;
 

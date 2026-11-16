@@ -33,6 +33,7 @@ dam new start: help = Start the event at this time, read the way --due reads one
 dam new end: help = End the event at this time, read the way --due reads one
 dam new id: help = Name it with your own id, so a repeat with the same id changes it. One line, up to 200 characters; not damnit's oid
 dam new template: help = Start from the template NAME: the project's .damtemplates/NAME.lua, else templates/NAME.lua beside config.lua. Each flag given replaces its value
+dam new preview: help = Show the change and write nothing
 dam new global: help = Reach every task, not only the project this folder is in; a path starts from the root
 dam new project: help = Work in the project at PATH, such as pns/hooks/, from any folder
 dam done: about = Mark a task done
