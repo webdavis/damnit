@@ -1,4 +1,4 @@
-use crate::ports::{Progress, Step};
+use crate::ports::{NoProgress, Progress, Step};
 use crate::service::Dam;
 
 pub(crate) struct Words<'a> {
@@ -11,7 +11,7 @@ impl Dam<'_> {
         if self.access.token().is_none() {
             self.progress
         } else {
-            &Unseen
+            &NoProgress
         }
     }
 
@@ -34,13 +34,4 @@ impl Dam<'_> {
         }
         answer
     }
-}
-
-struct Unseen;
-
-impl Progress for Unseen {
-    fn start(&self, _: Step<'_>) {}
-    fn advance(&self, _: usize) {}
-    fn finish(&self) {}
-    fn fail(&self) {}
 }

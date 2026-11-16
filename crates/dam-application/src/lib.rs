@@ -29,10 +29,11 @@ pub use ports::{
     EditRequest, EditRequests, EditedTable, Expected, FilterFunctions, FollowOn,
     FollowOnRepository, FunctionFailure, FunctionFault, HelperError, HelperLauncher, Histories,
     History, HookEdits, HookFailure, HookWarnings, Hooks, IdRepository, Interruption,
-    ItemRepository, LoadedConfig, Misread, MissingTask, Notice, NoticeRepository, ObjectRepository,
-    ObjectState, OriginRepository, Place, Progress, Pull, PulledChange, Randomness, RemoteHelper,
-    RemoteName, RemoteNameError, RemoteTrackingRepository, SecretsTightened, SettingChange,
-    SettingsFile, StageRepository, Step, Store, StoreError, Transactional, Uneditable,
+    ItemRepository, LoadedConfig, Misread, MissingTask, NoProgress, Notice, NoticeRepository,
+    ObjectRepository, ObjectState, OriginRepository, Place, Progress, Pull, PulledChange,
+    Randomness, RemoteHelper, RemoteName, RemoteNameError, RemoteTrackingRepository,
+    SecretsTightened, SettingChange, SettingsFile, StageRepository, Step, Store, StoreError,
+    Transactional, Uneditable,
 };
 pub use remote::{
     IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, PushOutcome,
