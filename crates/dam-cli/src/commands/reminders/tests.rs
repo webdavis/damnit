@@ -9,7 +9,7 @@ const SCHEMA: &str = include_str!(concat!(
     "/../../docs/schemas/reminders.schema.json"
 ));
 
-fn reminded_task() -> Object {
+pub(super) fn reminded_task() -> Object {
     let mut task = Task::new(dam_application::testing::oid(1), "call the bank");
     let due: jiff::Timestamp = "2026-01-02T10:00:00Z".parse().unwrap();
     task.due = Some(When::At(due.to_zoned(TimeZone::UTC)));

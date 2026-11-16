@@ -29,10 +29,13 @@ pub(crate) enum DayCommand {
 pub(crate) struct RemindersArgs {
     #[arg(
         long,
-        help = "Open the window at a date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM. Default: today"
+        help = "Open the window at a day, instant or anchor: 2026-11-20, 2026-11-20T09:00, today+1, week, now+2h. Default: today"
     )]
     pub(crate) from: Option<String>,
-    #[arg(long, help = "Close the window here, exclusive. Default: now")]
+    #[arg(
+        long,
+        help = "Close the window here; a day or period counts whole, an instant is not included. Default: now"
+    )]
     pub(crate) to: Option<String>,
     #[command(flatten)]
     pub(crate) scope: ScopeArgs,
