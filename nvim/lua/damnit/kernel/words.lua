@@ -11,6 +11,7 @@ local M = {}
 ---@class damnit.Candidate
 ---@field word string
 ---@field menu string
+---@field table? table a saved filter's conditions
 
 ---@class damnit.Category
 ---@field name string

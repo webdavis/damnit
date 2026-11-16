@@ -40,7 +40,8 @@ return {
       }),
       vim.inspect(sent)
     )
-    assert(vim.deep_equal(words.filters, { { word = "today", menu = "saved filter" } }), vim.inspect(words.filters))
+    local today = { word = "today", menu = "saved filter", table = { due = "..today" } }
+    assert(vim.deep_equal(words.filters, { today }), vim.inspect(words.filters))
     assert(vim.deep_equal(words.remotes, { { word = "fake", menu = "remote" } }), vim.inspect(words.remotes))
     local effort = words.categories[2]
     assert(effort.name == "effort" and vim.deep_equal(effort.values, { "light", "deep" }), vim.inspect(effort))
