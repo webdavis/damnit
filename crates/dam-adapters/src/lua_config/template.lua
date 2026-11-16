@@ -38,6 +38,9 @@ return {
   -- dependencies instead of refusing.
   --done = { interactive = true },
 
+  -- With progress = false, a slow step shows its progress line only under --progress.
+  --progress = false,
+
   -- A remote dam pulls from and pushes to, run by the dam-remote-<helper> program on PATH.
   -- url is <helper>::<address>, a helper name being letters, digits, - and _. deadline is the
   -- longest the helper may stay silent, 60s by default, a whole number then s, m or h. path limits

@@ -6,7 +6,9 @@ use super::hook::read_hooks;
 use super::remote::read_remote;
 use super::strict::StrictMap;
 
-pub(crate) const SETTINGS: [&str; 6] = ["owner", "done", "remote", "category", "filter", "hook"];
+pub(crate) const SETTINGS: [&str; 7] = [
+    "owner", "done", "progress", "remote", "category", "filter", "hook",
+];
 pub(crate) const DONE: [&str; 1] = ["interactive"];
 pub(crate) const CATEGORY: [&str; 2] = ["values", "exclusive"];
 const SECRETS: [&str; 2] = ["token", "schema"];
@@ -51,6 +53,7 @@ pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
     Ok(Config {
         owner: root.string("owner")?,
         done_interactive,
+        progress: root.bool("progress")?,
         remotes,
         categories,
         categories_writing_exclusive,

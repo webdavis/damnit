@@ -23,6 +23,7 @@ pub use remote::RemoteConfig;
 pub struct Config {
     pub owner: Option<String>,
     pub done_interactive: Option<bool>,
+    pub progress: Option<bool>,
     pub remotes: Vec<RemoteConfig>,
     pub categories: Categories,
     pub categories_writing_exclusive: BTreeSet<String>,
@@ -39,6 +40,10 @@ impl Config {
 
     pub fn done_interactive(&self) -> bool {
         self.done_interactive.unwrap_or(false)
+    }
+
+    pub fn progress(&self) -> bool {
+        self.progress.unwrap_or(true)
     }
 
     pub fn remote(&self, name: &str) -> Option<&RemoteConfig> {

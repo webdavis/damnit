@@ -20,6 +20,7 @@ Files ── where dam reads its configuration
 Settings ── what dam is using
   owner                                Ada
   done.interactive                     false (default)
+  progress                             true (default)
   remote.todoist.url                   todoist::
   remote.todoist.deadline              60s (default)
   remote.todoist.path                  work/
@@ -64,6 +65,7 @@ Files ── where dam reads its configuration
 Settings ── what dam is using
   owner             owner (default)
   done.interactive  false (default)
+  progress          true (default)
 "
             );
         }

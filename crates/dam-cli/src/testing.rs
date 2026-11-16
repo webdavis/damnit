@@ -27,6 +27,7 @@ pub(crate) fn context() -> Context {
         config: Config {
             owner: None,
             done_interactive: None,
+            progress: None,
             remotes: vec![],
             categories: Categories::new(vec![]).unwrap_or_else(|_| unreachable!()),
             categories_writing_exclusive: Default::default(),

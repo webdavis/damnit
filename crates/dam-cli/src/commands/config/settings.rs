@@ -36,6 +36,7 @@ pub(super) fn settings(config: &Config) -> Setting {
                 config.done_interactive(),
             )]),
         ),
+        flag("progress", config.progress.is_some(), config.progress()),
     ];
     entries.extend(
         groups
