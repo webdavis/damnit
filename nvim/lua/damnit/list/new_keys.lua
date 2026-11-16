@@ -42,7 +42,7 @@ function M.keys(app, quickadd, lists)
           if not context.oid then
             return app.say:warn("no task on this line to put the new one under")
           end
-          return " --parent " .. context.oid
+          return " --parent " .. context.oid:sub(1, 7)
         end),
       },
     }

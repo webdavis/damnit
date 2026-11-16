@@ -127,6 +127,12 @@ local function quick_added(sandbox)
   wait_for(function()
     return vim.tbl_contains(buffer.lines(), "[ ] buy oat milk")
   end, 20000)
+  prompt.type("obuy the carton")
+  assert(prompt.line():find("^buy the carton %-%-parent %x%x%x%x%x%x%x$"), prompt.line())
+  prompt.more("<CR>")
+  wait_for(function()
+    return vim.tbl_contains(buffer.lines(), "  [ ] buy the carton")
+  end, 20000)
 end
 
 return {
@@ -134,7 +140,7 @@ return {
     return with_real_dam(listed_in_a_project)
   end,
 
-  ["quick add with --due fri shows dam's date in the footer and the task appears in the list"] = function()
+  ["quick add with --due fri shows dam's date and the task appears; o makes a child under its short oid"] = function()
     if vim.fn.executable(dam_bin) ~= 1 then
       return ("no dam at %s; build it with cargo build -p damnit or set DAM_BIN"):format(dam_bin)
     end

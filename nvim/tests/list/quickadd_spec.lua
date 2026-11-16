@@ -98,13 +98,13 @@ return {
     assert(prompt.line() == "buy --path home/", prompt.line())
   end,
 
-  ["o puts --parent with the row's oid after the cursor"] = function()
+  ["o puts --parent with the row's short oid after the cursor"] = function()
     local _, fake = defined()
     listed(fake)
     local row = vim.fn.index(buffer.lines(), "[ ] call mom") + 1
     vim.api.nvim_win_set_cursor(0, { row, 0 })
     prompt.type("obuy")
-    assert(prompt.line() == "buy --parent " .. CALL_MOM, prompt.line())
+    assert(prompt.line() == "buy --parent 2222222", prompt.line())
   end,
 
   ["a new task the list shows takes the cursor"] = function()
