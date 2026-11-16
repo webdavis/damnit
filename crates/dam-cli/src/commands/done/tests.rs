@@ -16,7 +16,6 @@ fn parent_and_child(ctx: &Context) {
     p.base.path = Path::parse("top").unwrap();
     let mut c = Task::new(oid(2), "child");
     c.base.path = Path::parse("top/parent").unwrap();
-    c.base.parent = Some(oid(1));
     ctx.store.put(&Object::Task(p)).unwrap();
     ctx.store.put(&Object::Task(c)).unwrap();
 }

@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use dam_adapters::{OpenError, ReadOnly, SqliteStore};
 use dam_application::{
     AcceptedKindsRepository, AttemptRepository, CommitRepository, ObjectRepository, RemoteConfig,
-    RemoteTrackingRepository, StoreError, UseCaseError,
+    StoreError, UseCaseError, held_by_a_remote,
 };
 use dam_domain::{Object, Oid, unsettled};
 
@@ -67,14 +67,10 @@ fn unsettled_in(
     unsettled(&objects)
         .into_iter()
         .map(|(object, could_hold)| {
-            let mut pulled = false;
-            for remote in remotes {
-                pulled |= store.remote_id(&remote.name, object.oid())?.is_some();
-            }
             Ok(Unsettled {
                 object: object.clone(),
                 could_hold,
-                pulled,
+                pulled: held_by_a_remote(store, remotes, object.oid())?,
             })
         })
         .collect()

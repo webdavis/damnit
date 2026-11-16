@@ -39,6 +39,15 @@ pub(crate) fn dispatch_a_verb_that_opens_the_store(
     ctx: &Context,
     command: Command,
 ) -> Result<Report, CliError> {
+    run_a_verb(ctx, command).map_err(|error| match error {
+        CliError::UseCase(error) => {
+            CliError::UseCase(ctx.dam().telling_whether_a_remote_holds(error))
+        }
+        error => error,
+    })
+}
+
+fn run_a_verb(ctx: &Context, command: Command) -> Result<Report, CliError> {
     crate::gate::admit(ctx.access.as_ref(), &command)?;
     match command {
         Command::New(a) => new::run(ctx, a),
@@ -73,3 +82,6 @@ pub(crate) fn dispatch_a_verb_that_opens_the_store(
         }
     }
 }
+
+#[cfg(test)]
+mod tests;

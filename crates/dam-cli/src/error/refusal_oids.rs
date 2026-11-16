@@ -13,6 +13,16 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
             .collect(),
         Refusal::AmbiguousPrefix { matches, .. } => matches.clone(),
         Refusal::FocusFull { focused, .. } => focused.iter().map(named).collect(),
+        Refusal::ParentNotKnown {
+            oid,
+            unsettled,
+            namesakes,
+            ..
+        } => std::iter::once(oid)
+            .chain(unsettled)
+            .chain(namesakes)
+            .map(named)
+            .collect(),
         Refusal::NotATask(oid)
         | Refusal::NotAnEvent(oid)
         | Refusal::MoveInsideItself(oid)

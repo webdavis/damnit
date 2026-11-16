@@ -36,6 +36,23 @@ fn a_blocked_completion_names_the_task_and_then_its_blockers() {
 }
 
 #[test]
+fn an_unknown_parent_is_refused_naming_the_object_then_the_unsettled_then_the_namesakes() {
+    let error = CliError::from(Refusal::ParentNotKnown {
+        oid: oid(1),
+        unsettled: vec![oid(3)],
+        namesakes: vec![oid(2)],
+        folder: dam_domain::Path::parse("Home/errands").unwrap(),
+        held_by_a_remote: false,
+    });
+    assert_eq!(error.exit_code(), 4);
+    assert_eq!(error.document()["error"]["rule"], "parent_not_known");
+    assert_eq!(
+        error.document()["error"]["oids"],
+        serde_json::json!([oid(1).to_string(), oid(3).to_string(), oid(2).to_string()])
+    );
+}
+
+#[test]
 fn the_message_is_the_sentence_the_human_form_prints() {
     let error = CliError::UseCase(UseCaseError::Refused(Refusal::NotCompleted(oid(4))));
     assert_eq!(error.document()["error"]["message"], error.to_string());

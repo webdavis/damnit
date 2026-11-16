@@ -8,6 +8,7 @@ use super::commit_text::{not_in_commit, pulled_commit};
 use super::hook_text::HookText;
 use super::item_text::ItemText;
 use super::token_text::TokenText;
+use parent_text::parent_not_known;
 
 pub(crate) struct RefusalText<'a>(pub(crate) &'a Refusal);
 
@@ -153,6 +154,13 @@ impl fmt::Display for RefusalText<'_> {
             Refusal::Item(refusal) => write!(f, "{}", ItemText(refusal)),
             Refusal::PulledCommit(id) => pulled_commit(f, id),
             Refusal::NotInCommit { commit, text } => not_in_commit(f, commit, text),
+            Refusal::ParentNotKnown {
+                oid,
+                unsettled,
+                namesakes,
+                folder,
+                held_by_a_remote,
+            } => parent_not_known(f, oid, unsettled, namesakes, folder, *held_by_a_remote),
         }
     }
 }
@@ -178,6 +186,8 @@ fn short(id: &str) -> &str {
 }
 
 const SHORT_ID_LENGTH: usize = 7;
+
+mod parent_text;
 
 #[cfg(test)]
 mod tests;

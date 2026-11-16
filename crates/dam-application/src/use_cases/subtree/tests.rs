@@ -28,3 +28,5 @@ fn moving_an_object_into_a_folder_carries_the_folder_it_owns() {
 }
 
 mod parents;
+
+mod settling;

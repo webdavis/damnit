@@ -14,7 +14,6 @@ fn removing_a_parent_moves_its_child_up_and_says_so() {
     p.base.path = Path::parse("work").unwrap();
     let mut c = Task::new(oid(2), "step");
     c.base.path = Path::parse("work/plan").unwrap();
-    c.base.parent = Some(oid(1));
     ctx.store.put(&Object::Task(p)).unwrap();
     ctx.store.put(&Object::Task(c)).unwrap();
     let report = run(
