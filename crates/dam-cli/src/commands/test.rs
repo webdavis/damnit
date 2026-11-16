@@ -1,4 +1,6 @@
 mod credentials;
+#[cfg(test)]
+mod tests;
 
 use dam_adapters::LuaConfigFile;
 use dam_application::HelperLauncher;
@@ -24,10 +26,18 @@ pub(crate) fn print(
     format: Format,
     color: bool,
 ) -> Result<(), CliError> {
+    check_report::print(report(asked, config_file, launcher), format, color)
+}
+
+fn report(
+    asked: &[PartName],
+    config_file: &LuaConfigFile,
+    launcher: &dyn HelperLauncher,
+) -> CheckReport {
     let checks = EVERY_PART
         .iter()
         .filter(|(name, _)| asked.is_empty() || asked.contains(name))
         .map(|(_, test)| test(config_file, launcher))
         .collect();
-    check_report::print(CheckReport::new("test", PARTS, checks), format, color)
+    CheckReport::new("test", PARTS, checks)
 }
