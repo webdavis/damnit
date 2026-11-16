@@ -1,3 +1,4 @@
+local folds = require("damnit.kernel.folds")
 local actions = require("damnit.status.actions")
 local sections = require("damnit.status.sections")
 local winbar = require("damnit.status.winbar")
@@ -47,12 +48,27 @@ function Status:read()
   end)
 end
 
+---@param count integer
+---@param targets table<integer, damnit.StatusTarget>
+---@return damnit.FoldLine[]
+local function fold_lines(count, targets)
+  local lines = {}
+  for n = 1, count do
+    local section = targets[n] and targets[n].kind == "section" and targets[n].section
+    lines[n] = targets[n] and { header = section and true, depth = 0, key = section or nil } or {}
+  end
+  return lines
+end
+
 function Status:draw()
   local buf = self.buf
-  self.app.screen:window(buf, { winbar = self.app.screen.bar(winbar.chunks(self.answer)), wrap = false })
+  local window = { winbar = self.app.screen.bar(winbar.chunks(self.answer)), wrap = false }
   self.width = self.app.screen:text_width(buf)
   local lines, marks, targets = sections.render(self.answer, self.width)
-  self.app.screen:draw(buf, lines, marks)
+  folds.redraw(buf, fold_lines(#lines, targets), function()
+    self.app.screen:window(buf, vim.tbl_extend("error", window, folds.window))
+    self.app.screen:draw(buf, lines, marks)
+  end)
   self.targets = targets
 end
 
@@ -106,27 +122,30 @@ function Status:bind(buf)
   local function call(lhs, desc, run)
     return { lhs = lhs, desc = desc, run = run }
   end
-  self.app.keys:bind(buf, {
-    act("s", "stage the change, or everything on a header"),
-    act("u", "unstage the change, or everything on the Staged header"),
-    act("a", "accept the waiting item or set"),
-    act("x", "decline the waiting item or set"),
-    call("c", "commit the stage", function()
-      self.writes.commit(self.cwd)
-    end),
-    call("P", "push to every remote", function()
-      self.writes.push(self.cwd)
-    end),
-    call("F", "pull from every remote", function()
-      self.writes.pull(self.cwd)
-    end),
-    call("<CR>", "open the task", function()
-      self:open_target_task()
-    end),
-    call("r", "read the status again", function()
-      self:read()
-    end),
-  })
+  self.app.keys:bind(
+    buf,
+    vim.list_extend({
+      act("s", "stage the change, or everything on a header"),
+      act("u", "unstage the change, or everything on the Staged header"),
+      act("a", "accept the waiting item or set"),
+      act("x", "decline the waiting item or set"),
+      call("c", "commit the stage", function()
+        self.writes.commit(self.cwd)
+      end),
+      call("P", "push to every remote", function()
+        self.writes.push(self.cwd)
+      end),
+      call("F", "pull from every remote", function()
+        self.writes.pull(self.cwd)
+      end),
+      call("<CR>", "open the task", function()
+        self:open_target_task()
+      end),
+      call("r", "read the status again", function()
+        self:read()
+      end),
+    }, folds.keys())
+  )
   vim.api.nvim_create_autocmd("BufWipeout", {
     group = self.group,
     buffer = buf,

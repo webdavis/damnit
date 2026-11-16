@@ -1,9 +1,43 @@
 local M = {}
 
+M.TODAY = {
+  { title = "Overdue", overdue = true },
+  { title = "Today", due = "today", overdue = false },
+  { title = "Next 7 days", due = "today+1..today+7", overdue = false },
+  { title = "No date", due = "none" },
+}
+
+local NOT_FLAGS = { title = true, group = true }
+
 ---@param request table
 ---@return string
 local function encoded(request)
-  return vim.json.encode(next(request) and request or vim.empty_dict())
+  local flags = {}
+  for key, value in pairs(request) do
+    if not NOT_FLAGS[key] then
+      flags[key] = value
+    end
+  end
+  return vim.json.encode(next(flags) and flags or vim.empty_dict())
+end
+
+---@class damnit.ListPart
+---@field title? string
+---@field args string[]
+---@field stdin? string
+
+---@param view string|damnit.ViewSpec|damnit.ViewSpec[]|nil
+---@param views table<string, string|damnit.ViewSpec>
+---@return damnit.ListPart[] parts, string|string[]|nil grouped_by the sort whose first key groups the rows
+function M.parts(view, views)
+  local spec = type(view) == "string" and (views[view] or view) or view
+  if type(spec) == "table" and vim.islist(spec) and #spec > 0 then
+    return vim.tbl_map(function(section)
+      return { title = section.title, args = { "list", "--request", "-" }, stdin = encoded(section) }
+    end, spec)
+  end
+  local args, stdin = M.call(view, views)
+  return { { args = args, stdin = stdin } }, type(spec) == "table" and spec.group and spec.sort or nil
 end
 
 ---@param view string|damnit.ViewSpec|nil

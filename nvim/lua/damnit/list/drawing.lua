@@ -1,3 +1,5 @@
+local folds = require("damnit.kernel.folds")
+local groups = require("damnit.list.groups")
 local look = require("damnit.list.look")
 local winbar = require("damnit.list.winbar")
 
@@ -7,12 +9,20 @@ local Drawing = {}
 function Drawing:draw(buf)
   local list = self.shown[buf]
   list.width = self.app.screen:text_width(buf)
-  self.app.screen:draw(buf, look.render(list.arranged, self.app.options.signs, list.width))
-  local objects = vim.tbl_map(function(row)
-    return row.object
-  end, list.arranged)
+  local objects, fold_lines = {}, {}
+  for n, row in ipairs(list.arranged) do
+    table.insert(objects, row.object)
+    local object = row.object or {}
+    fold_lines[n] =
+      { header = row.header ~= nil, depth = row.depth, open = object.children_open, key = row.key or object.oid }
+  end
   local bar = winbar.chunks(list.name, list.path or vim.fs.basename(list.call.cwd), objects)
-  self.app.screen:window(buf, { winbar = self.app.screen.bar(bar), signcolumn = "auto:2", wrap = false })
+  local window = { winbar = self.app.screen.bar(bar), signcolumn = "auto:2", wrap = false }
+  local by_path = groups.key(list.grouped_by) == "path"
+  folds.redraw(buf, fold_lines, function()
+    self.app.screen:window(buf, vim.tbl_extend("error", window, folds.window))
+    self.app.screen:draw(buf, look.render(list.arranged, self.app.options.signs, list.width, by_path))
+  end)
 end
 
 ---@param buf integer

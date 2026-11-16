@@ -1,0 +1,65 @@
+{
+  "objects": [
+    {
+      "oid": "<id-1>",
+      "kind": "task",
+      "subject": "plan the move",
+      "body": "",
+      "path": "",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": false,
+      "children_open": 2
+    },
+    {
+      "oid": "<id-2>",
+      "kind": "task",
+      "subject": "read the lease",
+      "body": "",
+      "path": "",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": false,
+      "children_open": 0
+    },
+    {
+      "oid": "<id-3>",
+      "kind": "task",
+      "subject": "pack the books",
+      "body": "",
+      "path": "plan the move/",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "parent": "<id-1>",
+      "task": {
+        "done": false,
+        "priority": 4
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": false,
+      "children_open": 0
+    }
+  ]
+}

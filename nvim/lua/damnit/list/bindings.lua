@@ -1,4 +1,11 @@
+local folds = require("damnit.kernel.folds")
+
 local Bindings = {}
+
+---@return damnit.KeySpec[]
+local function section_keys()
+  return folds.keys()
+end
 
 ---@param buf integer
 function Bindings:bind(buf)
@@ -9,9 +16,10 @@ function Bindings:bind(buf)
       run = function()
         local list = self.shown[buf]
         local oid = list.oids[vim.api.nvim_win_get_cursor(0)[1]]
-        if oid then
-          self.open_task(oid, list.call.cwd)
+        if not oid then
+          return self.app.say:warn("no task on this line to open")
         end
+        self.open_task(oid, list.call.cwd)
       end,
     },
     {
@@ -22,6 +30,7 @@ function Bindings:bind(buf)
       end,
     },
   }
+  vim.list_extend(specs, section_keys())
   self.app.keys:bind(buf, vim.list_extend(specs, self.more_keys and self.more_keys(buf) or {}))
   vim.api.nvim_create_autocmd("BufWipeout", {
     group = self.group,

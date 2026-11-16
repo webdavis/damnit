@@ -1,0 +1,50 @@
+{
+  "objects": [
+    {
+      "oid": "<id-1>",
+      "kind": "task",
+      "subject": "send the invoice",
+      "body": "",
+      "path": "",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4,
+        "due": "<today+3>",
+        "estimate": 20
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": false,
+      "days_until_due": "<days>",
+      "children_open": 0
+    },
+    {
+      "oid": "<id-2>",
+      "kind": "task",
+      "subject": "book the van",
+      "body": "",
+      "path": "plan the move/",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "parent": "<id-3>",
+      "task": {
+        "done": false,
+        "priority": 4,
+        "due": "<today+3>"
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": false,
+      "days_until_due": "<days>",
+      "children_open": 0
+    }
+  ]
+}

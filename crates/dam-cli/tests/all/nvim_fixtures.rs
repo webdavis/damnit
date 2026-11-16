@@ -41,7 +41,7 @@ pub(crate) fn answer(sb: &Sandbox, args: &[&str], schema: &str) -> String {
     text
 }
 
-fn fed_answer(sb: &Sandbox, args: &[&str], request: &str) -> String {
+pub(crate) fn fed_answer(sb: &Sandbox, args: &[&str], request: &str) -> String {
     let out = fed(sb, args, request);
     assert!(out.status.success(), "{args:?} {request}: {out:?}");
     let text = String::from_utf8(out.stdout).unwrap();
