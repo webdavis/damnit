@@ -54,3 +54,31 @@ fn a_query_runs_over_the_visible_objects_alone() {
     };
     assert!(dam.list(Some("path:work/")).unwrap().is_empty());
 }
+
+fn post_held_by_errands() -> Scenario {
+    let s = Scenario::default();
+    s.working(Object::Task(task_in(1, "errands", "home")));
+    s.working(Object::Task(task_in(2, "post", "home/errands")));
+    s
+}
+
+fn parent_seen_by(paths: &[&str]) -> Option<dam_domain::Oid> {
+    let s = post_held_by_errands();
+    let token = holder(vec![allowed(&[TaskRead], Some(paths))]);
+    let dam = Dam {
+        access: &token,
+        ..s.dam()
+    };
+    let post = dam.seen_object(&crate::testing::oid(2)).unwrap().unwrap();
+    post.base().parent.clone()
+}
+
+#[test]
+fn a_token_is_shown_the_parent_it_may_see() {
+    assert_eq!(parent_seen_by(&["home"]), Some(crate::testing::oid(1)));
+}
+
+#[test]
+fn a_token_is_never_shown_a_parent_it_may_not_see() {
+    assert_eq!(parent_seen_by(&["home/errands"]), None);
+}
