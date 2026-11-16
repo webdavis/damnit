@@ -4,7 +4,7 @@ local columns = require("damnit.status.columns")
 local M = {}
 
 ---@class damnit.StatusTarget
----@field kind "section"|"change"|"waiting"|"set"|"conflict"|"remote"|"note"
+---@field kind "section"|"change"|"waiting"|"set"|"conflict"|"remote"|"note"|"commit"
 ---@field section string
 ---@field id? string
 ---@field oid? string
@@ -97,6 +97,21 @@ local function warnings(doc)
   end, doc.warnings)
 end
 
+local RECENT = 3
+local CLEAN = "nothing changed, staged, waiting or unpushed"
+
+local function recent(doc)
+  return vim.tbl_map(function(commit)
+    local count = #commit.changes
+    return {
+      shape = "commit",
+      left = { { commit.id:sub(1, 7) }, { commit.message } },
+      right = { { ("%d change%s"):format(count, count == 1 and "" or "s"), "DamMeta" } },
+      target = { kind = "commit", section = "recent", id = commit.id },
+    }
+  end, vim.list_slice(doc.recent or {}, 1, RECENT))
+end
+
 local SECTIONS = {
   { "conflicts", "Conflicts", conflicts },
   { "waiting", "Waiting", waiting },
@@ -105,6 +120,7 @@ local SECTIONS = {
   { "unpushed", "Unpushed", unpushed },
   { "notices", "Notices", notes },
   { "warnings", "Warnings", warnings },
+  { "recent", "Recent", recent },
 }
 
 local function sections_of(doc, width)
@@ -126,6 +142,9 @@ function M.render(doc, width)
   local lines, marks, targets = {}, {}, {}
   width = width or math.huge
   local shown, laid = sections_of(doc, width)
+  if not shown[1] or shown[1].name == "recent" then
+    table.insert(lines, CLEAN)
+  end
   for _, section in ipairs(shown) do
     if #lines > 0 then
       table.insert(lines, "")
@@ -144,9 +163,6 @@ function M.render(doc, width)
       local mark = align.right(#lines - 1, vim.fn.strdisplaywidth(lines[#lines]), chunks, width)
       table.insert(marks, mark)
     end
-  end
-  if #lines == 0 then
-    return { "nothing changed, staged, waiting or unpushed" }, {}, {}
   end
   return lines, marks, targets
 end

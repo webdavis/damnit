@@ -44,7 +44,10 @@ local function staged_and_committed_in_status(sandbox)
     buffer.feed("cc")
   end)
   wait_for(function()
-    return vim.deep_equal(buffer.lines(), { "nothing changed, staged, waiting or unpushed" })
+    return vim.deep_equal(
+      vim.list_slice(buffer.lines(), 1, 3),
+      { "nothing changed, staged, waiting or unpushed", "", "Recent (1)" }
+    )
   end, 20000)
 end
 
