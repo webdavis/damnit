@@ -50,7 +50,29 @@ pub(super) fn check(machine: &Machine) -> Vec<Check> {
         ),
         _ => None,
     };
-    [check.reading(files)].into_iter().chain(project).collect()
+    [check.reading(files)]
+        .into_iter()
+        .chain(project)
+        .chain(set_aside(machine))
+        .collect()
+}
+
+fn set_aside(machine: &Machine) -> Vec<Check> {
+    let (Ok(config), Standing::Inside(project)) = (machine.config(), &machine.standing) else {
+        return Vec::new();
+    };
+    config
+        .categories
+        .set_aside_by(&project.settings.categories)
+        .into_iter()
+        .map(|(yours, theirs)| {
+            let detail = format!(
+                "your category {yours} is set aside in this project; \
+                 the project's category {theirs} takes its place"
+            );
+            Check::of(CheckName::Config, Outcome::Warning, detail)
+        })
+        .collect()
 }
 
 fn said(files: &ConfigFiles) -> (Outcome, String) {

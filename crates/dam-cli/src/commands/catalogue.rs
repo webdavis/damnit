@@ -1,19 +1,27 @@
 use dam_application::{Config, FilterConfig};
 use serde::Serialize;
 
-use crate::args::{CategoryArgs, CategoryCommand, Command, FilterArgs, FilterCommand};
+mod category_list;
+
+use category_list::run_category;
+
+use crate::args::{CategoryArgs, CategoryCommand, Command, FilterArgs, FilterCommand, ScopeArgs};
 use crate::error::CliError;
 use crate::output::Report;
+use crate::project_scope::Standing;
 use crate::view::{Human, View, report};
 
 pub(crate) fn run(
     config: &Config,
     command: Command,
-    project_filters: &[FilterConfig],
+    standing: &Standing,
 ) -> Result<Report, CliError> {
     match command {
-        Command::Category(a) => run_category(config, a.command),
-        Command::Filter(a) => run_filter(config, a.command, project_filters),
+        Command::Category(a) => {
+            let project = standing.rules(&ScopeArgs::default());
+            run_category(config, a.command, project.map(|rules| &rules.categories))
+        }
+        Command::Filter(a) => run_filter(config, a.command, standing.filters()),
         _ => unreachable!("only category and filter read the config alone"),
     }
 }
@@ -27,33 +35,6 @@ pub(crate) fn only_reads(command: &Command) -> bool {
             command: FilterCommand::List
         })
     )
-}
-
-#[derive(Serialize)]
-struct CategoryList<'a> {
-    categories: Vec<CategoryRow<'a>>,
-}
-
-#[derive(Serialize)]
-struct CategoryRow<'a> {
-    name: &'a str,
-    values: &'a [String],
-    exclusive: bool,
-}
-
-impl View for CategoryList<'_> {
-    fn human(&self) -> Human {
-        Human::list(
-            self.categories
-                .iter()
-                .map(|c| {
-                    let holds = if c.exclusive { "exclusive" } else { "any" };
-                    vec![c.name.to_string(), holds.to_string(), c.values.join(", ")]
-                })
-                .collect(),
-            "no categories declared",
-        )
-    }
 }
 
 #[derive(Serialize)]
@@ -88,24 +69,6 @@ impl View for FilterList<'_> {
             "no filters declared",
         )
     }
-}
-
-fn run_category(config: &Config, command: CategoryCommand) -> Result<Report, CliError> {
-    let CategoryCommand::List = command else {
-        unreachable!("category create and remove open the store")
-    };
-    report(&CategoryList {
-        categories: config
-            .categories
-            .all()
-            .iter()
-            .map(|c| CategoryRow {
-                name: &c.name,
-                values: &c.values,
-                exclusive: c.exclusive,
-            })
-            .collect(),
-    })
 }
 
 fn run_filter(

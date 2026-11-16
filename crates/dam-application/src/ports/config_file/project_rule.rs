@@ -4,5 +4,4 @@ pub enum ProjectRuleFault {
     FilterIsAFunction,
     NotAQuery,
     LabelInTwoCategories,
-    ClashesWithYourCategories,
 }

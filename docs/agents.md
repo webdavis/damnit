@@ -315,6 +315,11 @@ project's path. A token's command runs no hook at all, the owner's or a project'
 Inside a project, the owner's `dam config set` and `unset`, `dam filter create|remove` and
 `dam category create|remove` write `.dam.lua`, and `--global` writes `config.lua`; in a data format the answer's `file` names the file written,
 `.dam.lua` relative to the project's folder. No token can run it.
+Inside a project, a project category sets aside whole any of the owner's that shares its name or a
+label; outside it and with `--global` the owner's applies. There `dam category list` rows carry
+`project: true` or `set_aside: true`, the `dam category create` answer lists in `sets_aside` the
+owner's categories it sets aside, and `dam doctor` reports each one as a `config` check with result
+`warning`.
 A hook may return a `dam edit --request` document for its task, which the same command applies.
 The answer of `new` and `edit` then shows the task as the hook left it. The answer of `new`,
 `edit`, `done` and `add` carries `changed_by_hook`: each task a hook changed, as `oid` and `hook`.

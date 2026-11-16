@@ -123,7 +123,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
             &meta,
         );
         gate::admit(access.as_ref(), &command)?;
-        let report = commands::catalogue::run(&config, command, run.standing().filters())?;
+        let report = commands::catalogue::run(&config, command, &run.standing())?;
         return output::print(format, color, &report);
     }
     let templates = Box::new(run.templates(&standing));
@@ -137,7 +137,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         context::invocation_of(&config_path, &store_path),
     )?
     .with_templates(templates);
-    let ctx = commands::scoped::following(ctx, &command, &standing)?;
+    let ctx = commands::scoped::following(ctx, &command, &standing);
     let ctx = project_hooks::opened(ctx, &standing, &run.switches, &config_file, &command)?;
     let report = match command {
         Command::Init(args) => commands::init::run(&ctx, args, (&run).into())?,

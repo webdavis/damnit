@@ -10,6 +10,11 @@
     "name": { "type": "string" },
     "values": { "type": "array", "minItems": 1, "items": { "type": "string" } },
     "exclusive": { "type": "boolean" },
-    "file": { "enum": [".dam.lua", "config.lua"] }
+    "file": { "enum": [".dam.lua", "config.lua"] },
+    "sets_aside": {
+      "description": "Your categories that share a name or a label with this one and so are set aside inside this project. Present only when one is.",
+      "type": "array",
+      "items": { "type": "string" }
+    }
   }
 }
