@@ -12,6 +12,7 @@ mod project_hook_switches;
 mod random;
 mod sqlite;
 mod wire;
+mod worked_out_document;
 
 pub use background::{
     background_sync_for_store, no_background_sync, no_run_records, run_records_for_store,
@@ -34,3 +35,4 @@ pub use project_hook_switches::ProjectHookSwitchFile;
 pub use random::OsRandom;
 pub use sqlite::{OpenError, ReadOnly, SqliteStore};
 pub use wire::{declared_on_the_wire, event_to_wire, to_wire};
+pub use worked_out_document::{category_document, stamp_worked_out};

@@ -1,10 +1,10 @@
 use std::collections::BTreeSet;
 use std::time::Duration;
 
-use dam_application::{ConfigFile, FunctionFailure, Histories, History};
+use dam_application::{ConfigFile, FunctionFailure, Handed, Histories, History};
 use dam_domain::{
     Attachment, Attendee, Completion, Conference, Event, Focus, Object, Oid, Path, Person,
-    Priority, Recurrence, Reminder, ResponseStatus, Task, Timestamp, When,
+    Priority, Recurrence, Reminder, ResponseStatus, Task, Timestamp, When, WorkedOut,
 };
 use jiff::civil::date;
 use serde_json::Value;
@@ -153,5 +153,18 @@ fn keeps_within(
     );
     let folder = config(&text);
     let loaded = folder.file().limiting_functions_to(limit).load().unwrap();
-    loaded.filter_functions.keeps("probe", objects, histories)
+    let handed: Vec<Handed> = objects.iter().map(handed).collect();
+    loaded.filter_functions.keeps("probe", &handed, histories)
+}
+
+pub(super) fn handed(object: &Object) -> Handed {
+    let task = object.as_task().is_some();
+    Handed {
+        object: object.clone(),
+        worked_out: WorkedOut {
+            category: Default::default(),
+            overdue: task.then_some(true),
+            blocked: task.then_some(false),
+        },
+    }
 }

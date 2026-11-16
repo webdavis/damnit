@@ -6,9 +6,10 @@ use dam_domain::{
 };
 
 use super::filter_fields::NOT_IN_THE_TABLE;
-use super::filter_support::{every_field_event, every_field_task, field_names};
+use super::filter_support::{every_field_event, every_field_task, field_names, handed};
 use crate::lua_config::{filter, hook, remote, secrets, settings, token};
-use crate::{history_document, object_document};
+use crate::{history_document, object_document, stamp_worked_out};
+use dam_application::Handed;
 
 const PAGE: &str = include_str!("../../../../../docs/lua.md");
 
@@ -75,7 +76,12 @@ fn the_page_names_every_key_secrets_lua_takes_and_no_other() {
 fn the_page_names_every_field_match_receives_and_no_other() {
     let handed: BTreeSet<String> = [every_field_task(), every_field_event()]
         .iter()
-        .flat_map(|o| field_names(&serde_json::to_value(object_document(o)).unwrap()))
+        .map(handed)
+        .flat_map(|Handed { object, worked_out }| {
+            let mut row = serde_json::to_value(object_document(&object)).unwrap();
+            stamp_worked_out(&mut row, &worked_out);
+            field_names(&row)
+        })
         .collect();
     assert_eq!(rows_under("What match receives"), handed);
     let [first, second, third] = NOT_IN_THE_TABLE;

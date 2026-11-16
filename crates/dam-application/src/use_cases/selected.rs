@@ -7,7 +7,6 @@ use crate::service::Dam;
 mod error;
 mod event_days;
 mod facts;
-mod from_object;
 mod pulled;
 mod saved;
 

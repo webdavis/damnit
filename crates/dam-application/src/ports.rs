@@ -33,7 +33,9 @@ pub use config_file::{
 };
 pub use days::DayRepository;
 pub use environment::{Clock, Interruption, Randomness};
-pub use filter_functions::{FilterFunctions, FunctionFailure, FunctionFault, Histories, History};
+pub use filter_functions::{
+    FilterFunctions, FunctionFailure, FunctionFault, Handed, Histories, History,
+};
 pub use follow_ons::{FollowOn, FollowOnRepository, ObjectState};
 pub use helper::{
     ComputeFailure, CredentialError, CredentialSource, HelperError, HelperLauncher, RemoteHelper,

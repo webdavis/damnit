@@ -33,7 +33,7 @@ impl Hooks for LuaFunctions {
         let defined = line_defined(&function);
         hook.limited(|scope, deadline| {
             let returned = while_marked(&hook.lua, event, || {
-                hook.call(scope, &function, task, histories)
+                hook.call(scope, &function, task, None, histories)
             });
             hook.answer(returned, defined, deadline)
         })
@@ -53,8 +53,8 @@ impl Hooks for LuaFunctions {
                 let pulled = hook.lua.create_table()?;
                 pulled.set("remote", pull.remote.0.as_str())?;
                 pulled.set("change", pull.change.as_str())?;
-                let before = before.map(|b| hook.object_value(b)).transpose()?;
-                function.call((hook.object_value(task)?, before, pulled))
+                let before = before.map(|b| hook.object_value(b, None)).transpose()?;
+                function.call((hook.object_value(task, None)?, before, pulled))
             });
             hook.answer(returned, defined, deadline)
         })

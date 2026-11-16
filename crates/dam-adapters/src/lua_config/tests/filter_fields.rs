@@ -2,8 +2,10 @@ use std::collections::BTreeSet;
 
 use serde_json::Value;
 
-use super::filter_support::{every_field_event, every_field_task, field_names, run_filter};
-use crate::object_document;
+use dam_application::Handed;
+
+use super::filter_support::{every_field_event, every_field_task, field_names, handed, run_filter};
+use crate::{object_document, stamp_worked_out};
 
 pub(super) const NOT_IN_THE_TABLE: [&str; 3] = ["author", "details", "id"];
 const ONLY_IN_A_COMMANDS_ANSWER: [&str; 2] = ["changed_by_hook", "project_created"];
@@ -103,10 +105,11 @@ fn match_is_handed_every_field_a_task_and_an_event_carry_named_as_the_schema_nam
 }
 
 #[test]
-fn match_is_handed_the_document_dam_show_prints() {
-    let task = every_field_task();
-    let document = serde_json::to_value(object_document(&task)).unwrap();
-    assert_eq!(names_match_was_handed(&task), field_names(&document));
+fn match_is_handed_the_row_dam_list_prints() {
+    let Handed { object, worked_out } = handed(&every_field_task());
+    let mut row = serde_json::to_value(object_document(&object)).unwrap();
+    stamp_worked_out(&mut row, &worked_out);
+    assert_eq!(names_match_was_handed(&object), field_names(&row));
 }
 
 #[test]

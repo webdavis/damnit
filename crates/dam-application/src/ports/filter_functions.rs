@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use dam_domain::{CommitRecord, Object, Oid};
+use dam_domain::{CommitRecord, Object, Oid, WorkedOut};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum History {
@@ -28,11 +28,17 @@ pub enum FunctionFault {
     Requested { why: String },
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Handed {
+    pub object: Object,
+    pub worked_out: WorkedOut,
+}
+
 pub trait FilterFunctions {
     fn keeps(
         &self,
         filter: &str,
-        objects: &[Object],
+        handed: &[Handed],
         histories: &dyn Histories,
     ) -> Result<Vec<bool>, FunctionFailure>;
 }

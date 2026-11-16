@@ -1,6 +1,6 @@
 use dam_application::{History, HookEvent};
 
-use super::filter_support::{FixedHistory, every_field_task, run_filter};
+use super::filter_support::{FixedHistory, every_field_task, handed, run_filter};
 use super::support::Folder;
 
 const SEEN: &str = "seen";
@@ -95,7 +95,7 @@ fn a_command_started_after_a_hook_returns_carries_no_event() {
         .unwrap();
     loaded
         .filter_functions
-        .keeps("probe", &[task], &histories)
+        .keeps("probe", &[handed(&task)], &histories)
         .unwrap();
     assert_eq!(folder.text(SEEN), "none");
 }
