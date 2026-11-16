@@ -89,7 +89,11 @@
         }
       }
     },
-    "warnings": { "type": "array", "items": { "type": "string" } }
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "unseen_failed": {
+      "description": "Present and true only for a token, when a conflict, failed push or unpushed change it cannot read is there. It names nothing and counts nothing.",
+      "const": true
+    }
   },
   "$defs": {
     "id": { "type": "string", "pattern": "^[0-9a-f]{40}$" },

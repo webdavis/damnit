@@ -72,6 +72,7 @@ pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliE
         ),
         unpushed: only_if(shown(RemoteRead), s.unpushed.iter().map(UnpushedRow::new)),
         warnings: only_if(shown(ConfigRead), warnings),
+        unseen_failed: s.unseen_failed,
         owner: the_owner_to(ctx.access.as_ref()),
     })
 }
@@ -134,6 +135,8 @@ mod tests;
 mod token_section_tests;
 #[cfg(test)]
 mod token_warning_tests;
+#[cfg(test)]
+mod unseen_status_tests;
 #[cfg(test)]
 mod warning_tests;
 #[cfg(test)]

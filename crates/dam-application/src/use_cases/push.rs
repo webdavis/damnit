@@ -111,7 +111,6 @@ mod report;
 mod sending;
 mod sending_order;
 mod settle;
-mod sight;
 mod skip;
 mod waves;
 

@@ -202,6 +202,11 @@ yours only when you may read both its working copy and its last committed one. W
 says `some changes you cannot see did not go through; ask the owner to run dam status`, and in a
 data format carries `"unseen_failed": true`. `dam sync run` answers the same way.
 
+`dam status` shows a conflict, a notice or an unpushed change only for an object you may read,
+and a push failure's reason only when your token reads every task and event. When a conflict,
+failed push or unpushed change you cannot see is there, it ends with the same sentence and carries
+`"unseen_failed": true`.
+
 ## Taking your task back
 
 `dam rm --id <id>` takes back the task you sent with `dam new --id <id>`. Pass the same
