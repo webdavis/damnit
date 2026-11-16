@@ -15,6 +15,7 @@ function M.setup(opts)
     require("damnit.messages").new(running),
     require("damnit.list").new(running, task.open),
     task,
+    require("damnit.status").new(running, task.open),
   })
   return running
 end

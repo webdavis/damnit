@@ -17,6 +17,7 @@
 ---@class damnit.Feature
 ---@field commands table<string, fun(args: string[], cmd: table)>
 ---@field complete? table<string, fun(arglead: string): string[]>
+---@field default? fun(args: string[], cmd: table)
 
 ---@class damnit.Call
 ---@field args string[]

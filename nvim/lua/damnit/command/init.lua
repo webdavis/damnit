@@ -3,12 +3,13 @@ local errors = require("damnit.kernel.error")
 local M = {}
 
 local function merged(features)
-  local commands, complete = {}, {}
+  local commands, complete, default = {}, {}, nil
   for _, feature in ipairs(features) do
     commands = vim.tbl_extend("error", commands, feature.commands)
     complete = vim.tbl_extend("error", complete, feature.complete or {})
+    default = default or feature.default
   end
-  return commands, complete
+  return commands, complete, default
 end
 
 local function cancel(app)
@@ -37,13 +38,16 @@ end
 ---@param app damnit.App
 ---@param features damnit.Feature[]
 function M.define(app, features)
-  local commands, complete = merged(features)
+  local commands, complete, default = merged(features)
   commands.cancel = cancel(app)
   local names = vim.tbl_keys(commands)
   table.sort(names)
   local valid = table.concat(names, ", ")
   vim.api.nvim_create_user_command("Dam", function(cmd)
     local name = cmd.fargs[1]
+    if not name and default then
+      return default({}, cmd)
+    end
     if not name then
       return app.say:info("dam subcommands: " .. valid)
     end
