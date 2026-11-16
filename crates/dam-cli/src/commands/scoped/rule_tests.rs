@@ -1,4 +1,5 @@
 mod new_task;
+mod required;
 
 use dam_application::{Project, ProjectSettings};
 use dam_domain::Object;

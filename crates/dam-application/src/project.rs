@@ -12,6 +12,16 @@ pub const PROJECT_FILE: &str = ".dam.lua";
 pub struct ProjectSettings {
     pub path: String,
     pub new_task: TaskTemplate,
+    pub required: Vec<RequiredField>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RequiredField {
+    Due,
+    Labels,
+    Priority,
+    Body,
+    Deadline,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
