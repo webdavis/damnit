@@ -12,6 +12,7 @@ local ANSWERS = {
   commit = "status-commit.json",
   push = "push.json",
   pull = "pull.json",
+  log = "log.json",
 }
 
 ---@param open_task? fun(oid: string, cwd: string)

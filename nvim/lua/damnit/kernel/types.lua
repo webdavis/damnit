@@ -134,6 +134,8 @@
 ---@field kind "task"|"event"
 ---@field subject string
 ---@field path string
+---@field before? damnit.Object under --full
+---@field after? damnit.Object under --full
 
 ---@class damnit.StatusWaiting: damnit.StatusChange
 ---@field hash string
@@ -146,6 +148,7 @@
 ---@field from string
 ---@field count integer
 ---@field age integer
+---@field items damnit.StatusWaiting[]
 
 ---@class damnit.StatusDoc
 ---@field conflicts { oid: string, remote: string, ours?: damnit.Object, theirs?: damnit.Object }[]
@@ -156,7 +159,18 @@
 ---@field unpushed { remote: string, commits: integer }[]
 ---@field notices { kind: string, remote?: string }[]
 ---@field warnings string[]
+---@field recent? damnit.Commit[] the newest commits from dam log, added by the status window
 
 ---@class damnit.VocabCache
 ---@field words fun(self, cwd: string): damnit.Vocab
 ---@field flags fun(self, command: string): damnit.Flag[]
+
+---@class damnit.Commit
+---@field id string
+---@field at string
+---@field message string
+---@field changes damnit.StatusChange[]
+
+---@class damnit.RevertAnswer
+---@field reverted { oid: string, fields: string[] }[]
+---@field kept { oid: string, fields: string[] }[]

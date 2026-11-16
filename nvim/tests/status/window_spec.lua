@@ -49,7 +49,7 @@ return {
     status.on("  update  call mom back")
     buffer.feed("s")
     buffer.wait_for(function()
-      return #buffer.lines() == 1
+      return buffer.lines()[1] == "nothing changed, staged, waiting or unpushed"
     end)
   end,
 

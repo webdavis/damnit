@@ -49,8 +49,12 @@ function Status:read()
     if buf ~= self.buf then
       return
     end
-    self.answer = answer
-    self:draw()
+    self.app.dam:run({ args = { "log" }, cwd = self.cwd, key = NAME .. " log" }, function(log)
+      if buf == self.buf then
+        self.answer = vim.tbl_extend("error", answer, { recent = log and log.commits })
+        self:draw()
+      end
+    end)
   end)
 end
 
