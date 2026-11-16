@@ -99,3 +99,47 @@ fn moving_into_a_same_named_objects_contents_is_not_moving_inside_itself() {
     assert_eq!(parent_of(&s, &oid(1)), Some(oid(6)));
     assert_eq!(s.path_of(&oid(3)), "Home/errands/sweep/errands/");
 }
+
+#[test]
+fn a_new_object_adopts_what_its_parent_holds_in_its_folder() {
+    let s = Scenario::default().drawing_from(42);
+    s.filed(task_in(5, "Home", ""))
+        .filed(task_in(3, "milk", "Home/errands/later"));
+    let errands = crate::use_cases::new_object::NewTask {
+        subject: "errands".into(),
+        path: Path::parse("Home").unwrap(),
+        priority: Default::default(),
+        due: None,
+        deadline: None,
+        labels: Default::default(),
+        body: String::new(),
+        id: None,
+    };
+    let errands = s.dam().new_task(errands).unwrap().written();
+    assert_eq!(parent_of(&s, &oid(3)), Some(errands.oid().clone()));
+}
+
+#[test]
+fn a_renamed_object_adopts_only_what_its_parent_holds_in_its_new_folder() {
+    let s = two_errands();
+    s.filed(task_in(8, "chores", "Home"))
+        .filed(task_in(9, "mop", "Home/chores"));
+    s.store
+        .put(&dam_domain::Object::Task(
+            task_in(9, "mop", "Home/jobs").held_by(5),
+        ))
+        .unwrap();
+    let rename = EditFields {
+        subject: Some("errands".into()),
+        ..EditFields::default()
+    };
+    let to_jobs = EditFields {
+        subject: Some("jobs".into()),
+        ..EditFields::default()
+    };
+    s.dam().edit(&oid(8), to_jobs).unwrap();
+    assert_eq!(parent_of(&s, &oid(9)), Some(oid(8)));
+    s.dam().edit(&oid(8), rename).unwrap();
+    assert_eq!(parent_of(&s, &oid(3)), Some(oid(1)));
+    assert_eq!(parent_of(&s, &oid(6)), Some(oid(2)));
+}

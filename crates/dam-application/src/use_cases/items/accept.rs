@@ -5,6 +5,7 @@ use crate::errors::UseCaseError;
 use crate::service::Dam;
 use crate::use_cases::parents::with_nearest_parent;
 use crate::use_cases::remove::{ItemAndTask, RemovePlan};
+use crate::use_cases::subtree::put_adopting;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Added {
@@ -49,7 +50,7 @@ impl Dam<'_> {
         let change = match &item.change {
             Change::Create { after } => {
                 let after = with_nearest_parent(self.store, after.clone())?;
-                self.store.put(&after)?;
+                put_adopting(self.store, &after)?;
                 Some(Change::Create { after })
             }
             Change::Update { before, after } => self.apply_change(item, before, after, on_clash)?,

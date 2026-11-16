@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use dam_domain::{Object, Oid, Path};
+use dam_domain::{Object, Oid, Path, nearest_parents};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
@@ -118,7 +118,32 @@ fn put_carrying_folder(
     {
         rebase_held(objects, before, &from, &to)?;
     }
-    Ok(objects.put(after)?)
+    if before.base().owned_folder() == after.base().owned_folder() {
+        return Ok(objects.put(after)?);
+    }
+    put_adopting(objects, after)
+}
+
+pub(crate) fn put_adopting(
+    objects: &dyn ObjectRepository,
+    holder: &Object,
+) -> Result<(), UseCaseError> {
+    objects.put(holder)?;
+    let Some(folder) = holder.base().owned_folder() else {
+        return Ok(());
+    };
+    let all = objects.all()?;
+    for mut held in all.iter().cloned() {
+        let adopted = held.oid() != holder.oid()
+            && held.base().parent == holder.base().parent
+            && held.base().path.is_within(&folder)
+            && nearest_parents(&held.base().path, &all) == [holder.oid().clone()];
+        if adopted {
+            held.base_mut().parent = Some(holder.oid().clone());
+            objects.put(&held)?;
+        }
+    }
+    Ok(())
 }
 
 fn held_chain(objects: &dyn ObjectRepository, owner: &Object) -> Result<Vec<Object>, UseCaseError> {
