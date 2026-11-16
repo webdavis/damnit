@@ -313,6 +313,10 @@ saved filter keeps its own query and is narrowed to the project. Listings print 
 `push`, `pull`, `log`, `show`, `edit`, `done`, `mv` and `rm` always cover everything, and a path
 given to `dam mv` is a full path.
 
+`--project <path>` on those four commands works from any folder, in a project or not, and stands in
+for the project you are in: `dam ls --project pns/hooks/`, `dam new "x" --project pns/ --path cli/`.
+It takes a path of any depth. `--global` and `--project` together are a usage error.
+
 ## The rules it keeps
 
 - A task with open children or open dependencies is not done until they are; `--force` overrides,

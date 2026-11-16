@@ -21,7 +21,10 @@ fn standing_in(root: &TempDir) -> Standing {
 }
 
 fn global() -> ScopeArgs {
-    ScopeArgs { global: true }
+    ScopeArgs {
+        global: true,
+        ..ScopeArgs::default()
+    }
 }
 
 #[test]
@@ -79,4 +82,32 @@ fn a_project_inside_another_uses_only_its_own_file() {
         standing_in(&root).place(&ScopeArgs::default()).unwrap(),
         Path::parse("inner/").unwrap()
     );
+}
+
+#[test]
+fn project_stands_in_for_the_project_from_any_folder() {
+    let deep = Path::parse("pns/hooks/").unwrap();
+    let scope = ScopeArgs {
+        project: Some(deep.clone()),
+        ..ScopeArgs::default()
+    };
+    let unreadable = folder_holding(Some("return {"));
+    assert_eq!(standing_in(&unreadable).place(&scope).unwrap(), deep);
+    assert_eq!(
+        standing_in(&folder_holding(None)).place(&scope).unwrap(),
+        deep
+    );
+}
+
+#[test]
+fn global_with_project_is_a_usage_conflict_on_every_scoped_command() {
+    use clap::Parser;
+    for command in ["new x", "ls", "agenda", "reminders"] {
+        let mut line: Vec<&str> = vec!["dam"];
+        line.extend(command.split(' '));
+        line.extend(["--global", "--project", "pns/"]);
+        let refused = crate::args::Cli::try_parse_from(&line).unwrap_err();
+        assert_eq!(refused.exit_code(), 2, "{command}");
+        assert_eq!(refused.kind(), clap::error::ErrorKind::ArgumentConflict);
+    }
 }

@@ -50,6 +50,9 @@ impl Standing {
     }
 
     pub(crate) fn place(self, scope: &ScopeArgs) -> Result<Path, CliError> {
+        if let Some(project) = &scope.project {
+            return Ok(project.clone());
+        }
         if scope.global {
             return Ok(Path::root());
         }
