@@ -21,6 +21,7 @@ Settings ── what dam is using
   owner                                Ada
   done.interactive                     false (default)
   progress                             true (default)
+  confirm_above                        not set
   remote.todoist.url                   todoist::
   remote.todoist.deadline              60s (default)
   remote.todoist.sync.interval         15m (default)
@@ -69,6 +70,7 @@ Settings ── what dam is using
   owner             owner (default)
   done.interactive  false (default)
   progress          true (default)
+  confirm_above     not set
 "
             );
         }

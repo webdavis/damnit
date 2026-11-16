@@ -253,6 +253,11 @@ answer is `docs/schemas/changes.schema.json`.
 `dam new --preview` answers the same changes document for the one create, and a project task
 `--project` would create, and writes nothing.
 
+`dam` never asks before a large change unless `confirm_above = 10` is in `config.lua`. Then a
+`--query` or `--filter` run over more than 10 objects asks `change 42 objects? [y/N]`, and no exits
+3. Without a terminal it needs `--expect 42` instead. Named oids, `--preview`, `--expect` and
+tokens are never asked.
+
 `dam edit <oid> --no-done` reopens a task you completed by mistake, and
 `dam restore <oid>...` throws a working change away, back to the last commit and out of the stage;
 `--preview` shows what it would throw away and writes nothing.

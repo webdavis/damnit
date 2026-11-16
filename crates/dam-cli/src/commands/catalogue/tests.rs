@@ -7,6 +7,7 @@ pub(super) fn config() -> Config {
         owner: None,
         done_interactive: None,
         progress: None,
+        confirm_above: None,
         remotes: vec![],
         categories: Categories::default(),
         categories_writing_exclusive: Default::default(),

@@ -13,6 +13,7 @@
       "properties": { "interactive": { "type": "boolean" } }
     },
     "progress": { "type": "boolean" },
+    "confirm_above": { "type": "integer", "minimum": 0 },
     "remote": { "type": "object", "additionalProperties": { "$ref": "#/$defs/remote" } },
     "category": { "type": "object", "additionalProperties": { "$ref": "#/$defs/category" } },
     "filter": { "type": "object", "additionalProperties": { "$ref": "#/$defs/filter" } },

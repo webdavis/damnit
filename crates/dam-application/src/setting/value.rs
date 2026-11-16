@@ -6,6 +6,7 @@ pub enum SettingValue {
     Text(String),
     Flag(bool),
     List(Vec<String>),
+    Count(usize),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -32,6 +33,7 @@ impl SettingKey {
                 .map(|_| SettingValue::Text(text.to_string()))
                 .ok_or_else(bad),
             SettingKind::Flag => text.parse().map(SettingValue::Flag).map_err(|_| bad()),
+            SettingKind::Count => text.parse().map(SettingValue::Count).map_err(|_| bad()),
             SettingKind::List => Ok(SettingValue::List(
                 text.split(',')
                     .map(str::trim)
@@ -49,6 +51,7 @@ impl SettingValue {
             SettingValue::Text(text) => text.clone(),
             SettingValue::Flag(flag) => flag.to_string(),
             SettingValue::List(items) => items.join(", "),
+            SettingValue::Count(count) => count.to_string(),
         }
     }
 }

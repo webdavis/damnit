@@ -5,6 +5,7 @@ pub enum SettingKind {
     Interval,
     Flag,
     List,
+    Count,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -39,6 +40,7 @@ impl SettingKey {
         let kind = match (group, rest, named.map(|(_, field)| field)) {
             ("owner", "", _) => Ok(SettingKind::Text),
             ("done", "interactive", _) | ("progress", "", _) => Ok(SettingKind::Flag),
+            ("confirm_above", "", _) => Ok(SettingKind::Count),
             ("token", _, _) => Err(KeyRefusal::Secret(key.to_string())),
             ("hook", _, _) | ("filter", _, Some("match")) => {
                 Err(KeyRefusal::Function(key.to_string()))

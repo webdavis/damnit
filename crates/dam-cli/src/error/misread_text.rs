@@ -80,5 +80,6 @@ fn expected_text(expected: Expected) -> &'static str {
         Expected::DateTime => "an RFC 3339 date-time",
         Expected::TableOfWholeNumbers => "a table of whole numbers",
         Expected::PriorityOneToFour => "a whole number from 1 to 4",
+        Expected::WholeNumber => "a whole number",
     }
 }

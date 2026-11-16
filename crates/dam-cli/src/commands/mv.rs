@@ -1,6 +1,6 @@
 use crate::args::MvArgs;
 use crate::args::values::path_arg;
-use crate::commands::each::{one_object, report_set, run_of, selector};
+use crate::commands::each::{one_object, report_set, set_of};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
@@ -31,13 +31,10 @@ pub(crate) fn run(ctx: &Context, args: MvArgs) -> Result<Report, CliError> {
         .map(|text| ctx.dam().resolve_object(text))
         .transpose()?;
     let Some(oid) = one_object(&args.oid, &args.set) else {
-        let selector = selector(ctx, &args.oid, &args.set)?;
-        let changes = ctx.dam().relocate_each(
-            &selector,
-            path.as_ref(),
-            parent.as_ref(),
-            run_of(&args.set),
-        )?;
+        let (selector, run) = set_of(ctx, &args.oid, &args.set)?;
+        let changes = ctx
+            .dam()
+            .relocate_each(&selector, path.as_ref(), parent.as_ref(), run)?;
         return report_set(ctx, &changes);
     };
     let oid = ctx.dam().resolve_object(oid)?;

@@ -47,6 +47,7 @@ fn every_example_uncommented_at_once_is_a_working_config() {
     let config = config(&text.join("\n")).load().unwrap();
     assert_eq!(config.owner_name(), "Ada");
     assert_eq!(config.done_interactive, Some(true));
+    assert_eq!(config.confirm_above, Some(10));
     let remote = config.remote("todoist").unwrap();
     assert_eq!(remote.url, "todoist::");
     assert!(remote.deadline.is_some() && remote.path.is_some() && !remote.except.is_empty());

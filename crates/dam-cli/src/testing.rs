@@ -34,6 +34,7 @@ pub(crate) fn context() -> Context {
             owner: None,
             done_interactive: None,
             progress: None,
+            confirm_above: None,
             remotes: vec![],
             categories: Categories::new(vec![]).unwrap_or_else(|_| unreachable!()),
             categories_writing_exclusive: Default::default(),

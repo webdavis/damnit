@@ -22,6 +22,7 @@ pub enum Expected {
     DateTime,
     TableOfWholeNumbers,
     PriorityOneToFour,
+    WholeNumber,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

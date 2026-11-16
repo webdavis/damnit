@@ -10,6 +10,7 @@ pub(super) enum Value {
     Text(String),
     Flag(bool),
     List(Vec<String>),
+    Count(usize),
     Grants(Vec<GrantView>),
     Unset,
 }
@@ -119,6 +120,7 @@ impl Value {
             Value::Text(text) => text.clone(),
             Value::Flag(flag) => flag.to_string(),
             Value::List(items) => or_a_dash(items.join(", ")),
+            Value::Count(count) => count.to_string(),
             Value::Grants(grants) => or_a_dash(
                 grants
                     .iter()

@@ -23,6 +23,9 @@ pub(super) fn flatten_value(key: &str, value: &SettingValue) -> Flat {
     match value {
         SettingValue::Text(text) => Flat::from([(key.to_string(), Shown::Text(text.clone()))]),
         SettingValue::Flag(flag) => Flat::from([(key.to_string(), Shown::Other(flag.to_string()))]),
+        SettingValue::Count(count) => {
+            Flat::from([(key.to_string(), Shown::Other(count.to_string()))])
+        }
         SettingValue::List(items) => items
             .iter()
             .enumerate()
@@ -70,6 +73,9 @@ fn add_table(flat: &mut Flat, prefix: &str, table: &Table) {
             }
             Value::Boolean(flag) => {
                 flat.insert(name, Shown::Other(flag.to_string()));
+            }
+            Value::Integer(number) => {
+                flat.insert(name, Shown::Other(number.to_string()));
             }
             other => {
                 flat.insert(name, Shown::Other(format!("{other:?}")));

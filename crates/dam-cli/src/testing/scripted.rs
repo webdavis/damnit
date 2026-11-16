@@ -15,6 +15,9 @@ impl Prompt for ScriptedPrompt {
     fn text(&self, _: &str) -> Result<String, CliError> {
         self.texts.borrow_mut().pop().ok_or(CliError::Cancelled)
     }
+    fn can_ask(&self) -> bool {
+        true
+    }
 }
 
 pub(crate) type Save = Box<dyn Fn(&str) -> String>;

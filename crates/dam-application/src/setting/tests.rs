@@ -112,3 +112,20 @@ fn sync_every_and_stale_are_refused_like_a_remote_credential() {
         KeyRefusal::Unknown("remote.todoist.sync.every".into())
     );
 }
+
+#[test]
+fn confirm_above_takes_a_whole_number() {
+    let key = SettingKey::parse("confirm_above").unwrap();
+    assert_eq!(key.path, ["confirm_above"]);
+    assert_eq!(key.value("10"), Ok(SettingValue::Count(10)));
+    for bad in ["ten", "-1", "2.5"] {
+        assert_eq!(
+            key.value(bad),
+            Err(BadValue {
+                key: "confirm_above".into(),
+                value: bad.into(),
+                expected: SettingKind::Count
+            })
+        );
+    }
+}
