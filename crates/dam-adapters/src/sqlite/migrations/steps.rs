@@ -106,7 +106,11 @@ pub(super) const V18: &str = r#"
 ALTER TABLE accepted_kinds ADD COLUMN fields TEXT;
 "#;
 
-pub(super) const BATCHES: [(u32, &str); 17] = [
+pub(super) const V19: &str = r#"
+ALTER TABLE items ADD COLUMN set_hash TEXT;
+"#;
+
+pub(super) const BATCHES: [(u32, &str); 18] = [
     (1, V1),
     (2, V2),
     (3, V3),
@@ -124,4 +128,5 @@ pub(super) const BATCHES: [(u32, &str); 17] = [
     (15, V15),
     (17, V17),
     (18, V18),
+    (19, V19),
 ];

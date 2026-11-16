@@ -33,14 +33,16 @@ pub fn item_repository_contract(items: &dyn ItemRepository) {
         },
         Timestamp::UNIX_EPOCH,
         &mut |b| b.fill(2),
-    );
+    )
+    .in_set(ItemHash::new(oid(9)));
     items.put_item(&created).unwrap();
     items.put_item(&changed).unwrap();
     assert_eq!(
         items.items().unwrap(),
         vec![created.clone(), changed.clone()],
-        "items read back whole, oldest first"
+        "items read back whole with their set, oldest first"
     );
+    assert_eq!(created.set, None);
     assert_eq!(items.item(&changed.hash).unwrap(), Some(changed.clone()));
 
     let at: Timestamp = "2026-11-11T09:00:00Z".parse().unwrap();
