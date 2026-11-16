@@ -1,4 +1,5 @@
 use super::*;
+use dam_application::{PullOutcome, RejectedObject};
 use dam_domain::{Object, Task};
 
 fn pulled_task(remote_id: &str) -> serde_json::Value {
@@ -105,5 +106,16 @@ fn a_pulled_object_with_no_remote_id_is_rejected_under_an_empty_name() {
             remote_id: String::new(),
             why: "an object with no remote id was skipped".into(),
         }]
+    );
+}
+
+#[test]
+fn each_named_container_is_kept_by_the_remote_id_of_what_it_holds() {
+    let mut held = pulled_task("r1");
+    held["container_remote_id"] = "r9".into();
+    let outcome = pull(vec![held, pulled_task("r2")]);
+    assert_eq!(
+        outcome.container_remote_ids,
+        [("r1".to_string(), "r9".to_string())].into()
     );
 }

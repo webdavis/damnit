@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use dam_domain::{Field, Kind, Object, Oid};
 
 use crate::ports::HelperError;
@@ -64,6 +66,7 @@ pub struct RejectedObject {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PullOutcome {
     pub objects: Vec<IncomingObject>,
+    pub container_remote_ids: BTreeMap<String, String>,
     pub rejected: Vec<RejectedObject>,
     pub removed: Vec<String>,
     pub cancelled: Vec<String>,
