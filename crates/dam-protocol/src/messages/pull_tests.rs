@@ -96,3 +96,31 @@ fn a_pull_answer_is_a_complete_listing_only_when_it_says_so() {
     let written = serde_json::to_value(PullResponse::default()).unwrap();
     assert!(written.get("complete").is_none(), "{written}");
 }
+
+#[test]
+fn a_pulled_object_names_the_remote_id_of_what_holds_it() {
+    let line = r#"{"objects":[{"oid":"","remote_id":"i:t1","kind":"task","subject":"a","container_remote_id":"s:s1","task":{"done":false,"priority":1}}]}"#;
+    let Reply::Answered(r) = serde_json::from_str::<Reply<PullResponse>>(line).unwrap() else {
+        panic!("not an answer");
+    };
+    assert_eq!(r.objects[0].container_remote_id.as_deref(), Some("s:s1"));
+    let written = serde_json::to_string(&r.objects[0]).unwrap();
+    assert!(
+        written.contains(r#""container_remote_id":"s:s1""#),
+        "{written}"
+    );
+}
+
+#[test]
+fn a_pulled_object_without_a_container_leaves_the_key_out() {
+    let line = r#"{"objects":[{"oid":"","remote_id":"i:t1","kind":"task","subject":"a","task":{"done":false,"priority":1}}]}"#;
+    let Reply::Answered(r) = serde_json::from_str::<Reply<PullResponse>>(line).unwrap() else {
+        panic!("not an answer");
+    };
+    assert_eq!(r.objects[0].container_remote_id, None);
+    assert!(
+        !serde_json::to_string(&r.objects[0])
+            .unwrap()
+            .contains("container_remote_id")
+    );
+}

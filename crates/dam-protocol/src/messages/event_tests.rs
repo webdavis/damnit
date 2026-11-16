@@ -17,6 +17,7 @@ fn standup() -> WireObject {
         reminders: vec![10],
         recurrence: None,
         parent: None,
+        container_remote_id: None,
         task: None,
         event: Some(WireEvent {
             start: "2026-09-25T09:00:00-04:00[America/New_York]".into(),

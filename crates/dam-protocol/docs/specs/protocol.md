@@ -82,6 +82,11 @@ moves the event it tracks under each id to `cancelled` and keeps tracking it. An
 track, or one that names a task, changes nothing. A helper that sends `cancelled` declares `status`
 in `fields`; otherwise each id changes nothing.
 
+A pulled object may carry `container_remote_id`, the remote's identity for the object it sits
+directly in. `dam` files the object in what it tracks under that id, so two containers with the
+same name are never confused. Without it, or with an id `dam` does not track, `dam` files the
+object by its path.
+
 `rejected` lists objects the helper could not read, each as `{"remote_id", "why"}`. `dam` lands the
 rest of the pull and shows each entry in `dam status` as a notice naming the id and the reason. An
 object `dam` itself cannot read is reported the same way.

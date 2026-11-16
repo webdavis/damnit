@@ -60,6 +60,7 @@ pub(crate) fn task(oid: &str, path: &str, subject: &str, done: bool) -> WireObje
         reminders: vec![],
         recurrence: None,
         parent: None,
+        container_remote_id: None,
         task: Some(WireTask {
             done,
             completed_at: None,
