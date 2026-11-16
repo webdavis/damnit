@@ -34,7 +34,7 @@ pub(crate) use remotes::{
     PullArgs, PushArgs, RemoteArgs, RemoteCommand, ResolveArgs, SyncArgs, SyncCommand,
 };
 pub(crate) use scope::ScopeArgs;
-pub(crate) use set::SetArgs;
+pub(crate) use set::{Piped, SetArgs};
 pub(crate) use staging::{
     AddArgs, CommitArgs, DiffArgs, ResetArgs, RestoreArgs, RevertArgs, ShowArgs, StatusArgs,
 };

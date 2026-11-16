@@ -6,7 +6,7 @@ use super::*;
 use crate::error::Problem;
 use crate::testing::{ScriptedPrompt, holding, machine_context};
 
-fn asking_above(limit: usize, answers: &[&str]) -> (Context, Vec<String>) {
+pub(super) fn asking_above(limit: usize, answers: &[&str]) -> (Context, Vec<String>) {
     let (mut ctx, oids) = three_tasks();
     ctx.config.confirm_above = Some(limit);
     ctx.prompt = Box::new(ScriptedPrompt {
@@ -16,7 +16,7 @@ fn asking_above(limit: usize, answers: &[&str]) -> (Context, Vec<String>) {
     (ctx, oids)
 }
 
-fn subject(ctx: &Context, oid: &str) -> String {
+pub(super) fn subject(ctx: &Context, oid: &str) -> String {
     let oid = Oid::parse(oid).unwrap();
     ctx.store.get(&oid).unwrap().unwrap().base().subject.clone()
 }

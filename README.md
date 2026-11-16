@@ -266,15 +266,17 @@ refused, and saving the template untouched cancels. A save that does not parse r
 once with the error on its first line; a second one exits 2 and names the file that keeps your
 edit. Under `-o` it refuses instead of opening an editor.
 
-`dam edit`, `dam done`, `dam mv` and `dam rm` take several oids, `--query TEXT` or `--filter NAME`
-in place of one oid, and change the whole set or nothing:
+`dam edit`, `dam done`, `dam mv` and `dam rm` take several oids, `-`, `--query TEXT` or
+`--filter NAME` in place of one oid, and change the whole set or nothing:
 
-    dam done --query 'path:work/ & due:today' --preview
+    dam list --path work/ --due ..today | dam done - --preview
     dam edit --filter postponed --due mon --expect 12
     dam mv 98d8 a9db work/clients/
 
-`--preview` prints the changes and writes nothing; it works on one oid too. `--expect N` refuses,
-changing nothing, unless the set holds N objects. With `--query` or `--filter`, `dam mv` takes its
+`-` reads the ids from standard input: the rows `dam list` prints, or its `-o json` document. They
+are a set even when one comes in; when none come in, nothing changes. `--preview` prints the
+changes and writes nothing; it works on one oid too. `--expect N` refuses, changing nothing, unless
+the set holds N objects. With `--query` or `--filter`, `dam mv` takes its
 path from `--path`. The changes land unstaged, so `dam restore <oid>...` throws them away. The
 answer is `docs/schemas/changes.schema.json`.
 
@@ -282,8 +284,8 @@ answer is `docs/schemas/changes.schema.json`.
 `--project` would create, and writes nothing.
 
 `dam` never asks before a large change unless `confirm_above = 10` is in `config.lua`. Then a
-`--query` or `--filter` run over more than 10 objects asks `change 42 objects? [y/N]`, and no exits
-3. Without a terminal it needs `--expect 42` instead. Named oids, `--preview`, `--expect` and
+`-`, `--query` or `--filter` run over more than 10 objects asks `change 42 objects? [y/N]`, and no
+exits 3. Without a terminal, or with ids piped in, it needs `--expect 42` instead. Named oids, `--preview`, `--expect` and
 tokens are never asked.
 
 A token's set run waits as one item per object. With `--as-one` it waits as one set: `dam add
@@ -367,7 +369,7 @@ saved filter keeps its own query and is narrowed to the project. Listings print 
 `dam edit`, `dam done`, `dam mv` and `dam rm` with `--query` or `--filter` change only what `dam list`
 lists there: the project's tasks, its filters found before yours, its categories in the query.
 `--global` picks from every task with your own filters and categories; `--project <path>` picks
-that project's. Oids are never narrowed: `dam done 98d8` works on any task from anywhere. When
+that project's. Oids, typed or piped in, are never narrowed: `dam done 98d8` works on any task from anywhere. When
 `.dam.lua` does not load, a `--query` or `--filter` run is refused unless `--global` or `--project`
 is given. On `dam mv`, `--global` and `--project` also decide where the destination path starts.
 `status`, `push`, `pull`, `log` and `show` always cover everything.

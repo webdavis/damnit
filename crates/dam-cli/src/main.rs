@@ -12,6 +12,7 @@ mod interrupted;
 mod layout;
 mod output;
 mod paint;
+mod piped;
 mod progress;
 mod project_hooks;
 mod project_scope;
@@ -36,6 +37,7 @@ fn main() {
     let interrupt = Interrupt::default();
     let interrupts_installed = dam_adapters::catch_interrupts(&interrupt);
     let line: Vec<_> = std::env::args_os().collect();
+    let typed = piped::typed(&line);
     let cli = match started_by_hook::refuse_a_dam_a_hook_started(&line)
         .and_then(|()| request::parse(line))
     {
@@ -46,8 +48,9 @@ fn main() {
         }
     };
     let format = cli.output.unwrap_or(Format::Human).quieted(cli.quiet);
+    let cli = piped::with_ids_from_standard_input(cli, &typed, format);
     if !interrupts_installed {
-        warn_a_human_that_ctrl_c_will_not_cancel_cleanly(format);
+        interrupted::warn_a_human_that_ctrl_c_will_not_cancel_cleanly(format);
     }
     match run(cli, format, &interrupt) {
         Ok(()) => {}
@@ -57,12 +60,6 @@ fn main() {
             output::print_error(format, &e);
             std::process::exit(e.exit_code());
         }
-    }
-}
-
-fn warn_a_human_that_ctrl_c_will_not_cancel_cleanly(format: Format) {
-    if format == Format::Human {
-        eprintln!("dam: could not install the interrupt handler; Ctrl-C will not cancel cleanly");
     }
 }
 

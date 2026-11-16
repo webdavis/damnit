@@ -1,5 +1,6 @@
 mod edit_categories;
 mod flags;
+mod piped;
 mod tokens;
 
 use clap::Parser;
