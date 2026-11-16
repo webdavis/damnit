@@ -25,7 +25,7 @@ return {
   ["a change key's answer is read with its command's flags, a value of several words kept whole"] = function()
     local flags_of = function(command)
       assert(command == "edit", command)
-      return { { name = "--due", value = true, help = "" }, { name = "--labels", value = true, help = "" } }
+      return { { name = "--due", value = "required", help = "" }, { name = "--labels", value = "required", help = "" } }
     end
     same(actions.batch("cd", { A }, "--due next fri --labels home", flags_of).flags, {
       "--due",

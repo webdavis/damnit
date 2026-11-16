@@ -6,10 +6,10 @@ local function same(got, want)
 end
 
 local FLAGS = {
-  { name = "--due", value = true, help = "" },
-  { name = "--labels", value = true, help = "" },
-  { name = "--recurrence", value = true, help = "" },
-  { name = "--parent", value = true, help = "" },
+  { name = "--due", value = "required", help = "" },
+  { name = "--labels", value = "required", help = "" },
+  { name = "--recurrence", value = "required", help = "" },
+  { name = "--parent", value = "required", help = "" },
 }
 
 return {

@@ -93,7 +93,7 @@ return {
     local due = vim.tbl_filter(function(flag)
       return flag.name == "--due"
     end, app.vocab:flags("new"))[1]
-    assert(due and due.value == true and due.help:find("due date"), vim.inspect(due))
+    assert(due and due.value == "required" and due.help:find("due date"), vim.inspect(due))
     assert(#app.vocab:flags("filter create") > 0)
   end,
 }

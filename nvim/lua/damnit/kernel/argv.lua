@@ -44,6 +44,19 @@ function M.words(line)
   end, (M.tokens(line)))
 end
 
+---@param flag damnit.Flag|nil
+---@param next_word damnit.Token|nil
+---@return boolean the flag takes the next word as its value
+function M.takes(flag, next_word)
+  if not flag or flag.value == "absent" then
+    return false
+  end
+  if flag.value == "optional" then
+    return next_word ~= nil and vim.tbl_contains(flag.values or {}, next_word.text)
+  end
+  return true
+end
+
 ---@param line string
 ---@param flags damnit.Flag[] the command's flags
 ---@return string[] words, each value of several words joined into one
@@ -52,8 +65,8 @@ function M.args(line, flags)
   for _, flag in ipairs(flags) do
     named[flag.name] = flag
   end
-  local words, value = {}, nil
-  for _, token in ipairs((M.tokens(line))) do
+  local words, value, tokens = {}, nil, (M.tokens(line))
+  for n, token in ipairs(tokens) do
     local flag = not token.quoted and named[token.text]
     local stray = not token.quoted and not flag and vim.startswith(token.text, "--")
     if value and not flag and not stray then
@@ -64,7 +77,7 @@ function M.args(line, flags)
       end
     else
       table.insert(words, token.text)
-      value = flag and flag.value and #words + 1 or nil
+      value = M.takes(flag, tokens[n + 1]) and #words + 1 or nil
     end
   end
   return words

@@ -1,13 +1,13 @@
 local words = require("damnit.kernel.words")
 
 local FLAGS = {
-  { name = "--due", value = true, help = "Set the due date" },
-  { name = "--deadline", value = true, help = "Set the deadline" },
-  { name = "--labels", value = true, help = "Add labels" },
-  { name = "--category", value = true, help = "Give it LABEL of GROUP" },
-  { name = "--path", value = true, help = "Put it under PATH" },
-  { name = "--filter", value = true, help = "Act on a saved filter" },
-  { name = "--preview", value = false, help = "Show the change" },
+  { name = "--due", value = "required", help = "Set the due date" },
+  { name = "--deadline", value = "required", help = "Set the deadline" },
+  { name = "--labels", value = "required", help = "Add labels" },
+  { name = "--category", value = "required", help = "Give it LABEL of GROUP" },
+  { name = "--path", value = "required", help = "Put it under PATH" },
+  { name = "--filter", value = "required", help = "Act on a saved filter" },
+  { name = "--preview", value = "absent", help = "Show the change" },
 }
 
 local VOCAB = {
@@ -102,5 +102,11 @@ return {
     local line = "buy --labels er --due fri"
     local start, candidates = words.at(line, #"buy --labels er", FLAGS, VOCAB)
     said(start, candidates, 13, { { word = "errand", menu = "3 tasks" } })
+  end,
+
+  ["a flag that names its values completes from them"] = function()
+    local flags = { { name = "--overdue", value = "optional", values = { "true", "false", "any" }, help = "" } }
+    local start, candidates = words.at("--overdue f", 11, flags, VOCAB)
+    said(start, candidates, 10, { { word = "false", menu = "overdue" } })
   end,
 }
