@@ -3,6 +3,7 @@ use dam_domain::{Authored, Change, CommitRecord, Object, Oid};
 use super::PullReport;
 use super::classify::Incoming;
 use super::notices::note_cancelled;
+use super::parents::{RemotePaths, as_seen};
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
 use crate::ports::Store;
@@ -17,6 +18,7 @@ impl Dam<'_> {
         &self,
         remote: &RemoteConfig,
         planned: Vec<(Oid, Incoming)>,
+        remote_paths: &RemotePaths,
         report: &mut PullReport,
     ) -> Result<Vec<PulledTask>, UseCaseError> {
         let mut landed = Vec::new();
@@ -25,22 +27,23 @@ impl Dam<'_> {
             match incoming {
                 Incoming::Unchanged => report.unchanged += 1,
                 Incoming::Settled(o) => {
-                    LastSeen::now_holds(self.store, &remote.name, &o)?;
+                    LastSeen::now_holds(self.store, &remote.name, &as_seen(&o, remote_paths))?;
                     report.unchanged += 1;
                 }
                 Incoming::Create(o) => {
                     pulled.extend(PulledTask::of(None, &o));
-                    landed.extend(take_theirs(self.store, remote, &oid, o)?);
+                    landed.extend(take_theirs(self.store, remote, remote_paths, o)?);
                     report.created += 1;
                 }
                 Incoming::FastForward(o) => {
                     pulled.extend(PulledTask::of(self.store.get(&oid)?, &o));
-                    landed.extend(take_theirs(self.store, remote, &oid, o)?);
+                    landed.extend(take_theirs(self.store, remote, remote_paths, o)?);
                     report.updated += 1;
                 }
                 Incoming::Conflict(conflict) => {
                     self.store.mark_conflict(&conflict)?;
-                    LastSeen::now_holds(self.store, &remote.name, &conflict.theirs)?;
+                    let seen = as_seen(&conflict.theirs, remote_paths);
+                    LastSeen::now_holds(self.store, &remote.name, &seen)?;
                     report.conflicts += 1;
                     note_cancelled(self.store, &conflict.theirs)?;
                 }
@@ -75,13 +78,18 @@ impl Dam<'_> {
 fn take_theirs(
     store: &dyn Store,
     remote: &RemoteConfig,
-    oid: &Oid,
+    remote_paths: &RemotePaths,
     theirs: Object,
 ) -> Result<Option<Change>, UseCaseError> {
-    let theirs = placed(store, store.get(oid)?.as_ref(), theirs)?;
+    let oid = theirs.oid().clone();
+    let theirs = if remote_paths.contains_key(&oid) {
+        theirs
+    } else {
+        placed(store, store.get(&oid)?.as_ref(), theirs)?
+    };
     store.put(&theirs)?;
-    LastSeen::now_holds(store, &remote.name, &theirs)?;
-    let committed = store.committed(oid)?;
+    LastSeen::now_holds(store, &remote.name, &as_seen(&theirs, remote_paths))?;
+    let committed = store.committed(&oid)?;
     note_cancelled(store, &theirs)?;
     Ok(Change::between(committed, Some(theirs)))
 }

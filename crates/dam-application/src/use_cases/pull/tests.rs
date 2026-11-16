@@ -12,6 +12,7 @@ mod kept_values;
 mod kind_change;
 mod missing_upstream;
 mod our_own_writes;
+mod parents;
 mod progress;
 mod removal_table;
 mod removals_and_notices;

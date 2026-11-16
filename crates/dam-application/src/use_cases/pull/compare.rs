@@ -1,6 +1,7 @@
 use dam_domain::{Object, merge_fields};
 
 use super::classify::Incoming;
+use super::parents::{RemotePaths, as_seen};
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
 use crate::ports::{Conflict, Store};
@@ -11,13 +12,16 @@ pub(super) fn settled(
     store: &dyn Store,
     remote: &RemoteConfig,
     theirs: Object,
+    remote_paths: &RemotePaths,
 ) -> Result<Incoming, UseCaseError> {
     let last_seen_on_the_remote = LastSeen::held(store, &remote.name, theirs.oid())?;
-    Ok(if last_seen_on_the_remote.as_ref() == Some(&theirs) {
-        Incoming::Unchanged
-    } else {
-        Incoming::Settled(theirs)
-    })
+    Ok(
+        if last_seen_on_the_remote == Some(as_seen(&theirs, remote_paths)) {
+            Incoming::Unchanged
+        } else {
+            Incoming::Settled(theirs)
+        },
+    )
 }
 
 pub(super) fn against_local(
@@ -25,6 +29,7 @@ pub(super) fn against_local(
     remote: &RemoteConfig,
     local: Object,
     theirs: Object,
+    remote_paths: &RemotePaths,
 ) -> Result<Incoming, UseCaseError> {
     if local == theirs {
         return Ok(Incoming::Unchanged);
@@ -34,7 +39,7 @@ pub(super) fn against_local(
     if last_seen_on_the_remote.as_ref() == Some(&local) {
         return Ok(Incoming::FastForward(theirs));
     }
-    if last_seen_on_the_remote.as_ref() == Some(&theirs) {
+    if last_seen_on_the_remote == Some(as_seen(&theirs, remote_paths)) {
         return Ok(Incoming::Unchanged);
     }
     Ok(Incoming::Conflict(Box::new(Conflict {
