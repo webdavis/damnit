@@ -97,7 +97,8 @@ fn through_editor(ctx: &Context, oid: &Oid) -> Result<EditFields, CliError> {
         .ok_or_else(|| Refusal::NoWorkingObject(oid.short().to_string()))?;
     let editor = ctx.editor.as_ref().ok_or(Refusal::NeedsAnEditor)?;
     let original = render_template(&current);
-    let parse = |saved: &str| parse_template(saved, &current, ctx.clock.today(), &ctx.tz);
+    let now = ctx.clock.now().to_zoned(ctx.tz.clone());
+    let parse = |saved: &str| parse_template(saved, &current, ctx.clock.today(), &now);
     let save = |opened: &str| editor.edit(opened).map_err(CliError::from);
     let saved = save(&original)?;
     if saved == original {

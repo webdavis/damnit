@@ -1,6 +1,9 @@
-use dam_domain::{Date, Object, When};
+use dam_domain::{Date, Object, When, date_to_set};
 use dam_toml::StrictTable;
+use jiff::Zoned;
 use toml::Table;
+
+use crate::commands::parsing::date_forms;
 
 const KEYS_A_TASK_TEMPLATE_MAY_CARRY: [&str; 9] = [
     "subject",
@@ -41,7 +44,12 @@ pub(super) fn when(
     key: &str,
     text: &str,
     today: Date,
-    tz: &jiff::tz::TimeZone,
+    now: &Zoned,
 ) -> Result<When, String> {
-    When::parse_human(text, today, tz).map_err(|e| reader.refuse(key, format_args!("{key}: {e}")))
+    date_to_set(text, today, now).ok_or_else(|| {
+        reader.refuse(
+            key,
+            format_args!("{key} cannot be {text:?}; {}", date_forms()),
+        )
+    })
 }

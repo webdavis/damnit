@@ -1,6 +1,7 @@
 use dam_application::EditFields;
 use dam_domain::{Date, Object, Oid};
 use dam_toml::{StrictTable, parse_toml};
+use jiff::Zoned;
 
 use super::reader::template_reader;
 use kind_fields::{event_fields, task_fields};
@@ -9,7 +10,7 @@ pub(crate) fn parse_template(
     text: &str,
     current: &Object,
     today: Date,
-    tz: &jiff::tz::TimeZone,
+    now: &Zoned,
 ) -> Result<EditFields, String> {
     let table = parse_toml(text)?;
     let reader = template_reader(text, &table, current)?;
@@ -27,8 +28,8 @@ pub(crate) fn parse_template(
         fields.body = Some(s);
     }
     match current {
-        Object::Task(t) => task_fields(&reader, today, tz, t, &mut fields)?,
-        Object::Event(e) => event_fields(&reader, today, tz, e, &mut fields)?,
+        Object::Task(t) => task_fields(&reader, today, now, t, &mut fields)?,
+        Object::Event(e) => event_fields(&reader, today, now, e, &mut fields)?,
     }
     labels(&reader, current, &mut fields)?;
     depends(&reader, current, &mut fields)?;

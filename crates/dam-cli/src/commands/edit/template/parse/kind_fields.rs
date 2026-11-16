@@ -1,13 +1,14 @@
 use dam_application::EditFields;
 use dam_domain::{Date, Oid, Priority};
 use dam_toml::StrictTable;
+use jiff::Zoned;
 
 use super::super::reader::when;
 
 pub(super) fn task_fields(
     reader: &StrictTable,
     today: Date,
-    tz: &jiff::tz::TimeZone,
+    now: &Zoned,
     t: &dam_domain::Task,
     fields: &mut EditFields,
 ) -> Result<(), String> {
@@ -24,7 +25,7 @@ pub(super) fn task_fields(
     if let Some(s) = reader.string("due")? {
         let value = match s.is_empty() {
             true => None,
-            false => Some(when(reader, "due", &s, today, tz)?),
+            false => Some(when(reader, "due", &s, today, now)?),
         };
         if value != t.due {
             fields.due = Some(value);
@@ -33,10 +34,7 @@ pub(super) fn task_fields(
     if let Some(s) = reader.string("deadline")? {
         let value = match s.is_empty() {
             true => None,
-            false => Some(
-                s.parse::<Date>()
-                    .map_err(|e| reader.refuse("deadline", format_args!("deadline: {e}")))?,
-            ),
+            false => Some(when(reader, "deadline", &s, today, now)?.date()),
         };
         if value != t.deadline {
             fields.deadline = Some(value);
@@ -60,18 +58,18 @@ pub(super) fn task_fields(
 pub(super) fn event_fields(
     reader: &StrictTable,
     today: Date,
-    tz: &jiff::tz::TimeZone,
+    now: &Zoned,
     e: &dam_domain::Event,
     fields: &mut EditFields,
 ) -> Result<(), String> {
     if let Some(s) = reader.string("start")? {
-        let value = when(reader, "start", &s, today, tz)?;
+        let value = when(reader, "start", &s, today, now)?;
         if value != e.start {
             fields.start = Some(value);
         }
     }
     if let Some(s) = reader.string("end")? {
-        let value = when(reader, "end", &s, today, tz)?;
+        let value = when(reader, "end", &s, today, now)?;
         if value != e.end {
             fields.end = Some(value);
         }
