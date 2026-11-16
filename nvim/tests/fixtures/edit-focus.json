@@ -1,0 +1,21 @@
+{
+  "oid": "<id-1>",
+  "kind": "task",
+  "subject": "renew the lease",
+  "body": "",
+  "path": "",
+  "labels": [],
+  "depends": [],
+  "reminders": [],
+  "task": {
+    "done": false,
+    "priority": 4,
+    "focus": {
+      "day": "<today>",
+      "set_by": "owner",
+      "set_at": "<now>"
+    }
+  },
+  "category": {},
+  "overdue": false
+}

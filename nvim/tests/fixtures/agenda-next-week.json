@@ -1,0 +1,86 @@
+{
+  "from": "2030-01-07",
+  "to": "2030-01-13",
+  "events": [
+    {
+      "oid": "<id-1>",
+      "subject": "offsite",
+      "path": "",
+      "labels": [],
+      "status": "confirmed",
+      "transparency": "busy",
+      "all_day": true,
+      "start": "2030-01-08",
+      "end": "2030-01-09",
+      "busy": true,
+      "attendees": [],
+      "category": {},
+      "day": "2030-01-08",
+      "weekday": "tue"
+    },
+    {
+      "oid": "<id-2>",
+      "subject": "standup",
+      "path": "",
+      "labels": [],
+      "status": "confirmed",
+      "transparency": "busy",
+      "all_day": false,
+      "start": "2030-01-09T09:00:00+00:00",
+      "end": "2030-01-09T09:30:00+00:00",
+      "busy": true,
+      "attendees": [],
+      "category": {},
+      "day": "2030-01-09",
+      "weekday": "wed"
+    }
+  ],
+  "tasks": [
+    {
+      "oid": "<id-3>",
+      "kind": "task",
+      "subject": "pay rent",
+      "body": "",
+      "path": "home/",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4,
+        "due": "2030-01-08"
+      },
+      "category": {},
+      "overdue": false,
+      "blocked": false,
+      "days_until_due": "<days>",
+      "children_open": 0,
+      "day": "2030-01-08",
+      "weekday": "tue"
+    },
+    {
+      "oid": "<id-4>",
+      "kind": "task",
+      "subject": "call the bank",
+      "body": "",
+      "path": "",
+      "labels": [
+        "money"
+      ],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4,
+        "due": "2030-01-10"
+      },
+      "category": {},
+      "overdue": false,
+      "blocked": false,
+      "days_until_due": "<days>",
+      "children_open": 0,
+      "day": "2030-01-10",
+      "weekday": "thu"
+    }
+  ]
+}
