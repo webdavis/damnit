@@ -84,6 +84,20 @@ impl Condition {
         Ok(())
     }
 
+    pub(crate) fn is_one_value(&self) -> bool {
+        !self.negated && matches!(self.wants.as_slice(), [want] if want.is_one_value())
+    }
+
+    pub(crate) fn admits_word(&self, word: &str) -> bool {
+        let hit = self.wants.iter().any(|want| match want {
+            Want::Any => true,
+            Want::Is(value) => value == word,
+            Want::Yes(yes) => yes.to_string() == word,
+            _ => false,
+        });
+        hit != self.negated
+    }
+
     pub(crate) fn error(&self, problem: Problem) -> FilterError {
         field_error(self.field, &self.text, problem)
     }
