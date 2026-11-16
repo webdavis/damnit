@@ -42,8 +42,8 @@ pub(crate) enum ConfigCommand {
         global: bool,
     },
     #[command(
-        about = "Remove one setting from config.lua, keeping the rest of the file as it is",
-        after_help = "Inside a project, project.hooks forgets this clone's own switch; --global removes it from config.lua.
+        about = "Remove one setting from config.lua, or from .dam.lua inside a project, keeping the rest of the file",
+        after_help = "Inside a project, a key .dam.lua takes is removed from .dam.lua, except path, which a project needs; --global removes it from config.lua.\nInside a project, project.hooks forgets this clone's own switch; --global removes it from config.lua.
 
 Examples:
   dam config unset remote.todoist.deadline
@@ -56,7 +56,7 @@ Examples:
         key: String,
         #[arg(
             long,
-            help = "Remove project.hooks from config.lua, not this clone's own switch"
+            help = "Remove the key from config.lua inside a project, not from .dam.lua or this clone's project.hooks"
         )]
         global: bool,
     },

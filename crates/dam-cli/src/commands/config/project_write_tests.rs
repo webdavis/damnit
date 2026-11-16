@@ -141,3 +141,28 @@ fn a_project_file_that_does_not_load_is_refused_naming_it_unless_global() {
     m.run(set("owner", "Grace", true), &unreadable).unwrap();
     assert!(m.config_text().unwrap().contains("Grace"));
 }
+
+fn unset(key: &str, global: bool) -> ConfigCommand {
+    ConfigCommand::Unset {
+        key: key.into(),
+        global,
+    }
+}
+
+#[test]
+fn unset_inside_a_project_removes_the_key_from_its_file_and_refuses_path() {
+    let m = machine();
+    m.run(set("ls", "label:app", false), &m.inside()).unwrap();
+    let report = m.run(unset("ls", false), &m.inside()).unwrap();
+    assert_eq!(report.data["file"], ".dam.lua");
+    assert_eq!(m.project_text(), PROJECT_TEXT);
+    assert_eq!(
+        m.usage(unset("path", false), &m.inside()),
+        "a project needs its path; change it with dam config set path <path>"
+    );
+    assert_eq!(
+        m.usage(unset("owner", false), &m.inside()),
+        "owner is yours, not the project's; add --global to change your config.lua"
+    );
+    assert_eq!(m.project_text(), PROJECT_TEXT);
+}
