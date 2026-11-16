@@ -2,6 +2,7 @@ use dam_domain::Path;
 
 use crate::args::Command;
 use crate::commands::dispatch_a_verb_that_opens_the_store;
+use crate::commands::mv::with_the_path_named;
 use crate::commands::new::required::holds_each;
 use crate::commands::new::templated::{filled, from_template};
 use crate::context::Context;
@@ -43,6 +44,13 @@ pub(crate) fn dispatch_in(
             let made = dispatch_a_verb_that_opens_the_store(ctx, Command::New(a))?;
             return Ok(project_created::told(made, created.as_ref(), &place));
         }
+        Command::Mv(a) => {
+            let mut a = with_the_path_named(a)?;
+            if let Some(path) = a.path.take() {
+                a.path = Some(path.under(&standing.place(&a.scope)?));
+            }
+            Command::Mv(a)
+        }
         Command::Ls(mut a) => {
             if let Some(rules) = standing.rules(&a.scope) {
                 a.query = rules.listed(a.query);
@@ -69,6 +77,8 @@ pub(crate) fn dispatch_in(
 
 #[cfg(test)]
 mod listing_tests;
+#[cfg(test)]
+mod mv_tests;
 #[cfg(test)]
 mod project_created_tests;
 #[cfg(test)]

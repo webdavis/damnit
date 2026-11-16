@@ -1,9 +1,9 @@
 use clap::Args;
 use dam_domain::{CallerId, ChildDisposition, DependencyDisposition, Path};
 
-use super::SetArgs;
 use super::dispositions::{child_disposition, dependency_disposition};
 use super::values::{caller_id_arg, path_arg};
+use super::{ScopeArgs, SetArgs};
 
 #[derive(Args, Debug)]
 pub(crate) struct DoneArgs {
@@ -59,6 +59,8 @@ pub(crate) struct MvArgs {
     pub(crate) path: Option<Path>,
     #[arg(long, help = "Put it in the object with this oid or prefix")]
     pub(crate) parent: Option<String>,
+    #[command(flatten)]
+    pub(crate) scope: ScopeArgs,
 }
 
 #[derive(Args, Debug)]

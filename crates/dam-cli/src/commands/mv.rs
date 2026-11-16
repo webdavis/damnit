@@ -6,14 +6,19 @@ use crate::error::CliError;
 use crate::output::Report;
 use crate::view::{ObjectRow, report};
 
-pub(crate) fn run(ctx: &Context, mut args: MvArgs) -> Result<Report, CliError> {
+pub(crate) fn with_the_path_named(mut args: MvArgs) -> Result<MvArgs, CliError> {
+    if args.path.is_none() && args.parent.is_none() && args.oid.len() >= 2 {
+        let last = args.oid.pop().expect("two or more words");
+        args.path = Some(path_arg(&last).map_err(|why| CliError::Usage(format!("{last}: {why}")))?);
+    }
+    Ok(args)
+}
+
+pub(crate) fn run(ctx: &Context, args: MvArgs) -> Result<Report, CliError> {
+    let mut args = with_the_path_named(args)?;
     let path = match (args.path.take(), &args.parent) {
         (Some(path), _) => Some(path),
         (None, Some(_)) => None,
-        (None, None) if args.oid.len() >= 2 => {
-            let last = args.oid.pop().expect("two or more words");
-            Some(path_arg(&last).map_err(|why| CliError::Usage(format!("{last}: {why}")))?)
-        }
         (None, None) => {
             return Err(CliError::Usage(
                 "dam mv needs a path or --parent: dam mv <oid> work/clients/, or dam mv <oid> --parent <oid>".into(),

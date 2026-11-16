@@ -52,7 +52,15 @@
     },
     "path": {
       "type": "string",
-      "description": "A path such as work/clients/."
+      "description": "A path such as work/clients/, starting from the project the command runs in."
+    },
+    "global": {
+      "type": "boolean",
+      "description": "Read path from the root, not from the project the command runs in."
+    },
+    "project": {
+      "type": "string",
+      "description": "Start path from the project at this path, such as pns/hooks/, from any folder. Not with global."
     },
     "parent": {
       "type": "string",
