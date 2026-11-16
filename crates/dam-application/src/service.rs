@@ -1,3 +1,5 @@
+use dam_domain::Path;
+
 use crate::access::Access;
 use crate::config::Config;
 use crate::ports::{
@@ -18,6 +20,14 @@ pub struct Dam<'a> {
     pub edit_requests: &'a dyn EditRequests,
     pub hook_edits: &'a dyn HookEdits,
     pub interruption: &'a dyn Interruption,
+    pub project_hooks: Option<ProjectHooks<'a>>,
+}
+
+#[derive(Clone, Copy)]
+pub struct ProjectHooks<'a> {
+    pub config: &'a Config,
+    pub hooks: &'a dyn Hooks,
+    pub within: &'a Path,
 }
 
 #[derive(Clone, Copy)]

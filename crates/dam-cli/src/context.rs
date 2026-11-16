@@ -96,6 +96,7 @@ impl Context {
             edit_requests: self,
             hook_edits: &self.changed_by_hook,
             interruption: &self.interrupt,
+            project_hooks: None,
         }
     }
 

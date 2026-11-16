@@ -47,7 +47,7 @@ pub use remote::{
     RejectedObject, RemoteCapabilities, RemoteMutation,
 };
 pub use secret::Secret;
-pub use service::{Dam, Remotes};
+pub use service::{Dam, ProjectHooks, Remotes};
 pub use setting::{BadValue, KeyRefusal, SettingKey, SettingKind, SettingValue};
 pub use tokens::{
     NewToken, Standing, TokenConfig, TokenFault, TokenName, TokenTerms, TokenWarning, Tokens,

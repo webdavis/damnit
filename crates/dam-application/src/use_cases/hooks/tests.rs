@@ -4,6 +4,7 @@ mod events;
 mod failures;
 mod marks;
 mod progress;
+mod project;
 mod quiet;
 mod resolving;
 

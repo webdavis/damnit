@@ -53,6 +53,7 @@ impl Fixture {
             edit_requests: &self.edit_requests,
             hook_edits: &self.hook_edits,
             interruption: &self.interruption,
+            project_hooks: None,
         }
     }
 }
