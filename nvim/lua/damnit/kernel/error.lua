@@ -1,3 +1,5 @@
+local progress = require("damnit.kernel.progress")
+
 local M = {}
 
 ---@param message string
@@ -19,18 +21,27 @@ local function document_of(stderr)
   end
 end
 
+---@param stderr string|nil
+---@return string
+local function without_records(stderr)
+  local kept = vim.tbl_filter(function(line)
+    return progress.record(line) == nil
+  end, vim.split(stderr or "", "\n", { plain = true }))
+  return vim.trim(table.concat(kept, "\n"))
+end
+
 ---@param code integer
 ---@param stderr string
 ---@return damnit.Error
 function M.of_exit(code, stderr)
-  local text = vim.trim(stderr or "")
+  local text = without_records(stderr)
   return document_of(text) or M.plugin(text ~= "" and text or ("dam exited %d"):format(code))
 end
 
 ---@param stderr string
 ---@return damnit.Error
 function M.not_json(stderr)
-  local text = vim.trim(stderr or "")
+  local text = without_records(stderr)
   return M.plugin("dam's answer was not JSON" .. (text ~= "" and (": " .. text) or ""))
 end
 
