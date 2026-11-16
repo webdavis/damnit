@@ -2,6 +2,7 @@ mod agenda;
 mod authorship;
 mod caller_id;
 pub(crate) mod catalogue;
+mod catalogue_write;
 mod check_report;
 mod commit;
 pub(crate) mod config;
@@ -73,8 +74,8 @@ fn run_a_verb(ctx: &Context, command: Command) -> Result<Report, CliError> {
         Command::Pull(a) => sync::run_pull(ctx, a),
         Command::Resolve(a) => sync::run_resolve(ctx, a),
         Command::Sync(a) => sync::run_sync(ctx, a),
+        Command::Filter(a) => catalogue_write::run_filter(ctx, a.command),
         Command::Category(_)
-        | Command::Filter(_)
         | Command::Token(_)
         | Command::Config(_)
         | Command::Doctor(_)

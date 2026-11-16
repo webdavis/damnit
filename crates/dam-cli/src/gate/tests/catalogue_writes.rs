@@ -1,0 +1,24 @@
+use dam_application::{Owner, Refusal};
+use dam_domain::Permission;
+
+use super::{allowing, command, holding};
+use crate::gate::admit;
+
+#[test]
+fn only_the_owner_creates_or_removes_a_filter() {
+    let everything = allowing(&Permission::ALL);
+    for (line, verb) in [
+        ("filter create f --query due:today", "filter create"),
+        ("filter remove f", "filter remove"),
+    ] {
+        assert_eq!(admit(&Owner, &command(line)), Ok(()), "{line}");
+        assert_eq!(
+            admit(&everything, &command(line)),
+            Err(Refusal::NotOpenToTokens(verb))
+        );
+        assert_eq!(
+            admit(&holding(vec![]), &command(line)),
+            Err(Refusal::NotOpenToTokens(verb))
+        );
+    }
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/filter-remove.schema.json",
+  "title": "dam filter remove answer",
+  "description": "What dam filter remove prints with --json or --toon: the name of the saved filter it removed from config.lua.",
+  "type": "object",
+  "required": ["name"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "type": "string" }
+  }
+}

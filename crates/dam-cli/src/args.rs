@@ -87,7 +87,7 @@ Examples:
     Day(DayArgs),
     #[command(about = "Read the label categories config.lua declares")]
     Category(CategoryArgs),
-    #[command(about = "Read the saved filters config.lua declares")]
+    #[command(about = "List, create and remove the saved filters config.lua declares")]
     Filter(FilterArgs),
     #[command(about = "Manage remotes")]
     Remote(RemoteArgs),

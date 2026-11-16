@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/filter-create.schema.json",
+  "title": "dam filter create answer",
+  "description": "What dam filter create prints with --json or --toon: the name and query of the saved filter it wrote to config.lua.",
+  "type": "object",
+  "required": ["name", "query"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "type": "string" },
+    "query": { "type": "string" }
+  }
+}

@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use dam_adapters::Interrupt;
 use dam_application::Config;
 use dam_application::testing::{
-    FakeFilterFunctions, FakeHooks, FixedClock, FixedRandom, MemoryStore,
+    FakeFilterFunctions, FakeHooks, FakeSettingsFile, FixedClock, FixedRandom, MemoryStore,
 };
 use dam_domain::Categories;
 use jiff::civil::date;
@@ -38,6 +38,7 @@ pub(crate) fn context() -> Context {
         },
         access: Box::new(dam_application::Owner),
         config_file: Box::new(FakeConfigFile::default()),
+        settings_file: Box::new(FakeSettingsFile::default()),
         clock: Box::new(FixedClock(date(2026, 9, 18))),
         random: Box::new(FixedRandom::new(1)),
         launcher: Box::new(EchoLauncher {

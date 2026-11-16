@@ -108,7 +108,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
             &commands::token::run(&config_file, &OsRandom, SystemClock.now(), args)?,
         );
     }
-    if let Command::Category(_) | Command::Filter(_) = cli.command {
+    if commands::catalogue::only_reads(&cli.command) {
         let config = config_file.load()?.config;
         let now = SystemClock.now();
         let access = caller(
@@ -121,7 +121,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         return output::print(format, color, &report);
     }
     let ctx = Context::open(
-        Box::new(config_file),
+        config_file,
         &store_path,
         presented_token,
         &meta,
