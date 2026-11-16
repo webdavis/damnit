@@ -1,5 +1,6 @@
 local argv = require("damnit.kernel.argv")
 local float = require("damnit.kernel.float")
+local room = require("damnit.list.filterbar_room")
 local view = require("damnit.list.view")
 local words = require("damnit.kernel.words")
 
@@ -61,7 +62,8 @@ end
 ---@param flags damnit.Flag[]
 ---@param refused table
 ---@param note? string
-function FilterBar:filter_read(buf, flags, refused, note)
+---@param place fun() makes room for the bar above the list's rows
+function FilterBar:filter_read(buf, flags, refused, note, place)
   local list = self.shown[buf]
   return function(text, done)
     local args = vim.list_extend({ "list" }, argv.args(text, flags))
@@ -69,12 +71,14 @@ function FilterBar:filter_read(buf, flags, refused, note)
       if err then
         refused.flag = err.usage and err.usage.word
         refused.shapes = err.selection and err.selection.shapes
-        return done(err.message, err)
+        done(err.message, err)
+        return place()
       end
       refused.flag = nil
       list.parts, list.grouped_by = { { args = args } }, nil
       self:arrange(buf, { { answer = answer } })
       done(table.concat({ rows(#answer.objects), note }, " · "), false)
+      place()
     end)
   end
 end
@@ -85,19 +89,23 @@ function FilterBar:filter(buf)
   local before = { parts = list.parts, grouped_by = list.grouped_by, name = list.name, text = list.filter_text }
   local conditions = self:conditions(list)
   local flags, refused = self.app.vocab:flags("list"), {}
+  local win, bar = vim.api.nvim_get_current_win(), nil
+  local function place()
+    room.make(buf, win, bar)
+  end
   local function restore()
     list.parts, list.grouped_by, list.name, list.filter_text = before.parts, before.grouped_by, before.name, before.text
     self:read(buf)
   end
   self.prompts = self.prompts or require("damnit.kernel.prompt").new(self.app.queue, self.app.say)
-  self.prompts:open({
+  bar = self.prompts:open({
     title = "dam list",
     prefill = conditions or "",
-    anchor = { top = vim.api.nvim_get_current_win() },
+    anchor = { top = win },
     read_first = true,
     reads_blank = true,
     flags = flags,
-    read = self:filter_read(buf, flags, refused, conditions == nil and SECTIONS or nil),
+    read = self:filter_read(buf, flags, refused, conditions == nil and SECTIONS or nil, place),
     submit = function(text)
       if text == (conditions or "") and not before.text then
         return restore()
@@ -106,6 +114,7 @@ function FilterBar:filter(buf)
       self:draw(buf)
     end,
     closed = function(sent)
+      room.clear(buf, win)
       if not sent then
         restore()
       end
@@ -118,7 +127,8 @@ function FilterBar:filter(buf)
         self:save_filter(buf, session, flags, restore)
       end,
     },
-  })
+  }).win
+  place()
 end
 
 ---@param buf integer
