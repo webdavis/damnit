@@ -1,6 +1,7 @@
 local M = {}
 
 local running
+local statusline
 
 ---@param opts? table
 ---@return damnit.App
@@ -12,6 +13,7 @@ function M.setup(opts)
   end
   running = require("damnit.kernel.app").new(options, require("damnit.kernel.process"))
   local task = require("damnit.task").new(running)
+  statusline = require("damnit.statusline").new(running)
   require("damnit.command").define(running, {
     require("damnit.messages").new(running),
     require("damnit.list").new(running, task.open),
@@ -20,6 +22,25 @@ function M.setup(opts)
     require("damnit.capture").new(running),
   })
   return running
+end
+
+---@return damnit.Statusline
+local function statusline_feature()
+  if not statusline then
+    M.setup({})
+  end
+  return statusline
+end
+
+---@param opts? { highlight?: boolean }
+---@return string
+function M.statusline(opts)
+  return statusline_feature().component(opts)
+end
+
+---@return damnit.Counts|nil
+function M.counts()
+  return statusline_feature().counts()
 end
 
 return M

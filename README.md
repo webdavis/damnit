@@ -840,6 +840,17 @@ project. `:Dam capture!` creates it without the prompt. Map it yourself:
 vim.keymap.set({ "n", "x" }, "<leader>dc", "<Plug>(dam-capture)")
 ```
 
+`require("damnit").statusline()` gives short counts for a statusline, such as `!2 ?1 M3 S1 ^2`:
+overdue, waiting, unstaged, staged and unpushed commits, using the `signs` characters. It is
+empty when all are zero. It never waits on dam: it reads again after a change, when Neovim gains
+focus and when the folder changes. `statusline({ highlight = true })` colours each count, and
+`require("damnit").counts()` gives the numbers as a table.
+
+```lua
+vim.o.statusline = "%f %m%=%{%v:lua.require'damnit'.statusline()%} "
+require("lualine").setup({ sections = { lualine_x = { function() return require("damnit").statusline() end } } })
+```
+
 With lazy.nvim from a checkout:
 
 ```lua
