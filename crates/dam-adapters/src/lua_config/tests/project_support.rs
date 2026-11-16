@@ -23,6 +23,10 @@ impl ProjectFolder {
     }
 
     pub(super) fn read(&self) -> Result<ProjectSettings, ConfigError> {
-        read_project_file(&self.file())
+        self.read_as("0.2.0")
+    }
+
+    pub(super) fn read_as(&self, this_dam: &str) -> Result<ProjectSettings, ConfigError> {
+        read_project_file(&self.file(), this_dam)
     }
 }

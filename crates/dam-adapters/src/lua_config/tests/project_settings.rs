@@ -45,7 +45,17 @@ fn any_other_key_is_refused_by_name() {
 
 #[test]
 fn a_key_that_belongs_to_a_person_is_refused_as_personal() {
-    for key in ["remote", "token", "owner", "schema", "project_hooks"] {
+    for key in [
+        "remote",
+        "token",
+        "owner",
+        "schema",
+        "project_hooks",
+        "hook",
+        "secrets",
+        "sync",
+        "except",
+    ] {
         let folder = ProjectFolder::with(&format!("return {{ path = 'a', {key} = 1 }}"));
         assert_eq!(
             folder.read(),

@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use dam_domain::CategoryError;
 
 use super::misread::{Misread, Place};
+use super::project_rule::ProjectRuleFault;
 use crate::ports::RemoteNameError;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -53,6 +54,16 @@ pub enum ConfigError {
     },
     NotAPath {
         file: PathBuf,
+    },
+    NeedsANewerDam {
+        file: PathBuf,
+        needs: String,
+        this: String,
+    },
+    ProjectRule {
+        file: PathBuf,
+        key: &'static str,
+        fault: ProjectRuleFault,
     },
     BadRemoteName(RemoteNameError),
     BadCategories(CategoryError),

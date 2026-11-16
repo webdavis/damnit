@@ -56,7 +56,7 @@ fn a_folder_becomes_a_project_named_after_itself() {
     )
     .unwrap();
     assert_eq!(
-        read_project_file(&folders.project.join(".dam.lua")),
+        read_project_file(&folders.project.join(".dam.lua"), "0.2.0"),
         Ok(ProjectSettings {
             path: "damnit/".into()
         })
@@ -72,7 +72,7 @@ fn the_path_flag_sets_where_the_projects_tasks_go() {
     let path = Some(Path::parse("work/app").unwrap());
     run(&ctx, InitArgs { path }, here(&folders, &folders.project)).unwrap();
     assert_eq!(
-        read_project_file(&folders.project.join(".dam.lua"))
+        read_project_file(&folders.project.join(".dam.lua"), "0.2.0")
             .unwrap()
             .path,
         "work/app/"
@@ -118,14 +118,14 @@ fn a_folder_inside_a_project_becomes_its_own_project() {
     std::fs::create_dir_all(&inner).unwrap();
     let report = run(&ctx, InitArgs { path: None }, here(&folders, &inner)).unwrap();
     assert_eq!(
-        read_project_file(&inner.join(".dam.lua")),
+        read_project_file(&inner.join(".dam.lua"), "0.2.0"),
         Ok(ProjectSettings {
             path: "src/".into()
         })
     );
     assert_eq!(report.data["path"], "src/");
     assert_eq!(
-        read_project_file(&folders.project.join(".dam.lua")),
+        read_project_file(&folders.project.join(".dam.lua"), "0.2.0"),
         Ok(ProjectSettings { path: "a/".into() })
     );
 }

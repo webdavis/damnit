@@ -85,8 +85,14 @@ folder alone, so a hook that does not load hides none of the others.
 
 A project's `.dam.lua` comes with the repository, so dam runs it locked: no `os`, `io`,
 `package`, `require`, `load`, `dofile`, `string` or `debug`, only plain values and a few base
-functions, with a cap on time and memory. It may hold one key, `path`. A key that belongs to a
-person, such as `owner`, `remote` or `token`, is refused; it belongs in `config.lua`.
+functions, with a cap on time and memory. A key that belongs to a person, such as `owner`,
+`remote`, `token`, `hook`, `secrets` or `sync`, is refused; it belongs in `config.lua`. A control
+character anywhere in the file, a wrong type or an unknown key refuses the file.
+
+| Key | Holds | Effect inside the project |
+| --- | --- | --- |
+| `path` | a path such as `"app/"` | where `dam new` starts a task's `--path`, and what `dam ls`, `dam agenda` and `dam reminders` list |
+| `minimum_dam` | a version such as `"0.3.0"` | an older `dam` refuses the file before it reads any other key |
 
 Inside the folder, `path` is where `dam new` starts a task's `--path`, and `dam ls`, `dam agenda`
 and `dam reminders` list only what is under it.
