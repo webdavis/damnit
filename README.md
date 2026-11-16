@@ -301,7 +301,8 @@ under `--json`, an empty array when nothing is declared.
 
 ## Hooks
 
-A hook in `config.lua` runs when your `dam new`, `dam edit`, `dam done` or `dam add` changes a task:
+A hook in `config.lua` runs when your `dam new`, `dam edit`, `dam done`, `dam add` or
+`dam resolve --theirs` changes a task:
 
     hook = {
       task_done = function(task)
@@ -473,8 +474,8 @@ task before and after the change.
 `dam add <hash>` takes an item into your working layer and stage, and `dam commit` records it as
 the token's change. Your own edit of the same task is staged and committed as yours. `dam add -A`
 takes every item that applies. An item that changes a field you edited and have not saved stops
-the add; settle it with `dam resolve <hash> --ours|--theirs`. An item that would make a dependency
-cycle, or completes a task with open children or dependencies, is refused the way your own `edit`
+the add; settle it with `dam resolve <hash> --ours|--theirs`, where `--theirs` runs the hooks
+`dam add` would. An item that would make a dependency cycle, or completes a task with open children or dependencies, is refused the way your own `edit`
 or `done` would be. `dam reset` sends an added item back to waiting and keeps your own edits.
 `dam rm <hash>` declines it, and the same change sent again is refused until `dam reset <hash>` puts
 the item back to waiting. A token may `dam rm` its own waiting item. A token's `dam rm <oid>` on one

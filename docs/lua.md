@@ -165,13 +165,13 @@ A hook is a function dam calls when your own command changes a task.
 `hook.task_new` runs for a task your `dam new` creates.
 `hook.task_done` runs for a task your `dam done` completes, or rolls forward when it repeats.
 `hook.task_changed` runs for any other change your `dam new`, `dam edit` or `dam done` makes.
-A token's item runs the same hooks when your `dam add` takes it.
+A token's item runs the same hooks when your `dam add` or `dam resolve <hash> --theirs` takes it.
 A command runs one hook for each task it changed, so `dam done --force` that moves open children
 runs `task_changed` for each child.
 When the item removes a task, the removed task runs no hook, and each task the removal moves or
 frees runs `task_changed`.
-Events, `dam rm`, `dam restore`, `dam resolve`, `dam revert`, `dam reset`, a pull and a token's
-commands run none of these three. A pull runs only `hook.task_pulled`.
+Events, `dam rm`, `dam restore`, `dam resolve --ours`, `dam resolve` of a conflict with a remote,
+`dam revert`, `dam reset`, a pull and a token's commands run none of these three. A pull runs only `hook.task_pulled`.
 
 A hook is a function, or a table that holds the function as `run`. `run(task, dam)` gets what a
 filter's `match` gets, with the task as it is after the change.

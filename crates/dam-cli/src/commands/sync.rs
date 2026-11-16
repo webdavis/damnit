@@ -1,6 +1,7 @@
 use dam_application::Side;
 
 use crate::args::{PullArgs, PushArgs, ResolveArgs, SyncArgs, SyncCommand};
+use crate::commands::hooked::hooked;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
@@ -47,7 +48,7 @@ pub(crate) fn run_resolve(ctx: &Context, args: ResolveArgs) -> Result<Report, Cl
     };
     let oid = ctx.dam().settle(&named, side)?;
     let side = if args.side.theirs { "theirs" } else { "ours" };
-    report(&Resolved { oid: &oid, side })
+    report(&hooked(ctx, Resolved { oid: &oid, side }))
 }
 
 #[cfg(test)]
