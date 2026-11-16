@@ -1,8 +1,10 @@
 use std::path::Path;
 
-use dam_application::{ConfigError, FilterConfig, FilterRule, ProjectRuleFault};
-use dam_domain::{Categories, parse_query};
+use dam_application::{ConfigError, FilterConfig, ProjectRuleFault};
+use dam_domain::Categories;
 
+use super::super::filter::{checked, none_reaches_itself, query_text};
+use super::super::filter_table::read_table;
 use super::super::strict::StrictMap;
 
 pub(super) fn filters(
@@ -10,6 +12,7 @@ pub(super) fn filters(
     root: &StrictMap,
     categories: &Categories,
 ) -> Result<Vec<FilterConfig>, ConfigError> {
+    let shown = file.display().to_string();
     let refused = |fault| ConfigError::ProjectRule {
         file: file.to_path_buf(),
         key: "filter",
@@ -18,25 +21,26 @@ pub(super) fn filters(
     let named = root
         .maps_in("filter")
         .map_err(|_| refused(ProjectRuleFault::Shape))?;
-    named
+    let filters = named
         .into_iter()
         .map(|(name, filter)| {
             if filter.get("match").is_some() {
                 return Err(refused(ProjectRuleFault::FilterIsAFunction));
             }
-            let query = filter
-                .only(&["query"])
-                .and_then(|_| filter.string("query"))
-                .ok()
-                .flatten()
-                .ok_or_else(|| refused(ProjectRuleFault::Shape))?;
-            if parse_query(&query, categories).is_err() {
-                return Err(refused(ProjectRuleFault::NotAQuery));
+            let key = format!("filter.{name}");
+            if let Some(query) = filter.string("query").ok().flatten() {
+                let was = format!("{key}.query");
+                return Err(query_text(shown.clone(), (was, key), &query, categories));
             }
+            let table = read_table(&filter, &[]).map_err(|_| refused(ProjectRuleFault::Shape))?;
+            checked(&table, shown.clone(), key)?;
             Ok(FilterConfig {
                 name,
-                rule: FilterRule::Query(query),
+                table,
+                runs_a_function: false,
             })
         })
-        .collect()
+        .collect::<Result<Vec<_>, _>>()?;
+    none_reaches_itself(&filters, &shown)?;
+    Ok(filters)
 }

@@ -24,12 +24,12 @@ fn a_filter_function_shows_as_a_function_and_never_its_source() {
     let _guard = support::guard("a_filter_function_shows_as_a_function_and_never_its_source");
     let sb = with_filters(
         "work = { match = function(task) return task.path == 'work' end }, \
-         soon = { query = 'due:today', match = function() return true end }",
+         soon = { due = 'today', match = function() return true end }",
     );
     assert_eq!(
         listed(&sb)["settings"]["filter"],
         json!({
-            "soon": {"query": {"value": "due:today", "default": false}, "match": {"function": true}},
+            "soon": {"due": {"value": "today", "default": false}, "match": {"function": true}},
             "work": {"match": {"function": true}},
         })
     );
@@ -37,7 +37,7 @@ fn a_filter_function_shows_as_a_function_and_never_its_source() {
     assert!(ok, "{err}");
     assert_eq!(
         out,
-        "  filter.soon.query  due:today\n  filter.soon.match  function\n  filter.work.match  function\n"
+        "  filter.soon.due    today\n  filter.soon.match  function\n  filter.work.match  function\n"
     );
 }
 

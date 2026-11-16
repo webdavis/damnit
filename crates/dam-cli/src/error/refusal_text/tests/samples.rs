@@ -53,6 +53,10 @@ pub(super) fn every_refusal_with_its_text() -> Vec<(Refusal, &'static str)> {
         "after the rename 0101010, 0202020 would hold two labels of exclusive category effort; \
          dam edit <oid> --unlabels LABEL first",
     ));
+    samples.push((
+        Refusal::FilterReachesItself(vec!["a".into(), "b".into(), "a".into()]),
+        "filter a reaches itself (a -> b -> a); remove one of those filter, in: or on: values",
+    ));
     samples
 }
 

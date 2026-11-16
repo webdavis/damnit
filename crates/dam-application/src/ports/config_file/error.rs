@@ -2,9 +2,11 @@ use std::path::PathBuf;
 
 use dam_domain::CategoryError;
 
+use super::edit_kinds::{ByHand, EditFault, EditedTable, Uneditable};
 use super::misread::{Misread, Place};
 use super::project_rule::ProjectRuleFault;
 use crate::ports::RemoteNameError;
+use crate::use_cases::selected::SelectError;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ConfigError {
@@ -60,6 +62,21 @@ pub enum ConfigError {
         needs: String,
         this: String,
     },
+    QueryText {
+        file: String,
+        was: String,
+        key: String,
+        table: Option<String>,
+    },
+    FilterTable {
+        file: String,
+        key: String,
+        error: Box<SelectError>,
+    },
+    FilterReachesItself {
+        file: String,
+        chain: Vec<String>,
+    },
     ProjectRule {
         file: PathBuf,
         key: &'static str,
@@ -114,33 +131,6 @@ pub enum ConfigError {
         key: String,
         why: Box<ConfigError>,
     },
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum EditedTable {
-    Remotes,
-    Tokens,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Uneditable {
-    NotEditable,
-    ReturnsBuiltInCode,
-    TableBuiltInCode,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum EditFault {
-    WouldNotHoldTheEntry,
-    WouldStillHoldTheEntry,
-    WouldNotKeepTheOthers,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum ByHand {
-    AddRemote { entry: String },
-    AddToken { name: String },
-    RemoveToken { name: String },
 }
 
 impl From<Misread> for ConfigError {

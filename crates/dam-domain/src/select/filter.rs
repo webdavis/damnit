@@ -5,6 +5,7 @@ use super::condition::Condition;
 use super::error::{FilterError, Problem};
 use super::field::Holds;
 use super::table::{FilterTable, TableValue};
+use super::want::SavedUse;
 use crate::{Categories, Object};
 
 #[derive(Clone, Debug, Default)]
@@ -66,9 +67,25 @@ impl Filter {
     }
 
     pub fn saved_filters(&self) -> Vec<&str> {
+        self.named(SavedUse::Any)
+    }
+
+    pub fn selected_filters(&self) -> Vec<&str> {
+        self.named(SavedUse::Selected)
+    }
+
+    pub fn listed_filters(&self) -> Vec<&str> {
+        self.named(SavedUse::Listed)
+    }
+
+    pub fn event_filters(&self) -> Vec<&str> {
+        self.named(SavedUse::Events)
+    }
+
+    fn named(&self, use_: SavedUse) -> Vec<&str> {
         let mut names: Vec<&str> = Vec::new();
-        let own = self.conditions.iter().flat_map(Condition::saved_filters);
-        let nested = self.any.iter().flat_map(Filter::saved_filters);
+        let own = self.conditions.iter().flat_map(|c| c.saved_filters(use_));
+        let nested = self.any.iter().flat_map(|f| f.named(use_));
         for name in own.chain(nested) {
             if !names.contains(&name) {
                 names.push(name);

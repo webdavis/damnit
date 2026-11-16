@@ -5,8 +5,12 @@ use dam_application::ConfigError;
 use super::edit_text::{ByHandClause, ByHandText, cannot_edit, named, would_break};
 use super::misread_text::{MisreadText, PlaceText};
 use super::setting_text::setting_reason;
+use filter::filter_text;
+use hook_moved::hook_moved;
 use project::project_text;
 
+mod filter;
+mod hook_moved;
 mod project;
 
 pub(crate) fn config_text(error: &ConfigError) -> String {
@@ -75,6 +79,9 @@ impl fmt::Display for ConfigReason<'_> {
             | ConfigError::NotAPath { .. }
             | ConfigError::NeedsANewerDam { .. }
             | ConfigError::ProjectRule { .. } => project_text(f, self.0),
+            ConfigError::QueryText { .. }
+            | ConfigError::FilterTable { .. }
+            | ConfigError::FilterReachesItself { .. } => filter_text(f, self.0),
             ConfigError::BadRemoteName(why) => write!(f, "{why}"),
             ConfigError::BadCategories(why) => write!(f, "category: {why:?}"),
             ConfigError::UndeclaredRemote { remote, config } => write!(
@@ -122,25 +129,6 @@ impl fmt::Display for ConfigReason<'_> {
             other => setting_reason(f, other),
         }
     }
-}
-
-fn hook_moved(f: &mut fmt::Formatter<'_>, config: &str, events: &[String]) -> fmt::Result {
-    let moves = events
-        .iter()
-        .map(|event| format!("hook.{event} moves to hooks/{event}.lua"))
-        .collect::<Vec<_>>();
-    match moves.is_empty() {
-        true => write!(
-            f,
-            "{config}: the hook table is gone; each hook moves to hooks/<event>.lua"
-        ),
-        false => write!(f, "{config}: {}", moves.join(", ")),
-    }?;
-    write!(
-        f,
-        "; put each hook's function or table after return in its own file beside {config}, \
-         remove the hook table, then run dam config validate"
-    )
 }
 
 #[cfg(test)]

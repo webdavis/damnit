@@ -1,6 +1,9 @@
 use std::collections::BTreeMap;
 
 use dam_application::Project;
+use serde_json::Value;
+
+use crate::view::{flags_of, table_json};
 use serde::Serialize;
 
 mod hooks;
@@ -12,8 +15,12 @@ pub(super) struct ProjectEntry {
     minimum_dam: Option<String>,
     new_task: NewTaskEntry,
     required: Vec<&'static str>,
-    ls: Option<String>,
-    filter: BTreeMap<String, FilterEntry>,
+    list: Option<Value>,
+    #[serde(skip)]
+    list_shown: Option<String>,
+    filter: BTreeMap<String, Value>,
+    #[serde(skip)]
+    filter_shown: BTreeMap<String, String>,
     category: BTreeMap<String, CategoryEntry>,
     sections: Vec<String>,
     branch_label: bool,
@@ -39,11 +46,6 @@ struct NewTaskEntry {
     deadline: Option<String>,
 }
 
-#[derive(Serialize)]
-struct FilterEntry {
-    query: String,
-}
-
 impl ProjectEntry {
     pub(super) fn of(project: &Project) -> ProjectEntry {
         let settings = &project.settings;
@@ -59,14 +61,17 @@ impl ProjectEntry {
                 deadline: template.deadline.clone(),
             },
             required: settings.required.iter().map(|field| field.name()).collect(),
-            ls: settings.ls.clone(),
+            list: settings.list.as_ref().map(table_json),
+            list_shown: settings.list.as_ref().map(shown),
             filter: settings
                 .filters
                 .iter()
-                .filter_map(|filter| {
-                    let query = filter.rule.query()?.to_string();
-                    Some((filter.name.clone(), FilterEntry { query }))
-                })
+                .map(|filter| (filter.name.clone(), table_json(&filter.table)))
+                .collect(),
+            filter_shown: settings
+                .filters
+                .iter()
+                .map(|filter| (filter.name.clone(), shown(&filter.table)))
                 .collect(),
             category: settings
                 .categories
@@ -110,9 +115,9 @@ impl ProjectEntry {
         rows.push(("new_task.deadline".into(), task.deadline.clone()));
         let required = (!self.required.is_empty()).then(|| self.required.join(", "));
         rows.push(("required".into(), required));
-        rows.push(("ls".into(), self.ls.clone()));
-        for (name, filter) in &self.filter {
-            rows.push((format!("filter.{name}.query"), Some(filter.query.clone())));
+        rows.push(("list".into(), self.list_shown.clone()));
+        for (name, shown) in &self.filter_shown {
+            rows.push((format!("filter.{name}"), Some(shown.clone())));
         }
         for (name, category) in &self.category {
             rows.push((
@@ -133,4 +138,8 @@ impl ProjectEntry {
             .filter_map(|(key, value)| Some((key, format!("{} (from the project)", value?))))
             .collect()
     }
+}
+
+fn shown(table: &dam_domain::FilterTable) -> String {
+    flags_of(table).unwrap_or_else(|| table_json(table).to_string())
 }

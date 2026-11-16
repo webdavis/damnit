@@ -68,10 +68,12 @@ return {
     --effort = { values = { "light", "admin", "deep" }, exclusive = true },
   --},
 
-  -- A saved filter runs by name in place of a query. It holds query text, a
-  -- match function that returns true to keep an object, or both.
+  -- A saved filter runs by name with dam list --filter NAME. Each key is a dam list flag and
+  -- its value the text you would type after it; a list repeats the flag, and any holds tables
+  -- of which at least one must hold. A match function that returns true to keep an object
+  -- narrows what the fields list. today lists tasks not done that are due today or before.
   --filter = {
-    --today = { query = "due:today | overdue" },
-    --undated = { match = function(task, dam) return task.kind == "task" and task.task.due == nil end },
+    --today = { due = "..today" },
+    --undated = { kind = "task", due = "none", match = function(task, dam) return task.task.deadline == nil end },
   --},
 }

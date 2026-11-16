@@ -13,7 +13,7 @@ use hook_samples::hook_samples;
 use item_samples::item_samples;
 use parent_samples::parent_samples;
 
-const HAND_COUNTED_RULES: usize = 58;
+const HAND_COUNTED_RULES: usize = 59;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -75,6 +75,7 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::NoSuchFilter(_) => 55,
         Refusal::CountMismatch { .. } => 56,
         Refusal::Item(ItemRefusal::InASet(_)) => 57,
+        Refusal::FilterReachesItself(_) => 58,
     }
 }
 

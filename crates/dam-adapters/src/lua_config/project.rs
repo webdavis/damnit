@@ -33,7 +33,7 @@ pub(in crate::lua_config) const PROJECT_SETTINGS: [&str; 10] = [
     "minimum_dam",
     "new_task",
     "required",
-    "ls",
+    "list",
     "filter",
     "category",
     "sections",
@@ -113,18 +113,19 @@ pub(in crate::lua_config) fn read_project_text(
             file: file.to_path_buf(),
         });
     }
+    let categories = categories::categories(file, &root)?;
+    let list = listing::listing(file, &root, &categories)?;
     root.only(&PROJECT_SETTINGS)?;
     let path = root.string("path")?.ok_or_else(|| root.missing("path"))?;
     let path = dam_domain::Path::parse(&path).map_err(|_| ConfigError::NotAPath {
         file: file.to_path_buf(),
     })?;
-    let categories = categories::categories(file, &root)?;
     Ok(ProjectSettings {
         path: path.as_str().to_string(),
         minimum_dam,
         new_task: new_task::new_task(file, &root)?,
         required: required::required(file, &root)?,
-        ls: listing::listing(file, &root, &categories)?,
+        list,
         filters: filters::filters(file, &root, &categories)?,
         categories,
         sections: sections::sections(file, &root)?,

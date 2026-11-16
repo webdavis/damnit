@@ -2,8 +2,9 @@
   "filters": [
     {
       "name": "today",
-      "kind": "query",
-      "query": "due:today | overdue"
+      "table": {
+        "due": "..today"
+      }
     }
   ]
 }

@@ -27,12 +27,6 @@ pub(crate) fn run_list(ctx: &Context, args: ListArgs) -> Result<Report, CliError
 }
 
 fn listed(ctx: &Context, args: &ListArgs) -> Result<Vec<Object>, CliError> {
-    if let Some(query) = &args.project_default {
-        if let Some(refused) = order_beside_default::refused(&args.order) {
-            return Err(refused);
-        }
-        return Ok(ctx.dam().list_within(Some(query), &args.place)?);
-    }
     let asked = Asked {
         verb: "dam list".into(),
         typed: &args.selection.typed,
@@ -48,8 +42,6 @@ fn listed(ctx: &Context, args: &ListArgs) -> Result<Vec<Object>, CliError> {
         .list_selected(&filter, &order, &args.place, &args.project_filters)
         .map_err(|e| asked.refused(e))
 }
-
-mod order_beside_default;
 
 #[cfg(test)]
 mod order_tests;

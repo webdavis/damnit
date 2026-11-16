@@ -59,23 +59,12 @@ fn a_label_in_two_project_categories_is_refused_without_quoting_it() {
 }
 
 #[test]
-fn a_query_may_name_the_projects_own_categories() {
+fn a_table_may_name_the_projects_own_categories() {
     let folder = ProjectFolder::with(
-        "return { path = 'a/', ls = 'area:bug', filter = { bugs = { query = 'area:bug' } }, \
+        "return { path = 'a/', list = { category = 'area=bug' }, \
+         filter = { bugs = { category = 'area=bug' } }, \
          category = { area = { values = { 'bug' } } } }",
     );
-    assert_eq!(folder.read().unwrap().ls.as_deref(), Some("area:bug"));
-}
-
-#[test]
-fn a_query_naming_a_category_the_project_lacks_is_refused() {
-    let folder = ProjectFolder::with("return { path = 'a/', ls = 'area:bug' }");
-    assert!(matches!(
-        folder.read(),
-        Err(ConfigError::ProjectRule {
-            key: "ls",
-            fault: ProjectRuleFault::NotAQuery,
-            ..
-        })
-    ));
+    let list = folder.read().unwrap().list.unwrap();
+    assert_eq!(list.fields["category"].texts(), ["area=bug"]);
 }

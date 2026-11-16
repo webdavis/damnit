@@ -18,6 +18,8 @@ mod saved_name;
 mod sort;
 mod stretch;
 mod table;
+mod table_labels;
+mod table_saved;
 mod table_under;
 mod values;
 mod want;

@@ -14,31 +14,31 @@ fn with_config(config_lua: &str) -> Sandbox {
 fn a_name_holding_a_dot_is_found_by_its_whole_name() {
     let _guard = support::guard("a_name_holding_a_dot_is_found_by_its_whole_name");
     let sb = with_config(
-        "return { filter = { team = { query = 'p2' }, ['team.a'] = { query = 'p1' } } }\n",
+        "return { filter = { team = { labels = 'p2' }, ['team.a'] = { labels = 'p1' } } }\n",
     );
     let got = |key: &str| sb.dam(&["config", "get", key]).1;
-    assert_eq!(got("filter.team.a"), "  filter.team.a.query  p1\n");
-    assert_eq!(got("filter.team.a.query"), "  filter.team.a.query  p1\n");
-    assert_eq!(got("filter.team.query"), "  filter.team.query  p2\n");
+    assert_eq!(got("filter.team.a"), "  filter.team.a.labels  p1\n");
+    assert_eq!(got("filter.team.a.labels"), "  filter.team.a.labels  p1\n");
+    assert_eq!(got("filter.team.labels"), "  filter.team.labels  p2\n");
 }
 
 #[test]
 fn a_key_read_two_ways_is_refused_with_both_readings() {
     let _guard = support::guard("a_key_read_two_ways_is_refused_with_both_readings");
     let sb = with_config(
-        "return { filter = { team = { query = 'p2' }, ['team.query'] = { query = 'p1' } } }\n",
+        "return { filter = { team = { labels = 'p2' }, ['team.labels'] = { labels = 'p1' } } }\n",
     );
-    let out = sb.output(&["config", "get", "filter.team.query"]);
+    let out = sb.output(&["config", "get", "filter.team.labels"]);
     assert_eq!(out.status.code(), Some(2), "{out:?}");
     assert!(out.stdout.is_empty());
     assert_eq!(
         String::from_utf8(out.stderr).unwrap(),
-        "dam: filter.team.query names two settings, filter / team / query and \
-filter / team.query; run dam config get filter to see both\n"
+        "dam: filter.team.labels names two settings, filter / team / labels and \
+filter / team.labels; run dam config get filter to see both\n"
     );
-    let (ok, out, err) = sb.dam(&["config", "get", "filter.team.query.query"]);
+    let (ok, out, err) = sb.dam(&["config", "get", "filter.team.labels.labels"]);
     assert!(ok, "{err}");
-    assert_eq!(out, "  filter.team.query.query  p1\n");
+    assert_eq!(out, "  filter.team.labels.labels  p1\n");
 }
 
 #[test]

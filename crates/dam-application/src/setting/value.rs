@@ -1,3 +1,5 @@
+use dam_domain::FilterTable;
+
 use super::key::{SettingKey, SettingKind};
 use crate::{ConfiguredDuration, RemoteSync};
 
@@ -7,6 +9,7 @@ pub enum SettingValue {
     Flag(bool),
     List(Vec<String>),
     Count(usize),
+    Table(FilterTable),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -52,6 +55,19 @@ impl SettingValue {
             SettingValue::Flag(flag) => flag.to_string(),
             SettingValue::List(items) => items.join(", "),
             SettingValue::Count(count) => count.to_string(),
+            SettingValue::Table(table) => table_text(table),
         }
     }
+}
+
+fn table_text(table: &FilterTable) -> String {
+    let fields = table
+        .fields
+        .iter()
+        .map(|(key, value)| format!("{key} = {}", value.texts().join(", ")));
+    let any = table
+        .any
+        .iter()
+        .map(|t| format!("any {{ {} }}", table_text(t)));
+    fields.chain(any).collect::<Vec<_>>().join("; ")
 }

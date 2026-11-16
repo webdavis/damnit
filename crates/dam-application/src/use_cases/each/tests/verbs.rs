@@ -13,7 +13,12 @@ fn done_completes_every_object_in_the_set() {
     let s = work_and_home();
     let out = s
         .dam()
-        .complete_each(&query("path:work/"), &|_| Force::No, &untracked, run())
+        .complete_each(
+            &picked(&[("path", "work/")]),
+            &|_| Force::No,
+            &untracked,
+            run(),
+        )
         .unwrap();
     assert_eq!(out.changes.len(), 2);
     for byte in [1, 2] {
@@ -70,7 +75,10 @@ fn mv_into_a_member_of_the_set_changes_nothing() {
 #[test]
 fn rm_removes_every_object_in_the_set() {
     let s = work_and_home();
-    let out = s.dam().remove_each(&query("path:work/"), run()).unwrap();
+    let out = s
+        .dam()
+        .remove_each(&picked(&[("path", "work/")]), run())
+        .unwrap();
     assert_eq!(out.changes.len(), 2);
     assert!(s.store.get(&oid(1)).unwrap().is_none());
     assert!(s.store.get(&oid(2)).unwrap().is_none());

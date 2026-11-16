@@ -244,11 +244,48 @@ dam category migrate: about = Rename labels on every task and event that carries
 dam category migrate map: help = Rename the label OLD to NEW. Repeatable
 dam category migrate preview: help = Show the changes and write nothing
 dam category migrate expect: help = Refuse, changing nothing, unless exactly N objects carry an old label
-dam category migrate update_config: help = Also rewrite each category's values and saved filter's query in config.lua; dam cannot see inside a match function, so that filter is left to edit by hand
+dam category migrate update_config: help = Also rewrite each category's values and saved filter in config.lua; dam cannot see inside a match function, so that filter is left to edit by hand
 dam filter: about = List, create and remove the saved filters config.lua declares
-dam filter list: about = List saved filters with their kinds and queries
+dam filter list: about = List saved filters with the flags that select what each one lists
 dam filter create: about = Save a filter in config.lua, or in .dam.lua inside a project
-dam filter create query: help = The query the filter runs, such as due:today
+dam filter create: after_help = The filter is saved as the table of the flags typed; dam list --filter NAME lists what it selects.
+
+Examples:
+  dam filter create today --due ..today
+  dam filter create review --labels bug --labels not:waiting
+  dam filter create hot --path work/ --any labels=urgent --any due=..today
+dam filter create kind: help = One of task, event, any; a,b for either
+dam filter create subject: help = Holds this text, ignoring case
+dam filter create body: help = Holds this text, ignoring case; none for empty
+dam filter create path: help = At or under this folder; a/,b/ for either
+dam filter create labels: help = Exactly this value; a,b for either; none for empty
+dam filter create category: help = A label group, or GROUP=LABEL; GROUP=a,b for either; none for empty
+dam filter create parent: help = This id, a list of ids, or in:FILTER; none for empty
+dam filter create depends: help = This id, a list of ids, or in:FILTER; none for empty
+dam filter create reminders: help = A length or a span: 30m, 30m..2h, ..5m; none for empty
+dam filter create filter: help = Listed by this saved filter; a,b for either
+dam filter create author: help = Exactly this value; a,b for either
+dam filter create done: help = true, false or any; the bare flag means true
+dam filter create overdue: help = true, false or any; the bare flag means true
+dam filter create blocked: help = true, false or any; the bare flag means true
+dam filter create priority: help = A number from 1 to 4, a list 1,2 or a span ..2
+dam filter create due: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty
+dam filter create deadline: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty
+dam filter create focus.day: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty
+dam filter create completed_at: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty
+dam filter create estimate: help = A length or a span: 30m, 30m..2h, ..5m; none for empty
+dam filter create attached: help = This id, a list of ids, or in:FILTER; none for empty
+dam filter create start: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu
+dam filter create end: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu
+dam filter create location: help = Holds this text, ignoring case; none for empty
+dam filter create status: help = One of confirmed, tentative, cancelled; a,b for either
+dam filter create transparency: help = One of busy, free; a,b for either
+dam filter create visibility: help = One of default, public, private, confidential; a,b for either
+dam filter create event_type: help = One of default, focus_time, out_of_office, working_location, birthday; a,b for either
+dam filter create response: help = One of needs_action, accepted, declined, tentative; a,b for either; none for empty
+dam filter create organizer.email: help = Exactly this value; a,b for either; none for empty
+dam filter create attendees.email: help = Exactly this value; a,b for either; none for empty
+dam filter create any: help = Hold at least one of the --any conditions, as well as every other flag
 dam filter create global: help = Write config.lua inside a project, not .dam.lua
 dam filter remove: about = Remove a saved filter from config.lua, or from .dam.lua inside a project
 dam filter remove global: help = Write config.lua inside a project, not .dam.lua

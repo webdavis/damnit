@@ -15,8 +15,8 @@ mod use_cases;
 
 pub use access::{Access, Detailed, Holder, Owner, TokenRefusal, authenticate};
 pub use config::{
-    Config, ConfiguredDuration, CredentialSpec, FilterConfig, FilterRule, HookConfig, HookEvent,
-    HookFile, HookSetting, OnFailure, PulledChanges, PulledHook, RemoteConfig, RemoteSync,
+    Config, ConfiguredDuration, CredentialSpec, FilterConfig, HookConfig, HookEvent, HookFile,
+    HookSetting, OnFailure, PulledChanges, PulledHook, RemoteConfig, RemoteSync,
     STARTED_BY_HOOK_VARIABLE,
 };
 pub use credentials::resolve_credentials;

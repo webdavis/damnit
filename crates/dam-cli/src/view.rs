@@ -1,3 +1,4 @@
+mod filter_table;
 mod objects;
 mod serialize;
 
@@ -9,6 +10,7 @@ use crate::output::Report;
 use crate::paint::Tint;
 use crate::style::Paint;
 
+pub(crate) use filter_table::{flags_of, table_json};
 pub(crate) use objects::{ObjectList, ObjectRow};
 pub(crate) use serialize::{display, displays, document, optional_display, optional_wire, wire};
 

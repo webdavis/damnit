@@ -15,7 +15,7 @@ use crate::tokens::Tokens;
 
 pub use credential::CredentialSpec;
 pub use duration::ConfiguredDuration;
-pub use filter::{FilterConfig, FilterRule};
+pub use filter::FilterConfig;
 pub use hook::{
     HookConfig, HookEvent, OnFailure, PulledChanges, PulledHook, STARTED_BY_HOOK_VARIABLE,
 };

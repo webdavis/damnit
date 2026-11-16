@@ -32,7 +32,7 @@ Settings ── what dam is using
   remote.todoist.credential.api_token  hidden
   category.effort.values               light, deep
   category.effort.exclusive            true
-  filter.today.query                   due:today | overdue
+  filter.today.due                     ..today
   token.tool.grant                     task:read paths work/
   token.tool.expires                   not set
   token.tool.not_before                not set

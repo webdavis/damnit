@@ -53,6 +53,10 @@ impl Context for Facts<'_> {
         self.open.contains(dependency)
     }
 
+    fn selects(&self, filter: &str, oid: &Oid) -> bool {
+        self.saved.selects(filter, oid)
+    }
+
     fn lists(&self, filter: &str, oid: &Oid) -> bool {
         self.saved.lists(filter, oid)
     }

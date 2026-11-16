@@ -27,7 +27,7 @@ fn the_projects_listing_gives_way_to_a_selection_flag_and_not_to_an_output_flag(
     std::fs::create_dir_all(&app).unwrap();
     std::fs::write(
         app.join(".dam.lua"),
-        "return { path = 'app/', ls = 'p1' }\n",
+        "return { path = 'app/', list = { priority = 1 } }\n",
     )
     .unwrap();
     sb.new_object(&["urgent", "--path", "app/", "-p", "1"]);

@@ -125,6 +125,7 @@ fn the_answer_matches_its_schema() {
         include_str!("../../../../../docs/schemas/changes.schema.json"),
         include_str!("../../../../../docs/schemas/status.schema.json"),
         include_str!("../../../../../docs/schemas/object.schema.json"),
+        include_str!("../../../../../docs/schemas/list.request.schema.json"),
     ] {
         let schema: serde_json::Value = serde_json::from_str(text).unwrap();
         let id = schema["$id"].as_str().unwrap().to_string();

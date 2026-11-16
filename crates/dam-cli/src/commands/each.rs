@@ -38,9 +38,12 @@ pub(crate) fn set_of(
 
 fn selector(ctx: &Context, oids: &[String], set: &SetArgs) -> Result<Selector, CliError> {
     let oids = set.piped.as_ref().map_or(oids, |piped| &piped.ids);
-    Ok(match (&set.projects_filter, &set.filter) {
-        (Some(query), _) => Selector::Query(query.clone(), set.place.clone()),
-        (_, Some(filter)) => Selector::Filter(filter.clone(), set.place.clone()),
+    Ok(match &set.filter {
+        Some(filter) => Selector::Filter(
+            filter.clone(),
+            set.place.clone(),
+            set.project_filters.clone(),
+        ),
         _ if oids.is_empty() => {
             return Err(CliError::Usage(
                 "name the objects: give oids, - to read them from dam list, or --filter NAME"

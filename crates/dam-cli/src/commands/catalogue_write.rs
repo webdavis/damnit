@@ -66,6 +66,8 @@ mod category_answer_tests;
 #[cfg(test)]
 mod category_tests;
 #[cfg(test)]
+mod filter_name_tests;
+#[cfg(test)]
 mod filter_tests;
 #[cfg(test)]
 mod migrate_refusal_tests;

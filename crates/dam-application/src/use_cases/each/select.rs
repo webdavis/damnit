@@ -1,7 +1,7 @@
 use dam_domain::Oid;
 
 use super::Selector;
-use crate::errors::{Refusal, UseCaseError};
+use crate::errors::UseCaseError;
 use crate::service::Dam;
 use crate::use_cases::load::no_such_object;
 
@@ -9,14 +9,7 @@ impl Dam<'_> {
     pub fn select(&self, selector: &Selector) -> Result<Vec<Oid>, UseCaseError> {
         let listed = match selector {
             Selector::Oids(oids) => return self.seen_oids(oids),
-            Selector::Query(text, place) => self.list_matching(Some(text), None, place)?,
-            Selector::Filter(name, place) => {
-                let filter = self
-                    .config
-                    .filter(name)
-                    .ok_or_else(|| Refusal::NoSuchFilter(name.clone()))?;
-                self.list_matching(filter.rule.query(), Some(filter), place)?
-            }
+            Selector::Filter(name, place, local) => self.listed_by_name(name, place, local)?,
         };
         Ok(listed.into_iter().map(|o| o.oid().clone()).collect())
     }

@@ -12,7 +12,7 @@
     "project": {
       "description": "Inside a project, its .dam.lua and every setting it holds, all from the project; null outside one or when the file does not load.",
       "type": ["object", "null"],
-      "required": ["file", "path", "minimum_dam", "new_task", "required", "ls", "filter", "category", "sections", "branch_label", "hooks", "hooks_changed", "hooks_from", "done_children"],
+      "required": ["file", "path", "minimum_dam", "new_task", "required", "list", "filter", "category", "sections", "branch_label", "hooks", "hooks_changed", "hooks_from", "done_children"],
       "additionalProperties": false,
       "properties": {
         "file": { "type": "string" },
@@ -33,15 +33,10 @@
           "type": "array",
           "items": { "enum": ["due", "labels", "priority", "body", "deadline"] }
         },
-        "ls": { "type": ["string", "null"] },
+        "list": { "anyOf": [{ "type": "null" }, { "$ref": "list.request.schema.json#/$defs/group" }] },
         "filter": {
           "type": "object",
-          "additionalProperties": {
-            "type": "object",
-            "required": ["query"],
-            "additionalProperties": false,
-            "properties": { "query": { "type": "string" } }
-          }
+          "additionalProperties": { "$ref": "list.request.schema.json#/$defs/group" }
         },
         "category": {
           "type": "object",

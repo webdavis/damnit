@@ -114,11 +114,11 @@ fn inside_a_project_the_list_shows_every_project_setting_marked_as_the_projects(
                 ..Default::default()
             },
             required: vec![dam_application::RequiredField::Due],
-            ls: Some("open".into()),
-            filters: vec![dam_application::FilterConfig {
-                name: "open".into(),
-                rule: dam_application::FilterRule::Query("label:cli".into()),
-            }],
+            list: Some(dam_application::testing::fields(&[("filter", "open")])),
+            filters: vec![dam_application::testing::saved(
+                "open",
+                &[("labels", "cli")],
+            )],
             categories: dam_domain::Categories::new(vec![dam_domain::Category {
                 name: "area".into(),
                 values: vec!["ui".into(), "db".into()],
@@ -138,8 +138,8 @@ fn inside_a_project_the_list_shows_every_project_setting_marked_as_the_projects(
     assert_eq!(project["new_task"]["due"], "friday");
     assert!(project["new_task"]["deadline"].is_null());
     assert_eq!(project["required"][0], "due");
-    assert_eq!(project["ls"], "open");
-    assert_eq!(project["filter"]["open"]["query"], "label:cli");
+    assert_eq!(project["list"]["filter"], "open");
+    assert_eq!(project["filter"]["open"]["labels"], "cli");
     assert_eq!(project["category"]["area"]["values"][1], "db");
     assert_eq!(project["category"]["area"]["exclusive"], true);
     assert_eq!(project["sections"][1], "features");
@@ -151,8 +151,8 @@ fn inside_a_project_the_list_shows_every_project_setting_marked_as_the_projects(
         "cli (from the project)",
         "friday (from the project)",
         "due (from the project)",
-        "open (from the project)",
-        "label:cli (from the project)",
+        "--labels cli (from the project)",
+        "--filter open (from the project)",
         "ui, db (from the project)",
         "true (from the project)",
         "bugs, features (from the project)",

@@ -12,7 +12,10 @@ fn a_key_splits_into_its_group_its_name_and_its_field() {
         path("remote.todoist.deadline"),
         ["remote", "todoist", "deadline"]
     );
-    assert_eq!(path("filter.a.b.query"), ["filter", "a.b", "query"]);
+    assert_eq!(path("filter.a.b.labels"), ["filter", "a.b", "labels"]);
+    assert_eq!(path("list.due"), ["list", "due"]);
+    assert!(SettingKey::parse("filter.today.query").is_err());
+    assert!(SettingKey::parse("ls").is_err());
 }
 
 #[test]
@@ -143,7 +146,8 @@ fn the_keys_of_a_project_file_are_settings_of_their_type() {
     for key in [
         "path",
         "minimum_dam",
-        "ls",
+        "list.labels",
+        "filter.mine.due",
         "new_task.due",
         "new_task.deadline",
         "done_children",

@@ -24,7 +24,7 @@ impl Dam<'_> {
         zone: &TimeZone,
     ) -> Result<Vec<DueReminder>, UseCaseError> {
         let mut due: Vec<DueReminder> = self
-            .list_within(None, place)?
+            .list_within(place)?
             .iter()
             .filter_map(|o| Some((o, anchor(o, zone)?)))
             .flat_map(|(o, anchor)| {

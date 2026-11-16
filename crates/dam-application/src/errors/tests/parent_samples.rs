@@ -22,6 +22,7 @@ pub(super) fn parent_samples() -> Vec<Refusal> {
             retry: Retry::New("buy milk".into()),
         },
         Refusal::NoSuchFilter("today".into()),
+        Refusal::FilterReachesItself(vec!["a".into(), "b".into(), "a".into()]),
         Refusal::CountMismatch {
             expected: 12,
             count: 3,

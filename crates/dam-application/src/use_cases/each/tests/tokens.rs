@@ -23,7 +23,7 @@ fn a_token_that_sees_nothing_selects_nothing_and_learns_no_count() {
         ..s.dam()
     };
     let out = dam
-        .edit_each(&query("kind:task"), retitled("x"), run())
+        .edit_each(&picked(&[("kind", "task")]), retitled("x"), run())
         .unwrap();
     assert!(out.oids.is_empty());
     assert_eq!(
@@ -43,7 +43,7 @@ fn a_token_that_sees_part_selects_only_that_part_and_waits_one_item_per_object()
         ..s.dam()
     };
     let out = dam
-        .edit_each(&query("kind:task"), retitled("x"), run())
+        .edit_each(&picked(&[("kind", "task")]), retitled("x"), run())
         .unwrap();
     assert_eq!(out.oids.len(), 2);
     assert!(out.changes.iter().all(|c| c.sent.is_some()));
@@ -59,7 +59,9 @@ fn a_token_that_sees_all_sends_an_item_for_each() {
         access: &token,
         ..s.dam()
     };
-    let out = dam.remove_each(&query("kind:task"), run()).unwrap();
+    let out = dam
+        .remove_each(&picked(&[("kind", "task")]), run())
+        .unwrap();
     assert_eq!(out.oids.len(), 3);
     assert_eq!(s.store.items().unwrap().len(), 3);
 }
@@ -77,7 +79,7 @@ fn a_token_preview_sends_no_item() {
         ..run()
     };
     let out = dam
-        .edit_each(&query("kind:task"), retitled("x"), previewing)
+        .edit_each(&picked(&[("kind", "task")]), retitled("x"), previewing)
         .unwrap();
     assert_eq!(out.changes.len(), 2);
     assert!(s.store.items().unwrap().is_empty());

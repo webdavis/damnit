@@ -32,8 +32,14 @@ fn water_the_plants(completion: Completion, sync: &str) -> PullOutcome {
 }
 
 fn completed_today(s: &Scenario) -> Vec<String> {
+    let filter = crate::use_cases::selected::tests::filter(&[("completed_at", "today")]);
     s.dam()
-        .list(Some("completed:today"))
+        .list_selected(
+            &filter,
+            &dam_domain::Order::default(),
+            &dam_domain::Path::root(),
+            &[],
+        )
         .unwrap()
         .into_iter()
         .map(|o| o.base().subject.clone())

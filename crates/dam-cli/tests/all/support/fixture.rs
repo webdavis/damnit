@@ -27,7 +27,7 @@ pub fn seeded() -> Sandbox {
     let sb = Sandbox::new();
     sb.add_category("effort", &["light", "deep"], true);
     sb.add_category("context", &["home", "errand"], false);
-    sb.add_filter("today", "due:today | overdue");
+    sb.add_filter_written_as("today", "{ due = \"..today\" }");
     let store = SqliteStore::open(&sb.dir.path().join("dam.db")).unwrap();
     for object in mixed_rows() {
         store.put(&object).unwrap();

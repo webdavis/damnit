@@ -42,7 +42,8 @@ fn one(ty: FieldType, text: &str) -> Option<Want> {
         FieldType::TextSet => Some(Want::Is(text.into())),
         FieldType::Path => Path::parse(text).ok().map(Want::Under),
         FieldType::Reference => match text.strip_prefix("in:") {
-            Some(filter) => one(FieldType::FilterName, filter),
+            Some("") => None,
+            Some(filter) => Some(Want::ListedBy(filter.into())),
             None => Oid::parse(text).ok().map(Want::Id),
         },
         FieldType::YesNo => match text {
@@ -53,7 +54,7 @@ fn one(ty: FieldType, text: &str) -> Option<Want> {
         },
         FieldType::Date => DateTest::read(text).map(Want::Date),
         FieldType::Category => category(text)?.pop(),
-        FieldType::FilterName => Some(Want::ListedBy(text.into())),
+        FieldType::FilterName => Some(Want::Selects(text.into())),
     }
 }
 

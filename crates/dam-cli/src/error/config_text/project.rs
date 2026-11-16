@@ -42,15 +42,11 @@ fn rule_text(
         ),
         ProjectRuleFault::FilterIsAFunction => write!(
             f,
-            "a filter in {file} holds a function; a project's filter is a query"
+            "a filter in {file} holds a function; a project's filter is a table of fields, such as filter.mine = {{ labels = \"bug\" }}"
         ),
         ProjectRuleFault::LabelInTwoCategories => write!(
             f,
             "a label in {file} belongs to two of its categories; keep each label in one category"
-        ),
-        ProjectRuleFault::NotAQuery => write!(
-            f,
-            "{key} in {file} is not a query dam can read; correct it, then run dam doctor config"
         ),
     }
 }

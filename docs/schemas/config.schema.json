@@ -65,14 +65,13 @@
       }
     },
     "filter": {
-      "description": "A saved filter: query text, a match function, or both, the query narrowing first.",
+      "description": "A saved filter: each key is a dam list flag and its value the text typed after it, as list.request.schema.json reads, with an optional match function that narrows what the fields list.",
       "type": "object",
-      "anyOf": [{ "required": ["query"] }, { "required": ["match"] }],
-      "additionalProperties": false,
       "properties": {
-        "query": { "type": "string" },
+        "any": { "type": "array", "items": { "$ref": "list.request.schema.json#/$defs/group" } },
         "match": { "description": "A Lua function(task, dam) that returns true to keep the object; docs/lua.md describes it." }
-      }
+      },
+      "additionalProperties": { "$ref": "list.request.schema.json#/$defs/texts" }
     },
     "hook": {
       "description": "A Lua function(task, dam), or a table holding it as run; docs/lua.md describes it.",

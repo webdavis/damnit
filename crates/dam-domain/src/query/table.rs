@@ -101,3 +101,6 @@ fn add_defaults(table: &mut FilterTable) {
             .insert("done".into(), TableValue::One("any".into()));
     }
 }
+
+#[cfg(test)]
+mod tests;

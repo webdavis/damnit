@@ -15,6 +15,7 @@ mod filter_fields;
 mod filter_history;
 mod filter_limits;
 mod filter_support;
+mod filter_table_written;
 mod filter_tables;
 mod fixture_fields;
 mod hook_files;

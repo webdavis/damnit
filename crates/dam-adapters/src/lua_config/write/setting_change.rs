@@ -90,5 +90,6 @@ pub(super) fn lua_literal(value: &SettingValue) -> String {
         SettingValue::Flag(flag) => flag.to_string(),
         SettingValue::Count(count) => count.to_string(),
         SettingValue::List(items) => list_literal(items),
+        SettingValue::Table(table) => super::table_literal(table),
     }
 }

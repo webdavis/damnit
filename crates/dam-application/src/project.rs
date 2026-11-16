@@ -3,7 +3,7 @@ mod hook_fingerprint;
 
 use std::path::PathBuf;
 
-use dam_domain::{Categories, ChildDisposition};
+use dam_domain::{Categories, ChildDisposition, FilterTable};
 
 use crate::{FilterConfig, TaskTemplate};
 
@@ -18,7 +18,7 @@ pub struct ProjectSettings {
     pub minimum_dam: Option<String>,
     pub new_task: TaskTemplate,
     pub required: Vec<RequiredField>,
-    pub ls: Option<String>,
+    pub list: Option<FilterTable>,
     pub filters: Vec<FilterConfig>,
     pub categories: Categories,
     pub sections: Vec<String>,
@@ -39,24 +39,6 @@ pub enum RequiredField {
 pub struct Project {
     pub folder: PathBuf,
     pub settings: ProjectSettings,
-}
-
-impl ProjectSettings {
-    pub fn listed(&self, query: Option<String>) -> Option<String> {
-        self.filtered(query.or_else(|| self.ls.clone()))
-    }
-
-    pub fn filtered(&self, query: Option<String>) -> Option<String> {
-        let filter = query.as_deref().and_then(|name| self.filter_query(name));
-        filter.map(String::from).or(query)
-    }
-
-    pub fn filter_query(&self, name: &str) -> Option<&str> {
-        self.filters
-            .iter()
-            .find(|filter| filter.name == name)
-            .and_then(|filter| filter.rule.query())
-    }
 }
 
 impl RequiredField {

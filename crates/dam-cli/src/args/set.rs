@@ -25,7 +25,7 @@ pub(crate) struct SetArgs {
     #[arg(skip)]
     pub(crate) place: Path,
     #[arg(skip)]
-    pub(crate) projects_filter: Option<String>,
+    pub(crate) project_filters: Vec<dam_application::FilterConfig>,
     #[arg(skip)]
     pub(crate) piped: Option<Box<Piped>>,
 }

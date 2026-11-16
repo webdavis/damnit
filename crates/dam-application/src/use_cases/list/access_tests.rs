@@ -25,7 +25,10 @@ fn a_token_lists_only_objects_inside_one_of_its_grants() {
         access: &token,
         ..s.dam()
     };
-    assert_eq!(subjects(&dam.list(None).unwrap()), ["report"]);
+    assert_eq!(
+        subjects(&dam.list_within(&dam_domain::Path::root()).unwrap()),
+        ["report"]
+    );
 }
 
 #[test]
@@ -38,21 +41,10 @@ fn task_read_shows_no_event_and_event_read_shows_no_task() {
             access: token,
             ..s.dam()
         };
-        dam.list(None).unwrap().len()
+        dam.list_within(&dam_domain::Path::root()).unwrap().len()
     };
     assert_eq!(listed(&tasks), 3);
     assert_eq!(listed(&events), 1);
-}
-
-#[test]
-fn a_query_runs_over_the_visible_objects_alone() {
-    let s = work_home_and_an_event();
-    let token = holder(vec![allowed(&[TaskRead], Some(&["home"]))]);
-    let dam = Dam {
-        access: &token,
-        ..s.dam()
-    };
-    assert!(dam.list(Some("path:work/")).unwrap().is_empty());
 }
 
 fn post_held_by_errands() -> Scenario {

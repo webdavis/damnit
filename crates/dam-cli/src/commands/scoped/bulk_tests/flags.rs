@@ -9,7 +9,7 @@ fn a_filter_inside_a_project_picks_only_its_tasks() {
 fn the_projects_filter_wins_over_the_persons_of_the_same_name() {
     let project = || {
         inside_with(ProjectSettings {
-            filters: vec![tasks_filter("path:cli/")],
+            filters: vec![tasks_filter(&[("path", "cli/")])],
             ..settings()
         })
     };
@@ -20,7 +20,7 @@ fn the_projects_filter_wins_over_the_persons_of_the_same_name() {
 fn global_picks_from_every_task_with_the_persons_filter() {
     let project = || {
         inside_with(ProjectSettings {
-            filters: vec![tasks_filter("path:cli/")],
+            filters: vec![tasks_filter(&[("path", "cli/")])],
             ..settings()
         })
     };
@@ -63,7 +63,7 @@ fn a_projects_category_reads_in_the_projects_filter() {
         ctx.store.put(&readme).unwrap();
         let project = inside_with(ProjectSettings {
             categories: stage(),
-            filters: vec![tasks_filter("stage:review")],
+            filters: vec![tasks_filter(&[("category", "stage=review")])],
             ..settings()
         });
         let picked = picked(ctx, verb, &["--filter", "tasks"], project);

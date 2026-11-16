@@ -23,6 +23,7 @@ pub enum Expected {
     TableOfWholeNumbers,
     PriorityOneToFour,
     WholeNumber,
+    FilterValue,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

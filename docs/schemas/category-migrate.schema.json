@@ -37,16 +37,13 @@
         "properties": {
           "key": {
             "type": "string",
-            "description": "The setting, such as category.effort.values, filter.today.query, or filter.today for a filter that runs a match function."
+            "description": "The setting, such as category.effort.values or filter.today."
           },
           "value": {
-            "type": [
-              "string",
-              "array"
+            "anyOf": [
+              { "type": "array", "items": { "type": "string" } },
+              { "$ref": "list.request.schema.json#/$defs/group" }
             ],
-            "items": {
-              "type": "string"
-            },
             "description": "What the setting is, or would be, with each old label replaced."
           },
           "by_hand": {

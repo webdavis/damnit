@@ -1,3 +1,4 @@
+mod edit_kinds;
 mod error;
 mod misread;
 mod project_rule;
@@ -6,7 +7,8 @@ use crate::config::Config;
 use crate::ports::{CredentialSource, FilterFunctions, Hooks, RemoteName};
 use crate::tokens::{NewToken, TokenName};
 
-pub use error::{ByHand, ConfigError, EditFault, EditedTable, Uneditable};
+pub use edit_kinds::{ByHand, EditFault, EditedTable, Uneditable};
+pub use error::ConfigError;
 pub use misread::{Expected, Misread, Place};
 pub use project_rule::ProjectRuleFault;
 

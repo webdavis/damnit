@@ -1,5 +1,5 @@
 use dam_application::{Config, FilterConfig};
-use dam_domain::Category;
+use dam_domain::{Category, FilterTable, TableValue};
 
 use super::hook_settings::hooks;
 use super::match_function::MatchFunction;
@@ -65,16 +65,35 @@ fn category(category: &Category, written: bool) -> (String, Setting) {
 }
 
 fn filter(filter: &FilterConfig) -> (String, Setting) {
-    let mut fields: Vec<_> = filter
-        .rule
-        .query()
-        .map(|q| text("query", q))
-        .into_iter()
-        .collect();
-    if filter.rule.runs_a_function() {
+    let mut fields = table_fields(&filter.table);
+    if filter.runs_a_function {
         fields.push(("match".to_string(), Setting::Function(MatchFunction)));
     }
     named(&filter.name, fields)
+}
+
+pub(super) fn table_fields(table: &FilterTable) -> Vec<(String, Setting)> {
+    let mut fields: Vec<(String, Setting)> = table
+        .fields
+        .iter()
+        .map(|(key, value)| {
+            let value = match value {
+                TableValue::One(text) => Value::Text(text.clone()),
+                TableValue::Many(texts) => Value::List(texts.clone()),
+            };
+            (key.clone(), Setting::set(value))
+        })
+        .collect();
+    if !table.any.is_empty() {
+        let any = table
+            .any
+            .iter()
+            .enumerate()
+            .map(|(at, t)| ((at + 1).to_string(), Setting::part(table_fields(t))))
+            .collect();
+        fields.push(("any".to_string(), Setting::part(any)));
+    }
+    fields
 }
 
 pub(super) fn named(name: &str, fields: Vec<(String, Setting)>) -> (String, Setting) {

@@ -55,6 +55,7 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
         | Refusal::NoSuchToken(_)
         | Refusal::NoSuchSetting(_)
         | Refusal::NoSuchFilter(_)
+        | Refusal::FilterReachesItself(_)
         | Refusal::CountMismatch { .. }
         | Refusal::PulledCommit(_)
         | Refusal::NotInCommit { .. }

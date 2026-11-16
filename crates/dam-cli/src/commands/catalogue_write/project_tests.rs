@@ -56,7 +56,10 @@ impl Machine {
 fn create_filter(global: bool) -> FilterCommand {
     FilterCommand::Create {
         name: "mine".into(),
-        query: "due:today".into(),
+        selection: crate::args::selection::SelectArgs {
+            typed: dam_application::testing::fields(&[("due", "today")]),
+        },
+        order: Default::default(),
         global,
     }
 }

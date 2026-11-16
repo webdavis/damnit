@@ -192,6 +192,12 @@ impl fmt::Display for RefusalText<'_> {
                 f,
                 "no saved filter named {name:?}; dam filter list shows the filters"
             ),
+            Refusal::FilterReachesItself(chain) => write!(
+                f,
+                "filter {} reaches itself ({}); remove one of those filter, in: or on: values",
+                chain[0],
+                chain.join(" -> ")
+            ),
             Refusal::CountMismatch { expected, count } => write!(
                 f,
                 "the set holds {count}, not the {expected} --expect names, so nothing changed; add --preview to see the set"

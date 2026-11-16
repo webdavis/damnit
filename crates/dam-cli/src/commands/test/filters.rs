@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use dam_adapters::{LuaConfigFile, ReadOnly, SqliteStore};
-use dam_application::{ConfigFile, Dam, FilterTrial, Progress, Step, UseCaseError, waited_on};
+use dam_application::{ConfigFile, Dam, FilterTrial, Progress, Step, waited_on};
 
 use crate::commands::check_report::{Check, Outcome, Row};
 use crate::context::Context;
@@ -86,9 +86,6 @@ fn row(dam: &Dam, name: &str, progress: &dyn Progress) -> Row {
             Some(oid) => format!("failed on {} at {}", oid.short(), FailureText(&failure)),
             None => format!("failed at {}", FailureText(&failure)),
         }),
-        Err(error @ UseCaseError::Query(_)) => {
-            Err(format!("the query does not parse: {}", UseCaseText(&error)))
-        }
         Err(error) => Err(UseCaseText(&error).to_string()),
     });
     match tried {

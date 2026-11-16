@@ -1,4 +1,4 @@
-use dam_application::{FilterConfig, FilterRule, ProjectSettings};
+use dam_application::ProjectSettings;
 use dam_domain::{Event, Object, Oid, Path, When};
 
 use super::super::dispatch_in;
@@ -33,10 +33,10 @@ fn holding() -> Context {
 
 fn with_a_work_filter() -> Standing {
     inside(ProjectSettings {
-        filters: vec![FilterConfig {
-            name: "work".into(),
-            rule: FilterRule::Query("label:work".into()),
-        }],
+        filters: vec![dam_application::testing::saved(
+            "work",
+            &[("kind", "any"), ("labels", "work")],
+        )],
         ..ProjectSettings::default()
     })
 }

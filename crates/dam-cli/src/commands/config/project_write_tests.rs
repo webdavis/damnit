@@ -67,7 +67,9 @@ impl Machine {
 #[test]
 fn a_project_key_set_inside_a_project_is_written_into_its_file_and_named() {
     let m = machine();
-    let report = m.run(set("ls", "label:app", false), &m.inside()).unwrap();
+    let report = m
+        .run(set("list.labels", "app", false), &m.inside())
+        .unwrap();
     assert_eq!(report.data["file"], ".dam.lua");
     assert!(report.human.contains(".dam.lua"), "{}", report.human);
     assert!(m.project_text().starts_with("-- the team's rules\n"));
@@ -75,7 +77,8 @@ fn a_project_key_set_inside_a_project_is_written_into_its_file_and_named() {
     let Standing::Inside(project) = m.inside() else {
         panic!("the project file no longer loads")
     };
-    assert_eq!(project.settings.ls.as_deref(), Some("label:app"));
+    let list = project.settings.list.unwrap();
+    assert_eq!(list.fields["labels"].texts(), ["app"]);
     assert_eq!(m.config_text(), None);
 }
 
@@ -83,11 +86,15 @@ fn a_project_key_set_inside_a_project_is_written_into_its_file_and_named() {
 fn global_inside_a_project_writes_config_lua_and_leaves_the_project_file() {
     let m = machine();
     let report = m
-        .run(set("filter.mine.query", "label:app", true), &m.inside())
+        .run(set("filter.mine.labels", "app", true), &m.inside())
         .unwrap();
     assert_eq!(report.data["file"], "config.lua");
     assert_eq!(m.project_text(), PROJECT_TEXT);
-    assert!(m.config_text().unwrap().contains("label:app"));
+    assert!(
+        m.config_text()
+            .unwrap()
+            .contains("mine = { labels = \"app\" }")
+    );
 }
 
 #[test]
@@ -119,12 +126,12 @@ fn outside_a_project_a_setting_goes_to_config_lua_and_a_project_key_is_refused()
         .unwrap();
     assert_eq!(report.data["file"], "config.lua");
     assert_eq!(
-        m.usage(set("ls", "label:app", false), &Standing::Outside),
-        "ls belongs to a project's .dam.lua; run dam config set inside the project's folder"
+        m.usage(set("sections", "docs", false), &Standing::Outside),
+        "sections belongs to a project's .dam.lua; run dam config set inside the project's folder"
     );
     assert_eq!(
-        m.usage(set("ls", "label:app", true), &m.inside()),
-        "ls belongs to a project's .dam.lua; run dam config set inside the project's folder"
+        m.usage(set("sections", "docs", true), &m.inside()),
+        "sections belongs to a project's .dam.lua; run dam config set inside the project's folder"
     );
 }
 
@@ -134,7 +141,7 @@ fn a_project_file_that_does_not_load_is_refused_naming_it_unless_global() {
     let unreadable = Standing::Unreadable(ConfigError::NotAPath {
         file: m.dir.path().join("app/.dam.lua"),
     });
-    let refusal = m.usage(set("ls", "label:app", false), &unreadable);
+    let refusal = m.usage(set("sections", "docs", false), &unreadable);
     assert!(refusal.contains("app/.dam.lua"), "{refusal}");
     assert!(refusal.contains("dam doctor config"), "{refusal}");
     assert!(refusal.contains("--global"), "{refusal}");
@@ -152,8 +159,8 @@ fn unset(key: &str, global: bool) -> ConfigCommand {
 #[test]
 fn unset_inside_a_project_removes_the_key_from_its_file_and_refuses_path() {
     let m = machine();
-    m.run(set("ls", "label:app", false), &m.inside()).unwrap();
-    let report = m.run(unset("ls", false), &m.inside()).unwrap();
+    m.run(set("sections", "docs", false), &m.inside()).unwrap();
+    let report = m.run(unset("sections", false), &m.inside()).unwrap();
     assert_eq!(report.data["file"], ".dam.lua");
     assert_eq!(m.project_text(), PROJECT_TEXT);
     assert_eq!(

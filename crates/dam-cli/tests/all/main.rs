@@ -51,6 +51,7 @@ mod error_prefix;
 mod estimate;
 mod field_names;
 mod filter_functions;
+mod filter_tables;
 mod finished_today;
 mod focus;
 mod golden_human;

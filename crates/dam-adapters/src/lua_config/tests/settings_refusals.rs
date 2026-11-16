@@ -1,4 +1,4 @@
-use dam_application::{ConfigError, Expected, Misread};
+use dam_application::{ConfigError, Expected, Misread, SelectError};
 
 use super::support::{config, in_table, top_of};
 
@@ -74,15 +74,16 @@ fn a_credential_on_a_remote_is_refused_as_belonging_in_secrets_lua() {
 }
 
 #[test]
-fn a_filter_takes_only_a_query() {
-    assert_eq!(
-        config("return { filter = { today = { query = 'x', sort = 'due' } } }").refusal(),
-        Misread::UnknownKey {
-            key: "sort".into(),
-            at: in_table("filter.today", "config.lua"),
-        }
-        .into()
-    );
+fn a_filter_holds_what_to_select_and_never_an_order() {
+    let refusal =
+        config("return { filter = { today = { due = 'today', sort = 'due' } } }").refusal();
+    let ConfigError::FilterTable { error, .. } = refusal else {
+        panic!("sort was read: {refusal:?}");
+    };
+    let SelectError::Value(error) = *error else {
+        panic!("not a value error");
+    };
+    assert_eq!(error.field, "sort");
 }
 
 #[test]
