@@ -77,8 +77,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     let meta = cli.meta.into_iter().collect();
     gate::refuse_any_token_to_an_owner_only_verb(presented_token.is_some(), &cli.command)?;
     let store_path = cli.store.unwrap_or_else(dam_adapters::default_store_path);
-    let run = RunFolders::of_this_run(&config_path)?;
-    let switches = dam_adapters::ProjectHookSwitchFile::beside_the_store(&store_path);
+    let run = RunFolders::of_this_run(&config_path, &store_path)?;
     if let Command::Test(args) = &cli.command {
         let launcher = ProcessLauncher::from_env(interrupt.clone());
         let progress = context::progress_without_a_context(&config_file, asked, format);
@@ -103,14 +102,14 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         return group_help::print(group);
     }
     if let Command::Config(ConfigArgs { command: Some(c) }) = cli.command {
-        let listed = commands::config::run(&config_file, c, &run.standing(), &switches)?;
+        let listed = commands::config::run(&config_file, c, &run.standing(), &run.switches)?;
         return output::print(format, color, &listed);
     }
     if presented_token.is_none() {
         first_run::create_the_owners_config_when_missing(&config_file, &config_path, format);
     }
     let standing = run.standing();
-    let look = ProjectHookLook::of(&standing, &switches);
+    let look = ProjectHookLook::of(&standing, &run.switches);
     let command = match commands::config_files::answer(&config_file, cli.command, &look)? {
         Ok(report) => return output::print(format, color, &report),
         Err(command) => command,
@@ -139,7 +138,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     )?
     .with_templates(templates);
     let ctx = commands::scoped::following(ctx, &command, &standing)?;
-    let ctx = project_hooks::opened(ctx, &standing, &switches, &config_file, &command)?;
+    let ctx = project_hooks::opened(ctx, &standing, &run.switches, &config_file, &command)?;
     let report = match command {
         Command::Init(args) => commands::init::run(&ctx, args, (&run).into())?,
         command => commands::scoped::dispatch_in(&ctx, command, standing)?,
