@@ -110,6 +110,11 @@ function Log:bind(buf)
         self:revert()
       end,
     },
+    unpack(self.app.keys:for_task(buf, "log", function()
+      local commit = self:commit()
+      local change = commit and commit.changes[1]
+      return change and change.oid, self.cwd
+    end)),
   })
   vim.api.nvim_create_autocmd("BufWipeout", {
     group = self.group,
