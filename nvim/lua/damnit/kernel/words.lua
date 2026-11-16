@@ -21,8 +21,18 @@ local M = {}
 ---@field filters damnit.Candidate[]
 ---@field remotes damnit.Candidate[]
 ---@field categories damnit.Category[]
+---@field rows? damnit.Candidate[] the tasks on screen, for flags that take an oid
 
-local VALUES = { labels = "labels", unlabels = "labels", path = "paths", filter = "filters", remote = "remotes" }
+local VALUES = {
+  labels = "labels",
+  unlabels = "labels",
+  path = "paths",
+  filter = "filters",
+  remote = "remotes",
+  parent = "rows",
+  depends = "rows",
+  undepends = "rows",
+}
 
 local function starting(prefix, candidates)
   return vim.tbl_filter(function(candidate)

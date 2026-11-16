@@ -19,14 +19,16 @@ end
 ---@param view string
 ---@param path string
 ---@param objects damnit.Object[]
+---@param marked? integer
 ---@return string[][]
-function M.chunks(view, path, objects)
+function M.chunks(view, path, objects, marked)
   local counts = tally(objects)
   local parts = { { " " .. view, "DamHeader" }, { path }, { counted(counts.task, "task", "tasks") } }
   local optional = {
     { counts.event, counted(counts.event, "event", "events") },
     { counts.overdue, counts.overdue .. " overdue", "DamOverdue" },
     { counts.blocked, counts.blocked .. " blocked", "DamBlocked" },
+    { marked or 0, (marked or 0) .. " marked", "DamMarked" },
   }
   for _, part in ipairs(optional) do
     if part[1] > 0 then

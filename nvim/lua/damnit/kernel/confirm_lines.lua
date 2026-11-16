@@ -44,14 +44,15 @@ function M.rows(rows, summary, removes)
 end
 
 ---@param answer { count: integer, changes: damnit.StatusChange[] }
+---@param verb? string what the changes would do, "would change" when not given
 ---@return string[] lines, damnit.Mark[] marks
-function M.changes(answer)
+function M.changes(answer, verb)
   local removes = false
   local rows = vim.tbl_map(function(change)
     removes = removes or change.op == "delete"
     return { op = change.op, subject = change.subject, detail = table.concat(change.fields, ", ") }
   end, answer.changes)
-  return M.rows(rows, ("%d of %d would change"):format(#answer.changes, answer.count), removes)
+  return M.rows(rows, ("%d of %d %s"):format(#answer.changes, answer.count, verb or "would change"), removes)
 end
 
 ---@param answer { remotes: { remote: string, mutations: table[], held: table[] }[] }

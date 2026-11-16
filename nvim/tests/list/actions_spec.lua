@@ -22,6 +22,19 @@ return {
     same(actions.batch("U", { A }).command, "restore")
   end,
 
+  ["a change key's answer is read with its command's flags, a value of several words kept whole"] = function()
+    local flags_of = function(command)
+      assert(command == "edit", command)
+      return { { name = "--due", value = true, help = "" }, { name = "--labels", value = true, help = "" } }
+    end
+    same(actions.batch("cd", { A }, "--due next fri --labels home", flags_of).flags, {
+      "--due",
+      "next fri",
+      "--labels",
+      "home",
+    })
+  end,
+
   ["a change key's answer is its flags, split as a shell would"] = function()
     same(
       actions.batch("cd", { A }, [[--due "next fri"]]),
@@ -50,6 +63,13 @@ return {
     local prompt = actions.prompt("cs", { subject = [[say "hi" to mom]] })
     same(prompt.prefill, [[--subject "say \"hi\" to mom"]])
     assert(prompt.one, "cs takes more than one row")
+  end,
+
+  ["the echo after a write counts the targets in the key's words"] = function()
+    same(actions.said("x", 3), "dam: 3 done")
+    same(actions.said("X", 1), "dam: 1 reopened")
+    same(actions.said("cd", 2), "dam: 2 changed")
+    same(actions.said("dd", 2), "dam: 2 removed")
   end,
 
   ["every key has a group and a description for g?"] = function()

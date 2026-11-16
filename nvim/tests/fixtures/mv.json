@@ -1,0 +1,15 @@
+{
+  "oid": "<id-1>",
+  "kind": "task",
+  "subject": "pay rent",
+  "body": "",
+  "path": "work/",
+  "labels": [],
+  "depends": [],
+  "reminders": [],
+  "task": {
+    "done": false,
+    "priority": 2,
+    "due": "2026-09-30"
+  }
+}

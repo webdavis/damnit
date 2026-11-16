@@ -55,7 +55,7 @@ function Keys:bind(buf, specs)
     end,
   })
   for _, spec in ipairs(all) do
-    vim.keymap.set("n", spec.lhs, spec.run, { buffer = buf, desc = spec.desc, nowait = true })
+    vim.keymap.set(spec.mode or "n", spec.lhs, spec.run, { buffer = buf, desc = spec.desc, nowait = true })
   end
 end
 

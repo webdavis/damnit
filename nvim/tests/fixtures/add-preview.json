@@ -1,0 +1,65 @@
+{
+  "preview": true,
+  "staged": [
+    {
+      "oid": "2222222222222222222222222222222222222222",
+      "op": "update",
+      "fields": [
+        "priority",
+        "done"
+      ],
+      "kind": "task",
+      "subject": "call mom",
+      "path": "",
+      "labels": [],
+      "done": true,
+      "completed_at": "<now>",
+      "priority": 2,
+      "due": null,
+      "from": null,
+      "key_id": null,
+      "channel": null,
+      "author": "owner",
+      "details": {
+        "meta": {},
+        "host": "<host>",
+        "dir": "<dir>",
+        "repo": null,
+        "branch": null,
+        "at": "<now>",
+        "channel": "local"
+      }
+    },
+    {
+      "oid": "<id-1>",
+      "op": "create",
+      "fields": [
+        "subject",
+        "path",
+        "priority",
+        "due"
+      ],
+      "kind": "task",
+      "subject": "pay rent",
+      "path": "work/",
+      "labels": [],
+      "done": false,
+      "completed_at": null,
+      "priority": 2,
+      "due": "2026-09-30",
+      "from": null,
+      "key_id": null,
+      "channel": null,
+      "author": "owner",
+      "details": {
+        "meta": {},
+        "host": "<host>",
+        "dir": "<dir>",
+        "repo": null,
+        "branch": null,
+        "at": "<now>",
+        "channel": "local"
+      }
+    }
+  ]
+}

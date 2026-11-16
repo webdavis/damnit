@@ -111,8 +111,23 @@ fn the_change_answer_fixtures_are_what_the_change_keys_write() {
         "edit-many.json",
         &fed_answer(&sb, &priority, &three, "changes.schema.json"),
     );
+    let moved = ["mv", &rent, "--path", "work/", "-o", "json"];
+    assert_fixture("mv.json", &answer(&sb, &moved, "mv.schema.json"));
+    let stage = ["add", &mom, &rent, "--preview", "-o", "json"];
+    assert_fixture("add-preview.json", &answer(&sb, &stage, "add.schema.json"));
+    run(&sb, &["add", &mom, &rent]);
+    run(
+        &sb,
+        &["edit", &short(CALL_MOM), "--subject", "call mom back"],
+    );
     let restored = answer(&sb, &["restore", &mom, "-o", "json"], "restore.schema.json");
     assert_fixture("restore.json", &restored);
+    let removed = ["rm", "-", "--expect", "2", "-o", "json"];
+    let two = [mom.as_str(), rent.as_str()];
+    assert_fixture(
+        "rm.json",
+        &fed_answer(&sb, &removed, &two, "changes.schema.json"),
+    );
 }
 
 #[test]
