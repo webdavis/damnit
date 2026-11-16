@@ -6,8 +6,8 @@ use crate::config::{Config, CredentialSpec, RemoteConfig};
 use crate::ports::{
     Clock, CommitRepository, ObjectRepository, RemoteName, RemoteTrackingRepository,
 };
-use crate::service::Dam;
 use crate::testing::{FixedRandom, Fixture, MemoryStore, oid};
+use crate::{service::Dam, use_cases::parents::placed};
 
 pub fn todoist() -> RemoteName {
     RemoteName("todoist".into())
@@ -87,7 +87,8 @@ impl Scenario {
     }
 
     pub fn working(&self, object: Object) -> &Scenario {
-        self.store.put(&object).unwrap();
+        let placed = placed(&self.store, Some(&object), object.clone()).unwrap();
+        self.store.put(&placed).unwrap();
         self
     }
 

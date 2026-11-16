@@ -5,7 +5,7 @@ use crate::ports::ObjectRepository;
 use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::load::load;
-use crate::use_cases::subtree::{children, move_into};
+use crate::use_cases::subtree::{contents, rebase_held};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct RemovePlan {
@@ -60,8 +60,13 @@ pub(crate) fn carry_out(
 ) -> Result<RemovePlan, UseCaseError> {
     let oid = object.oid();
     let plan = plan_for(objects, object)?;
+    if let Some(folder) = object.base().owned_folder() {
+        rebase_held(objects, object, &folder, &object.base().path)?;
+    }
     for child in &plan.moved_up {
-        move_into(objects, child, &object.base().path)?;
+        let mut moved = load(objects, child)?;
+        moved.base_mut().parent = object.base().parent.clone();
+        objects.put(&moved)?;
     }
     for dependent in &plan.dependents {
         if let Some(mut d) = objects.get(dependent)? {
@@ -78,7 +83,7 @@ pub(crate) fn plan_for(
     object: &Object,
 ) -> Result<RemovePlan, UseCaseError> {
     let oid = object.oid();
-    let moved_up = children(objects, object.base())?
+    let moved_up = contents(objects, object)?
         .iter()
         .map(|o| o.oid().clone())
         .collect();

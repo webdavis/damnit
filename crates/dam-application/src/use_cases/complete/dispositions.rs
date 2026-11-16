@@ -19,23 +19,23 @@ pub(super) fn apply_dispositions(
 
     let target = match d.children {
         ChildDisposition::Keep => None,
-        ChildDisposition::Up => Some(task.base.path.clone()),
+        ChildDisposition::Up => Some((task.base.path.clone(), task.base.parent.clone())),
         ChildDisposition::Into(_) if found.children.is_empty() => None,
         ChildDisposition::Into(name) => {
             let group_oid = Oid::generate(&mut |b| random.fill(b));
-            let mut group = Task::new(group_oid, name.clone());
+            let mut group = Task::new(group_oid.clone(), name.clone());
             group.base.path = task.base.path.clone();
             let folder = group
                 .base
                 .owned_folder()
                 .ok_or_else(|| UseCaseError::Parse(format!("{name:?} cannot name a folder")))?;
             objects.put(&with_nearest_parent(objects, Object::Task(group))?)?;
-            Some(folder)
+            Some((folder, Some(group_oid)))
         }
     };
-    if let Some(folder) = target {
+    if let Some((folder, parent)) = target {
         for child in &found.children {
-            move_into(objects, child, &folder)?;
+            move_into(objects, child, &folder, parent.clone())?;
         }
     }
     if d.dependencies == DependencyDisposition::Drop {

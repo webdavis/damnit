@@ -3,7 +3,7 @@ use dam_domain::{Blockers, Object, Oid, Permission, Task};
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
 use crate::service::Dam;
-use crate::use_cases::subtree::children;
+use crate::use_cases::subtree::contents;
 
 pub struct CompletePlan {
     pub oid: Oid,
@@ -29,7 +29,7 @@ impl Dam<'_> {
                 dependencies.push(dep.clone());
             }
         }
-        let children: Vec<Oid> = children(self.store, &task.base)?
+        let children: Vec<Oid> = contents(self.store, &Object::Task(task.clone()))?
             .iter()
             .filter(|c| c.as_task().is_some_and(|t| !t.completion.is_done()))
             .filter(|c| self.access.sees(c))
