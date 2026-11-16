@@ -2,6 +2,8 @@ use super::*;
 use clap::Parser;
 use dam_domain::{ChildDisposition, DependencyDisposition};
 
+mod nvim_flags;
+
 #[test]
 fn new_with_flags_parses() {
     let cli = Cli::try_parse_from([

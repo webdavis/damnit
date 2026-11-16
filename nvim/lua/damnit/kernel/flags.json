@@ -1,0 +1,898 @@
+{
+  "new": [
+    {
+      "name": "--kind",
+      "value": true,
+      "help": "Create a task or an event; an event needs --start and --end. Default: task"
+    },
+    {
+      "name": "--path",
+      "value": true,
+      "help": "Put it under PATH, such as work/clients/, starting from the project you are in. Default: the project, or the root outside one"
+    },
+    {
+      "name": "--parent",
+      "value": true,
+      "help": "Put it in the object with this oid or prefix"
+    },
+    {
+      "name": "--due",
+      "value": true,
+      "help": "Set the due date: a date word, today+N, now+LENGTH, YYYY-MM-DD or YYYY-MM-DDTHH:MM"
+    },
+    {
+      "name": "--priority",
+      "value": true,
+      "help": "Set the priority, 1 (highest) to 4. Default: 4"
+    },
+    {
+      "name": "--deadline",
+      "value": true,
+      "help": "Set the deadline, a whole day read the way --due reads one"
+    },
+    {
+      "name": "--labels",
+      "value": true,
+      "help": "Add labels, such as bug,urgent. Repeatable"
+    },
+    {
+      "name": "--body",
+      "value": true,
+      "help": "Set the body text"
+    },
+    {
+      "name": "--start",
+      "value": true,
+      "help": "Start the event at this time, read the way --due reads one"
+    },
+    {
+      "name": "--end",
+      "value": true,
+      "help": "End the event at this time, read the way --due reads one"
+    },
+    {
+      "name": "--id",
+      "value": true,
+      "help": "Name it with your own id, so a repeat with the same id changes it. One line, up to 200 characters; not damnit's oid"
+    },
+    {
+      "name": "--template",
+      "value": true,
+      "help": "Start from the template NAME: the project's .damtemplates/NAME.lua, else templates/NAME.lua beside config.lua. Each flag given replaces its value"
+    },
+    {
+      "name": "--depends",
+      "value": true,
+      "help": "Make it wait on the task with this oid. Repeatable"
+    },
+    {
+      "name": "--recurrence",
+      "value": true,
+      "help": "Repeat the task by a rule such as \"every 2 weeks on mon\""
+    },
+    {
+      "name": "--attached",
+      "value": true,
+      "help": "Attach the task to the event with this oid"
+    },
+    {
+      "name": "--location",
+      "value": true,
+      "help": "Set the event's location"
+    },
+    {
+      "name": "--estimate",
+      "value": true,
+      "help": "Set how long the task should take: minutes, such as 5, or 5m or 2h"
+    },
+    {
+      "name": "--focus",
+      "value": true,
+      "help": "Mark the task to work on first on DAY, after the ones marked before it. 3 a day"
+    },
+    {
+      "name": "--category",
+      "value": true,
+      "help": "Give it LABEL of the label group GROUP; GROUP=none takes the group's label off. Repeatable"
+    },
+    {
+      "name": "--preview",
+      "value": false,
+      "help": "Show the change and write nothing"
+    },
+    {
+      "name": "--global",
+      "value": false,
+      "help": "Reach every task, not only the project this folder is in; a path starts from the root"
+    },
+    {
+      "name": "--project",
+      "value": true,
+      "help": "Work in the project at PATH, such as pns/hooks/, from any folder"
+    }
+  ],
+  "edit": [
+    {
+      "name": "--filter",
+      "value": true,
+      "help": "Act on every object this saved filter lists; inside a project, only its tasks unless --global"
+    },
+    {
+      "name": "--preview",
+      "value": false,
+      "help": "Show the changes and write nothing"
+    },
+    {
+      "name": "--expect",
+      "value": true,
+      "help": "Refuse, changing nothing, unless the set holds exactly N objects"
+    },
+    {
+      "name": "--as-one",
+      "value": false,
+      "help": "For a token: the changes wait as one set the owner takes or declines whole"
+    },
+    {
+      "name": "--editor",
+      "value": false,
+      "help": "Open the object in your editor instead of passing flags"
+    },
+    {
+      "name": "--subject",
+      "value": true,
+      "help": "Replace the subject"
+    },
+    {
+      "name": "--body",
+      "value": true,
+      "help": "Replace the body text"
+    },
+    {
+      "name": "--priority",
+      "value": true,
+      "help": "Set the priority, 1 (highest) to 4"
+    },
+    {
+      "name": "--due",
+      "value": true,
+      "help": "Set the due date: a date word, today+N, now+LENGTH, YYYY-MM-DD or YYYY-MM-DDTHH:MM"
+    },
+    {
+      "name": "--no-due",
+      "value": false,
+      "help": "Clear the due date"
+    },
+    {
+      "name": "--deadline",
+      "value": true,
+      "help": "Set the deadline, a whole day read the way --due reads one"
+    },
+    {
+      "name": "--no-deadline",
+      "value": false,
+      "help": "Clear the deadline"
+    },
+    {
+      "name": "--no-done",
+      "value": false,
+      "help": "Reopen a completed task"
+    },
+    {
+      "name": "--labels",
+      "value": true,
+      "help": "Add labels, such as bug,urgent. Repeatable"
+    },
+    {
+      "name": "--unlabels",
+      "value": true,
+      "help": "Remove labels, such as bug,urgent. Repeatable"
+    },
+    {
+      "name": "--undepends",
+      "value": true,
+      "help": "Stop it waiting on the task with this oid. Repeatable"
+    },
+    {
+      "name": "--depends",
+      "value": true,
+      "help": "Make it wait on the task with this oid. Repeatable"
+    },
+    {
+      "name": "--recurrence",
+      "value": true,
+      "help": "Repeat the task by a rule such as \"every 2 weeks on mon\""
+    },
+    {
+      "name": "--attached",
+      "value": true,
+      "help": "Attach the task to the event with this oid"
+    },
+    {
+      "name": "--location",
+      "value": true,
+      "help": "Set the event's location"
+    },
+    {
+      "name": "--estimate",
+      "value": true,
+      "help": "Set how long the task should take: minutes, such as 5, or 5m or 2h"
+    },
+    {
+      "name": "--focus",
+      "value": true,
+      "help": "Mark the task to work on first on DAY, after the ones marked before it. 3 a day"
+    },
+    {
+      "name": "--category",
+      "value": true,
+      "help": "Give it LABEL of the label group GROUP; GROUP=none takes the group's label off. Repeatable"
+    },
+    {
+      "name": "--no-recurrence",
+      "value": false,
+      "help": "Stop the task repeating"
+    },
+    {
+      "name": "--no-attached",
+      "value": false,
+      "help": "Detach the task from its event"
+    },
+    {
+      "name": "--start",
+      "value": true,
+      "help": "Move the event's start, read the way --due reads one"
+    },
+    {
+      "name": "--end",
+      "value": true,
+      "help": "Move the event's end, read the way --due reads one"
+    },
+    {
+      "name": "--no-location",
+      "value": false,
+      "help": "Clear the event's location"
+    },
+    {
+      "name": "--no-estimate",
+      "value": false,
+      "help": "Clear the task's estimate"
+    },
+    {
+      "name": "--no-focus",
+      "value": false,
+      "help": "Clear the task's focus mark"
+    },
+    {
+      "name": "--global",
+      "value": false,
+      "help": "Reach every task, not only the project this folder is in; a path starts from the root"
+    },
+    {
+      "name": "--project",
+      "value": true,
+      "help": "Work in the project at PATH, such as pns/hooks/, from any folder"
+    }
+  ],
+  "done": [
+    {
+      "name": "--filter",
+      "value": true,
+      "help": "Act on every object this saved filter lists; inside a project, only its tasks unless --global"
+    },
+    {
+      "name": "--preview",
+      "value": false,
+      "help": "Show the changes and write nothing"
+    },
+    {
+      "name": "--expect",
+      "value": true,
+      "help": "Refuse, changing nothing, unless the set holds exactly N objects"
+    },
+    {
+      "name": "--as-one",
+      "value": false,
+      "help": "For a token: the changes wait as one set the owner takes or declines whole"
+    },
+    {
+      "name": "--force",
+      "value": false,
+      "help": "Complete it even though something it waits on is still open"
+    },
+    {
+      "name": "--interactive",
+      "value": false,
+      "help": "Ask what happens to the open children and dependencies"
+    },
+    {
+      "name": "--children",
+      "value": true,
+      "help": "Decide what happens to open children instead of asking. Default: keep"
+    },
+    {
+      "name": "--depends",
+      "value": true,
+      "help": "Decide what happens to open dependency links instead of asking. Default: keep"
+    },
+    {
+      "name": "--global",
+      "value": false,
+      "help": "Reach every task, not only the project this folder is in; a path starts from the root"
+    },
+    {
+      "name": "--project",
+      "value": true,
+      "help": "Work in the project at PATH, such as pns/hooks/, from any folder"
+    }
+  ],
+  "mv": [
+    {
+      "name": "--filter",
+      "value": true,
+      "help": "Act on every object this saved filter lists; inside a project, only its tasks unless --global"
+    },
+    {
+      "name": "--preview",
+      "value": false,
+      "help": "Show the changes and write nothing"
+    },
+    {
+      "name": "--expect",
+      "value": true,
+      "help": "Refuse, changing nothing, unless the set holds exactly N objects"
+    },
+    {
+      "name": "--as-one",
+      "value": false,
+      "help": "For a token: the changes wait as one set the owner takes or declines whole"
+    },
+    {
+      "name": "--path",
+      "value": true,
+      "help": "Move them under PATH instead of naming it last"
+    },
+    {
+      "name": "--parent",
+      "value": true,
+      "help": "Put it in the object with this oid or prefix"
+    },
+    {
+      "name": "--global",
+      "value": false,
+      "help": "Reach every task, not only the project this folder is in; a path starts from the root"
+    },
+    {
+      "name": "--project",
+      "value": true,
+      "help": "Work in the project at PATH, such as pns/hooks/, from any folder"
+    }
+  ],
+  "rm": [
+    {
+      "name": "--filter",
+      "value": true,
+      "help": "Act on every object this saved filter lists; inside a project, only its tasks unless --global"
+    },
+    {
+      "name": "--preview",
+      "value": false,
+      "help": "Show the changes and write nothing"
+    },
+    {
+      "name": "--expect",
+      "value": true,
+      "help": "Refuse, changing nothing, unless the set holds exactly N objects"
+    },
+    {
+      "name": "--as-one",
+      "value": false,
+      "help": "For a token: the changes wait as one set the owner takes or declines whole"
+    },
+    {
+      "name": "--id",
+      "value": true,
+      "help": "Take back the task or event you gave this id with dam new --id in the same session"
+    },
+    {
+      "name": "--global",
+      "value": false,
+      "help": "Reach every task, not only the project this folder is in; a path starts from the root"
+    },
+    {
+      "name": "--project",
+      "value": true,
+      "help": "Work in the project at PATH, such as pns/hooks/, from any folder"
+    }
+  ],
+  "list": [
+    {
+      "name": "--kind",
+      "value": true,
+      "help": "One of task, event, any; a,b for either"
+    },
+    {
+      "name": "--subject",
+      "value": true,
+      "help": "Holds this text, ignoring case"
+    },
+    {
+      "name": "--body",
+      "value": true,
+      "help": "Holds this text, ignoring case; none for empty"
+    },
+    {
+      "name": "--path",
+      "value": true,
+      "help": "At or under this folder; a/,b/ for either"
+    },
+    {
+      "name": "--labels",
+      "value": true,
+      "help": "Exactly this value; a,b for either; none for empty"
+    },
+    {
+      "name": "--category",
+      "value": true,
+      "help": "A label group, or GROUP=LABEL; GROUP=a,b for either; none for empty"
+    },
+    {
+      "name": "--parent",
+      "value": true,
+      "help": "This id, a list of ids, or in:FILTER; none for empty"
+    },
+    {
+      "name": "--depends",
+      "value": true,
+      "help": "This id, a list of ids, or in:FILTER; none for empty"
+    },
+    {
+      "name": "--reminders",
+      "value": true,
+      "help": "A length or a span: 30m, 30m..2h, ..5m; none for empty"
+    },
+    {
+      "name": "--filter",
+      "value": true,
+      "help": "Listed by this saved filter; a,b for either"
+    },
+    {
+      "name": "--author",
+      "value": true,
+      "help": "Exactly this value; a,b for either"
+    },
+    {
+      "name": "--done",
+      "value": true,
+      "help": "true, false or any; the bare flag means true"
+    },
+    {
+      "name": "--overdue",
+      "value": true,
+      "help": "true, false or any; the bare flag means true"
+    },
+    {
+      "name": "--blocked",
+      "value": true,
+      "help": "true, false or any; the bare flag means true"
+    },
+    {
+      "name": "--priority",
+      "value": true,
+      "help": "A number from 1 to 4, a list 1,2 or a span ..2"
+    },
+    {
+      "name": "--due",
+      "value": true,
+      "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty"
+    },
+    {
+      "name": "--deadline",
+      "value": true,
+      "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty"
+    },
+    {
+      "name": "--focus-day",
+      "value": true,
+      "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty"
+    },
+    {
+      "name": "--completed-at",
+      "value": true,
+      "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty"
+    },
+    {
+      "name": "--estimate",
+      "value": true,
+      "help": "A length or a span: 30m, 30m..2h, ..5m; none for empty"
+    },
+    {
+      "name": "--attached",
+      "value": true,
+      "help": "This id, a list of ids, or in:FILTER; none for empty"
+    },
+    {
+      "name": "--start",
+      "value": true,
+      "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu"
+    },
+    {
+      "name": "--end",
+      "value": true,
+      "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu"
+    },
+    {
+      "name": "--location",
+      "value": true,
+      "help": "Holds this text, ignoring case; none for empty"
+    },
+    {
+      "name": "--status",
+      "value": true,
+      "help": "One of confirmed, tentative, cancelled; a,b for either"
+    },
+    {
+      "name": "--transparency",
+      "value": true,
+      "help": "One of busy, free; a,b for either"
+    },
+    {
+      "name": "--visibility",
+      "value": true,
+      "help": "One of default, public, private, confidential; a,b for either"
+    },
+    {
+      "name": "--event-type",
+      "value": true,
+      "help": "One of default, focus_time, out_of_office, working_location, birthday; a,b for either"
+    },
+    {
+      "name": "--response",
+      "value": true,
+      "help": "One of needs_action, accepted, declined, tentative; a,b for either; none for empty"
+    },
+    {
+      "name": "--organizer-email",
+      "value": true,
+      "help": "Exactly this value; a,b for either; none for empty"
+    },
+    {
+      "name": "--attendees-email",
+      "value": true,
+      "help": "Exactly this value; a,b for either; none for empty"
+    },
+    {
+      "name": "--any",
+      "value": true,
+      "help": "Hold at least one of the --any conditions, as well as every other flag"
+    },
+    {
+      "name": "--sort",
+      "value": true,
+      "help": "Sort by this field, smallest first, or largest with :desc; empty values last. Repeatable, or a,b"
+    },
+    {
+      "name": "--limit",
+      "value": true,
+      "help": "List at most N rows"
+    },
+    {
+      "name": "--offset",
+      "value": true,
+      "help": "Skip the first N rows"
+    },
+    {
+      "name": "--global",
+      "value": false,
+      "help": "Reach every task, not only the project this folder is in; a path starts from the root"
+    },
+    {
+      "name": "--project",
+      "value": true,
+      "help": "Work in the project at PATH, such as pns/hooks/, from any folder"
+    }
+  ],
+  "agenda": [
+    {
+      "name": "--kind",
+      "value": true,
+      "help": "One of task, event, any; a,b for either"
+    },
+    {
+      "name": "--subject",
+      "value": true,
+      "help": "Holds this text, ignoring case"
+    },
+    {
+      "name": "--body",
+      "value": true,
+      "help": "Holds this text, ignoring case; none for empty"
+    },
+    {
+      "name": "--path",
+      "value": true,
+      "help": "At or under this folder; a/,b/ for either"
+    },
+    {
+      "name": "--labels",
+      "value": true,
+      "help": "Exactly this value; a,b for either; none for empty"
+    },
+    {
+      "name": "--category",
+      "value": true,
+      "help": "A label group, or GROUP=LABEL; GROUP=a,b for either; none for empty"
+    },
+    {
+      "name": "--parent",
+      "value": true,
+      "help": "This id, a list of ids, or in:FILTER; none for empty"
+    },
+    {
+      "name": "--depends",
+      "value": true,
+      "help": "This id, a list of ids, or in:FILTER; none for empty"
+    },
+    {
+      "name": "--reminders",
+      "value": true,
+      "help": "A length or a span: 30m, 30m..2h, ..5m; none for empty"
+    },
+    {
+      "name": "--filter",
+      "value": true,
+      "help": "Listed by this saved filter; a,b for either"
+    },
+    {
+      "name": "--author",
+      "value": true,
+      "help": "Exactly this value; a,b for either"
+    },
+    {
+      "name": "--start",
+      "value": true,
+      "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu"
+    },
+    {
+      "name": "--end",
+      "value": true,
+      "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu"
+    },
+    {
+      "name": "--location",
+      "value": true,
+      "help": "Holds this text, ignoring case; none for empty"
+    },
+    {
+      "name": "--status",
+      "value": true,
+      "help": "One of confirmed, tentative, cancelled; a,b for either"
+    },
+    {
+      "name": "--transparency",
+      "value": true,
+      "help": "One of busy, free; a,b for either"
+    },
+    {
+      "name": "--visibility",
+      "value": true,
+      "help": "One of default, public, private, confidential; a,b for either"
+    },
+    {
+      "name": "--event-type",
+      "value": true,
+      "help": "One of default, focus_time, out_of_office, working_location, birthday; a,b for either"
+    },
+    {
+      "name": "--response",
+      "value": true,
+      "help": "One of needs_action, accepted, declined, tentative; a,b for either; none for empty"
+    },
+    {
+      "name": "--organizer-email",
+      "value": true,
+      "help": "Exactly this value; a,b for either; none for empty"
+    },
+    {
+      "name": "--attendees-email",
+      "value": true,
+      "help": "Exactly this value; a,b for either; none for empty"
+    },
+    {
+      "name": "--any",
+      "value": true,
+      "help": "Hold at least one of the --any conditions, as well as every other flag"
+    },
+    {
+      "name": "--from",
+      "value": true,
+      "help": "Open the window at a day, instant or anchor: 2026-11-20, 2026-11-20T09:00, today+1, week, now+2h. Default: now"
+    },
+    {
+      "name": "--to",
+      "value": true,
+      "help": "Close the window here; a day or period counts whole, an instant is not included. Default: 24 hours after it opens"
+    },
+    {
+      "name": "--max-age",
+      "value": true,
+      "help": "Refuse when REMOTE last pulled over DURATION ago, such as 15m. Repeatable"
+    },
+    {
+      "name": "--global",
+      "value": false,
+      "help": "Reach every task, not only the project this folder is in; a path starts from the root"
+    },
+    {
+      "name": "--project",
+      "value": true,
+      "help": "Work in the project at PATH, such as pns/hooks/, from any folder"
+    }
+  ],
+  "filter create": [
+    {
+      "name": "--kind",
+      "value": true,
+      "help": "One of task, event, any; a,b for either"
+    },
+    {
+      "name": "--subject",
+      "value": true,
+      "help": "Holds this text, ignoring case"
+    },
+    {
+      "name": "--body",
+      "value": true,
+      "help": "Holds this text, ignoring case; none for empty"
+    },
+    {
+      "name": "--path",
+      "value": true,
+      "help": "At or under this folder; a/,b/ for either"
+    },
+    {
+      "name": "--labels",
+      "value": true,
+      "help": "Exactly this value; a,b for either; none for empty"
+    },
+    {
+      "name": "--category",
+      "value": true,
+      "help": "A label group, or GROUP=LABEL; GROUP=a,b for either; none for empty"
+    },
+    {
+      "name": "--parent",
+      "value": true,
+      "help": "This id, a list of ids, or in:FILTER; none for empty"
+    },
+    {
+      "name": "--depends",
+      "value": true,
+      "help": "This id, a list of ids, or in:FILTER; none for empty"
+    },
+    {
+      "name": "--reminders",
+      "value": true,
+      "help": "A length or a span: 30m, 30m..2h, ..5m; none for empty"
+    },
+    {
+      "name": "--filter",
+      "value": true,
+      "help": "Listed by this saved filter; a,b for either"
+    },
+    {
+      "name": "--author",
+      "value": true,
+      "help": "Exactly this value; a,b for either"
+    },
+    {
+      "name": "--done",
+      "value": true,
+      "help": "true, false or any; the bare flag means true"
+    },
+    {
+      "name": "--overdue",
+      "value": true,
+      "help": "true, false or any; the bare flag means true"
+    },
+    {
+      "name": "--blocked",
+      "value": true,
+      "help": "true, false or any; the bare flag means true"
+    },
+    {
+      "name": "--priority",
+      "value": true,
+      "help": "A number from 1 to 4, a list 1,2 or a span ..2"
+    },
+    {
+      "name": "--due",
+      "value": true,
+      "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty"
+    },
+    {
+      "name": "--deadline",
+      "value": true,
+      "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty"
+    },
+    {
+      "name": "--focus-day",
+      "value": true,
+      "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty"
+    },
+    {
+      "name": "--completed-at",
+      "value": true,
+      "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty"
+    },
+    {
+      "name": "--estimate",
+      "value": true,
+      "help": "A length or a span: 30m, 30m..2h, ..5m; none for empty"
+    },
+    {
+      "name": "--attached",
+      "value": true,
+      "help": "This id, a list of ids, or in:FILTER; none for empty"
+    },
+    {
+      "name": "--start",
+      "value": true,
+      "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu"
+    },
+    {
+      "name": "--end",
+      "value": true,
+      "help": "A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu"
+    },
+    {
+      "name": "--location",
+      "value": true,
+      "help": "Holds this text, ignoring case; none for empty"
+    },
+    {
+      "name": "--status",
+      "value": true,
+      "help": "One of confirmed, tentative, cancelled; a,b for either"
+    },
+    {
+      "name": "--transparency",
+      "value": true,
+      "help": "One of busy, free; a,b for either"
+    },
+    {
+      "name": "--visibility",
+      "value": true,
+      "help": "One of default, public, private, confidential; a,b for either"
+    },
+    {
+      "name": "--event-type",
+      "value": true,
+      "help": "One of default, focus_time, out_of_office, working_location, birthday; a,b for either"
+    },
+    {
+      "name": "--response",
+      "value": true,
+      "help": "One of needs_action, accepted, declined, tentative; a,b for either; none for empty"
+    },
+    {
+      "name": "--organizer-email",
+      "value": true,
+      "help": "Exactly this value; a,b for either; none for empty"
+    },
+    {
+      "name": "--attendees-email",
+      "value": true,
+      "help": "Exactly this value; a,b for either; none for empty"
+    },
+    {
+      "name": "--any",
+      "value": true,
+      "help": "Hold at least one of the --any conditions, as well as every other flag"
+    },
+    {
+      "name": "--global",
+      "value": false,
+      "help": "Write config.lua inside a project, not .dam.lua"
+    }
+  ]
+}
