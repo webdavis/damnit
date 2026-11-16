@@ -32,10 +32,11 @@ impl ProgramRunner for RecordingRunner {
             return Err(exited(1, "refused"));
         }
         match args {
-            ["print", ..] | ["--user", "is-active", ..] if !self.loaded.get() => {
+            ["print", ..] if !self.loaded.get() => {
                 let (code, message) = self.says_not_loaded_as.get().unwrap_or((113, "not loaded"));
                 Err(exited(code, message))
             }
+            ["--user", "is-active", ..] if !self.loaded.get() => Err(exited(3, "inactive")),
             ["bootstrap", ..] | ["--user", "start", ..] => {
                 self.loaded.set(true);
                 Ok(())
