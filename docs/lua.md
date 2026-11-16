@@ -10,6 +10,7 @@ key dam does not know is an error. A `<name>` in a key is a name you choose.
 | `owner` | The name your own objects and changes carry as their author. Default: `owner`. |
 | `done` | A table. |
 | `done.interactive` | `true` makes `dam done` ask about open children and dependencies. |
+| `progress` | `false` hides progress lines unless you give `--progress`. Default: `true`. |
 | `remote` | A table of remotes by name. |
 | `remote.<name>.url` | `<helper>::<address>`. Required. |
 | `remote.<name>.deadline` | A duration. The longest the helper may stay silent. Default: `60s`. |

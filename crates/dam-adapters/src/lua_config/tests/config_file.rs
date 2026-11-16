@@ -9,6 +9,7 @@ const EXAMPLE: &str = r#"
 return {
   owner = "Ada",
   done = { interactive = true },
+  progress = false,
   remote = {
     todoist = { url = "todoist::", deadline = "60s", path = "work" },
   },
@@ -26,6 +27,7 @@ fn config_lua_reads_its_owner_remotes_categories_and_filters() {
     let config = config(EXAMPLE).load().unwrap();
     assert_eq!(config.owner.as_deref(), Some("Ada"));
     assert_eq!(config.done_interactive, Some(true));
+    assert_eq!(config.progress, Some(false));
     let remote = config.remote("todoist").unwrap();
     assert_eq!(remote.helper, "todoist");
     assert_eq!(remote.deadline.as_ref().unwrap().text, "60s");

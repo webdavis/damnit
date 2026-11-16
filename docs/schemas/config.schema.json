@@ -12,6 +12,7 @@
       "additionalProperties": false,
       "properties": { "interactive": { "type": "boolean" } }
     },
+    "progress": { "type": "boolean" },
     "remote": { "type": "object", "additionalProperties": { "$ref": "#/$defs/remote" } },
     "category": { "type": "object", "additionalProperties": { "$ref": "#/$defs/category" } },
     "filter": { "type": "object", "additionalProperties": { "$ref": "#/$defs/filter" } },

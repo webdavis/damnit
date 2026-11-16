@@ -6,6 +6,7 @@ fn config() -> Config {
     Config {
         owner: None,
         done_interactive: None,
+        progress: None,
         remotes: vec![],
         categories: Categories::default(),
         categories_writing_exclusive: Default::default(),
