@@ -18,7 +18,7 @@ pub(crate) struct ObjectList<'a> {
 
 impl View for ObjectList<'_> {
     fn human(&self) -> Human {
-        Human::list(
+        Human::Table(
             self.objects
                 .iter()
                 .zip(self.authors)
@@ -28,8 +28,14 @@ impl View for ObjectList<'_> {
                     cells
                 })
                 .collect(),
-            "no objects match",
         )
+    }
+
+    fn notices(&self) -> Vec<String> {
+        match self.objects.is_empty() {
+            true => vec!["no objects match".into()],
+            false => Vec::new(),
+        }
     }
 }
 
