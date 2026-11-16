@@ -1,12 +1,29 @@
 use dam_application::{HookEvent, HookFailure, HookWarnings};
 
 use crate::error::HookText;
+use crate::output::Format;
 
-pub(crate) struct HookWarningsOnStandardError;
+pub(crate) struct HookWarningsOnStandardError {
+    shown: bool,
+}
+
+impl HookWarningsOnStandardError {
+    pub(crate) fn for_format(format: Format) -> HookWarningsOnStandardError {
+        HookWarningsOnStandardError {
+            shown: format != Format::Quiet,
+        }
+    }
+
+    fn line(&self, failure: &HookFailure) -> Option<String> {
+        self.shown.then(|| warning(failure))
+    }
+}
 
 impl HookWarnings for HookWarningsOnStandardError {
     fn warn(&self, failure: &HookFailure) {
-        eprintln!("{}", warning(failure));
+        if let Some(line) = self.line(failure) {
+            eprintln!("{line}");
+        }
     }
 }
 

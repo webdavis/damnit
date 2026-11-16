@@ -1,8 +1,5 @@
 use std::io::Write;
 
-use dam_domain::{Object, Timestamp, When};
-use jiff::tz::TimeZone;
-
 use crate::error::CliError;
 use crate::layout::{fit, terminal_width};
 use crate::paint::{Tint, painted};
@@ -10,6 +7,7 @@ use crate::paint::{Tint, painted};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Format {
     Human,
+    Quiet,
     Json,
     Toon,
 }
@@ -22,6 +20,13 @@ impl Format {
             Format::Toon
         } else {
             Format::Human
+        }
+    }
+
+    pub(crate) fn quieted(self, quiet: bool) -> Format {
+        match self {
+            Format::Human if quiet => Format::Quiet,
+            _ => self,
         }
     }
 }
@@ -39,6 +44,7 @@ pub(crate) struct Report {
 pub(crate) fn render(format: Format, report: &Report) -> Result<String, CliError> {
     match format {
         Format::Human => Ok(report.human.clone()),
+        Format::Quiet => Ok(String::new()),
         Format::Json => serde_json::to_string_pretty(&report.data)
             .map_err(|e| CliError::Internal(e.to_string())),
         Format::Toon => {
@@ -52,7 +58,7 @@ pub(crate) fn print_error(format: Format, error: &CliError) {
         return;
     }
     let line = match format {
-        Format::Human => format!("dam: {error}"),
+        Format::Human | Format::Quiet => format!("dam: {error}"),
         Format::Json | Format::Toon => {
             let report = Report {
                 human: String::new(),
@@ -72,16 +78,8 @@ pub(crate) fn print(format: Format, color: bool, report: &Report) -> Result<(), 
     let terminal =
         terminal_size::terminal_size_of(std::io::stdout()).map(|(w, _)| usize::from(w.0));
     let width = terminal_width(std::env::var("COLUMNS").ok().as_deref(), terminal);
-    let text = match (format, width) {
-        (Format::Human, Some(width)) => fitted(report, width),
-        _ => render(format, report)?,
-    };
-    let text = match format {
-        Format::Human if color => match &report.colored {
-            Some(colored) => colored.clone(),
-            None => painted(&text, &report.tints),
-        },
-        _ => text,
+    let Some(text) = shown(format, color, width, report)? else {
+        return Ok(());
     };
     if format == Format::Human {
         for line in &report.standard_error_lines {
@@ -101,43 +99,36 @@ pub(crate) fn print(format: Format, color: bool, report: &Report) -> Result<(), 
     }
 }
 
+pub(crate) fn shown(
+    format: Format,
+    color: bool,
+    width: Option<usize>,
+    report: &Report,
+) -> Result<Option<String>, CliError> {
+    if format == Format::Quiet {
+        return Ok(None);
+    }
+    let text = match (format, width) {
+        (Format::Human, Some(width)) => fitted(report, width),
+        _ => render(format, report)?,
+    };
+    let text = match format {
+        Format::Human if color => match &report.colored {
+            Some(colored) => colored.clone(),
+            None => painted(&text, &report.tints),
+        },
+        _ => text,
+    };
+    Ok(Some(text))
+}
+
 pub(crate) fn fitted(report: &Report, width: usize) -> String {
     fit(&report.human, width, &report.cut)
 }
 
-pub(crate) fn object_cells(object: &Object, zone: &TimeZone) -> Vec<String> {
-    let b = object.base();
-    let (state, when) = match object {
-        Object::Task(t) if t.completion.is_done() => ("done".to_string(), t.due.as_ref()),
-        Object::Task(t) => (format!("p{}", t.priority.get()), t.due.as_ref()),
-        Object::Event(e) => ("event".to_string(), Some(&e.start)),
-    };
-    let mut free_text = b.subject.clone();
-    if !b.labels.is_empty() {
-        let labels: Vec<&str> = b.labels.iter().map(String::as_str).collect();
-        free_text.push_str(&format!("  [{}]", labels.join(", ")));
-    }
-    vec![
-        b.oid.short().to_string(),
-        state,
-        when.map(|w| local_text(w, zone)).unwrap_or_default(),
-        b.path.as_str().to_string(),
-        free_text,
-    ]
-}
+mod cells;
 
-pub(crate) fn local_text(when: &When, zone: &TimeZone) -> String {
-    match when {
-        When::Day(d) => d.to_string(),
-        When::At(z) => local_time(z.timestamp(), zone),
-    }
-}
-
-pub(crate) fn local_time(at: Timestamp, zone: &TimeZone) -> String {
-    at.to_zoned(zone.clone())
-        .strftime("%Y-%m-%d %H:%M")
-        .to_string()
-}
+pub(crate) use cells::{local_time, object_cells};
 
 #[cfg(test)]
 mod tests;

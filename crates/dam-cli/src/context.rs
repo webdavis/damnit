@@ -11,7 +11,7 @@ use dam_application::{
 use crate::caller::{authenticated, caller};
 use crate::editor::{EditorSession, EnvEditor};
 use crate::error::CliError;
-use crate::hook_warnings::HookWarningsOnStandardError;
+pub(crate) use crate::hook_warnings::HookWarningsOnStandardError;
 use crate::output::Format;
 use crate::prompt::{Prompt, RefusingPrompt, TerminalPrompt};
 
@@ -32,6 +32,7 @@ pub(crate) struct Context {
     pub(crate) changed_by_hook: ChangedByHook,
     pub(crate) interrupt: Interrupt,
     pub(crate) hook_progress: HookProgressOnStandardError,
+    pub(crate) hook_warnings: HookWarningsOnStandardError,
 }
 
 impl Context {
@@ -69,6 +70,7 @@ impl Context {
             changed_by_hook: ChangedByHook::default(),
             interrupt: interrupt.clone(),
             hook_progress: HookProgressOnStandardError::for_format(format),
+            hook_warnings: HookWarningsOnStandardError::for_format(format),
         })
     }
 
@@ -81,7 +83,7 @@ impl Context {
             access: self.access.as_ref(),
             filter_functions: self.filter_functions.as_ref(),
             hooks: self.hooks.as_ref(),
-            hook_warnings: &HookWarningsOnStandardError,
+            hook_warnings: &self.hook_warnings,
             hook_progress: &self.hook_progress,
             edit_requests: self,
             hook_edits: &self.changed_by_hook,
@@ -102,7 +104,7 @@ pub(crate) fn terminal_pair_for_a_human_and_refusals_for_a_machine(
     interrupt: &Interrupt,
 ) -> (Box<dyn Prompt>, Option<Box<dyn EditorSession>>) {
     match format {
-        Format::Human => (
+        Format::Human | Format::Quiet => (
             Box::new(TerminalPrompt::new(interrupt.clone())),
             Some(Box::new(EnvEditor::from_env())),
         ),

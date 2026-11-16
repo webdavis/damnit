@@ -1,6 +1,7 @@
 use dam_application::{FunctionFailure, FunctionFault, HookEvent, HookFailure};
 
-use super::warning;
+use super::{HookWarningsOnStandardError, warning};
+use crate::output::Format;
 
 #[test]
 fn a_failed_pulled_hook_warns_where_it_failed_and_that_the_pull_is_kept() {
@@ -43,4 +44,22 @@ fn a_failed_change_hook_warns_that_the_change_stands() {
             warning(&failure)
         );
     }
+}
+
+#[test]
+fn under_quiet_it_warns_of_nothing_but_says_it_otherwise() {
+    let failure = HookFailure {
+        event: HookEvent::TaskDone,
+        failure: FunctionFailure {
+            file: "/home/config.lua".into(),
+            line: None,
+            fault: FunctionFault::Raised {
+                message: "no bell".into(),
+            },
+        },
+    };
+    let quiet = HookWarningsOnStandardError::for_format(Format::Quiet);
+    assert_eq!(quiet.line(&failure), None);
+    let json = HookWarningsOnStandardError::for_format(Format::Json);
+    assert_eq!(json.line(&failure), Some(warning(&failure)));
 }

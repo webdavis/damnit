@@ -1,7 +1,9 @@
+use super::cells::local_text;
 use super::*;
 use crate::view::{ObjectRow, report};
-use dam_domain::{Oid, Path, Priority, Task, When};
+use dam_domain::{Object, Oid, Path, Priority, Task, When};
 use jiff::civil::date;
+use jiff::tz::TimeZone;
 
 #[test]
 fn an_object_row_has_short_oid_priority_due_path_then_subject_and_labels() {
@@ -59,4 +61,25 @@ fn json_renders_the_data_and_human_renders_the_text() {
     };
     assert_eq!(render(Format::Human, &report).unwrap(), "hi");
     assert_eq!(render(Format::Json, &report).unwrap(), "{\n  \"a\": 1\n}");
+}
+
+#[test]
+fn quiet_shows_nothing_for_a_human_but_keeps_a_requested_document() {
+    let report = Report {
+        human: "hi".into(),
+        data: serde_json::json!({"a": 1}),
+        cut: Vec::new(),
+        tints: Vec::new(),
+        colored: None,
+        standard_error_lines: vec!["note".into()],
+    };
+    let quiet = Format::of(false, false).quieted(true);
+    assert_eq!(quiet, Format::Quiet);
+    assert_eq!(shown(quiet, false, Some(80), &report).unwrap(), None);
+    let json = Format::of(true, false).quieted(true);
+    assert_eq!(
+        shown(json, false, Some(80), &report).unwrap().as_deref(),
+        Some("{\n  \"a\": 1\n}")
+    );
+    assert_eq!(Format::of(false, false).quieted(false), Format::Human);
 }

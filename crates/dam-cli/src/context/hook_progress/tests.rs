@@ -14,3 +14,9 @@ fn under_json_it_says_nothing() {
     let progress = HookProgressOnStandardError::for_format(Format::Json);
     assert_eq!(progress.line(HookEvent::TaskPulled, 2), None);
 }
+
+#[test]
+fn under_quiet_it_says_nothing() {
+    let progress = HookProgressOnStandardError::for_format(Format::Quiet);
+    assert_eq!(progress.line(HookEvent::TaskPulled, 2), None);
+}

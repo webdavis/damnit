@@ -9,7 +9,8 @@ use dam_domain::Categories;
 use jiff::civil::date;
 
 use crate::context::{
-    Context, HookProgressOnStandardError, terminal_pair_for_a_human_and_refusals_for_a_machine,
+    Context, HookProgressOnStandardError, HookWarningsOnStandardError,
+    terminal_pair_for_a_human_and_refusals_for_a_machine,
 };
 use crate::output::Format;
 
@@ -53,6 +54,7 @@ pub(crate) fn context() -> Context {
         changed_by_hook: Default::default(),
         interrupt: Interrupt::default(),
         hook_progress: HookProgressOnStandardError::for_format(Format::Json),
+        hook_warnings: HookWarningsOnStandardError::for_format(Format::Json),
     }
 }
 
