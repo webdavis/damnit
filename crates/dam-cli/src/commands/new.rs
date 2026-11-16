@@ -2,6 +2,7 @@ use std::collections::BTreeSet;
 
 use crate::args::NewArgs;
 use crate::commands::caller_id::with_caller_id;
+use crate::commands::fields::fields_set;
 use crate::commands::hooked::{as_it_is_now, hooked};
 use crate::commands::parsing::{deadline_flag, when_flag};
 use crate::commands::sent::report_landed;
@@ -9,7 +10,7 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 use crate::view::{Human, View, report, wire};
-use dam_application::{Dam, Landed, NewEvent, NewTask, UseCaseError};
+use dam_application::{Dam, EditFields, Landed, NewEvent, NewTask, UseCaseError};
 use dam_domain::{Kind, Object};
 use serde::Serialize;
 
@@ -28,8 +29,8 @@ impl View for Created<'_> {
 }
 
 pub(crate) enum Made {
-    Task(NewTask),
-    Event(NewEvent),
+    Task(NewTask, EditFields),
+    Event(NewEvent, EditFields),
 }
 
 pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
@@ -48,8 +49,8 @@ pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
 
 pub(crate) fn land(dam: &Dam<'_>, made: Made) -> Result<Landed, UseCaseError> {
     match made {
-        Made::Task(task) => dam.new_task(task),
-        Made::Event(event) => dam.new_event(event),
+        Made::Task(task, set) => dam.new_task_setting(task, set),
+        Made::Event(event, set) => dam.new_event_setting(event, set),
     }
 }
 
@@ -61,6 +62,11 @@ fn made(ctx: &Context, args: NewArgs) -> Result<Made, CliError> {
         .map(|text| ctx.dam().resolve_object(text))
         .transpose()?;
     if args.kind == Kind::Event {
+        if let Some(flag) = args.fields.task_only_flag() {
+            return Err(CliError::Usage(format!(
+                "{flag} is for a task; drop it, or drop --kind event"
+            )));
+        }
         let start = when_flag(
             ctx,
             "start",
@@ -75,21 +81,27 @@ fn made(ctx: &Context, args: NewArgs) -> Result<Made, CliError> {
                 .as_deref()
                 .ok_or_else(|| CliError::Usage("--kind event needs --start and --end".into()))?,
         )?;
-        return Ok(Made::Event(NewEvent {
-            parent,
-            subject: args.subject,
-            path: args.path,
-            start,
-            end,
-            labels,
-            body: args.body,
-            id: args.id,
-        }));
+        return Ok(Made::Event(
+            NewEvent {
+                parent,
+                subject: args.subject,
+                path: args.path,
+                start,
+                end,
+                labels,
+                body: args.body,
+                id: args.id,
+            },
+            fields_set(ctx, args.fields)?,
+        ));
     }
     if args.start.is_some() || args.end.is_some() {
         return Err(CliError::Usage(
             "--start and --end need --kind event".into(),
         ));
+    }
+    if args.fields.location.is_some() {
+        return Err(CliError::Usage("--location needs --kind event".into()));
     }
     let due = args
         .due
@@ -101,22 +113,27 @@ fn made(ctx: &Context, args: NewArgs) -> Result<Made, CliError> {
         .as_deref()
         .map(|d| deadline_flag(ctx, d))
         .transpose()?;
-    Ok(Made::Task(NewTask {
-        parent,
-        subject: args.subject,
-        path: args.path,
-        priority: args.priority.unwrap_or_default(),
-        due,
-        deadline,
-        labels,
-        body: args.body,
-        id: args.id,
-    }))
+    Ok(Made::Task(
+        NewTask {
+            parent,
+            subject: args.subject,
+            path: args.path,
+            priority: args.priority.unwrap_or_default(),
+            due,
+            deadline,
+            labels,
+            body: args.body,
+            id: args.id,
+        },
+        fields_set(ctx, args.fields)?,
+    ))
 }
 
 mod preview;
 pub(crate) mod required;
 pub(crate) mod templated;
 
+#[cfg(test)]
+mod field_tests;
 #[cfg(test)]
 mod tests;

@@ -13,6 +13,7 @@ pub(crate) mod doctor;
 mod done;
 pub(crate) mod each;
 pub(crate) mod edit;
+mod fields;
 mod follow_ons;
 pub(crate) mod hook_error_row;
 pub(crate) mod hook_list;

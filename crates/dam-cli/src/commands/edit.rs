@@ -3,11 +3,12 @@ use dam_domain::Oid;
 
 use crate::args::EditArgs;
 use crate::commands::each::one_object;
+use crate::commands::fields::{fields_set, oid_of};
 use crate::commands::hooked::{as_it_is_now, hooked};
-use crate::commands::parsing::{day_flag, deadline_flag, when_flag};
+use crate::commands::parsing::{deadline_flag, when_flag};
 use crate::commands::sent::report_landed;
 use crate::context::Context;
-use crate::error::{CliError, UseCaseText};
+use crate::error::CliError;
 use crate::output::Report;
 use crate::view::{ObjectRow, report};
 use many::run_on_a_set;
@@ -34,16 +35,11 @@ pub(crate) fn run(ctx: &Context, args: EditArgs) -> Result<Report, CliError> {
 }
 
 pub(crate) fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, CliError> {
-    let oid_of = |flag: &str, text: &str| {
-        ctx.dam()
-            .resolve_object(text)
-            .map_err(|e| CliError::Usage(format!("--{flag}: {}", UseCaseText(&e))))
-    };
     let mut f = EditFields {
         subject: args.subject,
         body: args.body,
         priority: args.priority,
-        ..EditFields::default()
+        ..fields_set(ctx, args.fields)?
     };
     f.due = set_or_clear(
         args.due.map(|d| when_flag(ctx, "due", &d)).transpose()?,
@@ -56,21 +52,16 @@ pub(crate) fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, Cl
     f.undone = args.no_done;
     f.add_labels = args.labels;
     f.remove_labels = args.unlabels;
-    f.add_depends = args
-        .depends
-        .iter()
-        .map(|d| oid_of("depends", d))
-        .collect::<Result<Vec<Oid>, _>>()?;
     f.remove_depends = args
         .undepends
         .iter()
-        .map(|d| oid_of("undepends", d))
+        .map(|d| oid_of(ctx, "undepends", d))
         .collect::<Result<Vec<Oid>, _>>()?;
-    f.recurrence = set_or_clear(args.recurrence, args.no_recurrence);
-    f.attach = set_or_clear(
-        args.attached.map(|e| oid_of("attached", &e)).transpose()?,
-        args.no_attached,
-    );
+    cleared(&mut f.recurrence, args.no_recurrence);
+    cleared(&mut f.attach, args.no_attached);
+    cleared(&mut f.location, args.no_location);
+    cleared(&mut f.estimate, args.no_estimate);
+    cleared(&mut f.focus, args.no_focus);
     f.start = args
         .start
         .as_deref()
@@ -81,13 +72,13 @@ pub(crate) fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, Cl
         .as_deref()
         .map(|s| when_flag(ctx, "end", s))
         .transpose()?;
-    f.location = set_or_clear(args.location, args.no_location);
-    f.estimate = set_or_clear(args.estimate, args.no_estimate);
-    f.focus = set_or_clear(
-        args.focus.map(|d| day_flag(ctx, "focus", &d)).transpose()?,
-        args.no_focus,
-    );
     Ok(f)
+}
+
+fn cleared<T>(field: &mut Option<Option<T>>, clear: bool) {
+    if clear {
+        *field = Some(None);
+    }
 }
 
 fn set_or_clear<T>(value: Option<T>, clear: bool) -> Option<Option<T>> {

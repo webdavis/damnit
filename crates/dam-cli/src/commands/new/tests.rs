@@ -3,7 +3,7 @@ use crate::args::NewArgs;
 use crate::testing::context;
 use dam_domain::{Path, Priority};
 
-fn args(subject: &str) -> NewArgs {
+pub(super) fn args(subject: &str) -> NewArgs {
     NewArgs {
         subject: subject.into(),
         kind: Kind::Task,
@@ -21,6 +21,7 @@ fn args(subject: &str) -> NewArgs {
         template: None,
         preview: false,
         hold: None,
+        fields: Default::default(),
         scope: Default::default(),
     }
 }

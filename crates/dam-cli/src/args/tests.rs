@@ -160,7 +160,7 @@ fn attached_and_no_attached_match_the_key_and_attach_and_detach_still_parse() {
         let mut argv = vec!["dam", "edit", "abcd"];
         argv.extend_from_slice(args);
         match Cli::try_parse_from(argv).unwrap().command {
-            Command::Edit(a) => (a.attached, a.no_attached),
+            Command::Edit(a) => (a.fields.attached, a.no_attached),
             _ => panic!("wrong command"),
         }
     };

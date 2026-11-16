@@ -110,3 +110,4 @@ fn a_new_event_that_fails_at_its_write_leaves_nothing_behind() {
 mod parent;
 mod parent_tokens;
 mod resend;
+mod setting;

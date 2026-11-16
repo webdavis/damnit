@@ -66,8 +66,12 @@ fn the_categories_of_a_place_hold_only_for_objects_under_it() {
         )),
         ..Config::default()
     });
-    s.working(Object::Task(crate::testing::task_in(1, "in", "work")));
-    s.working(Object::Task(crate::testing::task_in(2, "out", "home")));
+    s.working(dam_domain::Object::Task(crate::testing::task_in(
+        1, "in", "work",
+    )));
+    s.working(dam_domain::Object::Task(crate::testing::task_in(
+        2, "out", "home",
+    )));
     let both = || EditFields {
         add_labels: vec!["review".into(), "ship".into()],
         ..Default::default()

@@ -40,6 +40,43 @@
       "type": "string",
       "description": "A date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
     },
+    "depends": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{4,40}$",
+        "description": "An oid, or a prefix of 4 or more hex characters."
+      }
+    },
+    "recurrence": {
+      "type": "string",
+      "description": "A rule such as every 2 weeks on mon."
+    },
+    "attached": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{4,40}$",
+      "description": "An oid, or a prefix of 4 or more hex characters."
+    },
+    "location": {
+      "type": "string"
+    },
+    "estimate": {
+      "description": "Minutes, such as 5, or 5m or 2h.",
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "type": "string",
+          "pattern": "^[0-9]+[mh]?$"
+        }
+      ]
+    },
+    "focus": {
+      "type": "string",
+      "description": "A date word or YYYY-MM-DD."
+    },
     "preview": {
       "type": "boolean",
       "description": "Answer the change and write nothing."

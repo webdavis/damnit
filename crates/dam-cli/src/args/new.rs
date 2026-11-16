@@ -1,8 +1,8 @@
 use clap::Args;
 use dam_domain::{CallerId, Kind, Path, Priority};
 
-use super::ScopeArgs;
 use super::values::{caller_id_arg, kind_arg, label_arg, path_arg, priority_arg};
+use super::{FieldArgs, ScopeArgs};
 
 #[derive(Args, Debug)]
 pub(crate) struct NewArgs {
@@ -87,6 +87,8 @@ pub(crate) struct NewArgs {
                 else templates/NAME.lua beside config.lua. Each flag given replaces its value"
     )]
     pub(crate) template: Option<String>,
+    #[command(flatten)]
+    pub(crate) fields: FieldArgs,
     #[arg(long, help = "Show the change and write nothing")]
     pub(crate) preview: bool,
     #[arg(skip)]
