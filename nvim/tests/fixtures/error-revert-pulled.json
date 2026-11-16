@@ -1,0 +1,8 @@
+{
+  "error": {
+    "kind": "refused",
+    "rule": "pulled_commit",
+    "message": "commit <id-1> came from dam pull; the remote would send its changes again, so dam revert leaves it",
+    "oids": []
+  }
+}
