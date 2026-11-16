@@ -5,9 +5,9 @@ fn of(t: &FilterTable, command: Command) -> Result<Scope, DefaultsError> {
     scope(&Filter::read(t).unwrap(), command)
 }
 
-fn ls(fields: &[(&str, &str)]) -> Result<Scope, DefaultsError> {
+fn list(fields: &[(&str, &str)]) -> Result<Scope, DefaultsError> {
     let fields: Vec<_> = fields.iter().map(|(k, v)| (*k, one(v))).collect();
-    of(&table(&fields), Command::Ls)
+    of(&table(&fields), Command::List)
 }
 
 fn agenda(fields: &[(&str, &str)]) -> Result<Scope, DefaultsError> {
@@ -27,9 +27,12 @@ const EVENTS: Scope = Scope {
 };
 
 #[test]
-fn ls_lists_open_tasks_while_other_fields_are_typed() {
-    assert_eq!(ls(&[]), Ok(OPEN_TASKS));
-    assert_eq!(ls(&[("labels", "bug"), ("due", "..today")]), Ok(OPEN_TASKS));
+fn list_lists_open_tasks_while_other_fields_are_typed() {
+    assert_eq!(list(&[]), Ok(OPEN_TASKS));
+    assert_eq!(
+        list(&[("labels", "bug"), ("due", "..today")]),
+        Ok(OPEN_TASKS)
+    );
 }
 
 #[test]
@@ -39,16 +42,16 @@ fn any_lifts_a_default() {
         events: true,
         done: None,
     };
-    assert_eq!(ls(&[("kind", "any"), ("done", "any")]), Ok(all));
+    assert_eq!(list(&[("kind", "any"), ("done", "any")]), Ok(all));
     assert_eq!(
-        ls(&[("done", "true")]),
+        list(&[("done", "true")]),
         Ok(Scope {
             done: Some(true),
             ..OPEN_TASKS
         })
     );
     assert_eq!(
-        ls(&[("kind", "event")]).map(|s| (s.tasks, s.events)),
+        list(&[("kind", "event")]).map(|s| (s.tasks, s.events)),
         Ok((false, true))
     );
 }
@@ -56,26 +59,26 @@ fn any_lifts_a_default() {
 #[test]
 fn an_event_field_means_events_and_completed_at_means_done_tasks() {
     assert_eq!(
-        ls(&[("location", "not:home")]).map(|s| (s.tasks, s.events)),
+        list(&[("location", "not:home")]).map(|s| (s.tasks, s.events)),
         Ok((false, true))
     );
     assert_eq!(
-        ls(&[("completed_at", "week")]),
+        list(&[("completed_at", "week")]),
         Ok(Scope {
             done: Some(true),
             ..OPEN_TASKS
         })
     );
-    assert_eq!(ls(&[("completed_at", "none")]), Ok(OPEN_TASKS));
+    assert_eq!(list(&[("completed_at", "none")]), Ok(OPEN_TASKS));
 }
 
 #[test]
 fn a_typed_kind_or_done_that_contradicts_a_field_exits_with_the_flag_to_drop() {
-    let kind = ls(&[("kind", "task"), ("start", "today")]).unwrap_err();
+    let kind = list(&[("kind", "task"), ("start", "today")]).unwrap_err();
     assert_eq!(kind, DefaultsError::KindContradicts { field: "start" });
     assert_eq!(kind.fix(), Fix::Drop("kind"));
-    assert!(ls(&[("done", "any"), ("completed_at", "today")]).is_ok());
-    let done = ls(&[("done", "false"), ("completed_at", "today")]).unwrap_err();
+    assert!(list(&[("done", "any"), ("completed_at", "today")]).is_ok());
+    let done = list(&[("done", "false"), ("completed_at", "today")]).unwrap_err();
     assert_eq!(
         done,
         DefaultsError::DoneContradicts {
@@ -83,20 +86,20 @@ fn a_typed_kind_or_done_that_contradicts_a_field_exits_with_the_flag_to_drop() {
         }
     );
     assert_eq!(done.fix(), Fix::Drop("done"));
-    let event_done = ls(&[("done", "true"), ("start", "today")]).unwrap_err();
+    let event_done = list(&[("done", "true"), ("start", "today")]).unwrap_err();
     assert_eq!(
         event_done,
         DefaultsError::DoneContradicts { field: "start" }
     );
     assert_eq!(
-        ls(&[("kind", "event"), ("start", "today")]).map(|s| s.events),
+        list(&[("kind", "event"), ("start", "today")]).map(|s| s.events),
         Ok(true)
     );
 }
 
 #[test]
 fn a_task_field_and_an_event_field_together_point_at_any() {
-    let both = ls(&[("due", "today"), ("start", "today")]).unwrap_err();
+    let both = list(&[("due", "today"), ("start", "today")]).unwrap_err();
     assert_eq!(
         both,
         DefaultsError::BothKinds {
@@ -116,27 +119,27 @@ fn a_field_inside_any_never_sets_kind_unless_any_names_both_kinds() {
         )
     };
     let events_only = alternatives(("start", "today"), ("location", "x"));
-    assert_eq!(of(&events_only, Command::Ls), Ok(OPEN_TASKS));
+    assert_eq!(of(&events_only, Command::List), Ok(OPEN_TASKS));
     let both = alternatives(("due", "today"), ("start", "today"));
     assert_eq!(
-        of(&both, Command::Ls).map(|s| (s.tasks, s.events)),
+        of(&both, Command::List).map(|s| (s.tasks, s.events)),
         Ok((true, true))
     );
     let completed = alternatives(("completed_at", "today"), ("labels", "x"));
-    assert_eq!(of(&completed, Command::Ls), Ok(OPEN_TASKS));
+    assert_eq!(of(&completed, Command::List), Ok(OPEN_TASKS));
 }
 
 #[test]
 fn one_any_alone_is_the_same_as_the_plain_field() {
     let alone = either(table(&[]), vec![table(&[("start", one("today"))])]);
     assert_eq!(
-        of(&alone, Command::Ls).map(|s| (s.tasks, s.events)),
+        of(&alone, Command::List).map(|s| (s.tasks, s.events)),
         Ok((false, true))
     );
 }
 
 #[test]
-fn agenda_lists_events_and_sends_task_fields_to_ls() {
+fn agenda_lists_events_and_sends_task_fields_to_list() {
     assert_eq!(agenda(&[]), Ok(EVENTS));
     assert_eq!(agenda(&[("location", "x")]), Ok(EVENTS));
     let task_field = agenda(&[("due", "today")]).unwrap_err();
@@ -144,7 +147,7 @@ fn agenda_lists_events_and_sends_task_fields_to_ls() {
         task_field,
         DefaultsError::TaskFieldInAgenda { field: "due" }
     );
-    assert_eq!(task_field.fix(), Fix::UseLs);
+    assert_eq!(task_field.fix(), Fix::UseList);
     let kind = agenda(&[("kind", "task")]).unwrap_err();
     assert_eq!(kind, DefaultsError::TaskFieldInAgenda { field: "kind" });
     assert_eq!(agenda(&[("kind", "any")]).map(|s| s.tasks), Ok(true));

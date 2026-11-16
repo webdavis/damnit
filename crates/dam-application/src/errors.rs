@@ -125,6 +125,7 @@ pub enum UseCaseError {
     Filter(FilterError),
     Parse(String),
     Query(QueryError),
+    Select(crate::use_cases::selected::SelectError),
     NotAnOid(String),
     Schedule(ScheduleError),
 }

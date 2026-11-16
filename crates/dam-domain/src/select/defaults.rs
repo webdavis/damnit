@@ -6,7 +6,7 @@ use crate::Object;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Command {
-    Ls,
+    List,
     Agenda,
 }
 
@@ -38,7 +38,7 @@ pub enum DefaultsError {
 pub enum Fix {
     Drop(&'static str),
     UseAny,
-    UseLs,
+    UseList,
 }
 
 impl DefaultsError {
@@ -47,7 +47,7 @@ impl DefaultsError {
             DefaultsError::KindContradicts { .. } => Fix::Drop(KIND.key),
             DefaultsError::DoneContradicts { .. } => Fix::Drop(DONE.key),
             DefaultsError::BothKinds { .. } => Fix::UseAny,
-            DefaultsError::TaskFieldInAgenda { .. } => Fix::UseLs,
+            DefaultsError::TaskFieldInAgenda { .. } => Fix::UseList,
         }
     }
 }
@@ -117,11 +117,11 @@ pub fn scope(filter: &Filter, command: Command) -> Result<Scope, DefaultsError> 
         .or(event_field.map(|_| (false, true)))
         .or(task_field.map(|_| (true, false)))
         .or(names_both_kinds(filter).then_some((true, true)))
-        .unwrap_or((command == Command::Ls, command == Command::Agenda));
+        .unwrap_or((command == Command::List, command == Command::Agenda));
     let done = match (done, completed) {
         (Some((yes, no)), _) => (yes != no).then_some(yes),
         (None, Some(_)) => Some(true),
-        (None, None) => (command == Command::Ls).then_some(false),
+        (None, None) => (command == Command::List).then_some(false),
     };
     Ok(Scope {
         tasks,

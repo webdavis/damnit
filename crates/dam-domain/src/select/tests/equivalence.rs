@@ -37,7 +37,7 @@ fn same_objects(old: &str, fields: &[(String, String)], any: &[Fields]) {
         .collect();
     let filter = Filter::read(&build(&pairs, any)).unwrap();
     filter.check(&fake.categories).unwrap();
-    let scope = scope(&filter, Command::Ls).unwrap();
+    let scope = scope(&filter, Command::List).unwrap();
     for object in objects() {
         let was = crate::matches(&expr, &object, TODAY, &TimeZone::UTC);
         let now = scope.admits(&object) && filter.matches(&object, &fake);

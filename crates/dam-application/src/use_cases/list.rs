@@ -3,7 +3,6 @@ use dam_domain::{Object, Path, QueryError, matches, parse_query};
 use crate::config::FilterConfig;
 use crate::errors::{Refusal, UseCaseError};
 use crate::service::Dam;
-use order::order;
 
 impl Dam<'_> {
     pub fn list(&self, query: Option<&str>) -> Result<Vec<Object>, UseCaseError> {
@@ -68,18 +67,8 @@ impl Dam<'_> {
                 None => expr.under(place),
             });
         let (today, zone) = (self.clock.today(), self.clock.zone());
-        let seen = self
-            .store
-            .all()?
-            .into_iter()
-            .filter(|o| self.access.sees(o) && o.base().path.is_within(place))
-            .map(|o| self.as_seen(o))
-            .collect::<Result<Vec<Object>, _>>()?;
-        let mut out: Vec<Object> = seen
-            .into_iter()
-            .filter(|o| expr.as_ref().is_none_or(|e| matches(e, o, today, &zone)))
-            .collect();
-        out.sort_by(|a, b| order(a, b, today));
+        let mut out = self.seen_within(place)?;
+        out.retain(|o| expr.as_ref().is_none_or(|e| matches(e, o, today, &zone)));
         Ok(out)
     }
 }
@@ -97,6 +86,7 @@ fn query_error(e: QueryError) -> UseCaseError {
 mod by_function;
 pub(crate) mod log_by_object;
 mod order;
+mod seen;
 pub(crate) mod trial;
 
 #[cfg(test)]

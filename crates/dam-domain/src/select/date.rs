@@ -48,6 +48,13 @@ impl DateTest {
         }
     }
 
+    pub(crate) fn saved_filter(&self) -> Option<&str> {
+        match &self.0 {
+            Shape::On(OnDay::EventsOf(name)) => Some(name),
+            _ => None,
+        }
+    }
+
     pub fn is_one_day_or_instant(&self) -> bool {
         matches!(&self.0, Shape::At(m) if m.is_one_day_or_instant())
     }

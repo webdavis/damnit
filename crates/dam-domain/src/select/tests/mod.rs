@@ -1,4 +1,5 @@
 mod any_groups;
+mod authors;
 mod categories;
 mod dates;
 mod defaults;
@@ -10,6 +11,7 @@ mod fixture;
 mod negation;
 mod objects;
 mod on_days;
+mod saved_names;
 mod spans;
 mod tables;
 mod values;

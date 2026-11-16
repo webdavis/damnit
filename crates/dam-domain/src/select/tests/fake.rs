@@ -11,6 +11,7 @@ pub struct Fake {
     pub open_tasks: BTreeSet<Oid>,
     pub listed: BTreeMap<String, BTreeSet<Oid>>,
     pub event_days: BTreeMap<String, BTreeSet<Date>>,
+    pub authors: BTreeMap<Oid, String>,
 }
 
 impl Fake {
@@ -21,6 +22,7 @@ impl Fake {
             open_tasks: BTreeSet::new(),
             listed: BTreeMap::new(),
             event_days: BTreeMap::new(),
+            authors: BTreeMap::new(),
         }
     }
 }
@@ -46,5 +48,9 @@ impl Context for Fake {
         self.event_days
             .get(filter)
             .is_some_and(|s| s.contains(&day))
+    }
+
+    fn author(&self, oid: &Oid) -> &str {
+        self.authors.get(oid).map_or("owner", String::as_str)
     }
 }

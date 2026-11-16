@@ -28,7 +28,7 @@ pub static DONE: SelectField = row("done", YesNo, Task, One, task::done);
 pub static COMPLETED_AT: SelectField =
     row("completed_at", Date, Task, OneOrNone, task::completed_at);
 
-static FIELDS: [&SelectField; 30] = [
+static FIELDS: [&SelectField; 31] = [
     &KIND,
     &row("subject", Text, Both, One, base::subject),
     &row("body", Text, Both, OneOrNone, base::body),
@@ -39,6 +39,7 @@ static FIELDS: [&SelectField; 30] = [
     &row("depends", Reference, Both, Many, base::depends),
     &row("reminders", Length, Both, Many, base::reminders),
     &row("filter", FilterName, Both, One, base::own_id),
+    &row("author", TextSet, Both, One, base::author),
     &DONE,
     &row("overdue", YesNo, Task, One, task::overdue),
     &row("blocked", YesNo, Task, One, task::blocked),
