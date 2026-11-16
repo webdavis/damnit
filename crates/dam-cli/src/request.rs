@@ -4,6 +4,7 @@ mod misuse;
 mod plain;
 mod refusal;
 mod source;
+mod whole_values;
 
 pub(crate) use hook::hook_edit_args;
 use source::read;
@@ -84,7 +85,7 @@ fn with_fields(
     refuse_flags_beside(given, leaf_given, &leaf_command, fields, takes_meta)?;
     let mut full = line;
     full.extend(argv::tokens(&leaf_command, fields, takes_meta)?);
-    let cli = Cli::try_parse_from(full).map_err(|e| {
+    let cli = whole_values::parsed(full).map_err(|e| {
         let mut built = Cli::command();
         built.build();
         refusal::named(&e, &command_at(built, &words))

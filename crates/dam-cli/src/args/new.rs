@@ -2,7 +2,7 @@ use clap::Args;
 use dam_domain::{CallerId, Kind, Path, Priority};
 
 use super::ScopeArgs;
-use super::values::{caller_id_arg, kind_arg, path_arg, priority_arg};
+use super::values::{caller_id_arg, kind_arg, label_arg, path_arg, priority_arg};
 
 #[derive(Args, Debug)]
 pub(crate) struct NewArgs {
@@ -48,7 +48,13 @@ pub(crate) struct NewArgs {
         help = "Set the deadline, a whole day read the way --due reads one"
     )]
     pub(crate) deadline: Option<String>,
-    #[arg(long, alias = "label", help = "Add a label. Repeatable")]
+    #[arg(
+        long,
+        alias = "label",
+        value_delimiter = ',',
+        value_parser = label_arg,
+        help = "Add labels, such as bug,urgent. Repeatable"
+    )]
     pub(crate) labels: Vec<String>,
     #[arg(
         long,

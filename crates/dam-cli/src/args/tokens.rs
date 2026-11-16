@@ -1,5 +1,7 @@
 use clap::{Args, Subcommand};
 
+use super::values::label_arg;
+
 #[derive(Args, Debug)]
 pub(crate) struct TokenArgs {
     #[command(subcommand)]
@@ -41,7 +43,9 @@ pub(crate) struct CreateArgs {
     #[arg(
         long,
         value_name = "LABEL",
-        help = "Narrow the grant to objects carrying a label. Repeatable"
+        value_delimiter = ',',
+        value_parser = label_arg,
+        help = "Narrow the grant to objects carrying a label, such as bug,urgent. Repeatable"
     )]
     pub(crate) labels: Vec<String>,
     #[arg(long, help = "Narrow the grant to objects the token made")]

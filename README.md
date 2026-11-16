@@ -216,6 +216,8 @@ characters before `dam status` shows it.
     dam commit -m "morning triage"
     dam push
 
+`--labels errand,home` adds two labels; the flag also repeats.
+
 `dam push --preview [remote]` shows what a push would send, hold and skip for each remote, and
 starts no helper and writes nothing. It needs one `dam pull` or `dam push` with that remote after
 upgrading; until then it says the remote is not known.

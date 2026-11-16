@@ -137,6 +137,8 @@ Examples:
 #[cfg(test)]
 mod help_text_tests;
 #[cfg(test)]
+mod labels_tests;
+#[cfg(test)]
 mod output_flag_tests;
 #[cfg(test)]
 mod parent_tests;

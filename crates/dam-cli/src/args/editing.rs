@@ -2,7 +2,7 @@ use clap::Args;
 use dam_domain::Priority;
 
 use super::SetArgs;
-use super::values::{estimate_arg, priority_arg};
+use super::values::{estimate_arg, label_arg, priority_arg};
 
 #[derive(Args, Debug)]
 pub(crate) struct EditArgs {
@@ -48,9 +48,21 @@ pub(crate) struct EditArgs {
     pub(crate) no_deadline: bool,
     #[arg(long, alias = "undone", help = "Reopen a completed task")]
     pub(crate) no_done: bool,
-    #[arg(long, alias = "label", help = "Add a label. Repeatable")]
+    #[arg(
+        long,
+        alias = "label",
+        value_delimiter = ',',
+        value_parser = label_arg,
+        help = "Add labels, such as bug,urgent. Repeatable"
+    )]
     pub(crate) labels: Vec<String>,
-    #[arg(long, alias = "unlabel", help = "Remove a label. Repeatable")]
+    #[arg(
+        long,
+        alias = "unlabel",
+        value_delimiter = ',',
+        value_parser = label_arg,
+        help = "Remove labels, such as bug,urgent. Repeatable"
+    )]
     pub(crate) unlabels: Vec<String>,
     #[arg(
         long = "depends",

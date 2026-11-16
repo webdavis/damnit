@@ -44,7 +44,7 @@ When a template renders `secrets.lua`, the template writes the token's table wit
 ## Sending a task
 
 ```sh example as=agent
-dam new "Draft the release notes" --path work/ --due fri -p 2 --labels writing
+dam new "Draft the release notes" --path work/ --due fri -p 2 --labels writing,release
 ```
 
 The same request as one JSON document, on standard input or in a file:
@@ -54,6 +54,9 @@ dam new --request - <<< '{"subject": "Draft the changelog", "path": "work/", "du
 printf '%s' '{"subject": "Tag the release", "path": "work/"}' > task.json
 dam new --request task.json
 ```
+
+A labels flag splits its value on commas. A document's `labels` list keeps each element whole, so
+only a document sends a label that holds a comma.
 
 The document's keys are the flags without their dashes, plus `subject`. Only global flags, such as
 `-o json`, may come beside `--request`. The schema is `docs/schemas/new.request.schema.json`;
