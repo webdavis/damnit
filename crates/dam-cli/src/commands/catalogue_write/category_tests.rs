@@ -32,7 +32,15 @@ fn list(items: &[&str]) -> SettingValue {
 #[test]
 fn creating_an_exclusive_category_writes_its_values_and_the_flag() {
     let file = FakeSettingsFile::default();
-    let report = create(&Config::default(), &file, "effort", "light, deep", true).unwrap();
+    let report = create(
+        &Config::default(),
+        &file,
+        "config.lua",
+        "effort",
+        "light, deep",
+        true,
+    )
+    .unwrap();
     assert_eq!(
         *file.written.borrow(),
         vec![
@@ -46,14 +54,22 @@ fn creating_an_exclusive_category_writes_its_values_and_the_flag() {
     );
     assert_eq!(
         report.data,
-        serde_json::json!({"name": "effort", "values": ["light", "deep"], "exclusive": true})
+        serde_json::json!({"name": "effort", "values": ["light", "deep"], "exclusive": true, "file": "config.lua"})
     );
 }
 
 #[test]
 fn a_category_that_is_not_exclusive_writes_only_its_values() {
     let file = FakeSettingsFile::default();
-    let report = create(&Config::default(), &file, "place", "home,work", false).unwrap();
+    let report = create(
+        &Config::default(),
+        &file,
+        "config.lua",
+        "place",
+        "home,work",
+        false,
+    )
+    .unwrap();
     assert_eq!(
         *file.written.borrow(),
         vec![Written::Set(
@@ -93,7 +109,7 @@ fn the_rules_of_the_config_reader_refuse_a_category_and_nothing_is_written() {
     ];
     for (name, values, refused) in cases {
         assert_eq!(
-            refusal(create(&effort(), &file, name, values, false)),
+            refusal(create(&effort(), &file, "config.lua", name, values, false)),
             refused
         );
     }
@@ -117,7 +133,7 @@ fn removing_a_category_removes_its_entry_and_counts_the_tasks_keeping_its_labels
     event.base.labels = ["light".to_string()].into();
     store.put(&Object::Event(event)).unwrap();
     let file = FakeSettingsFile::default();
-    let report = remove(&effort(), &store, &file, "effort").unwrap();
+    let report = remove(&effort(), &store, &file, "config.lua", "effort").unwrap();
     assert_eq!(
         *file.written.borrow(),
         vec![Written::Unset("category.effort".into())]
@@ -128,14 +144,21 @@ fn removing_a_category_removes_its_entry_and_counts_the_tasks_keeping_its_labels
     );
     assert_eq!(
         report.data,
-        serde_json::json!({"name": "effort", "tasks_keeping_labels": 2})
+        serde_json::json!({"name": "effort", "tasks_keeping_labels": 2, "file": "config.lua"})
     );
 }
 
 #[test]
 fn removing_a_category_no_task_carries_says_only_that_it_is_removed() {
     let file = FakeSettingsFile::default();
-    let report = remove(&effort(), &MemoryStore::new(), &file, "effort").unwrap();
+    let report = remove(
+        &effort(),
+        &MemoryStore::new(),
+        &file,
+        "config.lua",
+        "effort",
+    )
+    .unwrap();
     assert_eq!(report.human, "removed category effort");
 }
 
@@ -143,41 +166,14 @@ fn removing_a_category_no_task_carries_says_only_that_it_is_removed() {
 fn removing_a_category_that_does_not_exist_is_refused() {
     let file = FakeSettingsFile::default();
     assert_eq!(
-        refusal(remove(&effort(), &MemoryStore::new(), &file, "place")),
+        refusal(remove(
+            &effort(),
+            &MemoryStore::new(),
+            &file,
+            "config.lua",
+            "place"
+        )),
         "there is no category place; dam category list shows the categories"
     );
     assert!(file.written.borrow().is_empty());
-}
-
-#[test]
-fn the_answers_match_their_schemas() {
-    let file = FakeSettingsFile::default();
-    let created = create(&Config::default(), &file, "effort", "light", true).unwrap();
-    let removed = remove(&effort(), &MemoryStore::new(), &file, "effort").unwrap();
-    for (data, schema) in [
-        (
-            created.data,
-            include_str!("../../../../../docs/schemas/category-create.schema.json"),
-        ),
-        (
-            removed.data,
-            include_str!("../../../../../docs/schemas/category-remove.schema.json"),
-        ),
-    ] {
-        let schema: serde_json::Value = serde_json::from_str(schema).unwrap();
-        assert!(jsonschema::is_valid(&schema, &data), "{data}");
-    }
-}
-
-#[test]
-fn one_task_keeping_the_labels_is_counted_in_the_singular() {
-    let store = MemoryStore::new();
-    let mut task = Task::new(oid(1), "a task");
-    task.base.labels = ["deep".to_string()].into();
-    store.put(&Object::Task(task)).unwrap();
-    let report = remove(&effort(), &store, &FakeSettingsFile::default(), "effort").unwrap();
-    assert_eq!(
-        report.human,
-        "removed category effort\n1 task keeps its labels as free labels"
-    );
 }

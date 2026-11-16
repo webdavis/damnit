@@ -12,6 +12,7 @@ use crate::view::report;
 pub(super) fn create(
     config: &Config,
     file: &dyn SettingsFile,
+    named: &str,
     name: &str,
     values: &str,
     exclusive: bool,
@@ -61,6 +62,7 @@ pub(super) fn create(
         name,
         values: &values,
         exclusive,
+        file: named,
     })
 }
 
@@ -68,6 +70,7 @@ pub(super) fn remove(
     config: &Config,
     store: &dyn Store,
     file: &dyn SettingsFile,
+    named: &str,
     name: &str,
 ) -> Result<Report, CliError> {
     let category = config.categories.category_of_name(name).ok_or_else(|| {
@@ -88,5 +91,6 @@ pub(super) fn remove(
     report(&CategoryRemoved {
         name,
         tasks_keeping_labels,
+        file: named,
     })
 }

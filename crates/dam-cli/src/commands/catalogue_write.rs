@@ -5,6 +5,7 @@ mod filter;
 mod filter_written;
 mod migrate;
 mod migrated;
+pub(crate) mod routed;
 
 use dam_application::SetRun;
 
@@ -12,18 +13,15 @@ use crate::args::{CategoryCommand, FilterCommand};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
+use crate::project_scope::Standing;
 
-pub(super) fn run_category(ctx: &Context, command: CategoryCommand) -> Result<Report, CliError> {
+pub(crate) fn run_category(
+    ctx: &Context,
+    command: CategoryCommand,
+    standing: &Standing,
+) -> Result<Report, CliError> {
     let file = ctx.settings_file.as_ref();
     match command {
-        CategoryCommand::Create {
-            name,
-            values,
-            exclusive,
-        } => category::create(&ctx.config, file, &name, &values, exclusive),
-        CategoryCommand::Remove { name } => {
-            category::remove(&ctx.config, ctx.store.as_ref(), file, &name)
-        }
         CategoryCommand::Migrate {
             map,
             preview,
@@ -43,19 +41,28 @@ pub(super) fn run_category(ctx: &Context, command: CategoryCommand) -> Result<Re
                 update_config,
             },
         ),
-        CategoryCommand::List => unreachable!("dam category list reads the config alone"),
+        command => routed::category(&settings(ctx, standing), ctx.store.as_ref(), command),
     }
 }
 
-pub(super) fn run_filter(ctx: &Context, command: FilterCommand) -> Result<Report, CliError> {
-    let file = ctx.settings_file.as_ref();
-    match command {
-        FilterCommand::Create { name, query } => filter::create(&ctx.config, file, &name, &query),
-        FilterCommand::Remove { name } => filter::remove(&ctx.config, file, &name),
-        FilterCommand::List => unreachable!("dam filter list reads the config alone"),
+pub(crate) fn run_filter(
+    ctx: &Context,
+    command: FilterCommand,
+    standing: &Standing,
+) -> Result<Report, CliError> {
+    routed::filter(&settings(ctx, standing), command)
+}
+
+fn settings<'a>(ctx: &'a Context, standing: &'a Standing) -> routed::Settings<'a> {
+    routed::Settings {
+        config: &ctx.config,
+        personal: ctx.settings_file.as_ref(),
+        standing,
     }
 }
 
+#[cfg(test)]
+mod category_answer_tests;
 #[cfg(test)]
 mod category_tests;
 #[cfg(test)]
@@ -64,3 +71,5 @@ mod filter_tests;
 mod migrate_refusal_tests;
 #[cfg(test)]
 mod migrate_tests;
+#[cfg(test)]
+mod project_tests;

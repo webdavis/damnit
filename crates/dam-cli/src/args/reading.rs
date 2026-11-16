@@ -69,16 +69,24 @@ pub(crate) struct CategoryArgs {
 pub(crate) enum CategoryCommand {
     #[command(about = "List declared categories with their values and whether they are exclusive")]
     List,
-    #[command(about = "Declare a category in config.lua")]
+    #[command(about = "Declare a category in config.lua, or in .dam.lua inside a project")]
     Create {
         name: String,
         #[arg(long, help = "The labels of the category, separated by commas")]
         values: String,
         #[arg(long, help = "Let a task hold at most one of its labels")]
         exclusive: bool,
+        #[arg(long, help = "Write config.lua inside a project, not .dam.lua")]
+        global: bool,
     },
-    #[command(about = "Remove a category from config.lua; labels on tasks stay as free labels")]
-    Remove { name: String },
+    #[command(
+        about = "Remove a category from config.lua, or from .dam.lua inside a project; labels on tasks stay as free labels"
+    )]
+    Remove {
+        name: String,
+        #[arg(long, help = "Write config.lua inside a project, not .dam.lua")]
+        global: bool,
+    },
     #[command(about = "Rename labels on every task and event that carries them, as one change")]
     Migrate {
         #[arg(
@@ -114,12 +122,18 @@ pub(crate) struct FilterArgs {
 pub(crate) enum FilterCommand {
     #[command(about = "List saved filters with their kinds and queries")]
     List,
-    #[command(about = "Save a filter in config.lua")]
+    #[command(about = "Save a filter in config.lua, or in .dam.lua inside a project")]
     Create {
         name: String,
         #[arg(long, help = "The query the filter runs, such as due:today")]
         query: String,
+        #[arg(long, help = "Write config.lua inside a project, not .dam.lua")]
+        global: bool,
     },
-    #[command(about = "Remove a saved filter from config.lua")]
-    Remove { name: String },
+    #[command(about = "Remove a saved filter from config.lua, or from .dam.lua inside a project")]
+    Remove {
+        name: String,
+        #[arg(long, help = "Write config.lua inside a project, not .dam.lua")]
+        global: bool,
+    },
 }

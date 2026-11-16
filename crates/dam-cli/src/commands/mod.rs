@@ -2,7 +2,7 @@ mod agenda;
 mod authorship;
 mod caller_id;
 pub(crate) mod catalogue;
-mod catalogue_write;
+pub(crate) mod catalogue_write;
 mod check_report;
 mod commit;
 pub(crate) mod config;
@@ -82,12 +82,12 @@ fn run_a_verb(ctx: &Context, command: Command) -> Result<Report, CliError> {
         Command::Pull(a) => sync::run_pull(ctx, a),
         Command::Resolve(a) => sync::run_resolve(ctx, a),
         Command::Sync(a) => sync::run_sync(ctx, a),
-        Command::Category(a) => catalogue_write::run_category(ctx, a.command),
-        Command::Filter(a) => catalogue_write::run_filter(ctx, a.command),
         Command::Hook(HookArgs {
             command: Some(HookCommand::Run(a)),
         }) => hook_run::run(ctx, a),
         Command::Init(_)
+        | Command::Category(_)
+        | Command::Filter(_)
         | Command::Hook(_)
         | Command::Token(_)
         | Command::Config(_)

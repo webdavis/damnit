@@ -151,8 +151,9 @@ Inside the folder, `path` is where `dam new` starts a task's `--path`, and `dam 
 and `dam reminders` list only what is under it.
 A `.dam.lua` that does not load stops those four commands unless `--global` or `--project` is given;
 the others warn and carry on. dam never quotes the file's text in the error.
-Inside the folder, `dam config set` writes these keys into `.dam.lua`, keeping its other text, and
-refuses a value the file would then not load with; nothing is changed.
+Inside the folder, `dam config set`, `dam filter create|remove` and `dam category create|remove`
+write `.dam.lua`, keeping its other text, and refuse a change the file would then not load with;
+nothing is changed. `--global` writes `config.lua` instead.
 
 ## Filters
 
