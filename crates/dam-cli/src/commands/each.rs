@@ -21,11 +21,16 @@ pub(crate) fn set_of(
     oids: &[String],
     set: &SetArgs,
 ) -> Result<(Selector, SetRun), CliError> {
+    if set.as_one && ctx.access.token().is_none() {
+        return Err(CliError::Usage(
+            "--as-one is for a token; your own changes do not wait, so drop --as-one".into(),
+        ));
+    }
     let selector = selector(ctx, oids, set)?;
     let run = SetRun {
         preview: set.preview,
         expect: set.expect,
-        as_one: false,
+        as_one: set.as_one,
     };
     let run = confirmed(ctx, &selector, run)?;
     Ok((selector, run))

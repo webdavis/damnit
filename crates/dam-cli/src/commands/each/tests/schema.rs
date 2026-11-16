@@ -37,6 +37,11 @@ fn every_answer_matches_the_published_changes_schema() {
         .unwrap(),
         dam(&ctx, &["done", "--query", "path:garden/"]).unwrap(),
         dam(&ctx, &["rm", &oids[0], &oids[1]]).unwrap(),
+        dam(
+            &super::as_one::token_context().0,
+            &["edit", "--query", "kind:task", "--subject", "x", "--as-one"],
+        )
+        .unwrap(),
     ];
     for answer in answers {
         let errors: Vec<String> = validator

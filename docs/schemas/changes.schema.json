@@ -12,6 +12,10 @@
       "description": "True when nothing was written."
     },
     "count": { "type": "integer", "minimum": 0 },
+    "set": {
+      "$ref": "status.schema.json#/$defs/id",
+      "description": "With --as-one, the set a token's items wait in, taken or declined whole."
+    },
     "oids": {
       "type": "array",
       "items": { "$ref": "status.schema.json#/$defs/id" }
