@@ -22,6 +22,8 @@ pub struct WireObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub container_remote_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub task: Option<WireTask>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub event: Option<WireEvent>,

@@ -18,6 +18,7 @@ pub fn to_wire(object: &Object, remote_id: Option<String>) -> WireObject {
         reminders: b.reminders.iter().map(|r| r.minutes_before).collect(),
         recurrence: b.recurrence.as_ref().map(ToString::to_string),
         parent: b.parent.as_ref().map(ToString::to_string),
+        container_remote_id: None,
         task: object.as_task().map(|t| WireTask {
             done: t.completion.is_done(),
             completed_at: t.completion.at().map(|at| at.to_string()),

@@ -16,6 +16,7 @@ fn wire(remote_id: String, subject: &str, body: &str, path: String, task: WireTa
         reminders: vec![],
         recurrence: None,
         parent: None,
+        container_remote_id: None,
         task: Some(task),
         event: None,
     }

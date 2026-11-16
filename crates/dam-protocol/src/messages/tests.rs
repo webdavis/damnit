@@ -19,6 +19,7 @@ fn milk(subject: &str, done: bool) -> WireObject {
         reminders: vec![],
         recurrence: None,
         parent: None,
+        container_remote_id: None,
         task: Some(WireTask {
             done,
             completed_at: None,

@@ -85,7 +85,7 @@ fn the_fixtures_set_every_field_of_the_object_document() {
             "object",
             fields_of::<WireObject>(),
             vec![&task, &event],
-            &["remote_id"],
+            &["remote_id", "container_remote_id"],
         ),
         ("task", fields_of::<WireTask>(), vec![t], &["event"]),
         ("focus", fields_of::<WireFocus>(), vec![&t["focus"]], &[]),

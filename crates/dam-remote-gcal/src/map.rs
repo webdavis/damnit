@@ -82,6 +82,7 @@ pub(crate) fn map_event(listing: &Listing, event: &GoogleEvent) -> Result<Mapped
         reminders: vec![],
         recurrence: None,
         parent: None,
+        container_remote_id: None,
         task: None,
         event: Some(wire_event),
     };
