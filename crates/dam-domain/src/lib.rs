@@ -52,7 +52,7 @@ pub use query::{
 pub use recurrence::{Anchor, Freq, Recurrence, Rule, RuleError, roll_forward};
 pub use select::{
     Command, Condition, Context, DateTest, DefaultsError, FieldType, Filter, FilterError,
-    FilterTable, Fix, Has, Holds, Order, Problem, Scope, SelectField, Sort, TableValue,
+    FilterTable, Fix, Has, Holds, Order, Problem, Scope, SelectField, Sort, TableValue, WindowEdge,
     closest_field, scope, select_field, select_fields,
 };
 pub use weekday::{parse_weekday, weekday_text};

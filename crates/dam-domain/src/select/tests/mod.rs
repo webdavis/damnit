@@ -16,3 +16,4 @@ mod sorts;
 mod spans;
 mod tables;
 mod values;
+mod window_edges;
