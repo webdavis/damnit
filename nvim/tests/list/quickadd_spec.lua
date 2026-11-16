@@ -46,6 +46,7 @@ return {
     prompt.type(":Dam new<CR>buy oat milk --due 2026-11-20")
     local config = vim.api.nvim_win_get_config(assert(prompt.window()))
     assert(vim.trim(config.title[1][1]) == "dam new", vim.inspect(config.title))
+    assert(config.relative == "editor", config.relative)
     prompt.footer_reads('task "buy oat milk" · due 2026-11-20 · errand · home/')
     local previews = sent(fake, true)
     assert(#previews == 1 and previews[1].cwd == cwd, vim.inspect(previews))
@@ -94,8 +95,10 @@ return {
   ["a in a list whose view has one path puts --path after the cursor"] = function()
     local _, fake = defined({ views = { home = { path = "home/" } } })
     listed(fake, "home")
+    local list = vim.api.nvim_get_current_win()
     prompt.type("abuy")
     assert(prompt.line() == "buy --path home/", prompt.line())
+    assert(vim.api.nvim_win_get_config(assert(prompt.window())).win == list, "not anchored to the list")
   end,
 
   ["o puts --parent with the row's short oid after the cursor"] = function()

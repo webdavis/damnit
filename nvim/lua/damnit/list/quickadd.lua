@@ -4,7 +4,7 @@ local words = require("damnit.kernel.words")
 local M = {}
 
 ---@class damnit.QuickAdd
----@field open fun(cwd: string, after: string, landing?: damnit.Landing)
+---@field open fun(cwd: string, after: string, landing?: damnit.Landing, anchor?: integer)
 ---@field send fun(text: string, cwd: string, landing?: damnit.Landing)
 
 ---@alias damnit.Landing fun(oid: string, done: fun(found: boolean))
@@ -48,9 +48,10 @@ function M.new(app, prompts)
     end
   end
 
-  function quickadd.open(cwd, after, landing)
+  function quickadd.open(cwd, after, landing, anchor)
     prompts:open({
       title = "dam new",
+      anchor = anchor,
       prefill = "",
       after = after,
       read = read(cwd),

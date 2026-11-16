@@ -22,7 +22,7 @@ function M.keys(app, quickadd, lists)
         local context = lists():context(buf)
         local after = after_of(context)
         if after then
-          quickadd.open(context.cwd, after, landing(lists(), buf))
+          quickadd.open(context.cwd, after, landing(lists(), buf), vim.api.nvim_get_current_win())
         end
       end
     end
@@ -60,7 +60,7 @@ function M.command(quickadd, lists)
     local land = context and landing(lists, buf) or nil
     local text = cmd.args:gsub("^%s*%S+%s*", "", 1)
     if vim.trim(text) == "" then
-      return quickadd.open(cwd, "", land)
+      return quickadd.open(cwd, "", land, context and vim.api.nvim_get_current_win() or nil)
     end
     quickadd.send(text, cwd, land)
   end
