@@ -46,4 +46,20 @@ return {
     assert(view.single_path(nil, views) == nil)
     assert(view.single_path({ path = { "a/", "b/" } }, views) == nil)
   end,
+
+  ["a request table reads back as dam list's flags, keys spelled with - for _ and ."] = function()
+    local got = view.flags({ due = "..today+7", labels = "bug", ["focus.day"] = "today", completed_at = "week" })
+    assert(got == "--completed-at week --due ..today+7 --focus-day today --labels bug", got)
+  end,
+
+  ["a list repeats its flag, true is the bare flag, false and numbers are words, title and group are no flags"] = function()
+    local got =
+      view.flags({ title = "Overdue", group = true, overdue = true, done = false, priority = 2, path = { "a/", "b/" } })
+    assert(got == "--done false --overdue --path a/ --path b/ --priority 2", got)
+  end,
+
+  ["a value with a space is quoted and each --any condition is its own flag"] = function()
+    local got = view.flags({ subject = 'fix "login" loop', any = { { labels = "urgent" }, { due = "..today" } } })
+    assert(got == [[--any labels=urgent --any due=..today --subject "fix \"login\" loop"]], got)
+  end,
 }
