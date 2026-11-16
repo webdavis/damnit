@@ -316,7 +316,7 @@ The events are `task_new`, `task_changed` and `task_done`. A hook may return a t
 as `dam edit --request` takes them, and dam sets them on that task. What a hook prints goes to
 standard error. A failing hook warns, or with `on_failure = "refuse"` stops the command, which
 then changes nothing and exits 4. A `dam` run with `DAM_HOOK` set, as a hook's own commands are,
-exits 4 at once. `docs/lua.md` describes hooks.
+exits 4 at once. `dam log` names the hook that changed a task. `docs/lua.md` describes hooks.
 
 `hooks/task_pulled.lua` runs after a pull, as `run(task, before, pull)`, for each task the pull created
 or changed. dam commits its changes after the pull's commit, or with `changes = "working"` leaves

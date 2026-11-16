@@ -2,7 +2,7 @@ use crate::args::{AddArgs, CommitArgs};
 use crate::commands::stage::run_add;
 use crate::error::CliError;
 use crate::testing::context;
-use dam_application::Clock;
+use dam_application::{Clock, HookEvent};
 use dam_domain::{Object, Oid, Task, Timestamp};
 use jiff::civil::Date;
 
@@ -95,4 +95,40 @@ fn log_prints_commit_times_in_local_time_like_ls() {
         format!("{id}  2026-10-13 10:00  1 change  you  standup notes")
     );
     assert_eq!(log.data["commits"][0]["at"], "2026-10-13T14:00:00Z");
+}
+
+#[test]
+fn log_names_the_hook_that_changed_a_task() {
+    let mut ctx = context();
+    ctx.clock = Box::new(TwoPmUtc);
+    let oid = Oid::generate(&mut |x: &mut [u8]| x.fill(1));
+    ctx.store
+        .put(&Object::Task(Task::new(oid.clone(), "a")))
+        .unwrap();
+    ctx.store.mark_hooked(&oid, HookEvent::TaskNew).unwrap();
+    run_add(
+        &ctx,
+        AddArgs {
+            oids: vec![],
+            all: true,
+        },
+    )
+    .unwrap();
+    super::run_commit(
+        &ctx,
+        CommitArgs {
+            message: "dentist".into(),
+        },
+    )
+    .unwrap();
+    let log = super::run_log(&ctx).unwrap();
+    let id = log.data["commits"][0]["id"].as_str().unwrap()[..7].to_string();
+    assert_eq!(
+        log.human,
+        format!("{id}  2026-10-13 14:00  1 change  you, hook task_new  dentist")
+    );
+    assert_eq!(
+        log.data["commits"][0]["changes"][0]["details"]["meta"]["hook"],
+        "task_new"
+    );
 }
