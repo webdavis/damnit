@@ -195,7 +195,11 @@ dam applies it to the task within the same command, by the rules `dam edit` appl
 The change a hook makes runs no hook.
 The command's answer lists each task a hook changed under `changed_by_hook`, as its `oid` and
 the `hook`'s event. In plain text it says `dam: hook task_new changed <oid>` on standard error.
-`dam log` does not yet name the hook that made a change.
+`dam log` names the hook beside the sender, as `you, hook task_new`, and `--json` holds it
+under `details.meta.hook`. When several hooks change a task before your `dam add`, the record
+names the last one. When your own edit and a hook's edit land in one staged change, the record
+says a hook changed it, not which fields the hook set. `dam restore` or `dam rm` of the task
+drops what a hook did from that record; `dam reset` keeps it.
 A command a hook starts with `os.execute` or `io.popen` runs with `DAM_HOOK` set to the event.
 A `dam` that finds `DAM_HOOK` set refuses at once, before it reads or writes anything.
 It exits 4 with rule `started_by_hook`.

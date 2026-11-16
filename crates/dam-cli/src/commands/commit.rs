@@ -77,8 +77,13 @@ impl<'a> CommitDoc<'a> {
     }
 
     fn senders(&self) -> String {
-        let mut senders: Vec<&str> = Vec::new();
-        for sender in self.changes.iter().map(|c| c.sender(self.owner)) {
+        let mut senders: Vec<String> = Vec::new();
+        let names = self
+            .changes
+            .iter()
+            .map(|c| c.sender(self.owner).to_string());
+        let hooks = self.changes.iter().filter_map(|c| c.hook());
+        for sender in names.chain(hooks.map(|hook| format!("hook {hook}"))) {
             if !senders.contains(&sender) {
                 senders.push(sender);
             }

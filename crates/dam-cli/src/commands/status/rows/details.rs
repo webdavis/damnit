@@ -52,6 +52,13 @@ impl<'a> ChangeRow<'a> {
         self
     }
 
+    pub(crate) fn hook(&self) -> Option<&'a str> {
+        self.details
+            .as_ref()
+            .and_then(|d| d.meta.get("hook"))
+            .map(String::as_str)
+    }
+
     pub(crate) fn authored(ctx: &'a Context, change: &'a Authored, full: bool) -> ChangeRow<'a> {
         let token = change.author.token();
         let details = visible(ctx.access.as_ref(), token, change.details.as_ref());
