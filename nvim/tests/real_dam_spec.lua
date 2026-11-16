@@ -1,5 +1,6 @@
 local buffer = require("helpers.buffer")
 local helper = require("helpers.app")
+local ui = require("helpers.ui")
 local wait_for = buffer.wait_for
 
 local tests_dir = vim.fs.dirname(debug.getinfo(1, "S").source:sub(2))
@@ -59,6 +60,28 @@ local function shown_due(oid, sandbox)
   return got.answer.task.due
 end
 
+local function staged_and_committed_in_status(sandbox)
+  require("damnit").setup({ dam = dam_bin })
+  made(real_app(), { "new", "plant the tomatoes" }, sandbox)
+  vim.cmd.lcd(sandbox)
+  vim.cmd("Dam status")
+  local row = "  create plant the tomatoes  [subject]"
+  wait_for(function()
+    return vim.deep_equal(buffer.lines(), { "Unstaged (1)", row })
+  end, 20000)
+  vim.api.nvim_win_set_cursor(0, { 2, 0 })
+  buffer.feed("s")
+  wait_for(function()
+    return vim.deep_equal(buffer.lines(), { "Staged (1)", row })
+  end, 20000)
+  ui.answering({ input = "plant" }, function()
+    buffer.feed("c")
+  end)
+  wait_for(function()
+    return vim.deep_equal(buffer.lines(), { "nothing changed, staged, waiting or unpushed" })
+  end, 20000)
+end
+
 return {
   ["writing a changed due line in the task buffer changes what dam show prints"] = function()
     if vim.fn.executable(dam_bin) ~= 1 then
@@ -92,6 +115,13 @@ return {
       assert(vim.bo.modified, "no longer modified")
       assert(shown_due(oid, sandbox) == "2026-09-25")
     end)
+  end,
+
+  ["status shows a change made with dam new; s stages it and c commits it, and the section empties"] = function()
+    if vim.fn.executable(dam_bin) ~= 1 then
+      return ("no dam at %s; build it with cargo build -p damnit or set DAM_BIN"):format(dam_bin)
+    end
+    in_sandbox(staged_and_committed_in_status)
   end,
 
   ["a task made with dam new appears in :Dam list, its child indented under it"] = function()
