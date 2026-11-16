@@ -102,7 +102,9 @@ function Status:open_target_task()
     return self.open_log(self.cwd, nil, target.id)
   end
   if not (target and target.oid) then
-    return self.app.say:warn("<CR> opens the task of a change, waiting item or conflict row, or the log at a Recent commit")
+    return self.app.say:warn(
+      "<CR> opens the task of a change, waiting item or conflict row, or the log at a Recent commit"
+    )
   end
   self.open_task(target.oid, self.cwd)
 end
