@@ -14,12 +14,25 @@ local function spied()
   return seen
 end
 
+local function pushed_after_yes(fake, reply)
+  fake.reply("push", function(argv)
+    return vim.tbl_contains(argv, "--preview") and fixtures.answer("push-preview.json") or reply
+  end)
+  buffer.feed("P")
+  buffer.wait_for(function()
+    return vim.bo.filetype == "damconfirm"
+  end)
+  buffer.feed("y")
+end
+
 return {
   ["P shows the push running then success"] = function()
     local _, fake = status.opened()
     local seen = spied()
-    fake.reply("push", { code = 0, stdout = fixtures.read("push.json"), stderr = fixtures.read("progress-push.txt") })
-    buffer.feed("P")
+    pushed_after_yes(
+      fake,
+      { code = 0, stdout = fixtures.read("push.json"), stderr = fixtures.read("progress-push.txt") }
+    )
     buffer.wait_for(function()
       return #seen == 2
     end)
@@ -30,8 +43,7 @@ return {
     local _, fake = status.opened()
     local seen = spied()
     local notes = buffer.capture_notes()
-    fake.reply("push", { code = 1, stdout = "", stderr = fixtures.read("progress-push-failed.txt") })
-    buffer.feed("P")
+    pushed_after_yes(fake, { code = 1, stdout = "", stderr = fixtures.read("progress-push-failed.txt") })
     buffer.wait_for(function()
       return #notes > 0
     end)

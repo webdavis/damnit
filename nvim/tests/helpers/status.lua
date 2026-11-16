@@ -23,6 +23,12 @@ function M.defined(open_task)
   for verb, name in pairs(ANSWERS) do
     fake.reply(verb, fixtures.answer(name))
   end
+  fake.reply("push", function(argv)
+    return fixtures.answer(vim.tbl_contains(argv, "--preview") and "push-preview.json" or "push.json")
+  end)
+  fake.reply("restore", function(argv)
+    return fixtures.answer(vim.tbl_contains(argv, "--preview") and "restore-preview.json" or "restore.json")
+  end)
   return app, fake
 end
 

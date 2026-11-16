@@ -29,11 +29,11 @@ return {
     assert(vim.deep_equal(argv(header("staged"), "u"), { "reset" }))
   end,
 
-  ["a accepts and x declines a waiting item or set by its hash"] = function()
+  ["a accepts and dd declines a waiting item or set by its hash"] = function()
     for _, kind in ipairs({ "waiting", "set" }) do
       local target = { kind = kind, id = "abc1234", section = "waiting" }
       assert(vim.deep_equal(argv(target, "a"), { "add", "abc1234" }), kind)
-      assert(vim.deep_equal(argv(target, "x"), { "rm", "abc1234" }), kind)
+      assert(vim.deep_equal(argv(target, "dd"), { "rm", "abc1234" }), kind)
     end
   end,
 
@@ -41,13 +41,26 @@ return {
     assert(argv(change("staged"), "s") == nil)
     assert(argv(change("unstaged"), "u") == nil)
     assert(argv(change("unstaged"), "a") == nil)
-    assert(argv(header("staged"), "x") == nil)
+    assert(argv(header("staged"), "dd") == nil)
     assert(argv(nil, "s") == nil)
   end,
 
   ["each key says which rows it fits"] = function()
-    for _, key in ipairs({ "s", "u", "a", "x" }) do
+    for _, key in ipairs({ "s", "u", "a", "dd", "U" }) do
       assert(actions.fits(key):find("^" .. key .. " "), actions.fits(key))
     end
+  end,
+
+  ["U sets an unstaged or staged change back with dam restore, and fits no other row"] = function()
+    assert(vim.deep_equal(argv(change("unstaged"), "U"), { "restore", OID }))
+    assert(vim.deep_equal(argv(change("staged"), "U"), { "restore", OID }))
+    assert(argv(header("unstaged"), "U") == nil)
+  end,
+
+  ["dd's confirm rows are the waiting item or set as dam printed it"] = function()
+    local doc = require("helpers.fixtures").decoded("status.json")
+    local rows, summary = actions.declined(doc, { kind = "waiting", id = doc.waiting[1].hash })
+    local want = { { op = "new", subject = "call the plumber", detail = "from tool" } }
+    assert(vim.deep_equal(rows, want) and summary == "1 waiting item would be declined", vim.inspect(rows))
   end,
 }

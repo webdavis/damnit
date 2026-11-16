@@ -1,11 +1,16 @@
 local folds = require("damnit.kernel.folds")
-local actions = require("damnit.status.actions")
 local sections = require("damnit.status.sections")
 local winbar = require("damnit.status.winbar")
 
 local NAME = "dam://status"
 
-local Status = {}
+local Status = vim.tbl_extend(
+  "error",
+  {},
+  require("damnit.status.keys"),
+  require("damnit.status.confirms"),
+  require("damnit.status.refusals")
+)
 Status.__index = Status
 
 local M = {}
@@ -83,76 +88,12 @@ function Status:target()
   return self.targets[vim.api.nvim_win_get_cursor(0)[1]]
 end
 
----@param key "s"|"u"|"a"|"x"
-function Status:act(key)
-  local argv = actions.argv(self:target(), key)
-  if not argv then
-    return self.app.say:warn(actions.fits(key))
-  end
-  if key ~= "x" then
-    return self.writes.send(argv, self.cwd)
-  end
-  local row = vim.trim(vim.api.nvim_get_current_line()):gsub("%s+", " ")
-  vim.ui.select({ "decline", "keep" }, { prompt = ("decline %s?"):format(row) }, function(choice)
-    if choice == "decline" then
-      self.writes.send(argv, self.cwd)
-    end
-  end)
-end
-
 function Status:open_target_task()
   local target = self:target()
   if not (target and target.oid) then
     return self.app.say:warn("<CR> opens the task of a change, waiting item or conflict row")
   end
   self.open_task(target.oid, self.cwd)
-end
-
----@param buf integer
-function Status:bind(buf)
-  local function act(key, desc)
-    return {
-      lhs = key,
-      desc = desc,
-      run = function()
-        self:act(key)
-      end,
-    }
-  end
-  local function call(lhs, desc, run)
-    return { lhs = lhs, desc = desc, run = run }
-  end
-  self.app.keys:bind(
-    buf,
-    vim.list_extend({
-      act("s", "stage the change, or everything on a header"),
-      act("u", "unstage the change, or everything on the Staged header"),
-      act("a", "accept the waiting item or set"),
-      act("x", "decline the waiting item or set"),
-      call("c", "commit the stage", function()
-        self.writes.commit(self.cwd)
-      end),
-      call("P", "push to every remote", function()
-        self.writes.push(self.cwd)
-      end),
-      call("F", "pull from every remote", function()
-        self.writes.pull(self.cwd)
-      end),
-      call("<CR>", "open the task", function()
-        self:open_target_task()
-      end),
-      call("r", "read the status again", function()
-        self:read()
-      end),
-    }, folds.keys())
-  )
-  vim.api.nvim_create_autocmd("BufWipeout", {
-    group = self.group,
-    buffer = buf,
-    callback = function()
-      self.buf, self.answer = nil, nil
-    end,
-  })
 end
 
 ---@param cwd string
