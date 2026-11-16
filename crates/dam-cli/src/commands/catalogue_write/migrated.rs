@@ -1,4 +1,4 @@
-use dam_application::{ConfigPlace, SetChanges};
+use dam_application::{ConfigPlace, Dam, SetChanges};
 use serde::Serialize;
 use serde_json::{Value, json};
 
@@ -34,11 +34,12 @@ impl<'a> Migrated<'a> {
     pub(super) fn of(
         changes: &'a SetChanges,
         owner: &'a str,
+        dam: &Dam,
         places: Vec<Place>,
         updating: bool,
     ) -> Migrated<'a> {
         Migrated {
-            set: SetView::of(changes, owner),
+            set: SetView::of(changes, owner, dam),
             config: places.iter().map(document).collect(),
             places,
             updating,

@@ -70,6 +70,23 @@ fn the_change_preview_fixtures_are_what_the_change_keys_read() {
         "mv-preview.json",
         &answer(&sb, &moved, "changes.schema.json"),
     );
+    let fields = [
+        "edit",
+        &rent,
+        "--deadline",
+        "2026-12-04",
+        "--estimate",
+        "45",
+        "--category",
+        "context=errand",
+        "--preview",
+        "-o",
+        "json",
+    ];
+    assert_fixture(
+        "edit-preview-fields.json",
+        &answer(&sb, &fields, "changes.schema.json"),
+    );
     let removed = ["rm", "-", "--expect", "2", "--preview", "-o", "json"];
     assert_fixture(
         "rm-preview.json",

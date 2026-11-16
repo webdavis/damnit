@@ -1,7 +1,9 @@
-use dam_application::{SetChange, SetChanges};
+use dam_application::{Dam, SetChange, SetChanges};
 use dam_domain::{ItemHash, Oid};
 use serde::Serialize;
+use serde_json::{Map, Value};
 
+use super::after_values::after_values;
 use crate::commands::status::ChangeRow;
 use crate::view::{Human, Line, View, display, displays};
 
@@ -25,6 +27,8 @@ pub(crate) struct SetView<'a> {
 struct ChangeView<'a> {
     #[serde(flatten)]
     row: ChangeRow<'a>,
+    #[serde(flatten)]
+    after: Map<String, Value>,
     #[serde(
         skip_serializing_if = "Option::is_none",
         serialize_with = "optional_hash"
@@ -45,7 +49,7 @@ fn optional_hash<S: serde::Serializer>(
 }
 
 impl<'a> SetView<'a> {
-    pub(crate) fn of(changes: &'a SetChanges, owner: &'a str) -> SetView<'a> {
+    pub(crate) fn of(changes: &'a SetChanges, owner: &'a str, dam: &Dam) -> SetView<'a> {
         SetView {
             preview: changes.preview,
             count: changes.oids.len(),
@@ -53,7 +57,7 @@ impl<'a> SetView<'a> {
             changes: changes
                 .changes
                 .iter()
-                .map(|c| ChangeView::of(c, owner))
+                .map(|c| ChangeView::of(c, owner, dam))
                 .collect(),
             set: changes
                 .changes
@@ -65,11 +69,12 @@ impl<'a> SetView<'a> {
 }
 
 impl<'a> ChangeView<'a> {
-    fn of(change: &'a SetChange, owner: &'a str) -> ChangeView<'a> {
+    fn of(change: &'a SetChange, owner: &'a str, dam: &Dam) -> ChangeView<'a> {
         let sent = change.sent.as_ref();
         ChangeView {
             row: ChangeRow::new(&change.change, sent.map(|s| &s.item.author), false)
                 .sent(owner, None),
+            after: after_values(dam, &change.change),
             item: sent.map(|s| &s.item.hash),
             answer: sent.map(|s| s.answer.as_str()),
         }

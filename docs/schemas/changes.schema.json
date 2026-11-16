@@ -22,11 +22,39 @@
     },
     "changes": {
       "type": "array",
+      "description": "Each field named in fields that a change does not always carry also comes as a key holding the value it would have, in the form dam show prints it, and null when it would be cleared.",
       "items": {
         "allOf": [
           { "$ref": "status.schema.json#/$defs/change" },
           {
             "properties": {
+              "parent": {
+                "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/properties/parent" }],
+                "description": "The object it would sit in, null for none; carried when fields holds path."
+              },
+              "category": {
+                "$ref": "object.schema.json#/$defs/category",
+                "description": "The label groups it would hold, as dam show prints them; carried when fields holds labels."
+              },
+              "body": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/properties/body" }] },
+              "depends": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/properties/depends" }] },
+              "reminders": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/properties/reminders" }] },
+              "recurrence": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/properties/recurrence" }] },
+              "deadline": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/$defs/task/properties/deadline" }] },
+              "attached": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/$defs/task/properties/attached" }] },
+              "estimate": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/$defs/task/properties/estimate" }] },
+              "focus": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/$defs/task/properties/focus" }] },
+              "timezone": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/$defs/event/properties/timezone" }] },
+              "location": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/$defs/event/properties/location" }] },
+              "attendees": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/$defs/event/properties/attendees" }] },
+              "status": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/$defs/event/properties/status" }] },
+              "transparency": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/$defs/event/properties/transparency" }] },
+              "visibility": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/$defs/event/properties/visibility" }] },
+              "event_type": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/$defs/event/properties/event_type" }] },
+              "color": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/$defs/event/properties/color" }] },
+              "organizer": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/$defs/event/properties/organizer" }] },
+              "conference": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/$defs/event/properties/conference" }] },
+              "attachments": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/$defs/event/properties/attachments" }] },
               "item": {
                 "$ref": "status.schema.json#/$defs/id",
                 "description": "The item a token's change waits as."
