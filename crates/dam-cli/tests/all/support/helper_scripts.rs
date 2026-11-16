@@ -1,13 +1,28 @@
-use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
 use std::process::Command;
 
 use super::sandbox::Sandbox;
 
 impl Sandbox {
+    pub fn install_helper(&self, helper: &str, script: &str) {
+        let name = format!("dam-remote-{helper}");
+        let scripts = self.dir.path().join("helper-scripts");
+        std::fs::create_dir_all(&scripts).unwrap();
+        std::fs::write(scripts.join(&name), script).unwrap();
+        let launchers = self.dir.path().join("helpers");
+        std::fs::create_dir_all(&launchers).unwrap();
+        let launcher = launchers.join(&name);
+        if !launcher.exists() {
+            std::os::unix::fs::symlink(
+                Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/helper_launcher.sh"),
+                launcher,
+            )
+            .unwrap();
+        }
+    }
+
     pub fn install_silent_helper(&self) {
-        let helper = self.dir.path().join("bin/dam-remote-fake");
-        std::fs::write(&helper, "#!/bin/sh\nwhile :; do sleep 0.05; done\n").unwrap();
-        std::fs::set_permissions(&helper, std::fs::Permissions::from_mode(0o755)).unwrap();
+        self.install_helper("fake", "while :; do sleep 0.05; done\n");
     }
 
     pub fn no_helper_left_within(&self, margin: std::time::Duration) -> bool {
@@ -24,7 +39,7 @@ impl Sandbox {
     pub fn helper_running(&self) -> bool {
         Command::new("pgrep")
             .arg("-f")
-            .arg(self.dir.path().join("bin/dam-remote-fake"))
+            .arg(self.dir.path().join("helper-scripts/dam-remote-fake"))
             .output()
             .unwrap()
             .status

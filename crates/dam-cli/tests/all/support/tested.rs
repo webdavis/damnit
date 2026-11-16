@@ -1,5 +1,3 @@
-use std::os::unix::fs::PermissionsExt;
-
 use super::doctor::{Answer, VERSION};
 use super::sandbox::Sandbox;
 use super::schema::assert_matches_schema;
@@ -33,12 +31,10 @@ impl Sandbox {
     pub fn install_helper_without_login(&self, helper: &str) {
         let log = self.dir.path().join(format!("{helper}-requests"));
         let script = format!(
-            "#!/bin/sh\nwhile IFS= read -r line; do\n  printf '%s\\n' \"$line\" >> {log:?}\n  \
+            "while IFS= read -r line; do\n  printf '%s\\n' \"$line\" >> {log:?}\n  \
              printf '{{\"protocol\":1,\"kinds\":[],\"fields\":[],\"credentials\":[\"api_token\"]}}\\n'\ndone\n"
         );
-        let path = self.dir.path().join(format!("bin/dam-remote-{helper}"));
-        std::fs::write(&path, script).unwrap();
-        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
+        self.install_helper(helper, &script);
     }
 
     pub fn requests_to(&self, helper: &str) -> String {
