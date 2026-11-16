@@ -75,6 +75,10 @@ pub(super) fn of_defaults(fault: &Fault, error: &DefaultsError) -> String {
             "--{} holds only for tasks, and agenda lists events",
             flag_of(field)
         ),
+        DefaultsError::EventFieldInHookRun { field } => format!(
+            "--{} holds only for events, and a hook runs over tasks",
+            flag_of(field)
+        ),
     }
 }
 
