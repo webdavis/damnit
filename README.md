@@ -121,6 +121,15 @@ syncs by itself.
 `dam sync run todoist --when-due` syncs only when `interval` has passed since the last sync, and
 never when `allowed = false`; otherwise it prints nothing. `--interval 5m` replaces `interval`.
 
+    dam sync start todoist      # now, until the next restart; --interval 5m for this run only
+    dam sync stop todoist       # now; the next login still starts it if enabled
+    dam sync enable todoist     # at every login; --now also starts it
+    dam sync disable todoist    # no longer at login; --now also stops it
+
+Each names one remote and is safe to repeat. `start` and `enable` refuse when `allowed = false`.
+A token cannot run them. macOS uses launchd; elsewhere `dam` refuses and prints the crontab line
+to add by hand. `docs/schemas/sync-start.schema.json` and its three siblings are their `--json` schemas.
+
 ## Google Calendar
 
     cargo install --git https://github.com/webdavis/damnit dam-remote-gcal
@@ -562,7 +571,7 @@ output:
 
 `docs/schemas/error.schema.json` is the JSON Schema of this document.
 `kind` is one of `refused`, `store`, `helper`, `credential`, `filter`, `editor`, `parse`,
-`usage`, `cancelled` and `internal`, the last meaning a bug in `dam` itself.
+`usage`, `cancelled`, `scheduler` and `internal`, the last meaning a bug in `dam` itself.
 `rule` names which rule a refusal broke, such as `blocked`, `no_such_object` or
 `nothing_to_commit`, and is null for every other kind except an ambiguous oid prefix, a `usage`
 failure with rule `ambiguous_prefix`. `oids` names the objects the message names, in the order it

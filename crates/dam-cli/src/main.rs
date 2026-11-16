@@ -122,12 +122,12 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     }
     let ctx = Context::open(
         config_file,
-        &store_path,
         presented_token,
         &meta,
         format,
         asked,
         interrupt,
+        context::invocation_of(&config_path, &store_path),
     )?;
     let report = match cli.command {
         Command::Init(args) => {

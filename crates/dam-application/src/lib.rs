@@ -30,11 +30,12 @@ pub use ports::{
     Declared, DroppedBecause, EditFault, EditRequest, EditRequests, EditedTable, Expected,
     FilterFunctions, FollowOn, FollowOnRepository, FunctionFailure, FunctionFault, HelperError,
     HelperLauncher, Histories, History, HookEdits, HookFailure, HookMarkRepository, HookWarnings,
-    Hooks, IdRepository, Interruption, ItemRepository, LoadedConfig, Misread, MissingTask,
-    NoProgress, Notice, NoticeRepository, ObjectRepository, ObjectState, OriginRepository, Place,
-    Progress, Pull, PulledChange, Randomness, RemoteHelper, RemoteName, RemoteNameError,
-    RemoteTrackingRepository, ScheduleError, SecretsTightened, SettingChange, SettingsFile,
-    StageRepository, Step, Store, StoreError, Transactional, Uneditable, label_of, waited_on,
+    Hooks, IdRepository, Interruption, Invocation, ItemRepository, LoadedConfig, Misread,
+    MissingTask, NoProgress, Notice, NoticeRepository, ObjectRepository, ObjectState,
+    OriginRepository, Place, Progress, Pull, PulledChange, Randomness, RemoteHelper, RemoteName,
+    RemoteNameError, RemoteTrackingRepository, ScheduleError, SecretsTightened, SettingChange,
+    SettingsFile, StageRepository, Step, Store, StoreError, Transactional, Uneditable, label_of,
+    waited_on,
 };
 pub use project::{PROJECT_FILE, Project, ProjectFolders, ProjectSettings, find_project};
 pub use remote::{
@@ -49,6 +50,7 @@ pub use tokens::{
     disable_shared_values,
 };
 pub use use_cases::agenda::{Scheduled, Window};
+pub use use_cases::background::{BackgroundReport, BackgroundRequest, BackgroundStep};
 pub use use_cases::complete::{CompletePlan, Completed};
 pub use use_cases::edit::{EditFields, apply};
 pub use use_cases::hooks::pulled::PulledHookRun;

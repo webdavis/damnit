@@ -17,7 +17,26 @@ pub struct BackgroundJob {
     pub interval: Option<Duration>,
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Invocation {
+    pub dam: String,
+    pub config: String,
+    pub store: String,
+    pub search_path: String,
+}
+
 impl BackgroundJob {
+    pub fn new(invocation: &Invocation, remote: &str, interval: Option<Duration>) -> BackgroundJob {
+        BackgroundJob {
+            remote: remote.to_string(),
+            dam: invocation.dam.clone(),
+            config: invocation.config.clone(),
+            store: invocation.store.clone(),
+            search_path: invocation.search_path.clone(),
+            interval,
+        }
+    }
+
     pub fn label(&self) -> String {
         label_of(&self.remote)
     }

@@ -16,8 +16,8 @@ Hooks live in their own files in a `hooks` folder beside them.
 | `remote.<name>.url` | `<helper>::<address>`. Required. |
 | `remote.<name>.deadline` | A duration. The longest the helper may stay silent. Default: `60s`. |
 | `remote.<name>.sync` | A table. |
-| `remote.<name>.sync.interval` | A duration of at least `1m`. How often background sync runs. Default: `15m`. |
-| `remote.<name>.sync.allowed` | `false` means background sync may never start for this remote. Default: `true`. |
+| `remote.<name>.sync.interval` | A duration of at least `1m`. How often background sync runs, read on every tick. Default: `15m`. |
+| `remote.<name>.sync.allowed` | `false` makes `dam sync start` and `dam sync enable` refuse and every tick do nothing. Default: `true`. |
 | `remote.<name>.path` | A push sends only the objects under this path. |
 | `category` | A table of label categories by name. |
 | `category.<name>.values` | A list of labels. Required. |

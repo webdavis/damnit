@@ -13,7 +13,7 @@
       "additionalProperties": false,
       "properties": {
         "kind": {
-          "enum": ["refused", "store", "helper", "credential", "filter", "editor", "parse", "usage", "cancelled", "internal"]
+          "enum": ["refused", "store", "helper", "credential", "filter", "editor", "parse", "usage", "cancelled", "scheduler", "internal"]
         },
         "rule": {
           "anyOf": [
@@ -105,6 +105,7 @@
         "ambiguous_prefix",
         "no_such_remote",
         "remote_exists",
+        "sync_not_allowed",
         "not_a_task",
         "focus_full",
         "not_an_event",

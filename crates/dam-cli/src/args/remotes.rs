@@ -57,6 +57,43 @@ Examples:
         )]
         interval: Option<Duration>,
     },
+    #[command(
+        about = "Sync one remote in the background from now until the next restart",
+        after_help = "Examples:
+  dam sync start todoist
+  dam sync start todoist --interval 5m"
+    )]
+    Start {
+        #[arg(help = "Sync this remote in the background")]
+        remote: String,
+        #[arg(
+            long,
+            value_parser = interval_of_at_least_a_minute,
+            help = "Sync this often until the next restart in place of remote.<name>.sync.interval, such as 5m"
+        )]
+        interval: Option<Duration>,
+    },
+    #[command(
+        about = "Stop the background sync of one remote now; a restart starts it again if it is enabled"
+    )]
+    Stop {
+        #[arg(help = "Stop the background sync of this remote")]
+        remote: String,
+    },
+    #[command(about = "Start the background sync of one remote at every login")]
+    Enable {
+        #[arg(help = "Sync this remote in the background from the next login")]
+        remote: String,
+        #[arg(long, help = "Also start it now")]
+        now: bool,
+    },
+    #[command(about = "Stop starting the background sync of one remote at login")]
+    Disable {
+        #[arg(help = "Do not sync this remote in the background from the next login")]
+        remote: String,
+        #[arg(long, help = "Also stop it now")]
+        now: bool,
+    },
 }
 
 #[derive(Args, Debug)]

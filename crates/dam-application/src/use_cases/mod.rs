@@ -1,6 +1,7 @@
 pub(crate) mod agenda;
 pub(crate) mod as_it_stands;
 pub(crate) mod atomically;
+pub(crate) mod background;
 pub(crate) mod caller_view;
 pub(crate) mod commit;
 pub(crate) mod complete;

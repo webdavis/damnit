@@ -50,6 +50,10 @@ impl fmt::Display for RefusalText<'_> {
             }
             Refusal::NoSuchRemote(s) => write!(f, "no remote named {s:?}"),
             Refusal::RemoteExists(name) => write!(f, "remote {name} already exists"),
+            Refusal::SyncNotAllowed(name) => write!(
+                f,
+                "remote.{name}.sync.allowed is false; run dam config set remote.{name}.sync.allowed true to allow background sync"
+            ),
             Refusal::NotATask(o) => {
                 write!(f, "{} is an event; events are not completed", o.short())
             }

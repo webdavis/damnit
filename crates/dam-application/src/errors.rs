@@ -1,3 +1,4 @@
+mod conversions;
 mod filter_error;
 mod refusal_name;
 mod retry;
@@ -10,7 +11,7 @@ use dam_domain::{
 };
 
 use crate::access::TokenRefusal;
-use crate::ports::{CredentialError, HelperError, HookFailure, StoreError};
+use crate::ports::{CredentialError, HelperError, HookFailure, ScheduleError, StoreError};
 use crate::use_cases::items::refusal::ItemRefusal;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -36,6 +37,7 @@ pub enum Refusal {
         matches: Vec<String>,
     },
     NoSuchRemote(String),
+    SyncNotAllowed(String),
     RemoteExists(String),
     NotATask(Oid),
     NotAnEvent(Oid),
@@ -113,32 +115,7 @@ pub enum UseCaseError {
     Parse(String),
     Query(QueryError),
     NotAnOid(String),
-}
-
-impl From<Refusal> for UseCaseError {
-    fn from(r: Refusal) -> UseCaseError {
-        UseCaseError::Refused(r)
-    }
-}
-impl From<ItemRefusal> for UseCaseError {
-    fn from(r: ItemRefusal) -> UseCaseError {
-        UseCaseError::Refused(Refusal::Item(r))
-    }
-}
-impl From<StoreError> for UseCaseError {
-    fn from(e: StoreError) -> UseCaseError {
-        UseCaseError::Store(e)
-    }
-}
-impl From<HelperError> for UseCaseError {
-    fn from(e: HelperError) -> UseCaseError {
-        UseCaseError::Helper(e)
-    }
-}
-impl From<CredentialError> for UseCaseError {
-    fn from(e: CredentialError) -> UseCaseError {
-        UseCaseError::Credential(e)
-    }
+    Schedule(ScheduleError),
 }
 
 #[cfg(test)]

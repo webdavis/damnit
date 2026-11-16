@@ -1,6 +1,6 @@
 use dam_application::Refusal;
 
-pub(super) const RULES: usize = 39;
+pub(super) const RULES: usize = 40;
 
 pub(super) fn rule_number(refusal: &Refusal) -> usize {
     match refusal {
@@ -43,5 +43,6 @@ pub(super) fn rule_number(refusal: &Refusal) -> usize {
         Refusal::ParentNotKnown { .. } => 36,
         Refusal::PathOutsideParent { .. } => 37,
         Refusal::SeveralHoldThePath { .. } => 38,
+        Refusal::SyncNotAllowed(_) => 39,
     }
 }

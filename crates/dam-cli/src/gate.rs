@@ -56,6 +56,10 @@ pub(crate) fn need(command: &Command) -> Need {
         Command::Sync(a) => match a.command {
             None => Need::Open,
             Some(SyncCommand::Run { .. }) => Need::NarrowedFrom(&[RemotePull, RemotePush]),
+            Some(SyncCommand::Start { .. }) => Need::OwnerOnly("sync start"),
+            Some(SyncCommand::Stop { .. }) => Need::OwnerOnly("sync stop"),
+            Some(SyncCommand::Enable { .. }) => Need::OwnerOnly("sync enable"),
+            Some(SyncCommand::Disable { .. }) => Need::OwnerOnly("sync disable"),
         },
         Command::Day(_) => Need::OwnerOnly("day"),
         Command::Token(a) => match a.command {
@@ -108,5 +112,7 @@ pub(crate) fn may(access: &dyn Access, permission: Permission) -> bool {
     access.permits(permission, &[Subject::Whole])
 }
 
+#[cfg(test)]
+mod background_tests;
 #[cfg(test)]
 mod tests;
