@@ -31,8 +31,8 @@ fn pulled_taking(matched: usize, kept: usize, confirmed: usize) -> crate::output
 fn a_pull_prints_what_it_took_from_the_record_of_attempts() {
     assert_eq!(
         pulled_taking(1, 1, 1).human,
-        "fake: 0 new, 0 updated, 2 unchanged, 0 conflicts, 0 removed upstream\n  \
-         1 create matched\n  1 value kept\n  1 delete confirmed"
+        "pull ── what each remote sent\n  ✓ fake: nothing new, 2 unchanged\n    \
+         · 1 create matched\n    · 1 value kept\n    · 1 delete confirmed"
     );
 }
 
@@ -47,6 +47,6 @@ fn a_pull_answers_what_it_took_from_the_record_of_attempts() {
 }
 
 #[test]
-fn a_pull_that_took_nothing_from_the_record_prints_one_line() {
-    assert_eq!(pulled_taking(0, 0, 0).human.lines().count(), 1);
+fn a_pull_that_took_nothing_from_the_record_prints_only_its_row() {
+    assert_eq!(pulled_taking(0, 0, 0).human.lines().count(), 2);
 }

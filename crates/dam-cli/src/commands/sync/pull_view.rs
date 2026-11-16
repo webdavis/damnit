@@ -3,6 +3,7 @@ use serde::Serialize;
 
 use super::pulled_hook_view::PulledHookRow;
 use crate::layout::counted;
+use crate::style::{Mark, Paint, advice, heading, row};
 use crate::view::{Human, View};
 
 #[derive(Serialize)]
@@ -41,16 +42,18 @@ impl<'a> PullRow<'a> {
         }
     }
 
-    fn line(&self) -> String {
-        let mut line = format!(
-            "{}: {} new, {} updated, {} unchanged, {}, {} removed upstream",
-            self.remote,
-            self.created,
-            self.updated,
-            self.unchanged,
-            counted(self.conflicts, "conflict", "conflicts"),
-            self.removed_upstream
-        );
+    fn lines(&self, paint: Paint) -> Vec<String> {
+        let mut lines = vec![row(paint, self.mark(), 2, &self.line())];
+        if self.conflicts > 0 {
+            lines.push(advice(
+                paint,
+                4,
+                "see dam status, settle each with dam resolve",
+            ));
+        }
+        if self.removed_upstream > 0 {
+            lines.push(advice(paint, 4, "see dam status, drop each with dam rm"));
+        }
         let taken_from_the_record = [
             (self.creates_matched, "create matched", "creates matched"),
             (self.values_kept, "value kept", "values kept"),
@@ -61,20 +64,54 @@ impl<'a> PullRow<'a> {
             ),
         ];
         for (n, one, many) in taken_from_the_record.into_iter().filter(|(n, ..)| *n > 0) {
-            line.push_str(&format!("\n  {}", counted(n, one, many)));
+            lines.push(row(paint, Mark::Quiet, 4, &counted(n, one, many)));
         }
         if let Some(run) = &self.task_pulled {
-            line.push_str(&format!("\n  {}", run.line()));
+            lines.push(row(paint, run.mark(), 4, &run.line()));
         }
-        line
+        lines
+    }
+
+    fn mark(&self) -> Mark {
+        match self.conflicts + self.removed_upstream {
+            0 => Mark::Good,
+            _ => Mark::Warn,
+        }
+    }
+
+    fn line(&self) -> String {
+        let counts = [
+            (self.created, "new", "new"),
+            (self.updated, "updated", "updated"),
+            (self.unchanged, "unchanged", "unchanged"),
+            (self.conflicts, "conflict", "conflicts"),
+            (
+                self.removed_upstream,
+                "removed upstream",
+                "removed upstream",
+            ),
+        ];
+        let mut shown: Vec<String> = counts
+            .into_iter()
+            .filter(|(n, ..)| *n > 0)
+            .map(|(n, one, many)| counted(n, one, many))
+            .collect();
+        if self.created + self.updated + self.conflicts + self.removed_upstream == 0 {
+            shown.insert(0, "nothing new".to_string());
+        }
+        format!("{}: {}", self.remote, shown.join(", "))
     }
 }
 
 impl View for Pulled<'_> {
     fn human(&self) -> Human {
-        match self.remotes.as_slice() {
-            [] => Human::Lines(vec!["no remotes to pull from".to_string()]),
-            remotes => Human::Lines(remotes.iter().map(PullRow::line).collect()),
-        }
+        Human::styled(|paint| {
+            let mut lines = vec![heading(paint, "pull", "what each remote sent")];
+            match self.remotes.as_slice() {
+                [] => lines.push(row(paint, Mark::Quiet, 2, "no remotes to pull from")),
+                remotes => lines.extend(remotes.iter().flat_map(|r| r.lines(paint))),
+            }
+            lines
+        })
     }
 }

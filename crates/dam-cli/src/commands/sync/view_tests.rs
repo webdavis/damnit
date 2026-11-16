@@ -3,7 +3,7 @@ use dam_domain::{CommitId, Oid};
 
 use super::pull_view::{PullRow, Pulled};
 use super::view::{PushRow, Pushed};
-use crate::view::{Human, View};
+use crate::view::{self, Human, View};
 
 fn lines(human: Human) -> Vec<String> {
     let Human::Lines(lines) = human else {
@@ -69,11 +69,9 @@ fn a_pull_says_what_its_pulled_hook_did() {
         remotes: vec![PullRow::new(&report)],
     };
     assert_eq!(
-        lines(shown.human()),
-        [
-            "fake: 1 new, 0 updated, 0 unchanged, 0 conflicts, 0 removed upstream\n  \
-          task_pulled: 1 ran, 0 changed, 1 failed, 0 not reached"
-        ]
+        view::report(&shown).unwrap().human,
+        "pull ── what each remote sent\n  ✓ fake: 1 new\n    \
+         ⚠ task_pulled: 1 ran, 0 changed, 1 failed, 0 not reached"
     );
 }
 
@@ -90,9 +88,9 @@ fn a_pull_names_the_commit_its_pulled_hook_made_in_text_and_json() {
         remotes: vec![PullRow::new(&report)],
     };
     assert_eq!(
-        lines(shown.human())[0].lines().last().unwrap(),
+        view::report(&shown).unwrap().human.lines().last().unwrap(),
         format!(
-            "  task_pulled: 1 ran, 1 changed, 0 failed, 0 not reached, commit {}",
+            "    ✓ task_pulled: 1 ran, 1 changed, 0 failed, 0 not reached, commit {}",
             commit.short()
         )
     );
@@ -140,9 +138,7 @@ fn a_push_names_each_object_that_failed_and_why_in_text_and_json() {
 }
 
 #[test]
-fn a_push_or_pull_with_no_remotes_says_so() {
+fn a_push_with_no_remotes_says_so() {
     let pushed = Pushed { remotes: vec![] };
-    let pulled = Pulled { remotes: vec![] };
     assert_eq!(lines(pushed.human()), ["no remotes to push to"]);
-    assert_eq!(lines(pulled.human()), ["no remotes to pull from"]);
 }

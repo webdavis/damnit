@@ -36,8 +36,7 @@ fn new_add_commit_push_pull_and_ls_work_across_processes() {
 
     let (ok, out, err) = sb.dam(&["pull"]);
     assert!(ok, "{err}");
-    assert!(out.contains("1 new"), "{out}");
-    assert!(out.contains("0 updated"), "{out}");
+    assert!(out.contains("✓ fake: 1 new, 1 unchanged"), "{out}");
 
     let (ok, out, _) = sb.dam(&["ls", "--json"]);
     assert!(ok);
