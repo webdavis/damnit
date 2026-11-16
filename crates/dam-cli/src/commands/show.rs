@@ -21,6 +21,7 @@ pub(crate) fn run_show(ctx: &Context, args: ShowArgs) -> Result<Report, CliError
             &object,
             &ctx.tz,
             authorship.lines(object.oid()),
+            parent_line(ctx, &object)?,
         ))?;
         authorship.stamp(object.oid(), &mut shown.data)?;
         return Ok(with_caller_id(shown, id.as_ref()));
@@ -30,6 +31,16 @@ pub(crate) fn run_show(ctx: &Context, args: ShowArgs) -> Result<Report, CliError
     }
     let record = ctx.dam().resolve_commit(&args.id)?;
     report(&ShownCommit(CommitDoc::new(&record, ctx)))
+}
+
+fn parent_line(ctx: &Context, object: &Object) -> Result<Option<String>, CliError> {
+    let Some(parent) = &object.base().parent else {
+        return Ok(None);
+    };
+    Ok(ctx
+        .dam()
+        .seen_object(parent)?
+        .map(|p| format!("parent: {} {}", parent.short(), p.base().subject)))
 }
 
 fn working_object_named(ctx: &Context, text: &str) -> Result<Option<Object>, CliError> {
@@ -46,6 +57,7 @@ struct ShownObject<'a>(
     #[serde(serialize_with = "wire")] &'a Object,
     #[serde(skip)] &'a jiff::tz::TimeZone,
     #[serde(skip)] Vec<String>,
+    #[serde(skip)] Option<String>,
 );
 
 impl View for ShownObject<'_> {
@@ -53,6 +65,7 @@ impl View for ShownObject<'_> {
         let b = self.0.base();
         let mut human = table(&[object_cells(self.0, self.1)]);
         human.push(format!("oid: {}", b.oid));
+        human.extend(self.3.clone());
         human.extend(self.2.iter().cloned());
         if !b.body.is_empty() {
             human.push(String::new());
@@ -86,3 +99,6 @@ impl View for ShownCommit<'_> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod parent_tests;
