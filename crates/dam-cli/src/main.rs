@@ -134,6 +134,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         context::invocation_of(&config_path, &store_path),
     )?
     .with_templates(templates);
+    let ctx = commands::scoped::following(ctx, &command, &standing)?;
     let report = match command {
         Command::Init(args) => commands::init::run(&ctx, args, (&run).into())?,
         command => commands::scoped::dispatch_in(&ctx, command, standing)?,

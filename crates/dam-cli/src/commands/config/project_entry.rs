@@ -12,6 +12,13 @@ pub(super) struct ProjectEntry {
     required: Vec<&'static str>,
     ls: Option<String>,
     filter: BTreeMap<String, FilterEntry>,
+    category: BTreeMap<String, CategoryEntry>,
+}
+
+#[derive(Serialize)]
+struct CategoryEntry {
+    values: Vec<String>,
+    exclusive: bool,
 }
 
 #[derive(Serialize)]
@@ -51,6 +58,18 @@ impl ProjectEntry {
                     Some((filter.name.clone(), FilterEntry { query }))
                 })
                 .collect(),
+            category: settings
+                .categories
+                .all()
+                .iter()
+                .map(|category| {
+                    let entry = CategoryEntry {
+                        values: category.values.clone(),
+                        exclusive: category.exclusive,
+                    };
+                    (category.name.clone(), entry)
+                })
+                .collect(),
         }
     }
 
@@ -77,6 +96,16 @@ impl ProjectEntry {
         rows.push(("ls".into(), self.ls.clone()));
         for (name, filter) in &self.filter {
             rows.push((format!("filter.{name}.query"), Some(filter.query.clone())));
+        }
+        for (name, category) in &self.category {
+            rows.push((
+                format!("category.{name}.values"),
+                Some(category.values.join(", ")),
+            ));
+            rows.push((
+                format!("category.{name}.exclusive"),
+                Some(category.exclusive.to_string()),
+            ));
         }
         rows.into_iter()
             .filter_map(|(key, value)| Some((key, format!("{} (from the project)", value?))))

@@ -9,13 +9,13 @@ use crate::project_scope::Standing;
 use crate::testing::context;
 
 fn inside() -> Standing {
-    Standing::Inside(Project {
+    Standing::Inside(Box::new(Project {
         folder: "/work/damnit".into(),
         settings: ProjectSettings {
             path: "damnit/".into(),
             ..Default::default()
         },
-    })
+    }))
 }
 
 fn unreadable() -> Standing {

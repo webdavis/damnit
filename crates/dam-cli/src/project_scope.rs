@@ -44,7 +44,7 @@ impl RunFolders {
 #[derive(Debug)]
 pub(crate) enum Standing {
     Outside,
-    Inside(Project),
+    Inside(Box<Project>),
     Unreadable(ConfigError),
 }
 
@@ -54,7 +54,7 @@ impl Standing {
             return Standing::Outside;
         };
         match read_project_file(&folder.join(PROJECT_FILE), env!("CARGO_PKG_VERSION")) {
-            Ok(settings) => Standing::Inside(Project { folder, settings }),
+            Ok(settings) => Standing::Inside(Box::new(Project { folder, settings })),
             Err(e) => Standing::Unreadable(e),
         }
     }

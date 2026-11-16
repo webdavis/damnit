@@ -25,6 +25,7 @@ mod hook_runs;
 mod hook_tables;
 mod lua_page;
 mod printing_restored;
+mod project_categories;
 mod project_control;
 mod project_escapes;
 mod project_rules;

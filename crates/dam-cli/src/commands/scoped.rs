@@ -10,7 +10,10 @@ use crate::error::CliError;
 use crate::output::Report;
 use crate::project_scope::Standing;
 
+mod categories;
 mod project_created;
+
+pub(crate) use categories::following;
 
 pub(crate) fn dispatch_in(
     ctx: &Context,

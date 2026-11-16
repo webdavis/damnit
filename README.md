@@ -351,7 +351,11 @@ With `required = { "due" }`, `dam new` refuses a task without a due date and nam
 `filter = { hot = { query = "p1" } }` is found before your own filter named `hot` in `dam ls` and
 `dam agenda`, and
 `dam filter list` there marks it `(the project's)`; `dam filter create` and `remove` still change
-only your `config.lua`. With
+only your `config.lua`.
+`category = { area = { values = { "ui", "db" }, exclusive = true } }` adds label categories, as
+`config.lua` writes them, to `dam new` and the queries you type there; `dam edit` covers everything
+and keeps to yours. A project category that shares a name or a label with one of yours refuses the
+file. A query in `.dam.lua` may name only the project's own categories. With
 `minimum_dam = "0.3.0"` an older `dam` refuses the file and names the version it needs.
 
 `dam new --template bug "crash on pull"` starts the task from a template: the project's

@@ -5,7 +5,11 @@ use dam_domain::{Categories, parse_query};
 
 use super::super::strict::StrictMap;
 
-pub(super) fn filters(file: &Path, root: &StrictMap) -> Result<Vec<FilterConfig>, ConfigError> {
+pub(super) fn filters(
+    file: &Path,
+    root: &StrictMap,
+    categories: &Categories,
+) -> Result<Vec<FilterConfig>, ConfigError> {
     let refused = |fault| ConfigError::ProjectRule {
         file: file.to_path_buf(),
         key: "filter",
@@ -26,7 +30,7 @@ pub(super) fn filters(file: &Path, root: &StrictMap) -> Result<Vec<FilterConfig>
                 .ok()
                 .flatten()
                 .ok_or_else(|| refused(ProjectRuleFault::Shape))?;
-            if parse_query(&query, &Categories::default()).is_err() {
+            if parse_query(&query, categories).is_err() {
                 return Err(refused(ProjectRuleFault::NotAQuery));
             }
             Ok(FilterConfig {

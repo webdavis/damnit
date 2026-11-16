@@ -1,3 +1,4 @@
+mod categories;
 mod control;
 mod filters;
 mod listing;
@@ -25,13 +26,14 @@ use locked::locked_lua;
 pub(super) use template::read_project_template;
 pub use written::{FileSystemProjectFolders, write_project_file};
 
-const PROJECT_SETTINGS: [&str; 6] = [
+const PROJECT_SETTINGS: [&str; 7] = [
     "path",
     "minimum_dam",
     "new_task",
     "required",
     "ls",
     "filter",
+    "category",
 ];
 const PERSONAL_SETTINGS: [&str; 9] = [
     "owner",
@@ -86,12 +88,14 @@ pub fn read_project_file(file: &Path, this_dam: &str) -> Result<ProjectSettings,
     let path = dam_domain::Path::parse(&path).map_err(|_| ConfigError::NotAPath {
         file: file.to_path_buf(),
     })?;
+    let categories = categories::categories(file, &root)?;
     Ok(ProjectSettings {
         path: path.as_str().to_string(),
         minimum_dam,
         new_task: new_task::new_task(file, &root)?,
         required: required::required(file, &root)?,
-        ls: listing::listing(file, &root)?,
-        filters: filters::filters(file, &root)?,
+        ls: listing::listing(file, &root, &categories)?,
+        filters: filters::filters(file, &root, &categories)?,
+        categories,
     })
 }

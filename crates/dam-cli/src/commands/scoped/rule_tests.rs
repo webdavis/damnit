@@ -1,4 +1,5 @@
 mod agenda;
+mod categories;
 mod listing;
 mod new_task;
 mod required;
@@ -11,13 +12,13 @@ use crate::context::Context;
 use crate::project_scope::Standing;
 
 pub(crate) fn inside(settings: ProjectSettings) -> Standing {
-    Standing::Inside(Project {
+    Standing::Inside(Box::new(Project {
         folder: "/work/app".into(),
         settings: ProjectSettings {
             path: "app".into(),
             ..settings
         },
-    })
+    }))
 }
 
 pub(super) fn global(args: NewArgs) -> Command {

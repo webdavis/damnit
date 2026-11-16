@@ -13,13 +13,13 @@ fn no_config() -> (tempfile::TempDir, LuaConfigFile) {
 #[test]
 fn inside_a_project_the_list_shows_its_file_and_path_marked_as_the_projects() {
     let (_root, file) = no_config();
-    let inside = Standing::Inside(Project {
+    let inside = Standing::Inside(Box::new(Project {
         folder: "/work/damnit".into(),
         settings: ProjectSettings {
             path: "damnit/".into(),
             ..Default::default()
         },
-    });
+    }));
     let listed = run(&file, &inside).unwrap();
     assert_eq!(listed.data["project"]["file"], "/work/damnit/.dam.lua");
     assert_eq!(listed.data["project"]["path"], "damnit/");
@@ -90,7 +90,7 @@ fn a_remote_lists_the_paths_it_never_receives() {
 #[test]
 fn inside_a_project_the_list_shows_every_project_setting_marked_as_the_projects() {
     let (_root, file) = no_config();
-    let inside = Standing::Inside(Project {
+    let inside = Standing::Inside(Box::new(Project {
         folder: "/work/damnit".into(),
         settings: ProjectSettings {
             path: "damnit/".into(),
@@ -107,8 +107,14 @@ fn inside_a_project_the_list_shows_every_project_setting_marked_as_the_projects(
                 name: "open".into(),
                 rule: dam_application::FilterRule::Query("label:cli".into()),
             }],
+            categories: dam_domain::Categories::new(vec![dam_domain::Category {
+                name: "area".into(),
+                values: vec!["ui".into(), "db".into()],
+                exclusive: true,
+            }])
+            .unwrap(),
         },
-    });
+    }));
     let listed = run(&file, &inside).unwrap();
     let project = &listed.data["project"];
     assert_eq!(project["minimum_dam"], "0.2.0");
@@ -119,6 +125,8 @@ fn inside_a_project_the_list_shows_every_project_setting_marked_as_the_projects(
     assert_eq!(project["required"][0], "due");
     assert_eq!(project["ls"], "open");
     assert_eq!(project["filter"]["open"]["query"], "label:cli");
+    assert_eq!(project["category"]["area"]["values"][1], "db");
+    assert_eq!(project["category"]["area"]["exclusive"], true);
     for row in [
         "0.2.0 (from the project)",
         "cli (from the project)",
@@ -126,6 +134,8 @@ fn inside_a_project_the_list_shows_every_project_setting_marked_as_the_projects(
         "due (from the project)",
         "open (from the project)",
         "label:cli (from the project)",
+        "ui, db (from the project)",
+        "true (from the project)",
     ] {
         assert!(listed.human.contains(row), "{row}: {}", listed.human);
     }

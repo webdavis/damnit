@@ -8,13 +8,13 @@ use crate::project_scope::Standing;
 use crate::testing::context;
 
 fn inside(path: &str) -> Standing {
-    Standing::Inside(Project {
+    Standing::Inside(Box::new(Project {
         folder: "/work/damnit".into(),
         settings: ProjectSettings {
             path: path.into(),
             ..Default::default()
         },
-    })
+    }))
 }
 
 pub(crate) fn new_args(subject: &str, path: &str) -> NewArgs {
