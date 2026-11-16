@@ -9,7 +9,7 @@ local M = {}
 ---@class damnit.Pick
 ---@field views fun(cwd: string, smods?: table)
 ---@field rows fun(name: string, cwd: string)
----@field open fun(name: string|nil, cwd: string, smods?: table)
+---@field open fun(name: string|nil, cwd: string, smods?: table, folder?: string)
 
 ---@param app damnit.App
 ---@param name string
@@ -58,9 +58,9 @@ end
 function M.new(app, lists, open_task)
   local pick = {}
 
-  function pick.open(name, cwd, smods)
+  function pick.open(name, cwd, smods, folder)
     local spec = name and spec_of(app, name)
-    lists:open(name, cwd, smods, type(spec) == "table" and spec or nil)
+    lists:open(name, cwd, smods, type(spec) == "table" and spec or nil, folder)
   end
 
   function pick.views(cwd, smods)

@@ -53,6 +53,7 @@ function M.new(app, open_task)
       picker.views(vim.fn.getcwd())
     end,
   })
+  local sidebar = require("damnit.list.sidebar").toggle(app, picker)
   return {
     open = function(view, cwd, smods)
       lists:open(view, cwd, smods)
@@ -78,11 +79,14 @@ function M.new(app, open_task)
         end
         picker.views(vim.fn.getcwd(), cmd.smods)
       end,
+      sidebar = function(args)
+        sidebar(args[1], vim.fn.getcwd())
+      end,
       today = function(_, cmd)
         lists:open("today", vim.fn.getcwd(), cmd.smods, views.TODAY)
       end,
     },
-    complete = { list = view_names(app), pick = view_names(app) },
+    complete = { list = view_names(app), pick = view_names(app), sidebar = view_names(app) },
   }
 end
 

@@ -112,12 +112,25 @@ local function splits(smods)
   return smods ~= nil and (smods.vertical or smods.horizontal or (smods.split or "") ~= "" or (smods.tab or -1) >= 0)
 end
 
+local function out_of_side_window()
+  if not vim.w.damnit_side then
+    return
+  end
+  local previous = vim.fn.win_getid(vim.fn.winnr("#"))
+  if previous ~= 0 and previous ~= vim.api.nvim_get_current_win() then
+    return vim.api.nvim_set_current_win(previous)
+  end
+  vim.cmd.vsplit()
+  vim.wo.winfixwidth = false
+end
+
 ---@param buf integer
 ---@param smods? table
 function Screen:show(buf, smods)
   if splits(smods) then
     vim.cmd.sbuffer({ args = { buf }, mods = smods })
   else
+    out_of_side_window()
     vim.api.nvim_win_set_buf(0, buf)
   end
 end
