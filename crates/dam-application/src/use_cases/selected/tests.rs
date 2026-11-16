@@ -1,6 +1,6 @@
 use dam_domain::{
-    Categories, Category, Completion, DefaultsError, Filter, FilterTable, Object, Path, Problem,
-    TableValue, Task, When,
+    Categories, Category, Completion, DefaultsError, Filter, FilterTable, Object, Order, Path,
+    Problem, TableValue, Task, When,
 };
 use jiff::civil::date;
 
@@ -57,7 +57,9 @@ fn open_done_due_and_an_event() -> Scenario {
 }
 
 fn listed(s: &Scenario, fields: &[(&str, &str)]) -> Result<Vec<String>, UseCaseError> {
-    let out = s.dam().list_selected(&filter(fields), &Path::root(), &[])?;
+    let out = s
+        .dam()
+        .list_selected(&filter(fields), &Order::default(), &Path::root(), &[])?;
     Ok(subjects(&out).into_iter().map(String::from).collect())
 }
 
@@ -81,7 +83,12 @@ fn a_place_keeps_what_lies_under_it() {
     let s = open_done_due_and_an_event();
     let out = s
         .dam()
-        .list_selected(&filter(&[]), &Path::parse("work").unwrap(), &[])
+        .list_selected(
+            &filter(&[]),
+            &Order::default(),
+            &Path::parse("work").unwrap(),
+            &[],
+        )
         .unwrap();
     assert_eq!(subjects(&out), ["due"]);
 }
@@ -154,7 +161,12 @@ fn a_filter_of_the_place_is_found_first_and_reads_its_paths_from_the_place() {
     let work = Path::parse("work").unwrap();
     let out = s
         .dam()
-        .list_selected(&filter(&[("filter", "today")]), &work, &here)
+        .list_selected(
+            &filter(&[("filter", "today")]),
+            &Order::default(),
+            &work,
+            &here,
+        )
         .unwrap();
     assert_eq!(subjects(&out), ["due"]);
 }
