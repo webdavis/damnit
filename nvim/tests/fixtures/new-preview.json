@@ -1,0 +1,34 @@
+{
+  "preview": true,
+  "count": 1,
+  "oids": [
+    "<id-1>"
+  ],
+  "changes": [
+    {
+      "oid": "<id-1>",
+      "op": "create",
+      "fields": [
+        "subject",
+        "path",
+        "labels",
+        "due"
+      ],
+      "kind": "task",
+      "subject": "buy oat milk",
+      "path": "home/",
+      "labels": [
+        "errand"
+      ],
+      "done": false,
+      "completed_at": null,
+      "priority": 4,
+      "due": "2026-11-20",
+      "from": null,
+      "key_id": null,
+      "channel": null,
+      "author": "owner",
+      "details": null
+    }
+  ]
+}
