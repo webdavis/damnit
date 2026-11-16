@@ -19,6 +19,7 @@ mod repositories;
 mod run_records;
 mod settings_file;
 mod store;
+mod task_templates;
 
 pub use answers::AnswerRepository;
 pub use attempts::{Attempt, AttemptRepository, Attempts, Declared};
@@ -51,4 +52,7 @@ pub use store::{
     AcceptedKindsRepository, CommitRepository, Conflict, ConflictRepository, ObjectRepository,
     RemoteName, RemoteNameError, RemoteTrackingRepository, StageRepository, StoreError,
     Transactional,
+};
+pub use task_templates::{
+    NotATemplateName, TaskTemplate, TaskTemplates, TemplateName, TemplateOwner,
 };
