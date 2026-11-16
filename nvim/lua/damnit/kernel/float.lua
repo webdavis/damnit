@@ -25,7 +25,24 @@ local function wrapped(text, width)
   return lines
 end
 
+local INPUT_HEIGHT = 3
+
+local function at_cursor()
+  local textoff = vim.fn.getwininfo(vim.api.nvim_get_current_win())[1].textoff
+  local below = vim.api.nvim_win_get_height(0) - vim.fn.winline() >= INPUT_HEIGHT
+  return {
+    relative = "cursor",
+    anchor = below and "NW" or "SW",
+    row = below and 1 or 0,
+    col = textoff - vim.fn.wincol() + 1,
+    width = math.max(vim.api.nvim_win_get_width(0) - textoff - 2, 20),
+  }
+end
+
 local function placed(anchor)
+  if anchor == "cursor" then
+    return at_cursor()
+  end
   if anchor and vim.api.nvim_win_is_valid(anchor) then
     local width = math.max(vim.api.nvim_win_get_width(anchor) - 2, 20)
     return {
@@ -44,7 +61,7 @@ end
 
 ---@param buf integer
 ---@param title string
----@param anchor? integer
+---@param anchor? integer|"cursor"
 ---@return integer win
 function M.input(buf, title, anchor)
   return vim.api.nvim_open_win(

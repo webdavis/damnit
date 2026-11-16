@@ -831,6 +831,15 @@ opens the task; `r` reads it again. `:Dam commit [message]`, `:Dam push [remote]
 conflict is settled with `dam resolve` in a terminal.
 A push or pull shows each step dam reports as a Neovim progress message while it runs.
 
+`:Dam capture` opens the `dam new` prompt with the line under the cursor as the subject, its
+comment leader and any `TODO:` taken off, and `--body "<file>:<line>"` after the cursor. A range
+or a selection joins its lines. dam runs in the file's folder, so the task lands in that
+project. `:Dam capture!` creates it without the prompt. Map it yourself:
+
+```lua
+vim.keymap.set({ "n", "x" }, "<leader>dc", "<Plug>(dam-capture)")
+```
+
 With lazy.nvim from a checkout:
 
 ```lua

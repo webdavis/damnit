@@ -1,4 +1,6 @@
 vim.keymap.set("n", "<Plug>(dam-today)", "<Cmd>Dam today<CR>")
+vim.keymap.set("n", "<Plug>(dam-capture)", "<Cmd>Dam capture<CR>")
+vim.keymap.set("x", "<Plug>(dam-capture)", ":Dam capture<CR>", { silent = true })
 
 if vim.fn.exists(":Dam") == 2 then
   return
