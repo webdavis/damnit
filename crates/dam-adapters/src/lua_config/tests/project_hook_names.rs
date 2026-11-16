@@ -1,6 +1,11 @@
 use dam_application::{ConfigError, HookEvent};
 
 use super::support::Folder;
+use crate::ProjectHookFolder;
+
+fn read(folder: &Folder) -> ProjectHookFolder {
+    ProjectHookFolder::read(&folder.path("app")).unwrap()
+}
 
 const ESCAPE: &str = "task_new\u{1b}[2J.lua";
 const CARRIAGE_RETURN: &str = "task_done\r.lua";
@@ -20,7 +25,7 @@ fn project_holding(names: &[&str]) -> Folder {
 #[test]
 fn a_name_holding_a_control_character_is_counted_never_named() {
     let folder = project_holding(&[ESCAPE, CARRIAGE_RETURN, "task_changed.lua"]);
-    let (names, unshown) = crate::LuaConfigFile::project_hook_names(&folder.path("app")).unwrap();
+    let (names, unshown) = read(&folder).names();
     assert_eq!(
         names,
         [(
@@ -35,9 +40,9 @@ fn a_name_holding_a_control_character_is_counted_never_named() {
 fn a_file_whose_name_holds_a_control_character_is_never_loaded_or_listed() {
     let folder = project_holding(&[ESCAPE, CARRIAGE_RETURN]);
     let file = folder.file();
-    let loaded = file.project_hooks(&folder.path("app"), "Ada").unwrap();
+    let loaded = file.project_hooks(&read(&folder), "Ada").unwrap();
     assert!(loaded.hooks.is_empty());
-    let (files, unshown) = file.project_hook_files(&folder.path("app")).unwrap();
+    let (files, unshown) = file.project_hook_files(&read(&folder)).unwrap();
     assert!(files.is_empty());
     assert_eq!(unshown, 2);
     assert!(!folder.marker().exists());
@@ -49,10 +54,7 @@ fn a_projects_hook_that_does_not_load_never_quotes_what_it_raised() {
     let hooks = folder.path("app").join(".damhooks");
     std::fs::create_dir_all(&hooks).unwrap();
     std::fs::write(hooks.join("task_new.lua"), "error('\\27[2J gone')\n").unwrap();
-    let (files, _) = folder
-        .file()
-        .project_hook_files(&folder.path("app"))
-        .unwrap();
+    let (files, _) = folder.file().project_hook_files(&read(&folder)).unwrap();
     assert_eq!(
         files[0].read,
         Err(ConfigError::StoppedLoading {

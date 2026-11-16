@@ -1,96 +1,27 @@
 use dam_adapters::LuaConfigFile;
-use dam_application::{HookFile, HookSetting};
 use serde::Serialize;
 
-use crate::error::{CliError, ConfigReason};
+use crate::error::CliError;
 use crate::output::Report;
 use crate::view::{Human, View, report};
 
 mod project;
+mod row;
 
 pub(crate) use project::ProjectHookLook;
+use row::HookRow;
 
 #[derive(Serialize)]
 struct HookList {
     hooks: Vec<HookRow>,
     #[serde(skip)]
-    off: bool,
+    advice: Option<&'static str>,
     #[serde(rename = "unshown_files", skip_serializing_if = "is_zero")]
     unshown: usize,
 }
 
 fn is_zero(count: &usize) -> bool {
     *count == 0
-}
-
-#[derive(Serialize)]
-struct HookRow {
-    hook: Option<&'static str>,
-    file: String,
-    #[serde(skip_serializing_if = "std::ops::Not::not")]
-    project: bool,
-    #[serde(skip_serializing_if = "std::ops::Not::not")]
-    off: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    loads: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    on_failure: Option<&'static str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    changes: Option<&'static str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    error: Option<String>,
-    #[serde(skip)]
-    by_default: bool,
-}
-
-impl HookRow {
-    fn of(hook: &HookFile) -> HookRow {
-        let mut row = HookRow {
-            hook: hook.event.map(|event| event.as_str()),
-            file: hook.file.clone(),
-            project: false,
-            off: false,
-            loads: Some(hook.read.is_ok()),
-            on_failure: None,
-            changes: None,
-            error: None,
-            by_default: false,
-        };
-        match &hook.read {
-            Ok(HookSetting::OnFailure(written)) => {
-                row.on_failure = Some(written.unwrap_or_default().as_str());
-                row.by_default = written.is_none();
-            }
-            Ok(HookSetting::Changes(written)) => {
-                row.changes = Some(written.unwrap_or_default().as_str());
-                row.by_default = written.is_none();
-            }
-            Err(error) => row.error = Some(ConfigReason(error).to_string()),
-        }
-        row
-    }
-
-    fn cells(&self) -> Vec<String> {
-        let hook = self.hook.unwrap_or_default().to_string();
-        let mut cells = vec![hook, self.file.clone()];
-        if self.off {
-            cells.push("off".into());
-            return cells;
-        }
-        match (self.on_failure, self.changes) {
-            (Some(value), _) => cells.extend(["on_failure".into(), self.marked(value)]),
-            (_, Some(value)) => cells.extend(["changes".into(), self.marked(value)]),
-            (None, None) => cells.push("does not load".into()),
-        }
-        cells
-    }
-
-    fn marked(&self, value: &str) -> String {
-        match self.by_default {
-            true => format!("{value} (default)"),
-            false => value.to_string(),
-        }
-    }
 }
 
 impl View for HookList {
@@ -102,10 +33,10 @@ impl View for HookList {
     }
 
     fn warnings(&self) -> Vec<String> {
-        let off = self.off.then(|| project::TURN_ON.to_string());
+        let advice = self.advice.map(str::to_string);
         let errors = self.hooks.iter().filter_map(|hook| hook.error.clone());
         let unshown = project::unshown_text(self.unshown);
-        errors.chain(unshown).chain(off).collect()
+        errors.chain(unshown).chain(advice).collect()
     }
 }
 
@@ -115,16 +46,16 @@ pub(crate) fn run(file: &LuaConfigFile, look: &ProjectHookLook) -> Result<Report
     hooks.extend(theirs.rows);
     report(&HookList {
         hooks,
-        off: theirs.off,
+        advice: theirs.advice,
         unshown: theirs.unshown,
     })
 }
 
 #[cfg(test)]
-fn listed(hooks: Vec<HookFile>) -> Result<Report, CliError> {
+fn listed(hooks: Vec<dam_application::HookFile>) -> Result<Report, CliError> {
     report(&HookList {
         hooks: hooks.iter().map(HookRow::of).collect(),
-        off: false,
+        advice: None,
         unshown: 0,
     })
 }

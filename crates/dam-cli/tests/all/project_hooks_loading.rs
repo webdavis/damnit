@@ -89,3 +89,46 @@ fn global_and_project_flags_run_no_projects_hook() {
     assert_eq!(elsewhere["labels"], serde_json::json!([]));
     assert!(!loaded(&sb, "app"));
 }
+
+#[test]
+fn a_projects_hooks_stop_running_when_their_files_change_until_turned_on_again() {
+    let _guard = support::guard(
+        "a_projects_hooks_stop_running_when_their_files_change_until_turned_on_again",
+    );
+    let sb = Sandbox::new();
+    let app = project(&sb, "app");
+    dam_in(&sb, &app, &["config", "set", "project.hooks", "true"]);
+    let task = created(&sb, &app, &["water the plants"]);
+    assert_eq!(task["labels"], serde_json::json!(["from-app"]));
+    std::fs::remove_file(sb.dir.path().join("loaded-app")).unwrap();
+    let pulled = app.join(".damhooks").join("task_new.lua");
+    let edited = std::fs::read_to_string(&pulled).unwrap() + "-- pulled\n";
+    std::fs::write(&pulled, edited).unwrap();
+    let out = sb
+        .command(&["new", "-o", "json", "feed the cat"])
+        .current_dir(&app)
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "{out:?}");
+    let task: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(task["labels"], serde_json::json!([]));
+    assert!(!loaded(&sb, "app"));
+    assert_eq!(
+        String::from_utf8_lossy(&out.stderr),
+        "warning: this project's hooks changed since you turned them on, so they did not run; \
+         dam hook list shows them, and dam config set project.hooks true turns them on again\n"
+    );
+    let listed: serde_json::Value =
+        serde_json::from_str(&dam_in(&sb, &app, &["hook", "list", "-o", "json"])).unwrap();
+    support::schema::assert_matches_schema(&listed, "hook-list.schema.json");
+    let edited_row = listed["hooks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["hook"] == "task_new");
+    assert_eq!(edited_row.unwrap()["changed"], "changed");
+    assert!(!loaded(&sb, "app"));
+    dam_in(&sb, &app, &["config", "set", "project.hooks", "true"]);
+    let task = created(&sb, &app, &["walk the dog"]);
+    assert_eq!(task["labels"], serde_json::json!(["from-app"]));
+}

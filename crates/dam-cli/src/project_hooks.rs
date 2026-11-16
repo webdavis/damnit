@@ -7,6 +7,10 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::project_scope::Standing;
 
+mod answer;
+
+pub(crate) use answer::{CHANGED, ProjectHookAnswer, TOO_LARGE, answer};
+
 pub(crate) struct ProjectHookSet {
     config: Config,
     hooks: Box<dyn Hooks>,
@@ -51,15 +55,19 @@ impl ProjectHookSet {
         let Standing::Inside(project) = asked.standing else {
             return Ok(None);
         };
-        let this_clone = asked.switches.switch(&project.folder)?;
-        if !asked.personal.project_hooks_on(this_clone) {
-            return Ok(None);
-        }
+        let folder = match answer(asked.switches, &project.folder, asked.personal)? {
+            ProjectHookAnswer::On(folder) => folder,
+            ProjectHookAnswer::Off => return Ok(None),
+            held_back => {
+                eprintln!("warning: {}", held_back.held_back().unwrap_or(CHANGED));
+                return Ok(None);
+            }
+        };
         let Ok(within) = Path::parse(&project.settings.path) else {
             return Ok(None);
         };
         let owner = asked.personal.owner_name();
-        let loaded = asked.file.project_hooks(&project.folder, owner)?;
+        let loaded = asked.file.project_hooks(&folder, owner)?;
         Ok(Some(ProjectHookSet {
             config: Config {
                 hooks: loaded.hooks,

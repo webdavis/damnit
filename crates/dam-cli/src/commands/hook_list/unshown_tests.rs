@@ -1,6 +1,7 @@
 use dam_adapters::LuaConfigFile;
+use dam_adapters::ProjectHookFolder;
 use dam_application::testing::FakeProjectHookSwitches;
-use dam_application::{Project, ProjectHookSwitches, ProjectSettings};
+use dam_application::{Project, ProjectHookSwitch, ProjectHookSwitches, ProjectSettings};
 
 use super::{ProjectHookLook, run};
 use crate::output::{Format, Report, shown};
@@ -14,7 +15,17 @@ fn listed_with(files: &[(&str, &str)], on: bool) -> Report {
         std::fs::write(app.join(".damhooks").join(name), text).unwrap();
     }
     let switches = FakeProjectHookSwitches::default();
-    switches.turn(&app, Some(on)).unwrap();
+    let switch = match on {
+        true => ProjectHookSwitch::on_for(
+            ProjectHookFolder::read(&app)
+                .unwrap()
+                .fingerprint()
+                .unwrap()
+                .unwrap(),
+        ),
+        false => ProjectHookSwitch::off(),
+    };
+    switches.turn(&app, Some(switch)).unwrap();
     let standing = Standing::Inside(Box::new(Project {
         folder: app,
         settings: ProjectSettings {
@@ -55,7 +66,7 @@ fn names_holding_a_control_character_are_counted_and_never_printed() {
         assert!(
             report
                 .standard_error_lines
-                .contains(&"warning: 2 files in .damhooks have names dam will not show".into()),
+                .contains(&"warning: 2 files in .damhooks are links or have names dam will not show; dam does not load them".into()),
             "{:?}",
             report.standard_error_lines
         );
@@ -69,7 +80,7 @@ fn one_odd_name_is_told_as_one_file() {
     assert!(
         report
             .standard_error_lines
-            .contains(&"warning: 1 file in .damhooks has a name dam will not show".into())
+            .contains(&"warning: 1 file in .damhooks is a link or has a name dam will not show; dam does not load it".into())
     );
 }
 
