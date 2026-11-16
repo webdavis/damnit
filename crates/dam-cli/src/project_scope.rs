@@ -1,7 +1,9 @@
 use std::path::{Path as FsPath, PathBuf};
 
 use dam_adapters::{FileSystemProjectFolders, FileSystemTemplates, read_project_file};
-use dam_application::{ConfigError, PROJECT_FILE, Project, ProjectSettings, find_project};
+use dam_application::{
+    ConfigError, FilterConfig, PROJECT_FILE, Project, ProjectSettings, find_project,
+};
 use dam_domain::Path;
 
 use crate::args::ScopeArgs;
@@ -63,6 +65,13 @@ impl Standing {
         };
         let text = config_text(error).replace('\n', " ");
         Some(format!("dam: warning: {text}; run dam doctor config"))
+    }
+
+    pub(crate) fn filters(&self) -> &[FilterConfig] {
+        match self {
+            Standing::Inside(project) => &project.settings.filters,
+            _ => &[],
+        }
     }
 
     pub(crate) fn rules(&self, scope: &ScopeArgs) -> Option<&ProjectSettings> {

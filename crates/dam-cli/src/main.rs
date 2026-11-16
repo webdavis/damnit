@@ -119,7 +119,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
             &meta,
         );
         gate::admit(access.as_ref(), &command)?;
-        let report = commands::catalogue::run(&config, command)?;
+        let report = commands::catalogue::run(&config, command, run.standing().filters())?;
         return output::print(format, color, &report);
     }
     let standing = run.standing();

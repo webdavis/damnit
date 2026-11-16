@@ -44,8 +44,8 @@ pub(crate) fn dispatch_in(
             return Ok(project_created::told(made, created.as_ref(), &place));
         }
         Command::Ls(mut a) => {
-            if a.query.is_none() {
-                a.query = standing.rules(&a.scope).and_then(|rules| rules.ls.clone());
+            if let Some(rules) = standing.rules(&a.scope) {
+                a.query = rules.listed(a.query);
             }
             a.place = standing.place(&a.scope)?;
             Command::Ls(a)

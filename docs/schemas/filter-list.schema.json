@@ -30,6 +30,10 @@
           },
           "query": {
             "type": "string"
+          },
+          "project": {
+            "const": true,
+            "description": "Present when the filter comes from the .dam.lua of the project dam runs in."
           }
         },
         "if": {

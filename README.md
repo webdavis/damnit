@@ -325,7 +325,10 @@ the answer carries `project_created`, its `oid` and `path`.
 commands run inside the project without `--global` or `--project`.
 `new_task = { labels = { "app" }, priority = 2 }` fills what a flag and the template leave unset.
 With `required = { "due" }`, `dam new` refuses a task without a due date and names `--due`.
-`ls = "p1"` is what `dam ls` shows there when you give no query. With
+`ls = "p1"` is what `dam ls` shows there when you give no query.
+`filter = { hot = { query = "p1" } }` is found before your own filter named `hot`, and
+`dam filter list` there marks it `(the project's)`; `dam filter create` and `remove` still change
+only your `config.lua`. With
 `minimum_dam = "0.3.0"` an older `dam` refuses the file and names the version it needs.
 
 `dam new --template bug "crash on pull"` starts the task from a template: the project's

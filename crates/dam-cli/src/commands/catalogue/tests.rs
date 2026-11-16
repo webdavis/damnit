@@ -2,7 +2,7 @@ use super::*;
 use dam_application::{FilterConfig, FilterRule};
 use dam_domain::{Categories, Category};
 
-fn config() -> Config {
+pub(super) fn config() -> Config {
     Config {
         owner: None,
         done_interactive: None,
@@ -51,7 +51,7 @@ fn a_filter_line_is_its_name_its_kind_and_its_query() {
         name: "today".into(),
         rule: FilterRule::Query("due:today | overdue".into()),
     }];
-    let report = run_filter(&config, FilterCommand::List).unwrap();
+    let report = run_filter(&config, FilterCommand::List, &[]).unwrap();
     assert_eq!(report.human, "today  query  due:today | overdue");
     assert_eq!(
         report.data["filters"][0],
@@ -72,7 +72,7 @@ fn a_function_filter_shows_its_kind_and_any_query_but_never_its_source() {
             rule: FilterRule::QueryThenFunction("path:work/".into()),
         },
     ];
-    let report = run_filter(&config, FilterCommand::List).unwrap();
+    let report = run_filter(&config, FilterCommand::List, &[]).unwrap();
     assert_eq!(
         report.human,
         "slipping  function  -\nstuck     function  path:work/"
@@ -94,7 +94,7 @@ fn nothing_declared_is_an_empty_list_rather_than_a_failure() {
         serde_json::json!({"categories": []})
     );
     assert_eq!(
-        run_filter(&config, FilterCommand::List).unwrap().data,
+        run_filter(&config, FilterCommand::List, &[]).unwrap().data,
         serde_json::json!({"filters": []})
     );
     assert_eq!(
@@ -102,7 +102,7 @@ fn nothing_declared_is_an_empty_list_rather_than_a_failure() {
         "no categories declared"
     );
     assert_eq!(
-        run_filter(&config, FilterCommand::List).unwrap().human,
+        run_filter(&config, FilterCommand::List, &[]).unwrap().human,
         "no filters declared"
     );
 }

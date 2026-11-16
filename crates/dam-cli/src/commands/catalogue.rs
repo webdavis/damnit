@@ -1,4 +1,4 @@
-use dam_application::Config;
+use dam_application::{Config, FilterConfig};
 use serde::Serialize;
 
 use crate::args::{CategoryArgs, CategoryCommand, Command, FilterArgs, FilterCommand};
@@ -6,10 +6,14 @@ use crate::error::CliError;
 use crate::output::Report;
 use crate::view::{Human, View, report};
 
-pub(crate) fn run(config: &Config, command: Command) -> Result<Report, CliError> {
+pub(crate) fn run(
+    config: &Config,
+    command: Command,
+    project_filters: &[FilterConfig],
+) -> Result<Report, CliError> {
     match command {
         Command::Category(a) => run_category(config, a.command),
-        Command::Filter(a) => run_filter(config, a.command),
+        Command::Filter(a) => run_filter(config, a.command, project_filters),
         _ => unreachable!("only category and filter read the config alone"),
     }
 }
@@ -63,6 +67,8 @@ struct FilterRow<'a> {
     kind: &'static str,
     #[serde(skip_serializing_if = "Option::is_none")]
     query: Option<&'a str>,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    project: bool,
 }
 
 impl View for FilterList<'_> {
@@ -72,7 +78,11 @@ impl View for FilterList<'_> {
                 .iter()
                 .map(|f| {
                     let query = f.query.unwrap_or_default().to_string();
-                    vec![f.name.to_string(), f.kind.to_string(), query]
+                    let name = match f.project {
+                        true => format!("{} (the project's)", f.name),
+                        false => f.name.to_string(),
+                    };
+                    vec![name, f.kind.to_string(), query]
                 })
                 .collect(),
             "no filters declared",
@@ -98,25 +108,33 @@ fn run_category(config: &Config, command: CategoryCommand) -> Result<Report, Cli
     })
 }
 
-fn run_filter(config: &Config, command: FilterCommand) -> Result<Report, CliError> {
+fn run_filter(
+    config: &Config,
+    command: FilterCommand,
+    project_filters: &[FilterConfig],
+) -> Result<Report, CliError> {
     let FilterCommand::List = command else {
         unreachable!("filter create and remove open the store")
     };
+    let project = project_filters.iter().map(|f| (f, true));
+    let personal = config.filters.iter().map(|f| (f, false));
     report(&FilterList {
-        filters: config
-            .filters
-            .iter()
-            .map(|f| FilterRow {
+        filters: project
+            .chain(personal)
+            .map(|(f, project)| FilterRow {
                 name: &f.name,
                 kind: match f.rule.runs_a_function() {
                     true => "function",
                     false => "query",
                 },
                 query: f.rule.query(),
+                project,
             })
             .collect(),
     })
 }
 
+#[cfg(test)]
+mod project_tests;
 #[cfg(test)]
 mod tests;

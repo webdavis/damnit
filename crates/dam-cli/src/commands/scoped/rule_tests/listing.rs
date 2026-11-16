@@ -77,3 +77,27 @@ fn global_ignores_the_projects_listing() {
         ["calm", "urgent", "urgent elsewhere"]
     );
 }
+
+fn with_filter(name: &str, query: &str) -> dam_application::FilterConfig {
+    dam_application::FilterConfig {
+        name: name.into(),
+        rule: dam_application::FilterRule::Query(query.into()),
+    }
+}
+
+#[test]
+fn the_projects_filter_is_found_before_a_personal_one_of_the_same_name() {
+    let mut ctx = holding();
+    ctx.config.filters = vec![with_filter("hot", "p4")];
+    let standing = || {
+        inside(ProjectSettings {
+            filters: vec![with_filter("hot", "p1")],
+            ..ProjectSettings::default()
+        })
+    };
+    assert_eq!(
+        subjects(&ctx, ls(Some("hot"), false), standing()),
+        ["urgent"]
+    );
+    assert_eq!(subjects(&ctx, ls(Some("hot"), true), standing()), ["calm"]);
+}

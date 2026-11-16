@@ -2,7 +2,7 @@ mod find;
 
 use std::path::PathBuf;
 
-use crate::TaskTemplate;
+use crate::{FilterConfig, TaskTemplate};
 
 pub use find::{ProjectFolders, find_project};
 
@@ -14,6 +14,7 @@ pub struct ProjectSettings {
     pub new_task: TaskTemplate,
     pub required: Vec<RequiredField>,
     pub ls: Option<String>,
+    pub filters: Vec<FilterConfig>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -29,6 +30,19 @@ pub enum RequiredField {
 pub struct Project {
     pub folder: PathBuf,
     pub settings: ProjectSettings,
+}
+
+impl ProjectSettings {
+    pub fn listed(&self, query: Option<String>) -> Option<String> {
+        let query = query.or_else(|| self.ls.clone());
+        let filter = query.as_deref().and_then(|name| {
+            self.filters
+                .iter()
+                .find(|filter| filter.name == name)
+                .and_then(|filter| filter.rule.query())
+        });
+        filter.map(String::from).or(query)
+    }
 }
 
 impl Project {
