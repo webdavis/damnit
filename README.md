@@ -323,7 +323,8 @@ shows what `dam ls 'path:app/'` shows elsewhere, and a `path:` you type starts f
 saved filter keeps its own query and is narrowed to the project. Listings print full paths.
 `--global` on these four commands reaches every task and reads a path from the root. `status`,
 `push`, `pull`, `log`, `show`, `edit`, `done`, `mv` and `rm` always cover everything: their
-`--query` is not narrowed to the project, and a path given to `dam mv` is a full path.
+`--query` is not narrowed to the project. Only the path `dam mv` moves objects to starts from the
+project, with `--global` and `--project` as on `dam new`.
 
 `--project <path>` on those four commands works from any folder, in a project or not, and stands in
 for the project you are in: `dam ls --project pns/hooks/`, `dam new "x" --project pns/ --path cli/`.
