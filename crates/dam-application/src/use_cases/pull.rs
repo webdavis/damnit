@@ -17,6 +17,7 @@ mod land;
 mod missing;
 mod notices;
 mod ours;
+mod parents;
 mod removal;
 mod removed;
 mod skipped;
@@ -105,19 +106,19 @@ impl Dam<'_> {
                 remote,
                 &response.cancelled,
             )?);
-            let (planned, new_remote_id_mappings) = classify(
+            let (planned, new_remote_id_mappings, remote_paths) = classify(
                 store,
                 remote,
                 caps,
                 helper,
-                objects,
+                (objects, std::mem::take(&mut response.container_remote_ids)),
                 self.random,
                 &mut report,
             )?;
             for (oid, remote_id) in new_remote_id_mappings {
                 store.map_remote_id(&remote.name, &oid, &remote_id)?;
             }
-            pulled = self.land(remote, planned, &mut report)?;
+            pulled = self.land(remote, planned, &remote_paths, &mut report)?;
             let removed = std::mem::take(&mut response.removed);
             let removals = record_removals(store, remote, removed)?;
             report.removed_upstream = removals.in_the_app;
