@@ -4,7 +4,7 @@ use super::edit_request::Edited;
 use crate::access::Owner;
 use crate::config::{HookEvent, PulledChanges};
 use crate::errors::UseCaseError;
-use crate::ports::{HelperError, HookFailure, Pull, PulledChange, RemoteName};
+use crate::ports::{HelperError, HookFailure, Progress, Pull, PulledChange, RemoteName, Step};
 use crate::service::Dam;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -60,16 +60,18 @@ impl Dam<'_> {
             ..*self
         };
         let mut run = PulledHookRun::default();
-        let mut run_time = RunTime::started_on(self.clock);
+        let run_time = RunTime::started_on(self.clock);
         let owners = self.access.token().is_none();
+        let progress: &dyn Progress = if owners { self.progress } else { &Unseen };
+        progress.start(Step {
+            name: HookEvent::TaskPulled.as_str(),
+            unit: "tasks",
+            total: Some(pulled.len()),
+        });
         let mut first_error = None;
         for task in &pulled {
             if run_time.ran_out() || self.interruption.requested() {
                 break;
-            }
-            if run_time.first_time_long() && owners {
-                self.hook_progress
-                    .running(HookEvent::TaskPulled, pulled.len());
             }
             let pull = Pull {
                 remote: remote.clone(),
@@ -89,7 +91,9 @@ impl Dam<'_> {
                 }
             }
             run.ran += 1;
+            progress.advance(run.ran);
         }
+        progress.finish();
         run.not_reached = pulled.len() - run.ran;
         if let Some(before) = &before {
             run.commit = self.commit_hook_edits(remote, before)?;
@@ -111,6 +115,14 @@ impl Dam<'_> {
             Err(failure) => Ok(Edited::Failed(failure)),
         }
     }
+}
+
+struct Unseen;
+
+impl Progress for Unseen {
+    fn start(&self, _: Step<'_>) {}
+    fn advance(&self, _: usize) {}
+    fn finish(&self) {}
 }
 
 mod committed;

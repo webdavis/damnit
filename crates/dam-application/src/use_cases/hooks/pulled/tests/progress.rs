@@ -1,12 +1,10 @@
 use dam_domain::Permission::RemotePull;
-use jiff::SignedDuration;
 
 use super::slow::SlowHooks;
 use super::*;
 use crate::access::Access;
-use crate::config::HookEvent;
 use crate::service::Dam;
-use crate::testing::{allowed, holder};
+use crate::testing::{Said, allowed, holder};
 
 fn four_tasks() -> PullOutcome {
     PullOutcome {
@@ -16,58 +14,39 @@ fn four_tasks() -> PullOutcome {
     }
 }
 
-fn pulled_by(s: &Scenario, slow: &SlowHooks, access: &dyn Access) {
+fn pulled_by(s: &Scenario, access: &dyn Access) -> Vec<Said> {
     let l = pulling(four_tasks());
+    let slow = SlowHooks::taking(&s.fixture.hooks, 0);
     let dam = Dam {
-        clock: slow,
-        hooks: slow,
+        clock: &slow,
+        hooks: &slow,
         access,
         ..s.dam()
     };
     dam.pull(remotes_launched_by(&l), None).unwrap();
-}
-
-fn said(s: &Scenario) -> Vec<(HookEvent, usize)> {
-    s.fixture.hook_progress.said.borrow().clone()
+    s.fixture.progress.said.borrow().clone()
 }
 
 #[test]
-fn after_two_seconds_it_says_once_how_many_tasks_the_hook_runs_for() {
+fn the_hook_run_is_a_step_counted_task_by_task_that_finishes() {
     let s = pulled_hooked();
-    pulled_by(
-        &s,
-        &SlowHooks::taking(&s.fixture.hooks, 1),
-        &crate::access::Owner,
+    let said = pulled_by(&s, &crate::access::Owner);
+    assert_eq!(
+        said,
+        [
+            Said::Started("task_pulled tasks".into(), Some(4)),
+            Said::Advanced(1),
+            Said::Advanced(2),
+            Said::Advanced(3),
+            Said::Advanced(4),
+            Said::Finished,
+        ]
     );
-    assert_eq!(said(&s), [(HookEvent::TaskPulled, 4)]);
 }
 
 #[test]
-fn a_quick_run_says_nothing() {
-    let s = pulled_hooked();
-    pulled_by(
-        &s,
-        &SlowHooks::taking(&s.fixture.hooks, 0),
-        &crate::access::Owner,
-    );
-    assert_eq!(said(&s), []);
-}
-
-#[test]
-fn a_run_a_tokens_command_caused_says_nothing() {
+fn a_run_a_tokens_command_caused_shows_no_progress() {
     let s = pulled_hooked();
     let tool = holder(vec![allowed(&[RemotePull], None)]);
-    pulled_by(&s, &SlowHooks::taking(&s.fixture.hooks, 1), &tool);
-    assert_eq!(said(&s), []);
-}
-
-#[test]
-fn a_run_just_under_two_seconds_says_nothing() {
-    let s = pulled_hooked();
-    let slow = SlowHooks {
-        each_call: SignedDuration::from_millis(600),
-        ..SlowHooks::taking(&s.fixture.hooks, 0)
-    };
-    pulled_by(&s, &slow, &crate::access::Owner);
-    assert_eq!(said(&s), []);
+    assert_eq!(pulled_by(&s, &tool), []);
 }

@@ -9,6 +9,7 @@ mod hooks;
 mod interruption;
 mod launchers;
 mod memory_store;
+mod progress;
 mod scenario;
 
 pub use debug_form::each_field_in_its_debug_form;
@@ -20,7 +21,7 @@ pub use faulty_store::FaultyStore;
 pub use filter_functions::FakeFilterFunctions;
 pub use fixture::{Fixture, remotes_launched_by};
 pub use holders::{allowed, holder};
-pub use hooks::{FakeEditRequests, FakeHookEdits, FakeHookProgress, FakeHookWarnings, FakeHooks};
+pub use hooks::{FakeEditRequests, FakeHookEdits, FakeHookWarnings, FakeHooks};
 pub use interruption::FakeInterruption;
 pub use launchers::{
     Pushed, accepting_all, answering, pulling, pulling_events, pushing,
@@ -28,6 +29,7 @@ pub use launchers::{
     refusing_all_unasked,
 };
 pub use memory_store::MemoryStore;
+pub use progress::{FakeProgress, Said};
 pub use scenario::{Scenario, config, event, task, task_in, todoist};
 
 pub mod prelude {

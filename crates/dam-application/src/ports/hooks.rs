@@ -58,7 +58,3 @@ pub trait HookEdits {
 pub trait HookWarnings {
     fn warn(&self, failure: &HookFailure);
 }
-
-pub trait HookProgress {
-    fn running(&self, event: HookEvent, tasks: usize);
-}

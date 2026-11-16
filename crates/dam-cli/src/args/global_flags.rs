@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use clap::Parser;
 
 use super::{Command, values};
+use crate::progress::Asked;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -82,4 +83,15 @@ pub(crate) struct Cli {
     pub(crate) request: Option<PathBuf>,
     #[command(subcommand)]
     pub(crate) command: Command,
+}
+
+impl Cli {
+    pub(crate) fn progress_asked(&self) -> Asked {
+        Asked {
+            setting: true,
+            progress: self.progress,
+            no_progress: self.no_progress,
+            quiet: self.quiet,
+        }
+    }
 }

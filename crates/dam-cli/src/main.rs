@@ -81,6 +81,7 @@ const TOKEN_VARIABLE: &str = "DAM_TOKEN";
 
 fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> {
     let color = paint::wanted(cli.no_color);
+    let asked = cli.progress_asked();
     let config_path = cli.config.unwrap_or_else(dam_adapters::default_config_path);
     let config_file = LuaConfigFile::new(config_path.clone());
     let presented_token = std::env::var_os(TOKEN_VARIABLE);
@@ -135,6 +136,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         presented_token,
         &meta,
         format,
+        asked,
         interrupt,
     )?;
     let report = commands::dispatch_a_verb_that_opens_the_store(&ctx, cli.command)?;

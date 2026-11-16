@@ -185,13 +185,10 @@ fn quiet_is_global_with_a_short_q() {
 
 #[test]
 fn progress_and_no_progress_are_global_and_refuse_each_other_and_quiet() {
+    let asked = |line: &[&str]| Cli::try_parse_from(line).map(|cli| cli.progress_asked());
+    assert!(asked(&["dam", "pull", "--progress"]).unwrap().progress);
     assert!(
-        Cli::try_parse_from(["dam", "pull", "--progress"])
-            .unwrap()
-            .progress
-    );
-    assert!(
-        Cli::try_parse_from(["dam", "--no-progress", "pull"])
+        asked(&["dam", "--no-progress", "pull"])
             .unwrap()
             .no_progress
     );
