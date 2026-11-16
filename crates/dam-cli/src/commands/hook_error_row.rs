@@ -1,7 +1,7 @@
 use dam_application::FunctionFailure;
 use serde::Serialize;
 
-use crate::error::FaultText;
+use crate::error::FailureText;
 
 #[derive(Serialize)]
 pub(crate) struct HookErrorRow {
@@ -15,7 +15,7 @@ impl HookErrorRow {
         HookErrorRow {
             file: failure.file.display().to_string(),
             line: failure.line,
-            message: FaultText(&failure.fault).to_string(),
+            message: FailureText(failure).to_string(),
         }
     }
 

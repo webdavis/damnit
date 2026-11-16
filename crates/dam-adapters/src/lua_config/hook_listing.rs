@@ -6,12 +6,16 @@ use mlua::Lua;
 use super::evaluate::stopped_at_an_error;
 use super::file::LuaConfigFile;
 use super::functions::limit_every_thread;
-use super::hook_folder::{HOOKS_FOLDER, list_hook_folder};
+use super::hook_folder::{HOOKS_FOLDER, HookFolder, list_hook_folder};
 use super::hook_marker::mark_what_a_hook_starts;
 
 impl LuaConfigFile {
     pub fn hook_files(&self) -> Result<Vec<HookFile>, ConfigError> {
-        list_hook_folder(&self.fenced_lua()?, &self.hooks_folder())
+        let folder = self.hooks_folder();
+        Ok(list_hook_folder(
+            &self.fenced_lua()?,
+            &HookFolder::personal(&folder)?,
+        ))
     }
 
     pub(super) fn hooks_folder(&self) -> PathBuf {

@@ -7,7 +7,7 @@ use mlua::{Lua, Table};
 use super::computed::ConfiguredCredentials;
 use super::evaluate::{ErrorText, evaluate, read_text, stopped_at_an_error};
 use super::functions::LuaFunctions;
-use super::hook_folder::{KeptHook, configured, read_hook_folder};
+use super::hook_folder::{HookFolder, KeptHook, configured, read_hook_folder};
 use super::secrets::read_secrets;
 use super::settings::read_settings;
 use super::strict::StrictMap;
@@ -112,7 +112,7 @@ impl LuaConfigFile {
             Some(table) => read_settings(&StrictMap::root(&file_name(&self.config), table)?)?,
             None => Config::default(),
         };
-        let hooks = read_hook_folder(&lua, &self.hooks_folder())?;
+        let hooks = read_hook_folder(&lua, &HookFolder::personal(&self.hooks_folder())?)?;
         (config.hooks, config.task_pulled) = configured(&hooks);
         Ok(Kept {
             config,

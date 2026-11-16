@@ -26,6 +26,7 @@ use dam_application::{Clock, ConfigFile};
 
 use crate::args::{Cli, Command, ConfigArgs};
 use crate::caller::{authenticated, caller};
+use crate::commands::hook_list::ProjectHookLook;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Format;
@@ -108,7 +109,9 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     if presented_token.is_none() {
         first_run::create_the_owners_config_when_missing(&config_file, &config_path, format);
     }
-    let command = match commands::config_files::answer(&config_file, cli.command)? {
+    let standing = run.standing();
+    let look = ProjectHookLook::of(&standing, &switches);
+    let command = match commands::config_files::answer(&config_file, cli.command, &look)? {
         Ok(report) => return output::print(format, color, &report),
         Err(command) => command,
     };
@@ -124,7 +127,6 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         let report = commands::catalogue::run(&config, command, run.standing().filters())?;
         return output::print(format, color, &report);
     }
-    let standing = run.standing();
     let templates = Box::new(run.templates(&standing));
     let ctx = Context::open(
         config_file.clone(),

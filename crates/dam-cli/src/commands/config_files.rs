@@ -10,12 +10,13 @@ use crate::output::Report;
 pub(crate) fn answer(
     file: &LuaConfigFile,
     command: Command,
+    look: &hook_list::ProjectHookLook,
 ) -> Result<Result<Report, Command>, CliError> {
     Ok(Ok(match command {
         Command::Token(args) => token::run(file, &OsRandom, SystemClock.now(), args)?,
         Command::Hook(HookArgs {
             command: Some(HookCommand::List),
-        }) => hook_list::run(file)?,
+        }) => hook_list::run(file, look)?,
         command => return Ok(Err(command)),
     }))
 }

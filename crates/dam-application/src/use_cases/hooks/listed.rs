@@ -1,9 +1,9 @@
-use dam_domain::{Object, Oid};
+use dam_domain::Oid;
 
 use super::edit_request::Edited;
 use super::run_time::RunTime;
 use crate::config::HookEvent;
-use crate::errors::{Refusal, UseCaseError};
+use crate::errors::UseCaseError;
 use crate::ports::{
     FunctionFailure, HelperError, HookFailure, Pull, PulledChange, RemoteName, Step,
 };
@@ -21,22 +21,11 @@ pub struct ListedHookRun {
 }
 
 impl Dam<'_> {
-    pub fn run_hook_over_listed(
+    fn run_one_hook_over(
         &self,
         hook: HookEvent,
-        query: Option<&str>,
+        listed: &[Oid],
     ) -> Result<ListedHookRun, UseCaseError> {
-        if !self.config.declares(hook) {
-            return Err(Refusal::HookNotDeclared(hook).into());
-        }
-        let listed: Vec<Oid> = self
-            .list(query)?
-            .into_iter()
-            .filter_map(|object| match object {
-                Object::Task(task) => Some(task.base.oid),
-                Object::Event(_) => None,
-            })
-            .collect();
         let mut run = ListedHookRun {
             hook,
             ran: 0,
@@ -135,6 +124,8 @@ impl Dam<'_> {
         Ok(None)
     }
 }
+
+mod both;
 
 #[cfg(test)]
 mod tests;

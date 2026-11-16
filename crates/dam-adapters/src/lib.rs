@@ -23,8 +23,8 @@ pub use day_doc::{DayDoc, TaskStateDoc, day_from_doc, day_to_doc};
 pub use git_branch::checked_out_branch;
 pub use helper_process::ProcessLauncher;
 pub use lua_config::{
-    FileSystemProjectFolders, FileSystemTemplates, LuaConfigFile, ProjectHookFiles, STARTER_CONFIG,
-    history_document, read_project_file, write_project_file,
+    FileSystemProjectFolders, FileSystemTemplates, LuaConfigFile, PROJECT_HOOKS_FOLDER,
+    ProjectHookFiles, STARTER_CONFIG, history_document, read_project_file, write_project_file,
 };
 pub use object_document::object_document;
 pub use paths::{default_config_path, default_store_path};

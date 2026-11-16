@@ -3,6 +3,7 @@ mod changes;
 mod failures;
 mod limits;
 mod progress;
+mod project;
 
 use std::path::PathBuf;
 
