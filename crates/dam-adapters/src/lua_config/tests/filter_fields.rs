@@ -6,7 +6,7 @@ use super::filter_support::{every_field_event, every_field_task, field_names, ru
 use crate::object_document;
 
 pub(super) const NOT_IN_THE_TABLE: [&str; 3] = ["author", "details", "id"];
-const ONLY_IN_A_COMMANDS_ANSWER: &str = "changed_by_hook";
+const ONLY_IN_A_COMMANDS_ANSWER: [&str; 2] = ["changed_by_hook", "project_created"];
 
 const WRITE_FIELD_NAMES: &str = r#"
         local names = {}
@@ -40,7 +40,11 @@ fn schema_field_names() -> BTreeSet<String> {
     names
         .into_iter()
         .filter(|name| !NOT_IN_THE_TABLE.contains(&name.as_str()))
-        .filter(|name| !name.starts_with(ONLY_IN_A_COMMANDS_ANSWER))
+        .filter(|name| {
+            !ONLY_IN_A_COMMANDS_ANSWER
+                .iter()
+                .any(|key| name.starts_with(key))
+        })
         .collect()
 }
 

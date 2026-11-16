@@ -32,7 +32,8 @@ another uses only its own file.
 In a folder that holds `.dam.lua`, `dam new --path` starts from the project's path, and the
 token is checked on the full path; `--global`, or `"global": true` in a request, starts it from
 the root, and `--project <path>`, or `"project"` in a request, starts it from that path from any
-folder. `dam ls`, `dam agenda` and `dam reminders` there list only what the token sees under the
+folder. A missing task for that path is created first; that needs `task:create` there, and the
+answer carries `project_created`. `dam ls`, `dam agenda` and `dam reminders` there list only what the token sees under the
 project.
 
 When a template renders `secrets.lua`, the template writes the token's table with the value

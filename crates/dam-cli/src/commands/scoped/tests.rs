@@ -14,7 +14,7 @@ fn inside(path: &str) -> Standing {
     })
 }
 
-pub(super) fn new_args(subject: &str, path: &str) -> NewArgs {
+pub(crate) fn new_args(subject: &str, path: &str) -> NewArgs {
     NewArgs {
         subject: subject.into(),
         kind: Kind::Task,
