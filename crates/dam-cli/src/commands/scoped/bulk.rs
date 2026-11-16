@@ -25,7 +25,7 @@ pub(super) fn narrowing(command: Command, standing: &Standing) -> Result<Command
 }
 
 fn narrowed(set: &mut SetArgs, scope: &ScopeArgs, standing: &Standing) -> Result<(), CliError> {
-    if set.query.is_none() && set.filter.is_none() {
+    if set.filter.is_none() {
         return Ok(());
     }
     set.place = standing.place(scope)?;
@@ -34,8 +34,7 @@ fn narrowed(set: &mut SetArgs, scope: &ScopeArgs, standing: &Standing) -> Result
         .zip(set.filter.as_deref())
         .and_then(|(rules, name)| rules.filter_query(name));
     if let Some(query) = projects_filter.map(String::from) {
-        set.query = Some(query);
-        set.filter = None;
+        set.projects_filter = Some(query);
     }
     Ok(())
 }

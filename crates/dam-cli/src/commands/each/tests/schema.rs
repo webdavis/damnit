@@ -35,11 +35,11 @@ fn every_answer_matches_the_published_changes_schema() {
             &["edit", &oids[0], "--due", "2026-11-20", "--preview"],
         )
         .unwrap(),
-        dam(&ctx, &["done", "--query", "path:garden/"]).unwrap(),
+        dam(&ctx, &["done", "--filter", "garden"]).unwrap(),
         dam(&ctx, &["rm", &oids[0], &oids[1]]).unwrap(),
         dam(
             &super::as_one::token_context().0,
-            &["edit", "--query", "kind:task", "--subject", "x", "--as-one"],
+            &["edit", "--filter", "tasks", "--subject", "x", "--as-one"],
         )
         .unwrap(),
     ];

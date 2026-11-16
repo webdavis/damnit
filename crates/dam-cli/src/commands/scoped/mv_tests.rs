@@ -82,18 +82,6 @@ fn several_oids_move_under_the_project() {
 }
 
 #[test]
-fn a_query_picks_only_the_projects_tasks_and_moves_them_under_the_project() {
-    let ctx = context();
-    filed(&ctx, 1, "damnit/");
-    filed(&ctx, 2, "work/");
-    let mut args = mv(&[]);
-    args.path = Some(Path::parse("cli/").unwrap());
-    args.set.query = Some("kind:task".into());
-    dispatch_in(&ctx, Command::Mv(args), inside()).unwrap();
-    assert_eq!(paths(&ctx), ["damnit/cli/", "work/"]);
-}
-
-#[test]
 fn a_filter_moves_what_it_lists_under_the_project() {
     let mut ctx = context();
     ctx.config.filters = vec![FilterConfig {

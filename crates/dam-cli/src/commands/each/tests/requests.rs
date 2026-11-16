@@ -27,9 +27,9 @@ fn a_request_names_several_oids_as_an_array() {
 }
 
 #[test]
-fn a_request_carries_the_query_preview_and_expect() {
+fn a_request_carries_the_filter_preview_and_expect() {
     let (ctx, _) = three_tasks();
-    let document = r#"{"query": "path:work/", "preview": true, "expect": 2, "subject": "x"}"#;
+    let document = r#"{"filter": "work", "preview": true, "expect": 2, "subject": "x"}"#;
     let out = dispatch_a_verb_that_opens_the_store(&ctx, by_request(document)).unwrap();
     assert_eq!(out.data["preview"], true);
     assert_eq!(out.data["count"], 2);

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/changes.schema.json",
   "title": "dam edit, done, mv and rm answer for a set",
-  "description": "What dam edit, done, mv and rm print with -o when given several oids, --query, --filter or --preview. count and oids are what the selector listed; changes holds one change per object that changed.",
+  "description": "What dam edit, done, mv and rm print with -o when given several oids, -, --filter or --preview. count and oids are what the selector listed; changes holds one change per object that changed.",
   "type": "object",
   "required": ["preview", "count", "oids", "changes"],
   "additionalProperties": false,

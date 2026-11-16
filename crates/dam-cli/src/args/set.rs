@@ -5,12 +5,6 @@ use dam_domain::Path;
 pub(crate) struct SetArgs {
     #[arg(
         long,
-        conflicts_with_all = ["oid", "filter"],
-        help = "Act on every object this query lists; inside a project, only its tasks unless --global"
-    )]
-    pub(crate) query: Option<String>,
-    #[arg(
-        long,
         conflicts_with = "oid",
         help = "Act on every object this saved filter lists; inside a project, only its tasks unless --global"
     )]
@@ -31,6 +25,8 @@ pub(crate) struct SetArgs {
     #[arg(skip)]
     pub(crate) place: Path,
     #[arg(skip)]
+    pub(crate) projects_filter: Option<String>,
+    #[arg(skip)]
     pub(crate) piped: Option<Box<Piped>>,
 }
 
@@ -42,8 +38,7 @@ pub(crate) struct Piped {
 
 impl SetArgs {
     pub(crate) fn is_plain(&self) -> bool {
-        self.query.is_none()
-            && self.piped.is_none()
+        self.piped.is_none()
             && self.filter.is_none()
             && !self.preview
             && self.expect.is_none()

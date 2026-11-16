@@ -8,6 +8,7 @@ mod set_schemas;
 mod verbs;
 
 use clap::Parser;
+use dam_application::{FilterConfig, FilterRule};
 use dam_domain::{Object, Oid, Path, Task};
 
 use crate::args::Cli;
@@ -26,7 +27,17 @@ fn filed(ctx: &Context, byte: u8, path: &str) -> Oid {
 }
 
 fn three_tasks() -> (Context, Vec<String>) {
-    let ctx = context();
+    let mut ctx = context();
+    ctx.config.filters = [
+        ("tasks", "kind:task"),
+        ("work", "path:work/"),
+        ("garden", "path:garden/"),
+    ]
+    .map(|(name, query)| FilterConfig {
+        name: name.into(),
+        rule: FilterRule::Query(query.into()),
+    })
+    .into();
     let oids = [(1, "work"), (2, "work"), (3, "home")]
         .map(|(byte, path)| filed(&ctx, byte, path).as_str().to_string());
     (ctx, oids.into())

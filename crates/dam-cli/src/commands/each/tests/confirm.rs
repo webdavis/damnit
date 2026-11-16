@@ -21,7 +21,7 @@ pub(super) fn subject(ctx: &Context, oid: &str) -> String {
     ctx.store.get(&oid).unwrap().unwrap().base().subject.clone()
 }
 
-const ALL: &[&str] = &["edit", "--query", "kind:task", "--subject", "x"];
+const ALL: &[&str] = &["edit", "--filter", "tasks", "--subject", "x"];
 
 #[test]
 fn yes_at_the_question_changes_the_set() {
@@ -59,13 +59,13 @@ fn named_oids_a_preview_and_an_expect_are_not_asked() {
         &["edit", &oids[0], &oids[1], &oids[2], "--subject", "x"],
     )
     .unwrap();
-    dam(&ctx, &["done", "--query", "kind:task", "--preview"]).unwrap();
+    dam(&ctx, &["done", "--filter", "tasks", "--preview"]).unwrap();
     dam(
         &ctx,
         &[
             "edit",
-            "--query",
-            "kind:task",
+            "--filter",
+            "tasks",
             "--subject",
             "y",
             "--expect",

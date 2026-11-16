@@ -1,3 +1,4 @@
+use super::piped::piped;
 use super::*;
 
 #[test]
@@ -27,15 +28,18 @@ fn a_preview_on_one_oid_answers_the_document_and_writes_nothing() {
 #[test]
 fn an_empty_set_prints_nothing_matches() {
     let (ctx, _) = three_tasks();
-    let out = dam(&ctx, &["done", "--query", "path:garden/"]).unwrap();
+    let out = dam(&ctx, &["done", "--filter", "garden"]).unwrap();
     assert_eq!(out.human.trim(), "nothing matches");
     assert_eq!(out.data["count"], 0);
 }
 
 #[test]
-fn oids_and_a_query_together_are_a_usage_problem() {
+fn oids_and_a_filter_together_are_a_usage_problem() {
     let (ctx, oids) = three_tasks();
-    let refused = dam(&ctx, &["edit", &oids[0], "--query", "x", "--subject", "y"]);
+    let refused = dam(
+        &ctx,
+        &["edit", &oids[0], "--filter", "work", "--subject", "y"],
+    );
     assert!(matches!(refused, Err(CliError::Usage(_))));
 }
 
@@ -47,9 +51,9 @@ fn edit_e_on_a_set_is_a_usage_problem() {
 }
 
 #[test]
-fn done_on_a_query_completes_what_it_lists() {
-    let (ctx, _) = three_tasks();
-    let out = dam(&ctx, &["done", "--query", "path:work/", "--expect", "2"]).unwrap();
+fn done_on_piped_ids_completes_them() {
+    let (ctx, oids) = three_tasks();
+    let out = piped(&ctx, &["done", "-", "--expect", "2"], &oids[..2]).unwrap();
     assert_eq!(last_line(&out), "changed 2 of 2");
 }
 
@@ -67,9 +71,9 @@ fn mv_reads_the_last_word_as_the_path() {
 }
 
 #[test]
-fn mv_on_a_query_takes_its_path_from_the_path_flag() {
-    let (ctx, _) = three_tasks();
-    let out = dam(&ctx, &["mv", "--query", "path:work/", "--path", "garden"]).unwrap();
+fn mv_on_piped_ids_takes_its_path_from_the_path_flag() {
+    let (ctx, oids) = three_tasks();
+    let out = piped(&ctx, &["mv", "-", "--path", "garden"], &oids[..2]).unwrap();
     assert_eq!(last_line(&out), "changed 2 of 2");
 }
 
@@ -88,8 +92,8 @@ fn rm_on_many_oids_removes_them_all() {
 
 #[test]
 fn an_expect_that_differs_refuses() {
-    let (ctx, _) = three_tasks();
-    let refused = dam(&ctx, &["rm", "--query", "path:work/", "--expect", "3"]);
+    let (ctx, oids) = three_tasks();
+    let refused = piped(&ctx, &["rm", "-", "--expect", "3"], &oids[..2]);
     assert!(matches!(refused, Err(CliError::UseCase(_))));
 }
 
