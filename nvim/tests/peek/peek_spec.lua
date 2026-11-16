@@ -104,7 +104,8 @@ return {
     buffer.wait_for(function()
       return #notes > 0
     end)
-    assert(notes[1].level == vim.log.levels.ERROR, vim.inspect(notes))
+    vim.wait(30)
+    assert(#notes == 1 and notes[1].level == vim.log.levels.ERROR, vim.inspect(notes))
     assert(#floats() == 0)
   end,
 
