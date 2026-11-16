@@ -11,7 +11,9 @@ impl Rule {
     pub fn next_after(&self, date: Date) -> Option<Date> {
         let candidate = match self.freq {
             Freq::Weekly if !self.by_day.is_empty() => self.next_weekly_on(date),
-            Freq::Monthly if !self.by_month_day.is_empty() => self.next_monthly_on(date),
+            Freq::Monthly if !self.by_month_day.is_empty() || !self.by_nth_weekday.is_empty() => {
+                self.next_monthly_on(date)
+            }
             _ => date.checked_add(self.step()?).ok(),
         }?;
         match self.until {
@@ -42,25 +44,27 @@ impl Rule {
         let step = self.step()?;
         let mut month_start = from.first_of_month();
         for _ in 0..48 {
-            let days = if month_start == from.first_of_month() {
-                self.by_month_day
-                    .iter()
-                    .filter(|d| **d > from.day())
-                    .copied()
-                    .collect::<Vec<_>>()
-            } else {
-                self.by_month_day.clone()
-            };
-            for day in days {
-                if let Ok(candidate) =
-                    jiff::civil::Date::new(month_start.year(), month_start.month(), day)
-                {
-                    return Some(candidate);
-                }
+            let next = self
+                .days_in_month_of(month_start)
+                .filter(|day| *day > from)
+                .min();
+            if next.is_some() {
+                return next;
             }
             month_start = month_start.checked_add(step).ok()?;
         }
         None
+    }
+
+    fn days_in_month_of(&self, month_start: Date) -> impl Iterator<Item = Date> + '_ {
+        let month_days = self.by_month_day.iter().filter_map(move |day| {
+            jiff::civil::Date::new(month_start.year(), month_start.month(), *day).ok()
+        });
+        let nth_weekdays = self
+            .by_nth_weekday
+            .iter()
+            .filter_map(move |nth| nth.in_month_of(month_start));
+        month_days.chain(nth_weekdays)
     }
 }
 

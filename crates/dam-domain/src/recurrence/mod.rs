@@ -1,5 +1,7 @@
 mod error;
 mod next_date;
+mod nth_weekday;
+mod on_list;
 mod parse;
 
 use std::num::NonZeroU32;
@@ -67,6 +69,7 @@ pub struct Rule {
     interval: NonZeroU32,
     by_day: Vec<Weekday>,
     by_month_day: Vec<i8>,
+    by_nth_weekday: Vec<nth_weekday::NthWeekday>,
     until: Option<Date>,
     anchor: Anchor,
 }
