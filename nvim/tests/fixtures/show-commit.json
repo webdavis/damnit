@@ -1,0 +1,40 @@
+{
+  "id": "<id-1>",
+  "at": "<now>",
+  "message": "plan the errand",
+  "changes": [
+    {
+      "oid": "1111111111111111111111111111111111111111",
+      "op": "update",
+      "fields": [
+        "labels",
+        "priority",
+        "due"
+      ],
+      "kind": "task",
+      "subject": "buy oat milk",
+      "path": "home/",
+      "labels": [
+        "errand",
+        "shop"
+      ],
+      "done": false,
+      "completed_at": null,
+      "priority": 4,
+      "due": "2026-09-28",
+      "from": null,
+      "key_id": null,
+      "channel": null,
+      "author": "owner",
+      "details": {
+        "meta": {},
+        "host": "<host>",
+        "dir": "<dir>",
+        "repo": null,
+        "branch": null,
+        "at": "<now>",
+        "channel": "local"
+      }
+    }
+  ]
+}

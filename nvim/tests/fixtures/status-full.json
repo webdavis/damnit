@@ -1,0 +1,383 @@
+{
+  "staged": [
+    {
+      "oid": "1111111111111111111111111111111111111111",
+      "op": "update",
+      "fields": [
+        "labels",
+        "priority",
+        "due"
+      ],
+      "kind": "task",
+      "subject": "buy oat milk",
+      "path": "home/",
+      "labels": [
+        "errand",
+        "shop"
+      ],
+      "done": false,
+      "completed_at": null,
+      "priority": 4,
+      "due": "2026-09-28",
+      "before": {
+        "oid": "1111111111111111111111111111111111111111",
+        "kind": "task",
+        "subject": "buy oat milk",
+        "body": "",
+        "path": "home/",
+        "labels": [
+          "errand"
+        ],
+        "depends": [],
+        "reminders": [],
+        "task": {
+          "done": false,
+          "priority": 2,
+          "due": "2026-09-25"
+        }
+      },
+      "after": {
+        "oid": "1111111111111111111111111111111111111111",
+        "kind": "task",
+        "subject": "buy oat milk",
+        "body": "",
+        "path": "home/",
+        "labels": [
+          "errand",
+          "shop"
+        ],
+        "depends": [],
+        "reminders": [],
+        "task": {
+          "done": false,
+          "priority": 4,
+          "due": "2026-09-28"
+        }
+      },
+      "from": null,
+      "key_id": null,
+      "channel": null,
+      "author": "owner",
+      "details": {
+        "meta": {},
+        "host": "<host>",
+        "dir": "<dir>",
+        "repo": null,
+        "branch": null,
+        "at": "<now>",
+        "channel": "local"
+      }
+    }
+  ],
+  "unstaged": [
+    {
+      "oid": "2222222222222222222222222222222222222222",
+      "op": "update",
+      "fields": [
+        "labels",
+        "priority",
+        "due"
+      ],
+      "kind": "task",
+      "subject": "call mom",
+      "path": "",
+      "labels": [
+        "phone"
+      ],
+      "done": false,
+      "completed_at": null,
+      "priority": 1,
+      "due": "2026-09-30",
+      "before": {
+        "oid": "2222222222222222222222222222222222222222",
+        "kind": "task",
+        "subject": "call mom",
+        "body": "",
+        "path": "",
+        "labels": [],
+        "depends": [],
+        "reminders": [],
+        "task": {
+          "done": false,
+          "priority": 4
+        }
+      },
+      "after": {
+        "oid": "2222222222222222222222222222222222222222",
+        "kind": "task",
+        "subject": "call mom",
+        "body": "",
+        "path": "",
+        "labels": [
+          "phone"
+        ],
+        "depends": [],
+        "reminders": [],
+        "task": {
+          "done": false,
+          "priority": 1,
+          "due": "2026-09-30"
+        }
+      },
+      "from": null,
+      "key_id": null,
+      "channel": null,
+      "author": "owner",
+      "details": null
+    },
+    {
+      "oid": "3333333333333333333333333333333333333333",
+      "op": "delete",
+      "fields": [],
+      "kind": "event",
+      "subject": "standup",
+      "path": "work/",
+      "labels": [],
+      "start": "2026-09-25T09:00:00+00:00",
+      "end": "2026-09-25T09:15:00+00:00",
+      "before": {
+        "oid": "3333333333333333333333333333333333333333",
+        "kind": "event",
+        "subject": "standup",
+        "body": "",
+        "path": "work/",
+        "labels": [],
+        "depends": [],
+        "reminders": [],
+        "event": {
+          "start": "2026-09-25T09:00:00+00:00",
+          "end": "2026-09-25T09:15:00+00:00",
+          "attendees": [],
+          "status": "confirmed",
+          "transparency": "busy",
+          "visibility": "default",
+          "event_type": "default",
+          "attachments": []
+        }
+      },
+      "after": null,
+      "from": null,
+      "key_id": null,
+      "channel": null,
+      "author": "owner",
+      "details": null
+    }
+  ],
+  "waiting": [
+    {
+      "hash": "<id-1>",
+      "item": "new",
+      "oid": "<id-1>",
+      "op": "create",
+      "fields": [
+        "subject"
+      ],
+      "kind": "task",
+      "subject": "call the plumber",
+      "path": "",
+      "labels": [],
+      "done": false,
+      "completed_at": null,
+      "priority": 4,
+      "due": null,
+      "before": null,
+      "after": {
+        "oid": "<id-1>",
+        "kind": "task",
+        "subject": "call the plumber",
+        "body": "",
+        "path": "",
+        "labels": [],
+        "depends": [],
+        "reminders": [],
+        "task": {
+          "done": false,
+          "priority": 4
+        }
+      },
+      "from": "tool",
+      "key_id": "BBBBBBBBBBBB",
+      "channel": "local",
+      "author": "tool",
+      "details": {
+        "meta": {},
+        "host": "<host>",
+        "dir": "<dir>",
+        "repo": null,
+        "branch": null,
+        "at": "<now>",
+        "channel": "local"
+      },
+      "created": "<now>",
+      "age": 0
+    }
+  ],
+  "sets": [
+    {
+      "set": "<id-2>",
+      "from": "tool",
+      "count": 2,
+      "created": "<now>",
+      "age": 0,
+      "items": [
+        {
+          "hash": "<id-3>",
+          "item": "change",
+          "oid": "2222222222222222222222222222222222222222",
+          "op": "update",
+          "fields": [
+            "priority"
+          ],
+          "kind": "task",
+          "subject": "call mom",
+          "path": "",
+          "labels": [
+            "phone"
+          ],
+          "done": false,
+          "completed_at": null,
+          "priority": 3,
+          "due": "2026-09-30",
+          "before": {
+            "oid": "2222222222222222222222222222222222222222",
+            "kind": "task",
+            "subject": "call mom",
+            "body": "",
+            "path": "",
+            "labels": [
+              "phone"
+            ],
+            "depends": [],
+            "reminders": [],
+            "task": {
+              "done": false,
+              "priority": 1,
+              "due": "2026-09-30"
+            }
+          },
+          "after": {
+            "oid": "2222222222222222222222222222222222222222",
+            "kind": "task",
+            "subject": "call mom",
+            "body": "",
+            "path": "",
+            "labels": [
+              "phone"
+            ],
+            "depends": [],
+            "reminders": [],
+            "task": {
+              "done": false,
+              "priority": 3,
+              "due": "2026-09-30"
+            }
+          },
+          "from": "tool",
+          "key_id": "BBBBBBBBBBBB",
+          "channel": "local",
+          "author": "tool",
+          "details": {
+            "meta": {},
+            "host": "<host>",
+            "dir": "<dir>",
+            "repo": null,
+            "branch": null,
+            "at": "<now>",
+            "channel": "local"
+          },
+          "created": "<now>",
+          "age": 0
+        },
+        {
+          "hash": "<id-4>",
+          "item": "change",
+          "oid": "1111111111111111111111111111111111111111",
+          "op": "update",
+          "fields": [
+            "priority"
+          ],
+          "kind": "task",
+          "subject": "buy oat milk",
+          "path": "home/",
+          "labels": [
+            "errand",
+            "shop"
+          ],
+          "done": false,
+          "completed_at": null,
+          "priority": 3,
+          "due": "2026-09-28",
+          "before": {
+            "oid": "1111111111111111111111111111111111111111",
+            "kind": "task",
+            "subject": "buy oat milk",
+            "body": "",
+            "path": "home/",
+            "labels": [
+              "errand",
+              "shop"
+            ],
+            "depends": [],
+            "reminders": [],
+            "task": {
+              "done": false,
+              "priority": 4,
+              "due": "2026-09-28"
+            }
+          },
+          "after": {
+            "oid": "1111111111111111111111111111111111111111",
+            "kind": "task",
+            "subject": "buy oat milk",
+            "body": "",
+            "path": "home/",
+            "labels": [
+              "errand",
+              "shop"
+            ],
+            "depends": [],
+            "reminders": [],
+            "task": {
+              "done": false,
+              "priority": 3,
+              "due": "2026-09-28"
+            }
+          },
+          "from": "tool",
+          "key_id": "BBBBBBBBBBBB",
+          "channel": "local",
+          "author": "tool",
+          "details": {
+            "meta": {},
+            "host": "<host>",
+            "dir": "<dir>",
+            "repo": null,
+            "branch": null,
+            "at": "<now>",
+            "channel": "local"
+          },
+          "created": "<now>",
+          "age": 0
+        }
+      ]
+    }
+  ],
+  "conflicts": [],
+  "notices": [],
+  "unpushed": [
+    {
+      "remote": "fake",
+      "commits": 1,
+      "commit_ids": [
+        "<id-5>"
+      ],
+      "oids": [
+        "1111111111111111111111111111111111111111",
+        "2222222222222222222222222222222222222222",
+        "3333333333333333333333333333333333333333",
+        "4444444444444444444444444444444444444444"
+      ]
+    }
+  ],
+  "warnings": []
+}

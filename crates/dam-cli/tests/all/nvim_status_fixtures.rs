@@ -7,7 +7,7 @@ use support::tokens::{grant, grant_to};
 
 const RIGHTS: [&str; 3] = ["task:create", "task:read", "task:change"];
 
-fn without_ages(text: &str) -> String {
+pub(crate) fn without_ages(text: &str) -> String {
     text.lines()
         .map(|line| match line.find("\"age\": ") {
             Some(at) => {
