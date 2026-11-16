@@ -63,7 +63,7 @@ fn renaming_one_of_two_same_named_objects_carries_only_its_own_contents() {
 fn moving_one_of_two_same_named_objects_carries_only_its_own_contents() {
     let s = two_errands();
     s.dam()
-        .relocate(&oid(1), &Path::parse("Work").unwrap())
+        .relocate(&oid(1), Some(&Path::parse("Work").unwrap()), None)
         .unwrap();
     assert_eq!(s.path_of(&oid(3)), "Work/errands/");
     assert_eq!(s.path_of(&oid(4)), "Work/errands/later/");
@@ -94,7 +94,11 @@ fn children_into_a_group_files_only_its_own_contents() {
 fn moving_into_a_same_named_objects_contents_is_not_moving_inside_itself() {
     let s = two_errands();
     s.dam()
-        .relocate(&oid(1), &Path::parse("Home/errands/sweep").unwrap())
+        .relocate(
+            &oid(1),
+            Some(&Path::parse("Home/errands/sweep").unwrap()),
+            None,
+        )
         .unwrap();
     assert_eq!(parent_of(&s, &oid(1)), Some(oid(6)));
     assert_eq!(s.path_of(&oid(3)), "Home/errands/sweep/errands/");
@@ -106,6 +110,7 @@ fn a_new_object_adopts_what_its_parent_holds_in_its_folder() {
     s.filed(task_in(5, "Home", ""))
         .filed(task_in(3, "milk", "Home/errands/later"));
     let errands = crate::use_cases::new_object::NewTask {
+        parent: None,
         subject: "errands".into(),
         path: Path::parse("Home").unwrap(),
         priority: Default::default(),

@@ -21,7 +21,7 @@ pub use credentials::resolve_credentials;
 pub use dam_domain::{
     Blockers, ChildDisposition, DependencyDisposition, Dispositions, Force, Tracked,
 };
-pub use errors::{FilterError, Refusal, UseCaseError};
+pub use errors::{FilterError, Refusal, Retry, UseCaseError};
 pub use ports::{
     AcceptedKindsRepository, AnswerRepository, Attempt, AttemptRepository, Attempts, ByHand, Clock,
     CommitRepository, ComputeFailure, ConfigError, ConfigFile, Conflict, ConflictRepository,

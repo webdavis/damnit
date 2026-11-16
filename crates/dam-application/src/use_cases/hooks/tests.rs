@@ -33,6 +33,7 @@ fn every_hook() -> Scenario {
 
 fn new_task(subject: &str) -> NewTask {
     NewTask {
+        parent: None,
         subject: subject.into(),
         path: Path::root(),
         priority: Priority::default(),

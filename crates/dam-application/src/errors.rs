@@ -1,11 +1,16 @@
+mod filter_error;
 mod refusal_name;
+mod retry;
+
+pub use filter_error::FilterError;
+pub use retry::Retry;
 
 use dam_domain::{
     Blockers, CommitId, Date, LabelViolation, Oid, Path, Permission, QueryError, Tracked,
 };
 
 use crate::access::TokenRefusal;
-use crate::ports::{CredentialError, FunctionFailure, HelperError, HookFailure, StoreError};
+use crate::ports::{CredentialError, HelperError, HookFailure, StoreError};
 use crate::use_cases::items::refusal::ItemRefusal;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -81,6 +86,16 @@ pub enum Refusal {
         folder: Path,
         held_by_a_remote: bool,
     },
+    PathOutsideParent {
+        parent: Oid,
+        folder: Path,
+        path: Path,
+    },
+    SeveralHoldThePath {
+        namesakes: Vec<Oid>,
+        folder: Path,
+        retry: Retry,
+    },
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -98,17 +113,6 @@ pub enum UseCaseError {
     Parse(String),
     Query(QueryError),
     NotAnOid(String),
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum FilterError {
-    Failed {
-        filter: String,
-        failure: FunctionFailure,
-    },
-    Withheld {
-        filter: String,
-    },
 }
 
 impl From<Refusal> for UseCaseError {

@@ -40,6 +40,8 @@ impl Refusal {
             Refusal::PulledCommit(_) => "pulled_commit",
             Refusal::NotInCommit { .. } => "not_in_commit",
             Refusal::ParentNotKnown { .. } => "parent_not_known",
+            Refusal::PathOutsideParent { .. } => "path_outside_parent",
+            Refusal::SeveralHoldThePath { .. } => "several_hold_the_path",
         }
     }
 }

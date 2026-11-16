@@ -6,6 +6,7 @@ use dam_domain::{Categories, Category};
 
 fn input(subject: &str, labels: &[&str]) -> NewTask {
     NewTask {
+        parent: None,
         subject: subject.into(),
         path: Path::root(),
         priority: Priority::default(),
@@ -28,6 +29,7 @@ fn effort() -> Categories {
 
 fn dentist(start: When, end: When) -> NewEvent {
     NewEvent {
+        parent: None,
         subject: "dentist".into(),
         path: Path::root(),
         start,
@@ -104,3 +106,7 @@ fn a_new_event_that_fails_at_its_write_leaves_nothing_behind() {
         dam.new_event(dentist(day.clone(), day.clone())).map(drop)
     });
 }
+
+mod parent;
+mod parent_tokens;
+mod resend;

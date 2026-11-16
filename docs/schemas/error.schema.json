@@ -144,7 +144,9 @@
         "item_subject_names_no_folder",
         "pulled_commit",
         "not_in_commit",
-        "parent_not_known"
+        "parent_not_known",
+        "path_outside_parent",
+        "several_hold_the_path"
       ]
     },
     "tokenRule": {

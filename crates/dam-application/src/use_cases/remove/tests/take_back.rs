@@ -16,6 +16,7 @@ pub(super) fn dentist() -> CallerId {
 
 pub(super) fn dentist_task() -> NewTask {
     NewTask {
+        parent: None,
         subject: "call the dentist".into(),
         path: Path::parse("inbox").unwrap(),
         priority: Priority::default(),

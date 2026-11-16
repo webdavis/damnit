@@ -9,9 +9,10 @@ pub(crate) fn with_nearest_parent(
 ) -> Result<Object, UseCaseError> {
     let all = objects.all()?;
     let parents = nearest_parents(&object.base().path, &all);
+    let named = object.base().parent.clone();
     object.base_mut().parent = match <[Oid; 1]>::try_from(parents) {
         Ok([parent]) => Some(parent),
-        Err(_) => None,
+        Err(parents) => named.filter(|named| parents.contains(named)),
     };
     Ok(object)
 }

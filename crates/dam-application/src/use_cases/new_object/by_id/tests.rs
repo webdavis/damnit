@@ -6,6 +6,7 @@ use crate::use_cases::new_object::NewTask;
 
 fn dentist(subject: &str) -> NewTask {
     NewTask {
+        parent: None,
         subject: subject.into(),
         path: Path::root(),
         priority: Priority::default(),

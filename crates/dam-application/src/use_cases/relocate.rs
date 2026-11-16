@@ -1,16 +1,34 @@
 use dam_domain::{Oid, Path, nearest_parents};
 
-use crate::errors::{Refusal, UseCaseError};
+use crate::errors::{Refusal, Retry, UseCaseError};
 use crate::service::Dam;
 use crate::use_cases::atomically::atomically;
 use crate::use_cases::load::load;
+use crate::use_cases::placement::Placement;
 use crate::use_cases::subtree::{is_held_by, move_into};
 
 impl Dam<'_> {
-    pub fn relocate(&self, oid: &Oid, to: &Path) -> Result<(), UseCaseError> {
+    pub fn relocate(
+        &self,
+        oid: &Oid,
+        to: Option<&Path>,
+        parent: Option<&Oid>,
+    ) -> Result<(), UseCaseError> {
+        if self.access.token().is_some() {
+            return Err(Refusal::NotOpenToTokens("mv").into());
+        }
         atomically(self.store, || {
             load(self.store, oid)?;
-            let parents = nearest_parents(to, &self.store.all()?);
+            let asked = Placement {
+                path: to,
+                parent,
+                writing: None,
+            };
+            let (to, parent) = self.placement(asked, || Retry::Move(oid.clone()))?;
+            let parents = match &parent {
+                Some(parent) => vec![parent.clone()],
+                None => nearest_parents(&to, &self.store.all()?),
+            };
             for parent in &parents {
                 if is_held_by(self.store, parent, oid)? {
                     return Err(Refusal::MoveInsideItself(oid.clone()).into());
@@ -20,7 +38,7 @@ impl Dam<'_> {
                 Ok([parent]) => Some(parent),
                 Err(_) => None,
             };
-            move_into(self.store, oid, to, parent)
+            move_into(self.store, oid, &to, parent)
         })
     }
 }

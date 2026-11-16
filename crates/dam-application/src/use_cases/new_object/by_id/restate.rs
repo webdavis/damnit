@@ -89,6 +89,7 @@ fn restated_base(before: &Base, fresh: Base) -> Base {
         body: fresh.body,
         path: fresh.path,
         labels: fresh.labels,
+        parent: fresh.parent.or_else(|| before.parent.clone()),
         ..before.clone()
     }
 }

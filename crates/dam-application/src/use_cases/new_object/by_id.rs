@@ -12,6 +12,7 @@ impl Dam<'_> {
     ) -> Result<Landed, UseCaseError> {
         let create = Permission::create(fresh.kind());
         let Some(id) = id else {
+            let fresh = self.placed_new(fresh)?;
             self.refuse_unpermitted_or_unlabelled(create, None, &fresh)?;
             return self.put_or_send(create, None, fresh);
         };
@@ -20,8 +21,9 @@ impl Dam<'_> {
         if let Some(oid) = &mapped
             && let Some(before) = self.own_earlier(oid)?
         {
-            return self.restate(before, fresh);
+            return self.restate(before, self.placed_again(fresh)?);
         }
+        let fresh = self.placed_new(fresh)?;
         self.refuse_unpermitted_or_unlabelled(create, None, &fresh)?;
         let landed = self.put_or_send_among(create, None, fresh, &|earlier| {
             Some(earlier.target()) == mapped.as_ref()

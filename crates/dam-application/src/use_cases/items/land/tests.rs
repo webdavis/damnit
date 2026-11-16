@@ -13,6 +13,7 @@ use crate::use_cases::new_object::NewTask;
 
 fn new_task(subject: &str, path: &str) -> NewTask {
     NewTask {
+        parent: None,
         subject: subject.into(),
         path: Path::parse(path).unwrap(),
         priority: Priority::default(),

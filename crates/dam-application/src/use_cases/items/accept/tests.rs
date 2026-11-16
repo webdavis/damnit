@@ -25,6 +25,7 @@ pub(super) fn dentist(s: &Scenario) -> ItemHash {
     };
     sent_hash(
         dam.new_task(NewTask {
+            parent: None,
             subject: "call the dentist".into(),
             path: Path::parse("inbox").unwrap(),
             priority: Priority::default(),
