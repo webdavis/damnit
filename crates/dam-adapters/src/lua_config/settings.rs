@@ -7,7 +7,7 @@ use super::remote::read_remote;
 use super::strict::StrictMap;
 use super::whole_number::whole_number;
 
-pub(crate) const SETTINGS: [&str; 7] = [
+pub(crate) const SETTINGS: [&str; 8] = [
     "owner",
     "done",
     "progress",
@@ -15,8 +15,10 @@ pub(crate) const SETTINGS: [&str; 7] = [
     "remote",
     "category",
     "filter",
+    "project",
 ];
 pub(crate) const DONE: [&str; 1] = ["interactive"];
+pub(crate) const PROJECT: [&str; 1] = ["hooks"];
 pub(crate) const CATEGORY: [&str; 2] = ["values", "exclusive"];
 const SECRETS: [&str; 2] = ["token", "schema"];
 
@@ -35,6 +37,13 @@ pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
         Some(done) => {
             done.only(&DONE)?;
             done.bool("interactive")?
+        }
+        None => None,
+    };
+    let project_hooks = match root.map("project")? {
+        Some(project) => {
+            project.only(&PROJECT)?;
+            project.bool("hooks")?
         }
         None => None,
     };
@@ -70,6 +79,7 @@ pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
         filters,
         hooks: Vec::new(),
         task_pulled: None,
+        project_hooks,
         tokens: Default::default(),
     })
 }

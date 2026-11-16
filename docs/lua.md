@@ -13,6 +13,8 @@ Hooks live in their own files in a `hooks` folder beside them.
 | `done.interactive` | `true` makes `dam done` ask about open children and dependencies. |
 | `progress` | `false` hides progress lines unless you give `--progress`. Default: `true`. |
 | `confirm_above` | A whole number. `dam edit`, `done`, `mv` and `rm` with `--query` or `--filter` ask before changing more objects than this. Default: never ask. |
+| `project` | A table. |
+| `project.hooks` | `true` turns on the hooks every project ships in `.damhooks/`. See Project hooks. Default: `false`. |
 | `remote` | A table of remotes by name. |
 | `remote.<name>.url` | `<helper>::<address>`. Required. |
 | `remote.<name>.deadline` | A duration. The longest the helper may stay silent. Default: `60s`. |
@@ -41,6 +43,8 @@ under it there. A task whose parent is excepted and not on the remote is held un
 pull still brings in everything the remote has.
 
 `dam config set <key> <value>` and `dam config unset <key>` change one key of this table.
+Inside a project, `dam config set project.hooks true` turns that project's hooks on for this clone
+only and writes no file in the repository; `--global` writes `project.hooks` here instead.
 
 ## Hook files
 
@@ -90,7 +94,7 @@ folder alone, so a hook that does not load hides none of the others.
 A project's `.dam.lua` comes with the repository, so dam runs it locked: no `os`, `io`,
 `package`, `require`, `load`, `dofile`, `string` or `debug`, only plain values and a few base
 functions, with a cap on time and memory. A key that belongs to a person, such as `owner`,
-`remote`, `token`, `hook`, `secrets` or `sync`, is refused; it belongs in `config.lua`. A control
+`remote`, `token`, `hook`, `secrets`, `sync` or `project`, is refused; it belongs in `config.lua`. A control
 character anywhere in the file, a wrong type or an unknown key refuses the file.
 
 | Key | Holds | Effect inside the project |

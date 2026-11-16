@@ -1,8 +1,11 @@
 use dam_adapters::LuaConfigFile;
-use dam_application::{ConfigFile, Refusal};
+use std::path::Path;
+
+use dam_application::{ConfigFile, ProjectHookSwitches, Refusal};
 use serde::Serialize;
 
-use super::setting::Setting;
+use super::project_hooks::{From, KEY, in_force};
+use super::setting::{Setting, Value};
 use super::settings::settings;
 use super::warnings::warnings_naming_only_the_token;
 use crate::error::CliError;
@@ -48,6 +51,23 @@ pub(super) fn run(file: &LuaConfigFile, key: &str) -> Result<Report, CliError> {
         }),
         readings => Err(CliError::Usage(read_more_than_one_way(key, readings))),
     }
+}
+
+pub(super) fn this_clone(
+    file: &LuaConfigFile,
+    switches: &dyn ProjectHookSwitches,
+    clone: &Path,
+) -> Result<Report, CliError> {
+    let config = file.load()?.config;
+    let setting = match in_force(switches, clone, &config)? {
+        (on, From::Default) => Setting::by_default(Value::Flag(on)),
+        (on, _) => Setting::set(Value::Flag(on)),
+    };
+    report(&Got {
+        key: KEY,
+        setting: &setting,
+        warnings: warnings_naming_only_the_token(&config.tokens),
+    })
 }
 
 fn read_more_than_one_way(key: &str, readings: &[(Vec<&str>, &Setting)]) -> String {

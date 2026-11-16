@@ -100,7 +100,8 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         return group_help::print(group);
     }
     if let Command::Config(ConfigArgs { command: Some(c) }) = cli.command {
-        let listed = commands::config::run(&config_file, c, &run.standing())?;
+        let switches = dam_adapters::ProjectHookSwitchFile::beside_the_store(&store_path);
+        let listed = commands::config::run(&config_file, c, &run.standing(), &switches)?;
         return output::print(format, color, &listed);
     }
     if presented_token.is_none() {

@@ -8,6 +8,7 @@ mod lua_config;
 mod object_document;
 mod paths;
 mod process_details;
+mod project_hook_switches;
 mod random;
 mod sqlite;
 mod wire;
@@ -28,6 +29,7 @@ pub use lua_config::{
 pub use object_document::object_document;
 pub use paths::{default_config_path, default_store_path};
 pub use process_details::process_details;
+pub use project_hook_switches::ProjectHookSwitchFile;
 pub use random::OsRandom;
 pub use sqlite::{OpenError, ReadOnly, SqliteStore};
 pub use wire::{declared_on_the_wire, event_to_wire, to_wire};

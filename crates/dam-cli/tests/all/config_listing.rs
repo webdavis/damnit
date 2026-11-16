@@ -22,6 +22,7 @@ Settings ── what dam is using
   done.interactive                     false (default)
   progress                             true (default)
   confirm_above                        not set
+  project.hooks                        false (default)
   remote.todoist.url                   todoist::
   remote.todoist.deadline              60s (default)
   remote.todoist.sync.interval         15m (default)
@@ -71,6 +72,7 @@ Settings ── what dam is using
   done.interactive  false (default)
   progress          true (default)
   confirm_above     not set
+  project.hooks     false (default)
 "
             );
         }

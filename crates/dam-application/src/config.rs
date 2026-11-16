@@ -35,6 +35,7 @@ pub struct Config {
     pub filters: Vec<FilterConfig>,
     pub hooks: Vec<HookConfig>,
     pub task_pulled: Option<PulledHook>,
+    pub project_hooks: Option<bool>,
     pub tokens: Tokens,
 }
 
@@ -45,6 +46,10 @@ impl Config {
 
     pub fn done_interactive(&self) -> bool {
         self.done_interactive.unwrap_or(false)
+    }
+
+    pub fn project_hooks_on(&self, this_clone: Option<bool>) -> bool {
+        this_clone.or(self.project_hooks).unwrap_or(false)
     }
 
     pub fn progress(&self) -> bool {

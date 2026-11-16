@@ -56,6 +56,7 @@ fn a_key_that_belongs_to_a_person_is_refused_as_personal() {
         "secrets",
         "sync",
         "except",
+        "project",
     ] {
         let folder = ProjectFolder::with(&format!("return {{ path = 'a', {key} = 1 }}"));
         assert_eq!(
