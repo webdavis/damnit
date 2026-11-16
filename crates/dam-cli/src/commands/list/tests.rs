@@ -5,7 +5,7 @@ use jiff::civil::date;
 
 use crate::context::Context;
 use crate::error::CliError;
-use crate::output::Report;
+use crate::output::{Format, Report, shown};
 
 fn run(ctx: &Context, words: &[&str]) -> Result<Report, CliError> {
     super::run_list(ctx, list_args(words))
@@ -77,5 +77,40 @@ fn a_bad_value_is_refused_before_the_store_is_read() {
     assert!(
         err.to_string().ends_with("run dam list --priority 1"),
         "{err}"
+    );
+}
+
+#[test]
+fn on_says_once_how_many_it_could_not_place_and_how_to_see_them() {
+    let mut ctx = today_and_later();
+    ctx.config
+        .filters
+        .push(saved("standup", &[("kind", "event")]));
+    let report = run(&ctx, &["--due", "on:standup"]).unwrap();
+    assert_eq!(
+        report.standard_error_lines,
+        [
+            "dam: warning: dam holds no events, so on:standup could not place 1 task that is due; dam list --due not:none lists it",
+            "dam: no objects match"
+        ]
+    );
+    assert_eq!(shown(Format::Quiet, false, None, &report).unwrap(), None);
+    let held = run(&ctx, &["--due", "today"]).unwrap();
+    assert!(held.standard_error_lines.is_empty());
+}
+
+#[test]
+fn on_names_the_days_dam_holds_events_for() {
+    let beyond = dam_application::BeyondPulled {
+        filters: vec!["allhands".into()],
+        fields: vec!["due"],
+        held: Some((date(2026, 11, 9), date(2027, 2, 14))),
+        tasks: 3,
+        events: 0,
+    };
+    assert_eq!(
+        super::beyond_pulled::warning(&beyond),
+        "dam: warning: 3 tasks are due outside the days dam holds events for (2026-11-09 to 2027-02-14), \
+         so on:allhands could not place them; dam list --any due=..2026-11-08 --any due=2027-02-15.. lists them"
     );
 }

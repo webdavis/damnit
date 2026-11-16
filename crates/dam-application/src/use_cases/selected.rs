@@ -7,10 +7,12 @@ use crate::service::Dam;
 mod error;
 mod event_days;
 mod facts;
+mod pulled;
 mod saved;
 
 pub use error::SelectError;
 use facts::Facts;
+pub use pulled::BeyondPulled;
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum Defaults {
@@ -26,8 +28,19 @@ impl<'a> Dam<'a> {
         place: &Path,
         local: &[FilterConfig],
     ) -> Result<Vec<Object>, UseCaseError> {
+        Ok(self.list_selected_noting(filter, order, place, local)?.0)
+    }
+
+    pub fn list_selected_noting(
+        &self,
+        filter: &Filter,
+        order: &Order,
+        place: &Path,
+        local: &[FilterConfig],
+    ) -> Result<(Vec<Object>, Option<BeyondPulled>), UseCaseError> {
         let (listed, facts) = self.selected(filter, Command::List, place, local)?;
-        Ok(order.arrange(listed, &facts))
+        let beyond = facts.beyond_pulled(filter);
+        Ok((order.arrange(listed, &facts), beyond))
     }
 
     pub(crate) fn selected(
@@ -56,12 +69,15 @@ impl<'a> Dam<'a> {
         };
         let everything = self.seen_within(&Path::root())?;
         let saved = self.saved(filter, (place, local), chain)?;
-        let facts = self.facts(categories, &everything, saved)?;
-        let listed = everything
+        let mut facts = self.facts(categories, &everything, saved)?;
+        let candidates: Vec<Object> = everything
             .into_iter()
-            .filter(|o| o.base().path.is_within(place))
-            .filter(|o| scope.admits(o) && filter.matches(o, &facts))
+            .filter(|o| o.base().path.is_within(place) && scope.admits(o))
             .collect();
+        let (listed, rest): (Vec<Object>, Vec<Object>) = candidates
+            .into_iter()
+            .partition(|o| filter.matches(o, &facts));
+        facts.count_unplaced(filter, &rest);
         Ok((listed, facts))
     }
 
