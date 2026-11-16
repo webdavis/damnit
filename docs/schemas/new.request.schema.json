@@ -77,6 +77,25 @@
       "type": "string",
       "description": "A date word or YYYY-MM-DD."
     },
+    "category": {
+      "description": "A label group's label, as GROUP=LABEL, such as effort=deep: an object of group to label, or an array of GROUP=LABEL for several labels of one group. A label of none takes the group's label off.",
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[^=]+=.+$"
+          }
+        }
+      ]
+    },
     "preview": {
       "type": "boolean",
       "description": "Answer the change and write nothing."

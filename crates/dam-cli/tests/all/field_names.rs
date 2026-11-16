@@ -52,6 +52,7 @@ fn flag_values(value: &Value) -> Vec<String> {
 }
 
 fn every_field_set(sb: &Sandbox) -> (String, String) {
+    sb.add_category("effort", &["light", "deep"], true);
     let blocker = sb.new_object(&["blocker"]);
     let event = sb.new_object(&[
         "standup",
@@ -76,8 +77,8 @@ fn every_field_set(sb: &Sandbox) -> (String, String) {
         "2030-01-08",
         "--labels",
         "work",
-        "--labels",
-        "deep",
+        "--category",
+        "effort=deep",
         "--depends",
         &blocker,
         "--recurrence",

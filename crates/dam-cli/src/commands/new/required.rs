@@ -22,7 +22,9 @@ pub(crate) fn holds_each(args: &NewArgs, required: &[RequiredField]) -> Result<(
 fn held(args: &NewArgs, field: RequiredField) -> bool {
     match field {
         RequiredField::Due => args.due.is_some(),
-        RequiredField::Labels => !args.labels.is_empty(),
+        RequiredField::Labels => {
+            !args.labels.is_empty() || args.fields.category.iter().any(|(_, l)| l != "none")
+        }
         RequiredField::Priority => args.priority.is_some(),
         RequiredField::Body => !args.body.is_empty(),
         RequiredField::Deadline => args.deadline.is_some(),

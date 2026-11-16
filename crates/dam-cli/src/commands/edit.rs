@@ -51,8 +51,8 @@ pub(crate) fn from_flags(ctx: &Context, args: EditArgs) -> Result<EditFields, Cl
         args.no_deadline,
     );
     f.undone = args.no_done;
-    f.add_labels = args.labels;
-    f.remove_labels = args.unlabels;
+    f.add_labels.extend(args.labels);
+    f.remove_labels.extend(args.unlabels);
     f.remove_depends = args
         .undepends
         .iter()
