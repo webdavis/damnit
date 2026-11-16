@@ -6,6 +6,8 @@ local M = {}
 ---@class damnit.Segment
 ---@field title string
 ---@field objects? damnit.Object[]
+---@field rows? damnit.Row[] rows already arranged, drawn as they are
+---@field uncounted? boolean the header reads the title alone
 ---@field error? damnit.Error
 
 ---@param segment damnit.Segment
@@ -14,7 +16,9 @@ local function header_of(segment)
   if segment.error then
     return { header = segment.title .. ": " .. segment.error.message, failed = true, depth = 0, key = segment.title }
   end
-  return { header = ("%s (%d)"):format(segment.title, #segment.objects), depth = 0, key = segment.title }
+  local header = segment.uncounted and segment.title
+    or ("%s (%d)"):format(segment.title, #(segment.rows or segment.objects))
+  return { header = header, depth = 0, key = segment.title }
 end
 
 ---@param segments damnit.Segment[]
@@ -23,7 +27,7 @@ function M.rows(segments)
   local rows = {}
   for _, segment in ipairs(segments) do
     table.insert(rows, header_of(segment))
-    vim.list_extend(rows, segment.error and {} or tree.arranged(segment.objects))
+    vim.list_extend(rows, segment.error and {} or segment.rows or tree.arranged(segment.objects))
   end
   return rows
 end

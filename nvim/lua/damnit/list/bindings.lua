@@ -16,7 +16,8 @@ function Bindings:bind(buf)
       group = "every window",
       run = function()
         local list = self.shown[buf]
-        local oid = list.oids[vim.api.nvim_win_get_cursor(0)[1]]
+        local row = (list.arranged or {})[vim.api.nvim_win_get_cursor(0)[1]]
+        local oid = row and row.object and row.object.oid
         if not oid then
           return self.app.say:warn("no task on this line to open")
         end
@@ -42,6 +43,7 @@ function Bindings:bind(buf)
     end)
   )
   vim.list_extend(specs, self:filter_keys(buf))
+  vim.list_extend(specs, self:source_keys(buf))
   self.app.keys:bind(buf, vim.list_extend(specs, self.more_keys and self.more_keys(buf) or {}))
   vim.api.nvim_create_autocmd("BufWipeout", {
     group = self.group,
@@ -50,6 +52,13 @@ function Bindings:bind(buf)
       self.shown[buf] = nil
     end,
   })
+end
+
+---@param buf integer
+---@return damnit.KeySpec[]
+function Bindings:source_keys(buf)
+  local keys = self.shown[buf].source.keys
+  return keys and keys(self:window(buf)) or {}
 end
 
 return Bindings

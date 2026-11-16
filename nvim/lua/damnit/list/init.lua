@@ -48,6 +48,9 @@ function M.new(app, open_task)
     open = function(view, cwd, smods)
       lists:open(view, cwd, smods)
     end,
+    show = function(source, cwd, smods)
+      lists:show(source, cwd, smods)
+    end,
     commands = {
       list = function(args, cmd)
         lists:open(args[1], vim.fn.getcwd(), cmd.smods)

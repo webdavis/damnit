@@ -39,6 +39,7 @@ local function fresh_editor()
   vim.notify = notify
   closed_floats()
   vim.cmd("silent! %bwipeout!")
+  vim.cmd.redraw()
   vim.api.nvim_create_augroup("DamSpec", { clear = true })
 end
 
