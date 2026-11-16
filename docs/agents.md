@@ -165,6 +165,13 @@ stays until the owner adds or declines the removal. Both answer as the next sect
 A token cannot run `dam mv`, `dam done --force`, or `dam edit --focus`. Each exits 4, rule
 `not_open_to_tokens`.
 
+`dam edit`, `dam done` and `dam rm` also take several oids, `--query TEXT` or `--filter NAME`. The
+set holds only the objects your grants let you see, and each change waits as its own item. Add
+`--preview` to see the changes without sending anything, then run again with `--expect N` so the run
+refuses if the set changed since. A request carries `oid` as a string or an array, or `query` or
+`filter`, beside `preview` and `expect`. The answer is `changes.schema.json`: `count` and `oids` are
+the set, and each change in `changes` carries its `item` and `answer`.
+
 ## Taking your task back
 
 `dam rm --id <id>` takes back the task you sent with `dam new --id <id>`. Pass the same
