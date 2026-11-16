@@ -1,14 +1,18 @@
 use dam_adapters::LuaConfigFile;
 use dam_application::{
-    ConfigFile, CredentialSource, HelperError, HelperLauncher, LoadedConfig, NoProgress, Refusal,
-    RemoteConfig, Secret, UseCaseError, resolve_credentials,
+    ConfigFile, CredentialSource, HelperError, HelperLauncher, LoadedConfig, Progress, Refusal,
+    RemoteConfig, Secret, Step, UseCaseError, resolve_credentials, waited_on,
 };
 
 use crate::args::CheckName;
 use crate::commands::check_report::{Check, Outcome, Row};
 use crate::error::{ConfigReason, UseCaseText};
 
-pub(super) fn test(config_file: &LuaConfigFile, launcher: &dyn HelperLauncher) -> Check {
+pub(super) fn test(
+    config_file: &LuaConfigFile,
+    launcher: &dyn HelperLauncher,
+    progress: &dyn Progress,
+) -> Check {
     let found = |result, detail: String| Check::of(CheckName::Credentials, result, detail);
     let loaded = config_file.ends_in_lua().and_then(|()| config_file.load());
     let LoadedConfig {
@@ -31,7 +35,7 @@ pub(super) fn test(config_file: &LuaConfigFile, launcher: &dyn HelperLauncher) -
     let rows = config
         .remotes
         .iter()
-        .map(|remote| signed_in(remote, credentials.as_ref(), launcher))
+        .map(|remote| signed_in(remote, credentials.as_ref(), launcher, progress))
         .collect();
     Check::of_rows(CheckName::Credentials, rows)
 }
@@ -40,6 +44,7 @@ fn signed_in(
     remote: &RemoteConfig,
     source: &dyn CredentialSource,
     launcher: &dyn HelperLauncher,
+    progress: &dyn Progress,
 ) -> Row {
     let helper = format!("dam-remote-{}", remote.helper);
     let found = |result, detail: String| Row::of(&remote.name.0, result, detail);
@@ -58,8 +63,7 @@ fn signed_in(
         return found(Outcome::Warning, format!("{helper} cannot test a login"))
             .advising(format!("update {helper}"));
     }
-    let resolved = match resolve_credentials(source, remote, &capabilities.credentials, &NoProgress)
-    {
+    let resolved = match resolve_credentials(source, remote, &capabilities.credentials, progress) {
         Ok(resolved) => resolved,
         Err(UseCaseError::Refused(Refusal::MissingCredential { name, .. })) => {
             let remote = &remote.name.0;
@@ -68,10 +72,19 @@ fn signed_in(
         }
         Err(error) => return found(Outcome::Issue, UseCaseText(&error).to_string()),
     };
-    match launcher
-        .launch(remote, &resolved)
-        .and_then(|mut h| h.login())
-    {
+    let step = Step {
+        name: "sign_in",
+        remote: Some(&remote.name.0),
+        doing: &format!("signing in to {}", remote.name.0),
+        did: &format!("signed in to {}", remote.name.0),
+        unit: "",
+        total: None,
+    };
+    match waited_on(progress, step, || {
+        launcher
+            .launch(remote, &resolved)
+            .and_then(|mut h| h.login())
+    }) {
         Ok(()) => found(Outcome::Ok, "signed in".into()),
         Err(HelperError::Remote(said)) => {
             let detail = format!("did not sign in: {}", withheld(&said, &resolved));

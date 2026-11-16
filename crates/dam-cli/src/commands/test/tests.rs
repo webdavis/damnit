@@ -1,11 +1,12 @@
 mod credentials;
+mod progress;
 mod report;
 
 use std::cell::RefCell;
 use std::rc::Rc;
 
 use dam_adapters::LuaConfigFile;
-use dam_application::testing::{ScriptedHelper, task_caps};
+use dam_application::testing::{FakeProgress, ScriptedHelper, task_caps};
 use dam_application::{
     Declared, HelperError, HelperLauncher, PullOutcome, PushOutcome, RemoteCapabilities,
     RemoteConfig, RemoteHelper, RemoteMutation, Secret,
@@ -92,6 +93,7 @@ impl RemoteHelper for LoginHelper {
 struct Files {
     _dir: TempDir,
     config: LuaConfigFile,
+    progress: FakeProgress,
 }
 
 impl Files {
@@ -100,11 +102,15 @@ impl Files {
         std::fs::write(dir.path().join("config.lua"), config_lua).unwrap();
         std::fs::write(dir.path().join("secrets.lua"), secrets_lua).unwrap();
         let config = LuaConfigFile::new(dir.path().join("config.lua"));
-        Files { _dir: dir, config }
+        Files {
+            _dir: dir,
+            config,
+            progress: FakeProgress::default(),
+        }
     }
 
     fn report(&self, launcher: &Helpers, asked: &[PartName]) -> CheckReport {
-        super::report(asked, &self.config, launcher)
+        super::report(asked, &self.config, launcher, &self.progress)
     }
 }
 
