@@ -31,10 +31,11 @@ pub use ports::{
     Expected, FilterFunctions, FollowOn, FollowOnRepository, FunctionFailure, FunctionFault,
     HelperError, HelperLauncher, Histories, History, HookEdits, HookFailure, HookMarkRepository,
     HookWarnings, Hooks, IdRepository, Interruption, Invocation, ItemRepository, LastRun,
-    LoadedConfig, Misread, MissingTask, NoProgress, Notice, NoticeRepository, ObjectRepository,
-    ObjectState, OriginRepository, Place, Progress, Pull, PulledChange, Randomness, RemoteHelper,
-    RemoteName, RemoteNameError, RemoteTrackingRepository, RunEnding, RunRecords, ScheduleError,
-    SecretsTightened, SettingChange, SettingsFile, StageRepository, Step, Store, StoreError,
+    LoadedConfig, Misread, MissingTask, NoProgress, NotATemplateName, Notice, NoticeRepository,
+    ObjectRepository, ObjectState, OriginRepository, Place, Progress, Pull, PulledChange,
+    Randomness, RemoteHelper, RemoteName, RemoteNameError, RemoteTrackingRepository, RunEnding,
+    RunRecords, ScheduleError, SecretsTightened, SettingChange, SettingsFile, StageRepository,
+    Step, Store, StoreError, TaskTemplate, TaskTemplates, TemplateName, TemplateOwner,
     Transactional, Uneditable, label_of, waited_on,
 };
 pub use project::{PROJECT_FILE, Project, ProjectFolders, ProjectSettings, find_project};

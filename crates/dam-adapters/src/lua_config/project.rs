@@ -1,4 +1,5 @@
 mod locked;
+mod template;
 mod written;
 
 use std::path::Path;
@@ -13,6 +14,7 @@ use super::evaluate::{
 use super::shape::described;
 use super::strict::StrictMap;
 use locked::locked_lua;
+pub(super) use template::read_project_template;
 pub use written::{FileSystemProjectFolders, write_project_file};
 
 const PROJECT_SETTINGS: [&str; 1] = ["path"];

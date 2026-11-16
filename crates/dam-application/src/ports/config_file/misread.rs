@@ -21,6 +21,7 @@ pub enum Expected {
     CommittedOrWorking,
     DateTime,
     TableOfWholeNumbers,
+    PriorityOneToFour,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

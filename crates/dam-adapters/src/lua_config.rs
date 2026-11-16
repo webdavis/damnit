@@ -18,6 +18,7 @@ mod secrets;
 mod settings;
 mod shape;
 mod strict;
+mod task_template;
 mod token;
 mod write;
 
@@ -25,6 +26,7 @@ pub use create::STARTER_CONFIG;
 pub use file::LuaConfigFile;
 pub use functions::history_document;
 pub use project::{FileSystemProjectFolders, read_project_file, write_project_file};
+pub use task_template::FileSystemTemplates;
 
 #[cfg(test)]
 mod tests;
