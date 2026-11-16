@@ -88,15 +88,24 @@ return {
     end)
   end,
 
-  ["<CR> names the :Dam task that opens the row"] = function()
-    local _, fake = opened()
+  ["<CR> in the list opens that row's task"] = function()
+    local app, fake = helper.new()
+    local task = require("damnit.task").new(app)
+    require("damnit.command").define(app, { require("damnit.list").new(app, task.open), task })
+    fake.reply("list", fixtures.answer("list.json"))
+    fake.reply("show", fixtures.answer("show.json"))
+    local opened_in = folder()
     vim.cmd("Dam list")
     wait_for_reads(fake, 1)
-    local notes = buffer.capture_notes()
     vim.api.nvim_win_set_cursor(0, { 2, 0 })
     buffer.feed("<CR>")
-    assert(#notes == 1, vim.inspect(notes))
-    assert(notes[1].text:find(":Dam task 1111111111111111111111111111111111111111", 1, true), notes[1].text)
+    buffer.wait_for(function()
+      return #fake.of("show") == 1 and buffer.lines()[1]:find("^subject:") ~= nil
+    end)
+    local oid = "1111111111111111111111111111111111111111"
+    assert(vim.api.nvim_buf_get_name(0) == "dam://task/" .. oid, vim.api.nvim_buf_get_name(0))
+    assert(vim.deep_equal(fake.of("show")[1].argv, { "dam", "show", oid, "-o", "json" }))
+    assert(fake.of("show")[1].cwd == opened_in, fake.of("show")[1].cwd)
   end,
 
   ["list completion offers option views and saved filters"] = function()

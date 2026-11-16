@@ -5,13 +5,6 @@ local M = {}
 local HIGHLIGHTS = { DamOverdue = "DiagnosticError", DamBlocked = "DiagnosticWarn", DamDone = "Comment" }
 
 ---@param app damnit.App
-local function open_task(app)
-  return function(oid)
-    app.say:info((":Dam task %s will open this task once the task buffer is built"):format(oid))
-  end
-end
-
----@param app damnit.App
 ---@return string[]
 local function filter_names(app)
   local names
@@ -39,12 +32,13 @@ local function view_names(app)
 end
 
 ---@param app damnit.App
+---@param open_task fun(oid: string, cwd: string)
 ---@return damnit.Feature
-function M.new(app)
+function M.new(app, open_task)
   for group, link in pairs(HIGHLIGHTS) do
     vim.api.nvim_set_hl(0, group, { link = link, default = true })
   end
-  local lists = buffer.new(app, open_task(app))
+  local lists = buffer.new(app, open_task)
   return {
     open = function(view, cwd, smods)
       lists:open(view, cwd, smods)
