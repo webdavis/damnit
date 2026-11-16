@@ -113,6 +113,7 @@ fn inside_a_project_the_list_shows_every_project_setting_marked_as_the_projects(
                 exclusive: true,
             }])
             .unwrap(),
+            sections: vec!["bugs".into(), "features".into()],
         },
     }));
     let listed = run(&file, &inside).unwrap();
@@ -127,6 +128,7 @@ fn inside_a_project_the_list_shows_every_project_setting_marked_as_the_projects(
     assert_eq!(project["filter"]["open"]["query"], "label:cli");
     assert_eq!(project["category"]["area"]["values"][1], "db");
     assert_eq!(project["category"]["area"]["exclusive"], true);
+    assert_eq!(project["sections"][1], "features");
     for row in [
         "0.2.0 (from the project)",
         "cli (from the project)",
@@ -136,6 +138,7 @@ fn inside_a_project_the_list_shows_every_project_setting_marked_as_the_projects(
         "label:cli (from the project)",
         "ui, db (from the project)",
         "true (from the project)",
+        "bugs, features (from the project)",
     ] {
         assert!(listed.human.contains(row), "{row}: {}", listed.human);
     }

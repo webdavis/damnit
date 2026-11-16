@@ -6,6 +6,7 @@ mod locked;
 mod new_task;
 mod required;
 mod rule;
+mod sections;
 mod template;
 mod version;
 mod written;
@@ -26,7 +27,7 @@ use locked::locked_lua;
 pub(super) use template::read_project_template;
 pub use written::{FileSystemProjectFolders, write_project_file};
 
-const PROJECT_SETTINGS: [&str; 7] = [
+const PROJECT_SETTINGS: [&str; 8] = [
     "path",
     "minimum_dam",
     "new_task",
@@ -34,6 +35,7 @@ const PROJECT_SETTINGS: [&str; 7] = [
     "ls",
     "filter",
     "category",
+    "sections",
 ];
 const PERSONAL_SETTINGS: [&str; 9] = [
     "owner",
@@ -97,5 +99,6 @@ pub fn read_project_file(file: &Path, this_dam: &str) -> Result<ProjectSettings,
         ls: listing::listing(file, &root, &categories)?,
         filters: filters::filters(file, &root, &categories)?,
         categories,
+        sections: sections::sections(file, &root)?,
     })
 }

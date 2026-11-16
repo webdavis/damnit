@@ -90,17 +90,14 @@ fn a_second_init_changes_nothing_and_says_so() {
     let (ctx, folders) = (context(), folders());
     let file = folders.project.join(".dam.lua");
     std::fs::write(&file, "return { path = 'kept/' }").unwrap();
-    let report = run(
-        &ctx,
-        InitArgs { path: None },
-        here(&folders, &folders.project),
-    )
-    .unwrap();
+    let at = || here(&folders, &folders.project);
+    run(&ctx, InitArgs { path: None }, at()).unwrap();
+    let report = run(&ctx, InitArgs { path: None }, at()).unwrap();
     assert_eq!(
         std::fs::read_to_string(&file).unwrap(),
         "return { path = 'kept/' }"
     );
-    assert!(subjects_and_paths(&ctx).is_empty());
+    assert_eq!(subjects_and_paths(&ctx), [("kept".into(), "".into())]);
     assert_eq!(report.data["created"], false);
     assert_eq!(
         report.human,
@@ -162,4 +159,5 @@ fn the_personal_config_folder_is_refused_because_it_is_never_a_project() {
     assert!(!own.join(".dam.lua").exists());
 }
 
+mod clone;
 mod joining;

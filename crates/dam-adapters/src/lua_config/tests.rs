@@ -29,6 +29,7 @@ mod project_categories;
 mod project_control;
 mod project_escapes;
 mod project_rules;
+mod project_sections;
 mod project_settings;
 mod project_support;
 mod project_version;
