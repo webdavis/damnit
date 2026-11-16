@@ -19,7 +19,7 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
         Refusal::Blocked { .. } => 0,
         Refusal::Cycle { .. } => 1,
-        Refusal::Labels(_) => 2,
+        Refusal::Labels(_) | Refusal::ExclusiveAfterMigrate { .. } => 2,
         Refusal::UnknownCategory(_) => 3,
         Refusal::NoSuchObject(_) => 4,
         Refusal::NoWorkingObject(_) => 5,

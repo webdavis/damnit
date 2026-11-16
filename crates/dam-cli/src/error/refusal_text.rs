@@ -31,6 +31,15 @@ impl fmt::Display for RefusalText<'_> {
                 )
             }
             Refusal::Labels(v) => write!(f, "{v}"),
+            Refusal::ExclusiveAfterMigrate { category, oids } => {
+                let oids: Vec<&str> = oids.iter().map(|o| o.short()).collect();
+                write!(
+                    f,
+                    "after the rename {} would hold two labels of exclusive category {category}; \
+                     dam edit <oid> --unlabels LABEL first",
+                    oids.join(", ")
+                )
+            }
             Refusal::UnknownCategory(n) => write!(f, "{n:?} is not a declared category"),
             Refusal::NotACategoryValue { category, value } => {
                 write!(f, "{value} is not a value of category {category}")

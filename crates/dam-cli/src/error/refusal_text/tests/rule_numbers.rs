@@ -1,6 +1,6 @@
 use dam_application::Refusal;
 
-pub(super) const RULES: usize = 43;
+pub(super) const RULES: usize = 44;
 
 pub(super) fn rule_number(refusal: &Refusal) -> usize {
     match refusal {
@@ -47,5 +47,6 @@ pub(super) fn rule_number(refusal: &Refusal) -> usize {
         Refusal::HookNotDeclared(_) => 42,
         Refusal::NoSuchFilter(_) => 40,
         Refusal::CountMismatch { .. } => 41,
+        Refusal::ExclusiveAfterMigrate { .. } => 43,
     }
 }
