@@ -4,7 +4,7 @@ use super::edit_request::Edited;
 use crate::access::Owner;
 use crate::config::{HookEvent, PulledChanges};
 use crate::errors::UseCaseError;
-use crate::ports::{HelperError, HookFailure, Progress, Pull, PulledChange, RemoteName, Step};
+use crate::ports::{HelperError, HookFailure, Pull, PulledChange, RemoteName, Step};
 use crate::service::Dam;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -62,7 +62,7 @@ impl Dam<'_> {
         let mut run = PulledHookRun::default();
         let run_time = RunTime::started_on(self.clock);
         let owners = self.access.token().is_none();
-        let progress: &dyn Progress = if owners { self.progress } else { &Unseen };
+        let progress = self.shown_progress();
         progress.start(Step {
             doing: "running task_pulled",
             did: "ran task_pulled",
@@ -116,15 +116,6 @@ impl Dam<'_> {
             Err(failure) => Ok(Edited::Failed(failure)),
         }
     }
-}
-
-struct Unseen;
-
-impl Progress for Unseen {
-    fn start(&self, _: Step<'_>) {}
-    fn advance(&self, _: usize) {}
-    fn finish(&self) {}
-    fn fail(&self) {}
 }
 
 mod committed;

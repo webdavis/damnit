@@ -29,3 +29,4 @@ pub(crate) mod revert;
 pub(crate) mod stage;
 pub(crate) mod status;
 pub(crate) mod subtree;
+pub(crate) mod waiting;
