@@ -1,0 +1,70 @@
+local M = {}
+
+local function padded(text)
+  return text == "" and "" or (" %s "):format(text)
+end
+
+local function fitted(text, room)
+  if vim.fn.strdisplaywidth(text) <= room then
+    return text
+  end
+  return vim.fn.strcharpart(text, 0, room - 1) .. "…"
+end
+
+local function wrapped(text, width)
+  local lines, line = {}, ""
+  for word in text:gmatch("%S+") do
+    if line ~= "" and vim.fn.strdisplaywidth(line .. " " .. word) > width then
+      table.insert(lines, line)
+      line = word
+    else
+      line = line == "" and word or (line .. " " .. word)
+    end
+  end
+  table.insert(lines, line)
+  return lines
+end
+
+---@param buf integer
+---@param title string
+---@return integer win
+function M.input(buf, title)
+  local width = math.max(math.min(vim.o.columns - 4, 100), 20)
+  return vim.api.nvim_open_win(buf, true, {
+    relative = "editor",
+    row = math.floor((vim.o.lines - 3) / 4),
+    col = math.floor((vim.o.columns - width - 2) / 2),
+    width = width,
+    height = 1,
+    style = "minimal",
+    border = "rounded",
+    title = padded(title),
+    footer = "",
+    footer_pos = "right",
+  })
+end
+
+---@param win integer
+---@param text string
+---@param group string
+function M.footer(win, text, group)
+  if not vim.api.nvim_win_is_valid(win) then
+    return
+  end
+  local buf, width = vim.api.nvim_win_get_buf(win), vim.api.nvim_win_get_width(win)
+  local namespace = vim.api.nvim_create_namespace("damnit.prompt")
+  vim.api.nvim_buf_clear_namespace(buf, namespace, 0, -1)
+  local room = width - 4
+  local below = vim.fn.strdisplaywidth(text) > room and wrapped(text, width) or {}
+  if #below > 0 then
+    vim.api.nvim_buf_set_extmark(buf, namespace, 0, 0, {
+      virt_lines = vim.tbl_map(function(line)
+        return { { line, group } }
+      end, below),
+    })
+  end
+  local footer = text == "" and "" or { { padded(fitted(text, room)), group } }
+  vim.api.nvim_win_set_config(win, { footer = footer, footer_pos = "right", height = 1 + #below })
+end
+
+return M
