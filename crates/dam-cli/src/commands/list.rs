@@ -1,5 +1,5 @@
 use dam_application::{SelectError, UseCaseError};
-use dam_domain::{Filter, Object};
+use dam_domain::{Filter, Object, Order};
 
 use crate::args::ListArgs;
 use crate::commands::authorship::Authorship;
@@ -38,7 +38,12 @@ fn listed(ctx: &Context, args: &ListArgs) -> Result<Vec<Object>, CliError> {
     };
     let filter = Filter::read(typed).map_err(|e| fault(SelectError::Value(e)))?;
     let dam = ctx.dam();
-    let listed = dam.list_selected(&filter, &args.place, &args.project_filters);
+    let listed = dam.list_selected(
+        &filter,
+        &Order::default(),
+        &args.place,
+        &args.project_filters,
+    );
     listed.map_err(|e| match e {
         UseCaseError::Select(error) => fault(error),
         e => e.into(),

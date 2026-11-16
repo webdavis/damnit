@@ -1,4 +1,4 @@
-use dam_domain::{Command, Filter, Object, Path, scope};
+use dam_domain::{Command, Filter, Object, Order, Path, scope};
 
 use crate::config::FilterConfig;
 use crate::errors::UseCaseError;
@@ -15,6 +15,7 @@ impl Dam<'_> {
     pub fn list_selected(
         &self,
         filter: &Filter,
+        order: &Order,
         place: &Path,
         local: &[FilterConfig],
     ) -> Result<Vec<Object>, UseCaseError> {
@@ -24,11 +25,12 @@ impl Dam<'_> {
         let everything = self.seen_within(&Path::root())?;
         let saved = self.saved(filter, place, local)?;
         let facts = self.facts(categories, &everything, saved)?;
-        Ok(everything
+        let listed = everything
             .into_iter()
             .filter(|o| o.base().path.is_within(place))
             .filter(|o| scope.admits(o) && filter.matches(o, &facts))
-            .collect())
+            .collect();
+        Ok(order.arrange(listed, &facts))
     }
 }
 
@@ -36,5 +38,7 @@ impl Dam<'_> {
 mod access_tests;
 #[cfg(test)]
 mod event_days_tests;
+#[cfg(test)]
+mod order_tests;
 #[cfg(test)]
 mod tests;
