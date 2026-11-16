@@ -20,6 +20,19 @@ return {
     assert(vim.deep_equal(lines, { 1, 3 }), vim.inspect(lines))
   end,
 
+  ["a refusal that names none of the targets lands on the rows it names and on the targets"] = function()
+    local oids = { [1] = CALL_MOM, [2] = OAT_MILK }
+    local err = { kind = "refused", message = "full", oids = { OAT_MILK } }
+    local lines = diagnostics.rows_of(err, oids, { CALL_MOM })
+    assert(vim.deep_equal(lines, { 0, 1 }), vim.inspect(lines))
+  end,
+
+  ["a refusal that names a target lands only on the rows it names"] = function()
+    local oids = { [1] = CALL_MOM, [2] = OAT_MILK, [4] = "<id-1>" }
+    local lines = diagnostics.rows_of(refusal("error-done-open-children.json"), oids, { OAT_MILK })
+    assert(vim.deep_equal(lines, { 1, 3 }), vim.inspect(lines))
+  end,
+
   ["a refusal that names no row lands on line 1"] = function()
     assert(vim.deep_equal(diagnostics.rows_of(refusal("error-expect.json"), { CALL_MOM }), { 0 }))
   end,

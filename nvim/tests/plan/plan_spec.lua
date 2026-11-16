@@ -74,7 +74,7 @@ return {
     assert(#fake.of("edit") == 0 and notes[1] and notes[1].text:find("one section"), vim.inspect(notes))
   end,
 
-  ["dam's refusal of a full day shows as a diagnostic and nothing redraws"] = function()
+  ["dam's refusal of a full day shows on the pressed row and on the day's marks, and nothing redraws"] = function()
     local _, fake = plan.opened(true)
     plan.on("[ ] read the lease")
     buffer.feed(">")
@@ -84,6 +84,11 @@ return {
     end)
     local message = vim.diagnostic.get(0)[1].message
     assert(message:find("already has 3 focus tasks", 1, true), message)
+    local rows = vim.tbl_map(function(diagnostic)
+      return LINES[diagnostic.lnum + 1]
+    end, vim.diagnostic.get(0))
+    table.sort(rows)
+    assert(vim.deep_equal(rows, { "[ ] pay rent", "[ ] read the lease" }), vim.inspect(rows))
     assert(vim.deep_equal(buffer.lines(), LINES), vim.inspect(buffer.lines()))
   end,
 }

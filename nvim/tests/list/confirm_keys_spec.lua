@@ -79,7 +79,7 @@ return {
     assert(#app.say:log() == 1, vim.inspect(app.say:log()))
   end,
 
-  ["a refusal that names no row lands on line 1, and the next write clears it"] = function()
+  ["a refusal that names no row lands on the pressed row, and the next write clears it"] = function()
     local _, fake = list.opened()
     fake.reply("done", fixtures.refusal("error-expect.json", EXIT_REFUSED))
     list.on("[ ] call mom")
@@ -87,7 +87,7 @@ return {
     buffer.wait_for(function()
       return #vim.diagnostic.get(0) == 1
     end)
-    same(vim.diagnostic.get(0)[1].lnum, 0)
+    same(vim.diagnostic.get(0)[1].lnum, vim.fn.line(".") - 1)
     buffer.feed("X")
     buffer.wait_for(function()
       return #vim.diagnostic.get(0) == 0

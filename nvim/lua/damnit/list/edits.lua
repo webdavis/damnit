@@ -23,9 +23,10 @@ end
 
 ---@param buf integer
 ---@param err damnit.Error
-function Edits:refused(buf, err)
+---@param targets string[]
+function Edits:refused(buf, err, targets)
   if vim.api.nvim_buf_is_valid(buf) and self.shown[buf] then
-    diagnostics.show(buf, err, diagnostics.rows_of(err, self.shown[buf].oids))
+    diagnostics.show(buf, err, diagnostics.rows_of(err, self.shown[buf].oids, targets))
   end
 end
 
@@ -38,7 +39,7 @@ function Edits:send(buf, key, oids, answer)
   local oid = self.shown[buf].oids[row]
   self.app.dam:write(self:call_of(buf, key, oids, answer), function(written, err)
     if err then
-      return self:refused(buf, err)
+      return self:refused(buf, err, oids)
     end
     if vim.api.nvim_buf_is_valid(buf) then
       diagnostics.clear(buf)
@@ -67,7 +68,7 @@ function Edits:confirm(buf, key, oids, answer)
   self.app.dam:run(call, function(preview, err)
     if err then
       self.app.say:keep(err)
-      return self:refused(buf, err)
+      return self:refused(buf, err, oids)
     end
     local lines, marks = confirm_lines.changes(shown_changes(preview, #oids))
     confirm.open(self.app.screen, {

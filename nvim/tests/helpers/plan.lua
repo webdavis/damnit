@@ -8,6 +8,13 @@ local EXIT_REFUSED = 4
 
 M.ANSWERS = { none = "plan-unplanned.json", today = "plan-today.json", ["today+1"] = "plan-today+1.json" }
 
+---@return table reply dam's refusal of a full day, naming today's mark on screen as a holder
+function M.full_day()
+  local refusal = fixtures.decoded("error-focus-full.json")
+  refusal.error.oids = { "today-1" }
+  return { code = EXIT_REFUSED, stdout = "", stderr = vim.json.encode(refusal) }
+end
+
 ---@param full? boolean dam refuses every focus move: the day is full
 ---@return damnit.App app, table fake
 function M.opened(full)
@@ -22,10 +29,7 @@ function M.opened(full)
     end
     return { code = 0, stdout = vim.json.encode(answer), stderr = "" }
   end)
-  fake.reply(
-    "edit",
-    full and fixtures.refusal("error-focus-full.json", EXIT_REFUSED) or fixtures.answer("edit-focus.json")
-  )
+  fake.reply("edit", full and M.full_day() or fixtures.answer("edit-focus.json"))
   vim.cmd("Dam plan")
   buffer.wait_for(function()
     return #buffer.lines() > 8
