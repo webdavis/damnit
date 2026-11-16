@@ -7,6 +7,7 @@ use super::evaluate::{ErrorText, evaluated};
 use super::hook::{ReadHook, event_named, read_hook};
 
 pub(super) const HOOKS_FOLDER: &str = "hooks";
+pub(super) const PROJECT_HOOKS_FOLDER: &str = ".damhooks";
 
 pub(super) struct KeptHook {
     pub(super) event: HookEvent,
@@ -18,7 +19,7 @@ pub(super) struct KeptHook {
 pub(super) fn read_hook_folder(lua: &Lua, folder: &Path) -> Result<Vec<KeptHook>, ConfigError> {
     let mut hooks = lua_files(folder)?
         .into_iter()
-        .map(|path| read_hook_file(lua, path))
+        .map(|path| read_hook_file(lua, folder, path))
         .collect::<Result<Vec<_>, _>>()?;
     hooks.sort_by_key(|hook| hook.event);
     Ok(hooks)
@@ -28,9 +29,9 @@ pub(super) fn list_hook_folder(lua: &Lua, folder: &Path) -> Result<Vec<HookFile>
     let mut files: Vec<HookFile> = lua_files(folder)?
         .into_iter()
         .map(|path| HookFile {
-            file: file_of(&path),
+            file: file_of(folder, &path),
             event: event_of(&path),
-            read: read_hook_file(lua, path).map(|kept| kept.setting()),
+            read: read_hook_file(lua, folder, path).map(|kept| kept.setting()),
         })
         .collect();
     files.sort_by_key(|hook| (hook.event.is_none(), hook.event, hook.file.clone()));
@@ -53,17 +54,18 @@ fn lua_files(folder: &Path) -> Result<Vec<PathBuf>, ConfigError> {
     Ok(paths)
 }
 
-fn file_of(path: &Path) -> String {
+fn file_of(folder: &Path, path: &Path) -> String {
+    let folder = folder.file_name().unwrap_or_default().to_string_lossy();
     let name = path.file_name().unwrap_or_default().to_string_lossy();
-    format!("{HOOKS_FOLDER}/{name}")
+    format!("{folder}/{name}")
 }
 
 fn event_of(path: &Path) -> Option<HookEvent> {
     event_named(&path.file_stem().unwrap_or_default().to_string_lossy())
 }
 
-fn read_hook_file(lua: &Lua, path: PathBuf) -> Result<KeptHook, ConfigError> {
-    let file = file_of(&path);
+fn read_hook_file(lua: &Lua, folder: &Path, path: PathBuf) -> Result<KeptHook, ConfigError> {
+    let file = file_of(folder, &path);
     let event =
         event_of(&path).ok_or_else(|| ConfigError::UnknownHookFile { file: file.clone() })?;
     let text = std::fs::read_to_string(&path).map_err(|e| unreadable(&path, &e))?;

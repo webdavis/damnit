@@ -74,6 +74,7 @@ pub(crate) fn context() -> Context {
             search_path: "/usr/bin:/bin".into(),
         },
         templates: Box::new(FakeTemplates::default()),
+        project_hooks: None,
     }
 }
 

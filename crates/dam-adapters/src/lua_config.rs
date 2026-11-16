@@ -14,6 +14,7 @@ mod hook_marker;
 mod port;
 mod printed;
 mod project;
+mod project_hooks;
 mod remote;
 mod secrets;
 mod settings;
@@ -28,6 +29,7 @@ pub use create::STARTER_CONFIG;
 pub use file::LuaConfigFile;
 pub use functions::history_document;
 pub use project::{FileSystemProjectFolders, read_project_file, write_project_file};
+pub use project_hooks::ProjectHookFiles;
 pub use task_template::FileSystemTemplates;
 
 #[cfg(test)]

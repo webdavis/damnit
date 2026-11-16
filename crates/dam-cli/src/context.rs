@@ -16,6 +16,7 @@ use crate::error::CliError;
 pub(crate) use crate::hook_warnings::HookWarningsOnStandardError;
 use crate::output::Format;
 use crate::progress::{Asked, ProgressOnStandardError, shown};
+use crate::project_hooks::ProjectHookSet;
 use crate::prompt::Prompt;
 
 pub(crate) struct Context {
@@ -41,6 +42,7 @@ pub(crate) struct Context {
     pub(crate) run_records: Box<dyn RunRecords>,
     pub(crate) invocation: Invocation,
     pub(crate) templates: Box<dyn TaskTemplates>,
+    pub(crate) project_hooks: Option<ProjectHookSet>,
 }
 
 impl Context {
@@ -96,7 +98,7 @@ impl Context {
             edit_requests: self,
             hook_edits: &self.changed_by_hook,
             interruption: &self.interrupt,
-            project_hooks: None,
+            project_hooks: self.project_hooks.as_ref().map(ProjectHookSet::borrowed),
         }
     }
 

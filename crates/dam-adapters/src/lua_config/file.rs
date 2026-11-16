@@ -25,7 +25,7 @@ pub(super) struct Kept {
 #[derive(Clone)]
 pub struct LuaConfigFile {
     config: PathBuf,
-    function_limit: Duration,
+    pub(super) function_limit: Duration,
 }
 
 impl LuaConfigFile {
