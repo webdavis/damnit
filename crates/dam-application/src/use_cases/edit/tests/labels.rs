@@ -50,3 +50,29 @@ fn labels_are_added_removed_and_checked() {
         .written();
     assert!(out.base().labels.contains("light") && !out.base().labels.contains("deep"));
 }
+
+#[test]
+fn the_categories_of_a_place_hold_only_for_objects_under_it() {
+    let place = dam_domain::Path::parse("work/").unwrap();
+    let s = Scenario::default().configured(Config {
+        project_categories: Some((
+            place,
+            Categories::new(vec![Category {
+                name: "stage".into(),
+                values: vec!["review".into(), "ship".into()],
+                exclusive: true,
+            }])
+            .unwrap(),
+        )),
+        ..Config::default()
+    });
+    s.working(Object::Task(crate::testing::task_in(1, "in", "work")));
+    s.working(Object::Task(crate::testing::task_in(2, "out", "home")));
+    let both = || EditFields {
+        add_labels: vec!["review".into(), "ship".into()],
+        ..Default::default()
+    };
+    let refused = s.dam().edit(&oid(1), both()).unwrap_err();
+    assert!(matches!(refused, UseCaseError::Refused(Refusal::Labels(_))));
+    assert!(s.dam().edit(&oid(2), both()).is_ok());
+}

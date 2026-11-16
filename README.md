@@ -372,11 +372,12 @@ With `required = { "due" }`, `dam new` refuses a task without a due date and nam
 `dam filter list` there marks it `(the project's)`. Inside a project, `dam filter create|remove`
 and `dam category create|remove` change `.dam.lua`, and `--global` changes your `config.lua`.
 `category = { area = { values = { "ui", "db" }, exclusive = true } }` adds label categories, as
-`config.lua` writes them, to `dam new` and the queries you type there; `dam edit` covers everything
-and keeps to yours. Inside the project, a project category sets aside whole any of yours that
-shares its name or a label; outside it and with `--global` yours applies. `dam doctor` names each
-one set aside, and `dam category list` there marks each category the project's, yours, or yours set
-aside. A query in `.dam.lua` may name only the project's own categories.
+`config.lua` writes them, to `dam new`, `dam edit` and the queries you type there. Inside the
+project, a project category sets aside whole any of yours that shares its name or a label; `dam edit`
+judges a task under the project's path that way, and a task outside that path, or any task with
+`--global`, by yours alone. `dam doctor` names each one set aside, and `dam category list` there
+marks each category the project's, yours, or yours set aside. A query in `.dam.lua` may name only
+the project's own categories.
 `sections = { "bugs", "features" }` names standard sections that `dam init` creates under the path.
 With `branch_label = true`, `dam new` adds the checked-out git branch's name to the new task's
 labels, beside the ones from `--labels`, a template or the project's defaults. A detached head or no

@@ -1,3 +1,4 @@
+mod edit_categories;
 mod flags;
 mod tokens;
 

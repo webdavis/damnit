@@ -28,7 +28,7 @@ impl Dam<'_> {
             self.mark_focus(&mut next, day)?;
         }
         self.config
-            .categories
+            .categories_at(&next.base().path)
             .check(&next.base().labels)
             .map_err(Refusal::Labels)?;
         if self.access.token().is_none()
