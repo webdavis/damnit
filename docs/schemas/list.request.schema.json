@@ -1,0 +1,349 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/list.request.schema.json",
+  "title": "dam list request",
+  "description": "What dam list --request reads: each key is a flag of dam list, its value the text typed after the flag. A number or true/false may be bare, and a list means the flag repeated.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "$ref": "#/$defs/texts",
+      "description": "As --kind: task, event, any"
+    },
+    "subject": {
+      "$ref": "#/$defs/texts",
+      "description": "As --subject: TEXT, not:TEXT"
+    },
+    "body": {
+      "$ref": "#/$defs/texts",
+      "description": "As --body: TEXT, not:TEXT, none"
+    },
+    "path": {
+      "$ref": "#/$defs/texts",
+      "description": "As --path: FOLDER/, A/,B/, not:FOLDER/"
+    },
+    "labels": {
+      "$ref": "#/$defs/texts",
+      "description": "As --labels: VALUE, A,B, not:VALUE, =VALUE, none"
+    },
+    "category": {
+      "$ref": "#/$defs/texts",
+      "description": "As --category: GROUP, GROUP=LABEL, GROUP=A,B, not:GROUP, none"
+    },
+    "parent": {
+      "$ref": "#/$defs/texts",
+      "description": "As --parent: ID, ID,ID, in:FILTER, not:ID, none"
+    },
+    "depends": {
+      "$ref": "#/$defs/texts",
+      "description": "As --depends: ID, ID,ID, in:FILTER, not:ID, none"
+    },
+    "reminders": {
+      "$ref": "#/$defs/texts",
+      "description": "As --reminders: 30m, 2h, 30m..2h, ..5m, 1h.., not:30m, none"
+    },
+    "filter": {
+      "$ref": "#/$defs/texts",
+      "description": "As --filter: NAME, A,B, not:NAME"
+    },
+    "author": {
+      "$ref": "#/$defs/texts",
+      "description": "As --author: VALUE, A,B, not:VALUE, =VALUE"
+    },
+    "done": {
+      "$ref": "#/$defs/yesNo",
+      "description": "As --done: true, false, any"
+    },
+    "overdue": {
+      "$ref": "#/$defs/yesNo",
+      "description": "As --overdue: true, false, any"
+    },
+    "blocked": {
+      "$ref": "#/$defs/yesNo",
+      "description": "As --blocked: true, false, any"
+    },
+    "priority": {
+      "$ref": "#/$defs/numbers",
+      "description": "As --priority: N, N,M, N..M, ..M, N.., not:N"
+    },
+    "due": {
+      "$ref": "#/$defs/texts",
+      "description": "As --due: 2026-11-20, 2026-11-20T09:00, 2026-W47, 2026-11, 2026, today, today+3, week, week+1, month-1, year, now+2h, A..B, ..B, A.., on:thu, on:1tue, on:-1fri, on:15, on:-1, on:FILTER, not:DATE, none"
+    },
+    "deadline": {
+      "$ref": "#/$defs/texts",
+      "description": "As --deadline: 2026-11-20, 2026-11-20T09:00, 2026-W47, 2026-11, 2026, today, today+3, week, week+1, month-1, year, now+2h, A..B, ..B, A.., on:thu, on:1tue, on:-1fri, on:15, on:-1, on:FILTER, not:DATE, none"
+    },
+    "focus.day": {
+      "$ref": "#/$defs/texts",
+      "description": "As --focus-day: 2026-11-20, 2026-11-20T09:00, 2026-W47, 2026-11, 2026, today, today+3, week, week+1, month-1, year, now+2h, A..B, ..B, A.., on:thu, on:1tue, on:-1fri, on:15, on:-1, on:FILTER, not:DATE, none"
+    },
+    "completed_at": {
+      "$ref": "#/$defs/texts",
+      "description": "As --completed-at: 2026-11-20, 2026-11-20T09:00, 2026-W47, 2026-11, 2026, today, today+3, week, week+1, month-1, year, now+2h, A..B, ..B, A.., on:thu, on:1tue, on:-1fri, on:15, on:-1, on:FILTER, not:DATE, none"
+    },
+    "estimate": {
+      "$ref": "#/$defs/texts",
+      "description": "As --estimate: 30m, 2h, 30m..2h, ..5m, 1h.., not:30m, none"
+    },
+    "attached": {
+      "$ref": "#/$defs/texts",
+      "description": "As --attached: ID, ID,ID, in:FILTER, not:ID, none"
+    },
+    "start": {
+      "$ref": "#/$defs/texts",
+      "description": "As --start: 2026-11-20, 2026-11-20T09:00, 2026-W47, 2026-11, 2026, today, today+3, week, week+1, month-1, year, now+2h, A..B, ..B, A.., on:thu, on:1tue, on:-1fri, on:15, on:-1, on:FILTER, not:DATE"
+    },
+    "end": {
+      "$ref": "#/$defs/texts",
+      "description": "As --end: 2026-11-20, 2026-11-20T09:00, 2026-W47, 2026-11, 2026, today, today+3, week, week+1, month-1, year, now+2h, A..B, ..B, A.., on:thu, on:1tue, on:-1fri, on:15, on:-1, on:FILTER, not:DATE"
+    },
+    "location": {
+      "$ref": "#/$defs/texts",
+      "description": "As --location: TEXT, not:TEXT, none"
+    },
+    "status": {
+      "$ref": "#/$defs/texts",
+      "description": "As --status: confirmed, tentative, cancelled"
+    },
+    "transparency": {
+      "$ref": "#/$defs/texts",
+      "description": "As --transparency: busy, free"
+    },
+    "visibility": {
+      "$ref": "#/$defs/texts",
+      "description": "As --visibility: default, public, private, confidential"
+    },
+    "event_type": {
+      "$ref": "#/$defs/texts",
+      "description": "As --event-type: default, focus_time, out_of_office, working_location, birthday"
+    },
+    "response": {
+      "$ref": "#/$defs/texts",
+      "description": "As --response: needs_action, accepted, declined, tentative, none"
+    },
+    "organizer.email": {
+      "$ref": "#/$defs/texts",
+      "description": "As --organizer-email: VALUE, A,B, not:VALUE, =VALUE, none"
+    },
+    "attendees.email": {
+      "$ref": "#/$defs/texts",
+      "description": "As --attendees-email: VALUE, A,B, not:VALUE, =VALUE, none"
+    },
+    "any": {
+      "description": "At least one of these tables must hold, as well as every other key. A table may hold several fields and its own any.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/group"
+      }
+    },
+    "sort": {
+      "description": "As --sort: FIELD or FIELD:desc, or a list of them; empty values last.",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "limit": {
+      "description": "List at most this many rows.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "offset": {
+      "description": "Skip this many rows first.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "global": {
+      "description": "As --global.",
+      "type": "boolean"
+    },
+    "project": {
+      "description": "As --project.",
+      "type": "string"
+    }
+  },
+  "$defs": {
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/texts",
+          "description": "As --kind: task, event, any"
+        },
+        "subject": {
+          "$ref": "#/$defs/texts",
+          "description": "As --subject: TEXT, not:TEXT"
+        },
+        "body": {
+          "$ref": "#/$defs/texts",
+          "description": "As --body: TEXT, not:TEXT, none"
+        },
+        "path": {
+          "$ref": "#/$defs/texts",
+          "description": "As --path: FOLDER/, A/,B/, not:FOLDER/"
+        },
+        "labels": {
+          "$ref": "#/$defs/texts",
+          "description": "As --labels: VALUE, A,B, not:VALUE, =VALUE, none"
+        },
+        "category": {
+          "$ref": "#/$defs/texts",
+          "description": "As --category: GROUP, GROUP=LABEL, GROUP=A,B, not:GROUP, none"
+        },
+        "parent": {
+          "$ref": "#/$defs/texts",
+          "description": "As --parent: ID, ID,ID, in:FILTER, not:ID, none"
+        },
+        "depends": {
+          "$ref": "#/$defs/texts",
+          "description": "As --depends: ID, ID,ID, in:FILTER, not:ID, none"
+        },
+        "reminders": {
+          "$ref": "#/$defs/texts",
+          "description": "As --reminders: 30m, 2h, 30m..2h, ..5m, 1h.., not:30m, none"
+        },
+        "filter": {
+          "$ref": "#/$defs/texts",
+          "description": "As --filter: NAME, A,B, not:NAME"
+        },
+        "author": {
+          "$ref": "#/$defs/texts",
+          "description": "As --author: VALUE, A,B, not:VALUE, =VALUE"
+        },
+        "done": {
+          "$ref": "#/$defs/yesNo",
+          "description": "As --done: true, false, any"
+        },
+        "overdue": {
+          "$ref": "#/$defs/yesNo",
+          "description": "As --overdue: true, false, any"
+        },
+        "blocked": {
+          "$ref": "#/$defs/yesNo",
+          "description": "As --blocked: true, false, any"
+        },
+        "priority": {
+          "$ref": "#/$defs/numbers",
+          "description": "As --priority: N, N,M, N..M, ..M, N.., not:N"
+        },
+        "due": {
+          "$ref": "#/$defs/texts",
+          "description": "As --due: 2026-11-20, 2026-11-20T09:00, 2026-W47, 2026-11, 2026, today, today+3, week, week+1, month-1, year, now+2h, A..B, ..B, A.., on:thu, on:1tue, on:-1fri, on:15, on:-1, on:FILTER, not:DATE, none"
+        },
+        "deadline": {
+          "$ref": "#/$defs/texts",
+          "description": "As --deadline: 2026-11-20, 2026-11-20T09:00, 2026-W47, 2026-11, 2026, today, today+3, week, week+1, month-1, year, now+2h, A..B, ..B, A.., on:thu, on:1tue, on:-1fri, on:15, on:-1, on:FILTER, not:DATE, none"
+        },
+        "focus.day": {
+          "$ref": "#/$defs/texts",
+          "description": "As --focus-day: 2026-11-20, 2026-11-20T09:00, 2026-W47, 2026-11, 2026, today, today+3, week, week+1, month-1, year, now+2h, A..B, ..B, A.., on:thu, on:1tue, on:-1fri, on:15, on:-1, on:FILTER, not:DATE, none"
+        },
+        "completed_at": {
+          "$ref": "#/$defs/texts",
+          "description": "As --completed-at: 2026-11-20, 2026-11-20T09:00, 2026-W47, 2026-11, 2026, today, today+3, week, week+1, month-1, year, now+2h, A..B, ..B, A.., on:thu, on:1tue, on:-1fri, on:15, on:-1, on:FILTER, not:DATE, none"
+        },
+        "estimate": {
+          "$ref": "#/$defs/texts",
+          "description": "As --estimate: 30m, 2h, 30m..2h, ..5m, 1h.., not:30m, none"
+        },
+        "attached": {
+          "$ref": "#/$defs/texts",
+          "description": "As --attached: ID, ID,ID, in:FILTER, not:ID, none"
+        },
+        "start": {
+          "$ref": "#/$defs/texts",
+          "description": "As --start: 2026-11-20, 2026-11-20T09:00, 2026-W47, 2026-11, 2026, today, today+3, week, week+1, month-1, year, now+2h, A..B, ..B, A.., on:thu, on:1tue, on:-1fri, on:15, on:-1, on:FILTER, not:DATE"
+        },
+        "end": {
+          "$ref": "#/$defs/texts",
+          "description": "As --end: 2026-11-20, 2026-11-20T09:00, 2026-W47, 2026-11, 2026, today, today+3, week, week+1, month-1, year, now+2h, A..B, ..B, A.., on:thu, on:1tue, on:-1fri, on:15, on:-1, on:FILTER, not:DATE"
+        },
+        "location": {
+          "$ref": "#/$defs/texts",
+          "description": "As --location: TEXT, not:TEXT, none"
+        },
+        "status": {
+          "$ref": "#/$defs/texts",
+          "description": "As --status: confirmed, tentative, cancelled"
+        },
+        "transparency": {
+          "$ref": "#/$defs/texts",
+          "description": "As --transparency: busy, free"
+        },
+        "visibility": {
+          "$ref": "#/$defs/texts",
+          "description": "As --visibility: default, public, private, confidential"
+        },
+        "event_type": {
+          "$ref": "#/$defs/texts",
+          "description": "As --event-type: default, focus_time, out_of_office, working_location, birthday"
+        },
+        "response": {
+          "$ref": "#/$defs/texts",
+          "description": "As --response: needs_action, accepted, declined, tentative, none"
+        },
+        "organizer.email": {
+          "$ref": "#/$defs/texts",
+          "description": "As --organizer-email: VALUE, A,B, not:VALUE, =VALUE, none"
+        },
+        "attendees.email": {
+          "$ref": "#/$defs/texts",
+          "description": "As --attendees-email: VALUE, A,B, not:VALUE, =VALUE, none"
+        },
+        "any": {
+          "description": "At least one of these tables must hold, as well as every other key. A table may hold several fields and its own any.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/group"
+          }
+        }
+      }
+    },
+    "text": {
+      "type": [
+        "string",
+        "number",
+        "boolean"
+      ]
+    },
+    "texts": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/text"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      ]
+    },
+    "numbers": {
+      "$ref": "#/$defs/texts"
+    },
+    "yesNo": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "enum": [
+            "true",
+            "false",
+            "any"
+          ]
+        }
+      ]
+    }
+  }
+}
