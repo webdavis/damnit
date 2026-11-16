@@ -44,6 +44,15 @@ fn rule_text(
             f,
             "a filter in {file} holds a function; a project's filter is a query"
         ),
+        ProjectRuleFault::LabelInTwoCategories => write!(
+            f,
+            "a label in {file} belongs to two of its categories; keep each label in one category"
+        ),
+        ProjectRuleFault::ClashesWithYourCategories => write!(
+            f,
+            "a category in {file} shares a name or a label with a category in your config.lua; \
+             rename one, then run dam doctor config"
+        ),
         ProjectRuleFault::NotAQuery => write!(
             f,
             "{key} in {file} is not a query dam can read; correct it, then run dam doctor config"

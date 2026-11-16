@@ -12,7 +12,7 @@
     "project": {
       "description": "Inside a project, its .dam.lua and every setting it holds, all from the project; null outside one or when the file does not load.",
       "type": ["object", "null"],
-      "required": ["file", "path", "minimum_dam", "new_task", "required", "ls", "filter"],
+      "required": ["file", "path", "minimum_dam", "new_task", "required", "ls", "filter", "category"],
       "additionalProperties": false,
       "properties": {
         "file": { "type": "string" },
@@ -41,6 +41,18 @@
             "required": ["query"],
             "additionalProperties": false,
             "properties": { "query": { "type": "string" } }
+          }
+        },
+        "category": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["values", "exclusive"],
+            "additionalProperties": false,
+            "properties": {
+              "values": { "type": "array", "items": { "type": "string" } },
+              "exclusive": { "type": "boolean" }
+            }
           }
         }
       }

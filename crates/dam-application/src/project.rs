@@ -2,6 +2,8 @@ mod find;
 
 use std::path::PathBuf;
 
+use dam_domain::Categories;
+
 use crate::{FilterConfig, TaskTemplate};
 
 pub use find::{ProjectFolders, find_project};
@@ -16,6 +18,7 @@ pub struct ProjectSettings {
     pub required: Vec<RequiredField>,
     pub ls: Option<String>,
     pub filters: Vec<FilterConfig>,
+    pub categories: Categories,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

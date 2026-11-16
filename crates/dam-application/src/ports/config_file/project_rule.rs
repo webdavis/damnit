@@ -3,4 +3,6 @@ pub enum ProjectRuleFault {
     Shape,
     FilterIsAFunction,
     NotAQuery,
+    LabelInTwoCategories,
+    ClashesWithYourCategories,
 }

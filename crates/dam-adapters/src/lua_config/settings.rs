@@ -95,7 +95,7 @@ fn hook_moved(root: &StrictMap, hook: &mlua::Value) -> ConfigError {
     }
 }
 
-fn read_category(name: &str, category: &StrictMap) -> Result<Category, ConfigError> {
+pub(super) fn read_category(name: &str, category: &StrictMap) -> Result<Category, ConfigError> {
     category.only(&CATEGORY)?;
     let values = category
         .strings("values")?
