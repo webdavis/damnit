@@ -1,23 +1,19 @@
 mod declared;
 mod decode;
 mod encode;
+mod pull;
 
 use dam_application::{
-    HelperError, IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome,
-    PushOutcome, RejectedObject, RemoteCapabilities, RemoteMutation,
+    HelperError, MutationOp, MutationOutcome, MutationVerdict, PushOutcome, RemoteCapabilities,
+    RemoteMutation,
 };
 use dam_domain::{Field, Kind, Object, Oid};
-use dam_protocol::{Capabilities, Mutation, PullResponse, PushResponse, Verdict, WireObject};
+use dam_protocol::{Capabilities, Mutation, PushResponse, Verdict, WireObject};
 
 pub use declared::declared_on_the_wire;
 pub use decode::from_wire;
 pub use encode::{event_to_wire, to_wire};
-
-const NO_REMOTE_ID: &str = "an object with no remote id was skipped";
-
-fn placeholder_oid_until_the_application_resolves_the_remote_id() -> Oid {
-    Oid::generate(&mut |b: &mut [u8]| b.fill(0))
-}
+pub use pull::pull_from_wire;
 
 pub fn capabilities_from_wire(caps: &Capabilities) -> RemoteCapabilities {
     RemoteCapabilities {
@@ -27,49 +23,6 @@ pub fn capabilities_from_wire(caps: &Capabilities) -> RemoteCapabilities {
         incremental: caps.incremental,
         removes_only_empty_containers: caps.removes_only_empty_containers,
         answers_login: caps.answers_login,
-    }
-}
-
-pub fn pull_from_wire(response: PullResponse) -> PullOutcome {
-    let mut objects = Vec::new();
-    let mut rejected = Vec::new();
-    for mut wire in response.objects {
-        let Some(remote_id) = wire.remote_id.take() else {
-            rejected.push(RejectedObject {
-                remote_id: String::new(),
-                why: NO_REMOTE_ID.into(),
-            });
-            continue;
-        };
-        wire.oid = placeholder_oid_until_the_application_resolves_the_remote_id().to_string();
-        match from_wire(&wire) {
-            Ok(object) => objects.push(IncomingObject { remote_id, object }),
-            Err(why) => rejected.push(RejectedObject {
-                remote_id,
-                why: why.to_string(),
-            }),
-        }
-    }
-    rejected.extend(
-        response
-            .rejected
-            .into_iter()
-            .map(|rejection| RejectedObject {
-                why: if rejection.remote_id.is_empty() {
-                    NO_REMOTE_ID.into()
-                } else {
-                    rejection.why
-                },
-                remote_id: rejection.remote_id,
-            }),
-    );
-    PullOutcome {
-        objects,
-        rejected,
-        removed: response.removed,
-        cancelled: response.cancelled,
-        sync: response.sync,
-        complete: response.complete,
     }
 }
 
