@@ -14,6 +14,7 @@ pub(crate) fn as_it_stands(
         idempotency_key: String::new(),
         remote_id: None,
         container_remote_id: None,
+        container_oid: None,
         object: Some(object.clone()),
         fields: caps.fields.clone(),
     })

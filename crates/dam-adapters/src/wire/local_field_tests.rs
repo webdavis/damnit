@@ -29,6 +29,7 @@ fn a_focus_mark_never_reaches_a_remote() {
         idempotency_key: "k".into(),
         remote_id: None,
         container_remote_id: None,
+        container_oid: None,
         object: Some(object),
         fields: vec![Field::Subject],
     });
@@ -62,6 +63,7 @@ fn a_mutation_carries_the_container_it_names() {
         idempotency_key: "k".into(),
         remote_id: Some("i:c".into()),
         container_remote_id: Some("i:r2".into()),
+        container_oid: None,
         object: Some(object),
         fields: vec![Field::Path],
     });
@@ -110,6 +112,7 @@ fn a_parent_never_reaches_a_remote() {
         idempotency_key: "k".into(),
         remote_id: None,
         container_remote_id: None,
+        container_oid: None,
         object: Some(object),
         fields: vec![Field::Subject],
     });

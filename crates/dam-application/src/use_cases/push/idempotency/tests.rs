@@ -15,6 +15,7 @@ fn write(op: MutationOp) -> RemoteMutation {
         idempotency_key: String::new(),
         remote_id: Some("r1".into()),
         container_remote_id: None,
+        container_oid: None,
         object: Some(Object::Task(Task::new(object(1), "a"))),
         fields: vec![Field::Subject],
     }
@@ -51,6 +52,7 @@ fn an_update_s_key_follows_its_count_position_content_and_container() {
     let update = write(MutationOp::Update);
     let refiled = RemoteMutation {
         container_remote_id: Some("p1".into()),
+        container_oid: None,
         ..update.clone()
     };
     let first = key(0, 0, &update, &subject("a"));
@@ -58,6 +60,15 @@ fn an_update_s_key_follows_its_count_position_content_and_container() {
     assert_ne!(first, key(0, 2, &update, &subject("a")), "position");
     assert_ne!(first, key(0, 0, &update, &subject("b")), "content");
     assert_ne!(first, key(0, 0, &refiled, &subject("a")), "container");
+    let into_created = RemoteMutation {
+        container_oid: Some(object(2)),
+        ..update.clone()
+    };
+    assert_ne!(
+        first,
+        key(0, 0, &into_created, &subject("a")),
+        "created container"
+    );
 }
 
 #[test]

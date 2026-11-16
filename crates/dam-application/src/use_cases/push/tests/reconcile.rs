@@ -11,6 +11,7 @@ fn create(byte: u8) -> RemoteMutation {
         idempotency_key: format!("k{byte}"),
         remote_id: None,
         container_remote_id: None,
+        container_oid: None,
         object: Some(task(byte)),
         fields: vec![],
     }
@@ -104,6 +105,7 @@ fn an_accepted_delete_clears_the_mapping_instead_of_snapshotting() {
         op: MutationOp::Delete,
         remote_id: Some("r1".into()),
         container_remote_id: None,
+        container_oid: None,
         object: None,
         ..create(1)
     };

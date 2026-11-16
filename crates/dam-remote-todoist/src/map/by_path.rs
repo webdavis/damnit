@@ -1,41 +1,38 @@
 use super::Tree;
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct Several(pub usize);
+
 impl Tree {
-    pub fn project_id_for(&self, path: &str) -> Option<&str> {
-        if let Some(id) = self.added_this_push.project_by_path.get(path) {
-            return Some(id);
-        }
-        self.projects
-            .values()
-            .find(|p| !p.is_deleted && self.project_path(&p.id).as_deref() == Some(path))
-            .map(|p| p.id.as_str())
+    pub fn project_id_for(&self, path: &str) -> Result<Option<&str>, Several> {
+        the_one(
+            self.projects
+                .values()
+                .filter(|p| !p.is_deleted && self.project_path(&p.id).as_deref() == Some(path))
+                .map(|p| p.id.as_str()),
+        )
     }
 
-    pub fn section_id_for(&self, path: &str) -> Option<&str> {
-        if let Some(id) = self.added_this_push.section_by_path.get(path) {
-            return Some(id);
-        }
-        self.sections
-            .values()
-            .find(|s| !s.is_deleted && self.section_path(&s.id).as_deref() == Some(path))
-            .map(|s| s.id.as_str())
+    pub fn section_id_for(&self, path: &str) -> Result<Option<&str>, Several> {
+        the_one(
+            self.sections
+                .values()
+                .filter(|s| !s.is_deleted && self.section_path(&s.id).as_deref() == Some(path))
+                .map(|s| s.id.as_str()),
+        )
     }
 
-    pub fn item_id_for(&self, path: &str, content: &str) -> Option<&str> {
-        let place_and_content = (path.to_string(), content.to_string());
-        if let Some(id) = self
-            .added_this_push
-            .item_by_place_and_content
-            .get(&place_and_content)
-        {
-            return Some(id);
-        }
-        self.items
-            .values()
-            .find(|i| {
-                !i.is_deleted && i.content == content && self.item_path(i).as_deref() == Some(path)
-            })
-            .map(|i| i.id.as_str())
+    pub fn item_id_for(&self, path: &str, content: &str) -> Result<Option<&str>, Several> {
+        the_one(
+            self.items
+                .values()
+                .filter(|i| {
+                    !i.is_deleted
+                        && i.content == content
+                        && self.item_path(i).as_deref() == Some(path)
+                })
+                .map(|i| i.id.as_str()),
+        )
     }
 
     pub fn has_children_at(&self, path: &str) -> bool {
@@ -54,5 +51,14 @@ impl Tree {
                 .items
                 .values()
                 .any(|i| !i.is_deleted && self.item_path(i).as_deref() == Some(path))
+    }
+}
+
+fn the_one<'a>(ids: impl Iterator<Item = &'a str>) -> Result<Option<&'a str>, Several> {
+    let ids: Vec<&str> = ids.collect();
+    match ids[..] {
+        [] => Ok(None),
+        [one] => Ok(Some(one)),
+        _ => Err(Several(ids.len())),
     }
 }

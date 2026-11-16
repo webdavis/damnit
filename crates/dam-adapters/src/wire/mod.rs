@@ -38,6 +38,7 @@ pub fn mutation_to_wire(mutation: RemoteMutation) -> Mutation {
         idempotency_key: mutation.idempotency_key,
         remote_id: mutation.remote_id,
         container_remote_id: mutation.container_remote_id,
+        container_oid: mutation.container_oid.map(|oid| oid.to_string()),
         object: mutation.object.as_ref().map(without_local_fields),
         fields: mutation
             .fields

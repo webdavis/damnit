@@ -20,9 +20,10 @@ pub fn key(answers: u64, position: usize, write: &RemoteMutation, declared: &Dec
         MutationOp::Update => {
             hash.update((position as u64).to_be_bytes());
             hash.update("update");
-            let into = match &write.container_remote_id {
-                Some(container) => format!("into {container}"),
-                None => "in place".into(),
+            let into = match (&write.container_remote_id, &write.container_oid) {
+                (Some(container), _) => format!("into {container}"),
+                (None, Some(created)) => format!("into created {created}"),
+                (None, None) => "in place".into(),
             };
             for part in std::iter::once(into.as_str()).chain(
                 declared

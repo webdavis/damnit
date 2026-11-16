@@ -66,6 +66,7 @@ fn an_interrupt_is_noticed_while_answers_keep_coming() {
             idempotency_key: "k1".into(),
             remote_id: Some("r1".into()),
             container_remote_id: None,
+            container_oid: None,
             object: None,
             fields: vec![],
         }])
@@ -96,6 +97,7 @@ fn an_early_answer_that_cannot_be_read_ends_the_helper_and_keeps_what_came_befor
             idempotency_key: "k1".into(),
             remote_id: Some("r1".into()),
             container_remote_id: None,
+            container_oid: None,
             object: None,
             fields: vec![],
         }])

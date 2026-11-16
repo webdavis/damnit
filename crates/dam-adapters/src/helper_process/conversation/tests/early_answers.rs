@@ -42,6 +42,7 @@ fn three_deletes() -> Vec<RemoteMutation> {
             idempotency_key: format!("k{n}"),
             remote_id: Some(format!("r{n}")),
             container_remote_id: None,
+            container_oid: None,
             object: None,
             fields: vec![],
         })

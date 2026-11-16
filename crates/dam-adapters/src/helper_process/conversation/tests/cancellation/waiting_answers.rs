@@ -43,6 +43,7 @@ fn delete(c: char) -> RemoteMutation {
         idempotency_key: format!("k{c}"),
         remote_id: Some(format!("r{c}")),
         container_remote_id: None,
+        container_oid: None,
         object: None,
         fields: vec![],
     }

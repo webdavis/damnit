@@ -48,11 +48,13 @@ One mutation:
 | `idempotency_key` | stable across every resend of this same mutation |
 | `remote_id` | the remote's own identity for it, absent on a create |
 | `container_remote_id` | the remote's identity for the container `dam` means the object to sit directly in, absent unless `dam` knows it |
+| `container_oid` | the `oid` of that container when this same push creates it, absent otherwise |
 | `object` | the object itself, absent on a delete |
 | `fields` | the field names this mutation changes |
 
-`dam` sends `container_remote_id` when two containers share the object's path and it knows which
-one the object belongs in. A helper that leaves it out finds the container by the path.
+`dam` names the container on a create or a move whenever it knows it. A helper files the object in
+the container it is given, and finds one by the path only when neither field is sent. It refuses
+the object when that path names more than one container.
 
 ## Responses
 

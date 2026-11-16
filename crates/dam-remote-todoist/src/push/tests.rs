@@ -8,6 +8,7 @@ mod fixtures;
 mod idempotency;
 mod moved_containers;
 mod moves;
+mod named_containers;
 mod reasons;
 mod refusals;
 mod renames;
