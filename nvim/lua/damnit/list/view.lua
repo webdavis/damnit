@@ -21,6 +21,49 @@ local function encoded(request)
   return vim.json.encode(next(flags) and flags or vim.empty_dict())
 end
 
+local function word(value)
+  local text = tostring(value)
+  if not text:find("[%s\"']") then
+    return text
+  end
+  return '"' .. text:gsub('[\\"]', "\\%0") .. '"'
+end
+
+local function conditions(key, value)
+  if key == "any" then
+    local words = {}
+    for _, condition in ipairs(value) do
+      for field in vim.spairs(condition) do
+        local each = condition[field]
+        table.insert(
+          words,
+          "--any " .. word(field .. "=" .. (type(each) == "table" and table.concat(each, ",") or tostring(each)))
+        )
+      end
+    end
+    return words
+  end
+  local flag = "--" .. key:gsub("[_.]", "-")
+  if value == true then
+    return { flag }
+  end
+  return vim.tbl_map(function(each)
+    return flag .. " " .. word(each)
+  end, type(value) == "table" and value or { value })
+end
+
+---@param request table a view's conditions, as dam list --request reads them
+---@return string the same conditions as dam list's flags
+function M.flags(request)
+  local words = {}
+  for key, value in vim.spairs(request) do
+    if not NOT_FLAGS[key] then
+      vim.list_extend(words, conditions(key, value))
+    end
+  end
+  return table.concat(words, " ")
+end
+
 ---@class damnit.ListPart
 ---@field title? string
 ---@field args string[]
