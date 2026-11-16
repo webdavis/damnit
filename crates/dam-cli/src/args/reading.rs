@@ -58,6 +58,16 @@ pub(crate) struct CategoryArgs {
 pub(crate) enum CategoryCommand {
     #[command(about = "List declared categories with their values and whether they are exclusive")]
     List,
+    #[command(about = "Declare a category in config.lua")]
+    Create {
+        name: String,
+        #[arg(long, help = "The labels of the category, separated by commas")]
+        values: String,
+        #[arg(long, help = "Let a task hold at most one of its labels")]
+        exclusive: bool,
+    },
+    #[command(about = "Remove a category from config.lua; labels on tasks stay as free labels")]
+    Remove { name: String },
 }
 
 #[derive(Args, Debug)]
