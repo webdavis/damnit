@@ -107,10 +107,11 @@ end
 ---@param cwd string
 ---@param smods? table
 ---@param built_in? damnit.ViewSpec[] a view the plugin names, shown as dam://<name>
-function Lists:open(name, cwd, smods, built_in)
+---@param folder? string the buffer name before the view's name, such as dam://sidebar/
+function Lists:open(name, cwd, smods, built_in, folder)
   local spec = built_in or name or self.app.options.default_view
   name = name or (type(spec) == "string" and spec) or "default"
-  local title = (built_in and "dam://" or "dam://list/") .. name
+  local title = (folder or (built_in and "dam://" or "dam://list/")) .. name
   self:show({ name = name, title = title, view = spec }, cwd, smods)
 end
 

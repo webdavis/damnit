@@ -857,6 +857,9 @@ parent, children and dependencies in the location list.
 
 `:Dam pick`, or `go` in any dam window, offers every view to open: `today`, the
 `views` option and dam's saved filters. `:Dam pick <view>` offers that view's tasks.
+`:Dam sidebar [view]` or `<Plug>(dam-sidebar)` toggles a list in a side split, whose `<CR>`
+opens the task in the window you came from; the `sidebar` option sets its `side` and `width`,
+such as `sidebar = { side = "right", width = 50 }`.
 
 `:Dam` or `:Dam status` shows what `dam status` shows in the window's folder: conflicts, waiting
 items and sets, unstaged and staged changes, unpushed commits, notices and warnings, then the
