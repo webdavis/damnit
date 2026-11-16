@@ -866,6 +866,11 @@ A push or pull shows each step dam reports as a Neovim progress message while it
 Every open list and status window reads again when Neovim gains focus, so what an agent or a
 background sync wrote while you were away is on screen.
 
+`:Dam agenda [day|week]` shows `dam agenda --kind any` for this week or today: a header per day,
+its events with their time and `busy`, then its tasks due, which take every list key. When the
+window holds today, the overdue tasks come first. `>` and `<` move a day or week later or
+earlier, `T` comes back, and `<CR>` opens an event.
+
 `:Dam capture` opens the `dam new` prompt with the line under the cursor as the subject, its
 comment leader and any `TODO:` taken off, and `--body "<file>:<line>"` after the cursor. A range
 or a selection joins its lines. dam runs in the file's folder, so the task lands in that

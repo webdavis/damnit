@@ -99,4 +99,25 @@ function ChangeKeys:change_keys(buf)
   return specs
 end
 
+---@class damnit.ListWindow
+---@field targets fun(): string[] the rows a change key would act on
+---@field rows fun(): damnit.Row[] the rows drawn, one per line
+---@field edit fun(oids: string[], flags: string) sends dam edit with these flags, as cc sends its answer
+
+---@param buf integer
+---@return damnit.ListWindow
+function ChangeKeys:window(buf)
+  return {
+    targets = function()
+      return self:targets(buf, vim.v.count, visual_range())
+    end,
+    rows = function()
+      return self.shown[buf].arranged or {}
+    end,
+    edit = function(oids, flags)
+      self:act(buf, "cc", oids, flags)
+    end,
+  }
+end
+
 return ChangeKeys

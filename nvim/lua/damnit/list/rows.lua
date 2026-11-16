@@ -47,7 +47,11 @@ local function task_line(line, row, signs, marks)
   local object = row.object
   local indent = string.rep("  ", row.depth)
   local text, priority_end = text_of(object)
-  text = indent .. text
+  local lead = row.lead and (row.lead .. "  ") or ""
+  text = indent .. lead .. text
+  if row.lead then
+    table.insert(marks, { line = line, col = #indent, end_col = #indent + #row.lead, group = "DamDue" })
+  end
   for _, flag in ipairs(FLAGS) do
     if flag.holds(object) then
       table.insert(marks, { line = line, col = #indent, end_col = #text, group = flag.group })
@@ -57,7 +61,7 @@ local function task_line(line, row, signs, marks)
     end
   end
   if priority_end then
-    local col = #indent + priority_end - 2
+    local col = #indent + #lead + priority_end - 2
     table.insert(marks, { line = line, col = col, end_col = col + 2, group = "DamPriority" })
   end
   return text

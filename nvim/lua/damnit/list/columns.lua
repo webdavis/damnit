@@ -1,7 +1,7 @@
 local M = {}
 
-local ORDER = { "labels", "category", "path", "waits", "estimate", "deadline", "days", "due" }
-local DROPPED_FIRST = { "waits", "deadline", "category", "path", "estimate", "labels", "days" }
+local ORDER = { "labels", "category", "path", "busy", "waits", "estimate", "deadline", "days", "due" }
+local DROPPED_FIRST = { "waits", "deadline", "category", "path", "busy", "estimate", "labels", "days" }
 local GAP = "  "
 
 M.gap = #GAP
@@ -67,6 +67,7 @@ local function cells_of(object, subjects)
     labels = { table.concat(labels, " "), "DamLabel" },
     category = { table.concat(category, " "), "DamCategory" },
     path = { object.path, "DamMeta" },
+    busy = { object.busy and "busy" or nil, "DamMeta" },
     waits = { waits_on(object, subjects), "DamMeta" },
     estimate = { task.estimate and (task.estimate .. "m"), "DamMeta" },
     deadline = { task.deadline and ("deadline " .. task.deadline), "DamDue" },
@@ -118,7 +119,7 @@ end
 
 local function kept_of(widths, dropped)
   return vim.tbl_filter(function(name)
-    return widths[name] > 0 and not dropped[name]
+    return (widths[name] or 0) > 0 and not dropped[name]
   end, ORDER)
 end
 

@@ -18,7 +18,9 @@ function Drawing:draw(buf)
       { header = row.header ~= nil, depth = row.depth, open = object.children_open, key = row.key or object.oid }
   end
   list.marked = marked.kept(list.marked or {}, list.oids)
-  local bar = winbar.chunks(list.name, list.path or vim.fs.basename(list.call.cwd), objects, marked.count(list.marked))
+  local source_bar = self.sourced(list, "bar")
+  local bar = source_bar and source_bar(list.answers, marked.count(list.marked))
+    or winbar.chunks(list.name, list.path or vim.fs.basename(list.call.cwd), objects, marked.count(list.marked))
   local window = { winbar = self.app.screen.bar(bar), signcolumn = "auto:2", wrap = false }
   local by_path = groups.key(list.grouped_by) == "path"
   folds.redraw(buf, fold_lines, function()

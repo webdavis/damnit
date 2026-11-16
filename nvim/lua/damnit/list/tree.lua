@@ -6,6 +6,8 @@ local M = {}
 ---@field header? string
 ---@field failed? boolean
 ---@field key? string
+---@field lead? string text drawn before the row's subject
+---@field readonly? boolean opened by <CR>, left alone by the change keys
 
 ---@param objects damnit.Object[]
 ---@return table<string, damnit.Object[]> children, damnit.Object[] roots

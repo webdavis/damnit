@@ -29,9 +29,11 @@ function M.setup(opts)
   local task = require("damnit.task").new(running)
   statusline = require("damnit.statusline").new(running)
   local status, log = status_and_log(running, task.open)
+  local list = require("damnit.list").new(running, task.open)
   require("damnit.command").define(running, {
     require("damnit.messages").new(running),
-    require("damnit.list").new(running, task.open),
+    list,
+    require("damnit.agenda").new(running, list.show),
     task,
     status,
     log,

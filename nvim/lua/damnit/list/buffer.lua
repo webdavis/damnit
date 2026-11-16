@@ -45,18 +45,36 @@ end
 ---@param answers { answer?: damnit.ListAnswer, err?: damnit.Error }[]
 function Lists:arrange(buf, answers)
   local list = self.shown[buf]
-  local rows, err = sections.arranged(list.parts, answers, list.grouped_by)
+  local rows, err = self:rows_of(list, answers)
   if err then
     return self.app.say:error(err)
   end
-  list.arranged = rows
+  list.arranged, list.answers = rows, answers
   list.oids = vim.tbl_map(function(row)
-    return row.object and row.object.oid or false
+    return row.object and not row.readonly and row.object.oid or false
   end, rows)
   self:draw(buf)
   vim.cmd.redraw()
   self:refit(buf)
   self:drawn(list)
+end
+
+---@param list table
+---@param hook "segments"|"bar"
+---@return function|nil the source's hook, while the list reads the source's own calls
+function Lists.sourced(list, hook)
+  return list.parts == list.own_parts and list.source[hook] or nil
+end
+
+---@param list table
+---@param answers { answer?: table, err?: damnit.Error }[]
+---@return damnit.Row[]|nil rows, damnit.Error|nil err
+function Lists:rows_of(list, answers)
+  if not self.sourced(list, "segments") then
+    return sections.arranged(list.parts, answers, list.grouped_by)
+  end
+  local segments, err = list.source.segments(answers)
+  return segments and sections.rows(segments), err
 end
 
 ---@param buf integer
@@ -93,16 +111,41 @@ function Lists:open(name, cwd, smods, built_in)
   local spec = built_in or name or self.app.options.default_view
   name = name or (type(spec) == "string" and spec) or "default"
   local title = (built_in and "dam://" or "dam://list/") .. name
-  local buf = self.app.screen:scratch(title, "damlist")
-  if not self.shown[buf] then
+  self:show({ name = name, title = title, view = spec }, cwd, smods)
+end
+
+---@class damnit.ListSource
+---@field name string
+---@field title? string the buffer's name; dam://<name> when left out
+---@field filetype? string damlist when left out
+---@field view? string|damnit.ViewSpec|damnit.ViewSpec[] read as :Dam list reads a view
+---@field parts? damnit.ListPart[] the calls to make in place of a view's
+---@field segments? fun(answers: { answer?: table, err?: damnit.Error }[]): damnit.Segment[]|nil, damnit.Error|nil
+---@field bar? fun(answers: { answer?: table, err?: damnit.Error }[], marked: integer): string[][]
+---@field keys? fun(window: damnit.ListWindow): damnit.KeySpec[]
+
+---@param source damnit.ListSource
+---@param cwd string
+---@param smods? table
+function Lists:show(source, cwd, smods)
+  local title = source.title or ("dam://" .. source.name)
+  local buf = self.app.screen:scratch(title, source.filetype or "damlist")
+  local list = { name = source.name, source = source, call = { cwd = cwd, key = title }, oids = {}, waiting = {} }
+  list.view = source.view
+  if source.parts then
+    list.parts = source.parts
+  else
+    list.parts, list.grouped_by = view.parts(source.view, self.app.options.views)
+  end
+  list.own_parts = list.parts
+  local fresh = not self.shown[buf]
+  self.shown[buf] = list
+  if fresh then
     self:bind(buf)
   end
-  local list = { name = name, call = { cwd = cwd, key = title }, oids = {}, view = spec, waiting = {} }
-  list.parts, list.grouped_by = view.parts(spec, self.app.options.views)
-  self.shown[buf] = list
   self.app.screen:show(buf, smods)
   self:read(buf)
-  if view.global(spec, self.app.options.views) then
+  if view.global(source.view, self.app.options.views) then
     list.path = "all"
     return
   end
