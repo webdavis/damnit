@@ -6,16 +6,33 @@ use crate::error::{CliError, ConfigReason};
 use crate::output::Report;
 use crate::view::{Human, View, report};
 
+mod project;
+
+pub(crate) use project::ProjectHookLook;
+
 #[derive(Serialize)]
 struct HookList {
     hooks: Vec<HookRow>,
+    #[serde(skip)]
+    off: bool,
+    #[serde(rename = "unshown_files", skip_serializing_if = "is_zero")]
+    unshown: usize,
+}
+
+fn is_zero(count: &usize) -> bool {
+    *count == 0
 }
 
 #[derive(Serialize)]
 struct HookRow {
     hook: Option<&'static str>,
     file: String,
-    loads: bool,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    project: bool,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    off: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    loads: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     on_failure: Option<&'static str>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -31,7 +48,9 @@ impl HookRow {
         let mut row = HookRow {
             hook: hook.event.map(|event| event.as_str()),
             file: hook.file.clone(),
-            loads: hook.read.is_ok(),
+            project: false,
+            off: false,
+            loads: Some(hook.read.is_ok()),
             on_failure: None,
             changes: None,
             error: None,
@@ -54,6 +73,10 @@ impl HookRow {
     fn cells(&self) -> Vec<String> {
         let hook = self.hook.unwrap_or_default().to_string();
         let mut cells = vec![hook, self.file.clone()];
+        if self.off {
+            cells.push("off".into());
+            return cells;
+        }
         match (self.on_failure, self.changes) {
             (Some(value), _) => cells.extend(["on_failure".into(), self.marked(value)]),
             (_, Some(value)) => cells.extend(["changes".into(), self.marked(value)]),
@@ -79,22 +102,36 @@ impl View for HookList {
     }
 
     fn warnings(&self) -> Vec<String> {
-        self.hooks
-            .iter()
-            .filter_map(|hook| hook.error.clone())
-            .collect()
+        let off = self.off.then(|| project::TURN_ON.to_string());
+        let errors = self.hooks.iter().filter_map(|hook| hook.error.clone());
+        let unshown = project::unshown_text(self.unshown);
+        errors.chain(unshown).chain(off).collect()
     }
 }
 
-pub(crate) fn run(file: &LuaConfigFile) -> Result<Report, CliError> {
-    listed(file.hook_files()?)
-}
-
-fn listed(hooks: Vec<HookFile>) -> Result<Report, CliError> {
+pub(crate) fn run(file: &LuaConfigFile, look: &ProjectHookLook) -> Result<Report, CliError> {
+    let mut hooks: Vec<HookRow> = file.hook_files()?.iter().map(HookRow::of).collect();
+    let theirs = project::rows(file, look)?;
+    hooks.extend(theirs.rows);
     report(&HookList {
-        hooks: hooks.iter().map(HookRow::of).collect(),
+        hooks,
+        off: theirs.off,
+        unshown: theirs.unshown,
     })
 }
 
 #[cfg(test)]
+fn listed(hooks: Vec<HookFile>) -> Result<Report, CliError> {
+    report(&HookList {
+        hooks: hooks.iter().map(HookRow::of).collect(),
+        off: false,
+        unshown: 0,
+    })
+}
+
+#[cfg(test)]
+mod project_tests;
+#[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod unshown_tests;

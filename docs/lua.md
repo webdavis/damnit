@@ -68,6 +68,41 @@ folder alone, so a hook that does not load hides none of the others.
 | `<event>.on_failure` | `warn` or `refuse`. Default: `warn`. |
 | `task_pulled.changes` | `committed` or `working`: where its changes go. Default: `committed`. |
 
+## Project hooks
+
+A project may ship hooks in `.damhooks/` beside its `.dam.lua`, one file per event, written as a
+hook file above. They are off until you turn them on, and while off dam never loads, runs or reads
+the code in them.
+
+Turning them on runs that repository's code as you, with full Lua, now and after every pull that
+changes it. dam does not ask again when the files change. Read them first.
+
+| Command | Turns on |
+| --- | --- |
+| `dam config set project.hooks true`, inside the project | This project, in this clone only. Kept by dam beside its store, never in the repository. |
+| `dam config set --global project.hooks true` | Every project. Written as `project.hooks` in `config.lua`. |
+
+This clone's setting wins over `config.lua`, so `false` here keeps one project off. `dam config
+unset project.hooks` forgets this clone's setting. `dam config list` shows whether a project's
+hooks are on and where that comes from. Nothing in `.dam.lua`, `.damhooks/` or `.damtemplates/`
+can turn them on; a `project` key in `.dam.lua` is refused.
+
+A project's hook runs only for a command you run inside that project, and only for a task under
+the project's path. `--global` and `--project` run none. When you and the project both have a hook
+for one event, yours runs first, then the project's, which sees the task as yours left it. Either
+may refuse the command by its own `on_failure`. `task_pulled` runs the project's hook only for
+pulled tasks under the project's path; the pull's answer counts both hooks' runs together.
+A token's commands run no hook at all, yours or a project's.
+
+`dam hook list` inside a project lists its files after yours as `.damhooks/<event>.lua`. While
+they are off it shows each as `off`, without loading it, and says how to turn them on.
+`dam hook run <hook>` runs the project's hook too once they are on, only over tasks under the
+project's path. A project's hook names its `.damhooks/` file in every warning and error.
+A file in `.damhooks/` whose name holds a control character is never loaded or shown;
+`dam hook list` counts it. A project's file that does not load is named without quoting it, and a
+control character in what a project's hook raises or returns prints as �, U+FFFD.
+`dam log` names it by its event, as it names your own.
+
 ## secrets.lua
 
 | Key | Value |

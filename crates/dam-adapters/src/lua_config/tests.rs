@@ -29,6 +29,7 @@ mod project_categories;
 mod project_control;
 mod project_escapes;
 mod project_hook_files;
+mod project_hook_names;
 mod project_hooks_setting;
 mod project_rules;
 mod project_sections;

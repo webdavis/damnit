@@ -5,9 +5,10 @@ use mlua::Lua;
 
 use super::evaluate::{ErrorText, evaluated};
 use super::hook::{ReadHook, event_named, read_hook};
+pub(super) use super::hook_folder_files::HookFolder;
 
 pub(super) const HOOKS_FOLDER: &str = "hooks";
-pub(super) const PROJECT_HOOKS_FOLDER: &str = ".damhooks";
+pub const PROJECT_HOOKS_FOLDER: &str = ".damhooks";
 
 pub(super) struct KeptHook {
     pub(super) event: HookEvent,
@@ -16,29 +17,44 @@ pub(super) struct KeptHook {
     file: String,
 }
 
-pub(super) fn read_hook_folder(lua: &Lua, folder: &Path) -> Result<Vec<KeptHook>, ConfigError> {
-    let mut hooks = lua_files(folder)?
-        .into_iter()
-        .map(|path| read_hook_file(lua, folder, path))
+pub(super) fn read_hook_folder(
+    lua: &Lua,
+    folder: &HookFolder,
+) -> Result<Vec<KeptHook>, ConfigError> {
+    let mut hooks = folder
+        .files
+        .iter()
+        .map(|path| read_hook_file(lua, folder, path.clone()))
         .collect::<Result<Vec<_>, _>>()?;
     hooks.sort_by_key(|hook| hook.event);
     Ok(hooks)
 }
 
-pub(super) fn list_hook_folder(lua: &Lua, folder: &Path) -> Result<Vec<HookFile>, ConfigError> {
-    let mut files: Vec<HookFile> = lua_files(folder)?
-        .into_iter()
+pub(super) fn list_hook_folder(lua: &Lua, folder: &HookFolder) -> Vec<HookFile> {
+    let mut files: Vec<HookFile> = folder
+        .files
+        .iter()
         .map(|path| HookFile {
-            file: file_of(folder, &path),
-            event: event_of(&path),
-            read: read_hook_file(lua, folder, path).map(|kept| kept.setting()),
+            file: file_of(folder.path, path),
+            event: event_of(path),
+            read: read_hook_file(lua, folder, path.clone()).map(|kept| kept.setting()),
         })
         .collect();
     files.sort_by_key(|hook| (hook.event.is_none(), hook.event, hook.file.clone()));
-    Ok(files)
+    files
 }
 
-fn lua_files(folder: &Path) -> Result<Vec<PathBuf>, ConfigError> {
+pub(super) fn name_hook_folder(folder: &HookFolder) -> Vec<(String, Option<HookEvent>)> {
+    let mut names: Vec<_> = folder
+        .files
+        .iter()
+        .map(|path| (file_of(folder.path, path), event_of(path)))
+        .collect();
+    names.sort_by_key(|(file, event)| (event.is_none(), *event, file.clone()));
+    names
+}
+
+pub(super) fn lua_files(folder: &Path) -> Result<Vec<PathBuf>, ConfigError> {
     let entries = match std::fs::read_dir(folder) {
         Ok(entries) => entries,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
@@ -64,13 +80,14 @@ fn event_of(path: &Path) -> Option<HookEvent> {
     event_named(&path.file_stem().unwrap_or_default().to_string_lossy())
 }
 
-fn read_hook_file(lua: &Lua, folder: &Path, path: PathBuf) -> Result<KeptHook, ConfigError> {
-    let file = file_of(folder, &path);
+fn read_hook_file(lua: &Lua, folder: &HookFolder, path: PathBuf) -> Result<KeptHook, ConfigError> {
+    let file = file_of(folder.path, &path);
     let event =
         event_of(&path).ok_or_else(|| ConfigError::UnknownHookFile { file: file.clone() })?;
     let text = std::fs::read_to_string(&path).map_err(|e| unreadable(&path, &e))?;
-    let value = evaluated(lua, &path, &text, ErrorText::QuotesTheFile)?;
-    let read = read_hook(&file, event, value)?;
+    let read = evaluated(lua, &path, &text, ErrorText::QuotesTheFile)
+        .and_then(|value| read_hook(&file, event, value))
+        .map_err(|error| folder.error_text.about_what_it_holds(&path, error))?;
     Ok(KeptHook {
         event,
         path,
