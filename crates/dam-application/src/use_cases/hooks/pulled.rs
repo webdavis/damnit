@@ -48,7 +48,12 @@ impl Dam<'_> {
         remote: &RemoteName,
         pulled: Vec<PulledTask>,
     ) -> Result<Option<PulledHookRun>, UseCaseError> {
-        let Some(hook) = self.config.task_pulled.filter(|_| !pulled.is_empty()) else {
+        let Some(hook) = self
+            .config
+            .task_pulled
+            .as_ref()
+            .filter(|_| !pulled.is_empty())
+        else {
             return Ok(None);
         };
         let before = match hook.changes() {

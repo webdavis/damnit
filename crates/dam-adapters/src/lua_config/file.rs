@@ -7,6 +7,7 @@ use mlua::{Lua, Table};
 use super::computed::ConfiguredCredentials;
 use super::evaluate::{ErrorText, evaluate, read_text, stopped_at_an_error};
 use super::functions::{LuaFunctions, limit_every_thread};
+use super::hook_folder::{HOOKS_FOLDER, KeptHook, configured, read_hook_folder};
 use super::hook_marker::mark_what_a_hook_starts;
 use super::secrets::read_secrets;
 use super::settings::read_settings;
@@ -14,6 +15,13 @@ use super::strict::StrictMap;
 use super::token::read_tokens;
 
 const FUNCTION_LIMIT: Duration = Duration::from_secs(5);
+
+pub(super) struct Kept {
+    pub(super) config: Config,
+    pub(super) lua: Lua,
+    pub(super) settings: Option<Table>,
+    pub(super) hooks: Vec<KeptHook>,
+}
 
 #[derive(Clone)]
 pub struct LuaConfigFile {
@@ -51,8 +59,12 @@ impl LuaConfigFile {
     }
 
     pub(super) fn read_both(&self, secrets_error: ErrorText) -> Result<LoadedConfig, ConfigError> {
-        let (mut config, settings_lua, settings) =
-            self.settings_kept(read_text(&self.config)?.as_deref())?;
+        let Kept {
+            mut config,
+            lua: settings_lua,
+            settings,
+            hooks,
+        } = self.settings_kept(read_text(&self.config)?.as_deref())?;
         let lua = Lua::new();
         let path = self.secrets_path();
         let text = read_text(&path)?;
@@ -69,6 +81,7 @@ impl LuaConfigFile {
             settings_lua,
             self.config.clone(),
             settings,
+            hooks,
             config.owner_name(),
             self.function_limit,
         )
@@ -90,23 +103,27 @@ impl LuaConfigFile {
     }
 
     pub(super) fn settings_in(&self, text: Option<&str>) -> Result<Config, ConfigError> {
-        self.settings_kept(text).map(|(config, _, _)| config)
+        self.settings_kept(text).map(|kept| kept.config)
     }
 
-    pub(super) fn settings_kept(
-        &self,
-        text: Option<&str>,
-    ) -> Result<(Config, Lua, Option<Table>), ConfigError> {
+    pub(super) fn settings_kept(&self, text: Option<&str>) -> Result<Kept, ConfigError> {
         let lua = Lua::new();
         limit_every_thread(&lua)
             .and_then(|()| mark_what_a_hook_starts(&lua))
             .map_err(|_| stopped_at_an_error(&self.config))?;
         let table = evaluate(&lua, &self.config, text, ErrorText::QuotesTheFile)?;
-        let config = match &table {
+        let mut config = match &table {
             Some(table) => read_settings(&StrictMap::root(&file_name(&self.config), table)?)?,
             None => Config::default(),
         };
-        Ok((config, lua, table))
+        let hooks = read_hook_folder(&lua, &self.config.with_file_name(HOOKS_FOLDER))?;
+        (config.hooks, config.task_pulled) = configured(&hooks);
+        Ok(Kept {
+            config,
+            lua,
+            settings: table,
+            hooks,
+        })
     }
 
     pub(super) fn tokens_in(&self, text: Option<&str>) -> Result<Tokens, ConfigError> {

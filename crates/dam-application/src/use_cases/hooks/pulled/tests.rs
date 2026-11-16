@@ -24,7 +24,10 @@ fn pulled_hooked() -> Scenario {
 
 fn pulled_hooked_leaving(changes: Option<PulledChanges>) -> Scenario {
     let s = Scenario::default().drawing_from(42).configured(Config {
-        task_pulled: Some(PulledHook { changes }),
+        task_pulled: Some(PulledHook {
+            changes,
+            ..PulledHook::default()
+        }),
         ..config()
     });
     s.store.set_sync_token(&todoist(), Some("s0")).unwrap();

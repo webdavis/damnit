@@ -37,6 +37,12 @@ impl Folder {
         self
     }
 
+    pub(super) fn with_hook(self, file: &str, text: &str) -> Folder {
+        std::fs::create_dir_all(self.path("hooks")).unwrap();
+        std::fs::write(self.path("hooks").join(file), text).unwrap();
+        self
+    }
+
     pub(super) fn with_secrets(self, text: &str) -> Folder {
         std::fs::write(self.path("secrets.lua"), text).unwrap();
         self
@@ -77,6 +83,10 @@ impl Folder {
 
 pub(super) fn config(text: &str) -> Folder {
     Folder::new().with_config(text)
+}
+
+pub(super) fn hooked(event: &str, hook: &str) -> Folder {
+    Folder::new().with_hook(&format!("{event}.lua"), &format!("return {hook}\n"))
 }
 
 pub(super) const ONE_REMOTE: &str = "return { remote = { todoist = { url = 'todoist::' } } }";

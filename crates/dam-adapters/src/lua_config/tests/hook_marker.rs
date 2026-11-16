@@ -18,9 +18,10 @@ fn hooked(before: &str, body: &str) -> Folder {
     let folder = Folder::new();
     let seen = folder.path(SEEN);
     let body = body.replace("SEEN", &format!("{seen:?}"));
-    folder.with_config(&format!(
-        "{before}\nreturn {{ hook = {{ task_done = function()\n{body}\nend }} }}\n"
-    ))
+    folder.with_hook(
+        "task_done.lua",
+        &format!("{before}\nreturn function()\n{body}\nend\n"),
+    )
 }
 
 #[test]
@@ -78,8 +79,9 @@ fn a_command_a_filter_starts_carries_no_event() {
 fn a_command_started_after_a_hook_returns_carries_no_event() {
     let folder = Folder::new();
     let seen = folder.path(SEEN);
+    let folder = folder.with_hook("task_done.lua", "return function() end\n");
     let folder = folder.with_config(&format!(
-        "return {{\n  hook = {{ task_done = function() end }},\n  \
+        "return {{\n  \
            filter = {{ probe = {{ match = function()\n    \
              os.execute('printf %s \"${{DAM_HOOK-none}}\" > ' .. {seen:?})\n  \
            end }} }},\n}}\n"

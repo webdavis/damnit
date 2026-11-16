@@ -4,15 +4,24 @@ use support::errors::error_document;
 use support::sandbox::Sandbox;
 use support::schema::assert_matches_schema;
 
-const PRINTING: &str = "return { hook = {\n  \
-    task_new = function(task) print('new ' .. task.subject) end,\n  \
-    task_changed = function(task) print('changed ' .. task.subject) end,\n  \
-    task_done = function(task) print('done ' .. task.subject) end,\n\
-  } }\n";
+const PRINTING: &[(&str, &str)] = &[
+    (
+        "task_new",
+        "function(task) print('new ' .. task.subject) end",
+    ),
+    (
+        "task_changed",
+        "function(task) print('changed ' .. task.subject) end",
+    ),
+    (
+        "task_done",
+        "function(task) print('done ' .. task.subject) end",
+    ),
+];
 
-fn hooked(config: &str) -> Sandbox {
+fn hooked(hooks: &[(&str, &str)]) -> Sandbox {
     let sb = Sandbox::new();
-    sb.write_config_lua(config);
+    sb.write_hooks(hooks);
     sb.write_secrets_lua("return { schema = 1 }\n");
     sb
 }
@@ -44,13 +53,13 @@ fn hooks_run_on_new_edit_and_done_and_print_to_standard_error() {
 #[test]
 fn a_failing_hook_warns_and_the_change_stands() {
     let _guard = support::guard("a_failing_hook_warns_and_the_change_stands");
-    let sb = hooked("return { hook = {\n  task_new = function() error('no bell') end,\n} }\n");
+    let sb = hooked(&[("task_new", "function() error('no bell') end")]);
     let out = sb.output(&["new", "buy milk", "--json"]);
     assert!(out.status.success(), "{out:?}");
-    let config = sb.config_path().display().to_string();
+    let hook = sb.hook_path("task_new").display().to_string();
     assert_eq!(
         String::from_utf8_lossy(&out.stderr),
-        format!("warning: hook task_new failed at {config}:2: no bell; the change stands\n")
+        format!("warning: hook task_new failed at {hook}:1: no bell; the change stands\n")
     );
     assert_eq!(listed(&sb).as_array().unwrap().len(), 1);
 }
@@ -58,9 +67,10 @@ fn a_failing_hook_warns_and_the_change_stands() {
 #[test]
 fn a_failing_hook_that_refuses_changes_nothing_and_exits_4() {
     let _guard = support::guard("a_failing_hook_that_refuses_changes_nothing_and_exits_4");
-    let sb = hooked(
-        "return { hook = {\n  task_new = { run = function() return 1 end, on_failure = 'refuse' },\n} }\n",
-    );
+    let sb = hooked(&[(
+        "task_new",
+        "{ run = function() return 1 end, on_failure = 'refuse' }",
+    )]);
     let out = sb.output(&["new", "buy milk", "--json"]);
     assert_eq!(out.status.code(), Some(4), "{out:?}");
     assert!(out.stdout.is_empty(), "{out:?}");
@@ -68,11 +78,11 @@ fn a_failing_hook_that_refuses_changes_nothing_and_exits_4() {
     assert_matches_schema(&document, "error.schema.json");
     assert_eq!(document["error"]["rule"], "hook_refused");
     assert_eq!(document["error"]["hook"], "task_new");
-    let config = sb.config_path().display().to_string();
+    let hook = sb.hook_path("task_new").display().to_string();
     assert_eq!(
         document["error"]["message"],
         format!(
-            "hook task_new failed at {config}:2: it returned an integer, not nil or a table; \
+            "hook task_new failed at {hook}:1: it returned an integer, not nil or a table; \
              the command changed nothing"
         )
     );

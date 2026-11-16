@@ -236,7 +236,8 @@ of a whole id. A send with `--id` is safe to
 retry: a repeat answers `duplicate`. The schema is `docs/schemas/error.schema.json`, and it lists
 every rule.
 
-A hook in `config.lua` runs on the owner's `dam new`, `dam edit`, `dam done` and `dam add`.
+A hook in the `hooks` folder beside `config.lua` runs on the owner's `dam new`, `dam edit`,
+`dam done` and `dam add`.
 A token's command runs no hook; its item runs one when the owner's `dam add` takes it.
 A hook may return a `dam edit --request` document for its task, which the same command applies.
 The answer of `new` and `edit` then shows the task as the hook left it. The answer of `new`,
@@ -246,7 +247,7 @@ What it prints and its warnings go to standard error. A hook set to refuse exits
 `hook_refused`, and the error names the event under `hook`.
 A hook's own commands run with `DAM_HOOK` set to the event. A `dam` that finds `DAM_HOOK` set
 exits 4, rule `started_by_hook`, before it reads or writes anything.
-A pull runs only `hook.task_pulled`, once for each task it created or changed, after the pull
+A pull runs only `task_pulled`, once for each task it created or changed, after the pull
 has landed. A failing one never changes the pull's exit code. The answer of `pull` carries
 `task_pulled` on each remote it ran for: the counts `ran`, `changed`, `failed` and `not_reached`,
 and `commit`, the id of the commit that holds the hook's changes when it made one.

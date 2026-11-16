@@ -47,6 +47,7 @@ impl OnFailure {
 pub struct HookConfig {
     pub event: HookEvent,
     pub on_failure: Option<OnFailure>,
+    pub file: String,
 }
 
 impl HookConfig {
@@ -73,9 +74,10 @@ impl PulledChanges {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PulledHook {
     pub changes: Option<PulledChanges>,
+    pub file: String,
 }
 
 impl PulledHook {

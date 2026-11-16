@@ -5,14 +5,12 @@ use dam_application::{
 };
 
 use super::filter_support::{FixedHistory, every_field_task};
-use super::support::{Folder, config};
+use super::support::Folder;
 
 const LIMIT: Duration = Duration::from_secs(5);
 
 fn hooked(task_done: &str) -> Folder {
-    config(&format!(
-        "return {{\n  hook = {{\n    task_done = {task_done},\n  }},\n}}\n"
-    ))
+    super::support::hooked("task_done", task_done)
 }
 
 fn run_within(folder: &Folder, limit: Duration) -> Result<Option<EditRequest>, FunctionFailure> {
@@ -40,13 +38,16 @@ fn a_hook_that_returns_nothing_succeeds_written_either_way() {
 fn a_hook_is_handed_the_task_and_dam() {
     let folder = Folder::new();
     let marker = folder.marker();
-    let folder = folder.with_config(&format!(
-        "return {{ hook = {{ task_done = function(task, dam)\n  \
+    let folder = folder.with_hook(
+        "task_done.lua",
+        &format!(
+            "return function(task, dam)\n  \
            local file = io.open({marker:?}, 'w')\n  \
            file:write(task.subject, ' ', #dam.history(task))\n  \
            file:close()\n\
-         end }} }}\n"
-    ));
+         end\n"
+        ),
+    );
     assert_eq!(run_within(&folder, LIMIT), Ok(None));
     assert_eq!(std::fs::read_to_string(marker).unwrap(), "report 0");
 }
@@ -54,7 +55,7 @@ fn a_hook_is_handed_the_task_and_dam() {
 #[test]
 fn a_hook_that_returns_a_value_fails_naming_what_came_back() {
     let failure = run("{ run = function() return true end }").unwrap_err();
-    assert_eq!(failure.line, Some(3));
+    assert_eq!(failure.line, Some(1));
     assert_eq!(
         failure.fault,
         FunctionFault::Returned {
@@ -66,8 +67,12 @@ fn a_hook_that_returns_a_value_fails_naming_what_came_back() {
 #[test]
 fn a_hook_that_raises_gives_its_line_and_its_message() {
     let failure = run("function(task)\n      error('no bell')\n    end").unwrap_err();
-    assert!(failure.file.ends_with("config.lua"), "{:?}", failure.file);
-    assert_eq!(failure.line, Some(4));
+    assert!(
+        failure.file.ends_with("hooks/task_done.lua"),
+        "{:?}",
+        failure.file
+    );
+    assert_eq!(failure.line, Some(2));
     assert_eq!(
         failure.fault,
         FunctionFault::Raised {

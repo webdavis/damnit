@@ -40,13 +40,14 @@ and never a secret. `secrets.lua` holds each remote's credentials and the tokens
     }
 
 A credential is a string, or a function dam calls only when the remote is used. Any key dam does
-not know fails with exit 1. `docs/examples/` holds one of each file.
+not know fails with exit 1. `docs/examples/` holds one of each file, and a hook.
 What `config.lua` prints goes to standard error, so it never mixes with a command's answer.
 
 `dam config list` prints where the two files are and every setting dam is using, one row each: the
 key, then the value, with `(default)` after a value dam supplies. A remote's credential shows under
 `remote.<name>.credential` as only `hidden`, or `hidden (function)` for one dam calls.
-A filter's `match` and a hook's `run` show as `function`, never their source. A token shows
+A filter's `match` and a hook's `run` show as `function`, never their source, and a hook's
+`file` names its file. A token shows
 each of its settings by the key `secrets.lua` uses, never its value, or `disabled`. A setting with
 no value and no default shows `not set`.
 `docs/schemas/config-list.schema.json` is the schema of its `--json` answer.
@@ -303,14 +304,13 @@ under `--json`, an empty array when nothing is declared.
 
 ## Hooks
 
-A hook in `config.lua` runs when your `dam new`, `dam edit`, `dam done`, `dam add` or
-`dam resolve --theirs` changes a task:
+A hook runs when your `dam new`, `dam edit`, `dam done`, `dam add` or `dam resolve --theirs`
+changes a task. Each hook is its own file in the `hooks` folder beside `config.lua`, named for its
+event, such as `hooks/task_done.lua`:
 
-    hook = {
-      task_done = function(task)
-        print("done: " .. task.subject)
-      end,
-    }
+    return function(task)
+      print("done: " .. task.subject)
+    end
 
 The events are `task_new`, `task_changed` and `task_done`. A hook may return a table of fields,
 as `dam edit --request` takes them, and dam sets them on that task. What a hook prints goes to
@@ -318,7 +318,7 @@ standard error. A failing hook warns, or with `on_failure = "refuse"` stops the 
 then changes nothing and exits 4. A `dam` run with `DAM_HOOK` set, as a hook's own commands are,
 exits 4 at once. `docs/lua.md` describes hooks.
 
-`hook.task_pulled` runs after a pull, as `run(task, before, pull)`, for each task the pull created
+`hooks/task_pulled.lua` runs after a pull, as `run(task, before, pull)`, for each task the pull created
 or changed. dam commits its changes after the pull's commit, or with `changes = "working"` leaves
 them as working changes. It never runs on the first pull from a remote, and a failing one never
 undoes the pull.

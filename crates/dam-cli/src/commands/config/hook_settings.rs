@@ -19,6 +19,7 @@ fn pulled_hook(hook: &PulledHook) -> (String, Setting) {
         vec![
             ("run".to_string(), Setting::Function(MatchFunction)),
             ("changes".to_string(), changes),
+            file(&hook.file),
         ],
     )
 }
@@ -34,7 +35,15 @@ fn hook(hook: &HookConfig) -> (String, Setting) {
         vec![
             ("run".to_string(), Setting::Function(MatchFunction)),
             ("on_failure".to_string(), on_failure),
+            file(&hook.file),
         ],
+    )
+}
+
+fn file(file: &str) -> (String, Setting) {
+    (
+        "file".to_string(),
+        Setting::set(Value::Text(file.to_string())),
     )
 }
 

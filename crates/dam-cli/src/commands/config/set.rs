@@ -68,9 +68,16 @@ fn refused(refusal: KeyRefusal) -> CliError {
                  and dam config set never writes one"
             )
         }
-        KeyRefusal::Function(key) => {
-            format!("{key} is a function; write it in config.lua by hand")
-        }
+        KeyRefusal::Function(key) => match key.strip_prefix("hook.") {
+            Some(rest) => {
+                let event = rest.split('.').next().unwrap_or(rest);
+                format!(
+                    "{key} is part of a hook; write the hook by hand in hooks/{event}.lua \
+                     beside config.lua"
+                )
+            }
+            None => format!("{key} is a function; write it in config.lua by hand"),
+        },
     })
 }
 

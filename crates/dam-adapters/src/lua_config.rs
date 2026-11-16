@@ -7,6 +7,7 @@ mod filter;
 mod filter_function;
 mod functions;
 mod hook;
+mod hook_folder;
 mod hook_function;
 mod hook_marker;
 mod port;

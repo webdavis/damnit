@@ -68,15 +68,4 @@ return {
     --today = { query = "due:today | overdue" },
     --undated = { match = function(task, dam) return task.kind == "task" and task.task.due == nil end },
   --},
-
-  -- A hook runs when your own dam new, dam edit or dam done changes a task: task_new,
-  -- task_changed or task_done. It gets the task as it is after the change, and may return a
-  -- table of fields to set on it, as dam edit --request takes them. A failing hook warns,
-  -- or with on_failure = "refuse" the command changes nothing. What it prints goes to standard
-  -- error. task_pulled runs after a pull for each task it created or changed, as
-  -- run(task, before, pull), never on the first pull from a remote. dam commits what it
-  -- changes, or with changes = "working" leaves it as working changes.
-  --hook = {
-    --task_done = function(task, dam) print("done: " .. task.subject) end,
-  --},
 }

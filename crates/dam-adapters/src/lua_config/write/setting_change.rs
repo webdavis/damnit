@@ -79,8 +79,8 @@ impl LuaConfigFile {
     }
 
     fn flat(&self, text: Option<&str>) -> Result<Flat, ConfigError> {
-        let (_, _lua, table) = self.settings_kept(text)?;
-        Ok(flatten(table.as_ref()))
+        let kept = self.settings_kept(text)?;
+        Ok(flatten(kept.settings.as_ref()))
     }
 }
 

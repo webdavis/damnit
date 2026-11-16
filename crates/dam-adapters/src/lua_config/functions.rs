@@ -4,7 +4,8 @@ mod json_value;
 mod lua_value;
 mod time_limit;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use crate::object_document;
@@ -13,6 +14,7 @@ use dam_domain::Object;
 use mlua::{Function, Lua, Scope, Table, Value};
 
 use super::evaluate::{ErrorText, line_and_reason, lua_message, short_name_lua_never_truncates};
+use super::hook_folder::KeptHook;
 use super::printed::while_the_top_level_runs;
 use dam_table::dam_table;
 pub use history_document::history_document;
@@ -26,6 +28,7 @@ const SETTINGS: &str = "settings";
 pub struct LuaFunctions {
     pub(super) lua: Lua,
     path: PathBuf,
+    hooks: Rc<Vec<KeptHook>>,
     owner: String,
     limit: Duration,
 }
@@ -35,6 +38,7 @@ impl LuaFunctions {
         lua: Lua,
         path: PathBuf,
         settings: Option<Table>,
+        hooks: Vec<KeptHook>,
         owner: &str,
         limit: Duration,
     ) -> mlua::Result<LuaFunctions> {
@@ -44,13 +48,25 @@ impl LuaFunctions {
         Ok(LuaFunctions {
             lua,
             path,
+            hooks: Rc::new(hooks),
             owner: owner.to_string(),
             limit,
         })
     }
 
-    pub(super) fn path(&self) -> &std::path::Path {
+    pub(super) fn path(&self) -> &Path {
         &self.path
+    }
+
+    pub(super) fn hooks(&self) -> &[KeptHook] {
+        &self.hooks
+    }
+
+    pub(super) fn at(&self, path: &Path) -> LuaFunctions {
+        LuaFunctions {
+            path: path.to_path_buf(),
+            ..self.clone()
+        }
     }
 
     pub(super) fn settings(&self) -> mlua::Result<Table> {

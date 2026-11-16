@@ -5,9 +5,7 @@ use support::sandbox::Sandbox;
 
 fn hooked(task_new: &str) -> Sandbox {
     let sb = Sandbox::new();
-    sb.write_config_lua(&format!(
-        "return {{ hook = {{\n  task_new = {task_new},\n}} }}\n"
-    ));
+    sb.write_hooks(&[("task_new", task_new)]);
     sb.write_secrets_lua("return { schema = 1 }\n");
     sb
 }

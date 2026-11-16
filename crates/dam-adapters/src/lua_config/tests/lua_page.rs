@@ -46,11 +46,18 @@ fn the_page_names_every_key_config_lua_takes_and_no_other() {
         &remote::SETTINGS[..],
         &remote::SYNC[..],
         &filter::FILTER[..],
+    ]);
+    assert_eq!(keys_named(&rows_under("config.lua")), read);
+}
+
+#[test]
+fn the_page_names_every_event_and_key_a_hook_file_takes_and_no_other() {
+    let read = owned(&[
         &hook::HOOK[..],
         &hook::HOOK_TABLE[..],
         &hook::PULLED_HOOK_TABLE[..],
     ]);
-    assert_eq!(keys_named(&rows_under("config.lua")), read);
+    assert_eq!(keys_named(&rows_under("Hook files")), read);
 }
 
 #[test]

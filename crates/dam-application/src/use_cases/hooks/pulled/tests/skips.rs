@@ -76,6 +76,7 @@ fn the_local_hooks_stay_quiet_on_a_pull() {
         .extend(HookEvent::LOCAL.map(|event| HookConfig {
             event,
             on_failure: None,
+            file: String::new(),
         }));
     tracked(&s, 1, "old");
     pull_objects(&s, vec![incoming("new", "r1"), done("b", "r2")]);

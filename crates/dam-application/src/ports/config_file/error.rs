@@ -28,6 +28,17 @@ pub enum ConfigError {
     NotNamedSettings {
         file: String,
     },
+    HookMoved {
+        config: String,
+        events: Vec<String>,
+    },
+    UnknownHookFile {
+        file: String,
+    },
+    NotAHook {
+        file: String,
+        returned: String,
+    },
     Misread(Box<Misread>),
     BelongsInSecrets {
         key: String,

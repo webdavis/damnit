@@ -20,7 +20,11 @@ fn hooked(hooks: &[(HookEvent, Option<OnFailure>)]) -> Scenario {
     let s = Scenario::default().drawing_from(9).configured(Config {
         hooks: hooks
             .iter()
-            .map(|&(event, on_failure)| HookConfig { event, on_failure })
+            .map(|&(event, on_failure)| HookConfig {
+                event,
+                on_failure,
+                file: String::new(),
+            })
             .collect(),
         ..config()
     });

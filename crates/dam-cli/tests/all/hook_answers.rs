@@ -4,14 +4,17 @@ use serde_json::{Value, json};
 use support::sandbox::Sandbox;
 use support::tokens::{answer, grant, grant_to};
 
-const LABELLING: &str = "return { hook = {\n  \
-    task_new = function() return { labels = { 'new' } } end,\n  \
-    task_changed = function() return { labels = { 'changed' } } end,\n  \
-    task_done = function() return { labels = { 'done' } } end,\n\
-  } }\n";
+const LABELLING: &[(&str, &str)] = &[
+    ("task_new", "function() return { labels = { 'new' } } end"),
+    (
+        "task_changed",
+        "function() return { labels = { 'changed' } } end",
+    ),
+    ("task_done", "function() return { labels = { 'done' } } end"),
+];
 
-fn hooked(sb: &Sandbox, config: &str) {
-    sb.write_config_lua(config);
+fn hooked(sb: &Sandbox, hooks: &[(&str, &str)]) {
+    sb.write_hooks(hooks);
     sb.write_secrets_lua("return { schema = 1 }\n");
 }
 
@@ -40,7 +43,7 @@ fn an_answer_carries_no_changed_by_hook_when_the_hook_changed_nothing() {
     let _guard =
         support::guard("an_answer_carries_no_changed_by_hook_when_the_hook_changed_nothing");
     let sb = Sandbox::new();
-    hooked(&sb, "return { hook = { task_new = function() end } }\n");
+    hooked(&sb, &[("task_new", "function() end")]);
     let task = created(&sb);
     assert!(task.get("changed_by_hook").is_none(), "{task}");
 }

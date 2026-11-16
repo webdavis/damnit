@@ -2,6 +2,7 @@
 
 dam reads two Lua files from one folder: `config.lua` and `secrets.lua`. Each returns a table. A
 key dam does not know is an error. A `<name>` in a key is a name you choose.
+Hooks live in their own files in a `hooks` folder beside them.
 
 ## config.lua
 
@@ -24,18 +25,28 @@ key dam does not know is an error. A `<name>` in a key is a name you choose.
 | `filter` | A table of saved filters by name. |
 | `filter.<name>.query` | Query text. |
 | `filter.<name>.match` | A function that returns `true` to keep an object. |
-| `hook` | A table of hooks by event. |
-| `hook.task_new` | A hook that runs when you create a task. |
-| `hook.task_changed` | A hook that runs when you change a task. |
-| `hook.task_done` | A hook that runs when you complete a task. |
-| `hook.task_pulled` | A hook for each task a pull brings in. It takes no `on_failure`. |
-| `hook.<event>.run` | The hook's function, when the hook is a table. Required. |
-| `hook.<event>.on_failure` | `warn` or `refuse`. Default: `warn`. |
-| `hook.task_pulled.changes` | `committed` or `working`: where its changes go. Default: `committed`. |
 
 A duration is a whole number followed by `s`, `m` or `h`.
 
 `dam config set <key> <value>` and `dam config unset <key>` change one key of this table.
+
+## Hook files
+
+Each hook is one file in the `hooks` folder beside `config.lua`, named for its event.
+A hook file returns the hook: a function, or a table that holds the function as `run`.
+Only files ending in `.lua` count. A `.lua` file named for no event is an error.
+A `hook` table in `config.lua` is an error that names the file each hook moves to.
+A hook file holds no secret, so others may read it.
+
+| Event | Hook |
+| --- | --- |
+| `task_new` | `hooks/task_new.lua` runs when you create a task. |
+| `task_changed` | `hooks/task_changed.lua` runs when you change a task. |
+| `task_done` | `hooks/task_done.lua` runs when you complete a task. |
+| `task_pulled` | `hooks/task_pulled.lua` runs for each task a pull brings in. It takes no `on_failure`. |
+| `<event>.run` | The hook's function, when the hook is a table. Required. |
+| `<event>.on_failure` | `warn` or `refuse`. Default: `warn`. |
+| `task_pulled.changes` | `committed` or `working`: where its changes go. Default: `committed`. |
 
 ## secrets.lua
 
@@ -164,18 +175,19 @@ request stated, and `nil` when it is not shown to the caller.
 ## Hooks
 
 A hook is a function dam calls when your own command changes a task.
-`hook.task_new` runs for a task your `dam new` creates.
-`hook.task_done` runs for a task your `dam done` completes, or rolls forward when it repeats.
-`hook.task_changed` runs for any other change your `dam new`, `dam edit` or `dam done` makes.
+`task_new` runs for a task your `dam new` creates.
+`task_done` runs for a task your `dam done` completes, or rolls forward when it repeats.
+`task_changed` runs for any other change your `dam new`, `dam edit` or `dam done` makes.
 A token's item runs the same hooks when your `dam add` or `dam resolve <hash> --theirs` takes it.
 A command runs one hook for each task it changed, so `dam done --force` that moves open children
 runs `task_changed` for each child.
 When the item removes a task, the removed task runs no hook, and each task the removal moves or
 frees runs `task_changed`.
 Events, `dam rm`, `dam restore`, `dam resolve --ours`, `dam resolve` of a conflict with a remote,
-`dam revert`, `dam reset`, a pull and a token's commands run none of these three. A pull runs only `hook.task_pulled`.
+`dam revert`, `dam reset`, a pull and a token's commands run none of these three. A pull runs only
+`task_pulled`.
 
-A hook is a function, or a table that holds the function as `run`. `run(task, dam)` gets what a
+A hook file returns a function, or a table that holds the function as `run`. `run(task, dam)` gets what a
 filter's `match` gets, with the task as it is after the change.
 It returns nothing, or a table of fields to change on that task.
 The table takes the keys and values of a `dam edit --request` document, except `oid` and `meta`.
@@ -196,16 +208,16 @@ It also fails when its table is not an edit request, or when `dam edit` would re
 Then dam applies none of the hook's table.
 With `on_failure = "warn"`, the default, the change stands and dam warns on standard error:
 
-    warning: hook task_done failed at /home/ada/.config/dam/config.lua:3: no bell; the change stands
+    warning: hook task_done failed at /home/ada/.config/dam/hooks/task_done.lua:3: no bell; the change stands
 
 With `on_failure = "refuse"`, the command changes nothing and exits 4 with rule `hook_refused`.
 Its error document names the event under `hook`.
 
 A failing hook's warning says what was wrong with its table:
 
-    warning: hook task_new failed at /home/ada/.config/dam/config.lua:2: its edit request failed: --request: colour is not a field it takes; the change stands
+    warning: hook task_new failed at /home/ada/.config/dam/hooks/task_new.lua:2: its edit request failed: --request: colour is not a field it takes; the change stands
 
-`hook.task_pulled` runs after a pull has landed, once for each task the pull created or changed.
+`task_pulled` runs after a pull has landed, once for each task the pull created or changed.
 `run(task, before, pull)` gets the task as the pull left it, and `before`, dam's task before the
 pull, which is nil for a new task. Both have the shape `match` gets.
 `pull` holds `remote`, the remote's name, and `change`: `new`, `changed`, or `done` when the task
@@ -223,7 +235,7 @@ When it fails on a task, dam drops that task's change, goes on to the next task,
 pull. The pull's exit code stays as it was.
 The first failure of a pull warns on standard error, unless a token's command caused the pull:
 
-    warning: hook task_pulled failed at /home/ada/.config/dam/config.lua:3: no bell; the pull is kept
+    warning: hook task_pulled failed at /home/ada/.config/dam/hooks/task_pulled.lua:3: no bell; the pull is kept
 
 Later failures of that pull are counted, not printed.
 After 60 seconds of one pull's run, dam calls the hook for no more tasks and counts them in
@@ -237,7 +249,7 @@ caused the pull. The line stays when the run ends:
 When a pull's run failed on a task or did not reach one, `dam status` keeps one notice for that
 remote, also when a token's command caused the pull:
 
-    task_pulled on the last pull from todoist: 2 failed, 0 not reached; first error at /home/ada/.config/dam/config.lua:3: no bell
+    task_pulled on the last pull from todoist: 2 failed, 0 not reached; first error at /home/ada/.config/dam/hooks/task_pulled.lua:3: no bell
 
 The next run of that remote replaces it, or clears it when it fails on no task and reaches all.
 A token never sees it.
@@ -248,36 +260,37 @@ When a remote rewrites what dam pushed, the task comes back changed and the hook
 more. A hook that changes a task each time it runs changes it once per push and pull, never in a
 loop.
 
-Tasks you complete, written to a file, no task left outside a folder, and a due date on each
-changed task that has none:
+Tasks you complete, written to a file, in `hooks/task_done.lua`:
+
+    return function(task)
+      local log = io.open(os.getenv("HOME") .. "/done.log", "a")
+      log:write(task.subject, "\n")
+      log:close()
+    end
+
+No task left outside a folder, in `hooks/task_new.lua`:
 
     return {
-      hook = {
-        task_done = function(task)
-          local log = io.open(os.getenv("HOME") .. "/done.log", "a")
-          log:write(task.subject, "\n")
-          log:close()
-        end,
-        task_new = {
-          run = function(task)
-            if task.path == "" then
-              error("file it under a folder")
-            end
-          end,
-          on_failure = "refuse",
-        },
-        task_changed = function(task)
-          if task.task.due == nil then
-            return { due = "tomorrow" }
-          end
-        end,
-      },
+      run = function(task)
+        if task.path == "" then
+          error("file it under a folder")
+        end
+      end,
+      on_failure = "refuse",
     }
+
+A due date on each changed task that has none, in `hooks/task_changed.lua`:
+
+    return function(task)
+      if task.task.due == nil then
+        return { due = "tomorrow" }
+      end
+    end
 
 ## Limits and errors
 
 One filter has 5 seconds in total for a whole listing. One hook call has 5 seconds.
-`hook.task_pulled` has 60 seconds in total for one pull.
+`task_pulled` has 60 seconds in total for one pull.
 dam checks the time while Lua code runs.
 The limit covers code in a coroutine, and a `pcall` or `xpcall` cannot catch it for long.
 It cannot stop a blocked external command, such as one started with `os.execute`. It notices the

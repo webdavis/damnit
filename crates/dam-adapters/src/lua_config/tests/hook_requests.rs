@@ -13,8 +13,12 @@ fn a_table_a_hook_returns_comes_back_as_its_edit_request() {
     let request = run("function() return { labels = { 'errand' } } end")
         .unwrap()
         .unwrap();
-    assert!(request.file.ends_with("config.lua"), "{:?}", request.file);
-    assert_eq!(request.line, Some(3));
+    assert!(
+        request.file.ends_with("hooks/task_done.lua"),
+        "{:?}",
+        request.file
+    );
+    assert_eq!(request.line, Some(1));
     assert_eq!(
         serde_json::from_str::<Value>(&request.json).unwrap(),
         json!({ "labels": ["errand"] })

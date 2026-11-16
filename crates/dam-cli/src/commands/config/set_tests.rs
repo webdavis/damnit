@@ -85,3 +85,12 @@ fn a_remote_key_that_is_no_setting_is_refused_without_calling_it_a_secret() {
         );
     }
 }
+
+#[test]
+fn a_hook_key_is_refused_naming_the_file_the_hook_goes_in() {
+    assert_eq!(
+        refusal("hook.task_done.on_failure", "refuse"),
+        "hook.task_done.on_failure is part of a hook; write the hook by hand in \
+         hooks/task_done.lua beside config.lua"
+    );
+}

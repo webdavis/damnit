@@ -29,3 +29,11 @@ pub(super) fn map_entries(table: &Table) -> Option<Vec<(String, Value)>> {
     entries.sort_by(|a, b| a.0.cmp(&b.0));
     Some(entries)
 }
+
+pub(super) fn described(value: &Value) -> String {
+    match value.type_name() {
+        "nil" => "nil".to_string(),
+        name if name.starts_with(['a', 'e', 'i', 'o', 'u']) => format!("an {name}"),
+        name => format!("a {name}"),
+    }
+}
