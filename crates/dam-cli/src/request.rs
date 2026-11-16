@@ -1,11 +1,14 @@
 mod argv;
+mod beside;
 mod hook;
 mod misuse;
 mod plain;
 mod refusal;
+mod selection;
 mod source;
 mod whole_values;
 
+use beside::refuse_flags_beside;
 pub(crate) use hook::hook_edit_args;
 use source::read;
 pub(crate) use source::{decode, read_stdin};
@@ -13,7 +16,6 @@ pub(crate) use source::{decode, read_stdin};
 use std::ffi::OsString;
 use std::path::Path;
 
-use clap::parser::ValueSource;
 use clap::{ArgMatches, CommandFactory, Parser};
 use serde_json::{Map, Value};
 
@@ -21,7 +23,8 @@ use crate::args::{Cli, Command, DayArgs, DayCommand};
 use crate::error::CliError;
 use crate::output::Format;
 
-const TAKING_FLAGS: [&[&str]; 7] = [
+const TAKING_FLAGS: [&[&str]; 8] = [
+    &["list"],
     &["category", "migrate"],
     &["new"],
     &["edit"],
@@ -66,11 +69,14 @@ fn with_request(line: Vec<OsString>, given: &ArgMatches, source: &Path) -> Resul
     }
     if !TAKING_FLAGS.contains(&words.as_slice()) {
         return Err(CliError::Usage(
-            "--request applies to new, edit, done, mv, rm, category migrate, token create and day set".into(),
+            "--request applies to list, new, edit, done, mv, rm, category migrate, token create and day set".into(),
         ));
     }
     let fields: Map<String, Value> =
         decode(&text).map_err(|why| CliError::Usage(format!("--request: {why}")))?;
+    if words == ["list"] {
+        return selection::with_selection(line, given, fields);
+    }
     with_fields(line, given, &fields)
 }
 
@@ -115,35 +121,4 @@ fn leaf(given: &ArgMatches) -> (Vec<&str>, &ArgMatches) {
         matches = inner;
     }
     (words, matches)
-}
-
-fn refuse_flags_beside(
-    given: &ArgMatches,
-    leaf_given: &ArgMatches,
-    leaf_command: &clap::Command,
-    fields: &Map<String, Value>,
-    takes_meta: bool,
-) -> Result<(), CliError> {
-    let on_the_line =
-        |matches: &ArgMatches, id: &str| matches.value_source(id) == Some(ValueSource::CommandLine);
-    if takes_meta && fields.contains_key("meta") && on_the_line(given, "meta") {
-        return Err(twice("meta"));
-    }
-    match leaf_command
-        .get_arguments()
-        .map(|arg| arg.get_id().as_str())
-        .find(|id| on_the_line(leaf_given, id))
-    {
-        Some(id) if fields.contains_key(id) => Err(twice(id)),
-        Some(id) => Err(CliError::Usage(format!(
-            "--request takes only global flags beside it; put {id} in the request"
-        ))),
-        None => Ok(()),
-    }
-}
-
-fn twice(key: &str) -> CliError {
-    CliError::Usage(format!(
-        "{key} is in the request and on the command line; give it once"
-    ))
 }

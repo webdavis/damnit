@@ -547,6 +547,12 @@ keys are those of the command's request schema: its arguments, such as `subject`
 flags, and `meta` as an object of details. Only global flags may come beside it, and `edit` cannot
 open an editor from a request.
 
+`dam list --request` takes its selection as one table, by `list.request.schema.json`: each key is a
+field as the rows print it, such as `completed_at`, its value the text typed after the flag, a list
+the flag repeated, and `any` a list of tables that may hold several fields and their own `any`.
+`sort`, `limit` and `offset` sit beside them.
+
+    dam list --request - <<< '{"path": "work/", "any": [{"labels": "urgent", "priority": 1}, {"due": "..today"}], "sort": "due"}'
     dam new --request - <<< '{"subject": "buy oat milk", "due": "fri", "labels": ["errand"], "meta": {"session": "s1"}}'
     dam edit --request - <<< '{"oid": "98d878", "estimate": 30, "no_due": true}'
     dam done --request - <<< '{"oid": "98d878", "force": true, "children": "up"}'
