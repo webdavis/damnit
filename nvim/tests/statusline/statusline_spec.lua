@@ -7,6 +7,7 @@ local EXIT_REFUSED = 4
 local SHOWN = "!1 ?2 M1 S1 ^2"
 
 local function defined()
+  pcall(vim.api.nvim_del_augroup_by_name, "damnit.refresh")
   local app, fake = helper.new()
   fake.reply("list", fixtures.answer("list-overdue.json"))
   fake.reply("status", fixtures.answer("status.json"))
@@ -76,7 +77,7 @@ return {
     reads(fake, 3)
     local folder = status.folder()
     reads(fake, 4)
-    assert(fake.of("list")[4].cwd == folder, fake.of("list")[4].cwd)
+    assert(fake.of("list")[4].cwd == folder, fake.of("list")[4].cwd .. " is not " .. folder)
   end,
 
   ["before the first answer there are no counts"] = function()

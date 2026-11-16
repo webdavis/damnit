@@ -830,6 +830,8 @@ opens the task; `r` reads it again. `:Dam commit [message]`, `:Dam push [remote]
 `:Dam pull [remote]` do the same from anywhere; `:Dam cancel` stops a slow push or pull. A
 conflict is settled with `dam resolve` in a terminal.
 A push or pull shows each step dam reports as a Neovim progress message while it runs.
+Every open list and status window reads again when Neovim gains focus, so what an agent or a
+background sync wrote while you were away is on screen.
 
 `:Dam capture` opens the `dam new` prompt with the line under the cursor as the subject, its
 comment leader and any `TODO:` taken off, and `--body "<file>:<line>"` after the cursor. A range
