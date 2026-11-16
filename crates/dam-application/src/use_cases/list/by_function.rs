@@ -2,7 +2,7 @@ use dam_domain::Object;
 
 use super::log_by_object::LogByObject;
 use crate::errors::{FilterError, UseCaseError};
-use crate::ports::FunctionFailure;
+use crate::ports::{FunctionFailure, Handed};
 use crate::service::Dam;
 
 impl Dam<'_> {
@@ -11,14 +11,20 @@ impl Dam<'_> {
         filter: &str,
         listed: Vec<Object>,
     ) -> Result<Vec<Object>, UseCaseError> {
+        let worked_out = self.worked_out_over_seen(&listed)?;
+        let handed: Vec<Handed> = listed
+            .into_iter()
+            .zip(worked_out)
+            .map(|(object, worked_out)| Handed { object, worked_out })
+            .collect();
         let histories = LogByObject::new(self);
-        let keeps = self.filter_functions.keeps(filter, &listed, &histories);
+        let keeps = self.filter_functions.keeps(filter, &handed, &histories);
         histories.unread()?;
         let keeps = keeps.map_err(|failure| self.failed(filter, failure))?;
-        Ok(listed
+        Ok(handed
             .into_iter()
             .zip(keeps)
-            .filter_map(|(object, kept)| kept.then_some(object))
+            .filter_map(|(handed, kept)| kept.then_some(handed.object))
             .collect())
     }
 

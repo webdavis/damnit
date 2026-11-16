@@ -41,3 +41,4 @@ pub(crate) mod subtree;
 pub(crate) mod sync_now;
 pub(crate) mod sync_when_due;
 pub(crate) mod waiting;
+pub(crate) mod worked;

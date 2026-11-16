@@ -36,6 +36,8 @@ mod access_tests;
 
 #[cfg(test)]
 mod function_tests;
+#[cfg(test)]
+mod function_worked_tests;
 
 #[cfg(test)]
 mod history_reads_tests;

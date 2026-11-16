@@ -1,8 +1,8 @@
 use std::cell::RefCell;
 
-use dam_domain::Object;
+use dam_domain::WorkedOut;
 
-use crate::ports::{FilterFunctions, FunctionFailure, Histories, History};
+use crate::ports::{FilterFunctions, FunctionFailure, Handed, Histories, History};
 
 #[derive(Default)]
 pub struct FakeFilterFunctions {
@@ -11,6 +11,7 @@ pub struct FakeFilterFunctions {
     pub failing: RefCell<Option<FunctionFailure>>,
     pub failing_on: Option<(&'static str, FunctionFailure)>,
     pub seen: RefCell<Vec<(String, Option<History>)>>,
+    pub handed: RefCell<Vec<(String, WorkedOut)>>,
 }
 
 impl FakeFilterFunctions {
@@ -30,9 +31,15 @@ impl FilterFunctions for FakeFilterFunctions {
     fn keeps(
         &self,
         _filter: &str,
-        objects: &[Object],
+        handed: &[Handed],
         histories: &dyn Histories,
     ) -> Result<Vec<bool>, FunctionFailure> {
+        self.handed.borrow_mut().extend(
+            handed
+                .iter()
+                .map(|h| (h.object.base().subject.clone(), h.worked_out.clone())),
+        );
+        let objects: Vec<_> = handed.iter().map(|h| &h.object).collect();
         let seen: Vec<_> = objects
             .iter()
             .map(|o| {

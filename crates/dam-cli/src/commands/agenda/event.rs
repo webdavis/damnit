@@ -7,7 +7,7 @@ use jiff::tz::TimeZone;
 use serde::Serialize;
 use serde_json::Value;
 
-use crate::view::{category, display};
+use crate::view::{category_document, display};
 
 #[derive(Serialize)]
 pub(super) struct AgendaEvent<'a> {
@@ -63,7 +63,7 @@ impl<'a> AgendaEvent<'a> {
             attendees: wire.attendees,
             organizer: wire.organizer,
             conference: wire.conference,
-            category: category(&s.worked_out.category),
+            category: category_document(&s.worked_out.category),
         }
     }
 

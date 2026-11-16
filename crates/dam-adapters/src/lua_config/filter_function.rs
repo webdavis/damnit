@@ -1,7 +1,6 @@
 use std::time::Instant;
 
-use dam_application::{FilterFunctions, FunctionFailure, FunctionFault, Histories};
-use dam_domain::Object;
+use dam_application::{FilterFunctions, FunctionFailure, FunctionFault, Handed, Histories};
 use mlua::{Function, Table, Value};
 
 use super::functions::{LuaFunctions, line_defined};
@@ -20,15 +19,15 @@ impl FilterFunctions for LuaFunctions {
     fn keeps(
         &self,
         filter: &str,
-        objects: &[Object],
+        handed: &[Handed],
         histories: &dyn Histories,
     ) -> Result<Vec<bool>, FunctionFailure> {
         let function = self.filter(filter).map_err(|e| self.unkept(&e))?;
         let defined = line_defined(&function);
         self.limited(|scope, deadline| {
-            let mut keeps = Vec::with_capacity(objects.len());
-            for object in objects {
-                let returned = self.call(scope, &function, object, histories);
+            let mut keeps = Vec::with_capacity(handed.len());
+            for Handed { object, worked_out } in handed {
+                let returned = self.call(scope, &function, object, Some(worked_out), histories);
                 if Instant::now() >= deadline {
                     return Err(self.failed(defined, FunctionFault::RanOver));
                 }

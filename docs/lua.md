@@ -196,9 +196,9 @@ A token caller has `match` run only over the objects it may read. For a token wi
 
 ## What match receives
 
-`task` has the fields `dam show -o json` prints, except `author`, `details` and `id`. Those three
-come from dam's records of who made the object and the id a caller gave it, not from the object
-itself. `dam.history(task)` gives the `author` and `details` of each change. A filter cannot read
+`task` has the fields a `dam list -o json` row holds, except `author`, `details` and `id`. Those
+three come from dam's records of who made the object and the id a caller gave it, not from the
+object itself. `category`, `overdue` and `blocked` are read as `dam list` reads them. `dam.history(task)` gives the `author` and `details` of each change. A filter cannot read
 `id`. An optional field is `nil` when it holds nothing.
 
 | Field | Value |
@@ -213,6 +213,9 @@ itself. `dam.history(task)` gives the `author` and `details` of each change. A f
 | `reminders` | A list of minutes before the due time or start. |
 | `recurrence` | The rule it repeats by. |
 | `parent` | The oid of the object it sits in, or nil. |
+| `category` | Each label group it holds a label of, to that label; a list for several labels of a group that is not exclusive. |
+| `overdue` | For a task: `true` when it is not done and was due before today. |
+| `blocked` | For a task: `true` when it waits on a task that is not done; a task the caller cannot see blocks nothing. |
 | `task.done` | `true` or `false`. |
 | `task.completed_at` | When it was completed. |
 | `task.priority` | `1`, the highest, to `4`. |

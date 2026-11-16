@@ -8,9 +8,9 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
-use crate::object_document;
+use crate::{object_document, stamp_worked_out};
 use dam_application::{FunctionFailure, FunctionFault, Histories};
-use dam_domain::Object;
+use dam_domain::{Object, WorkedOut};
 use mlua::{Function, Lua, Scope, Table, Value};
 
 use super::evaluate::{ErrorText, line_and_reason, lua_message, short_name_lua_never_truncates};
@@ -92,16 +92,24 @@ impl LuaFunctions {
         scope: &'s Scope<'s, '_>,
         function: &Function,
         object: &Object,
+        worked_out: Option<&WorkedOut>,
         histories: &'s dyn Histories,
     ) -> mlua::Result<Value> {
-        let task = self.object_value(object)?;
+        let task = self.object_value(object, worked_out)?;
         let dam = dam_table(&self.lua, scope, object.oid(), histories, &self.owner)?;
         function.call((task, dam))
     }
 
-    pub(super) fn object_value(&self, object: &Object) -> mlua::Result<Value> {
-        let document =
+    pub(super) fn object_value(
+        &self,
+        object: &Object,
+        worked_out: Option<&WorkedOut>,
+    ) -> mlua::Result<Value> {
+        let mut document =
             serde_json::to_value(object_document(object)).map_err(mlua::Error::external)?;
+        if let Some(worked_out) = worked_out {
+            stamp_worked_out(&mut document, worked_out);
+        }
         lua_value(&self.lua, &document)
     }
 
