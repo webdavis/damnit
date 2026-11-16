@@ -31,3 +31,15 @@ fn a_project_file_refused_for_its_text_is_named_and_never_quoted() {
         assert!(!refusal.chars().any(char::is_control), "{refusal:?}");
     }
 }
+
+#[test]
+fn a_project_file_that_needs_a_newer_dam_names_both_versions() {
+    assert_eq!(
+        text(ConfigError::NeedsANewerDam {
+            file: "/work/app/.dam.lua".into(),
+            needs: "0.3.0".into(),
+            this: "0.2.0".into(),
+        }),
+        "config: /work/app/.dam.lua needs dam 0.3.0 or newer; this is dam 0.2.0"
+    );
+}

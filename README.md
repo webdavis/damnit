@@ -321,6 +321,9 @@ the answer carries `project_created`, its `oid` and `path`.
 `dam config list` inside a project shows the project's `.dam.lua` and its `path`, marked
 `(from the project)`; with `--json` they are under `project`.
 
+`.dam.lua` may hold more rules for the project; `docs/lua.md` lists them. With
+`minimum_dam = "0.3.0"` an older `dam` refuses the file and names the version it needs.
+
 `dam new --template bug "crash on pull"` starts the task from a template: the project's
 `.damtemplates/bug.lua` first, then `templates/bug.lua` beside your `config.lua`. Each flag you give
 replaces the template's value, and `--labels` replaces its labels. A name found in neither is

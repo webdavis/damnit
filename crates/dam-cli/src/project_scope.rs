@@ -51,7 +51,7 @@ impl Standing {
         let Some(folder) = find_project(folder, personal_config, &FileSystemProjectFolders) else {
             return Standing::Outside;
         };
-        match read_project_file(&folder.join(PROJECT_FILE)) {
+        match read_project_file(&folder.join(PROJECT_FILE), env!("CARGO_PKG_VERSION")) {
             Ok(settings) => Standing::Inside(Project { folder, settings }),
             Err(e) => Standing::Unreadable(e),
         }

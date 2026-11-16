@@ -1,6 +1,7 @@
 mod control;
 mod locked;
 mod template;
+mod version;
 mod written;
 
 use std::path::Path;
@@ -19,10 +20,20 @@ use locked::locked_lua;
 pub(super) use template::read_project_template;
 pub use written::{FileSystemProjectFolders, write_project_file};
 
-const PROJECT_SETTINGS: [&str; 1] = ["path"];
-const PERSONAL_SETTINGS: [&str; 5] = ["owner", "remote", "token", "schema", "project_hooks"];
+const PROJECT_SETTINGS: [&str; 2] = ["path", "minimum_dam"];
+const PERSONAL_SETTINGS: [&str; 9] = [
+    "owner",
+    "remote",
+    "token",
+    "schema",
+    "project_hooks",
+    "hook",
+    "secrets",
+    "sync",
+    "except",
+];
 
-pub fn read_project_file(file: &Path) -> Result<ProjectSettings, ConfigError> {
+pub fn read_project_file(file: &Path, this_dam: &str) -> Result<ProjectSettings, ConfigError> {
     let text = read_text(file)?.unwrap_or_default();
     let lua = locked_lua().map_err(|_| stopped_at_an_error(file))?;
     let short_name = short_name_lua_never_truncates(file);
@@ -47,6 +58,7 @@ pub fn read_project_file(file: &Path) -> Result<ProjectSettings, ConfigError> {
         }
         Walked::TooLarge => return Err(stopped_at_an_error(file)),
     }
+    version::needs_no_newer_dam(file, &table, this_dam)?;
     let root = StrictMap::root(&short_name, &table)?;
     if let Some((key, _)) = root
         .entries()

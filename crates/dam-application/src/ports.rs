@@ -28,7 +28,7 @@ pub use background_sync::{
 };
 pub use config_file::{
     ByHand, ConfigError, ConfigFile, EditFault, EditedTable, Expected, LoadedConfig, Misread,
-    Place, SecretsTightened, Uneditable,
+    Place, ProjectRuleFault, SecretsTightened, Uneditable,
 };
 pub use days::DayRepository;
 pub use environment::{Clock, Interruption, Randomness};

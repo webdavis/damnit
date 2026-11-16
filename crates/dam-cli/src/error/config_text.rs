@@ -72,7 +72,9 @@ impl fmt::Display for ConfigReason<'_> {
             }
             ConfigError::BelongsInPersonalConfig { .. }
             | ConfigError::HoldsAControlCharacter { .. }
-            | ConfigError::NotAPath { .. } => project_text(f, self.0),
+            | ConfigError::NotAPath { .. }
+            | ConfigError::NeedsANewerDam { .. }
+            | ConfigError::ProjectRule { .. } => project_text(f, self.0),
             ConfigError::BadRemoteName(why) => write!(f, "{why}"),
             ConfigError::BadCategories(why) => write!(f, "category: {why:?}"),
             ConfigError::UndeclaredRemote { remote, config } => write!(
