@@ -71,6 +71,7 @@ mod list_project_default;
 mod list_request;
 mod lua_page_example;
 mod new_id;
+mod nvim_change_fixtures;
 mod nvim_fixtures;
 mod nvim_list_fixtures;
 mod nvim_progress_fixtures;

@@ -1,0 +1,8 @@
+{
+  "error": {
+    "kind": "refused",
+    "rule": "count_mismatch",
+    "message": "the set holds 2, not the 3 --expect names, so nothing changed; add --preview to see the set",
+    "oids": []
+  }
+}

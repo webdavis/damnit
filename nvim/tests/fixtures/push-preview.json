@@ -1,0 +1,20 @@
+{
+  "preview": true,
+  "remotes": [
+    {
+      "remote": "fake",
+      "known": true,
+      "mutations": [
+        {
+          "op": "create",
+          "oid": "<id-1>",
+          "subject": "pay rent",
+          "container": null
+        }
+      ],
+      "held": [],
+      "conflicted": [],
+      "skipped": []
+    }
+  ]
+}
