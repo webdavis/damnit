@@ -1,0 +1,99 @@
+---@class damnit.Options
+---@field dam string
+---@field views table<string, string|damnit.ViewSpec>
+---@field default_view? string|damnit.ViewSpec
+---@field timeout_ms integer
+---@field sidebar { side: "left"|"right", width: integer }
+---@field handoff { host: "auto"|"rex"|"clipboard" }
+
+---@class damnit.App
+---@field options damnit.Options
+---@field dam damnit.Dam
+---@field queue damnit.Queue
+---@field screen damnit.Screen
+---@field keys damnit.Keys
+---@field say damnit.Say
+
+---@class damnit.Feature
+---@field commands table<string, fun(args: string[], cmd: table)>
+---@field complete? table<string, fun(arglead: string): string[]>
+
+---@class damnit.Call
+---@field args string[]
+---@field cwd string
+---@field stdin? string
+---@field key? string
+
+---@class damnit.Handle
+---@field cancel fun()
+
+---@class damnit.Dam
+---@field run fun(self, call: damnit.Call, done: fun(answer: table|nil, err: damnit.Error|nil)): damnit.Handle
+---@field write fun(self, call: damnit.Call, done: fun(answer: table|nil, err: damnit.Error|nil)): damnit.Handle
+---@field version fun(self): string|nil
+
+---@class damnit.Queue
+---@field submit fun(self, lane: string, start: fun(finish: fun()): damnit.Handle, mode: "latest"|"ordered")
+---@field cancel fun(self, lane?: string): integer
+
+---@class damnit.Screen
+---@field scratch fun(self, name: string, filetype: string): integer
+---@field draw fun(self, buf: integer, lines: string[], marks: damnit.Mark[])
+---@field show fun(self, buf: integer, smods?: table)
+
+---@class damnit.Mark
+---@field line integer
+---@field col integer
+---@field end_col integer
+---@field group string
+
+---@class damnit.KeySpec
+---@field lhs string
+---@field desc string
+---@field run fun()
+
+---@class damnit.Keys
+---@field bind fun(self, buf: integer, specs: damnit.KeySpec[])
+
+---@class damnit.Say
+---@field info fun(self, text: string)
+---@field warn fun(self, text: string)
+---@field error fun(self, err: damnit.Error)
+---@field log fun(self): damnit.Error[]
+---@field changed fun(self, cwd: string)
+
+---@class damnit.Selection
+---@field field string
+---@field value string
+---@field shapes string[]
+---@field command string
+
+---@class damnit.Error
+---@field kind string
+---@field rule? string
+---@field message string
+---@field oids string[]
+---@field usage? { problem: string, word: string|nil }
+---@field selection? damnit.Selection
+---@field prefix? string
+---@field key? string
+---@field hook? string
+
+---@class damnit.ViewSpec
+---@field global? boolean
+
+---@class damnit.Object
+---@field oid string
+---@field kind "task"|"event"
+---@field subject string
+---@field path string
+---@field labels string[]
+---@field parent? string
+---@field category table<string, string>
+---@field overdue boolean
+---@field blocked boolean
+---@field task? { done: boolean, priority: integer, due?: string, deadline?: string, estimate?: string }
+---@field event? { start: string }
+
+---@class damnit.ListAnswer
+---@field objects damnit.Object[]
