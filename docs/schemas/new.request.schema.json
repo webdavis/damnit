@@ -27,6 +27,10 @@
       "type": "boolean",
       "description": "Read path from the root, not from the project the command runs in."
     },
+    "project": {
+      "type": "string",
+      "description": "Work in the project at this path, such as pns/hooks/, from any folder; path goes on from there. Not with global."
+    },
     "parent": {
       "type": "string",
       "pattern": "^[0-9a-f]{4,40}$",
