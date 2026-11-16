@@ -7,7 +7,13 @@
   "required": ["staged"],
   "additionalProperties": false,
   "properties": {
+    "preview": { "const": true, "description": "Present only under --preview: nothing was staged, no item taken, no hook run." },
     "staged": { "type": "array", "items": { "$ref": "status.schema.json#/$defs/change" } },
+    "taken": {
+      "type": "array",
+      "items": { "$ref": "status.schema.json#/$defs/id" },
+      "description": "Under --preview, each waiting item dam add would take; its change is in staged."
+    },
     "removed": {
       "type": "array",
       "items": {

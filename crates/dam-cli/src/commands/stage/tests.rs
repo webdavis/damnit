@@ -20,6 +20,7 @@ fn add_stages_named_objects_and_all_stages_everything() {
         AddArgs {
             oids: vec![oid(1).as_str().into()],
             all: false,
+            preview: false,
         },
     )
     .unwrap();
@@ -30,6 +31,7 @@ fn add_stages_named_objects_and_all_stages_everything() {
         AddArgs {
             oids: vec![],
             all: true,
+            preview: false,
         },
     )
     .unwrap();
@@ -50,6 +52,7 @@ fn reset_unstages_one_or_all() {
         AddArgs {
             oids: vec![],
             all: true,
+            preview: false,
         },
     )
     .unwrap();

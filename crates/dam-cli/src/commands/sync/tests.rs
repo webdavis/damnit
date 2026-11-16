@@ -38,6 +38,7 @@ fn push_sends_unpushed_commits_and_reports_counts() {
         AddArgs {
             oids: vec![],
             all: true,
+            preview: false,
         },
     )
     .unwrap();
@@ -70,6 +71,7 @@ fn conflicted_after_a_pull() -> (Context, Oid) {
         AddArgs {
             oids: vec![],
             all: true,
+            preview: false,
         },
     )
     .unwrap();
@@ -89,6 +91,7 @@ fn conflicted_after_a_pull() -> (Context, Oid) {
         AddArgs {
             oids: vec![],
             all: true,
+            preview: false,
         },
     )
     .unwrap();

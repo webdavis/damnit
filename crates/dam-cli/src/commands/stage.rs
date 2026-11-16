@@ -13,7 +13,11 @@ use serde::Serialize;
 
 #[derive(Serialize)]
 struct Staged<'a> {
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    preview: bool,
     staged: Vec<ChangeRow<'a>>,
+    #[serde(serialize_with = "displays", skip_serializing_if = "<[_]>::is_empty")]
+    taken: &'a [ItemHash],
     #[serde(flatten)]
     removals: AddedRemovals<'a>,
 }
@@ -21,11 +25,21 @@ struct Staged<'a> {
 impl View for Staged<'_> {
     fn human(&self) -> Human {
         let staged = self.staged.iter().map(ChangeRow::line);
+        let mut lines: Vec<String> = staged.chain(self.removals.lines()).collect();
+        if self.preview {
+            lines.extend(
+                self.taken
+                    .iter()
+                    .map(|hash| format!("would take {}", hash.short())),
+            );
+            lines.push(format!(
+                "preview: {} would be staged, {} waiting items taken, nothing written",
+                self.staged.len(),
+                self.taken.len()
+            ));
+        }
         Human::list(
-            staged
-                .chain(self.removals.lines())
-                .map(|line| vec![line])
-                .collect(),
+            lines.into_iter().map(|line| vec![line]).collect(),
             "nothing to stage",
         )
     }
@@ -64,17 +78,10 @@ impl View for Unstaged<'_> {
 }
 
 pub(crate) fn run_add(ctx: &Context, args: AddArgs) -> Result<Report, CliError> {
-    let added = if args.all {
-        ctx.dam().add_all()?
-    } else {
-        let named = args
-            .oids
-            .iter()
-            .map(|t| ctx.dam().resolve_named(t))
-            .collect::<Result<Vec<_>, _>>()?;
-        ctx.dam().add(&named)?
-    };
+    let (added, taken) = adding::added(ctx, &args)?;
     let staged = Staged {
+        preview: args.preview,
+        taken: &taken,
         staged: added
             .staged
             .iter()
@@ -120,7 +127,10 @@ pub(crate) fn run_reset(ctx: &Context, args: ResetArgs) -> Result<Report, CliErr
     })
 }
 
+mod adding;
 mod removals;
 
+#[cfg(test)]
+mod preview_tests;
 #[cfg(test)]
 mod tests;

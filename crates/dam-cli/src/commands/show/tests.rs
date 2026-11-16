@@ -19,6 +19,7 @@ fn show_finds_an_object_or_a_commit_by_prefix() {
         AddArgs {
             oids: vec![],
             all: true,
+            preview: false,
         },
     )
     .unwrap();
@@ -74,6 +75,7 @@ fn an_ambiguous_commit_prefix_names_every_match() {
         AddArgs {
             oids: vec![],
             all: true,
+            preview: false,
         },
     )
     .unwrap();
@@ -95,6 +97,7 @@ fn an_ambiguous_commit_prefix_names_every_match() {
         AddArgs {
             oids: vec![],
             all: true,
+            preview: false,
         },
     )
     .unwrap();
@@ -138,6 +141,7 @@ fn a_token_without_history_read_finds_no_commit_as_if_none_matched() {
         AddArgs {
             oids: vec![],
             all: true,
+            preview: false,
         },
     )
     .unwrap();

@@ -10,6 +10,11 @@ pub(crate) struct AddArgs {
     pub(crate) oids: Vec<String>,
     #[arg(short = 'A', long, help = "Stage every change")]
     pub(crate) all: bool,
+    #[arg(
+        long,
+        help = "Show what would be staged and which waiting items taken, and write nothing"
+    )]
+    pub(crate) preview: bool,
 }
 
 #[derive(Args, Debug)]
