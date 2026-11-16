@@ -65,7 +65,7 @@ local function staged_and_committed_in_status(sandbox)
   made(real_app(), { "new", "plant the tomatoes" }, sandbox)
   vim.cmd.lcd(sandbox)
   vim.cmd("Dam status")
-  local row = "  create plant the tomatoes  [subject]"
+  local row = "  create  plant the tomatoes"
   wait_for(function()
     return vim.deep_equal(buffer.lines(), { "Unstaged (1)", row })
   end, 20000)
