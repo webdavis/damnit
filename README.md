@@ -202,7 +202,9 @@ it with `dam done <oid>` or `dam rm <oid>`.
 A push goes the other way. An object at the top level becomes a project. One level down it becomes
 a task in that project, or a section when something lives under it or arrives under it in the same
 push. Deeper levels name existing parent tasks by their text, and a path naming no Todoist project
-fails that one object. A change counts as pushed only when Todoist accepts every command it became.
+fails that one object. A rule on a weekday of the month goes in Todoist's words, `every month on
+1tue,-1fri` as `every 1st tue, last fri`; one with an interval of more months, or counted back past
+the last weekday such as `-2fri`, fails that one object. A change counts as pushed only when Todoist accepts every command it became.
 A rate limit stops the whole push and says how long Todoist asked to wait; any other failure stays
 with the object it happened on. An error Todoist sends back is cut to one line of at most 500
 characters before `dam status` shows it.

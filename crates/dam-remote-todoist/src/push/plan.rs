@@ -9,6 +9,7 @@ use super::commands::{
 };
 use super::named::ThisPush;
 use super::shape::{ItemPlace, Shape, shape_for, shape_inside};
+use super::weekday_of_month::in_todoist_words;
 use crate::map::{RemoteId, Tree};
 
 pub struct Plan {
@@ -33,10 +34,12 @@ pub fn plan_for(tree: &Tree, m: &Mutation, this_push: &ThisPush) -> Result<Plan,
         "delete" => removal::removal_plan(tree, m, addressed(m, "delete")?),
         "create" => {
             let object = m.object.as_ref().ok_or(missing_object("create"))?;
+            let object = &in_todoist_words(m, object)?;
             create_plan(tree, m, object, this_push)
         }
         "update" => {
             let object = m.object.as_ref().ok_or(missing_object("update"))?;
+            let object = &in_todoist_words(m, object)?;
             let remote = addressed(m, "update")?;
             update::update_plan(tree, m, object, remote, this_push)
         }

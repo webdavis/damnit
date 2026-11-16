@@ -1,0 +1,38 @@
+mod from_todoist;
+mod to_todoist;
+
+pub use from_todoist::from_todoist;
+pub use to_todoist::{Unheld, to_todoist};
+
+const ORDINALS: [(i8, &str, &str); 6] = [
+    (1, "1st", "first"),
+    (2, "2nd", "second"),
+    (3, "3rd", "third"),
+    (4, "4th", "fourth"),
+    (5, "5th", "fifth"),
+    (-1, "last", "last"),
+];
+
+const WEEKDAYS: [&str; 14] = [
+    "mon",
+    "tue",
+    "wed",
+    "thu",
+    "fri",
+    "sat",
+    "sun",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+];
+
+fn is_weekday(word: &str) -> bool {
+    WEEKDAYS.contains(&word.to_ascii_lowercase().as_str())
+}
+
+#[cfg(test)]
+mod tests;
