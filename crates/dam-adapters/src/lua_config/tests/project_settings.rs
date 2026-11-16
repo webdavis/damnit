@@ -14,7 +14,8 @@ fn the_path_setting_is_read() {
     assert_eq!(
         ProjectFolder::with("return { path = 'damnit/' }").read(),
         Ok(ProjectSettings {
-            path: "damnit/".into()
+            path: "damnit/".into(),
+            ..Default::default()
         })
     );
 }

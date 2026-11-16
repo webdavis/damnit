@@ -1,4 +1,4 @@
-use dam_application::{TaskTemplates, TemplateName, TemplateOwner};
+use dam_application::{TaskTemplate, TaskTemplates, TemplateName, TemplateOwner};
 use dam_domain::Path;
 
 use crate::args::NewArgs;
@@ -22,7 +22,11 @@ pub(crate) fn from_template(
         };
         return Err(CliError::Usage(text));
     };
-    Ok(NewArgs {
+    Ok(filled(args, template))
+}
+
+pub(crate) fn filled(args: NewArgs, template: TaskTemplate) -> NewArgs {
+    NewArgs {
         body: match args.body.is_empty() {
             true => template.body.unwrap_or_default(),
             false => args.body,
@@ -39,7 +43,7 @@ pub(crate) fn from_template(
         due: args.due.or(template.due),
         deadline: args.deadline.or(template.deadline),
         ..args
-    })
+    }
 }
 
 fn not_found(name: &TemplateName, names: &[(String, TemplateOwner)]) -> String {

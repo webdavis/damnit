@@ -105,7 +105,10 @@ fn a_templates_path_starts_from_the_project() {
     let ctx = holding(vec![("bug", TemplateOwner::Project, bug())]);
     let inside = Standing::Inside(Project {
         folder: "/work/app".into(),
-        settings: ProjectSettings { path: "app".into() },
+        settings: ProjectSettings {
+            path: "app".into(),
+            ..Default::default()
+        },
     });
     dispatch_in(&ctx, from("bug", new_args("crash", "")), inside).unwrap();
     assert_eq!(task(&ctx).base.path.as_str(), "app/bugs/");

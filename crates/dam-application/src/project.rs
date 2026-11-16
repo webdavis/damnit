@@ -2,13 +2,16 @@ mod find;
 
 use std::path::PathBuf;
 
+use crate::TaskTemplate;
+
 pub use find::{ProjectFolders, find_project};
 
 pub const PROJECT_FILE: &str = ".dam.lua";
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ProjectSettings {
     pub path: String,
+    pub new_task: TaskTemplate,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

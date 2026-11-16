@@ -17,6 +17,7 @@ fn inside_a_project_the_list_shows_its_file_and_path_marked_as_the_projects() {
         folder: "/work/damnit".into(),
         settings: ProjectSettings {
             path: "damnit/".into(),
+            ..Default::default()
         },
     });
     let listed = run(&file, &inside).unwrap();

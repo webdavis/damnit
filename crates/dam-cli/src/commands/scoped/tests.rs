@@ -10,7 +10,10 @@ use crate::testing::context;
 fn inside(path: &str) -> Standing {
     Standing::Inside(Project {
         folder: "/work/damnit".into(),
-        settings: ProjectSettings { path: path.into() },
+        settings: ProjectSettings {
+            path: path.into(),
+            ..Default::default()
+        },
     })
 }
 

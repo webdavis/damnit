@@ -58,7 +58,8 @@ fn a_folder_becomes_a_project_named_after_itself() {
     assert_eq!(
         read_project_file(&folders.project.join(".dam.lua"), "0.2.0"),
         Ok(ProjectSettings {
-            path: "damnit/".into()
+            path: "damnit/".into(),
+            ..Default::default()
         })
     );
     assert_eq!(subjects_and_paths(&ctx), [("damnit".into(), "".into())]);
@@ -120,13 +121,17 @@ fn a_folder_inside_a_project_becomes_its_own_project() {
     assert_eq!(
         read_project_file(&inner.join(".dam.lua"), "0.2.0"),
         Ok(ProjectSettings {
-            path: "src/".into()
+            path: "src/".into(),
+            ..Default::default()
         })
     );
     assert_eq!(report.data["path"], "src/");
     assert_eq!(
         read_project_file(&folders.project.join(".dam.lua"), "0.2.0"),
-        Ok(ProjectSettings { path: "a/".into() })
+        Ok(ProjectSettings {
+            path: "a/".into(),
+            ..Default::default()
+        })
     );
 }
 

@@ -84,6 +84,7 @@ pub(crate) fn run(ctx: &Context, args: InitArgs, here: Here) -> Result<Report, C
     };
     let settings = ProjectSettings {
         path: path.as_str().to_string(),
+        ..Default::default()
     };
     let file = write_project_file(here.folder, &settings)?;
     report(&Initialized {
