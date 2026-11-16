@@ -41,12 +41,20 @@
 ---@field scratch fun(self, name: string, filetype: string): integer
 ---@field draw fun(self, buf: integer, lines: string[], marks: damnit.Mark[])
 ---@field show fun(self, buf: integer, smods?: table)
+---@field window fun(self, buf: integer, options: table<string, string|boolean>)
+---@field text_width fun(self, buf: integer): integer
 
 ---@class damnit.Mark
 ---@field line integer
----@field col integer
----@field end_col integer
----@field group string
+---@field col? integer
+---@field end_col? integer
+---@field group? string
+---@field virt? string[][]
+---@field align? "eol"|"eol_right_align"|"right_align"|"overlay"|"inline"
+---@field sign? string
+---@field sign_group? string
+---@field line_group? string
+---@field virt_lines? string[][][]
 
 ---@class damnit.KeySpec
 ---@field lhs string
