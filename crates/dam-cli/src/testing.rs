@@ -15,12 +15,14 @@ use crate::output::Format;
 use crate::progress::{ProgressOnStandardError, Shown};
 
 mod config_file;
+mod list_args;
 mod remote_helpers;
 mod run_records;
 mod scheduler;
 mod scripted;
 mod templates;
 pub(crate) use config_file::FakeConfigFile;
+pub(crate) use list_args::list_args;
 pub(crate) use remote_helpers::{EchoLauncher, MissingCredentials};
 pub(crate) use run_records::MemoryRunRecords;
 pub(crate) use scheduler::RecordingScheduler;

@@ -21,6 +21,7 @@ mod misuse;
 mod refusal_oids;
 mod refusal_text;
 mod secrets_tightened_text;
+mod selection_fault;
 mod setting_text;
 mod token_fault_text;
 mod token_text;
@@ -33,6 +34,7 @@ pub(crate) use misuse::{Misuse, Problem};
 use refusal_oids::refusal_oids;
 pub(crate) use refusal_text::RefusalText;
 pub(crate) use secrets_tightened_text::SecretsTightenedText;
+pub(crate) use selection_fault::Fault;
 pub(crate) use token_fault_text::{TokenFaultText, TokenWarningText};
 pub(crate) use use_case_text::UseCaseText;
 
@@ -45,6 +47,7 @@ pub(crate) enum CliError {
     Open(OpenError),
     Usage(String),
     CommandLine(Misuse),
+    Selection(Box<Fault>),
     Cancelled,
     Io(String),
     Internal(String),
@@ -64,6 +67,7 @@ impl CliError {
         match self {
             CliError::Usage(_)
             | CliError::CommandLine(_)
+            | CliError::Selection(_)
             | CliError::Config(ConfigError::ProjectSettingWouldNotLoad { .. })
             | CliError::UseCase(UseCaseError::Refused(Refusal::AmbiguousPrefix { .. }))
             | CliError::UseCase(UseCaseError::NotAnOid(_))
@@ -111,6 +115,7 @@ impl fmt::Display for CliError {
                 f.write_str(text)
             }
             CliError::CommandLine(misuse) => f.write_str(&misuse.message),
+            CliError::Selection(fault) => write!(f, "{fault}"),
             CliError::Cancelled => f.write_str("cancelled"),
             CliError::Reported => f.write_str("the report names an issue"),
         }

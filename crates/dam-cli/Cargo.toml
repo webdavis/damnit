@@ -15,7 +15,7 @@ dam-domain = { path = "../dam-domain" }
 dam-application = { path = "../dam-application" }
 dam-adapters = { path = "../dam-adapters" }
 dam-toml = { path = "../dam-toml" }
-clap = { workspace = true, features = ["env", "wrap_help"] }
+clap = { workspace = true, features = ["env", "string", "wrap_help"] }
 serde.workspace = true
 serde_json.workspace = true
 jiff.workspace = true

@@ -46,7 +46,7 @@ const EVERY_COMMAND: [&str; 25] = [
     "show abcd",
     "status",
     "diff",
-    "ls",
+    "list",
     "agenda",
     "category list",
     "filter list",
@@ -163,7 +163,7 @@ fn whole_store_reads_need_every_permission_they_name_without_restrictions() {
 #[test]
 fn narrowed_reads_need_one_of_their_permissions_in_any_grant() {
     let events = allowing(&[Permission::EventRead]);
-    assert_eq!(admit(&events, &command("ls")), Ok(()));
+    assert_eq!(admit(&events, &command("list")), Ok(()));
     assert_eq!(admit(&events, &command("agenda")), Ok(()));
     assert_eq!(admit(&events, &command("reminders")), Ok(()));
     assert_eq!(

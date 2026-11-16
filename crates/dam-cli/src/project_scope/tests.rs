@@ -106,7 +106,7 @@ fn project_stands_in_for_the_project_from_any_folder() {
 #[test]
 fn global_with_project_is_a_usage_conflict_on_every_scoped_command() {
     use clap::Parser;
-    for command in ["new x", "ls", "agenda", "reminders"] {
+    for command in ["new x", "list", "agenda", "reminders"] {
         let mut line: Vec<&str> = vec!["dam"];
         line.extend(command.split(' '));
         line.extend(["--global", "--project", "pns/"]);

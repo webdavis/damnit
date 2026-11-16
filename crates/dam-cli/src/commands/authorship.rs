@@ -1,9 +1,8 @@
 use std::collections::BTreeMap;
 
-use dam_domain::{Author, Details, Object, Oid, Origin};
+use dam_domain::{Author, Details, Oid, Origin};
 use serde_json::Value;
 
-use crate::args::AuthorKind;
 use crate::commands::status::{DetailsView, visible};
 use crate::context::Context;
 use crate::error::CliError;
@@ -35,18 +34,6 @@ impl<'a> Authorship<'a> {
             origin.author.token(),
             origin.details.as_ref(),
         )
-    }
-
-    pub(crate) fn by(&self, kind: AuthorKind, object: &Object) -> bool {
-        let token = self
-            .origins
-            .get(object.oid())
-            .is_some_and(|o| o.author.token().is_some());
-        match kind {
-            AuthorKind::Mine => !token,
-            AuthorKind::Agents => token,
-            AuthorKind::All => true,
-        }
     }
 
     pub(crate) fn stamp(&self, oid: &Oid, document: &mut Value) -> Result<(), CliError> {

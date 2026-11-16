@@ -137,13 +137,50 @@ dam status full: help = Embed the whole object before and after each change, und
 dam diff: about = Show unstaged changes, or staged ones with --staged
 dam diff staged: help = Show the staged changes instead of the unstaged ones
 dam diff full: help = Embed the whole object before and after each change, under -o
-dam ls: about = List objects, optionally by query or saved filter
-dam ls query: help = Narrow the list by a query, such as due:today, or a saved filter's name
-dam ls by: help = List what you made, what tokens made, or all of it
-dam ls global: help = Reach every task, not only the project this folder is in; a path starts from the root
-dam ls project: help = Work in the project at PATH, such as pns/hooks/, from any folder
+dam list: about = List tasks that are not done, or what the flags select
+dam list: after_help = Every flag repeats, and each one must hold. A comma list holds when any of its values does, not: holds when none does, and none holds when the field is empty.
+
+Examples:
+  dam list --labels bug --due ..today
+  dam list --done --completed-at week
+  dam list --kind event --start today
+  dam list --path work/ --any labels=urgent --any due=..today
+dam list kind: help = One of task, event, any; a,b for either
+dam list subject: help = Holds this text, ignoring case
+dam list body: help = Holds this text, ignoring case; none for empty
+dam list path: help = At or under this folder; a/,b/ for either
+dam list labels: help = Exactly this value; a,b for either; none for empty
+dam list category: help = A label group, or GROUP=LABEL; GROUP=a,b for either; none for empty
+dam list parent: help = This id, a list of ids, or in:FILTER; none for empty
+dam list depends: help = This id, a list of ids, or in:FILTER; none for empty
+dam list reminders: help = A length or a span: 30m, 30m..2h, ..5m; none for empty
+dam list filter: help = Listed by this saved filter; a,b for either
+dam list author: help = Exactly this value; a,b for either
+dam list done: help = true, false or any; the bare flag means true
+dam list overdue: help = true, false or any; the bare flag means true
+dam list blocked: help = true, false or any; the bare flag means true
+dam list priority: help = A number from 1 to 4, a list 1,2 or a span ..2
+dam list due: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty
+dam list deadline: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty
+dam list focus.day: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty
+dam list completed_at: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty
+dam list estimate: help = A length or a span: 30m, 30m..2h, ..5m; none for empty
+dam list attached: help = This id, a list of ids, or in:FILTER; none for empty
+dam list start: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu
+dam list end: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu
+dam list location: help = Holds this text, ignoring case; none for empty
+dam list status: help = One of confirmed, tentative, cancelled; a,b for either
+dam list transparency: help = One of busy, free; a,b for either
+dam list visibility: help = One of default, public, private, confidential; a,b for either
+dam list event_type: help = One of default, focus_time, out_of_office, working_location, birthday; a,b for either
+dam list response: help = One of needs_action, accepted, declined, tentative; a,b for either; none for empty
+dam list organizer.email: help = Exactly this value; a,b for either; none for empty
+dam list attendees.email: help = Exactly this value; a,b for either; none for empty
+dam list any: help = Hold at least one of the --any conditions, as well as every other flag
+dam list global: help = Reach every task, not only the project this folder is in; a path starts from the root
+dam list project: help = Work in the project at PATH, such as pns/hooks/, from any folder
 dam agenda: about = Show events over a window, each with whether it holds time
-dam agenda query: help = Narrow the events by a query or saved filter, read the way `ls` reads one
+dam agenda query: help = Narrow the events by a query, such as due:today, or a saved filter's name
 dam agenda from: help = Open the window at a date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM. Default: now
 dam agenda to: help = Close the window here, exclusive. Default: 24 hours after it opens
 dam agenda max_age: help = Refuse when REMOTE last pulled over DURATION ago, such as 15m. Repeatable

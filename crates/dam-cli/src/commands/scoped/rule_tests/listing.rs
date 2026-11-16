@@ -4,20 +4,15 @@ use dam_domain::Object;
 
 use super::super::dispatch_in;
 use super::inside;
-use crate::args::{AuthorKind, Command, LsArgs};
+use crate::args::Command;
 use crate::context::Context;
 use crate::project_scope::Standing;
-use crate::testing::context;
+use crate::testing::{context, list_args};
 
-fn ls(query: Option<&str>, global: bool) -> Command {
-    let mut args = LsArgs {
-        query: query.map(String::from),
-        by: AuthorKind::All,
-        scope: Default::default(),
-        place: Default::default(),
-    };
+fn list(words: &[&str], global: bool) -> Command {
+    let mut args = list_args(words);
     args.scope.global = global;
-    Command::Ls(args)
+    Command::List(args)
 }
 
 fn listing_urgent() -> Standing {
@@ -52,19 +47,19 @@ fn subjects(ctx: &Context, command: Command, standing: Standing) -> Vec<String> 
 }
 
 #[test]
-fn ls_without_a_query_shows_the_projects_listing_narrowed_to_it() {
+fn list_without_a_selection_flag_shows_the_projects_listing_narrowed_to_it() {
     let ctx = holding();
     assert_eq!(
-        subjects(&ctx, ls(None, false), listing_urgent()),
+        subjects(&ctx, list(&[], false), listing_urgent()),
         ["urgent"]
     );
 }
 
 #[test]
-fn a_query_given_replaces_the_projects_listing() {
+fn a_selection_flag_replaces_the_projects_listing() {
     let ctx = holding();
     assert_eq!(
-        subjects(&ctx, ls(Some("p4"), false), listing_urgent()),
+        subjects(&ctx, list(&["--priority", "4"], false), listing_urgent()),
         ["calm"]
     );
 }
@@ -73,7 +68,7 @@ fn a_query_given_replaces_the_projects_listing() {
 fn global_ignores_the_projects_listing() {
     let ctx = holding();
     assert_eq!(
-        subjects(&ctx, ls(None, true), listing_urgent()),
+        subjects(&ctx, list(&[], true), listing_urgent()),
         ["calm", "urgent", "urgent elsewhere"]
     );
 }
@@ -96,8 +91,21 @@ fn the_projects_filter_is_found_before_a_personal_one_of_the_same_name() {
         })
     };
     assert_eq!(
-        subjects(&ctx, ls(Some("hot"), false), standing()),
+        subjects(&ctx, list(&["--filter", "hot"], false), standing()),
         ["urgent"]
     );
-    assert_eq!(subjects(&ctx, ls(Some("hot"), true), standing()), ["calm"]);
+    assert_eq!(
+        subjects(&ctx, list(&["--filter", "hot"], true), standing()),
+        ["calm"]
+    );
+}
+
+#[test]
+fn an_output_flag_keeps_the_projects_listing() {
+    let ctx = holding();
+    let args = crate::testing::list_args(&["-o", "json"]);
+    assert_eq!(
+        subjects(&ctx, Command::List(args), listing_urgent()),
+        ["urgent"]
+    );
 }

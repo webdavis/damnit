@@ -14,7 +14,7 @@ fn typed(ctx: &Context, argv: &[&str]) -> Result<String, String> {
     let report = match command(argv) {
         Command::New(a) => super::new::run(ctx, a),
         Command::Edit(a) => super::edit::run(ctx, a),
-        Command::Ls(a) => super::ls::run_ls(ctx, a),
+        Command::List(a) => super::list::run_list(ctx, a),
         _ => panic!("not a command these tests type"),
     };
     report.map(|r| r.human).map_err(|e| e.to_string())
@@ -70,7 +70,7 @@ fn edit_with_a_comma_list_adds_two_labels() {
 }
 
 #[test]
-fn a_stored_label_with_a_comma_survives_an_edit_of_another_field_and_shows_in_ls() {
+fn a_stored_label_with_a_comma_survives_an_edit_of_another_field_and_shows_in_list() {
     let ctx = holding("small,big");
     typed(
         &ctx,
@@ -78,7 +78,7 @@ fn a_stored_label_with_a_comma_survives_an_edit_of_another_field_and_shows_in_ls
     )
     .unwrap();
     assert_eq!(labels_of(&ctx), ["small,big"]);
-    let listed = typed(&ctx, &["dam", "ls"]).unwrap();
+    let listed = typed(&ctx, &["dam", "list"]).unwrap();
     assert!(listed.contains("small,big"), "{listed}");
 }
 
