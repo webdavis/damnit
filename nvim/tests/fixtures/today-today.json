@@ -1,0 +1,28 @@
+{
+  "objects": [
+    {
+      "oid": "<id-1>",
+      "kind": "task",
+      "subject": "call the bank",
+      "body": "",
+      "path": "",
+      "labels": [
+        "money"
+      ],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4,
+        "due": "<today>"
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": false,
+      "days_until_due": "<days>",
+      "children_open": 0
+    }
+  ]
+}

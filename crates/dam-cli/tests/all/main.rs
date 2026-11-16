@@ -77,6 +77,7 @@ mod nvim_progress_fixtures;
 mod nvim_prompt_fixtures;
 mod nvim_status_fixtures;
 mod nvim_task_fixtures;
+mod nvim_today_fixtures;
 mod object_author;
 mod output_flag;
 mod piped_ids;

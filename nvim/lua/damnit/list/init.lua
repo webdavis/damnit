@@ -1,5 +1,6 @@
 local buffer = require("damnit.list.buffer")
 local new_keys = require("damnit.list.new_keys")
+local views = require("damnit.list.view")
 
 local M = {}
 
@@ -52,6 +53,9 @@ function M.new(app, open_task)
         lists:open(args[1], vim.fn.getcwd(), cmd.smods)
       end,
       new = new_keys.command(quickadd, lists),
+      today = function(_, cmd)
+        lists:open("today", vim.fn.getcwd(), cmd.smods, views.TODAY)
+      end,
     },
     complete = { list = view_names(app) },
   }

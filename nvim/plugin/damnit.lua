@@ -1,3 +1,5 @@
+vim.keymap.set("n", "<Plug>(dam-today)", "<Cmd>Dam today<CR>")
+
 if vim.fn.exists(":Dam") == 2 then
   return
 end

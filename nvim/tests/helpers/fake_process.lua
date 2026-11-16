@@ -50,7 +50,7 @@ function M.new()
     run = function(argv, opts, on_exit)
       local reply = assert(fake.replies[verb_of(argv)], "the fake has no reply for " .. table.concat(argv, " "))
       if type(reply) == "function" then
-        reply = reply(argv)
+        reply = reply(argv, opts)
       end
       local call = {
         argv = argv,

@@ -782,17 +782,26 @@ require("damnit").setup({
     soon = { due = "..today+3", sort = "due" },
     everywhere = { global = true },
     errands = "errands",
+    places = { sort = "path", group = true },
+    week = {
+      { title = "Urgent", labels = "urgent" },
+      { title = "This week", due = "today..today+6", labels = "not:urgent" },
+    },
   },
 })
 ```
 
 A table is keyed like the flags of `dam list` and sent as `dam list --request -`; a text names
-a saved filter.
+a saved filter. `group = true` puts a header wherever the first `sort` key's value changes. A list
+of tables is a view of sections, one `dam list` each, under a header with its `title` and count.
+`:Dam today` is such a view: Overdue, Today, Next 7 days and No date.
 
 A row shows its checkbox, priority and subject, with dam's labels, category, folder, `waits on`,
 estimate, deadline and due in columns at the right. The folder shows when the rows hold more than
 one. A narrow window drops `waits on`, the deadline, the category, the folder, the estimate and the
-labels, in that order; the due stays. The winbar names the view, the project and the counts. `!` marks an overdue row and `~` a
+labels, in that order; the due stays. `<Tab>` folds a header's rows or a parent's children, and
+`[[` and `]]` move between headers, in the list and the status window. `<Plug>(dam-today)` opens
+`:Dam today`. The winbar names the view, the project and the counts. `!` marks an overdue row and `~` a
 blocked one; the `signs` option changes them, such as `signs = { overdue = "x" }`.
 A list open in two windows fits its columns to the narrower one.
 

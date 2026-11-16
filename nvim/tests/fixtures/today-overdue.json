@@ -1,0 +1,26 @@
+{
+  "objects": [
+    {
+      "oid": "<id-1>",
+      "kind": "task",
+      "subject": "renew the passport",
+      "body": "",
+      "path": "",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4,
+        "due": "2026-09-14"
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": true,
+      "blocked": false,
+      "days_until_due": "<days>",
+      "children_open": 0
+    }
+  ]
+}

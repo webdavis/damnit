@@ -1,0 +1,115 @@
+{
+  "objects": [
+    {
+      "oid": "2222222222222222222222222222222222222222",
+      "kind": "task",
+      "subject": "call mom",
+      "body": "",
+      "path": "",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": false,
+      "children_open": 0
+    },
+    {
+      "oid": "1111111111111111111111111111111111111111",
+      "kind": "task",
+      "subject": "buy oat milk",
+      "body": "",
+      "path": "home/",
+      "labels": [
+        "errand"
+      ],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 2,
+        "due": "2026-09-25"
+      },
+      "author": "owner",
+      "details": null,
+      "category": {
+        "context": "errand"
+      },
+      "overdue": true,
+      "blocked": false,
+      "days_until_due": "<days>",
+      "children_open": 0
+    },
+    {
+      "oid": "<id-1>",
+      "kind": "task",
+      "subject": "pay rent",
+      "body": "",
+      "path": "home/",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4,
+        "due": "2026-09-30"
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": true,
+      "blocked": false,
+      "days_until_due": "<days>",
+      "children_open": 0
+    },
+    {
+      "oid": "<id-2>",
+      "kind": "task",
+      "subject": "file the report",
+      "body": "",
+      "path": "work/",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4,
+        "estimate": 30
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": false,
+      "children_open": 0
+    },
+    {
+      "oid": "<id-3>",
+      "kind": "task",
+      "subject": "fix the gate",
+      "body": "",
+      "path": "work/",
+      "labels": [
+        "repair"
+      ],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": false,
+      "children_open": 0
+    }
+  ]
+}
