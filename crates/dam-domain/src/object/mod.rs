@@ -45,6 +45,7 @@ pub struct Base {
     pub depends: Vec<Oid>,
     pub reminders: Vec<Reminder>,
     pub recurrence: Option<Recurrence>,
+    pub parent: Option<Oid>,
 }
 
 impl Base {
@@ -58,6 +59,7 @@ impl Base {
             depends: Vec::new(),
             reminders: Vec::new(),
             recurrence: None,
+            parent: None,
         }
     }
 }

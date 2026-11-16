@@ -33,6 +33,7 @@ pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
             .map(|m| Reminder { minutes_before: *m })
             .collect(),
         recurrence: wire.recurrence.as_deref().map(Recurrence::parse),
+        parent: optional_oid("parent", wire.parent.as_deref())?,
     };
     match (Kind::parse(&wire.kind), &wire.task, &wire.event) {
         (Some(Kind::Task), Some(t), _) => Ok(Object::Task(Task {
@@ -56,11 +57,7 @@ pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
                         .map_err(|_| date("deadline")(d.to_string()))
                 })
                 .transpose()?,
-            event: t
-                .event
-                .as_deref()
-                .map(|o| Oid::parse(o).map_err(oid("attached", o)))
-                .transpose()?,
+            event: optional_oid("attached", t.event.as_deref())?,
             estimate: t.estimate,
             focus: t.focus.as_ref().map(focus).transpose()?,
         })),
@@ -106,6 +103,11 @@ pub fn from_wire(wire: &WireObject) -> Result<Object, WireError> {
         })),
         _ => Err(WireError::UnknownKind(wire.kind.clone())),
     }
+}
+
+fn optional_oid(field: &'static str, text: Option<&str>) -> Result<Option<Oid>, WireError> {
+    text.map(|t| Oid::parse(t).map_err(oid(field, t)))
+        .transpose()
 }
 
 fn focus(f: &WireFocus) -> Result<Focus, WireError> {

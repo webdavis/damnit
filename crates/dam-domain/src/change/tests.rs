@@ -95,3 +95,18 @@ fn a_change_to_the_completion_time_alone_names_done() {
         vec![Field::Done]
     );
 }
+
+#[test]
+fn a_change_of_parent_alone_names_the_place() {
+    let before = task("a");
+    let mut after = before.clone();
+    after.base_mut().parent = Some(oid(2));
+    assert_eq!(changed_fields(&before, &after), vec![Field::Path]);
+}
+
+#[test]
+fn merging_the_place_carries_the_parent() {
+    let mut theirs = task("a");
+    theirs.base_mut().parent = Some(oid(2));
+    assert_eq!(merge_fields(&task("a"), &theirs, &[Field::Path]), theirs);
+}

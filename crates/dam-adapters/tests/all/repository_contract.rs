@@ -87,3 +87,8 @@ fn it_keeps_the_follow_on_repository_contract() {
 fn it_keeps_the_origin_repository_contract() {
     contract::origin_repository_contract(&store());
 }
+
+#[test]
+fn it_keeps_the_parent_repository_contract() {
+    contract::parent_repository_contract(&store());
+}

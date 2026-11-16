@@ -87,6 +87,7 @@ itself. `dam.history(task)` gives the `author` and `details` of each change. A f
 | `depends` | A list of the oids it waits on. |
 | `reminders` | A list of minutes before the due time or start. |
 | `recurrence` | The rule it repeats by. |
+| `parent` | The oid of the object it sits in, or nil. |
 | `task.done` | `true` or `false`. |
 | `task.completed_at` | When it was completed. |
 | `task.priority` | `1`, the highest, to `4`. |

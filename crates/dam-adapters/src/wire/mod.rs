@@ -96,6 +96,7 @@ pub fn mutation_to_wire(mutation: RemoteMutation) -> Mutation {
 
 fn without_local_fields(object: &Object) -> WireObject {
     let mut wire = to_wire(object, None);
+    wire.parent = None;
     if let Some(task) = &mut wire.task {
         task.focus = None;
     }

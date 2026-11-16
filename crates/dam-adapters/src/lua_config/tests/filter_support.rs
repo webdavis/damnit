@@ -23,6 +23,7 @@ pub(super) fn every_field_task() -> Object {
     t.base.depends = vec![oid(2)];
     t.base.reminders = vec![Reminder { minutes_before: 10 }];
     t.base.recurrence = Some(Recurrence::parse("every 2 days"));
+    t.base.parent = Some(oid(3));
     t.priority = Priority::HIGHEST;
     t.completion = Completion::Done {
         at: Some(Timestamp::UNIX_EPOCH),
@@ -49,6 +50,7 @@ pub(super) fn every_field_event() -> Object {
     e.base.body = "the body".into();
     e.base.reminders = vec![Reminder { minutes_before: 5 }];
     e.base.recurrence = Some(Recurrence::parse("every 2 days"));
+    e.base.parent = Some(oid(3));
     e.timezone = Some("UTC".into());
     e.location = Some("Room 1".into());
     e.attendees = vec![Attendee {

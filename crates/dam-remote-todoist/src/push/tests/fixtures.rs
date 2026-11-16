@@ -59,6 +59,7 @@ pub(crate) fn task(oid: &str, path: &str, subject: &str, done: bool) -> WireObje
         depends: vec![],
         reminders: vec![],
         recurrence: None,
+        parent: None,
         task: Some(WireTask {
             done,
             completed_at: None,
