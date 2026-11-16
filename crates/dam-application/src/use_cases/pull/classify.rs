@@ -1,5 +1,7 @@
 use dam_domain::{Object, Oid, kind_change, merge_fields};
 
+use super::compare::{against_local, changed_in_the_app, settled};
+
 use super::PullReport;
 use super::adopt::creates_found;
 use super::ours::keep_what_we_sent;
@@ -99,52 +101,4 @@ pub(super) fn classify(
         planned.push((oid, incoming));
     }
     Ok((planned, new_remote_id_mappings))
-}
-
-fn settled(
-    store: &dyn Store,
-    remote: &RemoteConfig,
-    theirs: Object,
-) -> Result<Incoming, UseCaseError> {
-    let last_seen_on_the_remote = LastSeen::held(store, &remote.name, theirs.oid())?;
-    Ok(if last_seen_on_the_remote.as_ref() == Some(&theirs) {
-        Incoming::Unchanged
-    } else {
-        Incoming::Settled(theirs)
-    })
-}
-
-fn against_local(
-    store: &dyn Store,
-    remote: &RemoteConfig,
-    local: Object,
-    theirs: Object,
-) -> Result<Incoming, UseCaseError> {
-    if local == theirs {
-        return Ok(Incoming::Unchanged);
-    }
-    let oid = local.oid().clone();
-    let last_seen_on_the_remote = LastSeen::held(store, &remote.name, &oid)?;
-    if last_seen_on_the_remote.as_ref() == Some(&local) {
-        return Ok(Incoming::FastForward(theirs));
-    }
-    if last_seen_on_the_remote.as_ref() == Some(&theirs) {
-        return Ok(Incoming::Unchanged);
-    }
-    Ok(Incoming::Conflict(Box::new(Conflict {
-        remote: remote.name.clone(),
-        oid,
-        ours: Some(local),
-        theirs,
-    })))
-}
-
-fn changed_in_the_app(
-    store: &dyn Store,
-    remote: &RemoteConfig,
-    caps: &RemoteCapabilities,
-    theirs: &Object,
-) -> Result<bool, UseCaseError> {
-    let last_seen = LastSeen::held(store, &remote.name, theirs.oid())?;
-    Ok(last_seen.is_none_or(|seen| merge_fields(&seen, theirs, &caps.fields) != seen))
 }

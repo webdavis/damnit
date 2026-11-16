@@ -12,6 +12,7 @@ use crate::use_cases::hooks::pulled::{PulledHookRun, PulledTask};
 mod adopt;
 mod cancelled;
 mod classify;
+mod compare;
 mod land;
 mod missing;
 mod notices;
