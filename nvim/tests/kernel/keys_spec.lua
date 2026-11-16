@@ -45,4 +45,27 @@ return {
     assert(rows > 0 and vim.tbl_contains(help, "  cd  change the due date"), vim.inspect(help))
     assert(vim.fn.index(help, "  <CR>  open the task") < rows and vim.fn.index(help, "  a  new task") > rows)
   end,
+
+  ["a key added everywhere is bound in each window bound after, under every window"] = function()
+    local app = helper.new()
+    local ran = false
+    app.keys:everywhere({
+      lhs = "gL",
+      desc = "open the log",
+      run = function()
+        ran = true
+      end,
+    })
+    local buf = app.screen:scratch("dam://keys-everywhere", "damspec")
+    app.screen:show(buf)
+    app.keys:bind(buf, { { lhs = "x", desc = "done", group = "list", run = function() end } })
+    buffer.feed("gL")
+    assert(ran, "gL did not run")
+    buffer.feed("g?")
+    local help = buffer.lines()
+    assert(
+      vim.deep_equal(vim.list_slice(help, 3), { "every window", "  gL  open the log", "  g?  list these keys" }),
+      vim.inspect(help)
+    )
+  end,
 }

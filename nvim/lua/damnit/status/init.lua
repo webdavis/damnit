@@ -5,10 +5,11 @@ local M = {}
 
 ---@param app damnit.App
 ---@param open_task fun(oid: string, cwd: string)
+---@param open_log? fun(cwd: string, smods?: table, at?: string)
 ---@return damnit.Feature
-function M.new(app, open_task)
+function M.new(app, open_task, open_log)
   local writes = writes_of.new(app)
-  local status = buffer.new(app, writes, open_task)
+  local status = buffer.new(app, writes, open_task, open_log)
   local function open(_, cmd)
     status:open(vim.fn.getcwd(), cmd.smods)
   end

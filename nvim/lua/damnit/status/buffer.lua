@@ -19,8 +19,10 @@ local M = {}
 ---@param app damnit.App
 ---@param writes damnit.StatusWrites
 ---@param open_task fun(oid: string, cwd: string)
-function M.new(app, writes, open_task)
+---@param open_log? fun(cwd: string, smods?: table, at?: string)
+function M.new(app, writes, open_task, open_log)
   local status = setmetatable({ app = app, writes = writes, open_task = open_task, targets = {}, shown = {} }, Status)
+  status.open_log = open_log
   status.group = vim.api.nvim_create_augroup("damnit.status", { clear = true })
   vim.api.nvim_create_autocmd("User", {
     group = status.group,
@@ -96,8 +98,11 @@ end
 
 function Status:open_target_task()
   local target = self:target()
+  if target and target.kind == "commit" and self.open_log then
+    return self.open_log(self.cwd, nil, target.id)
+  end
   if not (target and target.oid) then
-    return self.app.say:warn("<CR> opens the task of a change, waiting item or conflict row")
+    return self.app.say:warn("<CR> opens the task of a change, waiting item or conflict row, or the log at a Recent commit")
   end
   self.open_task(target.oid, self.cwd)
 end
