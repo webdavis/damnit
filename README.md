@@ -850,6 +850,9 @@ none of them.
 with what changed; an emptied line clears that field. dam reads each value and shows its error
 when it refuses one.
 
+`K` on a row of a list or the status window shows that task as `dam show` prints it in a float;
+`K` again enters it, `q` closes it and `<CR>` opens the task.
+
 `:Dam` or `:Dam status` shows what `dam status` shows in the window's folder: conflicts, waiting
 items and sets, unstaged and staged changes, unpushed commits, notices and warnings, then the
 last three commits under Recent. Its keys:

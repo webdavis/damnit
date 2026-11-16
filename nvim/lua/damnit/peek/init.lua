@@ -9,9 +9,9 @@ Peek.__index = Peek
 local M = {}
 
 ---@class damnit.Peek
----@field peek fun(oid: string|nil, cwd: string)
+---@field peek fun(oid: string, cwd: string)
 ---@field again fun(): boolean
----@field key fun(locate: fun(): string|nil, string): damnit.KeySpec
+---@field key fun(at: damnit.TaskAt, group: string|nil, nothing: string): damnit.KeySpec
 
 function Peek:close()
   local shown = self.shown
@@ -70,12 +70,9 @@ function Peek:show(object, oid, cwd)
   self:bind(shown, oid, cwd)
 end
 
----@param oid string|nil
+---@param oid string
 ---@param cwd string
 function Peek:peek(oid, cwd)
-  if not oid then
-    return self.app.say:warn("no task or event on this line to peek at")
-  end
   local source, cursor = vim.api.nvim_get_current_win(), vim.api.nvim_win_get_cursor(0)
   self.app.dam:run({ args = { "show", oid }, cwd = cwd, key = "peek" }, function(answer, err)
     if err then
@@ -103,6 +100,27 @@ end
 ---@return damnit.Peek
 function M.new(app, open_task)
   local peek = setmetatable({ app = app, open_task = open_task }, Peek)
+  local function key(at, group, nothing)
+    return {
+      lhs = "K",
+      desc = "peek at the task, or enter the peek",
+      group = group,
+      mode = "n",
+      run = function()
+        if peek:again() then
+          return
+        end
+        local oid, cwd = at()
+        if not oid then
+          return app.say:warn(nothing)
+        end
+        peek:peek(oid, cwd)
+      end,
+    }
+  end
+  app.keys:offer_task_key(function(at, group)
+    return key(at, group, "K acts on task rows; this line holds no task")
+  end)
   return {
     peek = function(oid, cwd)
       peek:peek(oid, cwd)
@@ -110,17 +128,7 @@ function M.new(app, open_task)
     again = function()
       return peek:again()
     end,
-    key = function(locate)
-      return {
-        lhs = "K",
-        desc = "peek at the task, or enter the peek",
-        run = function()
-          if not peek:again() then
-            peek:peek(locate())
-          end
-        end,
-      }
-    end,
+    key = key,
   }
 end
 
