@@ -1,3 +1,4 @@
+use super::days_to_todoist::days_to_todoist;
 use super::{ORDINALS, is_weekday};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -14,7 +15,7 @@ pub fn to_todoist(rule: &str) -> Result<String, Unheld> {
         .map(|pair| pair[1])
         .collect();
     let (Some(head), false) = (words.first(), lists.is_empty()) else {
-        return Ok(rule.to_string());
+        return Ok(days_to_todoist(rule).unwrap_or_else(|| rule.to_string()));
     };
     let interval = words
         .get(1)

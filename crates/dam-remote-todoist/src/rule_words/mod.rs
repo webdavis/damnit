@@ -1,3 +1,4 @@
+mod days_to_todoist;
 mod from_todoist;
 mod to_todoist;
 
@@ -32,6 +33,10 @@ const WEEKDAYS: [&str; 14] = [
 
 fn is_weekday(word: &str) -> bool {
     WEEKDAYS.contains(&word.to_ascii_lowercase().as_str())
+}
+
+fn is_month_day(word: &str) -> bool {
+    matches!(word.parse::<u8>(), Ok(1..=31))
 }
 
 #[cfg(test)]
