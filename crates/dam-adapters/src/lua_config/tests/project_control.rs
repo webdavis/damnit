@@ -50,3 +50,16 @@ fn a_path_that_is_not_a_path_is_refused_naming_only_the_file() {
         }
     );
 }
+
+#[test]
+fn an_escape_sequence_deep_in_a_nested_table_is_refused() {
+    assert_refused_as_holding_a_control_character(
+        r#"return { path = "a", filter = { mine = { query = "x\27[2J" } } }"#,
+    );
+    assert_refused_as_holding_a_control_character(
+        r#"return { path = "a", category = { ["k\7"] = { values = { "a" } } } }"#,
+    );
+    assert_refused_as_holding_a_control_character(
+        r#"return { path = "a", category = { k = { values = { "a\27" } } } }"#,
+    );
+}

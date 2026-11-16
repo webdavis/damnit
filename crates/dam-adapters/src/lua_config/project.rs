@@ -1,3 +1,4 @@
+mod control;
 mod locked;
 mod template;
 mod written;
@@ -13,6 +14,7 @@ use super::evaluate::{
 };
 use super::shape::described;
 use super::strict::StrictMap;
+use control::Walked;
 use locked::locked_lua;
 pub(super) use template::read_project_template;
 pub use written::{FileSystemProjectFolders, write_project_file};
@@ -36,16 +38,16 @@ pub fn read_project_file(file: &Path) -> Result<ProjectSettings, ConfigError> {
             returned: described(&value),
         });
     };
-    let root = StrictMap::root(&short_name, &table)?;
-    let holds_a_control_character = |text: &str| text.chars().any(char::is_control);
-    if root.entries().any(|(key, value)| {
-        holds_a_control_character(key)
-            || matches!(value, Value::String(s) if holds_a_control_character(&s.to_string_lossy()))
-    }) {
-        return Err(ConfigError::HoldsAControlCharacter {
-            file: file.to_path_buf(),
-        });
+    match control::walked(&table) {
+        Walked::Clean => {}
+        Walked::HoldsAControlCharacter => {
+            return Err(ConfigError::HoldsAControlCharacter {
+                file: file.to_path_buf(),
+            });
+        }
+        Walked::TooLarge => return Err(stopped_at_an_error(file)),
     }
+    let root = StrictMap::root(&short_name, &table)?;
     if let Some((key, _)) = root
         .entries()
         .find(|(key, _)| PERSONAL_SETTINGS.contains(key))

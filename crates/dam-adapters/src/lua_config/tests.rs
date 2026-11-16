@@ -28,6 +28,7 @@ mod project_control;
 mod project_escapes;
 mod project_settings;
 mod project_support;
+mod project_walk;
 mod pulled_hook_runs;
 mod pulled_hook_tables;
 mod read_only;
