@@ -85,16 +85,18 @@ fn the_history_a_filter_function_reads_is_what_dam_log_prints() {
 }
 
 #[test]
-fn a_tokens_narrowed_history_is_what_dam_log_prints_to_that_token() {
+fn a_token_without_event_read_sees_no_event_change_and_no_message_of_that_commit() {
     let ctx = Context {
         access: holding(&[Permission::TaskRead, Permission::HistoryRead]),
         ..context()
     };
     let mut narrowed = a_plan(&ctx);
-    narrowed.changes[2].details = None;
+    narrowed.changes.remove(1);
+    narrowed.changes[1].details = None;
+    narrowed.message = String::new();
     let log = super::run_log(&ctx).unwrap().data;
     assert_eq!(
-        log["commits"][0]["changes"][2]["details"],
+        log["commits"][0]["changes"][1]["details"],
         serde_json::Value::Null
     );
     assert_eq!(
