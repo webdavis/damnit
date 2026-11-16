@@ -33,10 +33,32 @@ return {
     same(change_lines.reading(answer, OBJECTS, "path"), "path  none → work/")
   end,
 
-  ["a field dam's preview does not print reads as changed"] = function()
-    local answer = fixtures.decoded("mv-preview.json")
-    answer.changes[1].fields = { "estimate" }
-    same(change_lines.reading(answer, OBJECTS, "estimate"), "estimate  30 → changed")
+  ["the deadline, estimate and category read as the value dam's preview gives"] = function()
+    local answer = fixtures.decoded("edit-preview-fields.json")
+    same(change_lines.reading(answer, OBJECTS, "deadline"), "deadline  none → 2026-12-04")
+    same(change_lines.reading(answer, OBJECTS, "estimate"), "estimate  30 → 45")
+    same(change_lines.reading(answer, OBJECTS, "category"), "category  none → context=errand")
+  end,
+
+  ["a field dam's preview clears reads as none"] = function()
+    local answer = fixtures.decoded("edit-preview-fields.json")
+    answer.changes[1].fields, answer.changes[1].estimate = { "estimate" }, nil
+    same(change_lines.reading(answer, OBJECTS, "estimate"), "estimate  30 → none")
+  end,
+
+  ["an event's field reads its before from the event"] = function()
+    local hall = { oid = CALL_MOM, subject = "meet", labels = {}, event = { location = "hall" } }
+    local answer = fixtures.decoded("edit-preview-fields.json")
+    answer.oids, answer.changes[1].oid = { CALL_MOM }, CALL_MOM
+    answer.changes[1].fields, answer.changes[1].location = { "location" }, "room"
+    same(change_lines.reading(answer, { [CALL_MOM] = hall }, "location"), "location  hall → room")
+  end,
+
+  ["a focus mark reads as its day"] = function()
+    local answer = fixtures.decoded("edit-preview-fields.json")
+    answer.changes[1].fields = { "focus" }
+    answer.changes[1].focus = { day = "2026-12-01", set_by = "owner", set_at = "2026-11-30T09:00:00Z" }
+    same(change_lines.reading(answer, OBJECTS, "focus"), "focus  none → 2026-12-01")
   end,
 
   ["with no field named, each field dam lists is a row"] = function()
