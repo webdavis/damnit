@@ -25,7 +25,7 @@ pub fn answer(command: &str) -> Option<Vec<serde_json::Value>> {
         )]),
         "filter create" => Some(vec![json_of(
             &Sandbox::new(),
-            &["filter", "create", "soon", "--query", "due:today"],
+            &["filter", "create", "soon", "--due", "today"],
         )]),
         "filter remove" => Some(vec![json_of(
             &fixture::seeded(),

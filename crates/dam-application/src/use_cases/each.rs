@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use dam_domain::{Change, Oid, Path};
 
+use crate::config::FilterConfig;
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::Step;
 use crate::service::Dam;
@@ -12,8 +13,7 @@ use rehearsal::rehearsed;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Selector {
     Oids(Vec<Oid>),
-    Query(String, Path),
-    Filter(String, Path),
+    Filter(String, Path, Vec<FilterConfig>),
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]

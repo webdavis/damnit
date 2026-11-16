@@ -6,6 +6,7 @@ use dam_domain::{Has, Path};
 
 use super::ScopeArgs;
 use super::selection::SelectArgs;
+use super::selection::order_refused::{FILTER_CREATE_HELP, OrderRefused};
 use super::selection::ordering::OrderArgs;
 
 use super::values::max_age_arg;
@@ -20,8 +21,6 @@ pub(crate) struct ListArgs {
     pub(crate) scope: ScopeArgs,
     #[arg(skip)]
     pub(crate) place: Path,
-    #[arg(skip)]
-    pub(crate) project_default: Option<String>,
     #[arg(skip)]
     pub(crate) project_filters: Vec<FilterConfig>,
 }
@@ -105,7 +104,7 @@ pub(crate) enum CategoryCommand {
         expect: Option<usize>,
         #[arg(
             long,
-            help = "Also rewrite each category's values and saved filter's query in config.lua; \
+            help = "Also rewrite each category's values and saved filter in config.lua; \
                     dam cannot see inside a match function, so that filter is left to edit by hand"
         )]
         update_config: bool,
@@ -120,13 +119,18 @@ pub(crate) struct FilterArgs {
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum FilterCommand {
-    #[command(about = "List saved filters with their kinds and queries")]
+    #[command(about = "List saved filters with the flags that select what each one lists")]
     List,
-    #[command(about = "Save a filter in config.lua, or in .dam.lua inside a project")]
+    #[command(
+        about = "Save a filter in config.lua, or in .dam.lua inside a project",
+        after_help = FILTER_CREATE_HELP
+    )]
     Create {
         name: String,
-        #[arg(long, help = "The query the filter runs, such as due:today")]
-        query: String,
+        #[command(flatten)]
+        selection: SelectArgs,
+        #[command(flatten)]
+        order: OrderRefused,
         #[arg(long, help = "Write config.lua inside a project, not .dam.lua")]
         global: bool,
     },

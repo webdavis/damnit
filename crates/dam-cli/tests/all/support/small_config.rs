@@ -12,7 +12,7 @@ const CONFIG: &str = r#"return {
     effort = { values = { "light", "deep" }, exclusive = true },
   },
   filter = {
-    today = { query = "due:today | overdue" },
+    today = { due = "..today" },
   },
 }
 "#;

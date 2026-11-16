@@ -1,6 +1,6 @@
 use super::*;
-use dam_application::{FilterConfig, FilterRule};
-use dam_domain::{Categories, Category};
+use dam_application::FilterConfig;
+use dam_domain::{Categories, Category, FilterTable, TableValue};
 
 pub(super) fn config() -> Config {
     Config {
@@ -47,44 +47,77 @@ fn a_category_line_names_the_values_and_whether_it_holds_one() {
     );
 }
 
+pub(super) fn saved(name: &str, fields: &[(&str, &[&str])], any: Vec<FilterTable>) -> FilterConfig {
+    let value = |texts: &[&str]| match texts {
+        [one] => TableValue::One(one.to_string()),
+        many => TableValue::Many(many.iter().map(|t| t.to_string()).collect()),
+    };
+    FilterConfig {
+        name: name.into(),
+        table: FilterTable {
+            fields: fields
+                .iter()
+                .map(|(k, v)| (k.to_string(), value(v)))
+                .collect(),
+            any,
+        },
+        runs_a_function: false,
+    }
+}
+
 #[test]
-fn a_filter_line_is_its_name_its_kind_and_its_query() {
+fn a_filter_line_is_its_name_and_the_flags_that_select_it() {
     let mut config = config();
-    config.filters = vec![FilterConfig {
-        name: "today".into(),
-        rule: FilterRule::Query("due:today | overdue".into()),
-    }];
+    let urgent = saved("", &[("labels", &["urgent"])], vec![]).table;
+    config.filters = vec![saved(
+        "today",
+        &[("due", &["..today"]), ("labels", &["bug", "not:waiting"])],
+        vec![urgent],
+    )];
     let report = run_filter(&config, FilterCommand::List, &[]).unwrap();
-    assert_eq!(report.human, "today  query  due:today | overdue");
+    assert_eq!(
+        report.human,
+        "today  --due ..today --labels bug --labels not:waiting --any labels=urgent"
+    );
     assert_eq!(
         report.data["filters"][0],
-        serde_json::json!({"name": "today", "kind": "query", "query": "due:today | overdue"})
+        serde_json::json!({"name": "today", "table": {
+            "due": "..today", "labels": ["bug", "not:waiting"], "any": [{"labels": "urgent"}]
+        }})
     );
 }
 
 #[test]
-fn a_function_filter_shows_its_kind_and_any_query_but_never_its_source() {
+fn a_table_the_flags_cannot_say_is_shown_as_its_table() {
     let mut config = config();
-    config.filters = vec![
-        FilterConfig {
-            name: "slipping".into(),
-            rule: FilterRule::Function,
-        },
-        FilterConfig {
-            name: "stuck".into(),
-            rule: FilterRule::QueryThenFunction("path:work/".into()),
-        },
-    ];
+    let both = saved("", &[("labels", &["a"]), ("due", &["today"])], vec![]).table;
+    config.filters = vec![saved("odd", &[], vec![both])];
     let report = run_filter(&config, FilterCommand::List, &[]).unwrap();
     assert_eq!(
         report.human,
-        "slipping  function  -\nstuck     function  path:work/"
+        r#"odd  {"any":[{"due":"today","labels":"a"}]}"#
+    );
+}
+
+#[test]
+fn a_function_filter_shows_its_fields_but_never_its_source() {
+    let mut config = config();
+    let mut slipping = saved("slipping", &[], vec![]);
+    slipping.runs_a_function = true;
+    let mut stuck = saved("stuck", &[("path", &["work/"])], vec![]);
+    stuck.runs_a_function = true;
+    config.filters = vec![slipping, stuck];
+    let report = run_filter(&config, FilterCommand::List, &[]).unwrap();
+    assert_eq!(
+        report.human,
+        "slipping  -             and its match function
+stuck     --path work/  and its match function"
     );
     assert_eq!(
         report.data["filters"],
         serde_json::json!([
-            {"name": "slipping", "kind": "function"},
-            {"name": "stuck", "kind": "function", "query": "path:work/"},
+            {"name": "slipping", "table": {}, "match": true},
+            {"name": "stuck", "table": {"path": "work/"}, "match": true},
         ])
     );
 }

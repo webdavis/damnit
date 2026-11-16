@@ -3,7 +3,7 @@ use serde::Serialize;
 use serde_json::{Value, json};
 
 use crate::commands::each::SetView;
-use crate::view::{Human, Line, View};
+use crate::view::{Human, Line, View, flags_of, table_json};
 
 pub(super) struct Place {
     pub(super) place: ConfigPlace,
@@ -51,8 +51,8 @@ fn document(place: &Place) -> Value {
         ConfigPlace::Category { name, values } => json!({
             "key": format!("category.{name}.values"), "value": values, "written": place.written
         }),
-        ConfigPlace::Filter { name, query } => json!({
-            "key": format!("filter.{name}.query"), "value": query, "written": place.written
+        ConfigPlace::Filter { name, table } => json!({
+            "key": format!("filter.{name}"), "value": table_json(table), "written": place.written
         }),
         ConfigPlace::HandWritten { name } => json!({
             "key": format!("filter.{name}"), "by_hand": true, "written": false
@@ -66,10 +66,9 @@ pub(super) fn fix(place: &ConfigPlace) -> Option<String> {
             "dam config set category.{name}.values {}",
             quoted(&values.join(", "))
         )),
-        ConfigPlace::Filter { name, query } => Some(format!(
-            "dam config set filter.{name}.query {}",
-            quoted(query)
-        )),
+        ConfigPlace::Filter { name, table } => flags_of(table).map(|flags| {
+            format!("dam filter remove {name}, then dam filter create {name} {flags}")
+        }),
         ConfigPlace::HandWritten { .. } => None,
     }
 }
@@ -87,15 +86,17 @@ impl Migrated<'_> {
             ConfigPlace::Category { name, values } if self.updating => {
                 format!("  category.{name}.values = {}", values.join(", "))
             }
-            ConfigPlace::Filter { name, query } if self.updating => {
-                format!("  filter.{name}.query = {query}")
+            ConfigPlace::Filter { name, table } if self.updating => {
+                let shown = flags_of(table).unwrap_or_else(|| table_json(table).to_string());
+                format!("  filter.{name} = {shown}")
             }
             ConfigPlace::Category { name, .. } => {
                 format!("  category {name} → {}", fix(place).unwrap_or_default())
             }
-            ConfigPlace::Filter { name, .. } => {
-                format!("  filter {name} → {}", fix(place).unwrap_or_default())
-            }
+            ConfigPlace::Filter { name, .. } => match fix(place) {
+                Some(fix) => format!("  filter {name} → {fix}"),
+                None => format!("  filter {name} → edit filter.{name} in config.lua by hand"),
+            },
         }
     }
 

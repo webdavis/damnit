@@ -81,5 +81,6 @@ fn expected_text(expected: Expected) -> &'static str {
         Expected::TableOfWholeNumbers => "a table of whole numbers",
         Expected::PriorityOneToFour => "a whole number from 1 to 4",
         Expected::WholeNumber => "a whole number",
+        Expected::FilterValue => "text, a number, true or false, or a list of them",
     }
 }

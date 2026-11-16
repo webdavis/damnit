@@ -167,7 +167,8 @@
         "path_outside_parent",
         "several_hold_the_path",
         "no_such_filter",
-        "count_mismatch"
+        "count_mismatch",
+        "filter_reaches_itself"
       ]
     },
     "tokenRule": {

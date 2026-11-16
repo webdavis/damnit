@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 use dam_application::SettingValue;
+use dam_domain::{FilterTable, TableValue};
 use mlua::{Table, Value};
 
 pub(super) type Flat = BTreeMap<String, Shown>;
@@ -26,12 +27,34 @@ pub(super) fn flatten_value(key: &str, value: &SettingValue) -> Flat {
         SettingValue::Count(count) => {
             Flat::from([(key.to_string(), Shown::Other(count.to_string()))])
         }
-        SettingValue::List(items) => items
-            .iter()
-            .enumerate()
-            .map(|(at, item)| (format!("{key}.{}", at + 1), Shown::Text(item.clone())))
-            .collect(),
+        SettingValue::List(items) => listed(key, items),
+        SettingValue::Table(table) => flatten_table(key, table),
     }
+}
+
+fn listed(key: &str, items: &[String]) -> Flat {
+    items
+        .iter()
+        .enumerate()
+        .map(|(at, item)| (format!("{key}.{}", at + 1), Shown::Text(item.clone())))
+        .collect()
+}
+
+fn flatten_table(key: &str, table: &FilterTable) -> Flat {
+    let mut flat = Flat::new();
+    for (field, value) in &table.fields {
+        let name = format!("{key}.{field}");
+        match value {
+            TableValue::One(text) => {
+                flat.insert(name, Shown::Text(text.clone()));
+            }
+            TableValue::Many(texts) => flat.extend(listed(&name, texts)),
+        }
+    }
+    for (at, alternative) in table.any.iter().enumerate() {
+        flat.extend(flatten_table(&format!("{key}.any.{}", at + 1), alternative));
+    }
+    flat
 }
 
 pub(super) fn under(flat: &Flat, key: &str) -> Flat {

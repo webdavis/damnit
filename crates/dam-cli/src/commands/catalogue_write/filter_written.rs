@@ -6,7 +6,9 @@ use crate::view::{Human, View};
 #[derive(Serialize)]
 pub(super) struct FilterCreated<'a> {
     pub(super) name: &'a str,
-    pub(super) query: &'a str,
+    pub(super) table: serde_json::Value,
+    #[serde(skip)]
+    pub(super) shown: String,
     pub(super) file: &'a str,
 }
 
@@ -15,7 +17,7 @@ impl View for FilterCreated<'_> {
         Human::Lines(vec![format!(
             "created filter {}: {}{}",
             self.name,
-            self.query,
+            self.shown,
             in_project(self.file)
         )])
     }

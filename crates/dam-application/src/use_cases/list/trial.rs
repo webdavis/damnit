@@ -1,4 +1,6 @@
-use dam_domain::{Object, Oid, Path};
+use dam_domain::{Command, Object, Oid, Path};
+
+use crate::use_cases::selected::Defaults;
 
 use crate::errors::{FilterError, UseCaseError};
 use crate::ports::{FunctionFailure, FunctionFault};
@@ -18,8 +20,10 @@ pub enum FilterTrial {
 
 impl Dam<'_> {
     pub fn try_filter(&self, name: &str) -> Result<FilterTrial, UseCaseError> {
-        let ran_on = self.narrowed(None, &Path::root())?.1.len();
-        match self.list(Some(name)) {
+        let ran_on = self.seen_within(&Path::root())?.len();
+        let (config, narrowed) =
+            self.listed_by_table(name, Defaults::Of(Command::List), (&Path::root(), &[]), &[])?;
+        match self.kept(&config, narrowed.clone()) {
             Ok(kept) => Ok(FilterTrial::Passed {
                 ran_on,
                 kept: kept.len(),
@@ -27,7 +31,7 @@ impl Dam<'_> {
             Err(UseCaseError::Filter(FilterError::Failed { failure, .. })) => {
                 let object = match failure.fault {
                     FunctionFault::RanOver => None,
-                    _ => self.first_failing(name, self.narrowed(Some(name), &Path::root())?.1),
+                    _ => self.first_failing(name, narrowed),
                 };
                 Ok(FilterTrial::Failed { failure, object })
             }

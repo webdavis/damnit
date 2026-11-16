@@ -27,13 +27,14 @@ Hooks live in their own files in a `hooks` folder beside them.
 | `category.<name>.values` | A list of labels. Required. |
 | `category.<name>.exclusive` | `true` allows one value per object. |
 | `filter` | A table of saved filters by name. |
-| `filter.<name>.query` | Query text. |
+| `filter.<name>.<field>` | The text typed after `dam list --<field>`; a number or `true`/`false` may be bare, and a list repeats the flag. |
+| `filter.<name>.any` | A list of such tables; at least one must hold. |
 | `filter.<name>.match` | A function that returns `true` to keep an object. |
 
 A duration is a whole number followed by `s`, `m` or `h`.
 
-`dam category migrate --map old=new --update-config` rewrites `values` and each saved filter's
-`query` that names `old`.
+`dam category migrate --map old=new --update-config` rewrites `values` and each saved filter that
+names `old`.
 
 `except` never removes anything from a remote. A task under an excepted path, or the task that holds
 it, is not sent when the remote never held it. A task the remote already holds stays there as it is,
@@ -154,9 +155,9 @@ character anywhere in the file, a wrong type or an unknown key refuses the file.
 | `path` | a path such as `"app/"` | where `dam new` starts a task's `--path`, and what `dam list`, `dam agenda` and `dam reminders` list |
 | `new_task` | `labels`, `priority`, `due`, `deadline` | what `dam new` gives a task the flags and the template leave unset |
 | `required` | any of `"due"`, `"labels"`, `"priority"`, `"body"`, `"deadline"` | `dam new` refuses a task left without one, after the template and `new_task`, naming the field and its flag |
-| `ls` | a query such as `"@cli & p1"` | what `dam list` shows when no selection flag is typed, narrowed to the project; any selection flag replaces it |
-| `filter` | `<name> = { query = ".." }`, never a function | saved filters for `dam list --filter` and `dam agenda`, found before your own of the same name; `dam filter list` marks them as the project's |
-| `category` | `<name> = { values = { .. }, exclusive = true }`, as in `config.lua` | label categories for `dam new`, `dam list --category` and the queries you type there, beside your own; inside the project one sets aside whole any of yours that shares its name or a label, and `ls` and `filter` may name only these |
+| `list` | a table such as `{ labels = "cli", priority = 1 }`, as a filter holds | what `dam list` shows when no selection flag is typed, narrowed to the project; any selection flag replaces it |
+| `filter` | `<name> = { labels = "cli" }`, as in `config.lua`, never a function | saved filters for `--filter`, `in:` and `on:`, found before your own of the same name; `dam filter list` marks them as the project's |
+| `category` | `<name> = { values = { .. }, exclusive = true }`, as in `config.lua` | label categories for `dam new` and `--category`, beside your own; inside the project one sets aside whole any of yours that shares its name or a label |
 | `sections` | names such as `{ "bugs", "features" }`, each one path segment | `dam init` creates each as a task under `path` when it is missing |
 | `branch_label` | `true` or `false` | `dam new` adds the checked-out git branch's name to the new task's labels, read from `.git/HEAD` without running `git`, beside the labels from `--labels`, a template or `new_task.labels`; a detached head adds nothing; a name that is not a usable label adds nothing and warns |
 | `done_children` | `"up"`, `"keep"` or `"into:<name>"`, the words `--children` takes | what `dam done --force` does with the open children of a task under `path` when `--children` is not given; without `--force` the refusal stands |
@@ -172,9 +173,14 @@ nothing is changed. `--global` writes `config.lua` instead.
 
 ## Filters
 
-A filter takes `query`, `match`, or both. A filter with neither is an error. `dam list --filter <name>`
-and `dam agenda --filter <name>` run it. With both, the query narrows first, and `match` runs only on the
-objects that are left.
+A filter is a table of `dam list` flags: `today = { due = "..today" }`,
+`hot = { any = { { labels = "urgent" }, { due = "..today" } } }`. `--filter <name>` adds its fields to
+the flags typed, and the command's defaults then apply once over both: `dam list --filter hot --done`
+lists the done tasks it selects. `in:<name>` asks what `dam list --filter <name>` lists, and
+`on:<name>` asks about the events it selects. A filter holding only `match` lists under `--filter`
+what the command lists by default, open tasks for `dam list`, unless a flag lifts it. A filter that reaches itself through these is an error. Inside a project, a project's filter
+reads `path` from the project and yours from the root. `match` narrows what the fields list.
+`query` text is an error that shows the table to write.
 
 `match(task, dam)` runs once for each object the listing would show, events as well as tasks.
 `task.kind` says which. It returns `true` to keep the object. `false` and `nil` drop it, as Lua
@@ -446,8 +452,8 @@ A token caller sees only the filter's name:
 
     dam: filter broken failed; the owner sees why by running the same command
 
-`dam filter list` shows each filter's kind, `query` or `function`, and never a function's source.
-`dam filter create` writes only `query`, and `dam filter remove` refuses a filter with `match`;
+`dam filter list` shows each filter as the flags that select it, and never a function's source.
+`dam filter create` writes no `match`, and `dam filter remove` refuses a filter with `match`;
 edit those in `config.lua` by hand.
 
 ## Example

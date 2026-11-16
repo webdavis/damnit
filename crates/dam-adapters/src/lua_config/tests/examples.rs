@@ -37,6 +37,16 @@ fn schema(name: &str) -> Json {
         .unwrap()
 }
 
+fn validator(name: &str) -> jsonschema::Validator {
+    let request = schema("list.request.schema.json");
+    let id = request["$id"].as_str().unwrap().to_string();
+    jsonschema::options()
+        .should_validate_formats(true)
+        .with_resource(id, jsonschema::Resource::from_contents(request).unwrap())
+        .build(&schema(name))
+        .unwrap()
+}
+
 fn schema_errors(example: &str, schema_name: &str) -> Vec<String> {
     let lua = Lua::new();
     let path = docs().join("examples").join(example);
@@ -48,11 +58,7 @@ fn schema_errors(example: &str, schema_name: &str) -> Vec<String> {
     )
     .unwrap()
     .unwrap();
-    let validator = jsonschema::options()
-        .should_validate_formats(true)
-        .build(&schema(schema_name))
-        .unwrap();
-    validator
+    validator(schema_name)
         .iter_errors(&as_json(Value::Table(table)))
         .map(|e| e.to_string())
         .collect()
@@ -87,10 +93,7 @@ fn a_function_credential_is_left_open_by_the_secrets_schema() {
         .load("return { remote = { todoist = { api_token = function() return 'x' end } } }")
         .eval()
         .unwrap();
-    assert!(jsonschema::is_valid(
-        &schema("secrets.schema.json"),
-        &as_json(secrets)
-    ));
+    assert!(validator("secrets.schema.json").is_valid(&as_json(secrets)));
 }
 
 #[test]
@@ -113,7 +116,7 @@ fn the_reader_and_the_config_schema_refuse_the_same_remotes() {
         let text = format!("return {{ remote = {{ todoist = {remote} }} }}");
         let lua = Lua::new();
         let table: Value = lua.load(&text).eval().unwrap();
-        let by_schema = jsonschema::is_valid(&schema("config.schema.json"), &as_json(table));
+        let by_schema = validator("config.schema.json").is_valid(&as_json(table));
         let by_reader = config(&text).load().is_ok();
         assert_eq!((by_reader, by_schema), (accepted, accepted), "{remote}");
     }

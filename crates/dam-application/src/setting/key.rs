@@ -1,3 +1,4 @@
+use dam_domain::select_field;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SettingKind {
     Text,
@@ -38,7 +39,7 @@ impl SettingKey {
             });
         }
         let kind = match (group, rest, named.map(|(_, field)| field)) {
-            ("owner" | "path" | "minimum_dam" | "ls" | "done_children", "", _)
+            ("owner" | "path" | "minimum_dam" | "done_children", "", _)
             | ("new_task", "due" | "deadline", _) => Ok(SettingKind::Text),
             ("required" | "sections", "", _) | ("new_task", "labels", _) => Ok(SettingKind::List),
             ("new_task", "priority", _) => Ok(SettingKind::Count),
@@ -51,9 +52,9 @@ impl SettingKey {
             ("hook", _, _) | ("filter", _, Some("match")) => {
                 Err(KeyRefusal::Function(key.to_string()))
             }
-            ("remote", _, Some("url" | "path")) | ("filter", _, Some("query")) => {
-                Ok(SettingKind::Text)
-            }
+            ("remote", _, Some("url" | "path")) => Ok(SettingKind::Text),
+            ("filter", _, Some(field)) if select_field(field).is_some() => Ok(SettingKind::Text),
+            ("list", field, None) if select_field(field).is_some() => Ok(SettingKind::Text),
             ("remote", _, Some("deadline")) => Ok(SettingKind::Duration),
             ("remote", _, Some("except")) => Ok(SettingKind::List),
             ("remote", _, Some(_)) => Err(KeyRefusal::Secret(key.to_string())),

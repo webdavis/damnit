@@ -1,7 +1,7 @@
 use dam_domain::Object;
 use dam_domain::Permission::TaskRead;
 
-use crate::config::{Config, FilterConfig, FilterRule};
+use crate::config::Config;
 use crate::errors::UseCaseError;
 use crate::ports::{History, StoreError};
 use crate::service::Dam;
@@ -9,10 +9,7 @@ use crate::testing::{FakeFilterFunctions, FaultyStore, Scenario, allowed, holder
 
 fn three_tasks() -> Scenario {
     let mut s = Scenario::default().configured(Config {
-        filters: vec![FilterConfig {
-            name: "slipping".into(),
-            rule: FilterRule::Function,
-        }],
+        filters: vec![crate::testing::saved_function("slipping", &[])],
         ..Config::default()
     });
     s.fixture.filter_functions = FakeFilterFunctions::keeping(&[]);
@@ -31,7 +28,7 @@ fn a_token_without_history_read_never_has_the_log_read() {
         access: &reader,
         ..s.fixture.dam(&store)
     }
-    .list(Some("slipping"))
+    .list_saved("slipping")
     .unwrap();
     assert_eq!(store.log_reads(), 0);
 }
@@ -40,7 +37,7 @@ fn a_token_without_history_read_never_has_the_log_read() {
 fn a_listing_reads_the_log_once_however_many_objects_ask_for_their_history() {
     let s = three_tasks();
     let store = FaultyStore::new(s.store.clone());
-    s.fixture.dam(&store).list(Some("slipping")).unwrap();
+    s.fixture.dam(&store).list_saved("slipping").unwrap();
     assert_eq!(store.log_reads(), 1);
     let seen = s.fixture.filter_functions.seen.borrow();
     assert_eq!(seen.len(), 3);
@@ -55,7 +52,7 @@ fn a_match_that_never_asks_for_history_never_has_the_log_read() {
     let mut s = three_tasks();
     s.fixture.filter_functions.never_reading_history = true;
     let store = FaultyStore::new(s.store.clone());
-    s.fixture.dam(&store).list(Some("slipping")).unwrap();
+    s.fixture.dam(&store).list_saved("slipping").unwrap();
     assert_eq!(store.log_reads(), 0);
 }
 
@@ -65,7 +62,7 @@ fn a_log_that_will_not_read_fails_the_listing_as_the_store_failing() {
     let store = FaultyStore::new(s.store.clone());
     store.fail_reading_the_log();
     assert_eq!(
-        s.fixture.dam(&store).list(Some("slipping")),
+        s.fixture.dam(&store).list_saved("slipping"),
         Err(UseCaseError::Store(StoreError::Failed(
             "the log could not be read".into()
         )))

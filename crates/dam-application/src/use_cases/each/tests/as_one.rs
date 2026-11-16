@@ -27,7 +27,7 @@ fn as_one_puts_every_item_a_token_sends_in_one_new_set() {
         access: &token,
         ..s.dam()
     };
-    dam.edit_each(&query("kind:task"), retitled("x"), as_one())
+    dam.edit_each(&picked(&[("kind", "task")]), retitled("x"), as_one())
         .unwrap();
     let items = s.store.items().unwrap();
     assert_eq!(items.len(), 3);
@@ -44,7 +44,8 @@ fn without_as_one_each_item_waits_alone() {
         access: &token,
         ..s.dam()
     };
-    dam.remove_each(&query("kind:task"), run()).unwrap();
+    dam.remove_each(&picked(&[("kind", "task")]), run())
+        .unwrap();
     assert!(s.store.items().unwrap().iter().all(|i| i.set.is_none()));
 }
 
@@ -56,9 +57,9 @@ fn two_as_one_runs_make_two_sets() {
         access: &token,
         ..s.dam()
     };
-    dam.edit_each(&query("path:work/"), retitled("x"), as_one())
+    dam.edit_each(&picked(&[("path", "work/")]), retitled("x"), as_one())
         .unwrap();
-    dam.edit_each(&query("path:home/"), retitled("y"), as_one())
+    dam.edit_each(&picked(&[("path", "home/")]), retitled("y"), as_one())
         .unwrap();
     let items = s.store.items().unwrap();
     assert_ne!(items[0].set, items[2].set);
@@ -76,7 +77,7 @@ fn a_preview_as_one_sends_nothing() {
         preview: true,
         ..as_one()
     };
-    dam.edit_each(&query("kind:task"), retitled("x"), previewing)
+    dam.edit_each(&picked(&[("kind", "task")]), retitled("x"), previewing)
         .unwrap();
     assert!(s.store.items().unwrap().is_empty());
 }
@@ -110,7 +111,7 @@ fn a_set_never_takes_the_hash_of_an_item_already_kept() {
         access: &token,
         ..s.dam()
     };
-    dam.edit_each(&query("path:work/"), retitled("x"), as_one())
+    dam.edit_each(&picked(&[("path", "work/")]), retitled("x"), as_one())
         .unwrap();
     let items = s.store.items().unwrap();
     let set = items.iter().find_map(|i| i.set.clone()).unwrap();

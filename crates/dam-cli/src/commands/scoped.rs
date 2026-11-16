@@ -70,7 +70,9 @@ pub(crate) fn dispatch_in(
         }
         Command::List(mut a) => {
             if let Some(rules) = standing.rules(&a.scope) {
-                a.project_default = rules.listed(None).filter(|_| a.selection.is_empty());
+                if let Some(list) = rules.list.as_ref().filter(|_| a.selection.is_empty()) {
+                    a.selection.typed = list.clone();
+                }
                 a.project_filters = rules.filters.clone();
             }
             a.place = standing.place(&a.scope)?;

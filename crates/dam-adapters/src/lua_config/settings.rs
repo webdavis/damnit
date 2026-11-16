@@ -1,7 +1,7 @@
 use dam_application::{Config, ConfigError, SettingKey};
 use dam_domain::{Categories, Category};
 
-use super::filter::read_filter;
+use super::filter::{none_reaches_itself, read_filter};
 use super::hook::HOOK;
 use super::remote::read_remote;
 use super::strict::StrictMap;
@@ -72,8 +72,9 @@ pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
     let filters = root
         .maps_in("filter")?
         .iter()
-        .map(|(name, filter)| read_filter(name, filter))
+        .map(|(name, filter)| read_filter(name, filter, &categories))
         .collect::<Result<Vec<_>, _>>()?;
+    none_reaches_itself(&filters, &root.place().file)?;
     Ok(Config {
         owner: root.string("owner")?,
         done_interactive,

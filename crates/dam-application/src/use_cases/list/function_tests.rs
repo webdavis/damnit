@@ -3,19 +3,16 @@ use std::path::PathBuf;
 use dam_domain::Object;
 use dam_domain::Permission::{HistoryRead, TaskRead};
 
-use crate::config::{Config, FilterConfig, FilterRule};
+use crate::config::{Config, FilterConfig};
 use crate::errors::{FilterError, UseCaseError};
 use crate::ports::{FunctionFailure, FunctionFault, History};
 use crate::service::Dam;
 use crate::testing::prelude::{CommitRepository, ObjectRepository};
-use crate::testing::{FakeFilterFunctions, Scenario, allowed, holder, task_in};
+use crate::testing::{FakeFilterFunctions, Scenario, allowed, holder, saved_function, task_in};
 
-fn filtered_by(rule: FilterRule, keeping: &[&'static str]) -> Scenario {
+fn filtered_by(filter: FilterConfig, keeping: &[&'static str]) -> Scenario {
     let mut s = Scenario::default().configured(Config {
-        filters: vec![FilterConfig {
-            name: "slipping".into(),
-            rule,
-        }],
+        filters: vec![filter],
         ..Config::default()
     });
     s.fixture.filter_functions = FakeFilterFunctions::keeping(keeping);
@@ -31,18 +28,18 @@ fn subjects(objects: &[Object]) -> Vec<&str> {
 
 #[test]
 fn a_function_filter_keeps_what_its_function_keeps() {
-    let s = filtered_by(FilterRule::Function, &["laundry", "report"]);
-    let listed = s.dam().list(Some("slipping")).unwrap();
+    let s = filtered_by(saved_function("slipping", &[]), &["laundry", "report"]);
+    let listed = s.dam().list_saved("slipping").unwrap();
     assert_eq!(subjects(&listed), ["laundry", "report"]);
 }
 
 #[test]
 fn the_query_narrows_first_and_the_function_never_sees_what_it_dropped() {
     let s = filtered_by(
-        FilterRule::QueryThenFunction("path:work/".into()),
+        saved_function("slipping", &[("path", "work/")]),
         &["report", "laundry"],
     );
-    let listed = s.dam().list(Some("slipping")).unwrap();
+    let listed = s.dam().list_saved("slipping").unwrap();
     assert_eq!(subjects(&listed), ["report"]);
     assert_eq!(
         s.fixture.filter_functions.seen_subjects(),
@@ -52,16 +49,19 @@ fn the_query_narrows_first_and_the_function_never_sees_what_it_dropped() {
 
 #[test]
 fn the_function_keeps_the_order_the_listing_gives() {
-    let s = filtered_by(FilterRule::Function, &["report", "laundry", "invoice"]);
-    let unfiltered = s.dam().list(None).unwrap();
-    let listed = s.dam().list(Some("slipping")).unwrap();
+    let s = filtered_by(
+        saved_function("slipping", &[]),
+        &["report", "laundry", "invoice"],
+    );
+    let unfiltered = s.dam().list_within(&dam_domain::Path::root()).unwrap();
+    let listed = s.dam().list_saved("slipping").unwrap();
     assert_eq!(subjects(&listed), subjects(&unfiltered));
 }
 
 #[test]
 fn the_function_is_handed_each_objects_own_changes_newest_first() {
-    let s = filtered_by(FilterRule::Function, &[]);
-    s.dam().list(Some("slipping")).unwrap();
+    let s = filtered_by(saved_function("slipping", &[]), &[]);
+    s.dam().list_saved("slipping").unwrap();
     let seen = s.fixture.filter_functions.seen.borrow();
     let (subject, Some(History::Recorded(commits))) = &seen[0] else {
         panic!("the owner reads the history");
@@ -78,19 +78,19 @@ fn the_function_is_handed_each_objects_own_changes_newest_first() {
 
 #[test]
 fn a_token_has_the_function_run_only_over_objects_it_may_read() {
-    let s = filtered_by(FilterRule::Function, &["report", "laundry"]);
+    let s = filtered_by(saved_function("slipping", &[]), &["report", "laundry"]);
     let token = holder(vec![allowed(&[TaskRead], Some(&["home"]))]);
     let dam = Dam {
         access: &token,
         ..s.dam()
     };
-    assert_eq!(subjects(&dam.list(Some("slipping")).unwrap()), ["laundry"]);
+    assert_eq!(subjects(&dam.list_saved("slipping").unwrap()), ["laundry"]);
     assert_eq!(s.fixture.filter_functions.seen_subjects(), ["laundry"]);
 }
 
 #[test]
 fn a_token_without_history_read_has_the_history_withheld() {
-    let s = filtered_by(FilterRule::Function, &[]);
+    let s = filtered_by(saved_function("slipping", &[]), &[]);
     let reader = holder(vec![allowed(&[TaskRead], None)]);
     let historian = holder(vec![allowed(&[TaskRead, HistoryRead], None)]);
     for token in [&reader, &historian] {
@@ -98,7 +98,7 @@ fn a_token_without_history_read_has_the_history_withheld() {
             access: token,
             ..s.dam()
         }
-        .list(Some("slipping"))
+        .list_saved("slipping")
         .unwrap();
     }
     let seen = s.fixture.filter_functions.seen.borrow();
@@ -118,10 +118,10 @@ fn raised() -> FunctionFailure {
 
 #[test]
 fn a_failing_function_names_the_filter_and_its_place_to_the_owner() {
-    let s = filtered_by(FilterRule::Function, &[]);
+    let s = filtered_by(saved_function("slipping", &[]), &[]);
     *s.fixture.filter_functions.failing.borrow_mut() = Some(raised());
     assert_eq!(
-        s.dam().list(Some("slipping")).unwrap_err(),
+        s.dam().list_saved("slipping").unwrap_err(),
         UseCaseError::Filter(FilterError::Failed {
             filter: "slipping".into(),
             failure: raised(),
@@ -131,7 +131,7 @@ fn a_failing_function_names_the_filter_and_its_place_to_the_owner() {
 
 #[test]
 fn a_failing_function_names_only_the_filter_to_a_token() {
-    let s = filtered_by(FilterRule::Function, &[]);
+    let s = filtered_by(saved_function("slipping", &[]), &[]);
     *s.fixture.filter_functions.failing.borrow_mut() = Some(raised());
     let token = holder(vec![allowed(&[TaskRead], None)]);
     let dam = Dam {
@@ -139,7 +139,7 @@ fn a_failing_function_names_only_the_filter_to_a_token() {
         ..s.dam()
     };
     assert_eq!(
-        dam.list(Some("slipping")).unwrap_err(),
+        dam.list_saved("slipping").unwrap_err(),
         UseCaseError::Filter(FilterError::Withheld {
             filter: "slipping".into(),
         })
@@ -148,7 +148,7 @@ fn a_failing_function_names_only_the_filter_to_a_token() {
 
 #[test]
 fn a_token_reads_no_details_of_a_change_another_sender_made() {
-    let s = filtered_by(FilterRule::Function, &[]);
+    let s = filtered_by(saved_function("slipping", &[]), &[]);
     let laundry = s.store.get(&crate::testing::oid(3)).unwrap().unwrap();
     s.store
         .commit(&dam_domain::CommitRecord {
@@ -171,12 +171,12 @@ fn a_token_reads_no_details_of_a_change_another_sender_made() {
         })
         .unwrap();
     let everything = holder(vec![allowed(&[TaskRead, HistoryRead], None)]);
-    s.dam().list(Some("slipping")).unwrap();
+    s.dam().list_saved("slipping").unwrap();
     Dam {
         access: &everything,
         ..s.dam()
     }
-    .list(Some("slipping"))
+    .list_saved("slipping")
     .unwrap();
     let seen = s.fixture.filter_functions.seen.borrow();
     let details_of = |at: usize| match &seen[at].1 {

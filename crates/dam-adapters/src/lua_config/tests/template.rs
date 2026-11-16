@@ -55,11 +55,9 @@ fn every_example_uncommented_at_once_is_a_working_config() {
     let effort = config.categories.category_of_name("effort").unwrap();
     assert_eq!(effort.values, ["light", "admin", "deep"]);
     assert!(effort.exclusive);
-    assert_eq!(
-        config.filter("today").unwrap().rule.query(),
-        Some("due:today | overdue")
-    );
-    assert!(config.filter("undated").unwrap().rule.runs_a_function());
+    let today = &config.filter("today").unwrap().table;
+    assert_eq!(today.fields["due"].texts(), ["..today"]);
+    assert!(config.filter("undated").unwrap().runs_a_function);
 }
 
 #[test]

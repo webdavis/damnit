@@ -100,6 +100,7 @@ pub enum Refusal {
         path: Path,
     },
     NoSuchFilter(String),
+    FilterReachesItself(Vec<String>),
     CountMismatch {
         expected: usize,
         count: usize,

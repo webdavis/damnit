@@ -23,31 +23,31 @@ fn sorted(out: &SetChanges) -> Vec<Oid> {
 }
 
 #[test]
-fn a_query_within_a_place_selects_only_what_lies_under_it() {
+fn a_filter_within_a_place_selects_only_what_lies_under_it() {
     let s = in_work_and_beside_it();
-    let within = Selector::Query("kind:task".into(), work());
+    let within = picked_within(&[("kind", "task")], work());
     let out = s.dam().edit_each(&within, retitled("x"), run()).unwrap();
     assert_eq!(sorted(&out), oids(&[1, 2, 4]));
 }
 
 #[test]
-fn a_path_in_a_query_within_a_place_starts_from_that_place() {
+fn a_path_in_a_filter_within_a_place_starts_from_that_place() {
     let s = in_work_and_beside_it();
-    let within = Selector::Query("path:clients/".into(), work());
+    let within = picked_within(&[("path", "clients/")], work());
     let out = s.dam().edit_each(&within, retitled("x"), run()).unwrap();
     assert_eq!(out.oids, oids(&[4]));
 }
 
 #[test]
-fn a_filter_within_a_place_selects_only_what_lies_under_it() {
+fn a_personal_filter_within_a_place_selects_only_what_lies_under_it() {
     let s = in_work_and_beside_it();
-    let within = Selector::Filter("home".into(), work());
+    let within = Selector::Filter("home".into(), work(), vec![]);
     let out = s.dam().edit_each(&within, retitled("x"), run()).unwrap();
     assert!(out.oids.is_empty());
 }
 
 #[test]
-fn a_query_within_a_place_reads_the_categories_of_that_place() {
+fn a_filter_within_a_place_reads_the_categories_of_that_place() {
     let place_categories = Categories::new(vec![Category {
         name: "stage".into(),
         values: vec!["review".into()],
@@ -59,9 +59,9 @@ fn a_query_within_a_place_reads_the_categories_of_that_place() {
         ..config()
     });
     s.working(Object::Task(task_in(1, "report", "work")));
-    let within = Selector::Query("stage:review".into(), work());
+    let within = picked_within(&[("category", "stage=review")], work());
     assert!(s.dam().edit_each(&within, retitled("x"), run()).is_ok());
-    let everywhere = Selector::Query("stage:review".into(), Path::root());
+    let everywhere = picked_within(&[("category", "stage=review")], Path::root());
     assert!(
         s.dam()
             .edit_each(&everywhere, retitled("x"), run())
@@ -80,7 +80,7 @@ fn a_token_within_a_place_selects_only_what_it_sees_there() {
         access: &token,
         ..s.dam()
     };
-    let within = Selector::Query("kind:task".into(), work());
+    let within = picked_within(&[("kind", "task")], work());
     let out = dam.edit_each(&within, retitled("x"), run()).unwrap();
     assert_eq!(out.oids, oids(&[4]));
 }

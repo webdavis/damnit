@@ -134,5 +134,5 @@ fn example() -> &'static str {
 #[test]
 fn the_pages_example_reads_as_a_function_filter() {
     let config = super::support::config(example()).load().unwrap();
-    assert!(config.filter("postponed").unwrap().rule.runs_a_function());
+    assert!(config.filter("postponed").unwrap().runs_a_function);
 }

@@ -7,7 +7,7 @@ fn the_catalogue_answers_although_the_store_will_not_open() {
     let _guard = support::guard("the_catalogue_answers_although_the_store_will_not_open");
     let sb = Sandbox::new();
     sb.add_category("effort", &["deep"], true);
-    sb.add_filter("today", "due:today");
+    sb.add_filter_written_as("today", "{ due = \"today\" }");
 
     let a_directory_where_the_store_file_goes = sb.dir.path().join("dam.db");
     std::fs::create_dir(&a_directory_where_the_store_file_goes).unwrap();

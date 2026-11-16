@@ -13,11 +13,11 @@ fn each_category_and_filter_naming_an_old_label_is_listed_with_what_it_would_bec
             },
             ConfigPlace::Filter {
                 name: "short".into(),
-                query: "@deep | due:today".into(),
+                table: short("deep"),
             },
             ConfigPlace::Filter {
                 name: "focus".into(),
-                query: "@light & !done".into(),
+                table: table(&[("category", "effort=light")], vec![]),
             },
             ConfigPlace::HandWritten {
                 name: "picked".into()
@@ -27,13 +27,13 @@ fn each_category_and_filter_naming_an_old_label_is_listed_with_what_it_would_bec
 }
 
 #[test]
-fn a_new_label_that_needs_quotes_is_written_quoted() {
-    let places = config_places(&configured(), &map(&[("home", "at \"home\"")]));
+fn a_new_label_holding_a_comma_is_written_exact() {
+    let places = config_places(&configured(), &map(&[("home", "at,home")]));
     assert_eq!(
         places[1],
         ConfigPlace::Filter {
             name: "home".into(),
-            query: r#"@"at \"home\"""#.into(),
+            table: table(&[("labels", "=at,home")], vec![]),
         }
     );
 }

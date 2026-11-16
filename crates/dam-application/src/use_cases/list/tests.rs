@@ -1,6 +1,6 @@
-use super::*;
-use crate::config::{Config, FilterConfig, FilterRule};
+use crate::config::{Config, FilterConfig};
 use crate::testing::{Scenario, oid};
+use crate::testing::{fields, saved};
 use dam_domain::{Categories, Category, Object, Path, Priority, Task, When};
 use jiff::civil::date;
 
@@ -30,16 +30,20 @@ fn effort_categories_and_a_today_filter() -> Config {
         .unwrap(),
         filters: vec![FilterConfig {
             name: "today".into(),
-            rule: FilterRule::Query("due:today | overdue".into()),
+            table: dam_domain::FilterTable {
+                any: vec![fields(&[("due", "today")]), fields(&[("overdue", "true")])],
+                ..Default::default()
+            },
+            runs_a_function: false,
         }],
         ..Config::default()
     }
 }
 
 #[test]
-fn no_query_lists_everything_by_path_then_earlier_due_first() {
+fn the_root_lists_everything_by_path_then_earlier_due_first() {
     let s = tasks_a_b_and_c_later(effort_categories_and_a_today_filter());
-    let out = s.dam().list(None).unwrap();
+    let out = s.dam().list_within(&dam_domain::Path::root()).unwrap();
     let subjects: Vec<&str> = out.iter().map(|o| o.base().subject.as_str()).collect();
     assert_eq!(subjects, vec!["b", "a", "c"]);
 }
@@ -47,53 +51,19 @@ fn no_query_lists_everything_by_path_then_earlier_due_first() {
 #[test]
 fn a_saved_filter_runs_by_name() {
     let s = tasks_a_b_and_c_later(effort_categories_and_a_today_filter());
-    let out = s.dam().list(Some("today")).unwrap();
+    let out = s.dam().list_saved("today").unwrap();
     assert_eq!(out.len(), 2);
-}
-
-#[test]
-fn a_category_term_refuses_a_value_of_another_category() {
-    let s = tasks_a_b_and_c_later(effort_categories_and_a_today_filter());
-    let err = s.dam().list(Some("effort:home")).unwrap_err();
-    assert_eq!(
-        err,
-        UseCaseError::Refused(Refusal::NotACategoryValue {
-            category: "effort".into(),
-            value: "home".into()
-        })
-    );
-}
-
-#[test]
-fn a_category_term_checks_the_category_exists() {
-    let s = tasks_a_b_and_c_later(effort_categories_and_a_today_filter());
-    assert_eq!(s.dam().list(Some("effort:deep")).unwrap().len(), 1);
-    let err = s.dam().list(Some("mood:happy")).unwrap_err();
-    assert_eq!(
-        err,
-        UseCaseError::Refused(Refusal::UnknownCategory("mood".into()))
-    );
-}
-
-#[test]
-fn a_bad_query_is_a_query_error_naming_what_was_typed() {
-    let s = Scenario::default().configured(effort_categories_and_a_today_filter());
-    let err = s.dam().list(Some("(due:today")).unwrap_err();
-    assert_eq!(err, UseCaseError::Query(QueryError::Unclosed));
 }
 
 #[test]
 fn a_saved_filter_reads_a_quoted_value() {
     let config = Config {
-        filters: vec![FilterConfig {
-            name: "kitchen".into(),
-            rule: FilterRule::Query("path:\"kitchen remodel/\"".into()),
-        }],
+        filters: vec![saved("kitchen", &[("path", "kitchen remodel/")])],
         ..Config::default()
     };
     let s = Scenario::default().configured(config);
     let mut t = Task::new(oid(1), "get quotes");
     t.base.path = Path::parse("kitchen remodel").unwrap();
     s.working(Object::Task(t));
-    assert_eq!(s.dam().list(Some("kitchen")).unwrap().len(), 1);
+    assert_eq!(s.dam().list_saved("kitchen").unwrap().len(), 1);
 }

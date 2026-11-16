@@ -5,7 +5,7 @@ mod tokens;
 
 use clap::Parser;
 use dam_application::testing::task_in;
-use dam_application::{ConfigError, FilterConfig, FilterRule, Project, ProjectSettings};
+use dam_application::{ConfigError, FilterConfig, Project, ProjectSettings};
 use dam_domain::{Categories, Category, Object};
 use serde_json::Value;
 
@@ -49,11 +49,8 @@ fn unreadable() -> Standing {
     })
 }
 
-fn tasks_filter(query: &str) -> FilterConfig {
-    FilterConfig {
-        name: "tasks".into(),
-        rule: FilterRule::Query(query.into()),
-    }
+fn tasks_filter(fields: &[(&str, &str)]) -> FilterConfig {
+    dam_application::testing::saved("tasks", fields)
 }
 
 fn stage() -> Categories {
@@ -67,7 +64,7 @@ fn stage() -> Categories {
 
 fn holding_a_project_and_more() -> Context {
     let mut ctx = context();
-    ctx.config.filters = vec![tasks_filter("kind:task")];
+    ctx.config.filters = vec![tasks_filter(&[("kind", "task")])];
     for task in [
         task_in(1, "readme", "damnit"),
         task_in(2, "parse flags", "damnit/cli"),

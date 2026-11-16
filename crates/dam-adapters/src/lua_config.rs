@@ -5,6 +5,7 @@ mod evaluate;
 mod file;
 mod filter;
 mod filter_function;
+mod filter_table;
 mod functions;
 mod hook;
 mod hook_folder;

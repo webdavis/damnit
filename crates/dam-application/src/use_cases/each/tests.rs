@@ -9,16 +9,13 @@ mod within;
 use dam_domain::{Object, Oid};
 
 use super::{Selector, SetChanges, SetRun};
-use crate::config::{Config, FilterConfig, FilterRule};
+use crate::config::Config;
 use crate::testing::{Scenario, config, oid, task_in};
 use crate::use_cases::edit::EditFields;
 
 fn work_and_home() -> Scenario {
     let s = Scenario::default().configured(Config {
-        filters: vec![FilterConfig {
-            name: "home".into(),
-            rule: FilterRule::Query("path:home/".into()),
-        }],
+        filters: vec![crate::testing::saved("home", &[("path", "home/")])],
         ..config()
     });
     s.working(Object::Task(task_in(1, "report", "work")));
@@ -35,8 +32,13 @@ fn named(bytes: &[u8]) -> Selector {
     Selector::Oids(oids(bytes))
 }
 
-fn query(text: &str) -> Selector {
-    Selector::Query(text.into(), dam_domain::Path::root())
+fn picked(fields: &[(&str, &str)]) -> Selector {
+    picked_within(fields, dam_domain::Path::root())
+}
+
+fn picked_within(fields: &[(&str, &str)], place: dam_domain::Path) -> Selector {
+    let here = vec![crate::testing::saved("picked", fields)];
+    Selector::Filter("picked".into(), place, here)
 }
 
 fn retitled(subject: &str) -> EditFields {

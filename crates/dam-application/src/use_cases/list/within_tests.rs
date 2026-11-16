@@ -1,21 +1,15 @@
 use dam_domain::Permission::TaskRead;
 use dam_domain::{Kind, Object, Path};
 
-use crate::config::{Config, FilterConfig, FilterRule};
+use crate::config::Config;
 use crate::service::Dam;
 use crate::testing::{Scenario, allowed, holder, task_in};
 
 fn a_project_and_more() -> Scenario {
     let s = Scenario::default().configured(Config {
         filters: vec![
-            FilterConfig {
-                name: "cli".into(),
-                rule: FilterRule::Query("path:damnit/cli/".into()),
-            },
-            FilterConfig {
-                name: "everything".into(),
-                rule: FilterRule::Query("kind:task".into()),
-            },
+            crate::testing::saved("cli", &[("path", "damnit/cli/")]),
+            crate::testing::saved("everything", &[("kind", "task")]),
         ],
         ..Config::default()
     });
@@ -39,51 +33,24 @@ fn subjects(objects: Vec<Object>) -> Vec<String> {
 }
 
 #[test]
-fn a_list_within_a_project_equals_a_path_search_from_the_root() {
+fn a_list_within_a_project_holds_what_lies_under_it() {
     let s = a_project_and_more();
-    let dam = s.dam();
     assert_eq!(
-        dam.list_within(None, &damnit()).unwrap(),
-        dam.list(Some("path:damnit/")).unwrap()
-    );
-    assert_eq!(
-        subjects(dam.list_within(None, &damnit()).unwrap()),
+        subjects(s.dam().list_within(&damnit()).unwrap()),
         ["readme", "parse flags"]
     );
 }
 
 #[test]
-fn a_typed_path_term_starts_from_the_project() {
+fn a_saved_filter_keeps_its_paths_from_the_root_and_is_narrowed_to_the_project() {
     let s = a_project_and_more();
     let dam = s.dam();
-    assert_eq!(
-        subjects(dam.list_within(Some("path:cli/"), &damnit()).unwrap()),
-        ["parse flags"]
-    );
-}
-
-#[test]
-fn a_saved_filter_keeps_its_query_and_is_narrowed_to_the_project() {
-    let s = a_project_and_more();
-    let dam = s.dam();
-    assert_eq!(
-        subjects(dam.list_within(Some("cli"), &damnit()).unwrap()),
-        ["parse flags"]
-    );
-    assert_eq!(
-        subjects(dam.list_within(Some("everything"), &damnit()).unwrap()),
-        ["readme", "parse flags"]
-    );
-}
-
-#[test]
-fn the_root_lists_everything() {
-    let s = a_project_and_more();
-    let dam = s.dam();
-    assert_eq!(
-        dam.list_within(None, &Path::root()).unwrap(),
-        dam.list(None).unwrap()
-    );
+    let within = |name: &str| {
+        let listed = dam.listed_by_name(name, &damnit(), &[]).unwrap();
+        subjects(listed)
+    };
+    assert_eq!(within("cli"), ["parse flags"]);
+    assert_eq!(within("everything"), ["readme", "parse flags"]);
 }
 
 #[test]
@@ -95,7 +62,7 @@ fn a_token_lists_only_what_it_sees_inside_the_project() {
             access: &token,
             ..s.dam()
         };
-        subjects(dam.list_within(None, &damnit()).unwrap())
+        subjects(dam.list_within(&damnit()).unwrap())
     };
     assert!(listed(Some(&["home"])).is_empty());
     assert_eq!(listed(Some(&["damnit/cli"])), ["parse flags"]);

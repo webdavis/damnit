@@ -1,4 +1,4 @@
-use dam_application::{ConfigError, FilterConfig, FilterRule, Project, ProjectSettings};
+use dam_application::{ConfigError, Project, ProjectSettings};
 use dam_domain::{Object, Oid, Path, Task};
 
 use super::dispatch_in;
@@ -84,10 +84,10 @@ fn several_oids_move_under_the_project() {
 #[test]
 fn a_filter_moves_what_it_lists_under_the_project() {
     let mut ctx = context();
-    ctx.config.filters = vec![FilterConfig {
-        name: "tasks".into(),
-        rule: FilterRule::Query("kind:task".into()),
-    }];
+    ctx.config.filters = vec![dam_application::testing::saved(
+        "tasks",
+        &[("kind", "task")],
+    )];
     filed(&ctx, 1, "damnit/");
     filed(&ctx, 2, "work/");
     let mut args = mv(&[]);

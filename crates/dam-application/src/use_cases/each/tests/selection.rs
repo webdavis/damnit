@@ -24,11 +24,11 @@ fn an_oid_named_twice_is_changed_once() {
 }
 
 #[test]
-fn a_query_selects_what_ls_lists() {
+fn a_filter_selects_what_list_lists() {
     let s = work_and_home();
     let out = s
         .dam()
-        .edit_each(&query("path:work/"), retitled("x"), run())
+        .edit_each(&picked(&[("path", "work/")]), retitled("x"), run())
         .unwrap();
     let mut selected = out.oids.clone();
     selected.sort();
@@ -36,20 +36,9 @@ fn a_query_selects_what_ls_lists() {
 }
 
 #[test]
-fn a_query_never_reads_a_word_as_a_filter_name() {
+fn a_filter_selects_by_its_saved_table() {
     let s = work_and_home();
-    assert!(
-        s.dam()
-            .edit_each(&query("home"), retitled("x"), run())
-            .is_err()
-    );
-    assert_eq!(subject_of(&s, 3), "laundry");
-}
-
-#[test]
-fn a_filter_selects_by_its_saved_query() {
-    let s = work_and_home();
-    let filter = Selector::Filter("home".into(), dam_domain::Path::root());
+    let filter = Selector::Filter("home".into(), dam_domain::Path::root(), vec![]);
     let out = s.dam().edit_each(&filter, retitled("x"), run()).unwrap();
     assert_eq!(out.oids, oids(&[3]));
 }
@@ -57,7 +46,7 @@ fn a_filter_selects_by_its_saved_query() {
 #[test]
 fn an_unknown_filter_is_refused() {
     let s = work_and_home();
-    let filter = Selector::Filter("nope".into(), dam_domain::Path::root());
+    let filter = Selector::Filter("nope".into(), dam_domain::Path::root(), vec![]);
     assert_eq!(
         s.dam().edit_each(&filter, retitled("x"), run()),
         Err(UseCaseError::Refused(Refusal::NoSuchFilter("nope".into())))
@@ -69,7 +58,7 @@ fn an_empty_set_changes_nothing_and_counts_zero() {
     let s = work_and_home();
     let out = s
         .dam()
-        .edit_each(&query("path:garden/"), retitled("x"), run())
+        .edit_each(&picked(&[("path", "garden/")]), retitled("x"), run())
         .unwrap();
     assert!(out.oids.is_empty() && out.changes.is_empty());
 }
@@ -106,7 +95,7 @@ fn an_expect_that_differs_from_the_count_is_refused_before_anything_changes() {
     };
     assert_eq!(
         s.dam()
-            .edit_each(&query("path:work/"), retitled("x"), expecting),
+            .edit_each(&picked(&[("path", "work/")]), retitled("x"), expecting),
         Err(UseCaseError::Refused(Refusal::CountMismatch {
             expected: 3,
             count: 2
@@ -124,7 +113,7 @@ fn a_matching_expect_runs() {
     };
     assert!(
         s.dam()
-            .edit_each(&query("path:work/"), retitled("x"), expecting)
+            .edit_each(&picked(&[("path", "work/")]), retitled("x"), expecting)
             .is_ok()
     );
 }

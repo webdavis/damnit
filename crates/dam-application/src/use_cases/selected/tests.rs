@@ -5,11 +5,11 @@ use dam_domain::{
 use jiff::civil::date;
 
 use super::SelectError;
-use crate::config::{Config, FilterConfig, FilterRule};
+use crate::config::Config;
 use crate::errors::{Refusal, UseCaseError};
-use crate::testing::{Scenario, event, oid, task_in};
+use crate::testing::{Scenario, event, oid, saved, task_in};
 
-pub(super) fn filter(fields: &[(&str, &str)]) -> Filter {
+pub(crate) fn filter(fields: &[(&str, &str)]) -> Filter {
     let fields = fields
         .iter()
         .map(|(k, v)| (k.to_string(), TableValue::One(v.to_string())))
@@ -25,7 +25,7 @@ pub(super) fn subjects(objects: &[Object]) -> Vec<&str> {
     objects.iter().map(|o| o.base().subject.as_str()).collect()
 }
 
-fn effort_and_a_today_filter() -> Config {
+pub(super) fn effort_and_a_today_filter() -> Config {
     Config {
         owner: Some("ana".into()),
         categories: Categories::new(vec![Category {
@@ -34,15 +34,12 @@ fn effort_and_a_today_filter() -> Config {
             exclusive: true,
         }])
         .unwrap(),
-        filters: vec![FilterConfig {
-            name: "today".into(),
-            rule: FilterRule::Query("due:today".into()),
-        }],
+        filters: vec![saved("today", &[("due", "today")])],
         ..Config::default()
     }
 }
 
-fn open_done_due_and_an_event() -> Scenario {
+pub(super) fn open_done_due_and_an_event() -> Scenario {
     let s = Scenario::default().configured(effort_and_a_today_filter());
     let mut due = task_in(1, "due", "work");
     due.due = Some(When::Day(date(2026, 9, 18)));
@@ -154,10 +151,7 @@ fn a_task_waiting_on_an_open_task_is_blocked() {
 #[test]
 fn a_filter_of_the_place_is_found_first_and_reads_its_paths_from_the_place() {
     let s = open_done_due_and_an_event();
-    let here = [FilterConfig {
-        name: "today".into(),
-        rule: FilterRule::Query("path:/".into()),
-    }];
+    let here = [saved("today", &[("path", "/")])];
     let work = Path::parse("work").unwrap();
     let out = s
         .dam()

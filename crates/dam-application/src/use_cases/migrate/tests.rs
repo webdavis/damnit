@@ -2,10 +2,10 @@ mod map;
 mod places;
 mod run;
 
-use dam_domain::{Categories, Category, Object, Task};
+use dam_domain::{Categories, Category, FilterTable, Object, TableValue, Task};
 
 use super::LabelMap;
-use crate::config::{Config, FilterConfig, FilterRule};
+use crate::config::{Config, FilterConfig};
 use crate::testing::{Scenario, config, oid};
 
 fn effort() -> Categories {
@@ -24,22 +24,47 @@ fn effort() -> Categories {
     .unwrap()
 }
 
-fn filter(name: &str, rule: FilterRule) -> FilterConfig {
+fn table(fields: &[(&str, &str)], any: Vec<FilterTable>) -> FilterTable {
+    FilterTable {
+        fields: fields
+            .iter()
+            .map(|(k, v)| (k.to_string(), TableValue::One(v.to_string())))
+            .collect(),
+        any,
+    }
+}
+
+fn filter(name: &str, table: FilterTable, runs_a_function: bool) -> FilterConfig {
     FilterConfig {
         name: name.into(),
-        rule,
+        table,
+        runs_a_function,
     }
+}
+
+fn short(label: &str) -> FilterTable {
+    table(
+        &[],
+        vec![
+            table(&[("labels", label)], vec![]),
+            table(&[("due", "today")], vec![]),
+        ],
+    )
 }
 
 fn configured() -> Config {
     Config {
         categories: effort(),
         filters: vec![
-            filter("short", FilterRule::Query("@quick | due:today".into())),
-            filter("focus", FilterRule::Query("effort:hard & !done".into())),
-            filter("home", FilterRule::Query("@home".into())),
-            filter("picked", FilterRule::QueryThenFunction("@quick".into())),
-            filter("coded", FilterRule::Function),
+            filter("short", short("quick"), false),
+            filter(
+                "focus",
+                table(&[("category", "effort=hard")], vec![]),
+                false,
+            ),
+            filter("home", table(&[("labels", "home")], vec![]), false),
+            filter("picked", table(&[("labels", "quick")], vec![]), true),
+            filter("coded", FilterTable::default(), true),
         ],
         ..config()
     }

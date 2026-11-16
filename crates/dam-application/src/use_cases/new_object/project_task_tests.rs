@@ -18,7 +18,7 @@ fn a_missing_project_task_is_created_under_its_parent_path() {
     let s = Scenario::default();
     let made = s.dam().hold_project(&place("pns/hooks/")).unwrap();
     assert_eq!(written_subject(made), Some("hooks".into()));
-    let all = s.dam().list(None).unwrap();
+    let all = s.dam().list_within(&dam_domain::Path::root()).unwrap();
     assert_eq!(all[0].base().path, place("pns/"));
 }
 
@@ -33,7 +33,13 @@ fn a_project_task_already_there_is_kept_and_the_root_needs_none() {
             .is_none()
     );
     assert!(s.dam().hold_project(&Path::root()).unwrap().is_none());
-    assert_eq!(s.dam().list(None).unwrap().len(), 1);
+    assert_eq!(
+        s.dam()
+            .list_within(&dam_domain::Path::root())
+            .unwrap()
+            .len(),
+        1
+    );
 }
 
 #[test]

@@ -89,16 +89,3 @@ fn sort_limit_and_offset_sit_under_a_heading_of_their_own() {
         assert_eq!(arg.get_help_heading(), Some("Order and size"), "--{flag}");
     }
 }
-
-#[test]
-fn a_projects_query_text_default_refuses_an_order_rather_than_ignore_it() {
-    let mut args = list_args(&["--limit", "1"]);
-    args.project_default = Some("p1".into());
-    let err = super::run_list(&context(), args).unwrap_err();
-    assert_eq!(err.exit_code(), 2);
-    assert!(
-        err.to_string()
-            .ends_with("run dam list --done false --limit 1"),
-        "{err}"
-    );
-}

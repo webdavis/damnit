@@ -8,6 +8,7 @@ return {
     effort = { values = { "light", "admin", "deep" }, exclusive = true },
   },
   filter = {
-    today = { query = "due:today | overdue" },
+    today = { due = "..today" },
+    review = { labels = { "bug", "not:waiting" }, any = { { priority = "1,2" }, { due = "..today" } } },
   },
 }

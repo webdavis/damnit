@@ -361,8 +361,8 @@ The nearest `.dam.lua` at or above the folder decides the project; a project ins
 only its own file.
 
 `dam list`, `dam agenda` and `dam reminders` list only the project there: `dam list` in that project
-shows what `dam list --path app/` shows elsewhere, and a `--path` or `path:` you type starts from the project. A
-saved filter keeps its own query and is narrowed to the project. Listings print full paths.
+shows what `dam list --path app/` shows elsewhere, and a `--path` you type starts from the project. A
+project's filter reads its `path` from the project, yours from the root, and both are narrowed to the project. Listings print full paths.
 `--global` on these four commands reaches every task and reads a path from the root.
 
 `dam edit`, `dam done`, `dam mv` and `dam rm` with `--filter` change only what `dam list` lists
@@ -389,18 +389,17 @@ holds is refused there; `--global` writes `config.lua` instead. `project.hooks` 
 commands run inside the project without `--global` or `--project`.
 `new_task = { labels = { "app" }, priority = 2 }` fills what a flag and the template leave unset.
 With `required = { "due" }`, `dam new` refuses a task without a due date and names `--due`.
-`ls = "p1"` is what `dam list` shows there when you type no selection flag.
-`filter = { hot = { query = "p1" } }` is found before your own filter named `hot` in `dam list`,
+`list = { priority = 1 }` is what `dam list` shows there when you type no selection flag.
+`filter = { hot = { priority = 1 } }` is found before your own filter named `hot` in `dam list`,
 `dam agenda` and the `--filter` of `dam edit`, `dam done`, `dam mv` and `dam rm`, and
 `dam filter list` there marks it `(the project's)`. Inside a project, `dam filter create|remove`
 and `dam category create|remove` change `.dam.lua`, and `--global` changes your `config.lua`.
 `category = { area = { values = { "ui", "db" }, exclusive = true } }` adds label categories, as
-`config.lua` writes them, to `dam new`, `dam edit` and the queries you type there. Inside the
+`config.lua` writes them, to `dam new`, `dam edit` and `--category` there. Inside the
 project, a project category sets aside whole any of yours that shares its name or a label; `dam edit`
 judges a task under the project's path that way, and a task outside that path, or any task with
 `--global`, by yours alone. `dam doctor` names each one set aside, and `dam category list` there
-marks each category the project's, yours, or yours set aside. A query in `.dam.lua` may name only
-the project's own categories.
+marks each category the project's, yours, or yours set aside.
 `sections = { "bugs", "features" }` names standard sections that `dam init` creates under the path.
 With `branch_label = true`, `dam new` adds the checked-out git branch's name to the new task's
 labels, beside the ones from `--labels`, a template or the project's defaults. A detached head or no
@@ -436,29 +435,33 @@ reports it.
   conflict for it in `dam status`, and `dam resolve` settles it.
 - No error message contains a token.
 
-## Query language
+## Saved filters
 
-    due:today | overdue
-    path:work/ & effort:deep & !done
-    @errand & p1
+A saved filter is a table under `filter.<name>` in `config.lua`: each key is a `dam list` flag and
+its value the text typed after it. A number or `true`/`false` may be bare, a list repeats the flag,
+and `any` holds tables of which at least one must hold:
 
-`estimate:max:5m`, `estimate:min:1h` and `estimate:none` read the estimate; `focus:` and
-`completed_at:` take the same date words as `due:`.
+    filter = {
+      today = { due = "..today" },
+      review = { labels = { "bug", "not:waiting" } },
+      hot = { any = { { labels = "urgent" }, { due = "..today" } } },
+    }
 
-`|` or, `&` and, `!` not, parentheses group. `@label`, `pN`, `key:value`, where a key is a
-field's JSON key such as `labels:` or `attached:`; any other key is a category and the value must
-be one of its values. Double quotes keep spaces in a value, as in `path:"kitchen remodel/"`;
-inside them `\"` is a quote and `\\` a backslash. Saved filters live under `filter.<name>` in
-`config.lua` and run by name. A filter holds query text, a Lua `match` function, or both.
-`docs/lua.md` describes `match`.
+`--filter NAME` adds its fields to the flags typed, and the defaults apply once over both, so
+`dam list --filter today --done` lists the done tasks it selects. `in:NAME` asks what
+`dam list --filter NAME` lists, and `on:NAME` the days its events take place. A filter may
+also hold a Lua `match` function, which narrows what the fields list; `docs/lua.md` describes it.
+A filter written as `query` text, or one that reaches itself, stops the config from loading; the
+message shows the table to write. `on:NAME` knows only the events dam has pulled.
 
-`dam filter list` prints the saved filters with their kind, `query` or `function`, and
+`dam filter list` prints each saved filter as the flags that select it, and
 `dam category list` prints the label categories with their values and whether each is exclusive:
-`{"filters": [{"name": "today", "kind": "query", "query": "due:today | overdue"}]}` and
+`{"filters": [{"name": "today", "table": {"due": "..today"}}]}` and
 `{"categories": [{"name": "effort", "values": ["light", "admin", "deep"], "exclusive": true}]}`
 under `-o json`, an empty array when nothing is declared.
 
-`dam filter create <name> --query '<query>'` saves a filter, and `dam filter remove <name>`
+`dam filter create <name>` with `dam list` selection flags saves a filter, such as
+`dam filter create today --due ..today`, and `dam filter remove <name>`
 removes one. `dam category create <name> --values a,b --exclusive` and `dam category remove <name>`
 do the same for a category. A removed category's labels stay on tasks as free labels. A filter
 with a `match` function is changed by hand in `config.lua`.
@@ -466,7 +469,7 @@ with a `match` function is changed by hand in `config.lua`.
 `dam category migrate --map quick=light --map hard=deep` renames labels on every task and event
 that carries them, all or none, and takes `--preview` and `--expect N`. It leaves `config.lua` as
 it is and lists each category and saved filter that still names an old label, with the
-`dam config set` command that fixes it. `--update-config` also writes those into `config.lua`.
+command that fixes it. `--update-config` also writes those into `config.lua`.
 
 ## Hooks
 
@@ -760,7 +763,7 @@ rejects.
 |---|---|
 | 0 | The command did what it was asked. |
 | 1 | `dam` failed: a store, config, helper, editor or io failure, or a bug in `dam` itself. |
-| 2 | The command line was wrong: an unknown argument, an unreadable value or query, or a bad oid. |
+| 2 | The command line was wrong: an unknown argument, an unreadable value, or a bad oid. |
 | 3 | Cancelled: you interrupted, a prompt could not be answered, or you saved an edit untouched. |
 | 4 | `dam` refused by one of its own rules, and the message names the rule. |
 | 5 | `dam` refused the token in `DAM_TOKEN`, and the message names the rule. |

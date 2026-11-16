@@ -145,8 +145,6 @@ mod label_terms_tests;
 #[cfg(test)]
 mod quoted_value_tests;
 #[cfg(test)]
-mod table_tests;
-#[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod under_tests;

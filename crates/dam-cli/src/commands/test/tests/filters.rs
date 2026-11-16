@@ -1,19 +1,21 @@
 use std::path::PathBuf;
 
-use dam_application::testing::{FakeFilterFunctions, FakeProgress, Said, Scenario, task_in};
-use dam_application::{Config, FilterConfig, FilterRule, FunctionFailure, FunctionFault};
+use dam_application::testing::{
+    FakeFilterFunctions, FakeProgress, Said, Scenario, saved as fields_of, saved_function, task_in,
+};
+use dam_application::{Config, FilterConfig, FunctionFailure, FunctionFault};
 use dam_domain::Object;
 
 use super::{attention_of, json, rows_of};
 use crate::commands::check_report::CheckReport;
 use crate::commands::test::filters::tried;
 
-fn saved(filters: &[(&str, FilterRule)], functions: FakeFilterFunctions) -> Scenario {
+fn saved(filters: &[(&str, FilterConfig)], functions: FakeFilterFunctions) -> Scenario {
     let filters = filters
         .iter()
-        .map(|(name, rule)| FilterConfig {
+        .map(|(name, filter)| FilterConfig {
             name: name.to_string(),
-            rule: rule.clone(),
+            ..filter.clone()
         })
         .collect();
     let mut s = Scenario::default().configured(Config {
@@ -46,7 +48,7 @@ const BROKEN: &str = "broken: failed on 0202020 at /home/someone/.config/dam/con
 #[test]
 fn a_filter_that_runs_passes_with_how_many_it_ran_on_and_kept() {
     let s = saved(
-        &[("slipping", FilterRule::Function)],
+        &[("slipping", saved_function("", &[]))],
         FakeFilterFunctions::keeping(&["report"]),
     );
     let progress = FakeProgress::default();
@@ -73,7 +75,7 @@ fn a_function_that_errors_on_one_object_fails_naming_the_object_and_the_line() {
         failing_on: Some(("invoice", nil_due())),
         ..FakeFilterFunctions::default()
     };
-    let s = saved(&[("broken", FilterRule::Function)], functions);
+    let s = saved(&[("broken", saved_function("", &[]))], functions);
     let progress = FakeProgress::default();
     let report = report_of(&s, &progress);
     assert_eq!(
@@ -94,7 +96,7 @@ fn a_function_that_runs_too_long_fails() {
         fault: FunctionFault::RanOver,
         ..nil_due()
     });
-    let s = saved(&[("slow", FilterRule::Function)], functions);
+    let s = saved(&[("slow", saved_function("", &[]))], functions);
     let report = report_of(&s, &FakeProgress::default());
     assert_eq!(
         rows_of(&report)[1],
@@ -104,14 +106,14 @@ fn a_function_that_runs_too_long_fails() {
 }
 
 #[test]
-fn a_query_that_does_not_parse_fails_with_the_query_error() {
+fn a_table_that_does_not_read_fails_naming_the_field() {
     let s = saved(
-        &[("odd", FilterRule::Query("due:(".into()))],
+        &[("odd", fields_of("", &[("due", "soon")]))],
         FakeFilterFunctions::default(),
     );
     let report = report_of(&s, &FakeProgress::default());
     assert!(
-        rows_of(&report)[1].starts_with("    ✗ odd: the query does not parse: "),
+        rows_of(&report)[1].starts_with("    ✗ odd: --due cannot be \"soon\""),
         "{:?}",
         rows_of(&report)
     );
@@ -132,8 +134,8 @@ fn several_filters_put_the_worst_on_the_part_and_in_the_json() {
     };
     let s = saved(
         &[
-            ("work", FilterRule::Query("path:work/".into())),
-            ("broken", FilterRule::QueryThenFunction("path:work/".into())),
+            ("work", fields_of("", &[("path", "work/")])),
+            ("broken", saved_function("", &[("path", "work/")])),
         ],
         functions,
     );

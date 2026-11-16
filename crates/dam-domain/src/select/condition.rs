@@ -5,7 +5,7 @@ use super::field::{FieldType, SelectField};
 use super::fields::select_field;
 use super::read_value::wants;
 use super::values::Values;
-use super::want::Want;
+use super::want::{SavedUse, Want};
 use crate::{Categories, Object};
 
 #[derive(Clone, Debug)]
@@ -84,8 +84,8 @@ impl Condition {
         Ok(())
     }
 
-    pub fn saved_filters(&self) -> impl Iterator<Item = &str> {
-        self.wants.iter().filter_map(Want::saved_filter)
+    pub(crate) fn saved_filters(&self, use_: SavedUse) -> impl Iterator<Item = &str> {
+        self.wants.iter().filter_map(move |w| w.saved_filter(use_))
     }
 
     pub(crate) fn is_one_value(&self) -> bool {

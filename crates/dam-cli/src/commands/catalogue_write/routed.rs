@@ -43,16 +43,24 @@ pub(crate) fn filter(settings: &Settings, command: FilterCommand) -> Result<Repo
     match command {
         FilterCommand::Create {
             name,
-            query,
+            selection,
+            order,
             global,
-        } => settings.routed(
-            &format!("filter.{name}.query"),
-            global,
-            "filter create",
-            |config, file, named, _| filters::create(config, file, named, &name, &query),
-        ),
+        } => {
+            if let Some(refused) = order.refused(&name) {
+                return Err(refused);
+            }
+            settings.routed(
+                &format!("filter.{name}.kind"),
+                global,
+                "filter create",
+                |config, file, named, _| {
+                    filters::create(config, file, named, &name, &selection.typed)
+                },
+            )
+        }
         FilterCommand::Remove { name, global } => settings.routed(
-            &format!("filter.{name}.query"),
+            &format!("filter.{name}.kind"),
             global,
             "filter remove",
             |config, file, named, _| filters::remove(config, file, named, &name),

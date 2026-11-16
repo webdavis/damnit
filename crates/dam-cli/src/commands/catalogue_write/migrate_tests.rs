@@ -1,5 +1,5 @@
-use dam_application::testing::{FakeSettingsFile, Written, oid};
-use dam_application::{FilterConfig, FilterRule, SetRun, SettingValue};
+use dam_application::testing::{FakeSettingsFile, Written, fields, oid, saved, saved_function};
+use dam_application::{SetRun, SettingValue};
 use dam_domain::{Categories, Category, Object, Task};
 
 use super::migrate::{Migration, migrate};
@@ -17,14 +17,8 @@ pub(super) fn effort_and_filters() -> Context {
     }])
     .unwrap();
     ctx.config.filters = vec![
-        FilterConfig {
-            name: "short".into(),
-            rule: FilterRule::Query("@quick & !done".into()),
-        },
-        FilterConfig {
-            name: "picked".into(),
-            rule: FilterRule::QueryThenFunction("effort:quick".into()),
-        },
+        saved("short", &[("labels", "quick"), ("done", "false")]),
+        saved_function("picked", &[("category", "effort=quick")]),
     ];
     for byte in [1, 2] {
         let mut task = Task::new(oid(byte), format!("t{byte}"));
@@ -71,7 +65,7 @@ fn by_default_the_tasks_change_and_each_config_place_is_listed_with_its_fix() {
             "changed 2 of 2",
             "config.lua still names an old label in 3 places:",
             "  category effort → dam config set category.effort.values 'light, deep'",
-            "  filter short → dam config set filter.short.query '@light & !done'",
+            "  filter short → dam filter remove short, then dam filter create short --done false --labels light",
             "  filter picked runs a match function → edit filter.picked in config.lua by hand",
         ]
     );
@@ -98,8 +92,8 @@ fn update_config_rewrites_each_place_it_can_after_the_tasks_change() {
                 SettingValue::List(vec!["light".into(), "deep".into()])
             ),
             Written::Set(
-                "filter.short.query".into(),
-                SettingValue::Text("@light & !done".into())
+                "filter.short".into(),
+                SettingValue::Table(fields(&[("labels", "light"), ("done", "false")]))
             ),
         ]
     );
@@ -108,7 +102,7 @@ fn update_config_rewrites_each_place_it_can_after_the_tasks_change() {
         vec![
             "config.lua updated in 2 places:",
             "  category.effort.values = light, deep",
-            "  filter.short.query = @light & !done",
+            "  filter.short = --done false --labels light",
             "  filter picked runs a match function → edit filter.picked in config.lua by hand",
         ]
     );
@@ -141,7 +135,7 @@ fn a_config_write_that_fails_says_the_tasks_changed_and_what_to_set_by_hand() {
         error.to_string(),
         "the labels changed on 2 objects, but config.lua was not written: \
          dam config set category.effort.values 'light, deep' \
-         and dam config set filter.short.query '@light & !done' finish it"
+         and dam filter remove short, then dam filter create short --done false --labels light finish it"
     );
     let task = ctx.store.get(&oid(1)).unwrap().unwrap();
     assert!(task.base().labels.contains("light"));

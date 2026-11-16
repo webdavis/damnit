@@ -1,5 +1,5 @@
 use crate::testing::{context, list_args};
-use dam_application::{FilterConfig, FilterRule};
+use dam_application::testing::saved;
 use dam_domain::{Categories, Category, Object, Oid, Task, When};
 use jiff::civil::date;
 
@@ -25,10 +25,7 @@ fn today_and_later() -> Context {
     ctx.store.put(&Object::Task(due)).unwrap();
     let later = Task::new(Oid::generate(&mut |x: &mut [u8]| x.fill(2)), "later");
     ctx.store.put(&Object::Task(later)).unwrap();
-    ctx.config.filters.push(FilterConfig {
-        name: "now".into(),
-        rule: FilterRule::Query("due:today".into()),
-    });
+    ctx.config.filters.push(saved("now", &[("due", "today")]));
     ctx
 }
 

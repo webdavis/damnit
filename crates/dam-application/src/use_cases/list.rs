@@ -1,85 +1,27 @@
-use dam_domain::{Object, Path, QueryError, matches, parse_query};
+use dam_domain::{Object, Path};
 
 use crate::config::FilterConfig;
-use crate::errors::{Refusal, UseCaseError};
+use crate::errors::UseCaseError;
 use crate::service::Dam;
 
 impl Dam<'_> {
-    pub fn list(&self, query: Option<&str>) -> Result<Vec<Object>, UseCaseError> {
-        self.list_within(query, &Path::root())
+    pub fn list_within(&self, place: &Path) -> Result<Vec<Object>, UseCaseError> {
+        self.seen_within(place)
     }
 
-    pub fn list_within(
-        &self,
-        query: Option<&str>,
-        place: &Path,
-    ) -> Result<Vec<Object>, UseCaseError> {
-        let (filter, out) = self.narrowed(query, place)?;
-        self.kept(filter, out)
+    pub fn list_saved(&self, name: &str) -> Result<Vec<Object>, UseCaseError> {
+        self.listed_by_name(name, &Path::root(), &[])
     }
 
-    pub(crate) fn list_matching(
+    pub(crate) fn kept(
         &self,
-        text: Option<&str>,
-        filter: Option<&FilterConfig>,
-        place: &Path,
-    ) -> Result<Vec<Object>, UseCaseError> {
-        let out = self.matching(text, filter, place)?;
-        self.kept(filter, out)
-    }
-
-    fn kept(
-        &self,
-        filter: Option<&FilterConfig>,
+        filter: &FilterConfig,
         out: Vec<Object>,
     ) -> Result<Vec<Object>, UseCaseError> {
-        match filter.filter(|f| f.rule.runs_a_function()) {
-            Some(filter) => self.kept_by_function(&filter.name, out),
-            None => Ok(out),
+        match filter.runs_a_function {
+            true => self.kept_by_function(&filter.name, out),
+            false => Ok(out),
         }
-    }
-
-    fn narrowed(
-        &self,
-        query: Option<&str>,
-        place: &Path,
-    ) -> Result<(Option<&FilterConfig>, Vec<Object>), UseCaseError> {
-        let filter = query.and_then(|q| self.config.filter(q));
-        let text = match filter {
-            Some(filter) => filter.rule.query(),
-            None => query,
-        };
-        Ok((filter, self.matching(text, filter, place)?))
-    }
-
-    fn matching(
-        &self,
-        text: Option<&str>,
-        filter: Option<&FilterConfig>,
-        place: &Path,
-    ) -> Result<Vec<Object>, UseCaseError> {
-        let config = self.config;
-        let expr = text
-            .map(|text| parse_query(text, config.categories_at(place)).map_err(query_error))
-            .transpose()?
-            .map(|expr| match filter {
-                Some(_) => expr,
-                None => expr.under(place),
-            });
-        let (today, zone) = (self.clock.today(), self.clock.zone());
-        let mut out = self.seen_within(place)?;
-        out.retain(|o| expr.as_ref().is_none_or(|e| matches(e, o, today, &zone)));
-        Ok(out)
-    }
-}
-
-fn query_error(e: QueryError) -> UseCaseError {
-    match e {
-        QueryError::UnknownCategory(name) => Refusal::UnknownCategory(name).into(),
-        QueryError::NotAValue { category, value } => {
-            Refusal::NotACategoryValue { category, value }.into()
-        }
-        e => UseCaseError::Query(e),
     }
 }
 

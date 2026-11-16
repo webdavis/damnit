@@ -2,16 +2,13 @@ use dam_domain::Permission::TaskRead;
 use dam_domain::{Object, Order, Path};
 
 use super::tests::{filter, subjects};
-use crate::config::{Config, FilterConfig, FilterRule};
+use crate::config::Config;
 use crate::service::Dam;
 use crate::testing::{Scenario, allowed, holder, task_in};
 
 fn home_waits_on_work() -> Scenario {
     let s = Scenario::default().configured(Config {
-        filters: vec![FilterConfig {
-            name: "all".into(),
-            rule: FilterRule::Query("!done".into()),
-        }],
+        filters: vec![crate::testing::saved("all", &[])],
         ..Config::default()
     });
     let work = task_in(1, "report", "work");

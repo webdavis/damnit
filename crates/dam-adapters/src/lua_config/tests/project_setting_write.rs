@@ -9,8 +9,8 @@ const EXAMPLES: [(&str, &str); 11] = [
     ("minimum_dam", "0.1.0"),
     ("new_task.labels", "app, work"),
     ("required", "due"),
-    ("ls", "label:app"),
-    ("filter.mine.query", "label:app"),
+    ("list.labels", "app"),
+    ("filter.mine.labels", "app"),
     ("category.size.values", "small, large"),
     ("sections", "docs"),
     ("branch_label", "true"),
@@ -40,13 +40,13 @@ fn every_key_the_reader_takes_is_written_and_read_back() {
 
 #[test]
 fn a_set_keeps_the_comments_and_the_other_keys_and_answers_the_old_value() {
-    let text = "-- the team's rules\nreturn {\n  path = 'app/', -- where tasks go\n  ls = 'due:today',\n}\n";
+    let text = "-- the team's rules\nreturn {\n  path = 'app/', -- where tasks go\n  list = { due = 'today' },\n}\n";
     let folder = ProjectFolder::with(text);
-    let change = set(&folder, "ls", "label:app").unwrap();
-    assert_eq!(change.old.as_deref(), Some("due:today"));
+    let change = set(&folder, "list.due", "..today").unwrap();
+    assert_eq!(change.old.as_deref(), Some("today"));
     assert_eq!(
         std::fs::read_to_string(folder.file()).unwrap(),
-        text.replace("'due:today'", "\"label:app\"")
+        text.replace("'today'", "\"..today\"")
     );
 }
 
@@ -54,10 +54,10 @@ fn a_set_keeps_the_comments_and_the_other_keys_and_answers_the_old_value() {
 fn a_value_that_would_not_load_is_refused_and_changes_nothing() {
     let text = "return { path = 'app/' }\n";
     for (key, value) in [
-        ("ls", "due:"),
+        ("list.due", "soon"),
         ("new_task.priority", "9"),
         ("path", "work/../app"),
-        ("ls", "a\u{7}b"),
+        ("list.labels", "a\u{7}b"),
     ] {
         let folder = ProjectFolder::with(text);
         assert!(

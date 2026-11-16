@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/filter-list.schema.json",
   "title": "dam filter list answer",
-  "description": "What dam filter list prints with -o. kind is function when the filter runs a match function, and query is present only when the filter has query text.",
+  "description": "What dam filter list prints with -o: each saved filter's table, keyed as dam list --request reads it.",
   "type": "object",
   "required": [
     "filters"
@@ -15,38 +15,24 @@
         "type": "object",
         "required": [
           "name",
-          "kind"
+          "table"
         ],
         "additionalProperties": false,
         "properties": {
           "name": {
             "type": "string"
           },
-          "kind": {
-            "enum": [
-              "query",
-              "function"
-            ]
+          "table": {
+            "$ref": "list.request.schema.json#/$defs/group"
           },
-          "query": {
-            "type": "string"
+          "match": {
+            "const": true,
+            "description": "Present when the filter also runs a match function, which narrows what the table lists."
           },
           "project": {
             "const": true,
             "description": "Present when the filter comes from the .dam.lua of the project dam runs in."
           }
-        },
-        "if": {
-          "properties": {
-            "kind": {
-              "const": "query"
-            }
-          }
-        },
-        "then": {
-          "required": [
-            "query"
-          ]
         }
       }
     }

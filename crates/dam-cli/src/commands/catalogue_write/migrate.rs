@@ -3,7 +3,7 @@ use dam_application::{
     config_places,
 };
 
-use super::entry::setting_key;
+use super::entry::{entry_key, setting_key};
 use super::migrated::{Migrated, Place, fix};
 use crate::error::CliError;
 use crate::output::Report;
@@ -60,7 +60,7 @@ fn write(file: &dyn SettingsFile, places: &mut [Place], changed: usize) -> Resul
 fn setting_value(place: &ConfigPlace) -> Option<SettingValue> {
     match place {
         ConfigPlace::Category { values, .. } => Some(SettingValue::List(values.clone())),
-        ConfigPlace::Filter { query, .. } => Some(SettingValue::Text(query.clone())),
+        ConfigPlace::Filter { table, .. } => Some(SettingValue::Table(table.clone())),
         ConfigPlace::HandWritten { .. } => None,
     }
 }
@@ -69,7 +69,7 @@ fn setting_key_of(place: &ConfigPlace) -> Result<dam_application::SettingKey, Cl
     match place {
         ConfigPlace::Category { name, .. } => setting_key("category", name, "values"),
         ConfigPlace::Filter { name, .. } | ConfigPlace::HandWritten { name } => {
-            setting_key("filter", name, "query")
+            Ok(entry_key("filter", name))
         }
     }
 }

@@ -3,6 +3,14 @@ use super::date::DateTest;
 use super::values::Item;
 use crate::{Oid, Path};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum SavedUse {
+    Any,
+    Selected,
+    Listed,
+    Events,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Want {
     Empty,
@@ -13,6 +21,7 @@ pub(crate) enum Want {
     Under(Path),
     Id(Oid),
     ListedBy(String),
+    Selects(String),
     Yes(bool),
     Date(DateTest),
     Group(String, Option<String>),
@@ -30,6 +39,7 @@ impl Want {
             (Want::Under(folder), Item::Path(p)) => p.is_within(folder),
             (Want::Id(want), Item::Id(id)) => want == id,
             (Want::ListedBy(filter), Item::Id(id)) => context.lists(filter, id),
+            (Want::Selects(filter), Item::Id(id)) => context.selects(filter, id),
             (Want::Yes(want), Item::Yes(yes)) => want == yes,
             (Want::Date(date), Item::Point(at)) => date.holds(*at, context),
             (Want::Group(_, Some(label)), Item::Text(t)) => label == t,
@@ -41,10 +51,11 @@ impl Want {
         }
     }
 
-    pub(crate) fn saved_filter(&self) -> Option<&str> {
-        match self {
-            Want::ListedBy(name) => Some(name),
-            Want::Date(date) => date.saved_filter(),
+    pub(crate) fn saved_filter(&self, use_: SavedUse) -> Option<&str> {
+        match (self, use_) {
+            (Want::Selects(name), SavedUse::Selected | SavedUse::Any)
+            | (Want::ListedBy(name), SavedUse::Listed | SavedUse::Any) => Some(name),
+            (Want::Date(date), SavedUse::Events | SavedUse::Any) => date.saved_filter(),
             _ => None,
         }
     }

@@ -2,13 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/filter-create.schema.json",
   "title": "dam filter create answer",
-  "description": "What dam filter create prints with -o: the name and query of the saved filter it wrote to config.lua, or to .dam.lua inside a project, and the file written.",
+  "description": "What dam filter create prints with -o: the name and table of the saved filter it wrote to config.lua, or to .dam.lua inside a project, and the file written.",
   "type": "object",
-  "required": ["name", "query", "file"],
+  "required": ["name", "table", "file"],
   "additionalProperties": false,
   "properties": {
     "name": { "type": "string" },
-    "query": { "type": "string" },
+    "table": { "$ref": "list.request.schema.json#/$defs/group", "description": "The fields saved, keyed as dam list --request reads them." },
     "file": { "enum": [".dam.lua", "config.lua"] }
   }
 }

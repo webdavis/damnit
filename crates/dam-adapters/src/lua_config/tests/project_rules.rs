@@ -1,7 +1,5 @@
-use dam_application::{
-    ConfigError, FilterConfig, FilterRule, ProjectRuleFault, RequiredField, TaskTemplate,
-};
-use dam_domain::Priority;
+use dam_application::{ConfigError, FilterConfig, ProjectRuleFault, RequiredField, TaskTemplate};
+use dam_domain::{FilterTable, Priority, TableValue};
 
 use super::project_support::ProjectFolder;
 
@@ -79,37 +77,71 @@ fn a_required_field_dam_does_not_know_is_refused_naming_only_the_file() {
     refused_as_misshapen("return { path = 'a/', required = 'due' }", "required");
 }
 
-#[test]
-fn the_default_listing_is_read() {
-    let folder = ProjectFolder::with("return { path = 'a/', ls = '@cli & p1' }");
-    assert_eq!(folder.read().unwrap().ls.as_deref(), Some("@cli & p1"));
+fn priority_one() -> FilterTable {
+    FilterTable {
+        fields: [("priority".into(), TableValue::One("1".into()))].into(),
+        any: Vec::new(),
+    }
 }
 
 #[test]
-fn a_default_listing_that_is_not_a_query_is_refused_naming_only_the_file() {
-    let folder = ProjectFolder::with("return { path = 'a/', ls = '@cli &' }");
+fn the_default_list_is_read_as_a_table() {
+    let folder = ProjectFolder::with("return { path = 'a/', list = { priority = 1 } }");
+    assert_eq!(folder.read().unwrap().list, Some(priority_one()));
+    refused_as_misshapen("return { path = 'a/', list = 3 }", "list");
+}
+
+#[test]
+fn the_old_ls_is_refused_naming_list_with_its_table() {
+    let folder = ProjectFolder::with("return { path = 'a/', ls = '@cli & p1' }");
     assert_eq!(
         folder.read(),
-        Err(ConfigError::ProjectRule {
-            file: folder.file(),
-            key: "ls",
-            fault: ProjectRuleFault::NotAQuery,
+        Err(ConfigError::QueryText {
+            file: folder.file().display().to_string(),
+            was: "ls".into(),
+            key: "list".into(),
+            table: Some(r#"{ done = "any", labels = "cli", priority = "1" }"#.into()),
         })
     );
-    refused_as_misshapen("return { path = 'a/', ls = 3 }", "ls");
 }
 
 #[test]
-fn the_projects_filters_are_read_as_queries() {
+fn the_projects_filters_are_read_as_tables() {
     let folder =
-        ProjectFolder::with("return { path = 'a/', filter = { mine = { query = 'p1' } } }");
+        ProjectFolder::with("return { path = 'a/', filter = { mine = { priority = 1 } } }");
     assert_eq!(
         folder.read().unwrap().filters,
         [FilterConfig {
             name: "mine".into(),
-            rule: FilterRule::Query("p1".into()),
+            table: priority_one(),
+            runs_a_function: false,
         }]
     );
+}
+
+#[test]
+fn a_projects_filter_in_the_old_form_is_refused_with_its_table() {
+    let folder =
+        ProjectFolder::with("return { path = 'a/', filter = { mine = { query = 'p1' } } }");
+    let Err(ConfigError::QueryText { was, table, .. }) = folder.read() else {
+        panic!("the old form was read");
+    };
+    assert_eq!(was, "filter.mine.query");
+    assert_eq!(
+        table.as_deref(),
+        Some(r#"{ done = "any", priority = "1" }"#)
+    );
+}
+
+#[test]
+fn a_projects_filter_that_reaches_itself_is_refused() {
+    let folder = ProjectFolder::with(
+        "return { path = 'a/', filter = { a = { filter = 'b' }, b = { filter = 'a' } } }",
+    );
+    assert!(matches!(
+        folder.read(),
+        Err(ConfigError::FilterReachesItself { .. })
+    ));
 }
 
 #[test]
@@ -126,5 +158,4 @@ fn a_filter_that_holds_a_function_is_refused_as_not_a_query() {
         })
     );
     refused_as_misshapen("return { path = 'a/', filter = { mine = 'p1' } }", "filter");
-    refused_as_misshapen("return { path = 'a/', filter = { mine = {} } }", "filter");
 }

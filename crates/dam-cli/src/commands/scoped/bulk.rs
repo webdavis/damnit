@@ -29,12 +29,8 @@ fn narrowed(set: &mut SetArgs, scope: &ScopeArgs, standing: &Standing) -> Result
         return Ok(());
     }
     set.place = standing.place(scope)?;
-    let projects_filter = standing
-        .rules(scope)
-        .zip(set.filter.as_deref())
-        .and_then(|(rules, name)| rules.filter_query(name));
-    if let Some(query) = projects_filter.map(String::from) {
-        set.projects_filter = Some(query);
+    if let Some(rules) = standing.rules(scope) {
+        set.project_filters = rules.filters.clone();
     }
     Ok(())
 }
