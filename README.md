@@ -850,8 +850,8 @@ none of them.
 with what changed; an emptied line clears that field. dam reads each value and shows its error
 when it refuses one.
 
-`K` on a row of a list or the status window shows that task as `dam show` prints it in a float, and
-on a commit in the log the first task it changed;
+`K` on a row of a list, the agenda, the plan or the status window shows that task, or the agenda's
+event, as `dam show` prints it in a float, and on a commit in the log the first task it changed;
 `K` again enters it, `q` closes it and `<CR>` opens the task.
 In a task buffer `K` does the same for the oid under the cursor, `gd` opens it, and `gO` puts the
 parent, children and dependencies in the location list.
