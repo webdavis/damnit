@@ -17,6 +17,7 @@ function M.setup(opts)
     require("damnit.list").new(running, task.open),
     task,
     require("damnit.status").new(running, task.open),
+    require("damnit.capture").new(running),
   })
   return running
 end

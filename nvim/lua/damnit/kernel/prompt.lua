@@ -15,7 +15,8 @@ local M = {}
 ---@field read fun(text: string, done: fun(answer: string, refused: boolean)): damnit.Handle
 ---@field submit fun(text: string)
 ---@field complete? fun(line: string, col: integer): integer, damnit.Candidate[]
----@field anchor? integer
+---@field anchor? integer|"cursor"
+---@field read_first? boolean
 
 ---@class damnit.Prompts
 ---@field open fun(self, spec: damnit.PromptSpec)
@@ -79,6 +80,9 @@ function Prompts:open(spec)
   prompt_keys.bind(session)
   watched(session)
   session:prefill()
+  if spec.read_first then
+    session:changed()
+  end
   vim.cmd(spec.after and spec.after ~= "" and "startinsert" or "startinsert!")
 end
 

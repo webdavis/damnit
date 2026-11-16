@@ -90,4 +90,13 @@ function M.quoted(text)
   return '"' .. text:gsub('[\\"]', "\\%0") .. '"'
 end
 
+---@param subject string
+---@return string
+function M.typed(subject)
+  if subject:find("[\\\"']") or subject:find("%f[%S]%-%-") then
+    return M.quoted(subject)
+  end
+  return subject
+end
+
 return M

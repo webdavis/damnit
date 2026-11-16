@@ -44,7 +44,8 @@ function M.define(app, features)
   table.sort(names)
   local valid = table.concat(names, ", ")
   vim.api.nvim_create_user_command("Dam", function(cmd)
-    local name = cmd.fargs[1]
+    local name = cmd.fargs[1] and cmd.fargs[1]:gsub("!$", "")
+    cmd.bang = cmd.bang or name ~= cmd.fargs[1]
     if not name and default then
       return default({}, cmd)
     end

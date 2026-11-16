@@ -22,7 +22,10 @@ return {
 
   ["a block comment loses both ends"] = function()
     equal(text.subject({ "/* TODO: free the buffer */" }, C), "free the buffer")
-    equal(text.subject({ "/*", " * TODO: free the buffer", " * before returning", " */" }, C), "free the buffer before returning")
+    equal(
+      text.subject({ "/*", " * TODO: free the buffer", " * before returning", " */" }, C),
+      "free the buffer before returning"
+    )
     equal(text.subject({ "--[[ TODO: split this file ]]" }, LUA), "split this file")
   end,
 
@@ -49,5 +52,12 @@ return {
   ["a quoted word keeps quotes, backslashes and dashes as written"] = function()
     equal(text.quoted("don't --skip"), [["don't --skip"]])
     equal(text.quoted([[say "hi" \o/]]), [["say \"hi\" \\o/"]])
+  end,
+
+  ["a subject is quoted for the prompt only when dam would read it otherwise"] = function()
+    equal(text.typed("free the buffer"), "free the buffer")
+    equal(text.typed("don't free it"), [["don't free it"]])
+    equal(text.typed("pass --force here"), [["pass --force here"]])
+    equal(text.typed("a-b--c"), "a-b--c")
   end,
 }
