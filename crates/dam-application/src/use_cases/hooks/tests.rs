@@ -7,6 +7,7 @@ mod progress;
 mod project;
 mod quiet;
 mod resolving;
+mod worked;
 
 use std::path::PathBuf;
 

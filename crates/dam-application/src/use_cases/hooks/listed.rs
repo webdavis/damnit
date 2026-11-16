@@ -93,6 +93,7 @@ impl Dam<'_> {
         let Some(task) = self.store.get(oid)? else {
             return Ok(Some(Edited::Nothing));
         };
+        let task = self.handed(task)?;
         let answer = match hook {
             HookEvent::TaskPulled => {
                 let Some(remote) = self.tracking_remote(oid)? else {

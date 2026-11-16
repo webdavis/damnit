@@ -1,7 +1,7 @@
 use super::*;
 use crate::config::HookEvent::{self, TaskNew};
 use crate::errors::UseCaseError;
-use crate::ports::{HelperError, Histories, Hooks, Pull};
+use crate::ports::{Handed, HelperError, Histories, Hooks, Pull};
 use crate::service::Dam;
 use crate::testing::{SlowHooks, oid};
 
@@ -27,7 +27,7 @@ impl Hooks for PressingCtrlC<'_> {
     fn run(
         &self,
         event: HookEvent,
-        task: &Object,
+        task: &Handed,
         histories: &dyn Histories,
     ) -> Result<Option<EditRequest>, FunctionFailure> {
         self.0.fixture.interruption.pressed.set(true);
@@ -36,8 +36,8 @@ impl Hooks for PressingCtrlC<'_> {
 
     fn pulled(
         &self,
-        task: &Object,
-        before: Option<&Object>,
+        task: &Handed,
+        before: Option<&Handed>,
         pull: &Pull,
     ) -> Result<Option<EditRequest>, FunctionFailure> {
         self.0.fixture.hooks.pulled(task, before, pull)

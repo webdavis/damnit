@@ -4,6 +4,7 @@ use dam_domain::{Categories, Context, Date, Object, Oid, Path, WorkedOut, worked
 use jiff::Zoned;
 
 use crate::errors::UseCaseError;
+use crate::ports::Handed;
 use crate::service::Dam;
 
 struct Worked<'a> {
@@ -49,6 +50,19 @@ impl Dam<'_> {
             blocked: None,
             ..self.worked_out_among(object, &BTreeSet::new())
         }
+    }
+
+    pub(crate) fn handed(&self, object: Object) -> Result<Handed, UseCaseError> {
+        let mut open = BTreeSet::new();
+        for dependency in &object.base().depends {
+            if let Some(Object::Task(task)) = self.seen_object(dependency)?
+                && !task.completion.is_done()
+            {
+                open.insert(task.base.oid);
+            }
+        }
+        let worked_out = self.worked_out_among(&object, &open);
+        Ok(Handed { object, worked_out })
     }
 
     pub(crate) fn worked_out_over_seen(

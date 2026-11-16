@@ -10,7 +10,11 @@ fn run_task_done(folder: &Folder) {
     folder
         .loaded()
         .hooks
-        .run(HookEvent::TaskDone, &every_field_task(), &histories)
+        .run(
+            HookEvent::TaskDone,
+            &handed(&every_field_task()),
+            &histories,
+        )
         .unwrap();
 }
 
@@ -91,7 +95,7 @@ fn a_command_started_after_a_hook_returns_carries_no_event() {
     let task = every_field_task();
     loaded
         .hooks
-        .run(HookEvent::TaskDone, &task, &histories)
+        .run(HookEvent::TaskDone, &handed(&task), &histories)
         .unwrap();
     loaded
         .filter_functions

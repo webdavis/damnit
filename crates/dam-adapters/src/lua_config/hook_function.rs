@@ -1,9 +1,8 @@
 use std::time::Instant;
 
 use dam_application::{
-    EditRequest, FunctionFailure, FunctionFault, Histories, HookEvent, Hooks, Pull,
+    EditRequest, FunctionFailure, FunctionFault, Handed, Histories, HookEvent, Hooks, Pull,
 };
-use dam_domain::Object;
 use mlua::{Function, Value};
 
 use super::functions::{LuaFunctions, json_value, line_defined};
@@ -26,14 +25,20 @@ impl Hooks for LuaFunctions {
     fn run(
         &self,
         event: HookEvent,
-        task: &Object,
+        task: &Handed,
         histories: &dyn Histories,
     ) -> Result<Option<EditRequest>, FunctionFailure> {
         let (hook, function) = self.hook(event)?;
         let defined = line_defined(&function);
         hook.limited(|scope, deadline| {
             let returned = while_marked(&hook.lua, event, || {
-                hook.call(scope, &function, task, None, histories)
+                hook.call(
+                    scope,
+                    &function,
+                    &task.object,
+                    Some(&task.worked_out),
+                    histories,
+                )
             });
             hook.answer(returned, defined, deadline)
         })
@@ -41,8 +46,8 @@ impl Hooks for LuaFunctions {
 
     fn pulled(
         &self,
-        task: &Object,
-        before: Option<&Object>,
+        task: &Handed,
+        before: Option<&Handed>,
         pull: &Pull,
     ) -> Result<Option<EditRequest>, FunctionFailure> {
         let event = HookEvent::TaskPulled;
@@ -53,8 +58,11 @@ impl Hooks for LuaFunctions {
                 let pulled = hook.lua.create_table()?;
                 pulled.set("remote", pull.remote.0.as_str())?;
                 pulled.set("change", pull.change.as_str())?;
-                let before = before.map(|b| hook.object_value(b, None)).transpose()?;
-                function.call((hook.object_value(task, None)?, before, pulled))
+                let before = before
+                    .map(|b| hook.object_value(&b.object, Some(&b.worked_out)))
+                    .transpose()?;
+                let task = hook.object_value(&task.object, Some(&task.worked_out))?;
+                function.call((task, before, pulled))
             });
             hook.answer(returned, defined, deadline)
         })

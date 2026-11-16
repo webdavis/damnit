@@ -3,7 +3,7 @@ use dam_application::{
 };
 use dam_domain::{Object, Task};
 
-use super::filter_support::{every_field_task, oid};
+use super::filter_support::{every_field_task, handed, oid};
 use super::support::Folder;
 
 const SEEN: &str = "seen";
@@ -27,10 +27,11 @@ fn pulled(
         remote: RemoteName("todoist".into()),
         change,
     };
-    folder
-        .loaded()
-        .hooks
-        .pulled(&every_field_task(), before, &pull)
+    folder.loaded().hooks.pulled(
+        &handed(&every_field_task()),
+        before.map(handed).as_ref(),
+        &pull,
+    )
 }
 
 const WRITE_WHAT_IT_WAS_HANDED: &str = "local file = io.open(SEEN, 'w')\n\

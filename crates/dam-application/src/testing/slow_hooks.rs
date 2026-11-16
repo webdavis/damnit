@@ -1,10 +1,10 @@
 use std::cell::Cell;
 
-use dam_domain::{Date, Object, Timestamp};
+use dam_domain::{Date, Timestamp};
 use jiff::SignedDuration;
 
 use crate::config::HookEvent;
-use crate::ports::{Clock, EditRequest, FunctionFailure, Histories, Hooks, Pull};
+use crate::ports::{Clock, EditRequest, FunctionFailure, Handed, Histories, Hooks, Pull};
 use crate::testing::FakeHooks;
 
 pub struct SlowHooks<'a> {
@@ -27,7 +27,7 @@ impl Hooks for SlowHooks<'_> {
     fn run(
         &self,
         event: HookEvent,
-        task: &Object,
+        task: &Handed,
         histories: &dyn Histories,
     ) -> Result<Option<EditRequest>, FunctionFailure> {
         self.later();
@@ -36,8 +36,8 @@ impl Hooks for SlowHooks<'_> {
 
     fn pulled(
         &self,
-        task: &Object,
-        before: Option<&Object>,
+        task: &Handed,
+        before: Option<&Handed>,
         pull: &Pull,
     ) -> Result<Option<EditRequest>, FunctionFailure> {
         self.later();
