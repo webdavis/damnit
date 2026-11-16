@@ -80,3 +80,32 @@ fn a_blank_name_becomes_untitled_with_the_remote_id() {
         Some("untitled-p1/untitled-s1/")
     );
 }
+
+#[test]
+fn each_pulled_object_names_the_nearest_container_by_remote_id() {
+    let s = sync();
+    let t = Tree::from_sync(&s);
+    let container = |w: WireObject| w.container_remote_id;
+    assert_eq!(container(project_to_wire(&t, &s.projects[0])), None);
+    assert_eq!(
+        container(project_to_wire(&t, &s.projects[1])).as_deref(),
+        Some("p:p1")
+    );
+    assert_eq!(
+        container(section_to_wire(&t, &s.sections[0])).as_deref(),
+        Some("p:p1")
+    );
+    let items: Vec<Option<String>> = s
+        .items
+        .iter()
+        .map(|i| container(item_to_wire(&t, i).unwrap()))
+        .collect();
+    assert_eq!(
+        items,
+        vec![
+            Some("s:s1".to_string()),
+            Some("i:i1".to_string()),
+            Some("p:p1".to_string())
+        ]
+    );
+}
