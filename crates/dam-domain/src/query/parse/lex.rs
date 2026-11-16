@@ -1,4 +1,5 @@
 use std::fmt;
+use std::ops::Range;
 
 use super::QueryError;
 
@@ -25,45 +26,54 @@ impl fmt::Display for Tok {
     }
 }
 
-pub(super) fn lex(text: &str) -> Result<Vec<Tok>, QueryError> {
+pub(super) fn lex(text: &str) -> Result<Vec<(Tok, Range<usize>)>, QueryError> {
     let mut out = Vec::new();
-    let mut word = String::new();
-    let flush = |word: &mut String, out: &mut Vec<Tok>| {
-        if !word.is_empty() {
-            out.push(Tok::Word(std::mem::take(word)));
-        }
-    };
+    let mut word = Word::default();
     let mut chars = text.char_indices();
     while let Some((at, c)) = chars.next() {
-        match c {
-            '"' => quoted(&mut chars, &mut word)
-                .ok_or_else(|| QueryError::UnclosedQuote(text[at..].to_string()))?,
-            '&' => {
-                flush(&mut word, &mut out);
-                out.push(Tok::And)
+        let operator = match c {
+            '&' => Some(Tok::And),
+            '|' => Some(Tok::Or),
+            '!' => Some(Tok::Not),
+            '(' => Some(Tok::Open),
+            ')' => Some(Tok::Close),
+            _ => None,
+        };
+        if let Some(operator) = operator {
+            word.flush(&mut out);
+            out.push((operator, at..at + 1));
+        } else if c.is_whitespace() {
+            word.flush(&mut out);
+        } else {
+            word.start.get_or_insert(at);
+            if c == '"' {
+                quoted(&mut chars, &mut word.text)
+                    .ok_or_else(|| QueryError::UnclosedQuote(text[at..].to_string()))?;
+            } else {
+                word.text.push(c);
             }
-            '|' => {
-                flush(&mut word, &mut out);
-                out.push(Tok::Or)
-            }
-            '!' => {
-                flush(&mut word, &mut out);
-                out.push(Tok::Not)
-            }
-            '(' => {
-                flush(&mut word, &mut out);
-                out.push(Tok::Open)
-            }
-            ')' => {
-                flush(&mut word, &mut out);
-                out.push(Tok::Close)
-            }
-            c if c.is_whitespace() => flush(&mut word, &mut out),
-            c => word.push(c),
+            word.end = chars.offset();
         }
     }
-    flush(&mut word, &mut out);
+    word.flush(&mut out);
     Ok(out)
+}
+
+#[derive(Default)]
+struct Word {
+    text: String,
+    start: Option<usize>,
+    end: usize,
+}
+
+impl Word {
+    fn flush(&mut self, out: &mut Vec<(Tok, Range<usize>)>) {
+        if let Some(start) = self.start.take()
+            && !self.text.is_empty()
+        {
+            out.push((Tok::Word(std::mem::take(&mut self.text)), start..self.end));
+        }
+    }
 }
 
 fn quoted(chars: &mut std::str::CharIndices, word: &mut String) -> Option<()> {
