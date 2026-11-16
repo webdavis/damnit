@@ -1,6 +1,6 @@
 use dam_adapters::checked_out_branch;
 use dam_application::ProjectSettings;
-use dam_domain::{Categories, Expr, Term, parse_query};
+use dam_domain::names_a_label;
 
 use crate::project_scope::Standing;
 
@@ -15,14 +15,8 @@ pub(super) fn branch_of(
         _ => None,
     };
     match branch {
-        Some(name) if usable(&name) => (Some(name), None),
+        Some(name) if names_a_label(&name) => (Some(name), None),
         Some(_) => (None, Some(NOT_A_LABEL.into())),
         None => (None, None),
     }
-}
-
-fn usable(name: &str) -> bool {
-    let plain = !name.chars().any(|c| c.is_control() || c.is_whitespace());
-    let read = parse_query(&format!("@{name}"), &Categories::default());
-    plain && matches!(read, Ok(Expr::Term(Term::Label(label))) if label == name)
 }

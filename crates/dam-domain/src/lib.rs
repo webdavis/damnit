@@ -7,6 +7,7 @@ mod day;
 mod estimate;
 mod field;
 mod item;
+mod label;
 mod object;
 mod oid;
 mod path;
@@ -37,6 +38,7 @@ pub use field::Field;
 pub use item::{
     Item, ItemHash, ItemKind, Outcome, clashing_fields, fields_the_owner_moved, same_proposal,
 };
+pub use label::names_a_label;
 pub use object::{
     Attachment, Attendee, Base, Completion, Conference, Event, EventStatus, EventType,
     FOCUS_PER_DAY, Focus, Kind, Object, Person, Reminder, ResponseStatus, Task, Transparency,
