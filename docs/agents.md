@@ -45,6 +45,11 @@ The document's keys are the flags without their dashes, plus `subject`. Only glo
 `edit.request.schema.json`, `done.request.schema.json` and `rm.request.schema.json` cover the other
 writing commands.
 
+`--parent <oid>` files the task in that object, at its folder or at a `--path` inside it; a path
+outside it is refused, rule `path_outside_parent`. When two objects of the same name hold the
+`--path`, `dam new` is refused until `--parent` names one: rule `several_hold_the_path` when the
+token sees both, else `not_permitted`.
+
 ## Your own id
 
 `--id` names the task with your own id. The id is one line of up to 200 characters. A repeat of

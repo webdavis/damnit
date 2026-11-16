@@ -142,4 +142,6 @@ Examples:
 #[cfg(test)]
 mod help_text_tests;
 #[cfg(test)]
+mod parent_tests;
+#[cfg(test)]
 mod tests;

@@ -5,8 +5,19 @@
   "description": "The arguments dam mv takes.",
   "type": "object",
   "required": [
-    "oid",
-    "path"
+    "oid"
+  ],
+  "anyOf": [
+    {
+      "required": [
+        "path"
+      ]
+    },
+    {
+      "required": [
+        "parent"
+      ]
+    }
   ],
   "additionalProperties": false,
   "properties": {
@@ -18,6 +29,11 @@
     "path": {
       "type": "string",
       "description": "A path such as work/clients/."
+    },
+    "parent": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{4,40}$",
+      "description": "Put it in the object with this oid or prefix."
     },
     "meta": {
       "type": "object",

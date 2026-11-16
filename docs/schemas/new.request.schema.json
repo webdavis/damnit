@@ -23,6 +23,11 @@
       "type": "string",
       "description": "A path such as work/clients/. Default: the root."
     },
+    "parent": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{4,40}$",
+      "description": "Put it in the object with this oid or prefix."
+    },
     "due": {
       "type": "string",
       "description": "A date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
