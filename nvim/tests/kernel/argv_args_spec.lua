@@ -1,10 +1,12 @@
 local argv = require("damnit.kernel.argv")
 
 local FLAGS = {
-  { name = "--due", value = true, help = "" },
-  { name = "--labels", value = true, help = "" },
-  { name = "--subject", value = true, help = "" },
-  { name = "--preview", value = false, help = "" },
+  { name = "--due", value = "required", help = "" },
+  { name = "--labels", value = "required", help = "" },
+  { name = "--subject", value = "required", help = "" },
+  { name = "--preview", value = "absent", help = "" },
+  { name = "--overdue", value = "optional", values = { "true", "false", "any" }, help = "" },
+  { name = "--done", value = "optional", values = { "true", "false", "any" }, help = "" },
 }
 
 local function args(line)
@@ -42,5 +44,18 @@ return {
 
   ["a flag of the command typed in quotes is a word, not a flag"] = function()
     same(args([[buy "--due" --due fri]]), { "buy", "--due", "--due", "fri" })
+  end,
+
+  ["a flag whose value is optional takes none when the next word is another flag"] = function()
+    same(args("--overdue --labels bug"), { "--overdue", "--labels", "bug" })
+  end,
+
+  ["a flag whose value is optional takes the next word when it is one of its values"] = function()
+    same(args("--overdue false --labels bug"), { "--overdue", "false", "--labels", "bug" })
+    same(args("--done any"), { "--done", "any" })
+  end,
+
+  ["a flag whose value is optional takes no word that is none of its values"] = function()
+    same(args("--overdue two words"), { "--overdue", "two", "words" })
   end,
 }

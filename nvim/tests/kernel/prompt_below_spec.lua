@@ -1,7 +1,7 @@
 local prompt = require("helpers.prompt")
 local wait_for = require("helpers.buffer").wait_for
 
-local FLAGS = { { name = "--due", value = true, help = "Set the due date" } }
+local FLAGS = { { name = "--due", value = "required", help = "Set the due date" } }
 
 local function opened(keys, below)
   local prompts =

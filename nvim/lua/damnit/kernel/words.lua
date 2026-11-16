@@ -4,7 +4,8 @@ local M = {}
 
 ---@class damnit.Flag
 ---@field name string
----@field value boolean
+---@field value "required"|"optional"|"absent"
+---@field values? string[] the words an optional value may be
 ---@field help string
 
 ---@class damnit.Candidate
@@ -66,6 +67,14 @@ end
 
 local function value_items(flag, item, vocab)
   local name = flag.name:sub(3)
+  if flag.values then
+    return starting(
+      item,
+      vim.tbl_map(function(value)
+        return { word = value, menu = name }
+      end, flag.values)
+    )
+  end
   if name == "category" then
     return category_items(item, vocab.categories or {})
   end
@@ -105,7 +114,7 @@ function M.at(line, col, flags, vocab)
   local current = open and tokens[#tokens] or { text = "", from = #before + 1 }
   local previous = tokens[#tokens - (open and 1 or 0)]
   local flag = previous and flag_named(flags, previous.text)
-  if flag and flag.value and not vim.startswith(current.text, "--") then
+  if flag and flag.value ~= "absent" and not vim.startswith(current.text, "--") then
     local comma = before:sub(current.from):match(".*(),") or 0
     local item = current.text:match("[^,]*$")
     return current.from - 1 + comma, value_items(flag, item, vocab)

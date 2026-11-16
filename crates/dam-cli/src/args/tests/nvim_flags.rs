@@ -1,4 +1,5 @@
 use clap::CommandFactory;
+use dam_domain::select_field;
 use serde_json::{Map, Value, json};
 
 use crate::args::Cli;
@@ -20,17 +21,45 @@ fn command_at(words: &str) -> clap::Command {
     })
 }
 
+fn value_of(arg: &clap::Arg) -> &'static str {
+    match arg.get_num_args() {
+        Some(range) if !range.takes_values() => "absent",
+        Some(range) if range.min_values() == 0 => "optional",
+        Some(_) => "required",
+        None if arg.get_action().takes_values() => "required",
+        None => "absent",
+    }
+}
+
+fn values_of(arg: &clap::Arg) -> Option<Vec<String>> {
+    let known: Vec<String> = arg
+        .get_possible_values()
+        .iter()
+        .map(|value| value.get_name().to_string())
+        .collect();
+    if !known.is_empty() {
+        return Some(known);
+    }
+    (value_of(arg) == "optional")
+        .then(|| select_field(arg.get_id().as_str()).map(|field| field.shapes()))
+        .flatten()
+}
+
 fn flags_of(command: &clap::Command) -> Vec<Value> {
     command
         .get_arguments()
         .filter(|arg| !arg.is_hide_set() && !arg.is_global_set())
         .filter_map(|arg| {
             let help = arg.get_help().map(|h| h.to_string()).unwrap_or_default();
-            Some(json!({
+            let mut flag = json!({
                 "name": format!("--{}", arg.get_long()?),
-                "value": arg.get_action().takes_values(),
+                "value": value_of(arg),
                 "help": help.lines().next().unwrap_or_default(),
-            }))
+            });
+            if let Some(values) = values_of(arg) {
+                flag["values"] = json!(values);
+            }
+            Some(flag)
         })
         .collect()
 }
@@ -59,4 +88,30 @@ fn nvim_flags_json_holds_each_prompt_commands_flags() {
         "dam's flags drifted from {}; DAM_WRITE_NVIM_FIXTURES=1 rewrites it",
         path.display()
     );
+}
+
+fn flag_named(command: &str, name: &str) -> Value {
+    let flags = flags_of(&command_at(command));
+    flags
+        .into_iter()
+        .find(|flag| flag["name"] == name)
+        .unwrap_or_else(|| panic!("dam {command} has no {name}"))
+}
+
+#[test]
+fn nvim_flags_json_says_whether_a_flags_value_is_required_optional_or_absent() {
+    let labels = flag_named("list", "--labels");
+    let global = flag_named("list", "--global");
+    assert_eq!(labels["value"], "required");
+    assert_eq!(global["value"], "absent");
+    assert_eq!(labels.get("values"), None);
+}
+
+#[test]
+fn nvim_flags_json_names_the_values_a_yes_no_flag_may_take() {
+    for name in ["--done", "--overdue", "--blocked"] {
+        let flag = flag_named("list", name);
+        assert_eq!(flag["value"], "optional", "{name}");
+        assert_eq!(flag["values"], json!(["true", "false", "any"]), "{name}");
+    }
 }
