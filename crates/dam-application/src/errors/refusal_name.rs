@@ -5,7 +5,7 @@ impl Refusal {
         match self {
             Refusal::Blocked { .. } => "blocked",
             Refusal::Cycle { .. } => "cycle",
-            Refusal::Labels(_) => "exclusive_label",
+            Refusal::Labels(_) | Refusal::ExclusiveAfterMigrate { .. } => "exclusive_label",
             Refusal::UnknownCategory(_) => "unknown_category",
             Refusal::NotACategoryValue { .. } => "not_a_category_value",
             Refusal::NoSuchObject(_) => "no_such_object",

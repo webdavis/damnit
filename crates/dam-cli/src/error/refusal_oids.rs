@@ -24,6 +24,7 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
             .map(named)
             .collect(),
         Refusal::SeveralHoldThePath { namesakes, .. } => namesakes.iter().map(named).collect(),
+        Refusal::ExclusiveAfterMigrate { oids, .. } => oids.iter().map(named).collect(),
         Refusal::NotATask(oid)
         | Refusal::NotAnEvent(oid)
         | Refusal::MoveInsideItself(oid)

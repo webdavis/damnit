@@ -26,6 +26,10 @@ pub enum Refusal {
         path: Vec<Oid>,
     },
     Labels(LabelViolation),
+    ExclusiveAfterMigrate {
+        category: String,
+        oids: Vec<Oid>,
+    },
     UnknownCategory(String),
     NotACategoryValue {
         category: String,

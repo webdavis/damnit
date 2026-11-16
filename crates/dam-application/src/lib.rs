@@ -65,6 +65,7 @@ pub use use_cases::items::land::{Answer, Landed, Sent};
 pub use use_cases::items::refusal::ItemRefusal;
 pub use use_cases::items::reopen::Reopened;
 pub use use_cases::list::trial::FilterTrial;
+pub use use_cases::migrate::{ConfigPlace, LabelMap, MapProblem, config_places};
 pub use use_cases::new_object::{NewEvent, NewTask};
 pub use use_cases::prefix::{Named, SHORTEST_OID_PREFIX};
 pub use use_cases::pull::PullReport;
