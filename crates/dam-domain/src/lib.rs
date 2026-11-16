@@ -50,6 +50,9 @@ pub use query::{
     parse as parse_query,
 };
 pub use recurrence::{Anchor, Freq, Recurrence, Rule, RuleError, roll_forward};
-pub use select::{Context, DateTest};
+pub use select::{
+    Condition, Context, DateTest, FieldType, FilterError, Has, Holds, Problem, SelectField,
+    closest_field, select_field, select_fields,
+};
 pub use weekday::{parse_weekday, weekday_text};
 pub use when::{Date, Timestamp, When, WhenError};
