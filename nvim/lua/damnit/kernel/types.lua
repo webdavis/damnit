@@ -14,6 +14,7 @@
 ---@field screen damnit.Screen
 ---@field keys damnit.Keys
 ---@field say damnit.Say
+---@field vocab damnit.VocabCache
 
 ---@class damnit.Feature
 ---@field commands table<string, fun(args: string[], cmd: table)>
@@ -138,3 +139,7 @@
 ---@field unpushed { remote: string, commits: integer }[]
 ---@field notices { kind: string, remote?: string }[]
 ---@field warnings string[]
+
+---@class damnit.VocabCache
+---@field words fun(self, cwd: string): damnit.Vocab
+---@field flags fun(self, command: string): damnit.Flag[]
