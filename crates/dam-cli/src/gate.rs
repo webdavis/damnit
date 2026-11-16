@@ -1,7 +1,9 @@
 use dam_application::{Access, Refusal};
 use dam_domain::{Permission, Subject};
 
-use crate::args::{Command, ConfigCommand, RemoteCommand, SyncCommand, TokenCommand};
+use crate::args::{
+    Command, ConfigCommand, FilterCommand, RemoteCommand, SyncCommand, TokenCommand,
+};
 
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum Need {
@@ -28,7 +30,12 @@ pub(crate) fn need(command: &Command) -> Need {
         Command::Log => Need::Whole(&[HistoryRead]),
         Command::Status(_) => Need::Open,
         Command::Diff(_) => Need::Whole(&[WorkingRead, StageRead]),
-        Command::Category(_) | Command::Filter(_) => Need::Whole(&[ConfigRead]),
+        Command::Category(_) => Need::Whole(&[ConfigRead]),
+        Command::Filter(a) => match a.command {
+            FilterCommand::List => Need::Whole(&[ConfigRead]),
+            FilterCommand::Create { .. } => Need::OwnerOnly("filter create"),
+            FilterCommand::Remove { .. } => Need::OwnerOnly("filter remove"),
+        },
         Command::Ls(_) => Need::NarrowedFrom(&[TaskRead, EventRead]),
         Command::Agenda(_) => Need::NarrowedFrom(&[EventRead]),
         Command::Reminders(_) => Need::NarrowedFrom(&[TaskRead, EventRead]),

@@ -139,6 +139,11 @@ pub fn answers(command: &str) -> Option<Vec<serde_json::Value>> {
         "day list" => vec![json_of(&Sandbox::new(), &["day", "list"])],
         "category list" => vec![json_of(&fixture::seeded(), &["category", "list"])],
         "filter list" => vec![json_of(&fixture::seeded(), &["filter", "list"])],
+        "filter create" => vec![json_of(
+            &Sandbox::new(),
+            &["filter", "create", "soon", "--query", "due:today"],
+        )],
+        "filter remove" => vec![json_of(&fixture::seeded(), &["filter", "remove", "today"])],
         "remote add" => vec![json_of(
             &Sandbox::new(),
             &["remote", "add", "cal", "gcal::primary"],

@@ -3,10 +3,10 @@ use std::ffi::OsString;
 use std::io::IsTerminal;
 use std::path::Path;
 
-use dam_adapters::{Interrupt, SqliteStore, SystemClock};
+use dam_adapters::{Interrupt, LuaConfigFile, SqliteStore, SystemClock};
 use dam_application::{
     Access, Clock, Config, ConfigFile, CredentialSource, Dam, FilterFunctions, HelperLauncher,
-    Hooks, LoadedConfig, Randomness, Remotes, Store,
+    Hooks, LoadedConfig, Randomness, Remotes, SettingsFile, Store,
 };
 
 use crate::caller::{authenticated, caller};
@@ -22,6 +22,7 @@ pub(crate) struct Context {
     pub(crate) config: Config,
     pub(crate) access: Box<dyn Access>,
     pub(crate) config_file: Box<dyn ConfigFile>,
+    pub(crate) settings_file: Box<dyn SettingsFile>,
     pub(crate) clock: Box<dyn Clock>,
     pub(crate) random: Box<dyn Randomness>,
     pub(crate) launcher: Box<dyn HelperLauncher>,
@@ -39,7 +40,7 @@ pub(crate) struct Context {
 
 impl Context {
     pub(crate) fn open(
-        config_file: Box<dyn ConfigFile>,
+        config_file: LuaConfigFile,
         store_path: &Path,
         presented_token: Option<OsString>,
         meta: &BTreeMap<String, String>,
@@ -57,7 +58,8 @@ impl Context {
         let access = caller(holder, now, meta);
         let loaded = LoadedConfig { config, ..loaded };
         let opened = reading::Opened {
-            config_file,
+            config_file: Box::new(config_file.clone()),
+            settings_file: Box::new(config_file),
             loaded,
             store: Box::new(store),
             access,

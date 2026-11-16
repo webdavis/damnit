@@ -181,3 +181,5 @@ fn sync_run_admits_a_token_holding_a_remote_permission_and_bare_sync_is_open() {
     );
     assert_eq!(need(&command("sync")), Need::Open);
 }
+
+mod catalogue_writes;

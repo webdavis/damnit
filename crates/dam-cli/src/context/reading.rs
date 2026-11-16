@@ -1,5 +1,5 @@
-use dam_adapters::{Interrupt, OsRandom, ProcessLauncher, SystemClock};
-use dam_application::{Access, ConfigFile, LoadedConfig, Store};
+use dam_adapters::{Interrupt, LuaConfigFile, OsRandom, ProcessLauncher, SystemClock};
+use dam_application::{Access, ConfigFile, LoadedConfig, SettingsFile, Store};
 
 use super::{
     ChangedByHook, Context, HookWarningsOnStandardError,
@@ -10,6 +10,7 @@ use crate::progress::ProgressOnStandardError;
 
 pub(super) struct Opened {
     pub(super) config_file: Box<dyn ConfigFile>,
+    pub(super) settings_file: Box<dyn SettingsFile>,
     pub(super) loaded: LoadedConfig,
     pub(super) store: Box<dyn Store>,
     pub(super) access: Box<dyn Access>,
@@ -18,7 +19,7 @@ pub(super) struct Opened {
 
 impl Context {
     pub(crate) fn reading(
-        config_file: Box<dyn ConfigFile>,
+        config_file: LuaConfigFile,
         loaded: LoadedConfig,
         store: Box<dyn Store>,
         progress: ProgressOnStandardError,
@@ -26,7 +27,8 @@ impl Context {
     ) -> Context {
         let access = Box::new(dam_application::Owner);
         let opened = Opened {
-            config_file,
+            config_file: Box::new(config_file.clone()),
+            settings_file: Box::new(config_file),
             loaded,
             store,
             access,
@@ -38,6 +40,7 @@ impl Context {
     pub(super) fn assembled(opened: Opened, format: Format, interrupt: &Interrupt) -> Context {
         let Opened {
             config_file,
+            settings_file,
             loaded,
             store,
             access,
@@ -50,6 +53,7 @@ impl Context {
             config: loaded.config,
             access,
             config_file,
+            settings_file,
             clock: Box::new(SystemClock),
             random: Box::new(OsRandom),
             launcher: Box::new(ProcessLauncher::from_env(interrupt.clone())),

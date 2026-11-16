@@ -45,7 +45,7 @@ pub(super) fn test(
     let hidden = ProgressOnStandardError::new(Shown::Hidden, Format::Json);
     let interrupt = Default::default();
     let context = Context::reading(
-        Box::new(config_file.clone()),
+        config_file.clone(),
         loaded,
         Box::new(store),
         hidden,

@@ -30,6 +30,7 @@ mod remove_token;
 mod secrets_file;
 mod secrets_kept;
 mod secrets_names_withheld;
+mod settings_entry_removed;
 mod settings_refusals;
 mod settings_set;
 mod settings_set_refusals;

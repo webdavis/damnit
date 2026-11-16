@@ -70,4 +70,12 @@ pub(crate) struct FilterArgs {
 pub(crate) enum FilterCommand {
     #[command(about = "List saved filters with their kinds and queries")]
     List,
+    #[command(about = "Save a filter in config.lua")]
+    Create {
+        name: String,
+        #[arg(long, help = "The query the filter runs, such as due:today")]
+        query: String,
+    },
+    #[command(about = "Remove a saved filter from config.lua")]
+    Remove { name: String },
 }

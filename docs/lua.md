@@ -316,6 +316,8 @@ A token caller sees only the filter's name:
     dam: filter broken failed; the owner sees why by running the same command
 
 `dam filter list` shows each filter's kind, `query` or `function`, and never a function's source.
+`dam filter create` writes only `query`, and `dam filter remove` refuses a filter with `match`;
+edit those in `config.lua` by hand.
 
 ## Example
 

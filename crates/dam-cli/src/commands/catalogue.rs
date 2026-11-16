@@ -1,7 +1,7 @@
 use dam_application::Config;
 use serde::Serialize;
 
-use crate::args::{CategoryCommand, Command, FilterCommand};
+use crate::args::{CategoryCommand, Command, FilterArgs, FilterCommand};
 use crate::error::CliError;
 use crate::output::Report;
 use crate::view::{Human, View, report};
@@ -12,6 +12,16 @@ pub(crate) fn run(config: &Config, command: Command) -> Result<Report, CliError>
         Command::Filter(a) => run_filter(config, a.command),
         _ => unreachable!("only category and filter read the config alone"),
     }
+}
+
+pub(crate) fn only_reads(command: &Command) -> bool {
+    matches!(
+        command,
+        Command::Category(_)
+            | Command::Filter(FilterArgs {
+                command: FilterCommand::List
+            })
+    )
 }
 
 #[derive(Serialize)]
@@ -86,7 +96,9 @@ fn run_category(config: &Config, command: CategoryCommand) -> Result<Report, Cli
 }
 
 fn run_filter(config: &Config, command: FilterCommand) -> Result<Report, CliError> {
-    let FilterCommand::List = command;
+    let FilterCommand::List = command else {
+        unreachable!("filter create and remove open the store")
+    };
     report(&FilterList {
         filters: config
             .filters
