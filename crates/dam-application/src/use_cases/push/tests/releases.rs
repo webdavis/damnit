@@ -2,6 +2,7 @@ use dam_domain::{Completion, Path, Task};
 
 use super::namesakes::why_held;
 use super::order::held_upstream;
+use super::parents::held_by;
 use crate::remote::MutationOp;
 use crate::testing::Scenario;
 use crate::testing::{
@@ -29,7 +30,7 @@ fn a_section_whose_done_task_left_the_remote_path_stays_held_beside_a_namesake()
         let s = held_upstream(&[
             task_in(removed, "S", "Home/"),
             task_in(namesake, "S", "Home/"),
-            done(task_in(moved, "T", "Home/S/")),
+            done(held_by(moved, "T", "Home/S/", removed)),
         ])
         .configured(scoped);
         s.filed(done(task_in(moved, "T", "Work/")))
@@ -44,7 +45,7 @@ fn a_section_whose_done_task_left_the_remote_path_stays_held_beside_a_namesake()
 }
 
 #[test]
-fn a_removal_beside_two_namesakes_that_stay_is_held_for_the_namesakes() {
+fn a_removal_beside_two_namesakes_that_stay_waits_on_a_task_any_of_them_may_hold() {
     for (removed, first, second, child) in [(1, 2, 3, 4), (4, 3, 2, 1), (2, 4, 1, 3)] {
         let s = held_upstream(&[
             task_in(removed, "P", "Home/"),
@@ -55,7 +56,10 @@ fn a_removal_beside_two_namesakes_that_stay_is_held_for_the_namesakes() {
         s.deleted(&oid(removed));
         assert!(sent_to_a_remote_that_removes_only_empty_containers(&s).is_empty());
         let why = why_held(&s, &oid(removed));
-        assert!(why.contains("same name in the same place"), "{why}");
-        assert!(why.contains(oid(child).short()), "{why}");
+        let child = oid(child);
+        assert!(
+            why.starts_with(&format!("{} may be held by ", child.short())),
+            "{why}"
+        );
     }
 }

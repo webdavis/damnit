@@ -1,10 +1,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use dam_domain::{Base, Change, Object, Oid, Path};
+use dam_domain::{Change, Object, Oid};
 
 use crate::errors::UseCaseError;
 use crate::ports::{RemoteName, Store};
-use crate::remote::{RemoteCapabilities, RemoteMutation};
+use crate::remote::RemoteMutation;
 use crate::use_cases::last_seen::LastSeen;
 use crate::use_cases::push::owed::OwedChanges;
 use crate::use_cases::push::reconcile::Settlement;
@@ -12,12 +12,10 @@ use blocker::{Blocker, Unsent};
 
 #[derive(Default)]
 pub(super) struct Removals {
-    folders: BTreeMap<Oid, Path>,
-    upstream: BTreeMap<Oid, Base>,
-    local: BTreeMap<Oid, Path>,
-    placed: BTreeSet<Oid>,
+    removing: BTreeSet<Oid>,
+    upstream: BTreeMap<Oid, Object>,
+    moved_without_a_commit: BTreeSet<Oid>,
     tried: BTreeSet<Oid>,
-    remote_removes_only_empty_containers: bool,
 }
 
 #[derive(Default)]
@@ -34,42 +32,30 @@ impl Removals {
     pub(super) fn new(
         store: &dyn Store,
         remote: &RemoteName,
-        caps: &RemoteCapabilities,
         changes: &OwedChanges,
     ) -> Result<Removals, UseCaseError> {
-        let mut folders = BTreeMap::new();
-        let removed = changes
-            .iter()
-            .filter(|(_, change)| matches!(change, Change::Delete { .. }));
-        for (oid, change) in removed {
-            let held_at = LastSeen::held(store, remote, oid)?;
-            let held_at = held_at.as_ref().or(change.before());
-            if let Some(folder) = held_at.and_then(|o| o.base().owned_folder()) {
-                folders.insert(oid.clone(), folder);
+        let mut removals = Removals {
+            removing: changes
+                .iter()
+                .filter(|(_, change)| matches!(change, Change::Delete { .. }))
+                .map(|(oid, _)| oid.clone())
+                .collect(),
+            ..Removals::default()
+        };
+        if removals.removing.is_empty() {
+            return Ok(removals);
+        }
+        let kept = store.all()?.into_iter().map(|o| o.oid().clone());
+        let known: BTreeSet<Oid> = kept.chain(changes.keys().cloned()).collect();
+        for oid in known {
+            if moved_since_its_commit(store.get(&oid)?, store.committed(&oid)?) {
+                removals.moved_without_a_commit.insert(oid.clone());
+            }
+            if let Some(held) = LastSeen::held(store, remote, &oid)? {
+                removals.upstream.insert(oid, held);
             }
         }
-        let mut upstream = BTreeMap::new();
-        let mut local = BTreeMap::new();
-        if !folders.is_empty() {
-            let kept = store.all()?.into_iter().map(|o| o.oid().clone());
-            let known: BTreeSet<Oid> = kept.chain(changes.keys().cloned()).collect();
-            for oid in known {
-                if let Some(committed) = store.committed(&oid)? {
-                    local.insert(oid.clone(), committed.base().path.clone());
-                }
-                if let Some(held) = LastSeen::held(store, remote, &oid)? {
-                    upstream.insert(oid, held.base().clone());
-                }
-            }
-        }
-        Ok(Removals {
-            folders,
-            upstream,
-            local,
-            placed: BTreeSet::new(),
-            tried: BTreeSet::new(),
-            remote_removes_only_empty_containers: caps.removes_only_empty_containers,
-        })
+        Ok(removals)
     }
 
     pub(super) fn wave(&mut self, pending: Vec<RemoteMutation>) -> Wave {
@@ -96,15 +82,8 @@ impl Removals {
 
     pub(super) fn record(&mut self, sent: &[RemoteMutation], settled: &Settlement) {
         self.tried.extend(sent.iter().map(|m| m.oid.clone()));
-        let accepted: BTreeSet<&Oid> = settled.snapshot.iter().map(Object::oid).collect();
-        let placed_by_this_push = sent
-            .iter()
-            .filter(|m| accepted.contains(&m.oid) && release::places(m))
-            .map(|m| m.oid.clone());
-        self.placed.extend(placed_by_this_push);
         for placed in &settled.snapshot {
-            self.upstream
-                .insert(placed.oid().clone(), placed.base().clone());
+            self.upstream.insert(placed.oid().clone(), placed.clone());
         }
         for removed in &settled.clear {
             self.upstream.remove(removed);
@@ -112,8 +91,12 @@ impl Removals {
     }
 }
 
+fn moved_since_its_commit(working: Option<Object>, committed: Option<Object>) -> bool {
+    let place = |o: &Object| (o.base().path.clone(), o.base().parent.clone());
+    matches!((working, committed), (Some(w), Some(c)) if place(&w) != place(&c))
+}
+
 mod blocker;
-mod release;
 
 #[cfg(test)]
 mod tests;
