@@ -1,0 +1,46 @@
+{
+  "objects": [
+    {
+      "oid": "<id-1>",
+      "kind": "task",
+      "subject": "buy the seeds",
+      "body": "",
+      "path": "call mom/plan the garden/",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "parent": "<id-2>",
+      "task": {
+        "done": false,
+        "priority": 4
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": false,
+      "children_open": 0
+    },
+    {
+      "oid": "<id-3>",
+      "kind": "task",
+      "subject": "dig the beds",
+      "body": "",
+      "path": "call mom/plan the garden/",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "parent": "<id-2>",
+      "task": {
+        "done": false,
+        "priority": 4
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": false,
+      "children_open": 0
+    }
+  ]
+}

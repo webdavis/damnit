@@ -78,6 +78,7 @@ mod nvim_fixtures;
 mod nvim_health_fixtures;
 mod nvim_list_fixtures;
 mod nvim_log_fixtures;
+mod nvim_peek_fixtures;
 mod nvim_plan_fixtures;
 mod nvim_progress_fixtures;
 mod nvim_prompt_fixtures;
