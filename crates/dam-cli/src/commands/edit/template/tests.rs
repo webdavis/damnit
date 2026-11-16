@@ -13,14 +13,14 @@ fn task() -> Object {
     Object::Task(t)
 }
 
-fn tz() -> jiff::tz::TimeZone {
-    jiff::tz::TimeZone::UTC
+fn now() -> jiff::Zoned {
+    "2026-09-18T09:00[UTC]".parse().unwrap()
 }
 
 #[test]
 fn an_unchanged_template_parses_to_no_edits() {
     let text = super::render_template(&task());
-    let fields = super::parse_template(&text, &task(), date(2026, 9, 18), &tz()).unwrap();
+    let fields = super::parse_template(&text, &task(), date(2026, 9, 18), &now()).unwrap();
     assert_eq!(fields, EditFields::default());
 }
 
@@ -30,7 +30,7 @@ fn changed_values_become_edits_and_labels_diff() {
         .replace("subject = \"milk\"", "subject = \"oat milk\"")
         .replace("due = \"\"", "due = \"tomorrow\"")
         .replace("labels = [\"errand\"]", "labels = [\"grocery\"]");
-    let fields = super::parse_template(&text, &task(), date(2026, 9, 18), &tz()).unwrap();
+    let fields = super::parse_template(&text, &task(), date(2026, 9, 18), &now()).unwrap();
     assert_eq!(fields.subject.as_deref(), Some("oat milk"));
     assert_eq!(fields.due, Some(Some(When::Day(date(2026, 9, 19)))));
     assert_eq!(fields.add_labels, vec!["grocery".to_string()]);
@@ -40,7 +40,7 @@ fn changed_values_become_edits_and_labels_diff() {
 #[test]
 fn a_bad_line_is_named() {
     let text = super::render_template(&task()).replace("priority = 2", "priority = \"high\"");
-    let err = super::parse_template(&text, &task(), date(2026, 9, 18), &tz()).unwrap_err();
+    let err = super::parse_template(&text, &task(), date(2026, 9, 18), &now()).unwrap_err();
     assert!(err.starts_with("line 5:"), "{err}");
     assert!(err.contains("priority"));
 }
@@ -59,7 +59,7 @@ fn meeting() -> Object {
 #[test]
 fn an_unchanged_event_template_parses_to_no_edits() {
     let text = super::render_template(&meeting());
-    let fields = super::parse_template(&text, &meeting(), date(2026, 9, 18), &tz()).unwrap();
+    let fields = super::parse_template(&text, &meeting(), date(2026, 9, 18), &now()).unwrap();
     assert_eq!(fields, EditFields::default());
 }
 
@@ -77,7 +77,7 @@ fn hostile_subject_text_survives_a_render_and_a_parse_unchanged() {
         t.priority = Priority::new(2).unwrap();
         let object = Object::Task(t);
         let text = super::render_template(&object);
-        let fields = super::parse_template(&text, &object, date(2026, 9, 18), &tz())
+        let fields = super::parse_template(&text, &object, date(2026, 9, 18), &now())
             .unwrap_or_else(|e| panic!("{hostile:?} did not round trip: {e}"));
         assert_eq!(fields, EditFields::default(), "{hostile:?}");
     }
@@ -86,7 +86,7 @@ fn hostile_subject_text_survives_a_render_and_a_parse_unchanged() {
 #[test]
 fn a_misspelled_field_is_refused_rather_than_dropped() {
     let text = super::render_template(&task()).replace("subject =", "subjectt =");
-    let err = super::parse_template(&text, &task(), date(2026, 9, 18), &tz()).unwrap_err();
+    let err = super::parse_template(&text, &task(), date(2026, 9, 18), &now()).unwrap_err();
     assert_eq!(err, "line 3: unknown key subjectt");
 }
 
@@ -96,14 +96,14 @@ fn a_field_belonging_to_the_other_kind_is_refused_by_name() {
         "{}start = \"2026-09-19\"\n",
         super::render_template(&task())
     );
-    let err = super::parse_template(&text, &task(), date(2026, 9, 18), &tz()).unwrap_err();
+    let err = super::parse_template(&text, &task(), date(2026, 9, 18), &now()).unwrap_err();
     assert!(err.contains("start"), "{err}");
 }
 
 #[test]
 fn broken_toml_names_its_line() {
     let text = super::render_template(&task()).replace("body = \"\"", "body = \"unterminated");
-    let err = super::parse_template(&text, &task(), date(2026, 9, 18), &tz()).unwrap_err();
+    let err = super::parse_template(&text, &task(), date(2026, 9, 18), &now()).unwrap_err();
     assert_eq!(
         err,
         "line 4, column 21: invalid basic string, expected `\"`"
@@ -116,6 +116,6 @@ fn an_optional_field_emptied_in_the_template_clears_it() {
     t.due = Some(When::Day(date(2026, 9, 19)));
     let object = Object::Task(t);
     let text = super::render_template(&object).replace("due = \"2026-09-19\"", "due = \"\"");
-    let fields = super::parse_template(&text, &object, date(2026, 9, 18), &tz()).unwrap();
+    let fields = super::parse_template(&text, &object, date(2026, 9, 18), &now()).unwrap();
     assert_eq!(fields.due, Some(None));
 }

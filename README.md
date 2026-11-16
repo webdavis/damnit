@@ -269,7 +269,8 @@ are refused, rule `several_hold_the_path`, until `--parent` names one.
 `dam edit <oid> -e` opens the object as a TOML template in `$VISUAL`, else `$EDITOR`, else `vi`: a
 comment header naming the oid and kind, then one `key = value` line per field, where an empty
 string means none. Emptying an optional field clears it, a key the object's kind does not have is
-refused, and saving the template untouched cancels. A save that does not parse reopens the template
+refused, and saving the template untouched cancels. A date in it reads the way `--due` reads one.
+A save that does not parse reopens the template
 once with the error on its first line; a second one exits 2 and names the file that keeps your
 edit. Under `-o` it refuses instead of opening an editor.
 

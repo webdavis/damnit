@@ -20,10 +20,17 @@ pub(crate) fn day_flag(ctx: &Context, flag: &str, text: &str) -> Result<Date, Cl
 
 fn not_one_date(flag: &str, text: &str) -> CliError {
     CliError::Usage(format!(
-        "--{flag} cannot be {text:?}; a date to set is one day or instant: {}, or a word such as {}; run it with --{flag} today",
+        "--{flag} cannot be {text:?}; {}; run it with --{flag} today",
+        date_forms()
+    ))
+}
+
+pub(crate) fn date_forms() -> String {
+    format!(
+        "a date to set is one day or instant: {}, or a word such as {}",
         date_to_set_shapes().join(", "),
         DATE_WORDS.join(", ")
-    ))
+    )
 }
 
 #[cfg(test)]
