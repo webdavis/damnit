@@ -1,4 +1,4 @@
-use dam_application::{BackgroundJob, BackgroundSync, Change, ScheduleError};
+use dam_application::{BackgroundJob, BackgroundState, BackgroundSync, Change, ScheduleError};
 
 pub(super) struct NoScheduler;
 
@@ -38,6 +38,9 @@ impl BackgroundSync for NoScheduler {
     }
     fn disable(&self, remote: &str) -> Result<Change, ScheduleError> {
         NoScheduler::by_hand(remote)
+    }
+    fn state(&self, _: &str) -> Result<BackgroundState, ScheduleError> {
+        Ok(BackgroundState::default())
     }
 }
 

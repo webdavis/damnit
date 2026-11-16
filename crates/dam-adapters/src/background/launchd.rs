@@ -3,7 +3,9 @@ mod plist;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 
-use dam_application::{BackgroundJob, BackgroundSync, Change, ScheduleError, label_of};
+use dam_application::{
+    BackgroundJob, BackgroundState, BackgroundSync, Change, ScheduleError, label_of,
+};
 
 use super::ProgramRunner;
 use super::files::{ran, remove_each_present, write_when_changed};
@@ -98,7 +100,16 @@ impl<R: ProgramRunner> BackgroundSync for Launchd<R> {
         let removed = remove_each_present(&[self.enabled_agent(remote)])?;
         Ok(changed(!removed.is_empty()))
     }
+
+    fn state(&self, remote: &str) -> Result<BackgroundState, ScheduleError> {
+        Ok(BackgroundState {
+            running: self.loaded(&self.service(remote)?)?,
+            at_login: self.enabled_agent(remote).exists(),
+        })
+    }
 }
 
+#[cfg(test)]
+mod state_tests;
 #[cfg(test)]
 mod tests;

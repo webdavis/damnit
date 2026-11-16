@@ -5,6 +5,13 @@ pub trait BackgroundSync {
     fn stop(&self, remote: &str) -> Result<Change, ScheduleError>;
     fn enable(&self, job: &BackgroundJob) -> Result<Change, ScheduleError>;
     fn disable(&self, remote: &str) -> Result<Change, ScheduleError>;
+    fn state(&self, remote: &str) -> Result<BackgroundState, ScheduleError>;
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct BackgroundState {
+    pub running: bool,
+    pub at_login: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

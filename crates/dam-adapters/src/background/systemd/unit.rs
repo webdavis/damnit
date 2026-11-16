@@ -31,3 +31,19 @@ fn quoted(word: &str) -> String {
         .replace('$', "$$");
     format!("\"{escaped}\"")
 }
+
+pub(crate) fn unit_name(remote: &str, kind: &str) -> String {
+    let allowed = |c: char| c.is_ascii_alphanumeric() || ":_.-".contains(c);
+    let escaped: String = remote
+        .chars()
+        .map(|c| match allowed(c) {
+            true => c.to_string(),
+            false => c
+                .to_string()
+                .bytes()
+                .map(|b| format!(r"\x{b:02x}"))
+                .collect(),
+        })
+        .collect();
+    format!("dam-sync-{escaped}.{kind}")
+}

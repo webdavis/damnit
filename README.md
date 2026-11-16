@@ -130,8 +130,9 @@ database.
 
 Each names one remote and is safe to repeat. `start` and `enable` refuse when `allowed = false`.
 A token cannot run them. macOS uses launchd. Linux uses a systemd user timer; without
-`loginctl enable-linger` it runs only while you are logged in. With neither, `dam` refuses and
-prints the crontab line to add by hand. `docs/schemas/sync-start.schema.json` and its three siblings are their `--json` schemas.
+`loginctl enable-linger` it runs only while you are logged in. There, `start` refuses settings
+other than an enabled remote's, which systemd would keep in force; disable it first. With
+neither, `dam` refuses and prints the crontab line to add by hand. `docs/schemas/sync-start.schema.json` and its three siblings are their `--json` schemas.
 
 ## Google Calendar
 

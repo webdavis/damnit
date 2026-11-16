@@ -23,7 +23,7 @@ mod store;
 pub use answers::AnswerRepository;
 pub use attempts::{Attempt, AttemptRepository, Attempts, Declared};
 pub use background_sync::{
-    BackgroundJob, BackgroundSync, Change, Invocation, ScheduleError, label_of,
+    BackgroundJob, BackgroundState, BackgroundSync, Change, Invocation, ScheduleError, label_of,
 };
 pub use config_file::{
     ByHand, ConfigError, ConfigFile, EditFault, EditedTable, Expected, LoadedConfig, Misread,
