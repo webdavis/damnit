@@ -9,7 +9,7 @@ fn only_the_owner_lists_or_runs_hooks_whatever_a_token_holds() {
     for (line, verb) in [
         ("hook list", "hook list"),
         ("hook run task_new", "hook run"),
-        ("hook run task_pulled due:today", "hook run"),
+        ("hook run task_pulled --due today", "hook run"),
     ] {
         assert_eq!(admit(&Owner, &command(line)), Ok(()), "{line}");
         for token in [

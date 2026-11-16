@@ -365,8 +365,8 @@ When a remote rewrites what dam pushed, the task comes back changed and the hook
 more. A hook that changes a task each time it runs changes it once per push and pull, never in a
 loop.
 
-`dam hook run <hook> [query]` calls one hook for each task the query lists, a saved
-filter or a function filter included. Events are skipped, and it contacts no remote.
+`dam hook run <hook>` calls one hook for each task, done or not, or each task the selection flags
+of `dam list` select, `--filter` with a saved or function filter included. Events are skipped, and it contacts no remote.
 It reaches tasks no hook ran for: the tasks of a first pull, tasks a hook failed on or did not
 reach, and tasks older than your rule.
 Each task comes to the hook as new: `run(task, dam)` with the task as it is, or for `task_pulled`

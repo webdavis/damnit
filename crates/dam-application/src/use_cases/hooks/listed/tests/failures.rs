@@ -8,7 +8,10 @@ fn a_failure_drops_only_that_tasks_change_and_the_run_goes_on() {
     let s = hooked(&[(TaskChanged, Some(OnFailure::Refuse))], None);
     *s.fixture.hooks.failing.borrow_mut() = Some(raised());
     requesting(&s, "renamed");
-    let run = s.dam().run_hook_over_listed(TaskChanged, None).unwrap();
+    let run = s
+        .dam()
+        .run_hook_over_listed(TaskChanged, &Filter::default())
+        .unwrap();
     assert_eq!(subject(&s, &oid(3)), "buy milk");
     assert_eq!(subject(&s, &oid(2)), "renamed");
     assert_eq!(
@@ -22,7 +25,10 @@ fn a_failure_drops_only_that_tasks_change_and_the_run_goes_on() {
 fn only_the_first_failure_warns_that_its_task_is_left_as_it_was() {
     let s = hooked(&[(TaskChanged, None)], None);
     *s.fixture.hooks.failing_every_call.borrow_mut() = Some(raised());
-    let run = s.dam().run_hook_over_listed(TaskChanged, None).unwrap();
+    let run = s
+        .dam()
+        .run_hook_over_listed(TaskChanged, &Filter::default())
+        .unwrap();
     assert_eq!(run.failed, 3);
     assert_eq!(
         *s.fixture.hook_warnings.dropped.borrow(),

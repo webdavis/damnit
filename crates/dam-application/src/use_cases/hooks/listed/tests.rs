@@ -7,7 +7,7 @@ mod project;
 
 use std::path::PathBuf;
 
-use dam_domain::{Object, Oid};
+use dam_domain::{Filter, FilterTable, Object, Oid, TableValue};
 
 use crate::config::{Config, HookConfig, HookEvent, OnFailure, PulledChanges, PulledHook};
 use crate::ports::{EditRequest, FunctionFailure, FunctionFault, ObjectRepository};
@@ -69,4 +69,16 @@ fn ran(s: &Scenario) -> Vec<(HookEvent, String)> {
 
 fn subject(s: &Scenario, oid: &Oid) -> String {
     s.store.get(oid).unwrap().unwrap().base().subject.clone()
+}
+
+fn selecting(key: &str, value: &str) -> Filter {
+    Filter::read(&FilterTable {
+        fields: [(key.to_string(), TableValue::One(value.into()))].into(),
+        any: Vec::new(),
+    })
+    .unwrap()
+}
+
+fn errands() -> Filter {
+    selecting("path", "errands/")
 }

@@ -495,7 +495,8 @@ It has 60 seconds in total for one pull, and Ctrl-C stops it and keeps the pull.
 `dam hook list` prints each hook file with its event and its `on_failure` or `changes`, and warns
 why a file does not load.
 
-`dam hook run <hook> [query]` calls one hook for each task the query or saved filter lists, as if each were
+`dam hook run <hook>` calls one hook for each task, done or not, or each task the selection flags of
+`dam list` select, such as `--labels waiting` or `--filter NAME`, as if each were
 new, and leaves its changes as working changes to read in `dam diff`. Use it for tasks no hook ran
 for: a first pull, a task a hook failed on, a task older than the rule. A rule that compares before
 and after does nothing here, a hook with a side effect fires once per task, and nothing retries by

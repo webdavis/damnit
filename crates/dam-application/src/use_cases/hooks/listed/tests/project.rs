@@ -1,4 +1,4 @@
-use dam_domain::Path;
+use dam_domain::{Filter, Path};
 
 use super::hooked;
 use crate::config::{Config, HookConfig, HookEvent};
@@ -33,7 +33,7 @@ fn run_with(
         }),
         ..s.dam()
     };
-    dam.run_hook_over_listed(HookEvent::TaskNew, None)
+    dam.run_hook_over_listed(HookEvent::TaskNew, &Filter::default())
 }
 
 #[test]

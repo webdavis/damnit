@@ -1,7 +1,8 @@
-use dam_application::ListedHookRun;
+use dam_application::{HookEvent, ListedHookRun};
 use serde::Serialize;
 
 use crate::args::hook::HookRunArgs;
+use crate::commands::asked::Asked;
 use crate::commands::hook_error_row::HookErrorRow;
 use crate::commands::hooked::hooked;
 use crate::context::Context;
@@ -42,12 +43,20 @@ impl View for HookRun {
 }
 
 pub(super) fn run(ctx: &Context, args: HookRunArgs) -> Result<Report, CliError> {
-    let hook = args.hook.into();
+    let hook: HookEvent = args.hook.into();
+    let asked = Asked {
+        verb: format!("dam hook run {}", hook.as_str()),
+        typed: &args.selection.typed,
+        sort: &[],
+    };
     let run = ctx
         .dam()
-        .run_hook_over_listed(hook, args.query.as_deref())?;
+        .run_hook_over_listed(hook, &asked.filter()?)
+        .map_err(|e| asked.refused(e))?;
     report(&hooked(ctx, HookRun::of(&run)))
 }
 
+#[cfg(test)]
+mod selection_tests;
 #[cfg(test)]
 mod tests;
