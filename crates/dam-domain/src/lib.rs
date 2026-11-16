@@ -6,6 +6,7 @@ mod completion;
 mod day;
 mod estimate;
 mod field;
+mod in_use;
 mod item;
 mod label;
 mod object;
@@ -35,6 +36,7 @@ pub use completion::{
 pub use day::{Day, TaskState};
 pub use estimate::parse_minutes;
 pub use field::Field;
+pub use in_use::labels_in_use;
 pub use item::{
     Item, ItemHash, ItemKind, Outcome, clashing_fields, fields_the_owner_moved, same_proposal,
 };

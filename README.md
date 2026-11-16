@@ -493,6 +493,10 @@ out something `dam list` would otherwise list, it says how many on standard erro
 `{"categories": [{"name": "effort", "values": ["light", "admin", "deep"], "exclusive": true}]}`
 under `-o json`, an empty array when nothing is declared.
 
+`dam label list` prints every label the tasks and events carry, done ones too, with how many
+carry each: `{"labels": [{"name": "urgent", "count": 3}]}` under `-o json`. Inside a project
+it counts only the project's objects; `--global` counts all.
+
 `dam filter create <name>` with `dam list` selection flags saves a filter, such as
 `dam filter create today --due ..today`, and `dam filter remove <name>`
 removes one. `dam category create <name> --values a,b --exclusive` and `dam category remove <name>`
@@ -684,7 +688,7 @@ The permissions are `task:` and `event:` `read`, `create`, `change`, `move` and 
 
 | Command | Needs |
 |---|---|
-| `list`, `show`, `agenda`, `reminders` | `task:read` or `event:read`; objects outside every grant are left out, oids included |
+| `list`, `show`, `agenda`, `reminders`, `label list` | `task:read` or `event:read`; objects outside every grant are left out, oids included |
 | `new`, `edit`, `done` | `task:create` or `event:create`, `task:change` or `event:change`, `task:complete` |
 | `rm` | nothing for its own waiting item; `task:remove` or `event:remove` to send a removal |
 | `status` | nothing for its own items; `stage:read`, `working:read`, `pending:read` and `conflict:read` for the rest, each row only for objects a grant covers |

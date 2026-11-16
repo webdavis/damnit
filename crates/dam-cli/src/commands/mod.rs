@@ -19,6 +19,7 @@ pub(crate) mod hook_error_row;
 pub(crate) mod hook_list;
 mod hook_run;
 mod hooked;
+mod in_use;
 pub(crate) mod init;
 mod list;
 pub(crate) mod mv;
@@ -78,6 +79,7 @@ fn run_a_verb(ctx: &Context, command: Command) -> Result<Report, CliError> {
         Command::Status(a) => status::run_status(ctx, a),
         Command::Diff(a) => status::run_diff(ctx, a),
         Command::List(a) => list::run_list(ctx, a),
+        Command::Label(a) => in_use::run_label(ctx, a),
         Command::Agenda(a) => agenda::run_agenda(ctx, a),
         Command::Day(a) => day::run_day(ctx, a),
         Command::Reminders(a) => reminders::run_reminders(ctx, a),
