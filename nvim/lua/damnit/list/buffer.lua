@@ -51,6 +51,7 @@ function Lists:arrange(buf, answers)
     return row.object and row.object.oid or false
   end, rows)
   self:draw(buf)
+  vim.cmd.redraw()
   self:refit(buf)
   self:drawn(list)
 end

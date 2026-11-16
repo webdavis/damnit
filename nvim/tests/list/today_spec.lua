@@ -102,6 +102,22 @@ return {
     assert(vim.fn.foldclosed(1) == 1, vim.fn.foldclosed(1))
   end,
 
+  ["a subject that fits beside the columns once the sign column shows is drawn whole"] = function()
+    local subject = "call the bank about the new account"
+    local _, fake = today.opened(nil, { ['{"due":"today","overdue":false}'] = subject }, true)
+    buffer.wait_for(function()
+      return #fake.of("config") == 1 and #fake.of("list") == 4
+    end)
+    vim.wait(20)
+    for _, call in ipairs(fake.of("list")) do
+      fake.release(call)
+    end
+    buffer.wait_for(function()
+      return #buffer.lines() > 4
+    end)
+    assert(grid.row(5):find("[ ] " .. subject, 1, true), grid.row(5))
+  end,
+
   ["<Plug>(dam-today) runs :Dam today"] = function()
     dofile(vim.fs.joinpath(vim.fs.dirname(debug.getinfo(1, "S").source:sub(2)), "../../plugin/damnit.lua"))
     assert(vim.fn.maparg("<Plug>(dam-today)", "n") == "<Cmd>Dam today<CR>", vim.fn.maparg("<Plug>(dam-today)", "n"))
