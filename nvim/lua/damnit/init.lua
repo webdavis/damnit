@@ -10,10 +10,11 @@ function M.setup(opts)
     running.queue:cancel()
   end
   running = require("damnit.kernel.app").new(options, require("damnit.kernel.process"))
+  local task = require("damnit.task").new(running)
   require("damnit.command").define(running, {
     require("damnit.messages").new(running),
-    require("damnit.list").new(running),
-    require("damnit.task").new(running),
+    require("damnit.list").new(running, task.open),
+    task,
   })
   return running
 end
