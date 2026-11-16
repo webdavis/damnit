@@ -1,0 +1,137 @@
+{
+  "objects": [
+    {
+      "oid": "<id-1>",
+      "kind": "task",
+      "subject": "plan the offsite",
+      "body": "",
+      "path": "",
+      "labels": [
+        "deep",
+        "urgent"
+      ],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 1,
+        "due": "2026-09-14"
+      },
+      "author": "owner",
+      "details": null,
+      "category": {
+        "effort": "deep"
+      },
+      "overdue": true,
+      "blocked": false
+    },
+    {
+      "oid": "<id-2>",
+      "kind": "task",
+      "subject": "fix the login redirect loop that sends people back to log in",
+      "body": "",
+      "path": "",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4,
+        "due": "2030-11-16",
+        "deadline": "2030-11-20",
+        "estimate": 45
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": false
+    },
+    {
+      "oid": "<id-3>",
+      "kind": "task",
+      "subject": "send invites",
+      "body": "",
+      "path": "",
+      "labels": [],
+      "depends": [
+        "<id-1>"
+      ],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 2
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": true
+    },
+    {
+      "oid": "2222222222222222222222222222222222222222",
+      "kind": "task",
+      "subject": "call mom",
+      "body": "",
+      "path": "",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 4
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": false
+    },
+    {
+      "oid": "1111111111111111111111111111111111111111",
+      "kind": "task",
+      "subject": "buy oat milk",
+      "body": "",
+      "path": "home/",
+      "labels": [
+        "errand"
+      ],
+      "depends": [],
+      "reminders": [],
+      "task": {
+        "done": false,
+        "priority": 2,
+        "due": "2026-09-25"
+      },
+      "author": "owner",
+      "details": null,
+      "category": {
+        "context": "errand"
+      },
+      "overdue": true,
+      "blocked": false
+    },
+    {
+      "oid": "<id-4>",
+      "kind": "task",
+      "subject": "book venue",
+      "body": "",
+      "path": "plan the offsite/",
+      "labels": [],
+      "depends": [],
+      "reminders": [],
+      "parent": "<id-1>",
+      "task": {
+        "done": false,
+        "priority": 4,
+        "due": "2030-11-18",
+        "estimate": 30
+      },
+      "author": "owner",
+      "details": null,
+      "category": {},
+      "overdue": false,
+      "blocked": false
+    }
+  ]
+}
