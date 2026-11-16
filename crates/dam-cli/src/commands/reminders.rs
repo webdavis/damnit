@@ -12,7 +12,7 @@ use crate::view::{Human, View, display, report};
 
 pub(crate) fn run_reminders(ctx: &Context, args: RemindersArgs) -> Result<Report, CliError> {
     let window = window(ctx, &args)?;
-    let due = ctx.dam().due_reminders(window, &ctx.tz)?;
+    let due = ctx.dam().due_reminders(&args.place, window, &ctx.tz)?;
     report(&Due {
         reminders: due.iter().map(Row).collect(),
         zone: &ctx.tz,

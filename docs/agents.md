@@ -30,8 +30,10 @@ project folder gets that project, the same as a person does. A tool that wants e
 another uses only its own file.
 
 In a folder that holds `.dam.lua`, `dam new --path` starts from the project's path, and the
-token is checked on the full path. `--global`, or `"global": true` in a request, starts it from
-the root.
+token is checked on the full path; `--global`, or `"global": true` in a request, starts it from
+the root. `dam ls`, `dam agenda` and `dam reminders` there list only what the token sees under the
+project.
+
 When a template renders `secrets.lua`, the template writes the token's table with the value
 `dam token create` printed.
 

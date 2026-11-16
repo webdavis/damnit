@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-use dam_domain::{Date, Object, QueryError, Timestamp, matches, parse_query};
+use dam_domain::{Date, Object, Path, QueryError, Timestamp, matches, parse_query};
 
 use crate::config::FilterConfig;
 use crate::errors::{Refusal, UseCaseError};
@@ -8,7 +8,15 @@ use crate::service::Dam;
 
 impl Dam<'_> {
     pub fn list(&self, query: Option<&str>) -> Result<Vec<Object>, UseCaseError> {
-        let (filter, out) = self.narrowed(query)?;
+        self.list_within(query, &Path::root())
+    }
+
+    pub fn list_within(
+        &self,
+        query: Option<&str>,
+        place: &Path,
+    ) -> Result<Vec<Object>, UseCaseError> {
+        let (filter, out) = self.narrowed(query, place)?;
         match filter.filter(|f| f.rule.runs_a_function()) {
             Some(filter) => self.kept_by_function(&filter.name, out),
             None => Ok(out),
@@ -18,6 +26,7 @@ impl Dam<'_> {
     fn narrowed(
         &self,
         query: Option<&str>,
+        place: &Path,
     ) -> Result<(Option<&FilterConfig>, Vec<Object>), UseCaseError> {
         let config = self.config;
         let filter = query.and_then(|q| config.filter(q));
@@ -27,13 +36,17 @@ impl Dam<'_> {
         };
         let expr = text
             .map(|text| parse_query(text, &config.categories).map_err(query_error))
-            .transpose()?;
+            .transpose()?
+            .map(|expr| match filter {
+                Some(_) => expr,
+                None => expr.under(place),
+            });
         let (today, zone) = (self.clock.today(), self.clock.zone());
         let seen = self
             .store
             .all()?
             .into_iter()
-            .filter(|o| self.access.sees(o))
+            .filter(|o| self.access.sees(o) && o.base().path.is_within(place))
             .map(|o| self.as_seen(o))
             .collect::<Result<Vec<Object>, _>>()?;
         let mut out: Vec<Object> = seen
@@ -106,3 +119,6 @@ mod tests;
 
 #[cfg(test)]
 mod trial_tests;
+
+#[cfg(test)]
+mod within_tests;

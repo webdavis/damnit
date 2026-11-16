@@ -1,4 +1,7 @@
 use clap::{Args, Subcommand};
+use dam_domain::Path;
+
+use super::ScopeArgs;
 
 #[derive(Args, Debug)]
 pub(crate) struct DayArgs {
@@ -31,4 +34,8 @@ pub(crate) struct RemindersArgs {
     pub(crate) from: Option<String>,
     #[arg(long, help = "Close the window here, exclusive. Default: now")]
     pub(crate) to: Option<String>,
+    #[command(flatten)]
+    pub(crate) scope: ScopeArgs,
+    #[arg(skip)]
+    pub(crate) place: Path,
 }

@@ -18,10 +18,24 @@ pub(crate) fn dispatch_in(
             a.path = a.path.under(&standing.place(&a.scope)?);
             Command::New(a)
         }
+        Command::Ls(mut a) => {
+            a.place = standing.place(&a.scope)?;
+            Command::Ls(a)
+        }
+        Command::Agenda(mut a) => {
+            a.place = standing.place(&a.scope)?;
+            Command::Agenda(a)
+        }
+        Command::Reminders(mut a) => {
+            a.place = standing.place(&a.scope)?;
+            Command::Reminders(a)
+        }
         other => other,
     };
     dispatch_a_verb_that_opens_the_store(ctx, command)
 }
 
+#[cfg(test)]
+mod listing_tests;
 #[cfg(test)]
 mod tests;

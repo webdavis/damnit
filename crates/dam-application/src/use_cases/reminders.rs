@@ -1,4 +1,4 @@
-use dam_domain::{EventStatus, Kind, Object, Oid, Timestamp};
+use dam_domain::{EventStatus, Kind, Object, Oid, Path, Timestamp};
 use jiff::SignedDuration;
 use jiff::tz::TimeZone;
 
@@ -19,11 +19,12 @@ pub struct DueReminder {
 impl Dam<'_> {
     pub fn due_reminders(
         &self,
+        place: &Path,
         window: Window,
         zone: &TimeZone,
     ) -> Result<Vec<DueReminder>, UseCaseError> {
         let mut due: Vec<DueReminder> = self
-            .list(None)?
+            .list_within(None, place)?
             .iter()
             .filter_map(|o| Some((o, anchor(o, zone)?)))
             .flat_map(|(o, anchor)| {

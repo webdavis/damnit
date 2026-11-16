@@ -1,4 +1,4 @@
-use dam_domain::{Event, Object, Timestamp};
+use dam_domain::{Event, Object, Path, Timestamp};
 
 use crate::errors::UseCaseError;
 use crate::service::Dam;
@@ -21,11 +21,12 @@ impl Dam<'_> {
     pub fn agenda(
         &self,
         query: Option<&str>,
+        place: &Path,
         window: Window,
         zone: &jiff::tz::TimeZone,
     ) -> Result<Vec<Scheduled>, UseCaseError> {
         let mut found: Vec<Scheduled> = self
-            .list(query)?
+            .list_within(query, place)?
             .into_iter()
             .filter_map(|o| match o {
                 Object::Event(event) => {
