@@ -6,6 +6,7 @@ mod named;
 mod off_limits;
 mod plan;
 mod shape;
+mod weekday_of_month;
 
 use std::collections::HashMap;
 

@@ -4,3 +4,4 @@ pub(crate) mod map;
 mod pull;
 mod push;
 pub mod remote;
+mod rule_words;

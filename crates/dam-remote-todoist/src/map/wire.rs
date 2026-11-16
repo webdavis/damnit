@@ -2,6 +2,7 @@ use dam_protocol::{WireObject, WireTask};
 
 use super::{RemoteId, Tree, dam_priority};
 use crate::api::{Item, Project, Section};
+use crate::rule_words::from_todoist;
 
 fn wire(remote_id: String, subject: &str, body: &str, path: String, task: WireTask) -> WireObject {
     WireObject {
@@ -93,7 +94,7 @@ pub fn item_to_wire(t: &Tree, i: &Item) -> Option<WireObject> {
         .due
         .as_ref()
         .filter(|d| d.is_recurring)
-        .map(|d| d.string.clone());
+        .map(|d| from_todoist(&d.string));
     Some(w)
 }
 
