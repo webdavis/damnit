@@ -79,6 +79,15 @@ pub(crate) fn dispatch_in(
             a.place = standing.place(&a.scope)?;
             Command::Agenda(a)
         }
+        Command::Done(mut a) => {
+            a.project_children = standing.rules(&a.scope).and_then(|rules| {
+                let place = Path::parse(&rules.path).ok()?;
+                Some((place, rules.done_children.clone()?))
+            });
+            let mut answer = dispatch_a_verb_that_opens_the_store(ctx, Command::Done(a))?;
+            answer.standard_error_lines.extend(standing.warning());
+            return Ok(answer);
+        }
         Command::Reminders(mut a) => {
             a.place = standing.place(&a.scope)?;
             Command::Reminders(a)

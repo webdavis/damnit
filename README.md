@@ -366,6 +366,9 @@ With `branch_label = true`, `dam new` adds the checked-out git branch's name to 
 labels, beside the ones from `--labels`, a template or the project's defaults. A detached head or no
 repository adds nothing, and a branch name that is not a usable label adds nothing and prints one
 warning.
+`done_children = "up"` decides what `dam done --force` does with the open children of a task under
+the path when `--children` is not given; it takes the words `--children` takes. Without `--force`
+the refusal stands.
 With
 `minimum_dam = "0.3.0"` an older `dam` refuses the file and names the version it needs.
 

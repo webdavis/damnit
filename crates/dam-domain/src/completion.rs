@@ -40,6 +40,29 @@ pub enum ChildDisposition {
     Keep,
 }
 
+impl ChildDisposition {
+    pub fn parse(text: &str) -> Option<ChildDisposition> {
+        match text.split_once(':') {
+            Some(("into", name)) if !name.trim().is_empty() => {
+                Some(ChildDisposition::Into(name.trim().to_string()))
+            }
+            _ => match text {
+                "up" => Some(ChildDisposition::Up),
+                "keep" => Some(ChildDisposition::Keep),
+                _ => None,
+            },
+        }
+    }
+
+    pub fn words(&self) -> String {
+        match self {
+            ChildDisposition::Up => "up".into(),
+            ChildDisposition::Keep => "keep".into(),
+            ChildDisposition::Into(name) => format!("into:{name}"),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum DependencyDisposition {
     Drop,

@@ -1,16 +1,7 @@
 use dam_domain::{ChildDisposition, DependencyDisposition};
 
 pub(super) fn child_disposition(text: &str) -> Result<ChildDisposition, String> {
-    match text.split_once(':') {
-        Some(("into", name)) if !name.trim().is_empty() => {
-            Ok(ChildDisposition::Into(name.trim().to_string()))
-        }
-        _ => match text {
-            "up" => Ok(ChildDisposition::Up),
-            "keep" => Ok(ChildDisposition::Keep),
-            _ => Err("one of up, keep, into:<name>".to_string()),
-        },
-    }
+    ChildDisposition::parse(text).ok_or_else(|| "one of up, keep, into:<name>".to_string())
 }
 
 pub(super) fn dependency_disposition(text: &str) -> Result<DependencyDisposition, String> {
@@ -20,6 +11,3 @@ pub(super) fn dependency_disposition(text: &str) -> Result<DependencyDisposition
         _ => Err("one of drop, keep".to_string()),
     }
 }
-
-#[cfg(test)]
-mod tests;

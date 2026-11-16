@@ -1,6 +1,7 @@
 mod agenda;
 mod branch_label;
 mod categories;
+mod done_children;
 mod listing;
 mod new_task;
 mod required;

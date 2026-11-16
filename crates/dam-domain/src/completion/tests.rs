@@ -70,3 +70,28 @@ fn depending_on_yourself_is_a_cycle() {
     let edges = |_: &Oid| Vec::new();
     assert_eq!(cycle_in(&[oid(1)], &oid(1), &edges), Some(vec![oid(1)]));
 }
+
+#[test]
+fn a_child_disposition_is_read_from_its_words() {
+    assert_eq!(ChildDisposition::parse("up"), Some(ChildDisposition::Up));
+    assert_eq!(
+        ChildDisposition::parse("keep"),
+        Some(ChildDisposition::Keep)
+    );
+    assert_eq!(ChildDisposition::parse("drop"), None);
+}
+
+#[test]
+fn a_group_name_is_taken_without_the_space_around_it() {
+    assert_eq!(
+        ChildDisposition::parse("into:  leftovers  "),
+        Some(ChildDisposition::Into("leftovers".into()))
+    );
+}
+
+#[test]
+fn a_blank_group_name_is_refused_since_it_would_name_a_whitespace_group_task() {
+    for blank in ["into:", "into: ", "into:\t", "into:   "] {
+        assert_eq!(ChildDisposition::parse(blank), None, "{blank:?}");
+    }
+}

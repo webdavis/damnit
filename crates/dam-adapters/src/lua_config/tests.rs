@@ -27,6 +27,7 @@ mod lua_page;
 mod printing_restored;
 mod project_categories;
 mod project_control;
+mod project_done_children;
 mod project_escapes;
 mod project_hook_files;
 mod project_hook_names;

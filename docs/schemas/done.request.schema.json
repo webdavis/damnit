@@ -58,6 +58,14 @@
       ],
       "description": "Default: keep."
     },
+    "global": {
+      "type": "boolean",
+      "description": "Leave out the done_children rule of the project the command runs in."
+    },
+    "project": {
+      "type": "string",
+      "description": "A project path such as pns/hooks/; the done_children rule of the folder's project is left out. Not with global."
+    },
     "meta": {
       "type": "object",
       "additionalProperties": {

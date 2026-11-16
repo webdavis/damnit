@@ -127,6 +127,7 @@ fn inside_a_project_the_list_shows_every_project_setting_marked_as_the_projects(
             .unwrap(),
             sections: vec!["bugs".into(), "features".into()],
             branch_label: true,
+            done_children: Some(dam_domain::ChildDisposition::Into("rest".into())),
         },
     }));
     let listed = listing::run(&file, &inside, &FakeProjectHookSwitches::default()).unwrap();
@@ -143,8 +144,10 @@ fn inside_a_project_the_list_shows_every_project_setting_marked_as_the_projects(
     assert_eq!(project["category"]["area"]["exclusive"], true);
     assert_eq!(project["sections"][1], "features");
     assert_eq!(project["branch_label"], true);
+    assert_eq!(project["done_children"], "into:rest");
     for row in [
         "0.2.0 (from the project)",
+        "into:rest (from the project)",
         "cli (from the project)",
         "friday (from the project)",
         "due (from the project)",

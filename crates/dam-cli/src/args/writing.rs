@@ -43,6 +43,10 @@ pub(crate) struct DoneArgs {
         help = "Decide what happens to open dependency links instead of asking. Default: keep"
     )]
     pub(crate) depends: Option<DependencyDisposition>,
+    #[command(flatten)]
+    pub(crate) scope: ScopeArgs,
+    #[arg(skip)]
+    pub(crate) project_children: Option<(Path, ChildDisposition)>,
 }
 
 #[derive(Args, Debug)]

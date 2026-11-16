@@ -1,4 +1,4 @@
-use dam_domain::{Blockers, Object, Oid, Permission, Task};
+use dam_domain::{Blockers, Object, Oid, Path, Permission, Task};
 
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
@@ -8,6 +8,7 @@ use crate::use_cases::subtree::contents;
 pub struct CompletePlan {
     pub oid: Oid,
     pub blockers: Blockers,
+    pub path: Path,
 }
 
 impl Dam<'_> {
@@ -19,6 +20,7 @@ impl Dam<'_> {
         Ok(CompletePlan {
             oid: oid.clone(),
             blockers: self.blockers_of(&task)?,
+            path: task.base.path.clone(),
         })
     }
 
