@@ -133,6 +133,20 @@ impl Sandbox {
         std::fs::write(self.config_path(), text).unwrap();
     }
 
+    pub fn hook_path(&self, event: &str) -> PathBuf {
+        self.config_path()
+            .with_file_name("hooks")
+            .join(format!("{event}.lua"))
+    }
+
+    pub fn write_hooks(&self, hooks: &[(&str, &str)]) {
+        for (event, hook) in hooks {
+            let path = self.hook_path(event);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(path, format!("return {hook}\n")).unwrap();
+        }
+    }
+
     pub fn write_secrets_lua(&self, text: &str) {
         std::fs::write(self.secrets_path(), text).unwrap();
     }

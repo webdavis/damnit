@@ -48,9 +48,7 @@ fn dam_new_inside_a_hook_refuses_at_once_and_the_hook_finishes_in_time() {
         env!("CARGO_BIN_EXE_dam"),
         code
     );
-    sb.write_config_lua(&format!(
-        "return {{ hook = {{ task_new = function() os.execute({inner:?}) end }} }}\n"
-    ));
+    sb.write_hooks(&[("task_new", &format!("function() os.execute({inner:?}) end"))]);
     sb.write_secrets_lua("return { schema = 1 }\n");
     let started = Instant::now();
     let (ok, _, err) = sb.dam(&["new", "buy milk"]);

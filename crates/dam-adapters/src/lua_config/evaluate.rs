@@ -51,21 +51,29 @@ pub(super) fn evaluate(
     let Some(text) = text else {
         return Ok(None);
     };
+    match evaluated(lua, path, text, error_text)? {
+        Value::Table(table) => Ok(Some(table)),
+        other => Err(ConfigError::NotATable {
+            path: path.to_path_buf(),
+            returned: super::shape::described(&other),
+        }),
+    }
+}
+
+pub(super) fn evaluated(
+    lua: &Lua,
+    path: &Path,
+    text: &str,
+    error_text: ErrorText,
+) -> Result<Value, ConfigError> {
     let short_name = short_name_lua_never_truncates(path);
-    let value: Value = while_the_top_level_runs(lua, error_text, || {
+    while_the_top_level_runs(lua, error_text, || {
         lua.load(text)
             .set_name(format!("@{short_name}"))
             .set_mode(ChunkMode::Text)
             .eval()
     })
-    .map_err(|e| stopped_loading(path, &short_name, &e, error_text))?;
-    match value {
-        Value::Table(table) => Ok(Some(table)),
-        other => Err(ConfigError::NotATable {
-            path: path.to_path_buf(),
-            returned: described(&other),
-        }),
-    }
+    .map_err(|e| stopped_loading(path, &short_name, &e, error_text))
 }
 
 fn stopped_loading(
@@ -98,14 +106,6 @@ fn stopped_loading(
 pub(super) fn short_name_lua_never_truncates(path: &Path) -> String {
     path.file_name()
         .map_or_else(String::new, |name| name.to_string_lossy().into_owned())
-}
-
-pub(super) fn described(value: &Value) -> String {
-    match value.type_name() {
-        "nil" => "nil".to_string(),
-        name if name.starts_with(['a', 'e', 'i', 'o', 'u']) => format!("an {name}"),
-        name => format!("a {name}"),
-    }
 }
 
 pub(super) fn line_and_reason<'a>(

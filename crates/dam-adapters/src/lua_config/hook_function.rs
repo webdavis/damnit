@@ -4,22 +4,20 @@ use dam_application::{
     EditRequest, FunctionFailure, FunctionFault, Histories, HookEvent, Hooks, Pull,
 };
 use dam_domain::Object;
-use mlua::{Function, Table, Value};
+use mlua::{Function, Value};
 
-use super::evaluate::described;
 use super::functions::{LuaFunctions, json_value, line_defined};
 use super::hook_marker::while_marked;
+use super::shape::described;
 
 impl LuaFunctions {
-    fn hook(&self, event: HookEvent) -> mlua::Result<Function> {
-        match self.settings()?.get::<Table>("hook")?.get(event.as_str())? {
-            Value::Table(hook) => hook.get("run"),
-            Value::Function(run) => Ok(run),
-            other => Err(mlua::Error::runtime(format!(
-                "hook {} is {}",
-                event.as_str(),
-                described(&other)
-            ))),
+    fn hook(&self, event: HookEvent) -> Result<(LuaFunctions, Function), FunctionFailure> {
+        match self.hooks().iter().find(|hook| hook.event == event) {
+            Some(hook) => Ok((self.at(&hook.path), hook.read.run.clone())),
+            None => Err(self.unkept(&mlua::Error::runtime(format!(
+                "no hook {} is kept",
+                event.as_str()
+            )))),
         }
     }
 }
@@ -31,13 +29,13 @@ impl Hooks for LuaFunctions {
         task: &Object,
         histories: &dyn Histories,
     ) -> Result<Option<EditRequest>, FunctionFailure> {
-        let function = self.hook(event).map_err(|e| self.unkept(&e))?;
+        let (hook, function) = self.hook(event)?;
         let defined = line_defined(&function);
-        self.limited(|scope, deadline| {
-            let returned = while_marked(&self.lua, event, || {
-                self.call(scope, &function, task, histories)
+        hook.limited(|scope, deadline| {
+            let returned = while_marked(&hook.lua, event, || {
+                hook.call(scope, &function, task, histories)
             });
-            self.answer(returned, defined, deadline)
+            hook.answer(returned, defined, deadline)
         })
     }
 
@@ -48,17 +46,17 @@ impl Hooks for LuaFunctions {
         pull: &Pull,
     ) -> Result<Option<EditRequest>, FunctionFailure> {
         let event = HookEvent::TaskPulled;
-        let function = self.hook(event).map_err(|e| self.unkept(&e))?;
+        let (hook, function) = self.hook(event)?;
         let defined = line_defined(&function);
-        self.limited(|_, deadline| {
-            let returned = while_marked(&self.lua, event, || {
-                let pulled = self.lua.create_table()?;
+        hook.limited(|_, deadline| {
+            let returned = while_marked(&hook.lua, event, || {
+                let pulled = hook.lua.create_table()?;
                 pulled.set("remote", pull.remote.0.as_str())?;
                 pulled.set("change", pull.change.as_str())?;
-                let before = before.map(|b| self.object_value(b)).transpose()?;
-                function.call((self.object_value(task)?, before, pulled))
+                let before = before.map(|b| hook.object_value(b)).transpose()?;
+                function.call((hook.object_value(task)?, before, pulled))
             });
-            self.answer(returned, defined, deadline)
+            hook.answer(returned, defined, deadline)
         })
     }
 }

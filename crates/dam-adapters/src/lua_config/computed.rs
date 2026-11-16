@@ -5,7 +5,8 @@ use dam_application::{
 };
 use mlua::{Function, Lua, Table, Value};
 
-use super::evaluate::{described, line_and_reason, lua_message, short_name_lua_never_truncates};
+use super::evaluate::{line_and_reason, lua_message, short_name_lua_never_truncates};
+use super::shape::described;
 
 const SECRETS: &str = "secrets";
 

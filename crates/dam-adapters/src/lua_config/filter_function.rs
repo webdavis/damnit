@@ -4,8 +4,8 @@ use dam_application::{FilterFunctions, FunctionFailure, FunctionFault, Histories
 use dam_domain::Object;
 use mlua::{Function, Table, Value};
 
-use super::evaluate::described;
 use super::functions::{LuaFunctions, line_defined};
+use super::shape::described;
 
 impl LuaFunctions {
     fn filter(&self, filter: &str) -> mlua::Result<Function> {

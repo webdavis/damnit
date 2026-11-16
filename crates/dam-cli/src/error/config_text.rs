@@ -48,6 +48,17 @@ impl fmt::Display for ConfigReason<'_> {
             ConfigError::NotNamedSettings { file } => {
                 write!(f, "{file} must return a table of named settings")
             }
+            ConfigError::HookMoved { config, events } => hook_moved(f, config, events),
+            ConfigError::UnknownHookFile { file } => write!(
+                f,
+                "{file} names no event; a hook file is named task_new.lua, task_changed.lua, \
+                 task_done.lua or task_pulled.lua"
+            ),
+            ConfigError::NotAHook { file, returned } => write!(
+                f,
+                "{file} must return a function, or a table holding one as run, and it returned \
+                 {returned}"
+            ),
             ConfigError::Misread(misread) => write!(f, "{}", MisreadText(misread)),
             ConfigError::BelongsInSecrets { key, at } => {
                 write!(f, "{key} belongs in secrets.lua {}", PlaceText(at))
@@ -99,6 +110,25 @@ impl fmt::Display for ConfigReason<'_> {
             other => setting_reason(f, other),
         }
     }
+}
+
+fn hook_moved(f: &mut fmt::Formatter<'_>, config: &str, events: &[String]) -> fmt::Result {
+    let moves = events
+        .iter()
+        .map(|event| format!("hook.{event} moves to hooks/{event}.lua"))
+        .collect::<Vec<_>>();
+    match moves.is_empty() {
+        true => write!(
+            f,
+            "{config}: the hook table is gone; each hook moves to hooks/<event>.lua"
+        ),
+        false => write!(f, "{config}: {}", moves.join(", ")),
+    }?;
+    write!(
+        f,
+        "; put each hook's function or table after return in its own file beside {config}, \
+         remove the hook table, then run dam config validate"
+    )
 }
 
 #[cfg(test)]

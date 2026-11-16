@@ -2,13 +2,12 @@ use dam_application::{Config, ConfigError};
 use dam_domain::{Categories, Category};
 
 use super::filter::read_filter;
-use super::hook::read_hooks;
+use super::hook::HOOK;
 use super::remote::read_remote;
 use super::strict::StrictMap;
 
-pub(crate) const SETTINGS: [&str; 7] = [
-    "owner", "done", "progress", "remote", "category", "filter", "hook",
-];
+pub(crate) const SETTINGS: [&str; 6] =
+    ["owner", "done", "progress", "remote", "category", "filter"];
 pub(crate) const DONE: [&str; 1] = ["interactive"];
 pub(crate) const CATEGORY: [&str; 2] = ["values", "exclusive"];
 const SECRETS: [&str; 2] = ["token", "schema"];
@@ -19,6 +18,9 @@ pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
             key: key.to_string(),
             at: root.place(),
         });
+    }
+    if let Some(hook) = root.get("hook") {
+        return Err(hook_moved(root, hook));
     }
     root.only(&SETTINGS)?;
     let done_interactive = match root.map("done")? {
@@ -49,7 +51,6 @@ pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
         .iter()
         .map(|(name, filter)| read_filter(name, filter))
         .collect::<Result<Vec<_>, _>>()?;
-    let (hooks, task_pulled) = read_hooks(root)?;
     Ok(Config {
         owner: root.string("owner")?,
         done_interactive,
@@ -58,10 +59,31 @@ pub(super) fn read_settings(root: &StrictMap) -> Result<Config, ConfigError> {
         categories,
         categories_writing_exclusive,
         filters,
-        hooks,
-        task_pulled,
+        hooks: Vec::new(),
+        task_pulled: None,
         tokens: Default::default(),
     })
+}
+
+fn hook_moved(root: &StrictMap, hook: &mlua::Value) -> ConfigError {
+    let held = hook
+        .as_table()
+        .map(|table| {
+            table
+                .pairs::<String, mlua::Value>()
+                .filter_map(Result::ok)
+                .map(|(k, _)| k)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    ConfigError::HookMoved {
+        config: root.place().file,
+        events: HOOK
+            .into_iter()
+            .filter(|event| held.iter().any(|k| k == event))
+            .map(String::from)
+            .collect(),
+    }
 }
 
 fn read_category(name: &str, category: &StrictMap) -> Result<Category, ConfigError> {

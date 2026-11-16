@@ -12,9 +12,10 @@ fn hooked(body: &str) -> Folder {
     let folder = Folder::new();
     let seen = folder.path(SEEN);
     let body = body.replace("SEEN", &format!("{seen:?}"));
-    folder.with_config(&format!(
-        "return {{ hook = {{ task_pulled = function(task, before, pull)\n{body}\nend }} }}\n"
-    ))
+    folder.with_hook(
+        "task_pulled.lua",
+        &format!("return function(task, before, pull)\n{body}\nend\n"),
+    )
 }
 
 fn pulled(

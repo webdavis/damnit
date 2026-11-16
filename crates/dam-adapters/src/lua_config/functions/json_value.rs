@@ -1,7 +1,7 @@
 use mlua::{Table, Value};
 use serde_json::{Map, Number};
 
-use crate::lua_config::evaluate::described;
+use crate::lua_config::shape::described;
 
 pub(in crate::lua_config) fn json_value(
     name: &str,
