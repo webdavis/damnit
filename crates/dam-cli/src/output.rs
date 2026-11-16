@@ -76,12 +76,12 @@ pub(crate) fn print(format: Format, color: bool, report: &Report) -> Result<(), 
         }
     }
     let mut out = std::io::stdout().lock();
-    let written = out
-        .write_all(text.as_bytes())
-        .and_then(|()| match text.ends_with('\n') {
+    let written = out.write_all(text.as_bytes()).and_then(|()| {
+        match text.is_empty() || text.ends_with('\n') {
             true => Ok(()),
             false => out.write_all(b"\n"),
-        });
+        }
+    });
     match written {
         Err(e) if e.kind() != std::io::ErrorKind::BrokenPipe => Err(e.into()),
         _ => Ok(()),
