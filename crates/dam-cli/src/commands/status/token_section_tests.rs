@@ -1,12 +1,13 @@
 use crate::args::StatusArgs;
 use crate::testing::{context, holding};
 use dam_application::{Conflict, RemoteName, TokenWarning};
-use dam_domain::Permission::{ConfigRead, ConflictRead, StageRead, WorkingRead};
+use dam_domain::Permission::{ConfigRead, ConflictRead, StageRead, TaskRead, WorkingRead};
 use dam_domain::{Object, Oid, Task};
 
 fn a_conflict_and_a_warning() -> crate::context::Context {
     let mut ctx = context();
     let task = Object::Task(Task::new(Oid::generate(&mut |b: &mut [u8]| b.fill(1)), "t"));
+    ctx.store.put(&task).unwrap();
     ctx.store
         .mark_conflict(&Conflict {
             remote: RemoteName("todoist".into()),
@@ -33,7 +34,7 @@ fn a_token_sees_conflicts_only_with_conflict_read_and_warnings_only_with_config_
     let mut ctx = a_conflict_and_a_warning();
     ctx.access = holding(&[WorkingRead, StageRead]);
     assert_eq!(sections(&ctx), (0, 0));
-    ctx.access = holding(&[WorkingRead, StageRead, ConflictRead, ConfigRead]);
+    ctx.access = holding(&[WorkingRead, StageRead, ConflictRead, ConfigRead, TaskRead]);
     assert_eq!(sections(&ctx), (1, 1));
 }
 

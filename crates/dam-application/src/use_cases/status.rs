@@ -1,9 +1,9 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
 use dam_domain::{Authored, Change, CommitId, Item, ItemHash, Kind, Object, Oid, Permission};
 
 use crate::errors::UseCaseError;
-use crate::ports::{CommitRepository, Conflict, Notice, RemoteName, Store};
+use crate::ports::{Conflict, Notice, RemoteName, Store};
 use crate::service::Dam;
 use crate::use_cases::remove::RemovePlan;
 use crate::use_cases::stage::working_and_ever_committed_oids;
@@ -16,6 +16,7 @@ pub struct Status {
     pub conflicts: Vec<Conflict>,
     pub notices: Vec<Notice>,
     pub unpushed: Vec<Unpushed>,
+    pub unseen_failed: bool,
 }
 
 pub struct Unpushed {
@@ -27,19 +28,25 @@ pub struct Unpushed {
 impl Dam<'_> {
     pub fn status(&self, remotes: &[RemoteName]) -> Result<Status, UseCaseError> {
         let mut unpushed = Vec::new();
+        let mut unseen_failed = false;
         for remote in remotes {
             let accepted = self.store.accepted_kinds(remote)?;
-            unpushed.push(unpushed_for(self.store, remote, accepted.as_deref())?);
+            let (owed, hidden) = self.unpushed_for(remote, accepted.as_deref())?;
+            unseen_failed |= hidden;
+            unpushed.push(owed);
         }
         let waiting = self.waiting_items()?;
+        let (conflicts, hidden_conflicts) = self.seen_conflicts()?;
+        let (notices, hidden_notices) = self.seen_notices()?;
         Ok(Status {
             staged: self.seen_staged()?,
             unstaged: self.diff_working()?,
             removal_plans: self.plans_of_waiting_removals(&waiting)?,
             waiting,
-            conflicts: self.store.conflicts()?,
-            notices: self.store.notices()?,
+            conflicts,
+            notices,
             unpushed,
+            unseen_failed: unseen_failed || hidden_conflicts || hidden_notices,
         })
     }
 
@@ -63,39 +70,6 @@ impl Dam<'_> {
         }
         Ok(seen)
     }
-}
-
-fn unpushed_for(
-    commits: &dyn CommitRepository,
-    remote: &RemoteName,
-    accepted: Option<&[Kind]>,
-) -> Result<Unpushed, UseCaseError> {
-    let mut commit_ids = Vec::new();
-    let mut oids = Vec::new();
-    let mut named = BTreeSet::new();
-    let newest_first = commits.unpushed(remote)?.into_iter().rev();
-    for record in newest_first {
-        let owed: Vec<&Change> = record
-            .changes
-            .iter()
-            .map(|authored| &authored.change)
-            .filter(|change| taken_by(accepted, change))
-            .collect();
-        if owed.is_empty() {
-            continue;
-        }
-        for change in owed {
-            if named.insert(change.oid().clone()) {
-                oids.push(change.oid().clone());
-            }
-        }
-        commit_ids.push(record.id);
-    }
-    Ok(Unpushed {
-        remote: remote.clone(),
-        commit_ids,
-        oids,
-    })
 }
 
 fn taken_by(accepted: Option<&[Kind]>, change: &Change) -> bool {
@@ -125,5 +99,10 @@ fn working_changes(store: &dyn Store) -> Result<Vec<Change>, UseCaseError> {
     Ok(out)
 }
 
+mod seen;
+mod unpushed;
+
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod token_tests;

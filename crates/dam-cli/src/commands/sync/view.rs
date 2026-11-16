@@ -4,10 +4,8 @@ use serde::Serialize;
 
 use crate::layout::counted;
 use crate::style::{Mark, Paint, advice, row};
+use crate::view::UNSEEN_FAILED;
 use crate::view::{Human, View, display};
-
-const UNSEEN_FAILED: &str =
-    "some changes you cannot see did not go through; ask the owner to run dam status";
 
 #[derive(Serialize)]
 pub(super) struct Pushed<'a> {

@@ -7,6 +7,7 @@ use super::rows::{ChangeRow, ConflictRow};
 use super::sets::SetRow;
 use super::waiting::ItemRow;
 use crate::layout::counted;
+use crate::view::UNSEEN_FAILED;
 use crate::view::{Human, Line, View, displays};
 
 #[derive(Serialize)]
@@ -19,6 +20,8 @@ pub(super) struct StatusView<'a> {
     pub(super) notices: Vec<NoticeRow<'a>>,
     pub(super) unpushed: Vec<UnpushedRow<'a>>,
     pub(super) warnings: Vec<String>,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub(super) unseen_failed: bool,
     #[serde(skip)]
     pub(super) owner: &'static str,
 }
@@ -97,6 +100,9 @@ impl View for StatusView<'_> {
                     .collect(),
             ),
         );
+        if self.unseen_failed {
+            human.push(Line::Whole(UNSEEN_FAILED.to_string()));
+        }
         if human.len() == self.warnings.len() {
             human.push(Line::Row("nothing staged, nothing changed".to_string()));
         }

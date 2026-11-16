@@ -4,7 +4,7 @@ use super::PlannedPush;
 use crate::errors::UseCaseError;
 use crate::remote::RemoteMutation;
 use crate::service::Dam;
-use crate::use_cases::push::sight::HELD_BY_WHAT_YOU_CANNOT_SEE;
+use crate::use_cases::sight::HELD_BY_WHAT_YOU_CANNOT_SEE;
 
 impl Dam<'_> {
     pub(super) fn as_seen_plan(&self, plan: PlannedPush) -> Result<PlannedPush, UseCaseError> {

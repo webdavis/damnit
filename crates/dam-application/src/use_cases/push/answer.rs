@@ -2,11 +2,11 @@ use dam_domain::{Oid, Permission, Subject};
 
 use super::reconcile::Heard;
 use super::report::PushReport;
-use super::sight::HELD_BY_WHAT_YOU_CANNOT_SEE;
 use super::waves::Sent;
 use crate::errors::UseCaseError;
 use crate::ports::{HelperError, RemoteName};
 use crate::service::Dam;
+use crate::use_cases::sight::HELD_BY_WHAT_YOU_CANNOT_SEE;
 
 const REFUSED_FOR_A_REASON_THE_OWNER_SEES: &str =
     "refused by the remote; ask the owner to run dam status for the reason";
