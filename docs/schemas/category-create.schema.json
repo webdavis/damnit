@@ -2,13 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/category-create.schema.json",
   "title": "dam category create answer",
-  "description": "What dam category create prints with --json or --toon: the category it wrote to config.lua.",
+  "description": "What dam category create prints with --json or --toon: the category it wrote to config.lua, or to .dam.lua inside a project, and the file written.",
   "type": "object",
-  "required": ["name", "values", "exclusive"],
+  "required": ["name", "values", "exclusive", "file"],
   "additionalProperties": false,
   "properties": {
     "name": { "type": "string" },
     "values": { "type": "array", "minItems": 1, "items": { "type": "string" } },
-    "exclusive": { "type": "boolean" }
+    "exclusive": { "type": "boolean" },
+    "file": { "enum": [".dam.lua", "config.lua"] }
   }
 }

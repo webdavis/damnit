@@ -362,8 +362,8 @@ With `required = { "due" }`, `dam new` refuses a task without a due date and nam
 `ls = "p1"` is what `dam ls` shows there when you give no query.
 `filter = { hot = { query = "p1" } }` is found before your own filter named `hot` in `dam ls` and
 `dam agenda`, and
-`dam filter list` there marks it `(the project's)`; `dam filter create` and `remove` still change
-only your `config.lua`.
+`dam filter list` there marks it `(the project's)`. Inside a project, `dam filter create|remove`
+and `dam category create|remove` change `.dam.lua`, and `--global` changes your `config.lua`.
 `category = { area = { values = { "ui", "db" }, exclusive = true } }` adds label categories, as
 `config.lua` writes them, to `dam new` and the queries you type there; `dam edit` covers everything
 and keeps to yours. A project category that shares a name or a label with one of yours refuses the

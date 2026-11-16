@@ -29,7 +29,7 @@ fn refusal(result: Result<crate::output::Report, CliError>) -> String {
 #[test]
 fn creating_a_filter_writes_its_query_and_says_so() {
     let file = FakeSettingsFile::default();
-    let report = create(&Config::default(), &file, "soon", "due:today").unwrap();
+    let report = create(&Config::default(), &file, "config.lua", "soon", "due:today").unwrap();
     assert_eq!(
         *file.written.borrow(),
         vec![Written::Set(
@@ -40,14 +40,21 @@ fn creating_a_filter_writes_its_query_and_says_so() {
     assert_eq!(report.human, "created filter soon: due:today");
     assert_eq!(
         report.data,
-        serde_json::json!({"name": "soon", "query": "due:today"})
+        serde_json::json!({"name": "soon", "query": "due:today", "file": "config.lua"})
     );
 }
 
 #[test]
 fn a_query_that_does_not_parse_is_refused_and_nothing_is_written() {
     let file = FakeSettingsFile::default();
-    let error = create(&Config::default(), &file, "soon", "(due:today").unwrap_err();
+    let error = create(
+        &Config::default(),
+        &file,
+        "config.lua",
+        "soon",
+        "(due:today",
+    )
+    .unwrap_err();
     assert!(matches!(
         error,
         CliError::UseCase(dam_application::UseCaseError::Query(_))
@@ -60,7 +67,7 @@ fn creating_a_filter_that_exists_is_refused_naming_config_set() {
     let file = FakeSettingsFile::default();
     let config = config_with(vec![filter("soon", FilterRule::Query("due:today".into()))]);
     assert_eq!(
-        refusal(create(&config, &file, "soon", "due:tomorrow")),
+        refusal(create(&config, &file, "config.lua", "soon", "due:tomorrow")),
         "filter soon exists; change its query with dam config set filter.soon.query '<query>'"
     );
     assert!(file.written.borrow().is_empty());
@@ -70,7 +77,13 @@ fn creating_a_filter_that_exists_is_refused_naming_config_set() {
 fn a_filter_without_a_name_is_refused() {
     let file = FakeSettingsFile::default();
     assert_eq!(
-        refusal(create(&Config::default(), &file, "", "due:today")),
+        refusal(create(
+            &Config::default(),
+            &file,
+            "config.lua",
+            "",
+            "due:today"
+        )),
         "a filter needs a name"
     );
 }
@@ -79,20 +92,23 @@ fn a_filter_without_a_name_is_refused() {
 fn removing_a_filter_removes_its_whole_entry() {
     let file = FakeSettingsFile::default();
     let config = config_with(vec![filter("soon", FilterRule::Query("due:today".into()))]);
-    let report = remove(&config, &file, "soon").unwrap();
+    let report = remove(&config, &file, "config.lua", "soon").unwrap();
     assert_eq!(
         *file.written.borrow(),
         vec![Written::Unset("filter.soon".into())]
     );
     assert_eq!(report.human, "removed filter soon");
-    assert_eq!(report.data, serde_json::json!({"name": "soon"}));
+    assert_eq!(
+        report.data,
+        serde_json::json!({"name": "soon", "file": "config.lua"})
+    );
 }
 
 #[test]
 fn removing_a_filter_that_does_not_exist_is_refused() {
     let file = FakeSettingsFile::default();
     assert_eq!(
-        refusal(remove(&Config::default(), &file, "soon")),
+        refusal(remove(&Config::default(), &file, "config.lua", "soon")),
         "there is no filter soon; dam filter list shows the saved filters"
     );
 }
@@ -106,7 +122,7 @@ fn removing_a_filter_with_a_match_function_is_refused_and_says_where() {
     ] {
         let config = config_with(vec![filter("mine", rule)]);
         assert_eq!(
-            refusal(remove(&config, &file, "mine")),
+            refusal(remove(&config, &file, "config.lua", "mine")),
             "filter mine runs a match function, which is written by hand; \
              remove filter.mine from config.lua by hand"
         );
@@ -117,16 +133,16 @@ fn removing_a_filter_with_a_match_function_is_refused_and_says_where() {
 #[test]
 fn quiet_prints_nothing_for_a_created_filter() {
     let file = FakeSettingsFile::default();
-    let report = create(&Config::default(), &file, "soon", "due:today").unwrap();
+    let report = create(&Config::default(), &file, "config.lua", "soon", "due:today").unwrap();
     assert_eq!(shown(Format::Quiet, false, None, &report).unwrap(), None);
 }
 
 #[test]
 fn the_answers_match_their_schemas() {
     let file = FakeSettingsFile::default();
-    let created = create(&Config::default(), &file, "soon", "due:today").unwrap();
+    let created = create(&Config::default(), &file, "config.lua", "soon", "due:today").unwrap();
     let config = config_with(vec![filter("soon", FilterRule::Query("due:today".into()))]);
-    let removed = remove(&config, &file, "soon").unwrap();
+    let removed = remove(&config, &file, "config.lua", "soon").unwrap();
     for (data, schema) in [
         (
             created.data,

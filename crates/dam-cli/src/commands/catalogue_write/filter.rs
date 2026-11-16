@@ -10,6 +10,7 @@ use crate::view::report;
 pub(super) fn create(
     config: &Config,
     file: &dyn SettingsFile,
+    named: &str,
     name: &str,
     query: &str,
 ) -> Result<Report, CliError> {
@@ -25,12 +26,17 @@ pub(super) fn create(
         &key,
         &dam_application::SettingValue::Text(query.to_string()),
     )?;
-    report(&FilterCreated { name, query })
+    report(&FilterCreated {
+        name,
+        query,
+        file: named,
+    })
 }
 
 pub(super) fn remove(
     config: &Config,
     file: &dyn SettingsFile,
+    named: &str,
     name: &str,
 ) -> Result<Report, CliError> {
     let filter = config
@@ -49,5 +55,5 @@ pub(super) fn remove(
         )));
     }
     file.unset(&entry_key("filter", name))?;
-    report(&FilterRemoved { name })
+    report(&FilterRemoved { name, file: named })
 }

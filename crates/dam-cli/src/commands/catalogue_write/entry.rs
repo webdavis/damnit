@@ -1,4 +1,4 @@
-use dam_application::{SettingKey, SettingKind};
+use dam_application::{PROJECT_FILE, SettingKey, SettingKind};
 
 use crate::error::CliError;
 
@@ -11,5 +11,12 @@ pub(super) fn entry_key(group: &str, name: &str) -> SettingKey {
     SettingKey {
         path: vec![group.to_string(), name.to_string()],
         kind: SettingKind::Text,
+    }
+}
+
+pub(super) fn in_project(file: &str) -> String {
+    match file {
+        PROJECT_FILE => format!(" in {PROJECT_FILE}"),
+        _ => String::new(),
     }
 }
