@@ -173,7 +173,7 @@ nothing is changed. `--global` writes `config.lua` instead.
 ## Filters
 
 A filter takes `query`, `match`, or both. A filter with neither is an error. `dam list --filter <name>`
-and `dam agenda <name>` run it. With both, the query narrows first, and `match` runs only on the
+and `dam agenda --filter <name>` run it. With both, the query narrows first, and `match` runs only on the
 objects that are left.
 
 `match(task, dam)` runs once for each object the listing would show, events as well as tasks.

@@ -179,9 +179,46 @@ dam list offset: help = Skip the first N rows
 dam list global: help = Reach every task, not only the project this folder is in; a path starts from the root
 dam list project: help = Work in the project at PATH, such as pns/hooks/, from any folder
 dam agenda: about = Show events over a window, each with whether it holds time
-dam agenda query: help = Narrow the events by a query, such as due:today, or a saved filter's name
-dam agenda from: help = Open the window at a date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM. Default: now
-dam agenda to: help = Close the window here, exclusive. Default: 24 hours after it opens
+dam agenda: after_help = The selection flags narrow the events in the window, as they do for dam list.
+
+Examples:
+  dam agenda --to today
+  dam agenda --from week+1 --to week+1 --labels work
+  dam agenda --response not:declined --to now+4h
+dam agenda kind: help = One of task, event, any; a,b for either
+dam agenda subject: help = Holds this text, ignoring case
+dam agenda body: help = Holds this text, ignoring case; none for empty
+dam agenda path: help = At or under this folder; a/,b/ for either
+dam agenda labels: help = Exactly this value; a,b for either; none for empty
+dam agenda category: help = A label group, or GROUP=LABEL; GROUP=a,b for either; none for empty
+dam agenda parent: help = This id, a list of ids, or in:FILTER; none for empty
+dam agenda depends: help = This id, a list of ids, or in:FILTER; none for empty
+dam agenda reminders: help = A length or a span: 30m, 30m..2h, ..5m; none for empty
+dam agenda filter: help = Listed by this saved filter; a,b for either
+dam agenda author: help = Exactly this value; a,b for either
+dam agenda done: help = true, false or any; the bare flag means true
+dam agenda overdue: help = true, false or any; the bare flag means true
+dam agenda blocked: help = true, false or any; the bare flag means true
+dam agenda priority: help = A number from 1 to 4, a list 1,2 or a span ..2
+dam agenda due: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty
+dam agenda deadline: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty
+dam agenda focus.day: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty
+dam agenda completed_at: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu; none for empty
+dam agenda estimate: help = A length or a span: 30m, 30m..2h, ..5m; none for empty
+dam agenda attached: help = This id, a list of ids, or in:FILTER; none for empty
+dam agenda start: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu
+dam agenda end: help = A day, period, anchor, span or repeating day: 2026-11-20, 2026-W47, today+3, ..today, on:thu
+dam agenda location: help = Holds this text, ignoring case; none for empty
+dam agenda status: help = One of confirmed, tentative, cancelled; a,b for either
+dam agenda transparency: help = One of busy, free; a,b for either
+dam agenda visibility: help = One of default, public, private, confidential; a,b for either
+dam agenda event_type: help = One of default, focus_time, out_of_office, working_location, birthday; a,b for either
+dam agenda response: help = One of needs_action, accepted, declined, tentative; a,b for either; none for empty
+dam agenda organizer.email: help = Exactly this value; a,b for either; none for empty
+dam agenda attendees.email: help = Exactly this value; a,b for either; none for empty
+dam agenda any: help = Hold at least one of the --any conditions, as well as every other flag
+dam agenda from: help = Open the window at a day, instant or anchor: 2026-11-20, 2026-11-20T09:00, today+1, week, now+2h. Default: now
+dam agenda to: help = Close the window here; a day or period counts whole, an instant is not included. Default: 24 hours after it opens
 dam agenda max_age: help = Refuse when REMOTE last pulled over DURATION ago, such as 15m. Repeatable
 dam agenda global: help = Reach every task, not only the project this folder is in; a path starts from the root
 dam agenda project: help = Work in the project at PATH, such as pns/hooks/, from any folder

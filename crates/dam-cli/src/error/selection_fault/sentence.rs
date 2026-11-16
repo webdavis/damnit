@@ -15,7 +15,10 @@ pub(super) fn of_value(fault: &Fault, problem: &Problem) -> String {
             flag_of(c)
         ),
         Problem::UnknownField { closest: None } => {
-            format!("--any {field}={value} names no field; dam list --help shows the fields")
+            format!(
+                "--any {field}={value} names no field; {} --help shows the fields",
+                fault.verb
+            )
         }
         Problem::BadValue => format!(
             "--{field} cannot be {value:?}; it takes {}",
@@ -89,7 +92,10 @@ pub(super) fn of_sort(fault: &Fault, problem: &Problem) -> String {
             format!("--sort {value} names no field; the closest is {c}")
         }
         Problem::UnknownField { closest: None } => {
-            format!("--sort {value} names no field; dam list --help shows the fields")
+            format!(
+                "--sort {value} names no field; {} --help shows the fields",
+                fault.verb
+            )
         }
         _ => format!(
             "--sort cannot be {value:?}; it takes {}",

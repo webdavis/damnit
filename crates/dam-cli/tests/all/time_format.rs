@@ -103,7 +103,7 @@ fn every_command_prints_its_times_as_rfc_3339_or_a_plain_date() {
         (&["show", &standup], true),
         (&["show", &offsite], true),
         (
-            &["agenda", "--from", "2026-09-25", "--to", "2026-09-27"],
+            &["agenda", "--from", "2026-09-25", "--to", "2026-09-26"],
             true,
         ),
         (&["log"], true),

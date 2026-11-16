@@ -588,8 +588,11 @@ attendee that stands for the calendar the event came from. `attendees`, `organiz
 `conference` read as they do in `dam show`; `attendees` is always a list, and the others appear only
 when the event has them. Every event the window overlaps is listed, busy or not; a recurring event
 made in dam is listed at its stored occurrence only. With no flags the window runs from now to 24
-hours later; `--from` and `--to` take the same words `--due` does, and a query or saved filter's name
-narrows it. Keys are only ever added, never renamed or retyped.
+hours later. `--from` and `--to` take a day, an instant or an anchor such as `today+7`, `week+1` or
+`now+2h`; a day or period as `--to` counts whole, so `--to today` runs to midnight, and an instant
+there is not included. The selection flags of `dam list`, such as `--labels work` or
+`--filter NAME`, narrow the events, and `--request` reads them as JSON. Keys are only ever added,
+never renamed or retyped.
 
 `--max-age <remote>=<duration>` makes the answer depend on that remote being fresh. When its last
 successful pull is older than the duration, or it has never pulled, `agenda` prints nothing on

@@ -3,10 +3,10 @@ use dam_domain::{Event, Object, Oid, Path, When};
 
 use super::super::dispatch_in;
 use super::inside;
-use crate::args::{AgendaArgs, Command};
+use crate::args::Command;
 use crate::context::Context;
 use crate::project_scope::Standing;
-use crate::testing::context;
+use crate::testing::{agenda_args, context};
 
 fn meeting(fill: u8, subject: &str, label: Option<&str>) -> Object {
     let mut event = Event::new(
@@ -41,11 +41,8 @@ fn with_a_work_filter() -> Standing {
     })
 }
 
-fn agenda(query: &str, global: bool) -> Command {
-    let mut args = AgendaArgs {
-        query: Some(query.into()),
-        ..AgendaArgs::default()
-    };
+fn agenda(filter: &str, global: bool) -> Command {
+    let mut args = agenda_args(&["--filter", filter]);
     args.scope.global = global;
     Command::Agenda(args)
 }

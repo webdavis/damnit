@@ -1,4 +1,5 @@
 mod agenda;
+mod asked;
 mod authorship;
 mod caller_id;
 pub(crate) mod catalogue;
@@ -37,6 +38,7 @@ mod sync;
 pub(crate) mod test;
 pub(crate) mod token;
 mod token_warnings;
+mod window_edge;
 
 use crate::args::Command;
 use crate::args::hook::{HookArgs, HookCommand};

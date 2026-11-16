@@ -1,11 +1,11 @@
 use dam_application::Window;
-use dam_domain::Timestamp;
 use jiff::SignedDuration;
 use jiff::tz::TimeZone;
 use serde::Serialize;
 
 use crate::args::AgendaArgs;
-use crate::commands::parsing::when_flag;
+use crate::commands::asked::Asked;
+use crate::commands::window_edge::{Side, edge};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
@@ -13,8 +13,15 @@ use crate::view::{Human, View, report};
 use event::AgendaEvent;
 
 const DEFAULT_SPAN: SignedDuration = SignedDuration::from_hours(24);
+const AGENDA: &str = "dam agenda";
 
 pub(crate) fn run_agenda(ctx: &Context, args: AgendaArgs) -> Result<Report, CliError> {
+    let asked = Asked {
+        verb: AGENDA.into(),
+        typed: &args.selection.typed,
+        sort: &[],
+    };
+    let filter = asked.filter()?;
     let window = window(ctx, &args)?;
     let bounds: Vec<_> = args
         .max_age
@@ -24,7 +31,8 @@ pub(crate) fn run_agenda(ctx: &Context, args: AgendaArgs) -> Result<Report, CliE
     ctx.dam().require_fresh(&bounds)?;
     let found = ctx
         .dam()
-        .agenda(args.query.as_deref(), &args.place, window, &ctx.tz)?;
+        .agenda(&filter, &args.place, &args.project_filters, window, &ctx.tz)
+        .map_err(|e| asked.refused(e))?;
     report(&Agenda {
         events: found.iter().map(|s| AgendaEvent::new(s, &ctx.tz)).collect(),
         zone: &ctx.tz,
@@ -32,17 +40,12 @@ pub(crate) fn run_agenda(ctx: &Context, args: AgendaArgs) -> Result<Report, CliE
 }
 
 fn window(ctx: &Context, args: &AgendaArgs) -> Result<Window, CliError> {
-    let instant = |flag: &str, text: &str| -> Result<Timestamp, CliError> {
-        when_flag(ctx, flag, text)?
-            .instant(&ctx.tz)
-            .ok_or_else(|| CliError::Usage(format!("--{flag}: {text} is outside the calendar")))
-    };
     let from = match &args.from {
-        Some(text) => instant("from", text)?,
+        Some(text) => edge(ctx, AGENDA, "from", text, Side::Opens)?,
         None => ctx.clock.now(),
     };
     let to = match &args.to {
-        Some(text) => instant("to", text)?,
+        Some(text) => edge(ctx, AGENDA, "to", text, Side::Closes)?,
         None => from.saturating_add(DEFAULT_SPAN).unwrap_or(from),
     };
     if to <= from {
@@ -74,5 +77,7 @@ mod event;
 
 #[cfg(test)]
 mod people_tests;
+#[cfg(test)]
+mod selection_tests;
 #[cfg(test)]
 mod tests;

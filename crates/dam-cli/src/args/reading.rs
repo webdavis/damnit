@@ -27,17 +27,18 @@ pub(crate) struct ListArgs {
 }
 
 #[derive(Args, Debug, Default)]
+#[command(after_help = super::selection::AGENDA_HELP)]
 pub(crate) struct AgendaArgs {
-    #[arg(help = "Narrow the events by a query, such as due:today, or a saved filter's name")]
-    pub(crate) query: Option<String>,
+    #[command(flatten)]
+    pub(crate) selection: SelectArgs,
     #[arg(
         long,
-        help = "Open the window at a date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM. Default: now"
+        help = "Open the window at a day, instant or anchor: 2026-11-20, 2026-11-20T09:00, today+1, week, now+2h. Default: now"
     )]
     pub(crate) from: Option<String>,
     #[arg(
         long,
-        help = "Close the window here, exclusive. Default: 24 hours after it opens"
+        help = "Close the window here; a day or period counts whole, an instant is not included. Default: 24 hours after it opens"
     )]
     pub(crate) to: Option<String>,
     #[arg(
@@ -51,6 +52,8 @@ pub(crate) struct AgendaArgs {
     pub(crate) scope: ScopeArgs,
     #[arg(skip)]
     pub(crate) place: Path,
+    #[arg(skip)]
+    pub(crate) project_filters: Vec<FilterConfig>,
 }
 
 #[derive(Args, Debug)]

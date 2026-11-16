@@ -14,7 +14,7 @@ fn list_prints_the_golden_lines() {
 
 #[test]
 fn agenda_prints_the_golden_lines() {
-    let args = ["agenda", "--from", "2026-09-25", "--to", "2026-09-26"];
+    let args = ["agenda", "--from", "2026-09-25", "--to", "2026-09-25"];
     assert_golden_output(&fixture::committed(), &args, "agenda.txt");
 }
 
@@ -68,7 +68,7 @@ fn no_line_of_a_list_passes_a_forty_column_terminal() {
     let sb = fixture::with_staged_and_unstaged_changes();
     for args in [
         &["list"][..],
-        &["agenda", "--from", "2026-09-25", "--to", "2026-09-26"],
+        &["agenda", "--from", "2026-09-25", "--to", "2026-09-25"],
         &["status"],
         &["remote", "list"],
     ] {

@@ -77,6 +77,10 @@ fn accepted() -> Vec<(&'static str, Value)> {
             "list",
             json!({"path": "home/", "any": [{"labels": "quick"}, {"due": "today.."}], "sort": "due", "limit": 5}),
         ),
+        (
+            "agenda",
+            json!({"labels": "work", "any": [{"response": "accepted"}], "to": "today"}),
+        ),
     ]
 }
 
@@ -102,6 +106,7 @@ fn refused() -> Vec<(&'static str, Value)> {
         ("day-set", json!({"plan": []})),
         ("list", json!({"limit": -1})),
         ("list", json!({"labls": "quick"})),
+        ("agenda", json!({"sort": "start"})),
     ]
 }
 
