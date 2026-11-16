@@ -120,6 +120,8 @@ syncs by itself.
 `dam sync run` ignores `allowed`. `docs/schemas/sync-run.schema.json` is its `--json` schema.
 `dam sync run todoist --when-due` syncs only when `interval` has passed since the last sync, and
 never when `allowed = false`; otherwise it prints nothing. `--interval 5m` replaces `interval`.
+Each `dam sync run` notes when it ran and how it ended in the `background` folder beside the
+database.
 
     dam sync start todoist      # now, until the next restart; --interval 5m for this run only
     dam sync stop todoist       # now; the next login still starts it if enabled

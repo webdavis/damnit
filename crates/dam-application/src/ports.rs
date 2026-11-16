@@ -16,6 +16,7 @@ mod origins;
 mod progress;
 mod pulled;
 mod repositories;
+mod run_records;
 mod settings_file;
 mod store;
 
@@ -44,6 +45,7 @@ pub use origins::OriginRepository;
 pub use progress::{NoProgress, Progress, Step, waited_on};
 pub use pulled::{Pull, PulledChange};
 pub use repositories::Store;
+pub use run_records::{LastRun, RunEnding, RunRecords};
 pub use settings_file::{SettingChange, SettingsFile};
 pub use store::{
     AcceptedKindsRepository, CommitRepository, Conflict, ConflictRepository, ObjectRepository,
