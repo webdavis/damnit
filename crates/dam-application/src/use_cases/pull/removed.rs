@@ -9,8 +9,8 @@ use crate::use_cases::last_seen::LastSeen;
 
 #[derive(Default)]
 pub(super) struct Removals {
-    pub(super) in_the_app: usize,
-    pub(super) dams_own: usize,
+    pub(super) in_the_app: Vec<Oid>,
+    pub(super) dams_own: Vec<Oid>,
 }
 
 pub(super) fn record_removals(
@@ -50,9 +50,9 @@ pub(super) fn record_removals(
         }
         if removal.noticed {
             notify(store, remote, &oid)?;
-            removals.in_the_app += 1;
+            removals.in_the_app.push(oid);
         } else {
-            removals.dams_own += 1;
+            removals.dams_own.push(oid);
         }
     }
     if retries.len() > retried_before {

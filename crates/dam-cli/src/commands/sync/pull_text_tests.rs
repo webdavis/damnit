@@ -16,6 +16,7 @@ fn pulled(remote: &str, counts: [usize; 5]) -> PullReport {
         values_kept: 0,
         deletes_confirmed: 0,
         task_pulled: None,
+        unseen_pulled: false,
     }
 }
 

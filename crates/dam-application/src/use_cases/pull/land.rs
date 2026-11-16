@@ -1,9 +1,9 @@
 use dam_domain::{Authored, Change, CommitRecord, Object, Oid};
 
-use super::PullReport;
 use super::classify::Incoming;
 use super::notices::note_cancelled;
 use super::parents::{RemotePaths, as_seen};
+use super::tally::Tally;
 use crate::config::RemoteConfig;
 use crate::errors::UseCaseError;
 use crate::ports::Store;
@@ -19,32 +19,32 @@ impl Dam<'_> {
         remote: &RemoteConfig,
         planned: Vec<(Oid, Incoming)>,
         remote_paths: &RemotePaths,
-        report: &mut PullReport,
+        tally: &mut Tally,
     ) -> Result<Vec<PulledTask>, UseCaseError> {
         let mut landed = Vec::new();
         let mut pulled = Vec::new();
         for (oid, incoming) in planned {
             match incoming {
-                Incoming::Unchanged => report.unchanged += 1,
+                Incoming::Unchanged => tally.unchanged.push(oid),
                 Incoming::Settled(o) => {
                     LastSeen::now_holds(self.store, &remote.name, &as_seen(&o, remote_paths))?;
-                    report.unchanged += 1;
+                    tally.unchanged.push(oid);
                 }
                 Incoming::Create(o) => {
                     pulled.extend(PulledTask::of(None, &o));
                     landed.extend(take_theirs(self.store, remote, remote_paths, o)?);
-                    report.created += 1;
+                    tally.created.push(oid);
                 }
                 Incoming::FastForward(o) => {
                     pulled.extend(PulledTask::of(self.store.get(&oid)?, &o));
                     landed.extend(take_theirs(self.store, remote, remote_paths, o)?);
-                    report.updated += 1;
+                    tally.updated.push(oid);
                 }
                 Incoming::Conflict(conflict) => {
                     self.store.mark_conflict(&conflict)?;
                     let seen = as_seen(&conflict.theirs, remote_paths);
                     LastSeen::now_holds(self.store, &remote.name, &seen)?;
-                    report.conflicts += 1;
+                    tally.conflicts.push(oid);
                     note_cancelled(self.store, &conflict.theirs)?;
                 }
             }

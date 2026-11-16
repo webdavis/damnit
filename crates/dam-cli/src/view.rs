@@ -103,3 +103,5 @@ pub(crate) fn report(view: &impl View) -> Result<Report, CliError> {
 
 pub(crate) const UNSEEN_FAILED: &str =
     "some changes you cannot see did not go through; ask the owner to run dam status";
+
+pub(crate) const UNSEEN_PULLED: &str = "some changes you cannot see came in too";

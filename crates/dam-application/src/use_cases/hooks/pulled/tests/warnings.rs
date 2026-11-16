@@ -42,7 +42,7 @@ fn the_first_failure_warns_once_however_many_tasks_fail() {
 }
 
 #[test]
-fn a_pull_a_tokens_read_caused_warns_nothing_to_the_token() {
+fn a_pull_a_tokens_read_caused_warns_nothing_and_reports_no_hook_run_to_the_token() {
     let s = pulled_hooked();
     *s.fixture.hooks.failing_every_call.borrow_mut() = Some(no_bell());
     let tool = holder(vec![allowed(&[RemotePull], None)]);
@@ -52,6 +52,6 @@ fn a_pull_a_tokens_read_caused_warns_nothing_to_the_token() {
         ..s.dam()
     };
     let report = dam.pull(remotes_launched_by(&l), None).unwrap().remove(0);
-    assert_eq!(report.task_pulled.unwrap().failed, 2);
+    assert_eq!(report.task_pulled, None);
     assert!(s.fixture.hook_warnings.warned.borrow().is_empty());
 }

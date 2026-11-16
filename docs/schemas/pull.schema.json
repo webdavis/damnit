@@ -61,6 +61,10 @@
             "type": "integer",
             "minimum": 0
           },
+          "unseen_pulled": {
+            "description": "Present and true only for a token, when the pull changed or kept an object it cannot read. Every count leaves those out, and task_pulled is left out for a token.",
+            "const": true
+          },
           "task_pulled": {
             "description": "What hook.task_pulled did on this pull. Absent when no such hook is set or the pull brought it no task.",
             "type": "object",

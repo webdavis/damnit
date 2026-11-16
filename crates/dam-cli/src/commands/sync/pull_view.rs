@@ -4,7 +4,7 @@ use serde::Serialize;
 use super::pulled_hook_view::PulledHookRow;
 use crate::layout::counted;
 use crate::style::{Mark, Paint, advice, heading, row};
-use crate::view::{Human, View};
+use crate::view::{Human, UNSEEN_PULLED, View};
 
 #[derive(Serialize)]
 pub(super) struct Pulled<'a> {
@@ -24,6 +24,8 @@ pub(super) struct PullRow<'a> {
     deletes_confirmed: usize,
     #[serde(skip_serializing_if = "Option::is_none")]
     task_pulled: Option<PulledHookRow>,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    unseen_pulled: bool,
 }
 
 impl<'a> PullRow<'a> {
@@ -39,6 +41,7 @@ impl<'a> PullRow<'a> {
             values_kept: r.values_kept,
             deletes_confirmed: r.deletes_confirmed,
             task_pulled: r.task_pulled.as_ref().map(PulledHookRow::new),
+            unseen_pulled: r.unseen_pulled,
         }
     }
 
@@ -69,6 +72,9 @@ impl<'a> PullRow<'a> {
         if let Some(run) = &self.task_pulled {
             lines.push(row(paint, run.mark(), 4, &run.line()));
         }
+        if self.unseen_pulled {
+            lines.push(row(paint, Mark::Quiet, 4, UNSEEN_PULLED));
+        }
         lines
     }
 
@@ -96,8 +102,14 @@ impl<'a> PullRow<'a> {
             .filter(|(n, ..)| *n > 0)
             .map(|(n, one, many)| counted(n, one, many))
             .collect();
-        if self.created + self.updated + self.conflicts + self.removed_upstream == 0 {
-            shown.insert(0, "nothing new".to_string());
+        let nothing_seen =
+            self.created + self.updated + self.conflicts + self.removed_upstream == 0;
+        if nothing_seen {
+            let nothing = match self.unseen_pulled {
+                true => "nothing you can see",
+                false => "nothing new",
+            };
+            shown.insert(0, nothing.to_string());
         }
         format!("{name}: {}", shown.join(", "))
     }
