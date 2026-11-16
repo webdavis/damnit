@@ -9,9 +9,19 @@
   "properties": {
     "config": { "type": ["string", "null"], "description": "The path of config.lua, or null when there is none." },
     "secrets": { "type": ["string", "null"], "description": "The path of secrets.lua, beside config.lua, or null when there is none." },
+    "project": {
+      "description": "Inside a project, its .dam.lua and the path it sets, both from the project; null outside one or when the file does not load.",
+      "type": ["object", "null"],
+      "required": ["file", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string" },
+        "path": { "type": "string" }
+      }
+    },
     "settings": { "$ref": "#/$defs/part" },
     "warnings": {
-      "description": "Each token dam ignores or holds disabled, as dam doctor warns of it. Without --json or --toon each goes to standard error.",
+      "description": "Each token dam ignores or holds disabled, as dam doctor warns of it, and a project .dam.lua that does not load. Without --json or --toon each goes to standard error.",
       "type": "array",
       "items": { "type": "string" }
     }

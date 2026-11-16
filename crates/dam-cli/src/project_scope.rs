@@ -5,7 +5,7 @@ use dam_application::{ConfigError, PROJECT_FILE, Project, find_project};
 use dam_domain::Path;
 
 use crate::args::ScopeArgs;
-use crate::error::CliError;
+use crate::error::{CliError, config_text};
 
 pub(crate) struct RunFolders {
     pub(crate) folder: PathBuf,
@@ -47,6 +47,14 @@ impl Standing {
             Ok(settings) => Standing::Inside(Project { folder, settings }),
             Err(e) => Standing::Unreadable(e),
         }
+    }
+
+    pub(crate) fn warning(&self) -> Option<String> {
+        let Standing::Unreadable(error) = self else {
+            return None;
+        };
+        let text = config_text(error).replace('\n', " ");
+        Some(format!("dam: warning: {text}; run dam doctor config"))
     }
 
     pub(crate) fn place(self, scope: &ScopeArgs) -> Result<Path, CliError> {

@@ -14,10 +14,15 @@ use dam_adapters::LuaConfigFile;
 use crate::args::ConfigCommand;
 use crate::error::CliError;
 use crate::output::Report;
+use crate::project_scope::Standing;
 
-pub(crate) fn run(file: &LuaConfigFile, command: ConfigCommand) -> Result<Report, CliError> {
+pub(crate) fn run(
+    file: &LuaConfigFile,
+    command: ConfigCommand,
+    standing: &Standing,
+) -> Result<Report, CliError> {
     match command {
-        ConfigCommand::List => listing::run(file),
+        ConfigCommand::List => listing::run(file, standing),
         ConfigCommand::Get { key } => get::run(file, &key),
         ConfigCommand::Set { key, value } => set::run(file, &key, Some(&value)),
         ConfigCommand::Unset { key } => set::run(file, &key, None),
@@ -28,5 +33,7 @@ pub(crate) fn run(file: &LuaConfigFile, command: ConfigCommand) -> Result<Report
     }
 }
 
+#[cfg(test)]
+mod listing_tests;
 #[cfg(test)]
 mod set_tests;

@@ -28,6 +28,7 @@ mod use_case_text;
 
 pub(crate) use config_text::ConfigReason;
 use config_text::ConfigText;
+pub(crate) use config_text::config_text;
 pub(crate) use hook_text::{FaultText, HookText};
 pub(crate) use misuse::{Misuse, Problem};
 use refusal_oids::refusal_oids;

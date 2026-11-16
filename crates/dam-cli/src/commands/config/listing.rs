@@ -8,6 +8,7 @@ use super::warnings::warnings_naming_only_the_token;
 use crate::commands::doctor::found;
 use crate::error::CliError;
 use crate::output::Report;
+use crate::project_scope::Standing;
 use crate::style::{column, field, heading};
 use crate::view::{Human, View, report};
 
@@ -15,8 +16,15 @@ use crate::view::{Human, View, report};
 struct Listing {
     config: Option<String>,
     secrets: Option<String>,
+    project: Option<ProjectEntry>,
     settings: Setting,
     warnings: Vec<String>,
+}
+
+#[derive(Serialize)]
+struct ProjectEntry {
+    file: String,
+    path: String,
 }
 
 impl View for Listing {
@@ -24,11 +32,18 @@ impl View for Listing {
         let or_none = |path: &Option<String>, name: &str| {
             path.clone().unwrap_or_else(|| format!("no {name}"))
         };
-        let files = [
+        let mut files = vec![
             ("config", or_none(&self.config, "config.lua")),
             ("secrets", or_none(&self.secrets, "secrets.lua")),
         ];
-        let settings = self.settings.rows("");
+        let mut settings = self.settings.rows("");
+        if let Some(project) = &self.project {
+            files.push(("project", project.file.clone()));
+            settings.push((
+                "path".to_string(),
+                format!("{} (from the project)", project.path),
+            ));
+        }
         let files_column = column(files.iter().map(|(name, _)| *name));
         let settings_column = column(settings.iter().map(|(key, _)| key.as_str()));
         Human::styled(|paint| {
@@ -50,12 +65,22 @@ impl View for Listing {
     }
 }
 
-pub(super) fn run(file: &LuaConfigFile) -> Result<Report, CliError> {
+pub(super) fn run(file: &LuaConfigFile, standing: &Standing) -> Result<Report, CliError> {
     let config = file.load()?.config;
+    let project = match standing {
+        Standing::Inside(project) => Some(ProjectEntry {
+            file: project.file().display().to_string(),
+            path: project.settings.path.clone(),
+        }),
+        _ => None,
+    };
+    let mut warnings = warnings_naming_only_the_token(&config.tokens);
+    warnings.extend(standing.warning());
     report(&Listing {
         config: found(file.config_path()),
         secrets: found(&file.secrets_path()),
+        project,
         settings: settings(&config),
-        warnings: warnings_naming_only_the_token(&config.tokens),
+        warnings,
     })
 }
