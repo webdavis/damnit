@@ -9,6 +9,7 @@ function M.defaults()
     timeout_ms = 120000,
     sidebar = { side = "left", width = 40 },
     handoff = { host = "auto" },
+    signs = { overdue = "!", blocked = "~", changed = "M", staged = "S", waiting = "?" },
   }
 end
 
@@ -19,6 +20,7 @@ local KNOWN = {
   timeout_ms = true,
   sidebar = { side = true, width = true },
   handoff = { host = true },
+  signs = { overdue = true, blocked = true, changed = true, staged = true, waiting = true },
 }
 
 local function unknown_keys(given, known, prefix, found)
@@ -40,6 +42,11 @@ local function one_of(...)
   end
 end
 
+local function sign_text(value)
+  local width = type(value) == "string" and vim.fn.strdisplaywidth(value) or 0
+  return width >= 1 and width <= 2, "text one or two cells wide"
+end
+
 local function validate(o)
   vim.validate("dam", o.dam, "string")
   vim.validate("views", o.views, "table")
@@ -50,6 +57,10 @@ local function validate(o)
   vim.validate("sidebar.width", o.sidebar.width, "number")
   vim.validate("handoff", o.handoff, "table")
   vim.validate("handoff.host", o.handoff.host, one_of("auto", "rex", "clipboard"))
+  vim.validate("signs", o.signs, "table")
+  for name, text in pairs(o.signs) do
+    vim.validate("signs." .. name, text, sign_text)
+  end
   for name, view in pairs(o.views) do
     vim.validate("views." .. tostring(name), view, { "string", "table" })
   end
