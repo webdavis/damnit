@@ -64,3 +64,16 @@ fn a_non_ascii_empty_or_overflowing_duration_is_refused_rather_than_a_panic() {
     assert_eq!(seconds("\u{201c}2m\u{201d}"), None);
     assert_eq!(seconds("18446744073709551615h"), None);
 }
+
+#[test]
+fn project_hooks_are_off_until_a_clone_or_the_person_turns_them_on() {
+    let personal = |on| Config {
+        project_hooks: on,
+        ..Config::default()
+    };
+    assert!(!personal(None).project_hooks_on(None));
+    assert!(personal(Some(true)).project_hooks_on(None));
+    assert!(personal(None).project_hooks_on(Some(true)));
+    assert!(!personal(Some(true)).project_hooks_on(Some(false)));
+    assert!(personal(Some(false)).project_hooks_on(Some(true)));
+}

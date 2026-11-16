@@ -44,6 +44,7 @@ pub(super) fn settings(config: &Config) -> Setting {
                 .confirm_above
                 .map_or_else(Setting::unset, |count| Setting::set(Value::Count(count))),
         ),
+        super::project_hooks::personal(config),
     ];
     entries.extend(
         groups

@@ -129,3 +129,10 @@ fn confirm_above_takes_a_whole_number() {
         );
     }
 }
+
+#[test]
+fn project_hooks_is_a_flag_in_the_project_part() {
+    let key = SettingKey::parse("project.hooks").unwrap();
+    assert_eq!(key.path, ["project", "hooks"]);
+    assert_eq!(key.kind, SettingKind::Flag);
+}

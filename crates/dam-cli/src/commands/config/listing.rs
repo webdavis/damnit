@@ -1,8 +1,9 @@
 use dam_adapters::LuaConfigFile;
-use dam_application::ConfigFile;
+use dam_application::{ConfigFile, ProjectHookSwitches};
 use serde::Serialize;
 
 use super::project_entry::ProjectEntry;
+use super::project_hooks::in_force;
 use super::setting::Setting;
 use super::settings::settings;
 use super::warnings::warnings_naming_only_the_token;
@@ -35,6 +36,7 @@ impl View for Listing {
         if let Some(project) = &self.project {
             files.push(("project", project.file().to_string()));
             settings.extend(project.rows());
+            settings.push(("project hooks".to_string(), project.hooks_line()));
         }
         let files_column = column(files.iter().map(|(name, _)| *name));
         let settings_column = column(settings.iter().map(|(key, _)| key.as_str()));
@@ -57,10 +59,17 @@ impl View for Listing {
     }
 }
 
-pub(super) fn run(file: &LuaConfigFile, standing: &Standing) -> Result<Report, CliError> {
+pub(super) fn run(
+    file: &LuaConfigFile,
+    standing: &Standing,
+    switches: &dyn ProjectHookSwitches,
+) -> Result<Report, CliError> {
     let config = file.load()?.config;
     let project = match standing {
-        Standing::Inside(project) => Some(ProjectEntry::of(project)),
+        Standing::Inside(project) => {
+            let (hooks, from) = in_force(switches, &project.folder, &config)?;
+            Some(ProjectEntry::of(project).with_hooks(hooks, from.as_str()))
+        }
         _ => None,
     };
     let mut warnings = warnings_naming_only_the_token(&config.tokens);

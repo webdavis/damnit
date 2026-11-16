@@ -14,6 +14,7 @@ pub(super) fn config() -> Config {
         filters: vec![],
         hooks: vec![],
         task_pulled: None,
+        project_hooks: None,
         tokens: Default::default(),
     }
 }

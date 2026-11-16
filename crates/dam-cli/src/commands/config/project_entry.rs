@@ -15,6 +15,8 @@ pub(super) struct ProjectEntry {
     category: BTreeMap<String, CategoryEntry>,
     sections: Vec<String>,
     branch_label: bool,
+    hooks: bool,
+    hooks_from: &'static str,
 }
 
 #[derive(Serialize)]
@@ -74,7 +76,22 @@ impl ProjectEntry {
                 .collect(),
             sections: settings.sections.clone(),
             branch_label: settings.branch_label,
+            hooks: false,
+            hooks_from: "default",
         }
+    }
+
+    pub(super) fn with_hooks(self, hooks: bool, hooks_from: &'static str) -> ProjectEntry {
+        ProjectEntry {
+            hooks,
+            hooks_from,
+            ..self
+        }
+    }
+
+    pub(super) fn hooks_line(&self) -> String {
+        let on = if self.hooks { "on" } else { "off" };
+        format!("{on} (from {})", self.hooks_from)
     }
 
     pub(super) fn file(&self) -> &str {

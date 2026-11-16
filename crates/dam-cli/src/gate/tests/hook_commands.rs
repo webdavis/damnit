@@ -33,3 +33,21 @@ fn only_the_owner_lists_or_runs_hooks_whatever_a_token_holds() {
 fn bare_hook_only_prints_its_help() {
     assert_eq!(need(&command("hook")), Need::Open);
 }
+
+#[test]
+fn no_token_turns_project_hooks_on_or_off_whatever_it_holds() {
+    for (line, verb) in [
+        ("config set project.hooks true", "config set"),
+        ("config set --global project.hooks true", "config set"),
+        ("config unset project.hooks", "config unset"),
+    ] {
+        assert_eq!(
+            refuse_any_token_to_an_owner_only_verb(true, &command(line)),
+            Err(Refusal::NotOpenToTokens(verb))
+        );
+        assert_eq!(
+            admit(&allowing(&Permission::ALL), &command(line)),
+            Err(Refusal::NotOpenToTokens(verb))
+        );
+    }
+}

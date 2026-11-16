@@ -42,6 +42,7 @@ fn the_page_names_every_key_config_lua_takes_and_no_other() {
     let read = owned(&[
         &settings::SETTINGS[..],
         &settings::DONE[..],
+        &settings::PROJECT[..],
         &settings::CATEGORY[..],
         &remote::SETTINGS[..],
         &remote::SYNC[..],

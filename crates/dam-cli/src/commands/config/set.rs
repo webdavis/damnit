@@ -1,5 +1,5 @@
 use dam_adapters::LuaConfigFile;
-use dam_application::{KeyRefusal, SettingChange, SettingKey, SettingKind, SettingsFile};
+use dam_application::{BadValue, KeyRefusal, SettingChange, SettingKey, SettingKind, SettingsFile};
 use serde::Serialize;
 
 use crate::error::CliError;
@@ -42,22 +42,28 @@ pub(super) fn run(
     let key = SettingKey::parse(key).map_err(refused)?;
     let change = match value {
         Some(text) => {
-            let value = key.value(text).map_err(|bad| {
-                CliError::Usage(format!(
-                    "{} takes {}, and {:?} is not one",
-                    bad.key,
-                    kind_text(bad.expected),
-                    bad.value
-                ))
-            })?;
+            let value = key.value(text).map_err(bad_value)?;
             file.set(&key, &value)?
         }
         None => file.unset(&key)?,
     };
-    report(&Changed(&change))
+    changed(&change)
 }
 
-fn refused(refusal: KeyRefusal) -> CliError {
+pub(super) fn changed(change: &SettingChange) -> Result<Report, CliError> {
+    report(&Changed(change))
+}
+
+pub(super) fn bad_value(bad: BadValue) -> CliError {
+    CliError::Usage(format!(
+        "{} takes {}, and {:?} is not one",
+        bad.key,
+        kind_text(bad.expected),
+        bad.value
+    ))
+}
+
+pub(super) fn refused(refusal: KeyRefusal) -> CliError {
     CliError::Usage(match refusal {
         KeyRefusal::Unknown(key) => format!(
             "dam has no setting {key}; dam config list shows the keys, and docs/lua.md lists every one"

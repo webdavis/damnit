@@ -41,6 +41,7 @@ pub(crate) fn context() -> Context {
             filters: vec![],
             hooks: vec![],
             task_pulled: None,
+            project_hooks: None,
             tokens: Default::default(),
         },
         access: Box::new(dam_application::Owner),

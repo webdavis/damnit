@@ -26,7 +26,7 @@ pub(crate) enum ConfigCommand {
     },
     #[command(
         about = "Write one setting into config.lua, keeping the rest of the file as it is",
-        after_help = "A list takes its items separated by commas. A secret, a function or a hook is refused.\n\nExamples:\n  dam config set remote.todoist.deadline 15m\n  dam config set category.priority.values high,low"
+        after_help = "A list takes its items separated by commas. A secret, a function or a hook is refused.\nInside a project, project.hooks is kept for this clone only, outside the repository; --global writes it into config.lua for every project.\n\nExamples:\n  dam config set remote.todoist.deadline 15m\n  dam config set category.priority.values high,low\n  dam config set project.hooks true\n  dam config set --global project.hooks true"
     )]
     Set {
         #[arg(
@@ -35,16 +35,30 @@ pub(crate) enum ConfigCommand {
         key: String,
         #[arg(help = "The value, read as that setting's type")]
         value: String,
+        #[arg(
+            long,
+            help = "Write project.hooks into config.lua for every project, not for this clone only"
+        )]
+        global: bool,
     },
     #[command(
         about = "Remove one setting from config.lua, keeping the rest of the file as it is",
-        after_help = "Examples:\n  dam config unset remote.todoist.deadline"
+        after_help = "Inside a project, project.hooks forgets this clone's own switch; --global removes it from config.lua.
+
+Examples:
+  dam config unset remote.todoist.deadline
+  dam config unset project.hooks"
     )]
     Unset {
         #[arg(
             help = "Name the setting by the key dam config list shows, such as remote.todoist.deadline"
         )]
         key: String,
+        #[arg(
+            long,
+            help = "Remove project.hooks from config.lua, not this clone's own switch"
+        )]
+        global: bool,
     },
     #[command(
         about = "Print the starter config.lua a first run writes, without writing a file",

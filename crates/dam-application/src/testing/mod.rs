@@ -10,6 +10,7 @@ mod interruption;
 mod launchers;
 mod memory_store;
 mod progress;
+mod project_hook_switches;
 mod remote_fixture;
 mod scenario;
 mod settings_file;
@@ -33,6 +34,7 @@ pub use launchers::{
 };
 pub use memory_store::MemoryStore;
 pub use progress::{FakeProgress, Said};
+pub use project_hook_switches::FakeProjectHookSwitches;
 pub use remote_fixture::{config, todoist};
 pub use scenario::{Scenario, event, task, task_in};
 pub use settings_file::{FakeSettingsFile, Written};

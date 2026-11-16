@@ -38,7 +38,7 @@ const PROJECT_SETTINGS: [&str; 9] = [
     "sections",
     "branch_label",
 ];
-const PERSONAL_SETTINGS: [&str; 9] = [
+const PERSONAL_SETTINGS: [&str; 11] = [
     "owner",
     "remote",
     "token",
@@ -48,6 +48,8 @@ const PERSONAL_SETTINGS: [&str; 9] = [
     "secrets",
     "sync",
     "except",
+    "project",
+    "project.hooks",
 ];
 
 pub fn read_project_file(file: &Path, this_dam: &str) -> Result<ProjectSettings, ConfigError> {
