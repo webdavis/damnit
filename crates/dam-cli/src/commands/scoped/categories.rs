@@ -7,7 +7,7 @@ use crate::project_scope::Standing;
 pub(crate) fn following(mut ctx: Context, command: &Command, standing: &Standing) -> Context {
     let (scope, at_its_path) = match command {
         Command::New(a) => (&a.scope, false),
-        Command::Ls(a) => (&a.scope, false),
+        Command::List(a) => (&a.scope, false),
         Command::Agenda(a) => (&a.scope, false),
         Command::Reminders(a) => (&a.scope, false),
         Command::Edit(a) => (&a.scope, true),

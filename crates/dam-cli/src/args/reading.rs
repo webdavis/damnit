@@ -1,40 +1,31 @@
 use std::time::Duration;
 
 use clap::{Args, Subcommand};
-use dam_application::RemoteName;
+use dam_application::{FilterConfig, RemoteName};
 use dam_domain::Path;
 
 use super::ScopeArgs;
+use super::selection::SelectArgs;
 
 use super::values::max_age_arg;
 
-#[derive(Args, Debug)]
-pub(crate) struct LsArgs {
-    #[arg(help = "Narrow the list by a query, such as due:today, or a saved filter's name")]
-    pub(crate) query: Option<String>,
-    #[arg(
-        long,
-        value_enum,
-        default_value_t = AuthorKind::All,
-        help = "List what you made, what tokens made, or all of it"
-    )]
-    pub(crate) by: AuthorKind,
+#[derive(Args, Debug, Default)]
+pub(crate) struct ListArgs {
+    #[command(flatten)]
+    pub(crate) selection: SelectArgs,
     #[command(flatten)]
     pub(crate) scope: ScopeArgs,
     #[arg(skip)]
     pub(crate) place: Path,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
-pub(crate) enum AuthorKind {
-    Mine,
-    Agents,
-    All,
+    #[arg(skip)]
+    pub(crate) project_default: Option<String>,
+    #[arg(skip)]
+    pub(crate) project_filters: Vec<FilterConfig>,
 }
 
 #[derive(Args, Debug, Default)]
 pub(crate) struct AgendaArgs {
-    #[arg(help = "Narrow the events by a query or saved filter, read the way `ls` reads one")]
+    #[arg(help = "Narrow the events by a query, such as due:today, or a saved filter's name")]
     pub(crate) query: Option<String>,
     #[arg(
         long,

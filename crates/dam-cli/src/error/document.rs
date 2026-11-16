@@ -19,6 +19,9 @@ impl CliError {
         if let Some(usage) = misuse::usage_part(self) {
             error["usage"] = usage;
         }
+        if let CliError::Selection(fault) = self {
+            error["selection"] = fault.document();
+        }
         if let CliError::UseCase(UseCaseError::Refused(Refusal::HookRefused(refused))) = self {
             error["hook"] = refused.event.as_str().into();
         }

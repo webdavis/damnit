@@ -19,4 +19,11 @@ impl TableValue {
             TableValue::Many(texts) => texts,
         }
     }
+
+    pub fn map(&self, f: impl Fn(&str) -> String) -> TableValue {
+        match self {
+            TableValue::One(text) => TableValue::One(f(text)),
+            TableValue::Many(texts) => TableValue::Many(texts.iter().map(|t| f(t)).collect()),
+        }
+    }
 }

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/error.schema.json",
   "title": "dam error document",
-  "description": "What dam prints on standard error when a command run with -o fails. A rule in tokenRule exits 5; every other rule exits 4, except ambiguous_prefix, whose kind is usage and which exits 2. A usage error carries usage when the command line was mistyped, and prefix when the id text it gave was not one dam could use. A no_such_setting refusal carries key, and a hook_refused refusal carries hook.",
+  "description": "What dam prints on standard error when a command run with -o fails. A rule in tokenRule exits 5; every other rule exits 4, except ambiguous_prefix, whose kind is usage and which exits 2. A usage error carries usage when the command line was mistyped, with selection when a selection flag such as --due could not be used, and prefix when the id text it gave was not one dam could use. A no_such_setting refusal carries key, and a hook_refused refusal carries hook.",
   "type": "object",
   "required": ["error"],
   "additionalProperties": false,
@@ -41,7 +41,8 @@
         "hook": {
           "description": "The event of the hook that refused the command.",
           "enum": ["task_new", "task_changed", "task_done"]
-        }
+        },
+        "selection": { "$ref": "#/$defs/selection" }
       },
       "allOf": [
         {
@@ -64,6 +65,10 @@
           "else": { "properties": { "rule": { "not": { "const": "no_such_setting" } } } }
         },
         {
+          "if": { "required": ["selection"] },
+          "then": { "properties": { "kind": { "const": "usage" } }, "required": ["usage"] }
+        },
+        {
           "if": { "required": ["hook"] },
           "then": { "properties": { "rule": { "const": "hook_refused" } } },
           "else": { "properties": { "rule": { "not": { "const": "hook_refused" } } } }
@@ -72,6 +77,18 @@
     }
   },
   "$defs": {
+    "selection": {
+      "description": "A selection flag dam could not use: the field at fault, the value typed for it, the shapes that field takes, and one corrected command to run.",
+      "type": "object",
+      "required": ["field", "value", "shapes", "command"],
+      "additionalProperties": false,
+      "properties": {
+        "field": { "type": "string", "minLength": 1 },
+        "value": { "type": "string" },
+        "shapes": { "type": "array", "items": { "type": "string" } },
+        "command": { "type": "string", "pattern": "^dam " }
+      }
+    },
     "usage": {
       "description": "What was wrong with the command line. word is the subcommand or flag at fault, as dam names it, and is null when there is none.",
       "type": "object",

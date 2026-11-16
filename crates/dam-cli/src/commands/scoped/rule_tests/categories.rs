@@ -4,10 +4,10 @@ use dam_domain::{Categories, Category};
 use super::super::tests::new_args;
 use super::super::{dispatch_in, following};
 use super::{global, inside};
-use crate::args::{AuthorKind, Command, LsArgs, NewArgs};
+use crate::args::{Command, NewArgs};
 use crate::context::Context;
 use crate::project_scope::Standing;
-use crate::testing::context;
+use crate::testing::{context, list_args};
 
 fn area(name: &str, values: &[&str]) -> Categories {
     Categories::new(vec![Category {
@@ -53,14 +53,9 @@ fn with_global_the_projects_categories_do_not_apply() {
 }
 
 #[test]
-fn a_query_typed_inside_the_project_may_name_its_category() {
-    let ls = Command::Ls(LsArgs {
-        query: Some("area:bug".into()),
-        by: AuthorKind::All,
-        scope: Default::default(),
-        place: Default::default(),
-    });
-    assert_eq!(run(context(), ls, with_an_area()), Ok(()));
+fn a_category_typed_inside_the_project_may_name_its_group() {
+    let list = Command::List(list_args(&["--category", "area=bug"]));
+    assert_eq!(run(context(), list, with_an_area()), Ok(()));
 }
 
 fn yours(categories: Categories) -> Context {
@@ -69,15 +64,10 @@ fn yours(categories: Categories) -> Context {
     ctx
 }
 
-fn ls(query: &str, global: bool) -> Command {
-    let mut args = LsArgs {
-        query: Some(query.into()),
-        by: AuthorKind::All,
-        scope: Default::default(),
-        place: Default::default(),
-    };
+fn list(category: &str, global: bool) -> Command {
+    let mut args = list_args(&["--category", category]);
     args.scope.global = global;
-    Command::Ls(args)
+    Command::List(args)
 }
 
 #[test]
@@ -131,9 +121,12 @@ fn with_global_your_category_of_the_same_name_applies() {
 }
 
 #[test]
-fn a_query_naming_the_category_reads_the_projects_inside_and_yours_with_global() {
+fn a_category_flag_reads_the_projects_group_inside_and_yours_with_global() {
     let mine = || yours(area("area", &["chore"]));
-    assert_eq!(run(mine(), ls("area:bug", false), with_an_area()), Ok(()));
-    assert!(run(mine(), ls("area:bug", true), with_an_area()).is_err());
-    assert_eq!(run(mine(), ls("area:chore", true), with_an_area()), Ok(()));
+    assert_eq!(run(mine(), list("area=bug", false), with_an_area()), Ok(()));
+    assert!(run(mine(), list("area=bug", true), with_an_area()).is_err());
+    assert_eq!(
+        run(mine(), list("area=chore", true), with_an_area()),
+        Ok(())
+    );
 }

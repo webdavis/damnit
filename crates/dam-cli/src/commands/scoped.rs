@@ -68,12 +68,14 @@ pub(crate) fn dispatch_in(
             }
             Command::Mv(a)
         }
-        Command::Ls(mut a) => {
+        Command::List(mut a) => {
             if let Some(rules) = standing.rules(&a.scope) {
-                a.query = rules.listed(a.query);
+                a.project_default = rules.listed(None).filter(|_| a.selection.is_empty());
+                a.project_filters = rules.filters.clone();
             }
             a.place = standing.place(&a.scope)?;
-            Command::Ls(a)
+            a.selection = a.selection.under(&a.place);
+            Command::List(a)
         }
         Command::Agenda(mut a) => {
             if let Some(rules) = standing.rules(&a.scope) {

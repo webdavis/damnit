@@ -10,6 +10,7 @@ mod planning;
 mod reading;
 mod remotes;
 mod scope;
+pub(crate) mod selection;
 mod set;
 mod staging;
 mod test;
@@ -27,7 +28,7 @@ pub(crate) use init::InitArgs;
 pub(crate) use new::NewArgs;
 pub(crate) use planning::{DayArgs, DayCommand, RemindersArgs};
 pub(crate) use reading::{
-    AgendaArgs, AuthorKind, CategoryArgs, CategoryCommand, FilterArgs, FilterCommand, LsArgs,
+    AgendaArgs, CategoryArgs, CategoryCommand, FilterArgs, FilterCommand, ListArgs,
 };
 pub(crate) use remotes::{
     PullArgs, PushArgs, RemoteArgs, RemoteCommand, ResolveArgs, SyncArgs, SyncCommand,
@@ -79,8 +80,11 @@ pub(crate) enum Command {
     Status(StatusArgs),
     #[command(about = "Show unstaged changes, or staged ones with --staged")]
     Diff(DiffArgs),
-    #[command(about = "List objects, optionally by query or saved filter")]
-    Ls(LsArgs),
+    #[command(
+        about = "List tasks that are not done, or what the flags select",
+        after_help = selection::LIST_HELP
+    )]
+    List(ListArgs),
     #[command(about = "Show events over a window, each with whether it holds time")]
     Agenda(AgendaArgs),
     #[command(about = "List the reminders that fall due in a window, by default today until now")]

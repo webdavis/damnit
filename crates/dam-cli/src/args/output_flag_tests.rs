@@ -13,21 +13,21 @@ fn refused(line: &[&str]) -> clap::Error {
 #[test]
 fn output_chooses_json_toon_or_yaml_on_any_command() {
     for (line, format) in [
-        (&["dam", "ls", "-o", "json"][..], Format::Json),
-        (&["dam", "-o", "toon", "ls"][..], Format::Toon),
+        (&["dam", "list", "-o", "json"][..], Format::Json),
+        (&["dam", "-o", "toon", "list"][..], Format::Toon),
         (&["dam", "status", "--output", "yaml"][..], Format::Yaml),
-        (&["dam", "ls", "--output=json"][..], Format::Json),
-        (&["dam", "ls", "-oyaml"][..], Format::Yaml),
+        (&["dam", "list", "--output=json"][..], Format::Json),
+        (&["dam", "list", "-oyaml"][..], Format::Yaml),
     ] {
         assert_eq!(Cli::try_parse_from(line).unwrap().output, Some(format));
     }
-    assert_eq!(Cli::try_parse_from(["dam", "ls"]).unwrap().output, None);
+    assert_eq!(Cli::try_parse_from(["dam", "list"]).unwrap().output, None);
 }
 
 #[test]
 fn an_unknown_output_names_the_three_values() {
     for value in ["xml", "human", "JSON", ""] {
-        let error = refused(&["dam", "ls", "-o", value]);
+        let error = refused(&["dam", "list", "-o", value]);
         assert!(
             error
                 .to_string()
@@ -39,8 +39,8 @@ fn an_unknown_output_names_the_three_values() {
 
 #[test]
 fn output_given_twice_or_without_a_value_is_refused() {
-    let twice = refused(&["dam", "ls", "-o", "json", "-o", "yaml"]);
+    let twice = refused(&["dam", "list", "-o", "json", "-o", "yaml"]);
     assert_eq!(twice.kind(), ErrorKind::ArgumentConflict, "{twice}");
-    let bare = refused(&["dam", "ls", "-o"]);
+    let bare = refused(&["dam", "list", "-o"]);
     assert_eq!(bare.kind(), ErrorKind::InvalidValue, "{bare}");
 }
