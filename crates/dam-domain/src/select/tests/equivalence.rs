@@ -38,10 +38,16 @@ fn same_objects(old: &str, fields: &[(String, String)], any: &[Fields]) {
     let filter = Filter::read(&build(&pairs, any)).unwrap();
     filter.check(&fake.categories).unwrap();
     let scope = scope(&filter, Command::List).unwrap();
+    let translated = crate::query_table(old, &categories()).expect(old);
+    let translated = Filter::read(&translated).unwrap();
+    translated.check(&fake.categories).unwrap();
+    let translated_scope = crate::select::scope(&translated, Command::List).unwrap();
     for object in objects() {
         let was = crate::matches(&expr, &object, TODAY, &TimeZone::UTC);
         let now = scope.admits(&object) && filter.matches(&object, &fake);
         assert_eq!(was, now, "{old} on {object:?}");
+        let written = translated_scope.admits(&object) && translated.matches(&object, &fake);
+        assert_eq!(was, written, "{old} written as a table, on {object:?}");
     }
 }
 

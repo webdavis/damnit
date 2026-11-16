@@ -47,13 +47,14 @@ pub use path::{Path, PathError};
 pub use priority::{Priority, PriorityError};
 pub use query::{
     DateSel, EstimateSel, Expr, LabelTerm, QueryError, Term, label_terms, matches,
-    parse as parse_query,
+    parse as parse_query, query_table,
 };
 pub use recurrence::{Anchor, Freq, Recurrence, Rule, RuleError, roll_forward};
 pub use select::{
     Command, Condition, Context, DateTest, DefaultsError, FieldType, Filter, FilterError,
-    FilterTable, Fix, Has, Holds, Order, Problem, Scope, SelectField, Sort, TableValue, WindowEdge,
-    closest_field, scope, select_field, select_fields,
+    FilterTable, Fix, Has, Holds, NameFault, Order, Problem, Scope, SelectField, Sort, TableValue,
+    WindowEdge, chain_to_itself, closest_field, filter_name_fault, scope, select_field,
+    select_fields,
 };
 pub use weekday::{parse_weekday, weekday_text};
 pub use when::{Date, Timestamp, When, WhenError};

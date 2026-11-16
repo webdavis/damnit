@@ -1,4 +1,5 @@
 mod parse;
+mod table;
 mod term;
 mod under;
 
@@ -9,6 +10,7 @@ use crate::weekday::week_start;
 use crate::{Date, Kind, Object, Oid, Path, Priority, Transparency};
 
 pub use parse::{LabelTerm, QueryError, label_terms, parse};
+pub use table::query_table;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DateSel {
@@ -142,6 +144,8 @@ mod field_name_terms_tests;
 mod label_terms_tests;
 #[cfg(test)]
 mod quoted_value_tests;
+#[cfg(test)]
+mod table_tests;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
