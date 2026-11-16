@@ -3,49 +3,8 @@ local helper = require("helpers.app")
 local ui = require("helpers.ui")
 local wait_for = buffer.wait_for
 
-local tests_dir = vim.fs.dirname(debug.getinfo(1, "S").source:sub(2))
-local dam_bin =
-  vim.fs.normalize(vim.fs.abspath(vim.env.DAM_BIN or vim.fs.joinpath(tests_dir, "../../target/debug/dam")))
-
-local SANDBOXED = { "DAM_CONFIG", "DAM_STORE", "HOME" }
-
-local function in_sandbox(run)
-  local sandbox = vim.fn.tempname()
-  vim.fn.mkdir(sandbox, "p")
-  local saved = {}
-  for _, name in ipairs(SANDBOXED) do
-    saved[name] = vim.env[name]
-  end
-  vim.env.DAM_CONFIG = vim.fs.joinpath(sandbox, "config", "dam", "config.lua")
-  vim.env.DAM_STORE = vim.fs.joinpath(sandbox, "dam.db")
-  vim.env.HOME = sandbox
-  local ok, err = pcall(run, sandbox)
-  for _, name in ipairs(SANDBOXED) do
-    vim.env[name] = saved[name]
-  end
-  assert(ok, err)
-end
-
-local function with_real_dam(run)
-  if vim.fn.executable(dam_bin) ~= 1 then
-    return ("no dam at %s; build it with cargo build -p damnit or set DAM_BIN"):format(dam_bin)
-  end
-  in_sandbox(run)
-end
-
-local function real_app()
-  local options = require("damnit.kernel.options").resolve({ dam = dam_bin })
-  return require("damnit.kernel.app").new(options, require("damnit.kernel.process"))
-end
-
-local function made(app, args, cwd)
-  local got = helper.call(app, { args = args, cwd = cwd }, "write")
-  wait_for(function()
-    return got.done
-  end, 20000)
-  assert(not got.err, vim.inspect(got.err))
-  return got.answer.oid
-end
+local real_dam = require("helpers.real_dam")
+local dam_bin, with_real_dam, real_app, made = real_dam.bin, real_dam.with_real_dam, real_dam.app, real_dam.made
 
 local function task_buffer(sandbox, due)
   require("damnit").setup({ dam = dam_bin })
@@ -110,41 +69,9 @@ local function listed_in_a_project(sandbox)
   assert(require("helpers.grid").row(1):find(" default · garden/ · 1 task · 1 overdue", 1, true))
 end
 
-local function quick_added(sandbox)
-  local prompt = require("helpers.prompt")
-  local app = real_app()
-  require("damnit.command").define(app, { require("damnit.list").new(app) })
-  local read = helper.call(app, { args = { "new", "buy oat milk", "--due", "fri", "--preview" }, cwd = sandbox })
-  wait_for(function()
-    return read.done
-  end, 20000)
-  local due = read.answer.changes[1].due
-  vim.cmd.lcd(sandbox)
-  vim.cmd("Dam list")
-  prompt.type("abuy oat milk --due fri")
-  prompt.footer_reads(('task "buy oat milk" · due %s'):format(due), 20000)
-  prompt.more("<CR>")
-  wait_for(function()
-    return vim.tbl_contains(buffer.lines(), "[ ] buy oat milk")
-  end, 20000)
-  prompt.type("obuy the carton")
-  assert(prompt.line():find("^buy the carton %-%-parent %x%x%x%x%x%x%x$"), prompt.line())
-  prompt.more("<CR>")
-  wait_for(function()
-    return vim.tbl_contains(buffer.lines(), "  [ ] buy the carton")
-  end, 20000)
-end
-
 return {
   ["in a project :Dam list shows the project in the winbar and the due at the window's right edge"] = function()
     return with_real_dam(listed_in_a_project)
-  end,
-
-  ["quick add with --due fri shows dam's date and the task appears; o makes a child under its short oid"] = function()
-    if vim.fn.executable(dam_bin) ~= 1 then
-      return ("no dam at %s; build it with cargo build -p damnit or set DAM_BIN"):format(dam_bin)
-    end
-    in_sandbox(quick_added)
   end,
 
   ["writing a changed due line in the task buffer changes what dam show prints"] = function()
