@@ -1,4 +1,3 @@
-use dam_adapters::LuaConfigFile;
 use dam_application::{BadValue, KeyRefusal, SettingChange, SettingKey, SettingKind, SettingsFile};
 use serde::Serialize;
 
@@ -8,23 +7,18 @@ use crate::style::{column, field};
 use crate::view::{Human, View, report};
 
 #[derive(Serialize)]
-struct Changed<'a>(#[serde(with = "ChangeDoc")] &'a SettingChange);
-
-#[derive(Serialize)]
-#[serde(remote = "SettingChange")]
-struct ChangeDoc {
-    key: String,
-    old: Option<String>,
-    new: Option<String>,
+struct Changed<'a> {
+    key: &'a str,
+    old: &'a Option<String>,
+    new: &'a Option<String>,
+    file: Option<&'a str>,
 }
 
 impl View for Changed<'_> {
     fn human(&self) -> Human {
         let shown = |value: &Option<String>| value.clone().unwrap_or_else(|| "not set".into());
-        let rows = [
-            ("was", shown(&self.0.old)),
-            (self.0.key.as_str(), shown(&self.0.new)),
-        ];
+        let mut rows = vec![("was", shown(self.old)), (self.key, shown(self.new))];
+        rows.extend(self.file.map(|file| ("file", file.to_string())));
         let column = column(rows.iter().map(|(key, _)| *key));
         Human::styled(|paint| {
             rows.iter()
@@ -35,7 +29,8 @@ impl View for Changed<'_> {
 }
 
 pub(super) fn run(
-    file: &LuaConfigFile,
+    file: &dyn SettingsFile,
+    named: &str,
     key: &str,
     value: Option<&str>,
 ) -> Result<Report, CliError> {
@@ -47,11 +42,16 @@ pub(super) fn run(
         }
         None => file.unset(&key)?,
     };
-    changed(&change)
+    changed(&change, Some(named))
 }
 
-pub(super) fn changed(change: &SettingChange) -> Result<Report, CliError> {
-    report(&Changed(change))
+pub(super) fn changed(change: &SettingChange, file: Option<&str>) -> Result<Report, CliError> {
+    report(&Changed {
+        key: &change.key,
+        old: &change.old,
+        new: &change.new,
+        file,
+    })
 }
 
 pub(super) fn bad_value(bad: BadValue) -> CliError {

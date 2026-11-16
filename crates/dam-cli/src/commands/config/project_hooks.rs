@@ -31,11 +31,14 @@ pub(super) fn set(
     };
     let old = switches.switch(clone)?;
     switches.turn(clone, on)?;
-    changed(&SettingChange {
-        key: KEY.into(),
-        old: old.map(|on| on.to_string()),
-        new: on.map(|on| on.to_string()),
-    })
+    changed(
+        &SettingChange {
+            key: KEY.into(),
+            old: old.map(|on| on.to_string()),
+            new: on.map(|on| on.to_string()),
+        },
+        None,
+    )
 }
 
 pub(super) enum From {

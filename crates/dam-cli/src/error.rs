@@ -64,6 +64,7 @@ impl CliError {
         match self {
             CliError::Usage(_)
             | CliError::CommandLine(_)
+            | CliError::Config(ConfigError::ProjectSettingWouldNotLoad { .. })
             | CliError::UseCase(UseCaseError::Refused(Refusal::AmbiguousPrefix { .. }))
             | CliError::UseCase(UseCaseError::NotAnOid(_))
             | CliError::UseCase(UseCaseError::Query(_)) => EXIT_USAGE_AS_CLAP_EXITS,
@@ -98,9 +99,11 @@ impl fmt::Display for CliError {
         match self {
             CliError::UseCase(e) => write!(f, "{}", UseCaseText(e)),
             CliError::Editor(e) => write!(f, "editor: {}", e.0),
-            CliError::Config(e @ (ConfigError::NotLua(_) | ConfigError::ReadOnly { .. })) => {
-                write!(f, "{}", ConfigText(e))
-            }
+            CliError::Config(
+                e @ (ConfigError::NotLua(_)
+                | ConfigError::ReadOnly { .. }
+                | ConfigError::ProjectSettingWouldNotLoad { .. }),
+            ) => write!(f, "{}", ConfigText(e)),
             CliError::Config(e) => write!(f, "{}; run dam doctor", ConfigText(e)),
             CliError::Open(e) => write!(f, "{e}"),
             CliError::Usage(text) | CliError::Io(text) | CliError::Internal(text) => {

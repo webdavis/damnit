@@ -1,4 +1,4 @@
-use dam_application::{Config, ConfigError};
+use dam_application::{Config, ConfigError, SettingKey};
 use dam_domain::{Categories, Category};
 
 use super::filter::read_filter;
@@ -17,6 +17,12 @@ pub(crate) const SETTINGS: [&str; 8] = [
     "filter",
     "project",
 ];
+pub fn personal_setting(key: &SettingKey) -> bool {
+    key.path
+        .first()
+        .is_some_and(|top| SETTINGS.contains(&top.as_str()))
+}
+
 pub(crate) const DONE: [&str; 1] = ["interactive"];
 pub(crate) const PROJECT: [&str; 1] = ["hooks"];
 pub(crate) const CATEGORY: [&str; 2] = ["values", "exclusive"];

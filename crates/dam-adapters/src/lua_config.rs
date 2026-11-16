@@ -30,9 +30,13 @@ pub use create::STARTER_CONFIG;
 pub use file::LuaConfigFile;
 pub use functions::history_document;
 pub use hook_folder::PROJECT_HOOKS_FOLDER;
-pub use project::{FileSystemProjectFolders, read_project_file, write_project_file};
+pub use project::{
+    FileSystemProjectFolders, project_setting, read_project_file, write_project_file,
+};
 pub use project_hooks::ProjectHookFiles;
+pub use settings::personal_setting;
 pub use task_template::FileSystemTemplates;
+pub use write::ProjectSettingsFile;
 
 #[cfg(test)]
 mod tests;

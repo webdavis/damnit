@@ -34,6 +34,7 @@ mod project_hook_names;
 mod project_hooks_setting;
 mod project_rules;
 mod project_sections;
+mod project_setting_write;
 mod project_settings;
 mod project_support;
 mod project_version;

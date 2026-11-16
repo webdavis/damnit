@@ -38,7 +38,11 @@ impl SettingKey {
             });
         }
         let kind = match (group, rest, named.map(|(_, field)| field)) {
-            ("owner", "", _) => Ok(SettingKind::Text),
+            ("owner" | "path" | "minimum_dam" | "ls" | "done_children", "", _)
+            | ("new_task", "due" | "deadline", _) => Ok(SettingKind::Text),
+            ("required" | "sections", "", _) | ("new_task", "labels", _) => Ok(SettingKind::List),
+            ("new_task", "priority", _) => Ok(SettingKind::Count),
+            ("branch_label", "", _) => Ok(SettingKind::Flag),
             ("done", "interactive", _) | ("progress", "", _) | ("project", "hooks", _) => {
                 Ok(SettingKind::Flag)
             }

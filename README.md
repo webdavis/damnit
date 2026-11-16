@@ -350,6 +350,10 @@ holds that path yet, `dam new --project` creates it first and says so on standar
 the answer carries `project_created`, its `oid` and `path`.
 `dam config list` inside a project shows the project's `.dam.lua` and each setting it holds,
 marked `(from the project)`; with `--json` they are under `project`.
+Inside a project, `dam config set` writes a key `.dam.lua` holds into `.dam.lua`, keeping the rest of
+the file, and refuses a value that would leave the file unable to load. A key only your `config.lua`
+holds is refused there; `--global` writes `config.lua` instead. `project.hooks` never goes into
+`.dam.lua`.
 
 `.dam.lua` may hold more rules for the project; `docs/lua.md` lists them. They apply only to
 commands run inside the project without `--global` or `--project`.

@@ -110,6 +110,10 @@ pub enum ConfigError {
         key: String,
         by_hand: String,
     },
+    ProjectSettingWouldNotLoad {
+        key: String,
+        why: Box<ConfigError>,
+    },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

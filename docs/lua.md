@@ -45,6 +45,8 @@ pull still brings in everything the remote has.
 `dam config set <key> <value>` and `dam config unset <key>` change one key of this table.
 Inside a project, `dam config set project.hooks true` turns that project's hooks on for this clone
 only and writes no file in the repository; `--global` writes `project.hooks` here instead.
+Inside a project, `dam config set` writes a key the project file takes into `.dam.lua` instead, and
+refuses a key that belongs here unless you add `--global`.
 
 ## Hook files
 
@@ -149,6 +151,8 @@ Inside the folder, `path` is where `dam new` starts a task's `--path`, and `dam 
 and `dam reminders` list only what is under it.
 A `.dam.lua` that does not load stops those four commands unless `--global` or `--project` is given;
 the others warn and carry on. dam never quotes the file's text in the error.
+Inside the folder, `dam config set` writes these keys into `.dam.lua`, keeping its other text, and
+refuses a value the file would then not load with; nothing is changed.
 
 ## Filters
 

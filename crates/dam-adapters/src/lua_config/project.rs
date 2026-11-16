@@ -14,9 +14,9 @@ mod written;
 
 use std::path::Path;
 
-use dam_application::{ConfigError, ProjectSettings};
-use mlua::Value;
+use dam_application::{ConfigError, ProjectSettings, SettingKey};
 use mlua::chunk::ChunkMode;
+use mlua::{Lua, Table, Value};
 
 use super::evaluate::{
     ErrorText, read_text, short_name_lua_never_truncates, stopped_at_an_error, stopped_loading,
@@ -28,7 +28,7 @@ use locked::locked_lua;
 pub(super) use template::read_project_template;
 pub use written::{FileSystemProjectFolders, write_project_file};
 
-const PROJECT_SETTINGS: [&str; 10] = [
+pub(in crate::lua_config) const PROJECT_SETTINGS: [&str; 10] = [
     "path",
     "minimum_dam",
     "new_task",
@@ -54,8 +54,21 @@ const PERSONAL_SETTINGS: [&str; 11] = [
     "project.hooks",
 ];
 
+pub fn project_setting(key: &SettingKey) -> bool {
+    key.path
+        .first()
+        .is_some_and(|top| PROJECT_SETTINGS.contains(&top.as_str()))
+}
+
 pub fn read_project_file(file: &Path, this_dam: &str) -> Result<ProjectSettings, ConfigError> {
     let text = read_text(file)?.unwrap_or_default();
+    read_project_text(file, &text, this_dam)
+}
+
+pub(in crate::lua_config) fn project_table(
+    file: &Path,
+    text: &str,
+) -> Result<(Lua, Table), ConfigError> {
     let lua = locked_lua().map_err(|_| stopped_at_an_error(file))?;
     let short_name = short_name_lua_never_truncates(file);
     let value: Value = lua
@@ -70,6 +83,16 @@ pub fn read_project_file(file: &Path, this_dam: &str) -> Result<ProjectSettings,
             returned: described(&value),
         });
     };
+    Ok((lua, table))
+}
+
+pub(in crate::lua_config) fn read_project_text(
+    file: &Path,
+    text: &str,
+    this_dam: &str,
+) -> Result<ProjectSettings, ConfigError> {
+    let (_lua, table) = project_table(file, text)?;
+    let short_name = short_name_lua_never_truncates(file);
     match control::walked(&table) {
         Walked::Clean => {}
         Walked::HoldsAControlCharacter => {

@@ -84,7 +84,7 @@ impl LuaConfigFile {
     }
 }
 
-fn lua_literal(value: &SettingValue) -> String {
+pub(super) fn lua_literal(value: &SettingValue) -> String {
     match value {
         SettingValue::Text(text) => string_literal(text),
         SettingValue::Flag(flag) => flag.to_string(),

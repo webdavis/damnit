@@ -24,7 +24,8 @@ pub use git_branch::checked_out_branch;
 pub use helper_process::ProcessLauncher;
 pub use lua_config::{
     FileSystemProjectFolders, FileSystemTemplates, LuaConfigFile, PROJECT_HOOKS_FOLDER,
-    ProjectHookFiles, STARTER_CONFIG, history_document, read_project_file, write_project_file,
+    ProjectHookFiles, ProjectSettingsFile, STARTER_CONFIG, history_document, personal_setting,
+    project_setting, read_project_file, write_project_file,
 };
 pub use object_document::object_document;
 pub use paths::{default_config_path, default_store_path};

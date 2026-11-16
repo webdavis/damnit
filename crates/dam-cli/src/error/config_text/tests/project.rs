@@ -43,3 +43,19 @@ fn a_project_file_that_needs_a_newer_dam_names_both_versions() {
         "config: /work/app/.dam.lua needs dam 0.3.0 or newer; this is dam 0.2.0"
     );
 }
+
+#[test]
+fn a_value_the_project_file_would_not_load_with_is_a_usage_error_said_once() {
+    let refused = crate::error::CliError::Config(ConfigError::ProjectSettingWouldNotLoad {
+        key: "path".into(),
+        why: Box::new(ConfigError::NotAPath {
+            file: "/work/app/.dam.lua".into(),
+        }),
+    });
+    assert_eq!(
+        refused.to_string(),
+        "config: cannot set path: .dam.lua would not load with that value, so nothing was \
+         changed; docs/lua.md lists what path takes"
+    );
+    assert_eq!(refused.exit_code(), 2);
+}
