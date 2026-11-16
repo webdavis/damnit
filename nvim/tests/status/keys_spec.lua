@@ -3,10 +3,10 @@ local status = require("helpers.status")
 local ui = require("helpers.ui")
 
 local MOM = ("2"):rep(40)
-local UNSTAGED = "  update call mom back  [subject]"
-local STAGED = "  create water the plants  [subject]"
-local ITEM = "  new call the plumber  from tool"
-local SET = "  set of 2  from tool"
+local UNSTAGED = "  update  call mom back"
+local STAGED = "  create  water the plants"
+local ITEM = "  new       call the plumber"
+local SET = "  set of 2"
 
 return {
   ["s on a change stages it"] = function()
@@ -42,7 +42,7 @@ return {
     status.on(ITEM)
     ui.answering({ select = "keep" }, function(prompts)
       buffer.feed("x")
-      assert(prompts[1] == "decline new call the plumber  from tool?", vim.inspect(prompts))
+      assert(prompts[1] == "decline new call the plumber?", vim.inspect(prompts))
     end)
     status.nothing_sent(fake, "rm")
     ui.answering({ select = "decline" }, function()

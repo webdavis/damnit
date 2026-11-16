@@ -12,6 +12,16 @@ local function change(op, subject, path, fields)
   return { oid = ("a"):rep(40), op = op, subject = subject, path = path, fields = fields, kind = "task" }
 end
 
+local function right_of(marks, line)
+  for _, mark in ipairs(marks) do
+    if mark.line == line - 1 and mark.virt then
+      return table.concat(vim.tbl_map(function(chunk)
+        return chunk[1]
+      end, mark.virt))
+    end
+  end
+end
+
 local function headers(lines)
   return vim.tbl_filter(function(line)
     return line ~= "" and not vim.startswith(line, " ")
@@ -30,24 +40,41 @@ return {
     assert(vim.deep_equal(lines, { "nothing changed, staged, waiting or unpushed" }), vim.inspect(lines))
   end,
 
-  ["a change row shows what happened, the subject and the path"] = function()
-    local lines = sections.render(doc({ unstaged = { change("update", "pay rent", "home/", { "due", "priority" }) } }))
-    assert(lines[2] == "  update pay rent  home/  [due, priority]", vim.inspect(lines))
+  ["a change row shows the op and subject, with the path and changed fields at the right"] = function()
+    local unstaged = { change("update", "pay rent", "home/", { "due", "priority" }), change("delete", "x", "", {}) }
+    local lines, marks = sections.render(doc({ unstaged = unstaged }), 80)
+    assert(lines[2] == "  update  pay rent", vim.inspect(lines))
+    assert(right_of(marks, 2) == "  home/  due, priority", right_of(marks, 2))
+    assert(right_of(marks, 3) == nil, vim.inspect(right_of(marks, 3)))
   end,
 
-  ["a change at the root shows no path"] = function()
-    local lines = sections.render(fixtures.decoded("status.json"))
-    assert(vim.tbl_contains(lines, "  create water the plants  [subject]"), vim.inspect(lines))
+  ["a created task shows no field list"] = function()
+    local lines, marks = sections.render(doc({ staged = { change("create", "plant", "home/", { "subject" }) } }), 80)
+    assert(lines[2] == "  create  plant" and right_of(marks, 2) == "  home/", vim.inspect(right_of(marks, 2)))
   end,
 
-  ["a waiting item shows what it is and who sent it"] = function()
-    local lines = sections.render(fixtures.decoded("status.json"))
-    assert(vim.tbl_contains(lines, "  new call the plumber  from tool"), vim.inspect(lines))
+  ["the op and subject line up in columns across sections"] = function()
+    local lines = sections.render(fixtures.decoded("status.json"), 80)
+    assert(vim.tbl_contains(lines, "  update  call mom back"), vim.inspect(lines))
+    assert(vim.tbl_contains(lines, "  create  water the plants"), vim.inspect(lines))
+  end,
+
+  ["a long subject ends in an ellipsis before the right-hand columns"] = function()
+    local long = change("update", ("a long subject "):rep(6), "home/", { "due" })
+    local _, marks = sections.render(doc({ unstaged = { long } }), 60)
+    assert(right_of(marks, 2) == "… home/  due", vim.inspect(right_of(marks, 2)))
+  end,
+
+  ["a waiting item shows what it is, the subject, who sent it and its age"] = function()
+    local lines, marks = sections.render(fixtures.decoded("status.json"), 80)
+    local row = vim.fn.index(lines, "  new       call the plumber") + 1
+    assert(row > 0, vim.inspect(lines))
+    assert(right_of(marks, row) == "  from tool  0s ago", vim.inspect(right_of(marks, row)))
   end,
 
   ["a waiting set shows as one row with its count"] = function()
-    local lines, _, targets = sections.render(fixtures.decoded("status.json"))
-    local row = vim.fn.index(lines, "  set of 2  from tool") + 1
+    local lines, _, targets = sections.render(fixtures.decoded("status.json"), 80)
+    local row = vim.fn.index(lines, "  set of 2") + 1
     assert(row > 0, vim.inspect(lines))
     assert(targets[row].kind == "set" and targets[row].id == "<id-3>", vim.inspect(targets[row]))
   end,
@@ -92,11 +119,47 @@ return {
     local function at(text)
       return targets[vim.fn.index(lines, text) + 1]
     end
-    local unstaged = at("  update call mom back  [subject]")
+    local unstaged = at("  update  call mom back")
     assert(unstaged.kind == "change" and unstaged.section == "unstaged" and unstaged.id == ("2"):rep(40))
-    local item = at("  new call the plumber  from tool")
+    local item = at("  new       call the plumber")
     assert(item.kind == "waiting" and item.id == "<id-2>" and item.oid == "<id-2>", vim.inspect(item))
     assert(vim.deep_equal(at("Staged (1)"), { kind = "section", section = "staged" }), vim.inspect(at("Staged (1)")))
     assert(targets[vim.fn.index(lines, "") + 1] == nil)
+  end,
+
+  ["a change row takes the colour of its op"] = function()
+    local unstaged = {
+      change("create", "plant", "", { "subject" }),
+      change("update", "water", "", { "due" }),
+      change("delete", "weed", "", {}),
+    }
+    local lines, marks = sections.render(doc({ unstaged = unstaged }))
+    local coloured = {}
+    for _, mark in ipairs(marks) do
+      if mark.group and mark.group ~= "DamHeader" then
+        table.insert(coloured, lines[mark.line + 1]:sub(mark.col + 1, mark.end_col) .. " " .. mark.group)
+      end
+    end
+    local expected = {
+      "create  plant DamAdded",
+      "update  water DamChanged",
+      "delete  weed DamRemoved",
+    }
+    assert(vim.deep_equal(coloured, expected), vim.inspect(coloured))
+  end,
+
+  ["a narrow window drops the field list first, then the path, so sixteen cells of subject still show"] = function()
+    local unstaged = { change("update", "pay rent", "home/", { "due", "priority" }) }
+    local _, marks = sections.render(doc({ unstaged = unstaged }), 40)
+    assert(right_of(marks, 2) == "  home/", vim.inspect(right_of(marks, 2)))
+    local _, narrower = sections.render(doc({ unstaged = unstaged }), 14)
+    assert(right_of(narrower, 2) == "…", vim.inspect(right_of(narrower, 2)))
+  end,
+
+  ["age reads in the largest whole unit"] = function()
+    local columns = require("damnit.status.columns")
+    local ages = vim.tbl_map(columns.ago, { 0, 59, 60, 3599, 3600, 86399, 86400 * 3 })
+    local expected = { "0s ago", "59s ago", "1m ago", "59m ago", "1h ago", "23h ago", "3d ago" }
+    assert(vim.deep_equal(ages, expected), vim.inspect(ages))
   end,
 }

@@ -1,5 +1,6 @@
 local actions = require("damnit.status.actions")
 local sections = require("damnit.status.sections")
+local winbar = require("damnit.status.winbar")
 
 local NAME = "dam://status"
 
@@ -23,6 +24,12 @@ function M.new(app, writes, open_task)
       end
     end,
   })
+  vim.api.nvim_create_autocmd("WinResized", {
+    group = status.group,
+    callback = function()
+      status:refit()
+    end,
+  })
   return status
 end
 
@@ -35,10 +42,24 @@ function Status:read()
     if buf ~= self.buf then
       return
     end
-    local lines, marks, targets = sections.render(answer)
-    self.app.screen:draw(buf, lines, marks)
-    self.targets = targets
+    self.answer = answer
+    self:draw()
   end)
+end
+
+function Status:draw()
+  local buf = self.buf
+  self.app.screen:window(buf, { winbar = self.app.screen.bar(winbar.chunks(self.answer)), wrap = false })
+  self.width = self.app.screen:text_width(buf)
+  local lines, marks, targets = sections.render(self.answer, self.width)
+  self.app.screen:draw(buf, lines, marks)
+  self.targets = targets
+end
+
+function Status:refit()
+  if self.buf and self.answer and self.app.screen:text_width(self.buf) ~= self.width then
+    self:draw()
+  end
 end
 
 ---@return damnit.StatusTarget|nil
@@ -55,7 +76,7 @@ function Status:act(key)
   if key ~= "x" then
     return self.writes.send(argv, self.cwd)
   end
-  local row = vim.trim(vim.api.nvim_get_current_line())
+  local row = vim.trim(vim.api.nvim_get_current_line()):gsub("%s+", " ")
   vim.ui.select({ "decline", "keep" }, { prompt = ("decline %s?"):format(row) }, function(choice)
     if choice == "decline" then
       self.writes.send(argv, self.cwd)
@@ -110,7 +131,7 @@ function Status:bind(buf)
     group = self.group,
     buffer = buf,
     callback = function()
-      self.buf = nil
+      self.buf, self.answer = nil, nil
     end,
   })
 end
