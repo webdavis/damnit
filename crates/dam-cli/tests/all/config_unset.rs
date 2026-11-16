@@ -27,9 +27,11 @@ fn a_setting_with_no_value_has_a_row_saying_so() {
     assert!(
         settings.ends_with(
             "\
-  remote.todoist.url       todoist::
-  remote.todoist.deadline  60s (default)
-  remote.todoist.path      not set
+  remote.todoist.url            todoist::
+  remote.todoist.deadline       60s (default)
+  remote.todoist.sync.interval  15m (default)
+  remote.todoist.sync.allowed   true (default)
+  remote.todoist.path           not set
 "
         ),
         "{out}"

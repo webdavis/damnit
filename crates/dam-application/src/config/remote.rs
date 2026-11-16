@@ -1,6 +1,6 @@
 use dam_domain::Path;
 
-use super::{ConfiguredDuration, CredentialSpec};
+use super::{ConfiguredDuration, CredentialSpec, RemoteSync};
 use crate::ports::RemoteName;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -10,6 +10,7 @@ pub struct RemoteConfig {
     pub url: String,
     pub credentials: Vec<CredentialSpec>,
     pub deadline: Option<ConfiguredDuration>,
+    pub sync: RemoteSync,
     pub path: Option<Path>,
 }
 

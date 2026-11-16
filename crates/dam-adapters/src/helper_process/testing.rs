@@ -60,6 +60,7 @@ pub(super) fn remote() -> RemoteConfig {
         url: "t::".into(),
         credentials: vec![],
         deadline: None,
+        sync: Default::default(),
         path: None,
     }
 }

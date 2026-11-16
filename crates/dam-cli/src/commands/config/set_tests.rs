@@ -1,5 +1,6 @@
 use dam_adapters::LuaConfigFile;
 
+use crate::error::CliError;
 use crate::output::{Format, shown};
 
 fn config_folder() -> (tempfile::TempDir, LuaConfigFile) {
@@ -25,4 +26,62 @@ fn quiet_prints_nothing_for_a_set() {
     let report = super::set::run(&file, "owner", Some("Grace")).unwrap();
     assert_eq!(shown(Format::Quiet, false, None, &report).unwrap(), None);
     assert!(report.standard_error_lines.is_empty());
+}
+
+#[test]
+fn the_sync_settings_of_a_remote_show_their_defaults_and_are_set_and_unset_by_key() {
+    let (_dir, file) = config_folder();
+    super::set::run(&file, "remote.todoist.url", Some("todoist::")).unwrap();
+    let got = |key: &str| super::get::run(&file, key).unwrap().data;
+    assert_eq!(
+        got("remote.todoist.sync"),
+        serde_json::json!({
+            "interval": {"value": "15m", "default": true},
+            "allowed": {"value": true, "default": true},
+        })
+    );
+    super::set::run(&file, "remote.todoist.sync.interval", Some("5m")).unwrap();
+    super::set::run(&file, "remote.todoist.sync.allowed", Some("false")).unwrap();
+    assert_eq!(
+        got("remote.todoist.sync.interval"),
+        serde_json::json!({"value": "5m", "default": false})
+    );
+    assert_eq!(
+        got("remote.todoist.sync.allowed"),
+        serde_json::json!({"value": false, "default": false})
+    );
+    super::set::run(&file, "remote.todoist.sync.allowed", None).unwrap();
+    assert_eq!(
+        got("remote.todoist.sync.allowed"),
+        serde_json::json!({"value": true, "default": true})
+    );
+}
+
+fn refusal(key: &str, value: &str) -> String {
+    let (_dir, file) = config_folder();
+    match super::set::run(&file, key, Some(value)) {
+        Err(CliError::Usage(text)) => text,
+        _ => panic!("{key} = {value} was not refused"),
+    }
+}
+
+#[test]
+fn a_sync_interval_under_a_minute_is_refused_naming_the_floor() {
+    assert_eq!(
+        refusal("remote.todoist.sync.interval", "30s"),
+        "remote.todoist.sync.interval takes a duration of at least 1m, and \"30s\" is not one"
+    );
+}
+
+#[test]
+fn a_remote_key_that_is_no_setting_is_refused_without_calling_it_a_secret() {
+    for key in ["remote.todoist.sync_every", "remote.todoist.stale"] {
+        assert_eq!(
+            refusal(key, "15m"),
+            format!(
+                "{key} is not a setting of config.lua; a credential belongs in secrets.lua, \
+                 and dam config set never writes one"
+            )
+        );
+    }
 }

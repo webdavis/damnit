@@ -33,6 +33,7 @@ mod settings_refusals;
 mod settings_set;
 mod settings_set_refusals;
 mod support;
+mod sync_table;
 mod template;
 mod token_tables;
 mod token_terms;

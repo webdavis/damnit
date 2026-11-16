@@ -23,6 +23,8 @@ Settings ── what dam is using
   progress                             true (default)
   remote.todoist.url                   todoist::
   remote.todoist.deadline              60s (default)
+  remote.todoist.sync.interval         15m (default)
+  remote.todoist.sync.allowed          true (default)
   remote.todoist.path                  work/
   remote.todoist.credential.api_token  hidden
   category.effort.values               light, deep

@@ -143,6 +143,16 @@ fn a_value_dam_cannot_take_is_named_with_its_key_and_table() {
             "deadline \"+15m\" must be <number><s|m|h> in remote.todoist of config.lua",
         ),
         (
+            Misread::ShorterThanFloor {
+                key: "interval".into(),
+                text: "30s".into(),
+                floor: "1m",
+                at: in_table("remote.todoist.sync", "config.lua"),
+            }
+            .into(),
+            "interval \"30s\" is shorter than the floor of 1m in remote.todoist.sync of config.lua",
+        ),
+        (
             ConfigError::BelongsInSecrets {
                 key: "token".into(),
                 at: top_of("config.lua"),

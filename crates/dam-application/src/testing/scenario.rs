@@ -2,33 +2,10 @@ use dam_domain::{Event, Object, Oid, Path, Task, When};
 use jiff::SignedDuration;
 use jiff::civil::date;
 
-use crate::config::{Config, CredentialSpec, RemoteConfig};
-use crate::ports::{
-    Clock, CommitRepository, ObjectRepository, RemoteName, RemoteTrackingRepository,
-};
-use crate::testing::{FixedRandom, Fixture, MemoryStore, oid};
+use crate::config::Config;
+use crate::ports::{Clock, CommitRepository, ObjectRepository, RemoteTrackingRepository};
+use crate::testing::{FixedRandom, Fixture, MemoryStore, config, oid, todoist};
 use crate::{service::Dam, use_cases::parents::placed};
-
-pub fn todoist() -> RemoteName {
-    RemoteName("todoist".into())
-}
-
-pub fn config() -> Config {
-    Config {
-        remotes: vec![RemoteConfig {
-            name: todoist(),
-            helper: "todoist".into(),
-            url: "todoist::".into(),
-            credentials: vec![CredentialSpec::Literal {
-                name: "api_token".into(),
-                value: "t".into(),
-            }],
-            deadline: None,
-            path: None,
-        }],
-        ..Config::default()
-    }
-}
 
 pub fn task(byte: u8) -> Object {
     Object::Task(Task::new(oid(byte), format!("t{byte}")))

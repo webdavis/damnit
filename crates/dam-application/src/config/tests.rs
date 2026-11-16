@@ -16,6 +16,7 @@ fn a_config_holding_a_literal_credential_never_debug_prints_it() {
                 value: TOKEN.into(),
             }],
             deadline: None,
+            sync: Default::default(),
             path: None,
         }],
         ..Config::default()
@@ -31,6 +32,7 @@ fn the_address_is_the_text_after_the_helper_name() {
         url: "gcal::primary,team@group.calendar.google.com".into(),
         credentials: vec![],
         deadline: None,
+        sync: Default::default(),
         path: None,
     };
     assert_eq!(remote.address(), "primary,team@group.calendar.google.com");

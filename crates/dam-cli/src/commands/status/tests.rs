@@ -142,6 +142,7 @@ fn status_reports_conflicts_and_unpushed_commits() {
         url: "todoist::".into(),
         credentials: vec![],
         deadline: None,
+        sync: Default::default(),
         path: None,
     });
     ctx.store

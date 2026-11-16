@@ -1,9 +1,12 @@
-use dam_application::{ConfigError, ConfiguredDuration, Misread, RemoteConfig, RemoteName};
+use dam_application::{
+    ConfigError, ConfiguredDuration, Misread, RemoteConfig, RemoteName, RemoteSync,
+};
 use dam_domain::Path;
 
 use super::strict::StrictMap;
 
-pub(crate) const SETTINGS: [&str; 3] = ["url", "deadline", "path"];
+pub(crate) const SETTINGS: [&str; 4] = ["url", "deadline", "sync", "path"];
+pub(crate) const SYNC: [&str; 2] = ["interval", "allowed"];
 
 pub(super) fn read_remote(name: &str, remote: &StrictMap) -> Result<RemoteConfig, ConfigError> {
     remote.only(&SETTINGS).map_err(|misread| match misread {
@@ -41,6 +44,7 @@ pub(super) fn read_remote(name: &str, remote: &StrictMap) -> Result<RemoteConfig
         url,
         credentials: Vec::new(),
         deadline: duration(remote, "deadline")?,
+        sync: sync(remote)?,
         path,
     })
 }
@@ -61,4 +65,27 @@ fn duration(remote: &StrictMap, key: &str) -> Result<Option<ConfiguredDuration>,
             })
         })
         .transpose()
+}
+
+fn interval(sync: &StrictMap) -> Result<Option<ConfiguredDuration>, Misread> {
+    match duration(sync, "interval")? {
+        Some(interval) if interval.value < RemoteSync::FLOOR => Err(Misread::ShorterThanFloor {
+            key: "interval".into(),
+            text: interval.text,
+            floor: RemoteSync::FLOOR_TEXT,
+            at: sync.place(),
+        }),
+        interval => Ok(interval),
+    }
+}
+
+fn sync(remote: &StrictMap) -> Result<RemoteSync, Misread> {
+    let Some(sync) = remote.map("sync")? else {
+        return Ok(RemoteSync::default());
+    };
+    sync.only(&SYNC)?;
+    Ok(RemoteSync {
+        interval: interval(&sync)?,
+        allowed: sync.bool("allowed")?,
+    })
 }

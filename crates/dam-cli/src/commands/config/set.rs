@@ -63,7 +63,10 @@ fn refused(refusal: KeyRefusal) -> CliError {
             "dam has no setting {key}; dam config list shows the keys, and docs/lua.md lists every one"
         ),
         KeyRefusal::Secret(key) => {
-            format!("{key} belongs in secrets.lua, and dam config set never writes a secret")
+            format!(
+                "{key} is not a setting of config.lua; a credential belongs in secrets.lua, \
+                 and dam config set never writes one"
+            )
         }
         KeyRefusal::Function(key) => {
             format!("{key} is a function; write it in config.lua by hand")
@@ -75,6 +78,7 @@ fn kind_text(kind: SettingKind) -> &'static str {
     match kind {
         SettingKind::Text => "text",
         SettingKind::Duration => "a duration, a whole number followed by s, m or h",
+        SettingKind::Interval => "a duration of at least 1m",
         SettingKind::Flag => "true or false",
         SettingKind::List => "a list of items separated by commas",
     }

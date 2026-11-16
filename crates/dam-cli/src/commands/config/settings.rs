@@ -1,4 +1,4 @@
-use dam_application::{Config, CredentialSpec, FilterConfig, RemoteConfig};
+use dam_application::{Config, CredentialSpec, FilterConfig, RemoteConfig, RemoteSync};
 use dam_domain::Category;
 
 use super::hook_settings::hooks;
@@ -55,6 +55,7 @@ fn remote(remote: &RemoteConfig) -> (String, Setting) {
     let mut fields = vec![
         text("url", &remote.url),
         ("deadline".to_string(), deadline),
+        sync(&remote.sync),
         optional("path", remote.path.as_ref().map(|path| path.as_str())),
     ];
     let credentials: Vec<_> = remote.credentials.iter().map(credential).collect();
@@ -62,6 +63,20 @@ fn remote(remote: &RemoteConfig) -> (String, Setting) {
         fields.push(named("credential", credentials));
     }
     named(&remote.name.0, fields)
+}
+
+fn sync(sync: &RemoteSync) -> (String, Setting) {
+    let interval = match &sync.interval {
+        Some(interval) => Setting::set(Value::Text(interval.text.clone())),
+        None => Setting::by_default(Value::Text(RemoteSync::DEFAULT_INTERVAL.to_string())),
+    };
+    named(
+        "sync",
+        vec![
+            ("interval".to_string(), interval),
+            flag("allowed", sync.allowed.is_some(), sync.allowed()),
+        ],
+    )
 }
 
 fn credential(credential: &CredentialSpec) -> (String, Setting) {
