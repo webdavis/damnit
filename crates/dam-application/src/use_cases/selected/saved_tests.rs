@@ -6,6 +6,7 @@ use crate::errors::{Refusal, UseCaseError};
 use crate::service::Dam;
 use crate::testing::{Scenario, oid, saved, task_in};
 use crate::use_cases::each::Selector;
+use crate::use_cases::selected::BeyondPulled;
 
 fn configured(filters: Vec<crate::config::FilterConfig>) -> Scenario {
     let s = open_done_due_and_an_event();
@@ -94,4 +95,52 @@ fn a_function_narrows_what_the_fields_list() {
     )]);
     s.fixture.filter_functions = crate::testing::FakeFilterFunctions::keeping(&["due", "later"]);
     assert_eq!(listed(&s.dam(), &[("filter", "mine")]).unwrap(), ["due"]);
+}
+
+fn noted(dam: &Dam) -> Option<BeyondPulled> {
+    let on = filter(&[("due", "on:standup")]);
+    dam.list_selected_noting(&on, &Order::default(), &Path::root(), &[])
+        .unwrap()
+        .1
+}
+
+fn due_late(s: &Scenario, byte: u8, path: &str) {
+    let mut late = task_in(byte, "late", path);
+    late.due = Some(When::Day(date(2026, 10, 1)));
+    s.working(Object::Task(late));
+}
+
+#[test]
+fn on_counts_what_it_could_not_place_past_the_events_dam_holds() {
+    let s = configured(vec![saved("standup", &[("kind", "event")])]);
+    let standup = Event::new(
+        oid(9),
+        "standup",
+        When::Day(date(2026, 9, 18)),
+        When::Day(date(2026, 9, 19)),
+    );
+    s.working(Object::Event(standup));
+    assert_eq!(noted(&s.dam()), None);
+    due_late(&s, 7, "work");
+    due_late(&s, 8, "home");
+    let beyond = BeyondPulled {
+        filters: vec!["standup".into()],
+        fields: vec!["due"],
+        held: Some((date(2026, 1, 1), date(2026, 9, 18))),
+        tasks: 2,
+        events: 0,
+    };
+    assert_eq!(noted(&s.dam()), Some(beyond.clone()));
+    let token = crate::testing::holder(vec![crate::testing::allowed(
+        &[
+            dam_domain::Permission::TaskRead,
+            dam_domain::Permission::EventRead,
+        ],
+        Some(&["home"]),
+    )]);
+    let dam = Dam {
+        access: &token,
+        ..s.dam()
+    };
+    assert_eq!(noted(&dam).map(|b| b.tasks), Some(1));
 }

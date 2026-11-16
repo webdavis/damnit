@@ -452,7 +452,8 @@ and `any` holds tables of which at least one must hold:
 `dam list --filter NAME` lists, and `on:NAME` the days its events take place. A filter may
 also hold a Lua `match` function, which narrows what the fields list; `docs/lua.md` describes it.
 A filter written as `query` text, or one that reaches itself, stops the config from loading; the
-message shows the table to write. `on:NAME` knows only the events dam has pulled.
+message shows the table to write. `on:NAME` knows only the events dam has pulled; when that left
+out something `dam list` would otherwise list, it says how many on standard error.
 
 `dam filter list` prints each saved filter as the flags that select it, and
 `dam category list` prints the label categories with their values and whether each is exclusive:

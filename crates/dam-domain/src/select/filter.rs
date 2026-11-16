@@ -82,6 +82,21 @@ impl Filter {
         self.named(SavedUse::Events)
     }
 
+    pub fn on_fields(&self) -> Vec<&'static str> {
+        let mut keys: Vec<&'static str> = Vec::new();
+        let own = self.conditions.iter().filter_map(|c| {
+            let mut names = c.saved_filters(SavedUse::Events);
+            names.next().map(|_| c.key())
+        });
+        let nested = self.any.iter().flat_map(Filter::on_fields);
+        for key in own.chain(nested) {
+            if !keys.contains(&key) {
+                keys.push(key);
+            }
+        }
+        keys
+    }
+
     fn named(&self, use_: SavedUse) -> Vec<&str> {
         let mut names: Vec<&str> = Vec::new();
         let own = self.conditions.iter().flat_map(|c| c.saved_filters(use_));
