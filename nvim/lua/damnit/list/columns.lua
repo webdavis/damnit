@@ -4,6 +4,8 @@ local ORDER = { "labels", "category", "waits", "estimate", "deadline", "days", "
 local DROPPED_FIRST = { "labels", "category", "waits", "estimate", "deadline", "days" }
 local GAP = "  "
 
+M.gap = #GAP
+
 ---@alias damnit.Cell { [1]: string, [2]: string }
 
 ---@class damnit.Layout

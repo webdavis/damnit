@@ -44,6 +44,7 @@
 ---@field show fun(self, buf: integer, smods?: table)
 ---@field window fun(self, buf: integer, options: table<string, string|boolean>)
 ---@field text_width fun(self, buf: integer): integer
+---@field bar fun(chunks: string[][]): string
 
 ---@class damnit.Mark
 ---@field line integer

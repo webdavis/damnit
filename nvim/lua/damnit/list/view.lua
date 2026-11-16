@@ -20,4 +20,12 @@ function M.call(view, views)
   return { "list", "--request", "-" }, encoded(spec)
 end
 
+---@param view string|damnit.ViewSpec|nil
+---@param views table<string, string|damnit.ViewSpec>
+---@return boolean
+function M.global(view, views)
+  local spec = type(view) == "string" and views[view] or view
+  return type(spec) == "table" and spec.global == true
+end
+
 return M
