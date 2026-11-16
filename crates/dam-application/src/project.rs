@@ -35,7 +35,10 @@ pub struct Project {
 
 impl ProjectSettings {
     pub fn listed(&self, query: Option<String>) -> Option<String> {
-        let query = query.or_else(|| self.ls.clone());
+        self.filtered(query.or_else(|| self.ls.clone()))
+    }
+
+    pub fn filtered(&self, query: Option<String>) -> Option<String> {
         let filter = query.as_deref().and_then(|name| {
             self.filters
                 .iter()

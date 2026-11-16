@@ -63,6 +63,9 @@ pub(crate) fn dispatch_in(
             Command::Ls(a)
         }
         Command::Agenda(mut a) => {
+            if let Some(rules) = standing.rules(&a.scope) {
+                a.query = rules.filtered(a.query);
+            }
             a.place = standing.place(&a.scope)?;
             Command::Agenda(a)
         }
