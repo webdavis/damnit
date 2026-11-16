@@ -1,6 +1,6 @@
 use dam_adapters::{Interrupt, LuaConfigFile, OsRandom, ProcessLauncher, SystemClock};
 use dam_application::{
-    Access, BackgroundSync, ConfigFile, Invocation, LoadedConfig, SettingsFile, Store,
+    Access, BackgroundSync, ConfigFile, Invocation, LoadedConfig, RunRecords, SettingsFile, Store,
 };
 
 use super::{
@@ -18,6 +18,7 @@ pub(super) struct Opened {
     pub(super) access: Box<dyn Access>,
     pub(super) progress: ProgressOnStandardError,
     pub(super) background: Box<dyn BackgroundSync>,
+    pub(super) run_records: Box<dyn RunRecords>,
     pub(super) invocation: Invocation,
 }
 
@@ -38,6 +39,7 @@ impl Context {
             access,
             progress,
             background: dam_adapters::no_background_sync(),
+            run_records: dam_adapters::no_run_records(),
             invocation: Invocation::default(),
         };
         Context::assembled(opened, Format::Json, interrupt)
@@ -52,6 +54,7 @@ impl Context {
             access,
             progress,
             background,
+            run_records,
             invocation,
         } = opened;
         let (prompt, editor) =
@@ -76,6 +79,7 @@ impl Context {
             progress,
             hook_warnings: HookWarningsOnStandardError::for_format(format),
             background,
+            run_records,
             invocation,
         }
     }

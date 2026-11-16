@@ -1,4 +1,4 @@
-use dam_application::{BackgroundRequest, BackgroundStep, Side};
+use dam_application::{BackgroundRequest, BackgroundStep, LastRun, RunEnding, Side, UseCaseError};
 
 use crate::args::{PullArgs, PushArgs, ResolveArgs, SyncArgs, SyncCommand};
 use crate::commands::hooked::hooked;
@@ -8,12 +8,14 @@ use crate::output::Report;
 use crate::view::report;
 
 mod background_view;
+mod failure_reason;
 mod pull_view;
 mod pulled_hook_view;
 mod sync_view;
 mod view;
 
 use background_view::BackgroundSynced;
+use failure_reason::failure_reason;
 use pull_view::{PullRow, Pulled};
 use sync_view::Synced;
 use view::{PushRow, Pushed, Resolved};
@@ -72,10 +74,21 @@ fn run_once(
     when_due: bool,
     interval: Option<std::time::Duration>,
 ) -> Result<Report, CliError> {
-    if !when_due {
-        return report(&Synced::new(&ctx.dam().sync_now(ctx.remotes(), remote)?));
+    let synced = match when_due {
+        true => ctx.dam().sync_when_due(ctx.remotes(), remote, interval),
+        false => ctx.dam().sync_now(ctx.remotes(), remote).map(Some),
     }
-    match ctx.dam().sync_when_due(ctx.remotes(), remote, interval)? {
+    .map_err(CliError::from);
+    let ended = match &synced {
+        Ok(Some(_)) => RunEnding::Synced,
+        Ok(None) => RunEnding::NotDue,
+        Err(e) => RunEnding::Failed(failure_reason(e)),
+    };
+    let at = ctx.clock.now();
+    ctx.run_records
+        .record(remote, &LastRun { at, ended })
+        .map_err(UseCaseError::from)?;
+    match synced? {
         Some(synced) => report(&Synced::new(&synced)),
         None => Ok(Report::nothing()),
     }
@@ -110,6 +123,8 @@ mod failure_kind_tests;
 mod pull_counts_tests;
 #[cfg(test)]
 mod pull_text_tests;
+#[cfg(test)]
+mod run_record_tests;
 #[cfg(test)]
 mod sync_view_tests;
 #[cfg(test)]

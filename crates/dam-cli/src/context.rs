@@ -6,7 +6,8 @@ use std::path::Path;
 use dam_adapters::{Interrupt, LuaConfigFile, SqliteStore, SystemClock};
 use dam_application::{
     Access, BackgroundSync, Clock, Config, ConfigFile, CredentialSource, Dam, FilterFunctions,
-    HelperLauncher, Hooks, Invocation, LoadedConfig, Randomness, Remotes, SettingsFile, Store,
+    HelperLauncher, Hooks, Invocation, LoadedConfig, Randomness, Remotes, RunRecords, SettingsFile,
+    Store,
 };
 
 use crate::caller::{authenticated, caller};
@@ -37,6 +38,7 @@ pub(crate) struct Context {
     pub(crate) progress: ProgressOnStandardError,
     pub(crate) hook_warnings: HookWarningsOnStandardError,
     pub(crate) background: Box<dyn BackgroundSync>,
+    pub(crate) run_records: Box<dyn RunRecords>,
     pub(crate) invocation: Invocation,
 }
 
@@ -68,6 +70,7 @@ impl Context {
             access,
             progress,
             background: dam_adapters::background_sync_for_store(store_path),
+            run_records: dam_adapters::run_records_for_store(store_path),
             invocation,
         };
         Ok(Context::assembled(opened, format, interrupt))
