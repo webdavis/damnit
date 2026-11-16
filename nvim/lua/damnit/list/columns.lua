@@ -29,7 +29,7 @@ local function in_category(object)
 end
 
 local function days_words(days)
-  if days == nil then
+  if type(days) ~= "number" then
     return nil
   end
   if days < 0 then
@@ -69,7 +69,7 @@ local function cells_of(object, subjects)
     waits = { waits_on(object, subjects), "DamMeta" },
     estimate = { task.estimate and (task.estimate .. "m"), "DamMeta" },
     deadline = { task.deadline and ("deadline " .. task.deadline), "DamDue" },
-    days = { days_words(task.days_until_due), "DamMeta" },
+    days = { days_words(object.days_until_due), "DamMeta" },
     due = { due, object.overdue and "DamOverdue" or "DamDue" },
   }
 end
