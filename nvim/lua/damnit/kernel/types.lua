@@ -24,6 +24,7 @@
 ---@class damnit.Call
 ---@field args string[]
 ---@field cwd string
+---@field placed? boolean the caller shows a refusal where it belongs, so the write only keeps it
 ---@field stdin? string
 ---@field key? string
 ---@field progress? boolean
@@ -72,6 +73,7 @@
 ---@field info fun(self, text: string)
 ---@field warn fun(self, text: string)
 ---@field error fun(self, err: damnit.Error)
+---@field keep fun(self, err: damnit.Error) logs it for :Dam messages without announcing it
 ---@field log fun(self): damnit.Error[]
 ---@field changed fun(self, cwd: string)
 

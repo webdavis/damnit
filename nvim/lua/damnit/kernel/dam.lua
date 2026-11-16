@@ -107,7 +107,9 @@ end
 
 function Dam:write(call, done)
   return self:queued(call, "ordered", call.key or "writes", function(answer, err)
-    if err then
+    if err and call.placed then
+      self.say:keep(err)
+    elseif err then
       self.say:error(err)
     else
       self.say:changed(call.cwd)
