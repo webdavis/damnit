@@ -50,6 +50,7 @@ fn a_setting_a_part_and_a_default_print_by_key() {
   remote.todoist.sync.interval         15m (default)
   remote.todoist.sync.allowed          true (default)
   remote.todoist.path                  work/
+  remote.todoist.except                not set
   remote.todoist.credential.api_token  hidden
 "
     );

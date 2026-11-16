@@ -26,6 +26,7 @@ Settings ── what dam is using
   remote.todoist.sync.interval         15m (default)
   remote.todoist.sync.allowed          true (default)
   remote.todoist.path                  work/
+  remote.todoist.except                not set
   remote.todoist.credential.api_token  hidden
   category.effort.values               light, deep
   category.effort.exclusive            true

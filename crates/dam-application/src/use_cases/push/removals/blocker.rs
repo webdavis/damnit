@@ -135,7 +135,8 @@ impl Removals {
         } else {
             format!(
                 "{short} is still under it upstream and this push does not move it; \
-                 run: dam mv {short} PATH inside this remote's path, then dam push"
+                 run: dam mv {short} {}, then dam push",
+                self.hint.place_for(stuck)
             )
         }
     }

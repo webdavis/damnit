@@ -91,7 +91,7 @@ fn sync_every_and_stale_are_unknown_remote_keys() {
             Misread::UnknownRemoteKey {
                 key: key.into(),
                 at: in_table("remote.todoist", "config.lua"),
-                takes: ["url", "deadline", "sync", "path"]
+                takes: ["url", "deadline", "sync", "path", "except"]
                     .map(String::from)
                     .to_vec(),
             }

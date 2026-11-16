@@ -19,6 +19,7 @@ fn with_remote() -> Context {
         deadline: None,
         sync: Default::default(),
         path: None,
+        except: Vec::new(),
     });
     ctx
 }

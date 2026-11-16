@@ -44,7 +44,8 @@
             "allowed": { "type": "boolean" }
           }
         },
-        "path": { "type": "string" }
+        "path": { "type": "string" },
+        "except": { "type": "array", "items": { "type": "string" } }
       }
     },
     "duration": { "type": "string", "pattern": "^[0-9]+[smh]$" },

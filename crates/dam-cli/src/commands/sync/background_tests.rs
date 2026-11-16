@@ -48,6 +48,7 @@ fn with_todoist(scheduler: &Rc<RecordingScheduler>) -> Context {
         deadline: None,
         sync: Default::default(),
         path: None,
+        except: Vec::new(),
     });
     ctx
 }

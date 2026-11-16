@@ -144,6 +144,7 @@ fn status_reports_conflicts_and_unpushed_commits() {
         deadline: None,
         sync: Default::default(),
         path: None,
+        except: Vec::new(),
     });
     ctx.store
         .put(&Object::Task(Task::new(oid(1), "mine")))

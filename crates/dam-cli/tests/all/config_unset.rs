@@ -32,6 +32,7 @@ fn a_setting_with_no_value_has_a_row_saying_so() {
   remote.todoist.sync.interval  15m (default)
   remote.todoist.sync.allowed   true (default)
   remote.todoist.path           not set
+  remote.todoist.except         not set
 "
         ),
         "{out}"
@@ -40,6 +41,7 @@ fn a_setting_with_no_value_has_a_row_saying_so() {
     assert_matches_schema(&answer, "config-list.schema.json");
     let todoist = &answer["settings"]["remote"]["todoist"];
     assert_eq!(todoist["path"], json!({"value": null, "default": true}));
+    assert_eq!(todoist["except"], json!({"value": null, "default": true}));
 }
 
 #[test]

@@ -68,3 +68,20 @@ fn a_project_file_holding_an_escape_sequence_lists_no_control_character() {
     assert!(!printed.chars().any(char::is_control), "{printed:?}");
     assert!(!printed.contains("evil"), "{printed}");
 }
+
+#[test]
+fn a_remote_lists_the_paths_it_never_receives() {
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("config.lua");
+    std::fs::write(
+        &path,
+        "return { remote = { todoist = { url = 'todoist::', except = { 'kitchen', 'journal/private' } } } }",
+    )
+    .unwrap();
+    let listed = run(&LuaConfigFile::new(path), &Standing::Outside).unwrap();
+    assert!(
+        listed.human.contains("remote.todoist.except") && listed.human.contains("journal/private"),
+        "{}",
+        listed.human
+    );
+}

@@ -18,6 +18,7 @@ fn a_config_holding_a_literal_credential_never_debug_prints_it() {
             deadline: None,
             sync: Default::default(),
             path: None,
+            except: Vec::new(),
         }],
         ..Config::default()
     };
@@ -34,6 +35,7 @@ fn the_address_is_the_text_after_the_helper_name() {
         deadline: None,
         sync: Default::default(),
         path: None,
+        except: Vec::new(),
     };
     assert_eq!(remote.address(), "primary,team@group.calendar.google.com");
     remote.url = "todoist::".into();

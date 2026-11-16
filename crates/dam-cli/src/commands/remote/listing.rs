@@ -21,6 +21,7 @@ pub(super) fn run(ctx: &Context) -> Result<Report, CliError> {
                 helper: &r.helper,
                 url: &r.url,
                 path: r.path.as_ref().map(|p| p.as_str()),
+                except: r.except.iter().map(|p| p.as_str()).collect(),
                 last_pull: ctx.store.last_pull(&r.name)?,
                 last_push: ctx.store.last_push(&r.name)?,
             })
@@ -45,6 +46,7 @@ struct RemoteRow<'a> {
     helper: &'a str,
     url: &'a str,
     path: Option<&'a str>,
+    except: Vec<&'a str>,
     #[serde(serialize_with = "optional_display")]
     last_pull: Option<Timestamp>,
     #[serde(serialize_with = "optional_display")]
@@ -65,10 +67,23 @@ impl RemoteRow<'_> {
         vec![
             self.name.to_string(),
             self.url.to_string(),
-            self.path.map(|p| format!("path {p}")).unwrap_or_default(),
+            self.scope(),
             when_phrase("pulled", self.last_pull, now),
             when_phrase("pushed", self.last_push, now),
         ]
+    }
+}
+
+impl RemoteRow<'_> {
+    fn scope(&self) -> String {
+        let path = self.path.map(|p| format!("path {p}"));
+        let except =
+            (!self.except.is_empty()).then(|| format!("except {}", self.except.join(", ")));
+        [path, except]
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>()
+            .join("  ")
     }
 }
 

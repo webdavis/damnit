@@ -49,7 +49,7 @@ fn every_example_uncommented_at_once_is_a_working_config() {
     assert_eq!(config.done_interactive, Some(true));
     let remote = config.remote("todoist").unwrap();
     assert_eq!(remote.url, "todoist::");
-    assert!(remote.deadline.is_some() && remote.path.is_some());
+    assert!(remote.deadline.is_some() && remote.path.is_some() && !remote.except.is_empty());
     assert!(remote.sync.interval.is_some() && remote.sync.allowed.is_some());
     let effort = config.categories.category_of_name("effort").unwrap();
     assert_eq!(effort.values, ["light", "admin", "deep"]);

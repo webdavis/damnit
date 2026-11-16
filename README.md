@@ -182,7 +182,7 @@ Then its credentials, in `secrets.lua`:
 A pull reads the week behind and the ninety days ahead, recurring events as their instances, and
 files each event under a folder named after its calendar's title. The remote is read-only: it
 declares no kinds, so `dam push` sends it nothing, and an event you make or change in dam stays in
-dam. `path` narrows what a push sends, so it does nothing for this remote.
+dam. `path` and `except` narrow what a push sends, so they do nothing for this remote.
 
 Pull it on a schedule: run `dam pull gcal` every few minutes from cron, launchd or a systemd timer.
 Its credential functions must run without a terminal.

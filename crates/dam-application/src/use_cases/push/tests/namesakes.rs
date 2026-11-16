@@ -83,7 +83,7 @@ fn a_removal_waits_on_what_it_still_holds_upstream() {
         why_held(&s, &oid(1)),
         format!(
             "{c} is still under it upstream and this push does not move it; \
-             run: dam mv {c} PATH inside this remote's path, then dam push"
+             run: dam mv {c} PATH, then dam push"
         )
     );
 }

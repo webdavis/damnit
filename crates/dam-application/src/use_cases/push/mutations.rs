@@ -9,6 +9,7 @@ use crate::remote::{MutationOp, RemoteCapabilities, RemoteMutation};
 use crate::use_cases::push::attempting::differing;
 use crate::use_cases::push::containers::{Containers, Placement, places};
 use crate::use_cases::push::owed::OwedChanges;
+use crate::use_cases::push::owed::excepted::{is_excepted, parent_left_out};
 use crate::use_cases::push::sending_order::turn;
 
 pub(super) struct Plan {
@@ -43,6 +44,10 @@ pub(super) fn plan(
         match mutation_for(remote_tracking, caps, remote, &change, &differing)? {
             Some(mut mutation) => {
                 if let (true, Some(object)) = (places(&mutation), &mutation.object) {
+                    if let Some(why) = parent_left_out(store, remote, object)? {
+                        plan.unplaced.push((mutation.oid, why));
+                        continue;
+                    }
                     match containers.place(remote_tracking, &remote.name, object, &creating)? {
                         Placement::Named(container) => mutation.container_remote_id = container,
                         Placement::CreatedThisPush(parent) => mutation.container_oid = Some(parent),
@@ -135,5 +140,5 @@ pub(super) fn goes_to(remote: &RemoteConfig, caps: &RemoteCapabilities, object: 
         .path
         .as_ref()
         .is_none_or(|scope| object.base().path.is_within(scope));
-    caps.kinds.contains(&object.kind()) && within_its_path
+    caps.kinds.contains(&object.kind()) && within_its_path && !is_excepted(remote, object)
 }

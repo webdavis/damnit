@@ -17,6 +17,7 @@ fn with_remote(credentials: Vec<CredentialSpec>) -> Context {
         deadline: None,
         sync: Default::default(),
         path: None,
+        except: Vec::new(),
     });
     ctx
 }

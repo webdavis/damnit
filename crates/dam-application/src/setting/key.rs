@@ -47,6 +47,7 @@ impl SettingKey {
                 Ok(SettingKind::Text)
             }
             ("remote", _, Some("deadline")) => Ok(SettingKind::Duration),
+            ("remote", _, Some("except")) => Ok(SettingKind::List),
             ("remote", _, Some(_)) => Err(KeyRefusal::Secret(key.to_string())),
             ("category", _, Some("values")) => Ok(SettingKind::List),
             ("category", _, Some("exclusive")) => Ok(SettingKind::Flag),

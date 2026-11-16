@@ -34,6 +34,7 @@ fn a_pulled_task_with_an_unreadable_rule_is_told_to_complete_it_upstream() {
         deadline: None,
         sync: Default::default(),
         path: None,
+        except: Vec::new(),
     });
     ctx.store.map_remote_id(&todoist, &oid(7), "4242").unwrap();
     let err = run(&ctx, args(&oid(7), false, false)).unwrap_err();
