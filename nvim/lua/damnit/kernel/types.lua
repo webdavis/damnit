@@ -26,6 +26,7 @@
 ---@field cwd string
 ---@field stdin? string
 ---@field key? string
+---@field progress? boolean
 
 ---@class damnit.Handle
 ---@field cancel fun()

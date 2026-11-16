@@ -1,5 +1,6 @@
 local errors = require("damnit.kernel.error")
 local handshake = require("damnit.kernel.handshake")
+local progress = require("damnit.kernel.progress")
 local spawn = require("damnit.kernel.spawn")
 
 local Dam = {}
@@ -31,7 +32,15 @@ local function answer_of(exit, err)
   return nil, errors.not_json(exit.stderr)
 end
 
-function Dam:call(call, done)
+local function args_of(call, shown)
+  local args = vim.list_extend({}, call.args)
+  if shown then
+    table.insert(args, "--progress")
+  end
+  return vim.list_extend(args, { "-o", "json" })
+end
+
+function Dam:call(call, done, shown)
   local cancelled, spawned = false, nil
   self.handshake.wait(call.cwd, function(err)
     if cancelled then
@@ -40,8 +49,11 @@ function Dam:call(call, done)
     if err then
       return done(nil, err)
     end
-    local args = vim.list_extend(vim.list_extend({}, call.args), { "-o", "json" })
-    spawned = self.spawn(args, call.cwd, call.stdin, function(exit, spawn_err)
+    local opts = { cwd = call.cwd, stdin = call.stdin, on_line = shown and shown.line }
+    spawned = self.spawn(args_of(call, shown), opts, function(exit, spawn_err)
+      if shown then
+        shown.stop("failed")
+      end
       done(answer_of(exit, spawn_err))
     end)
   end)
@@ -51,12 +63,19 @@ function Dam:call(call, done)
       if spawned then
         spawned.cancel()
       end
+      if shown then
+        shown.stop("cancel")
+      end
     end,
   }
 end
 
 function Dam:queued(call, mode, lane, done)
   local state = { cancelled = false }
+  local handle = {}
+  local shown = call.progress and progress.shown(function()
+    handle.cancel()
+  end) or nil
   self.queue:submit(lane, function(finish)
     state.finish = finish
     if state.cancelled then
@@ -66,20 +85,19 @@ function Dam:queued(call, mode, lane, done)
     state.inner = self:call(call, function(answer, err)
       finish()
       done(answer, err)
-    end)
+    end, shown)
     return state.inner
   end, mode)
-  return {
-    cancel = function()
-      state.cancelled = true
-      if state.inner then
-        state.inner.cancel()
-      end
-      if state.finish then
-        state.finish()
-      end
-    end,
-  }
+  handle.cancel = function()
+    state.cancelled = true
+    if state.inner then
+      state.inner.cancel()
+    end
+    if state.finish then
+      state.finish()
+    end
+  end
+  return handle
 end
 
 function Dam:run(call, done)

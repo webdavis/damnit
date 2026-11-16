@@ -18,7 +18,7 @@ local function read(exit)
   return found, nil
 end
 
----@param spawn fun(args: string[], cwd: string, stdin: string|nil, on_exit: fun(exit: damnit.Exit, err: damnit.Error|nil)): damnit.Handle
+---@param spawn damnit.Spawn
 function M.new(spawn)
   local settled, waiting = nil, nil
   local handshake = {}
@@ -37,7 +37,7 @@ function M.new(spawn)
       return table.insert(waiting, ready)
     end
     waiting = { ready }
-    spawn({ "--version" }, cwd, nil, function(exit, spawn_err)
+    spawn({ "--version" }, { cwd = cwd }, function(exit, spawn_err)
       local found, err = nil, spawn_err
       if not err then
         found, err = read(exit)

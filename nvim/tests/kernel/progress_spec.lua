@@ -15,14 +15,14 @@ return {
     )
   end,
 
-  ["a finished record ends its message as success"] = function()
-    local _, opts = progress.message(assert(progress.record(lines_of("progress-pull.txt")[2])))
-    assert(opts.status == "success", vim.inspect(opts))
+  ["a finished record ends its message as success with the words pull finished"] = function()
+    local text, opts = progress.message(assert(progress.record(lines_of("progress-pull.txt")[2])))
+    assert(opts.status == "success" and text == "pull finished", vim.inspect({ text, opts }))
   end,
 
-  ["a failed record ends its message as failed"] = function()
-    local _, opts = progress.message(assert(progress.record(lines_of("progress-push-failed.txt")[2])))
-    assert(opts.status == "failed", vim.inspect(opts))
+  ["a failed record ends its message as failed with the words push failed"] = function()
+    local text, opts = progress.message(assert(progress.record(lines_of("progress-push-failed.txt")[2])))
+    assert(opts.status == "failed" and text == "push failed", vim.inspect({ text, opts }))
   end,
 
   ["a percent is given only when dam gives a total above 0"] = function()
