@@ -5,6 +5,7 @@ mod interrupt;
 mod limits;
 mod notice;
 mod progress;
+mod project;
 mod runs;
 mod skips;
 mod warnings;

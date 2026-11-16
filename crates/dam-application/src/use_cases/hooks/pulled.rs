@@ -4,7 +4,7 @@ use super::edit_request::Edited;
 use crate::access::Owner;
 use crate::config::{HookEvent, PulledChanges};
 use crate::errors::UseCaseError;
-use crate::ports::{HelperError, HookFailure, Pull, PulledChange, RemoteName, Step};
+use crate::ports::{FunctionFailure, HookFailure, Pull, PulledChange, RemoteName, Step};
 use crate::service::Dam;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -16,6 +16,7 @@ pub struct PulledHookRun {
     pub commit: Option<CommitId>,
 }
 
+#[derive(Clone)]
 pub(crate) struct PulledTask {
     oid: Oid,
     before: Option<Object>,
@@ -43,11 +44,11 @@ impl PulledTask {
 }
 
 impl Dam<'_> {
-    pub(crate) fn run_pulled_hook(
+    fn run_one_pulled_hook(
         &self,
         remote: &RemoteName,
-        pulled: Vec<PulledTask>,
-    ) -> Result<Option<PulledHookRun>, UseCaseError> {
+        pulled: &[PulledTask],
+    ) -> Result<Option<(PulledHookRun, Option<FunctionFailure>)>, UseCaseError> {
         let Some(hook) = self
             .config
             .task_pulled
@@ -77,7 +78,7 @@ impl Dam<'_> {
             total: Some(pulled.len()),
         });
         let mut first_error = None;
-        for task in &pulled {
+        for task in pulled {
             if run_time.ran_out() || self.interruption.requested() {
                 break;
             }
@@ -106,11 +107,7 @@ impl Dam<'_> {
         if let Some(before) = &before {
             run.commit = self.commit_hook_edits(remote, before)?;
         }
-        self.note_pulled_hook_run(remote, &run, first_error)?;
-        if self.interruption.requested() {
-            return Err(HelperError::Cancelled.into());
-        }
-        Ok(Some(run))
+        Ok(Some((run, first_error)))
     }
 
     fn pulled_hook_on(&self, task: &PulledTask, pull: &Pull) -> Result<Edited, UseCaseError> {
@@ -125,6 +122,7 @@ impl Dam<'_> {
     }
 }
 
+mod both;
 mod committed;
 mod notice;
 
