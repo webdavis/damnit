@@ -2,6 +2,7 @@ use dam_adapters::LuaConfigFile;
 use dam_application::ConfigFile;
 use serde::Serialize;
 
+use super::project_entry::ProjectEntry;
 use super::setting::Setting;
 use super::settings::settings;
 use super::warnings::warnings_naming_only_the_token;
@@ -21,12 +22,6 @@ struct Listing {
     warnings: Vec<String>,
 }
 
-#[derive(Serialize)]
-struct ProjectEntry {
-    file: String,
-    path: String,
-}
-
 impl View for Listing {
     fn human(&self) -> Human {
         let or_none = |path: &Option<String>, name: &str| {
@@ -38,11 +33,8 @@ impl View for Listing {
         ];
         let mut settings = self.settings.rows("");
         if let Some(project) = &self.project {
-            files.push(("project", project.file.clone()));
-            settings.push((
-                "path".to_string(),
-                format!("{} (from the project)", project.path),
-            ));
+            files.push(("project", project.file().to_string()));
+            settings.extend(project.rows());
         }
         let files_column = column(files.iter().map(|(name, _)| *name));
         let settings_column = column(settings.iter().map(|(key, _)| key.as_str()));
@@ -68,10 +60,7 @@ impl View for Listing {
 pub(super) fn run(file: &LuaConfigFile, standing: &Standing) -> Result<Report, CliError> {
     let config = file.load()?.config;
     let project = match standing {
-        Standing::Inside(project) => Some(ProjectEntry {
-            file: project.file().display().to_string(),
-            path: project.settings.path.clone(),
-        }),
+        Standing::Inside(project) => Some(ProjectEntry::of(project)),
         _ => None,
     };
     let mut warnings = warnings_naming_only_the_token(&config.tokens);

@@ -70,7 +70,7 @@ pub fn read_project_file(file: &Path, this_dam: &str) -> Result<ProjectSettings,
         }
         Walked::TooLarge => return Err(stopped_at_an_error(file)),
     }
-    version::needs_no_newer_dam(file, &table, this_dam)?;
+    let minimum_dam = version::needs_no_newer_dam(file, &table, this_dam)?;
     let root = StrictMap::root(&short_name, &table)?;
     if let Some((key, _)) = root
         .entries()
@@ -88,6 +88,7 @@ pub fn read_project_file(file: &Path, this_dam: &str) -> Result<ProjectSettings,
     })?;
     Ok(ProjectSettings {
         path: path.as_str().to_string(),
+        minimum_dam,
         new_task: new_task::new_task(file, &root)?,
         required: required::required(file, &root)?,
         ls: listing::listing(file, &root)?,

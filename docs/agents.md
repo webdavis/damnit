@@ -35,7 +35,8 @@ the root, and `--project <path>`, or `"project"` in a request, starts it from th
 folder. A missing task for that path is created first; that needs `task:create` there, and the
 answer carries `project_created`. The path `dam mv` moves objects to starts from the project the
 same way; its oids, `--query` and `--filter` still pick from every task. `dam ls`, `dam agenda` and `dam reminders` there list only what the token sees under the
-project.
+project. `dam config list --json` carries every setting the project's `.dam.lua` holds under
+`project`, as the file sets it.
 
 When a template renders `secrets.lua`, the template writes the token's table with the value
 `dam token create` printed.

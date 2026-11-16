@@ -11,6 +11,7 @@ pub const PROJECT_FILE: &str = ".dam.lua";
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ProjectSettings {
     pub path: String,
+    pub minimum_dam: Option<String>,
     pub new_task: TaskTemplate,
     pub required: Vec<RequiredField>,
     pub ls: Option<String>,
@@ -42,6 +43,18 @@ impl ProjectSettings {
                 .and_then(|filter| filter.rule.query())
         });
         filter.map(String::from).or(query)
+    }
+}
+
+impl RequiredField {
+    pub fn name(self) -> &'static str {
+        match self {
+            RequiredField::Due => "due",
+            RequiredField::Labels => "labels",
+            RequiredField::Priority => "priority",
+            RequiredField::Body => "body",
+            RequiredField::Deadline => "deadline",
+        }
     }
 }
 

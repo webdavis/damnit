@@ -10,13 +10,39 @@
     "config": { "type": ["string", "null"], "description": "The path of config.lua, or null when there is none." },
     "secrets": { "type": ["string", "null"], "description": "The path of secrets.lua, beside config.lua, or null when there is none." },
     "project": {
-      "description": "Inside a project, its .dam.lua and the path it sets, both from the project; null outside one or when the file does not load.",
+      "description": "Inside a project, its .dam.lua and every setting it holds, all from the project; null outside one or when the file does not load.",
       "type": ["object", "null"],
-      "required": ["file", "path"],
+      "required": ["file", "path", "minimum_dam", "new_task", "required", "ls", "filter"],
       "additionalProperties": false,
       "properties": {
         "file": { "type": "string" },
-        "path": { "type": "string" }
+        "path": { "type": "string" },
+        "minimum_dam": { "type": ["string", "null"] },
+        "new_task": {
+          "type": "object",
+          "required": ["labels", "priority", "due", "deadline"],
+          "additionalProperties": false,
+          "properties": {
+            "labels": { "type": ["array", "null"], "items": { "type": "string" } },
+            "priority": { "type": ["integer", "null"], "minimum": 1, "maximum": 4 },
+            "due": { "type": ["string", "null"] },
+            "deadline": { "type": ["string", "null"] }
+          }
+        },
+        "required": {
+          "type": "array",
+          "items": { "enum": ["due", "labels", "priority", "body", "deadline"] }
+        },
+        "ls": { "type": ["string", "null"] },
+        "filter": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["query"],
+            "additionalProperties": false,
+            "properties": { "query": { "type": "string" } }
+          }
+        }
       }
     },
     "settings": { "$ref": "#/$defs/part" },

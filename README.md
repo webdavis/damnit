@@ -340,8 +340,8 @@ for the project you are in: `dam ls --project pns/hooks/`, `dam new "x" --projec
 It takes a path of any depth. `--global` and `--project` together are a usage error. When no task
 holds that path yet, `dam new --project` creates it first and says so on standard error; with `--json`
 the answer carries `project_created`, its `oid` and `path`.
-`dam config list` inside a project shows the project's `.dam.lua` and its `path`, marked
-`(from the project)`; with `--json` they are under `project`.
+`dam config list` inside a project shows the project's `.dam.lua` and each setting it holds,
+marked `(from the project)`; with `--json` they are under `project`.
 
 `.dam.lua` may hold more rules for the project; `docs/lua.md` lists them. They apply only to
 commands run inside the project without `--global` or `--project`.
