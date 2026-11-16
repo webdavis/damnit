@@ -13,6 +13,7 @@ function M.setup(opts)
   require("damnit.command").define(running, {
     require("damnit.messages").new(running),
     require("damnit.list").new(running),
+    require("damnit.task").new(running),
   })
   return running
 end

@@ -780,6 +780,10 @@ require("damnit").setup({
 A table is keyed like the flags of `dam list` and sent as `dam list --request -`; a text names
 a saved filter.
 
+`:Dam task <oid>` opens the task as `dam show` prints it: one `field: value` line each, then `---` and the body. Change a line and `:w` sends `dam edit`
+with what changed; an emptied line clears that field. dam reads each value and shows its error
+when it refuses one.
+
 With lazy.nvim from a checkout:
 
 ```lua
