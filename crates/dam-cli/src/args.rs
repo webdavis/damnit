@@ -4,6 +4,7 @@ mod doctor;
 mod editing;
 mod global_flags;
 pub(crate) mod hook;
+mod in_use;
 mod init;
 mod new;
 mod planning;
@@ -24,6 +25,7 @@ pub(crate) use config::{ConfigArgs, ConfigCommand};
 pub(crate) use doctor::{CheckName, DoctorArgs};
 pub(crate) use editing::{EditArgs, FieldArgs};
 pub(crate) use global_flags::Cli;
+pub(crate) use in_use::{LabelArgs, LabelCommand};
 pub(crate) use init::InitArgs;
 pub(crate) use new::NewArgs;
 pub(crate) use planning::{DayArgs, DayCommand, RemindersArgs};
@@ -93,6 +95,8 @@ pub(crate) enum Command {
     Day(DayArgs),
     #[command(about = "List, create, remove and migrate the label categories config.lua declares")]
     Category(CategoryArgs),
+    #[command(about = "List the labels in use")]
+    Label(LabelArgs),
     #[command(about = "List, create and remove the saved filters config.lua declares")]
     Filter(FilterArgs),
     #[command(about = "List the hooks in the hooks folder, or run one over listed tasks")]
@@ -124,16 +128,7 @@ pub(crate) enum Command {
     Doctor(DoctorArgs),
     #[command(
         about = "Make each part do its real job once and say whether it worked",
-        after_help = "It contacts each remote, and runs credential functions, which may prompt.
-The filters part runs each saved filter once over the store.
-It writes nothing: not the store, not the config, not a remote.
-It exits 1 when a part finds an issue, and prints the report to stdout either way.
-
-Examples:
-  dam test
-  dam test credentials
-  dam test filters
-  dam test -o json"
+        after_help = test::TEST_HELP
     )]
     Test(TestArgs),
 }

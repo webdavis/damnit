@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/label-list.schema.json",
+  "title": "dam label list answer",
+  "description": "What dam label list prints with -o: every label carried by a task or event in scope, done ones included, sorted by name. Inside a project only its objects count; a token counts only the objects it may read.",
+  "type": "object",
+  "required": [
+    "labels"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "labels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "count"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "count": {
+            "description": "How many objects carry the label.",
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    }
+  }
+}

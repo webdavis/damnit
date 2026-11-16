@@ -1,6 +1,6 @@
 use dam_domain::Path;
 
-use crate::args::Command;
+use crate::args::{Command, LabelCommand};
 use crate::commands::catalogue_write;
 use crate::commands::dispatch_a_verb_that_opens_the_store;
 use crate::commands::mv::with_the_path_named;
@@ -98,6 +98,11 @@ pub(crate) fn dispatch_in(
         }
         Command::Category(a) => return catalogue_write::run_category(ctx, a.command, &standing),
         Command::Filter(a) => return catalogue_write::run_filter(ctx, a.command, &standing),
+        Command::Label(mut a) => {
+            let LabelCommand::List(list) = &mut a.command;
+            list.place = standing.place(&list.scope)?;
+            Command::Label(a)
+        }
         Command::Reminders(mut a) => {
             a.place = standing.place(&a.scope)?;
             Command::Reminders(a)
