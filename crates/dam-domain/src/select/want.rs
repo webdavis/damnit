@@ -40,4 +40,13 @@ impl Want {
             _ => false,
         }
     }
+
+    pub(crate) fn is_one_value(&self) -> bool {
+        match self {
+            Want::Is(_) | Want::Under(_) | Want::Id(_) | Want::Yes(_) => true,
+            Want::Range(lo, hi) => lo.is_some() && lo == hi,
+            Want::Date(date) => date.is_one_day_or_instant(),
+            _ => false,
+        }
+    }
 }
