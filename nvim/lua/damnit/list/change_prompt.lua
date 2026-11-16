@@ -6,8 +6,10 @@ local M = {}
 local function on_screen(list)
   local objects, rows = {}, {}
   for _, row in ipairs(list.arranged or {}) do
-    objects[row.object.oid] = row.object
-    table.insert(rows, { word = row.object.oid:sub(1, 7), menu = row.object.subject })
+    if row.object then
+      objects[row.object.oid] = row.object
+      table.insert(rows, { word = row.object.oid:sub(1, 7), menu = row.object.subject })
+    end
   end
   return objects, rows
 end
@@ -25,12 +27,12 @@ end
 ---@param key string
 ---@param oids string[]
 ---@param prompt { title: string, prefill: string, field?: string }
----@param submit fun(text: string)
-function M.open(lists, buf, key, oids, prompt, submit)
+---@param hooks { submit: fun(text: string), closed?: fun() }
+function M.open(lists, buf, key, oids, prompt, hooks)
   local app, list = lists.app, lists.shown[buf]
   local objects, rows = on_screen(list)
   local flags = app.vocab:flags(vim.split(prompt.title, " ")[2])
-  lists.prompts = lists.prompts or require("damnit.kernel.prompt").new(app.queue)
+  lists.prompts = lists.prompts or require("damnit.kernel.prompt").new(app.queue, app.say)
   lists.prompts:open({
     title = prompt.title .. (#oids > 1 and (" · %d rows"):format(#oids) or ""),
     prefill = prompt.prefill,
@@ -39,12 +41,13 @@ function M.open(lists, buf, key, oids, prompt, submit)
     read = function(text, done)
       return app.dam:run(lists:call_of(buf, key, oids, text, true), function(answer, err)
         if err then
-          return done(err.message, true)
+          return done(err.message, err)
         end
         done(judged(answer, objects, prompt, #oids > 1))
       end)
     end,
-    submit = submit,
+    submit = hooks.submit,
+    closed = hooks.closed,
     complete = function(line, col)
       local vocab = vim.tbl_extend("force", {}, app.vocab:words(list.call.cwd), { rows = rows })
       return words.at(line, col, flags, vocab)

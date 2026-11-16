@@ -83,19 +83,22 @@ end
 ---@param key string
 ---@param oids string[]
 ---@param answer? string
----@param remember? fun(answer: string)
-function Edits:act(buf, key, oids, answer, remember)
+---@param hooks? { answered: fun(answer: string), closed: fun() }
+function Edits:act(buf, key, oids, answer, hooks)
   local prompt = actions.prompt(key, self:object_of(buf, oids[1]))
   if prompt and prompt.one and #oids > 1 then
     return self.app.say:warn(key .. " changes one row at a time")
   end
   if prompt and not answer then
-    return change_prompt.open(self, buf, key, oids, prompt, function(text)
-      if remember then
-        remember(text)
-      end
-      self:send(buf, key, oids, text)
-    end)
+    return change_prompt.open(self, buf, key, oids, prompt, {
+      submit = function(text)
+        if hooks then
+          hooks.answered(text)
+        end
+        self:send(buf, key, oids, text)
+      end,
+      closed = hooks and hooks.closed,
+    })
   end
   if actions.confirms(key, oids) then
     return self:confirm(buf, key, oids, answer)
