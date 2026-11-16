@@ -1,0 +1,32 @@
+{
+  "oid": "<id-1>",
+  "kind": "task",
+  "subject": "plan the garden",
+  "body": "step 1 of the plan\nstep 2 of the plan\nstep 3 of the plan\nstep 4 of the plan\nstep 5 of the plan\nstep 6 of the plan\nstep 7 of the plan\nstep 8 of the plan\nstep 9 of the plan\nstep 10 of the plan\nstep 11 of the plan\nstep 12 of the plan\nstep 13 of the plan\nstep 14 of the plan\nstep 15 of the plan\nstep 16 of the plan\nstep 17 of the plan\nstep 18 of the plan\nstep 19 of the plan\nstep 20 of the plan",
+  "path": "call mom/",
+  "labels": [
+    "deep",
+    "garden"
+  ],
+  "depends": [
+    "1111111111111111111111111111111111111111"
+  ],
+  "reminders": [],
+  "recurrence": "every week",
+  "parent": "2222222222222222222222222222222222222222",
+  "task": {
+    "done": false,
+    "priority": 2,
+    "due": "2026-09-25",
+    "deadline": "2026-09-30",
+    "estimate": 45
+  },
+  "author": "owner",
+  "details": null,
+  "category": {
+    "effort": "deep"
+  },
+  "overdue": true,
+  "days_until_due": "<days>",
+  "days_until_deadline": "<days>"
+}
