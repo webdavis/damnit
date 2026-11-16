@@ -50,6 +50,13 @@ pub(crate) struct Cli {
     )]
     pub(crate) no_color: bool,
     #[arg(
+        short,
+        long,
+        global = true,
+        help = "Print only errors; --json and --toon still print their answer"
+    )]
+    pub(crate) quiet: bool,
+    #[arg(
         long,
         global = true,
         value_name = "KEY=VALUE",

@@ -308,6 +308,8 @@ It has 60 seconds in total for one pull, and Ctrl-C stops it and keeps the pull.
 A flag is named after the key it writes: a value `dam show --json` prints under `due` goes back
 through `dam edit --due`, and `--no-due` clears it.
 
+`--quiet` (`-q`) prints only errors; under `--json` or `--toon` the answer still prints.
+
 Every time under `--json` and `--toon` is RFC 3339 with its offset, such as
 `2026-09-25T09:00:00-04:00`, and every all-day date is a plain `YYYY-MM-DD`.
 

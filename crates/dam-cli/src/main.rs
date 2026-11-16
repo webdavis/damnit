@@ -39,7 +39,7 @@ fn main() {
             std::process::exit(refused.error.exit_code());
         }
     };
-    let format = Format::of(cli.json, cli.toon);
+    let format = Format::of(cli.json, cli.toon).quieted(cli.quiet);
     if !interrupts_installed {
         warn_a_human_that_ctrl_c_will_not_cancel_cleanly(format);
     }

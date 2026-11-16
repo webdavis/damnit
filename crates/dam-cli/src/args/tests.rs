@@ -176,3 +176,9 @@ fn attached_and_no_attached_match_the_key_and_attach_and_detach_still_parse() {
         assert_eq!(edit(&[clear]), (None, true));
     }
 }
+
+#[test]
+fn quiet_is_global_with_a_short_q() {
+    assert!(Cli::try_parse_from(["dam", "ls", "--quiet"]).unwrap().quiet);
+    assert!(Cli::try_parse_from(["dam", "-q", "pull"]).unwrap().quiet);
+}
