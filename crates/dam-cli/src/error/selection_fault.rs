@@ -6,6 +6,7 @@ use crate::args::selection::flag_of;
 mod command_line;
 mod fix;
 mod sentence;
+mod sort_fix;
 
 use command_line::command_line;
 
@@ -13,6 +14,7 @@ use command_line::command_line;
 pub(crate) struct Fault {
     pub(crate) error: SelectError,
     pub(crate) typed: FilterTable,
+    pub(crate) sort: Vec<String>,
 }
 
 impl Fault {
@@ -20,22 +22,27 @@ impl Fault {
         match &self.error {
             SelectError::Value(e) => &e.field,
             SelectError::Defaults(e) => fix::dropped_or_moved(e),
+            SelectError::Sort(_) => "sort",
         }
     }
 
     pub(crate) fn value(&self) -> String {
         match &self.error {
-            SelectError::Value(e) => e.value.clone(),
+            SelectError::Value(e) | SelectError::Sort(e) => e.value.clone(),
             SelectError::Defaults(_) => fix::typed_text(&self.typed, self.field()),
         }
     }
 
     pub(crate) fn shapes(&self) -> Vec<String> {
+        if let SelectError::Sort(_) = self.error {
+            return vec!["FIELD".into(), "FIELD:desc".into()];
+        }
         select_field(self.field()).map_or_else(Vec::new, |f| f.shapes())
     }
 
     pub(crate) fn command(&self) -> String {
-        command_line(&fix::corrected(&self.error, &self.typed))
+        let sort = sort_fix::sorted(&self.error, &self.sort);
+        command_line(&fix::corrected(&self.error, &self.typed), &sort)
     }
 
     pub(crate) fn conflict(&self) -> bool {
@@ -64,6 +71,7 @@ impl std::fmt::Display for Fault {
         let sentence = match &self.error {
             SelectError::Value(e) => sentence::of_value(self, &e.problem),
             SelectError::Defaults(e) => sentence::of_defaults(self, e),
+            SelectError::Sort(e) => sentence::of_sort(self, &e.problem),
         };
         write!(f, "{sentence}; run {}", self.command())
     }

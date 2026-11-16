@@ -77,3 +77,19 @@ pub(super) fn of_defaults(fault: &Fault, error: &DefaultsError) -> String {
         ),
     }
 }
+
+pub(super) fn of_sort(fault: &Fault, problem: &Problem) -> String {
+    let value = fault.value();
+    match problem {
+        Problem::UnknownField { closest: Some(c) } => {
+            format!("--sort {value} names no field; the closest is {c}")
+        }
+        Problem::UnknownField { closest: None } => {
+            format!("--sort {value} names no field; dam list --help shows the fields")
+        }
+        _ => format!(
+            "--sort cannot be {value:?}; it takes {}",
+            fault.shapes().join(", ")
+        ),
+    }
+}

@@ -1,5 +1,5 @@
 use dam_application::{SelectError, UseCaseError};
-use dam_domain::{Filter, Object, Order};
+use dam_domain::{Filter, Object, Order, Sort};
 
 use crate::args::ListArgs;
 use crate::commands::authorship::Authorship;
@@ -27,6 +27,9 @@ pub(crate) fn run_list(ctx: &Context, args: ListArgs) -> Result<Report, CliError
 
 fn listed(ctx: &Context, args: &ListArgs) -> Result<Vec<Object>, CliError> {
     if let Some(query) = &args.project_default {
+        if let Some(refused) = order_beside_default::refused(&args.order) {
+            return Err(refused);
+        }
         return Ok(ctx.dam().list_within(Some(query), &args.place)?);
     }
     let typed = &args.selection.typed;
@@ -34,21 +37,26 @@ fn listed(ctx: &Context, args: &ListArgs) -> Result<Vec<Object>, CliError> {
         CliError::Selection(Box::new(Fault {
             error,
             typed: typed.clone(),
+            sort: args.order.sort.clone(),
         }))
     };
     let filter = Filter::read(typed).map_err(|e| fault(SelectError::Value(e)))?;
+    let order = Order {
+        sort: Sort::read(&args.order.sort).map_err(|e| fault(SelectError::Sort(e)))?,
+        offset: args.order.offset.unwrap_or(0),
+        limit: args.order.limit,
+    };
     let dam = ctx.dam();
-    let listed = dam.list_selected(
-        &filter,
-        &Order::default(),
-        &args.place,
-        &args.project_filters,
-    );
+    let listed = dam.list_selected(&filter, &order, &args.place, &args.project_filters);
     listed.map_err(|e| match e {
         UseCaseError::Select(error) => fault(error),
         e => e.into(),
     })
 }
 
+mod order_beside_default;
+
+#[cfg(test)]
+mod order_tests;
 #[cfg(test)]
 mod tests;

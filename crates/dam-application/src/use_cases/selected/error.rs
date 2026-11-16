@@ -6,6 +6,7 @@ use crate::errors::UseCaseError;
 pub enum SelectError {
     Value(FilterError),
     Defaults(DefaultsError),
+    Sort(FilterError),
 }
 
 impl From<SelectError> for UseCaseError {

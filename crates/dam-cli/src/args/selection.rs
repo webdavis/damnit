@@ -3,6 +3,7 @@ use dam_domain::{FilterTable, SelectField, TableValue, select_fields};
 
 mod any;
 mod help_line;
+pub(crate) mod ordering;
 mod place;
 
 pub(crate) use any::flag_of;

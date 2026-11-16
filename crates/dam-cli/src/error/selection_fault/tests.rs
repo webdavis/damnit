@@ -30,6 +30,7 @@ fn read(typed: FilterTable) -> CliError {
     CliError::Selection(Box::new(Fault {
         error: SelectError::Value(error),
         typed,
+        sort: Vec::new(),
     }))
 }
 
@@ -37,6 +38,7 @@ fn defaults(error: DefaultsError, typed: FilterTable) -> CliError {
     CliError::Selection(Box::new(Fault {
         error: SelectError::Defaults(error),
         typed,
+        sort: Vec::new(),
     }))
 }
 
