@@ -63,6 +63,11 @@ impl fmt::Display for ConfigReason<'_> {
             ConfigError::BelongsInSecrets { key, at } => {
                 write!(f, "{key} belongs in secrets.lua {}", PlaceText(at))
             }
+            ConfigError::BelongsInPersonalConfig { key, file } => write!(
+                f,
+                "{key} belongs in your own config.lua, never in a project file; remove it from {}",
+                file.display()
+            ),
             ConfigError::BadRemoteName(why) => write!(f, "{why}"),
             ConfigError::BadCategories(why) => write!(f, "category: {why:?}"),
             ConfigError::UndeclaredRemote { remote, config } => write!(

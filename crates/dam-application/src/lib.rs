@@ -3,6 +3,7 @@ mod config;
 mod credentials;
 mod errors;
 mod ports;
+mod project;
 mod remote;
 mod secret;
 mod service;
@@ -35,6 +36,7 @@ pub use ports::{
     SecretsTightened, SettingChange, SettingsFile, StageRepository, Step, Store, StoreError,
     Transactional, Uneditable, waited_on,
 };
+pub use project::{PROJECT_FILE, Project, ProjectFolders, ProjectSettings, find_project};
 pub use remote::{
     IncomingObject, MutationOp, MutationOutcome, MutationVerdict, PullOutcome, PushOutcome,
     RejectedObject, RemoteCapabilities, RemoteMutation,

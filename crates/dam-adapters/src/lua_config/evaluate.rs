@@ -76,7 +76,7 @@ pub(super) fn evaluated(
     .map_err(|e| stopped_loading(path, &short_name, &e, error_text))
 }
 
-fn stopped_loading(
+pub(super) fn stopped_loading(
     path: &Path,
     short_name: &str,
     error: &mlua::Error,
