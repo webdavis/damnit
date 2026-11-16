@@ -9,7 +9,7 @@ use super::{ScopeArgs, SetArgs};
 pub(crate) struct DoneArgs {
     #[arg(
         help = "Pick the tasks by oid, by a prefix of 4 or more hex characters, or - to read the ids dam list prints from stdin",
-        required_unless_present_any = ["query", "filter"]
+        required_unless_present_any = ["filter"]
     )]
     pub(crate) oid: Vec<String>,
     #[command(flatten)]
@@ -54,7 +54,7 @@ pub(crate) struct MvArgs {
     #[arg(
         value_name = "OID... PATH",
         help = "Pick the objects by oid, by a prefix of 4 or more hex characters, or - to read the ids dam list prints from stdin, then the PATH to move them under, such as work/clients/",
-        required_unless_present_any = ["query", "filter"]
+        required_unless_present_any = ["filter"]
     )]
     pub(crate) oid: Vec<String>,
     #[command(flatten)]
@@ -71,14 +71,14 @@ pub(crate) struct MvArgs {
 pub(crate) struct RmArgs {
     #[arg(
         help = "Pick the objects by oid, by a prefix of 4 or more hex characters, or - to read the ids dam list prints from stdin",
-        required_unless_present_any = ["query", "filter", "id"]
+        required_unless_present_any = ["filter", "id"]
     )]
     pub(crate) oid: Vec<String>,
     #[command(flatten)]
     pub(crate) set: SetArgs,
     #[arg(
         long,
-        conflicts_with_all = ["oid", "query", "filter", "preview", "expect"],
+        conflicts_with_all = ["oid", "filter", "preview", "expect"],
         value_parser = caller_id_arg,
         help = "Take back the task or event you gave this id with dam new --id in the same session"
     )]

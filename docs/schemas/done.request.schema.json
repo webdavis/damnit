@@ -23,10 +23,6 @@
         }
       ]
     },
-    "query": {
-      "type": "string",
-      "description": "Act on every object this query lists; inside a project, only its tasks unless global."
-    },
     "filter": {
       "type": "string",
       "description": "Act on every object this saved filter lists; inside a project, only its tasks unless global."
@@ -64,11 +60,11 @@
     },
     "global": {
       "type": "boolean",
-      "description": "Pick query and filter from every task and leave out the done_children rule of the project the command runs in."
+      "description": "Pick the saved filter's objects from every task and leave out the done_children rule of the project the command runs in."
     },
     "project": {
       "type": "string",
-      "description": "Pick query and filter from the project at this path, such as pns/hooks/, from any folder; the done_children rule of the folder's project is left out. Not with global."
+      "description": "Pick the saved filter's objects from the project at this path, such as pns/hooks/, from any folder; the done_children rule of the folder's project is left out. Not with global."
     },
     "meta": {
       "type": "object",
@@ -111,11 +107,6 @@
     {
       "required": [
         "oid"
-      ]
-    },
-    {
-      "required": [
-        "query"
       ]
     },
     {

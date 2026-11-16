@@ -12,7 +12,7 @@ Hooks live in their own files in a `hooks` folder beside them.
 | `done` | A table. |
 | `done.interactive` | `true` makes `dam done` ask about open children and dependencies. |
 | `progress` | `false` hides progress lines unless you give `--progress`. Default: `true`. |
-| `confirm_above` | A whole number. `dam edit`, `done`, `mv` and `rm` with `--query` or `--filter` ask before changing more objects than this. Default: never ask. |
+| `confirm_above` | A whole number. `dam edit`, `done`, `mv` and `rm` with `-` or `--filter` ask before changing more objects than this. Default: never ask. |
 | `project` | A table. |
 | `project.hooks` | `true` turns on the hooks every project ships in `.damhooks/`. See Project hooks. Default: `false`. |
 | `remote` | A table of remotes by name. |

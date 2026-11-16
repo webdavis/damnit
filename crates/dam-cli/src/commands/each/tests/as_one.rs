@@ -14,7 +14,7 @@ fn a_tokens_as_one_run_answers_the_one_set_its_items_wait_in() {
     let (ctx, _) = token_context();
     let out = dam(
         &ctx,
-        &["edit", "--query", "kind:task", "--subject", "x", "--as-one"],
+        &["edit", "--filter", "tasks", "--subject", "x", "--as-one"],
     )
     .unwrap();
     let set = out.data["set"].as_str().expect("the answer names the set");
@@ -37,7 +37,7 @@ pub(super) fn a_waiting_set() -> (Context, String, String) {
     ctx.access = holding(&[Permission::TaskRead, Permission::TaskChange]);
     let out = dam(
         &ctx,
-        &["edit", "--query", "kind:task", "--subject", "x", "--as-one"],
+        &["edit", "--filter", "tasks", "--subject", "x", "--as-one"],
     )
     .unwrap();
     let set = out.data["set"].as_str().unwrap().to_string();

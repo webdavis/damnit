@@ -34,9 +34,10 @@ token is checked on the full path; `--global`, or `"global": true` in a request,
 the root, and `--project <path>`, or `"project"` in a request, starts it from that path from any
 folder. A missing task for that path is created first; that needs `task:create` there, and the
 answer carries `project_created`. The path `dam mv` moves objects to starts from the project the
-same way. Inside a project, `--query` and `--filter` on `dam edit`, `dam done`, `dam mv` and
-`dam rm` pick only the project's tasks the token sees, as `dam list` lists them; `--global`, or
-`"global": true` in a request, picks from every task. Oids, typed or piped in, are never narrowed. `dam list`, `dam agenda` and `dam reminders` there list only what the token sees under the
+same way. Inside a project, `--filter` on `dam edit`, `dam done`, `dam mv` and `dam rm` picks
+only the project's tasks the token sees, as `dam list` lists them; `--global`, or
+`"global": true` in a request, picks from every task. Oids, typed or piped in, are never narrowed.
+`dam list`, `dam agenda` and `dam reminders` there list only what the token sees under the
 project. `dam config list -o json` carries every setting the project's `.dam.lua` holds under
 `project`, as the file sets it.
 
@@ -174,10 +175,11 @@ A token cannot run `dam mv`, `dam done --force`, or `dam edit --focus`. Each exi
 open children, never what a token may do.
 
 `dam edit`, `dam done` and `dam rm` also take several oids, `-` for the ids `dam list` prints, read
-from standard input, `--query TEXT` or `--filter NAME`. The set holds only the objects your grants let you see, and each change waits as its own item. Add
+from standard input, or `--filter NAME`. The set holds only the objects your grants let you see,
+and each change waits as its own item. Ids from `-` are a set even when one comes in. Add
 `--preview` to see the changes without sending anything, then run again with `--expect N` so the run
-refuses if the set changed since. A request carries `oid` as a string or an array, or `query` or
-`filter`, beside `preview` and `expect`. The answer is `changes.schema.json`: `count` and `oids` are
+refuses if the set changed since. A request carries `oid` as a string or an array, or `filter`,
+beside `preview` and `expect`. The answer is `changes.schema.json`: `count` and `oids` are
 the set, and each change in `changes` carries its `item` and `answer`. `dam new --preview` answers
 the same document for the item it would send, and sends nothing.
 

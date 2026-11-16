@@ -26,7 +26,7 @@ fn edit_refuses_a_second_label_of_a_projects_exclusive_category() {
     assert!(refused.is_err());
     let ctx = holding_a_project_and_more();
     labelled_review(&ctx, "readme");
-    let words = ["edit", "--query", "kind:task", "--labels", "ship"];
+    let words = ["edit", "--filter", "tasks", "--labels", "ship"];
     assert!(run(ctx, &words, with_stage()).is_err());
 }
 

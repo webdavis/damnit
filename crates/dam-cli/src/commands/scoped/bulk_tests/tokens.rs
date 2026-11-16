@@ -23,7 +23,7 @@ fn a_token_picks_only_what_it_sees_within_the_project() {
         ),
     ] {
         for verb in [&["done"][..], &["edit", "--subject", "x"][..], &["rm"][..]] {
-            let picked = picked(token_over(paths), verb, &["--query", "kind:task"], inside());
+            let picked = picked(token_over(paths), verb, &["--filter", "tasks"], inside());
             assert_eq!(picked, expected, "dam {verb:?} over {paths:?}");
         }
     }
