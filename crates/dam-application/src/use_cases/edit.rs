@@ -45,7 +45,7 @@ impl Dam<'_> {
         {
             return Err(no_such_object(event).into());
         }
-        refuse_losing_a_held_folder(self.store, &current, &next)?;
+        self.unless_it_names_the_unseen(refuse_losing_a_held_folder(self.store, &current, &next))?;
         self.put_or_send(Permission::change(current.kind()), Some(&current), next)
     }
 }
