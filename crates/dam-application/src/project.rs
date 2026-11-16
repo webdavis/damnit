@@ -20,6 +20,7 @@ pub struct ProjectSettings {
     pub filters: Vec<FilterConfig>,
     pub categories: Categories,
     pub sections: Vec<String>,
+    pub branch_label: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

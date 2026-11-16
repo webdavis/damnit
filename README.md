@@ -358,6 +358,10 @@ only your `config.lua`.
 and keeps to yours. A project category that shares a name or a label with one of yours refuses the
 file. A query in `.dam.lua` may name only the project's own categories.
 `sections = { "bugs", "features" }` names standard sections that `dam init` creates under the path.
+With `branch_label = true`, `dam new` adds the checked-out git branch's name to the new task's
+labels, beside the ones from `--labels`, a template or the project's defaults. A detached head or no
+repository adds nothing, and a branch name that is not a usable label adds nothing and prints one
+warning.
 With
 `minimum_dam = "0.3.0"` an older `dam` refuses the file and names the version it needs.
 

@@ -2,6 +2,7 @@ mod background;
 mod cancel;
 mod clock;
 mod day_doc;
+mod git_branch;
 mod helper_process;
 mod lua_config;
 mod object_document;
@@ -18,6 +19,7 @@ pub use cancel::{Interrupt, catch_interrupts};
 pub use clock::SystemClock;
 pub use dam_protocol::{WireAttendee, WireConference, WirePerson};
 pub use day_doc::{DayDoc, TaskStateDoc, day_from_doc, day_to_doc};
+pub use git_branch::checked_out_branch;
 pub use helper_process::ProcessLauncher;
 pub use lua_config::{
     FileSystemProjectFolders, FileSystemTemplates, LuaConfigFile, STARTER_CONFIG, history_document,

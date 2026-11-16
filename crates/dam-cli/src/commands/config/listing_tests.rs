@@ -114,6 +114,7 @@ fn inside_a_project_the_list_shows_every_project_setting_marked_as_the_projects(
             }])
             .unwrap(),
             sections: vec!["bugs".into(), "features".into()],
+            branch_label: true,
         },
     }));
     let listed = run(&file, &inside).unwrap();
@@ -129,6 +130,7 @@ fn inside_a_project_the_list_shows_every_project_setting_marked_as_the_projects(
     assert_eq!(project["category"]["area"]["values"][1], "db");
     assert_eq!(project["category"]["area"]["exclusive"], true);
     assert_eq!(project["sections"][1], "features");
+    assert_eq!(project["branch_label"], true);
     for row in [
         "0.2.0 (from the project)",
         "cli (from the project)",

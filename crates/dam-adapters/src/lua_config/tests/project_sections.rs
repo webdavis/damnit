@@ -29,3 +29,18 @@ fn a_section_that_is_not_one_path_segment_is_refused_naming_only_the_file() {
         );
     }
 }
+
+#[test]
+fn branch_label_is_read_and_a_wrong_type_is_refused_naming_only_the_file() {
+    let folder = ProjectFolder::with("return { path = 'a/', branch_label = true }");
+    assert!(folder.read().unwrap().branch_label);
+    let folder = ProjectFolder::with("return { path = 'a/', branch_label = 'yes' }");
+    assert_eq!(
+        folder.read(),
+        Err(ConfigError::ProjectRule {
+            file: folder.file(),
+            key: "branch_label",
+            fault: ProjectRuleFault::Shape,
+        })
+    );
+}
