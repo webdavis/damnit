@@ -118,6 +118,8 @@ pulls from one remote, then pushes its committed changes. A conflict is left for
 defaults to `15m` and is at least `1m`; `allowed = false` keeps it from ever starting. Nothing
 syncs by itself.
 `dam sync run` ignores `allowed`. `docs/schemas/sync-run.schema.json` is its `--json` schema.
+`dam sync run todoist --when-due` syncs only when `interval` has passed since the last sync, and
+never when `allowed = false`; otherwise it prints nothing. `--interval 5m` replaces `interval`.
 
 ## Google Calendar
 

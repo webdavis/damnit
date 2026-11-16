@@ -41,6 +41,19 @@ pub(crate) struct Report {
     pub(crate) standard_error_lines: Vec<String>,
 }
 
+impl Report {
+    pub(crate) fn nothing() -> Report {
+        Report {
+            human: String::new(),
+            data: serde_json::Value::Null,
+            cut: Vec::new(),
+            tints: Vec::new(),
+            colored: None,
+            standard_error_lines: Vec::new(),
+        }
+    }
+}
+
 pub(crate) fn render(format: Format, report: &Report) -> Result<String, CliError> {
     match format {
         Format::Human => Ok(report.human.clone()),
@@ -105,7 +118,7 @@ pub(crate) fn shown(
     width: Option<usize>,
     report: &Report,
 ) -> Result<Option<String>, CliError> {
-    if format == Format::Quiet {
+    if format == Format::Quiet || report.data.is_null() {
         return Ok(None);
     }
     let text = match (format, width) {

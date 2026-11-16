@@ -1,4 +1,7 @@
+use std::time::Duration;
+
 use clap::{Args, Subcommand};
+use dam_application::{ConfiguredDuration, RemoteSync};
 
 #[derive(Args, Debug)]
 pub(crate) struct RemoteArgs {
@@ -35,11 +38,24 @@ and the push goes on past it.
 
 Examples:
   dam sync run todoist
-  dam sync run todoist --json"
+  dam sync run todoist --json
+  dam sync run todoist --when-due"
     )]
     Run {
         #[arg(help = "Sync this remote")]
         remote: String,
+        #[arg(
+            long,
+            help = "Sync only when the interval has passed since the last sync; otherwise do nothing"
+        )]
+        when_due: bool,
+        #[arg(
+            long,
+            requires = "when_due",
+            value_parser = interval_of_at_least_a_minute,
+            help = "Use this interval in place of remote.<name>.sync.interval, such as 5m"
+        )]
+        interval: Option<Duration>,
     },
 }
 
@@ -71,3 +87,18 @@ pub(crate) struct Side {
     #[arg(long, help = "Keep the remote's side")]
     pub(crate) theirs: bool,
 }
+
+pub(crate) fn interval_of_at_least_a_minute(text: &str) -> Result<Duration, String> {
+    ConfiguredDuration::parse(text)
+        .map(|d| d.value)
+        .filter(|d| *d >= RemoteSync::FLOOR)
+        .ok_or_else(|| {
+            format!(
+                "give a whole number and s, m or h of at least {}, such as 5m",
+                RemoteSync::FLOOR_TEXT
+            )
+        })
+}
+
+#[cfg(test)]
+mod tests;
