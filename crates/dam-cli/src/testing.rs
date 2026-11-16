@@ -16,9 +16,11 @@ use crate::progress::{ProgressOnStandardError, Shown};
 
 mod config_file;
 mod remote_helpers;
+mod scheduler;
 mod scripted;
 pub(crate) use config_file::FakeConfigFile;
 pub(crate) use remote_helpers::{EchoLauncher, MissingCredentials};
+pub(crate) use scheduler::RecordingScheduler;
 pub(crate) use scripted::{Save, ScriptedEditor, ScriptedPrompt};
 
 pub(crate) fn context() -> Context {
@@ -57,6 +59,13 @@ pub(crate) fn context() -> Context {
         interrupt: Interrupt::default(),
         progress: ProgressOnStandardError::new(Shown::Hidden, Format::Json),
         hook_warnings: HookWarningsOnStandardError::for_format(Format::Json),
+        background: Box::new(RecordingScheduler::default()),
+        invocation: dam_application::Invocation {
+            dam: "/opt/dam/bin/dam".into(),
+            config: "/home/someone/config.lua".into(),
+            store: "/home/someone/dam.db".into(),
+            search_path: "/usr/bin:/bin".into(),
+        },
     }
 }
 

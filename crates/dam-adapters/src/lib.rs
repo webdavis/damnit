@@ -11,7 +11,7 @@ mod random;
 mod sqlite;
 mod wire;
 
-pub use background::launchd_background_sync;
+pub use background::{background_sync_for_store, no_background_sync};
 pub use cancel::{Interrupt, catch_interrupts};
 pub use clock::SystemClock;
 pub use dam_protocol::{WireAttendee, WireConference, WirePerson};

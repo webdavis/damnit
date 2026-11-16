@@ -13,6 +13,7 @@ impl Refusal {
             Refusal::AmbiguousPrefix { .. } => "ambiguous_prefix",
             Refusal::NoSuchRemote(_) => "no_such_remote",
             Refusal::RemoteExists(_) => "remote_exists",
+            Refusal::SyncNotAllowed(_) => "sync_not_allowed",
             Refusal::NotATask(_) => "not_a_task",
             Refusal::NotAnEvent(_) => "not_an_event",
             Refusal::NotCompleted(_) => "not_completed",

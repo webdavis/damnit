@@ -158,6 +158,20 @@ Examples:
 dam sync run remote: help = Sync this remote
 dam sync run when_due: help = Sync only when the interval has passed since the last sync; otherwise do nothing
 dam sync run interval: help = Use this interval in place of remote.<name>.sync.interval, such as 5m
+dam sync start: about = Sync one remote in the background from now until the next restart
+dam sync start: after_help = Examples:
+  dam sync start todoist
+  dam sync start todoist --interval 5m
+dam sync start remote: help = Sync this remote in the background
+dam sync start interval: help = Sync this often until the next restart in place of remote.<name>.sync.interval, such as 5m
+dam sync stop: about = Stop the background sync of one remote now; a restart starts it again if it is enabled
+dam sync stop remote: help = Stop the background sync of this remote
+dam sync enable: about = Start the background sync of one remote at every login
+dam sync enable remote: help = Sync this remote in the background from the next login
+dam sync enable now: help = Also start it now
+dam sync disable: about = Stop starting the background sync of one remote at login
+dam sync disable remote: help = Do not sync this remote in the background from the next login
+dam sync disable now: help = Also stop it now
 dam token: about = Manage the tokens tools and agents run dam with
 dam token create: about = Make a token with one grant, add it to secrets.lua and print it once
 dam token create name: help = Name the token, such as tool

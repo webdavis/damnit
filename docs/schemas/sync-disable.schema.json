@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/sync-disable.schema.json",
+  "title": "dam sync disable answer",
+  "description": "What dam sync disable prints with --json or --toon: each step taken and whether it changed anything.",
+  "type": "object",
+  "required": [
+    "remote",
+    "interval_seconds",
+    "steps"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "remote": {
+      "type": "string"
+    },
+    "interval_seconds": {
+      "type": "integer",
+      "minimum": 60
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "step",
+          "changed"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "step": {
+            "enum": [
+              "start",
+              "stop",
+              "enable",
+              "disable"
+            ]
+          },
+          "changed": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

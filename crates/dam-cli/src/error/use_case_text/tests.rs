@@ -161,3 +161,20 @@ fn a_computed_credential_that_is_not_a_string_names_what_it_returned() {
         "remote todoist: computing api_token failed at secrets.lua:4: its function returned a number, not a string"
     );
 }
+
+#[test]
+fn a_scheduler_failure_names_what_failed_and_no_scheduler_gives_the_crontab_line() {
+    use dam_application::ScheduleError;
+    assert_eq!(
+        text(UseCaseError::Schedule(ScheduleError::Failed(
+            "launchctl bootout: 5".into()
+        ))),
+        "the scheduler refused the change: launchctl bootout: 5"
+    );
+    let line = "* * * * * /bin/dam sync run todoist --when-due".to_string();
+    let shown = text(UseCaseError::Schedule(ScheduleError::NoScheduler {
+        crontab_line: line.clone(),
+    }));
+    assert!(shown.contains("crontab -e"), "{shown}");
+    assert!(shown.ends_with(&line), "{shown}");
+}

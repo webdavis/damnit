@@ -12,7 +12,7 @@ use hook_samples::hook_samples;
 use item_samples::item_samples;
 use parent_samples::parent_samples;
 
-const HAND_COUNTED_RULES: usize = 53;
+const HAND_COUNTED_RULES: usize = 54;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -69,6 +69,7 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::ParentNotKnown { .. } => 50,
         Refusal::PathOutsideParent { .. } => 51,
         Refusal::SeveralHoldThePath { .. } => 52,
+        Refusal::SyncNotAllowed(_) => 53,
     }
 }
 
@@ -94,6 +95,7 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
         Refusal::NoWorkingObject("abab".into()),
         Refusal::NoSuchRemote("todoist".into()),
         Refusal::RemoteExists("todoist".into()),
+        Refusal::SyncNotAllowed("todoist".into()),
         Refusal::NotATask(oid(1)),
         Refusal::NotAnEvent(oid(1)),
         Refusal::NotCompleted(oid(1)),

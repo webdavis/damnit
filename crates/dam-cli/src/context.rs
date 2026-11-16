@@ -5,17 +5,17 @@ use std::path::Path;
 
 use dam_adapters::{Interrupt, LuaConfigFile, SqliteStore, SystemClock};
 use dam_application::{
-    Access, Clock, Config, ConfigFile, CredentialSource, Dam, FilterFunctions, HelperLauncher,
-    Hooks, LoadedConfig, Randomness, Remotes, SettingsFile, Store,
+    Access, BackgroundSync, Clock, Config, ConfigFile, CredentialSource, Dam, FilterFunctions,
+    HelperLauncher, Hooks, Invocation, LoadedConfig, Randomness, Remotes, SettingsFile, Store,
 };
 
 use crate::caller::{authenticated, caller};
-use crate::editor::{EditorSession, EnvEditor};
+use crate::editor::EditorSession;
 use crate::error::CliError;
 pub(crate) use crate::hook_warnings::HookWarningsOnStandardError;
 use crate::output::Format;
 use crate::progress::{Asked, ProgressOnStandardError, shown};
-use crate::prompt::{Prompt, RefusingPrompt, TerminalPrompt};
+use crate::prompt::Prompt;
 
 pub(crate) struct Context {
     pub(crate) store: Box<dyn Store>,
@@ -36,18 +36,21 @@ pub(crate) struct Context {
     pub(crate) interrupt: Interrupt,
     pub(crate) progress: ProgressOnStandardError,
     pub(crate) hook_warnings: HookWarningsOnStandardError,
+    pub(crate) background: Box<dyn BackgroundSync>,
+    pub(crate) invocation: Invocation,
 }
 
 impl Context {
     pub(crate) fn open(
         config_file: LuaConfigFile,
-        store_path: &Path,
         presented_token: Option<OsString>,
         meta: &BTreeMap<String, String>,
         format: Format,
         asked: Asked,
         interrupt: &Interrupt,
+        invocation: Invocation,
     ) -> Result<Context, CliError> {
+        let store_path = Path::new(&invocation.store);
         let loaded = config_file.load()?;
         let config = loaded.config;
         let now = SystemClock.now();
@@ -64,6 +67,8 @@ impl Context {
             store: Box::new(store),
             access,
             progress,
+            background: dam_adapters::background_sync_for_store(store_path),
+            invocation,
         };
         Ok(Context::assembled(opened, format, interrupt))
     }
@@ -116,23 +121,14 @@ pub(crate) fn progress_for(
     ProgressOnStandardError::new(shown(asked, terminal), format)
 }
 
-pub(crate) fn terminal_pair_for_a_human_and_refusals_for_a_machine(
-    format: Format,
-    interrupt: &Interrupt,
-) -> (Box<dyn Prompt>, Option<Box<dyn EditorSession>>) {
-    match format {
-        Format::Human | Format::Quiet => (
-            Box::new(TerminalPrompt::new(interrupt.clone())),
-            Some(Box::new(EnvEditor::from_env())),
-        ),
-        Format::Json | Format::Toon => (Box::new(RefusingPrompt), None),
-    }
-}
-
 mod changed_by_hook;
 mod edit_requests;
+mod invocation;
 mod reading;
+mod terminal_pair;
 #[cfg(test)]
 mod tests;
 
 pub(crate) use changed_by_hook::ChangedByHook;
+pub(crate) use invocation::invocation_of;
+pub(crate) use terminal_pair::terminal_pair_for_a_human_and_refusals_for_a_machine;

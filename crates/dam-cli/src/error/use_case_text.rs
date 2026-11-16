@@ -1,7 +1,8 @@
 use std::fmt;
 
 use dam_application::{
-    ComputeFailure, CredentialError, HelperError, SHORTEST_OID_PREFIX, StoreError, UseCaseError,
+    ComputeFailure, CredentialError, HelperError, SHORTEST_OID_PREFIX, ScheduleError, StoreError,
+    UseCaseError,
 };
 
 use super::filter_text::FilterText;
@@ -110,6 +111,13 @@ impl fmt::Display for UseCaseText<'_> {
             UseCaseError::Filter(e) => write!(f, "{}", FilterText(e)),
             UseCaseError::Parse(s) => write!(f, "{s}"),
             UseCaseError::Query(e) => write!(f, "{e}"),
+            UseCaseError::Schedule(ScheduleError::Failed(why)) => {
+                write!(f, "the scheduler refused the change: {why}")
+            }
+            UseCaseError::Schedule(ScheduleError::NoScheduler { crontab_line }) => write!(
+                f,
+                "this machine has neither launchd nor systemd; to sync in the background, add this line with crontab -e, and remove it to stop: {crontab_line}"
+            ),
             UseCaseError::NotAnOid(text) => write!(
                 f,
                 "{text:?} is not an oid; give at least {SHORTEST_OID_PREFIX} hex characters"

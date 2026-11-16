@@ -39,6 +39,7 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
         | Refusal::NoWorkingObject(_)
         | Refusal::NoSuchRemote(_)
         | Refusal::RemoteExists(_)
+        | Refusal::SyncNotAllowed(_)
         | Refusal::MissingCredential { .. }
         | Refusal::StaleRemote { .. }
         | Refusal::UnreadableRecurrence { .. }

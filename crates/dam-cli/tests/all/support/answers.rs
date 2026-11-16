@@ -168,6 +168,9 @@ pub fn answers(command: &str) -> Option<Vec<serde_json::Value>> {
         "pull" => vec![json_of(&fixture::committed(), &["pull"])],
         "init" => vec![super::init_answer::init_in_a_folder_of_its_own()],
         "sync run" => vec![json_of(&fixture::committed(), &["sync", "run", "fake"])],
+        "sync start" | "sync stop" | "sync enable" | "sync disable" => {
+            vec![super::background_sync::never_run(command)]
+        }
         "resolve" => vec![json_of(&in_conflict(), &["resolve", &milk, "--theirs"])],
         "token create" => vec![json_of(
             &Sandbox::new(),

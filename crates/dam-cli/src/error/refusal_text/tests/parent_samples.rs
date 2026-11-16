@@ -49,5 +49,9 @@ pub(super) fn parent_refusals_with_their_text() -> Vec<(Refusal, &'static str)> 
             },
             "0101010, 0202020 and 0606060 all hold Home/errands/; name one: dam mv 0303030 --parent 0101010",
         ),
+        (
+            Refusal::SyncNotAllowed("todoist".into()),
+            "remote.todoist.sync.allowed is false; run dam config set remote.todoist.sync.allowed true to allow background sync",
+        ),
     ]
 }
