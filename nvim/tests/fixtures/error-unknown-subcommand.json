@@ -1,0 +1,12 @@
+{
+  "error": {
+    "kind": "usage",
+    "rule": null,
+    "message": "unrecognized subcommand 'nonesuch'",
+    "oids": [],
+    "usage": {
+      "problem": "unknown_subcommand",
+      "word": "nonesuch"
+    }
+  }
+}
