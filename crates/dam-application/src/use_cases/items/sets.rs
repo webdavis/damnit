@@ -21,7 +21,11 @@ impl Dam<'_> {
             .into_iter()
             .filter(|item| item.is_waiting() && item.set.as_ref() == Some(set))
             .collect();
-        if members.is_empty() || !members.iter().all(|item| self.sees_item(item)) {
+        let mut all_seen = true;
+        for item in &members {
+            all_seen &= self.sees_item(item)?;
+        }
+        if members.is_empty() || !all_seen {
             return Err(Refusal::NoSuchObject(set.short().to_string()).into());
         }
         Ok(members)

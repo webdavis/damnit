@@ -1,4 +1,4 @@
-use dam_domain::Permission::{PendingRead, TaskCreate};
+use dam_domain::Permission::{PendingRead, TaskCreate, TaskRead};
 use dam_domain::{Change, Channel, Item, Object, Outcome, Timestamp, Token, TokenAuthor};
 
 use crate::access::Holder;
@@ -53,7 +53,7 @@ fn a_token_sees_its_own_waiting_items_and_others_only_with_pending_read() {
     );
     let reviewer = Holder {
         name: "claude".into(),
-        ..holder(vec![allowed(&[PendingRead], Some(&["work"]))])
+        ..holder(vec![allowed(&[PendingRead, TaskRead], Some(&["work"]))])
     };
     assert_eq!(as_token(&reviewer), ["codex"]);
     assert_eq!(hashes(&s.dam()), ["tool", "codex"]);

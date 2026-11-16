@@ -17,7 +17,12 @@ fn dentist_from_tool() -> (Sandbox, String, String) {
 fn a_token_withdraws_its_own_item_and_cannot_remove_another_senders() {
     let _guard = support::guard("a_token_withdraws_its_own_item_and_cannot_remove_another_senders");
     let (sb, held, hash) = dentist_from_tool();
-    let claude = grant_to(&sb, "claude", 2, vec![grant(&["pending:read"])]);
+    let claude = grant_to(
+        &sb,
+        "claude",
+        2,
+        vec![grant(&["pending:read", "task:read"])],
+    );
     assert_eq!(
         refused(&sb.output_holding(&claude, &["rm", &hash, "--json"])),
         "not_your_item"

@@ -604,7 +604,7 @@ The permissions are `task:` and `event:` `read`, `create`, `change`, `move` and 
 | `new`, `edit`, `done` | `task:create` or `event:create`, `task:change` or `event:change`, `task:complete` |
 | `rm` | nothing for its own waiting item; `task:remove` or `event:remove` to send a removal |
 | `status` | nothing for its own items; `stage:read`, `working:read`, `pending:read` and `conflict:read` for the rest, each row only for objects a grant covers |
-| `diff` | `working:read` and `stage:read` |
+| `diff` | `working:read` and `stage:read`; a row only when `task:read` or `event:read` covers every state of its object |
 | `log`, `show <commit>` | `history:read` |
 | `category list`, `filter list` | `config:read` |
 | `remote list`, `pull`, `push` | `remote:read`, `remote:pull`, `remote:push`; `conflict:read` for the count `push` held |
