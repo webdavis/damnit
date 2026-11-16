@@ -40,6 +40,11 @@ impl Dam<'_> {
             }
         }
         object.base_mut().depends = depends;
+        if let Some(parent) = &object.base().parent
+            && self.hides(parent)?
+        {
+            object.base_mut().parent = None;
+        }
         if let Object::Task(task) = &mut object
             && let Some(event) = &task.event
             && self.hides(event)?
