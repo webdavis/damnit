@@ -23,7 +23,7 @@ local M = {}
 ---@field flags? damnit.Flag[] the command's flags; a word at the cursor that begins one is not read yet
 
 ---@class damnit.Prompts
----@field open fun(self, spec: damnit.PromptSpec)
+---@field open fun(self, spec: damnit.PromptSpec): damnit.PromptSession
 
 ---@param queue damnit.Queue
 ---@param say damnit.Say keeps the refusal of a line sent with <CR> for :Dam messages
@@ -63,6 +63,7 @@ local function watched(session)
 end
 
 ---@param spec damnit.PromptSpec
+---@return damnit.PromptSession
 function Prompts:open(spec)
   local buf = vim.api.nvim_create_buf(false, true)
   vim.bo[buf].bufhidden = "wipe"
@@ -90,6 +91,7 @@ function Prompts:open(spec)
     session:changed()
   end
   vim.cmd(spec.after and spec.after ~= "" and "startinsert" or "startinsert!")
+  return session
 end
 
 return M

@@ -107,4 +107,19 @@ return {
     vim.cmd("Dam filter")
     assert(notes[1] and notes[1].text:find(":Dam list", 1, true), vim.inspect(notes))
   end,
+
+  ["the list's first row sits under the bar, not behind it, and moves back up when the bar closes"] = function()
+    filterbar.opened()
+    local list_win = vim.api.nvim_get_current_win()
+    local top = vim.fn.screenpos(list_win, 1, 1).row
+    filterbar.bar("<End> --overdue")
+    prompt.footer_reads("1 row")
+    vim.cmd.redraw()
+    local bar = vim.api.nvim_win_get_config(prompt.window())
+    local first = vim.fn.screenpos(list_win, 1, 1).row
+    assert(first == top + bar.height + 2, ("row 1 at %d, the bar from %d, %d high"):format(first, top, bar.height))
+    prompt.type("<Esc>")
+    vim.cmd.redraw()
+    assert(vim.fn.screenpos(list_win, 1, 1).row == top, vim.fn.screenpos(list_win, 1, 1).row)
+  end,
 }
