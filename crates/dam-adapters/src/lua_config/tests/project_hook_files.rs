@@ -1,6 +1,6 @@
 use dam_application::{History, HookEvent};
 
-use super::filter_support::{FixedHistory, every_field_task};
+use super::filter_support::{FixedHistory, every_field_task, handed};
 use super::support::Folder;
 use crate::ProjectHookFolder;
 
@@ -38,7 +38,11 @@ fn a_failing_projects_hook_names_its_file_under_damhooks() {
     let histories = FixedHistory(History::Recorded(vec![]));
     let failure = loaded
         .run
-        .run(HookEvent::TaskDone, &every_field_task(), &histories)
+        .run(
+            HookEvent::TaskDone,
+            &handed(&every_field_task()),
+            &histories,
+        )
         .unwrap_err();
     assert!(
         failure.file.ends_with("app/.damhooks/task_done.lua"),
@@ -59,7 +63,11 @@ fn an_edit_request_from_a_projects_hook_names_its_file_under_damhooks() {
     let histories = FixedHistory(History::Recorded(vec![]));
     let request = loaded
         .run
-        .run(HookEvent::TaskDone, &every_field_task(), &histories)
+        .run(
+            HookEvent::TaskDone,
+            &handed(&every_field_task()),
+            &histories,
+        )
         .unwrap()
         .unwrap();
     assert!(

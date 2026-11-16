@@ -1,6 +1,7 @@
 use super::edits::requesting;
 use super::*;
 use crate::errors::UseCaseError;
+use crate::ports::Handed;
 use crate::ports::{
     CommitRepository, EditRequest, FunctionFailure, HelperError, Hooks, Notice, NoticeRepository,
     Pull,
@@ -13,7 +14,7 @@ impl Hooks for PressingCtrlC<'_> {
     fn run(
         &self,
         event: crate::config::HookEvent,
-        task: &Object,
+        task: &Handed,
         histories: &dyn crate::ports::Histories,
     ) -> Result<Option<EditRequest>, FunctionFailure> {
         self.0.fixture.hooks.run(event, task, histories)
@@ -21,8 +22,8 @@ impl Hooks for PressingCtrlC<'_> {
 
     fn pulled(
         &self,
-        task: &Object,
-        before: Option<&Object>,
+        task: &Handed,
+        before: Option<&Handed>,
         pull: &Pull,
     ) -> Result<Option<EditRequest>, FunctionFailure> {
         self.0.fixture.interruption.pressed.set(true);

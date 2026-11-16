@@ -114,7 +114,9 @@ impl Dam<'_> {
         let Some(now) = self.store.get(&task.oid)? else {
             return Ok(Edited::Nothing);
         };
-        match self.hooks.pulled(&now, task.before.as_ref(), pull) {
+        let now = self.handed(now)?;
+        let before = task.before.clone().map(|b| self.handed(b)).transpose()?;
+        match self.hooks.pulled(&now, before.as_ref(), pull) {
             Ok(None) => Ok(Edited::Nothing),
             Ok(Some(request)) => self.hook_edit(&task.oid, &request),
             Err(failure) => Ok(Edited::Failed(failure)),

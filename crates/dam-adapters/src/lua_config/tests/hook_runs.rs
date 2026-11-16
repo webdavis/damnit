@@ -4,7 +4,7 @@ use dam_application::{
     ConfigFile, EditRequest, FunctionFailure, FunctionFault, History, HookEvent,
 };
 
-use super::filter_support::{FixedHistory, every_field_task};
+use super::filter_support::{FixedHistory, every_field_task, handed};
 use super::support::Folder;
 
 const LIMIT: Duration = Duration::from_secs(5);
@@ -16,9 +16,11 @@ fn hooked(task_done: &str) -> Folder {
 fn run_within(folder: &Folder, limit: Duration) -> Result<Option<EditRequest>, FunctionFailure> {
     let loaded = folder.file().limiting_functions_to(limit).load().unwrap();
     let histories = FixedHistory(History::Recorded(vec![]));
-    loaded
-        .hooks
-        .run(HookEvent::TaskDone, &every_field_task(), &histories)
+    loaded.hooks.run(
+        HookEvent::TaskDone,
+        &handed(&every_field_task()),
+        &histories,
+    )
 }
 
 pub(super) fn run(task_done: &str) -> Result<Option<EditRequest>, FunctionFailure> {
@@ -86,4 +88,22 @@ fn a_hook_that_never_returns_is_stopped_at_the_limit() {
     let folder = hooked("function() while true do end end");
     let failure = run_within(&folder, Duration::from_millis(200)).unwrap_err();
     assert_eq!(failure.fault, FunctionFault::RanOver);
+}
+
+#[test]
+fn a_hook_is_handed_category_overdue_and_blocked_as_match_is() {
+    let folder = Folder::new();
+    let marker = folder.marker();
+    let folder = folder.with_hook(
+        "task_done.lua",
+        &format!(
+            "return function(task, dam)\n  \
+           local file = io.open({marker:?}, 'w')\n  \
+           file:write(type(task.category), ' ', tostring(task.overdue), ' ', tostring(task.blocked))\n  \
+           file:close()\n\
+         end\n"
+        ),
+    );
+    assert_eq!(run_within(&folder, LIMIT), Ok(None));
+    assert_eq!(std::fs::read_to_string(marker).unwrap(), "table true false");
 }

@@ -1,11 +1,11 @@
 use std::cell::RefCell;
 
-use dam_domain::{Object, Oid};
+use dam_domain::{Oid, WorkedOut};
 
 use crate::config::HookEvent;
 use crate::errors::Refusal;
 use crate::ports::{
-    EditRequest, EditRequests, FunctionFailure, Histories, History, HookEdits, HookFailure,
+    EditRequest, EditRequests, FunctionFailure, Handed, Histories, History, HookEdits, HookFailure,
     HookWarnings, Hooks, Pull,
 };
 use crate::use_cases::edit::EditFields;
@@ -18,6 +18,7 @@ pub struct FakeHooks {
     pub ran: RefCell<Vec<(HookEvent, String)>>,
     pub histories: RefCell<Vec<History>>,
     pub pulled: RefCell<Vec<(String, Option<String>, Pull)>>,
+    pub handed: RefCell<Vec<WorkedOut>>,
 }
 
 impl FakeHooks {
@@ -30,9 +31,11 @@ impl Hooks for FakeHooks {
     fn run(
         &self,
         event: HookEvent,
-        task: &Object,
+        task: &Handed,
         histories: &dyn Histories,
     ) -> Result<Option<EditRequest>, FunctionFailure> {
+        self.handed.borrow_mut().push(task.worked_out.clone());
+        let task = &task.object;
         self.ran
             .borrow_mut()
             .push((event, task.base().subject.clone()));
@@ -42,11 +45,12 @@ impl Hooks for FakeHooks {
 
     fn pulled(
         &self,
-        task: &Object,
-        before: Option<&Object>,
+        task: &Handed,
+        before: Option<&Handed>,
         pull: &Pull,
     ) -> Result<Option<EditRequest>, FunctionFailure> {
-        let subject = |object: &Object| object.base().subject.clone();
+        self.handed.borrow_mut().push(task.worked_out.clone());
+        let subject = |handed: &Handed| handed.object.base().subject.clone();
         self.pulled
             .borrow_mut()
             .push((subject(task), before.map(subject), pull.clone()));

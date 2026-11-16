@@ -62,6 +62,7 @@ impl Dam<'_> {
         let Some(hook) = self.config.hook(event) else {
             return Ok(());
         };
+        let task = self.handed(task)?;
         let histories = LogByObject::new(self);
         let step = Step {
             name: event.as_str(),
@@ -75,11 +76,11 @@ impl Dam<'_> {
         histories.unread()?;
         let failure = match ran {
             Ok(None) => return Ok(()),
-            Ok(Some(request)) => match self.hook_edit(task.oid(), &request)? {
+            Ok(Some(request)) => match self.hook_edit(task.object.oid(), &request)? {
                 Edited::Nothing => return Ok(()),
                 Edited::Changed => {
-                    self.store.mark_hooked(task.oid(), event)?;
-                    self.hook_edits.edited(event, task.oid());
+                    self.store.mark_hooked(task.object.oid(), event)?;
+                    self.hook_edits.edited(event, task.object.oid());
                     return Ok(());
                 }
                 Edited::Failed(failure) => failure,

@@ -1,10 +1,10 @@
 use std::path::PathBuf;
 
-use dam_domain::{Object, Oid};
+use dam_domain::Oid;
 
 use crate::config::HookEvent;
 use crate::errors::Refusal;
-use crate::ports::{FunctionFailure, FunctionFault, Histories, Pull};
+use crate::ports::{FunctionFailure, FunctionFault, Handed, Histories, Pull};
 use crate::use_cases::edit::EditFields;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -34,14 +34,14 @@ pub trait Hooks {
     fn run(
         &self,
         event: HookEvent,
-        task: &Object,
+        task: &Handed,
         histories: &dyn Histories,
     ) -> Result<Option<EditRequest>, FunctionFailure>;
 
     fn pulled(
         &self,
-        task: &Object,
-        before: Option<&Object>,
+        task: &Handed,
+        before: Option<&Handed>,
         pull: &Pull,
     ) -> Result<Option<EditRequest>, FunctionFailure>;
 }
