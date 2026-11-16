@@ -25,6 +25,9 @@
     "category": { "$ref": "#/$defs/category" },
     "overdue": { "type": "boolean", "description": "A task that is not done and was due before today, as dam list --overdue selects it. dam list, dam show, dam new and dam edit carry it on every task." },
     "blocked": { "type": "boolean", "description": "A task that waits on a task not done that the reader may see, as dam list --blocked selects it. dam list carries it on every task; the commands that print one object leave it out." },
+    "days_until_due": { "type": "integer", "description": "Whole days from today to the day of the task's due, in the person's zone: 0 today, 1 tomorrow, negative once past. dam list, dam show, dam new and dam edit carry it on every task with a due, done or not." },
+    "days_until_deadline": { "type": "integer", "description": "Whole days from today to the task's deadline, counted as days_until_due is. dam list, dam show, dam new and dam edit carry it on every task with a deadline." },
+    "children_open": { "type": "integer", "minimum": 0, "description": "How many of the object's children are tasks not done that the reader may see, counted in the whole store whatever the filter lists. dam list carries it on every object, 0 when none; the commands that print one object leave it out." },
     "task": { "$ref": "#/$defs/task" },
     "event": { "$ref": "#/$defs/event" }
   },

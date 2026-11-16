@@ -3,6 +3,7 @@ mod authors;
 mod categories;
 mod chains;
 mod dates;
+mod days_and_children;
 mod defaults;
 mod equivalence;
 mod fake;

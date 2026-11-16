@@ -138,3 +138,12 @@ fn writing_to_the_task_changes_nothing_damnit_holds() {
     );
     assert_eq!(second_sees_a_fresh_copy.unwrap(), [true, true]);
 }
+
+#[test]
+fn match_is_handed_the_days_until_due_and_deadline_and_the_open_children() {
+    let kept = run_filter(
+        "        return task.days_until_due == -2 and task.days_until_deadline == 3 and task.children_open == 0",
+        &[every_field_task()],
+    );
+    assert_eq!(kept.unwrap(), [true]);
+}

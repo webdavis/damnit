@@ -10,4 +10,5 @@ pub trait Context {
     fn lists(&self, filter: &str, oid: &Oid) -> bool;
     fn has_event_on(&self, filter: &str, day: Date) -> bool;
     fn author(&self, oid: &Oid) -> &str;
+    fn open_children(&self, parent: &Oid) -> usize;
 }

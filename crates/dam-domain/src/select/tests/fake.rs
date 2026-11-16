@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use jiff::Zoned;
 
-use crate::select::Context;
+use crate::select::{Context, OpenChildren};
 use crate::{Categories, Date, Oid};
 
 pub struct Fake {
@@ -13,6 +13,7 @@ pub struct Fake {
     pub selected: BTreeMap<String, BTreeSet<Oid>>,
     pub event_days: BTreeMap<String, BTreeSet<Date>>,
     pub authors: BTreeMap<Oid, String>,
+    pub children: OpenChildren,
 }
 
 impl Fake {
@@ -25,6 +26,7 @@ impl Fake {
             selected: BTreeMap::new(),
             event_days: BTreeMap::new(),
             authors: BTreeMap::new(),
+            children: OpenChildren::default(),
         }
     }
 }
@@ -58,5 +60,9 @@ impl Context for Fake {
 
     fn author(&self, oid: &Oid) -> &str {
         self.authors.get(oid).map_or("owner", String::as_str)
+    }
+
+    fn open_children(&self, parent: &Oid) -> usize {
+        self.children.of_parent(parent)
     }
 }

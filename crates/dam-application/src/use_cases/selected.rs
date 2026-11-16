@@ -114,6 +114,8 @@ impl<'a> Dam<'a> {
 #[cfg(test)]
 mod access_tests;
 #[cfg(test)]
+mod children_tests;
+#[cfg(test)]
 mod defaults_once_tests;
 #[cfg(test)]
 mod event_days_tests;

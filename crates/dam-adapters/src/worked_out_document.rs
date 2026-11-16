@@ -13,6 +13,17 @@ pub fn stamp_worked_out(row: &mut Value, worked: &WorkedOut) {
             row.insert(key.into(), yes.into());
         }
     }
+    for (key, days) in [
+        ("days_until_due", worked.days_until_due),
+        ("days_until_deadline", worked.days_until_deadline),
+    ] {
+        if let Some(days) = days {
+            row.insert(key.into(), days.into());
+        }
+    }
+    if let Some(open) = worked.children_open {
+        row.insert("children_open".into(), open.into());
+    }
 }
 
 pub fn category_document(groups: &BTreeMap<String, Vec<String>>) -> Value {

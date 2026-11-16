@@ -3,13 +3,16 @@ use std::collections::BTreeMap;
 use super::Context;
 use super::fields::select_field;
 use super::values::{Item, Values};
-use crate::Object;
+use crate::{Date, Object};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct WorkedOut {
     pub category: BTreeMap<String, Vec<String>>,
     pub overdue: Option<bool>,
     pub blocked: Option<bool>,
+    pub days_until_due: Option<i32>,
+    pub days_until_deadline: Option<i32>,
+    pub children_open: Option<usize>,
 }
 
 pub fn worked_out(object: &Object, context: &dyn Context) -> WorkedOut {
@@ -17,7 +20,23 @@ pub fn worked_out(object: &Object, context: &dyn Context) -> WorkedOut {
         category: category(object, context),
         overdue: yes_or_no("overdue", object, context),
         blocked: yes_or_no("blocked", object, context),
+        days_until_due: object
+            .as_task()
+            .and_then(|t| days_until(t.due.as_ref()?.day_in(context.now().time_zone()), context)),
+        days_until_deadline: object
+            .as_task()
+            .and_then(|t| days_until(t.deadline?, context)),
+        children_open: Some(context.open_children(object.oid())),
     }
+}
+
+fn days_until(day: Date, context: &dyn Context) -> Option<i32> {
+    context
+        .now()
+        .date()
+        .until(day)
+        .ok()
+        .map(|span| span.get_days())
 }
 
 fn read(key: &str, object: &Object, context: &dyn Context) -> Vec<Item> {

@@ -17,7 +17,8 @@
       "details": null,
       "category": {},
       "overdue": false,
-      "blocked": false
+      "blocked": false,
+      "children_open": 0
     },
     {
       "oid": "1111111111111111111111111111111111111111",
@@ -41,7 +42,9 @@
         "context": "errand"
       },
       "overdue": true,
-      "blocked": false
+      "blocked": false,
+      "days_until_due": "<days>",
+      "children_open": 1
     },
     {
       "oid": "<id-1>",
@@ -61,7 +64,8 @@
       "details": null,
       "category": {},
       "overdue": false,
-      "blocked": false
+      "blocked": false,
+      "children_open": 0
     }
   ]
 }

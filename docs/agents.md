@@ -274,8 +274,12 @@ dam reminders -o json
 `not:NAME` lists the rest. Each `dam list -o json` row carries `category`, each label group it
 holds a label of mapped to that label, and a task's row `overdue` and `blocked`, each true exactly
 when `--category`, `--overdue` or `--blocked` would select it. A task waiting only on tasks the
-token cannot see is not `blocked`. `dam show`, `dam new` and `dam edit` carry `category` and
-`overdue` but not `blocked`. A grant with `--own` lists only events the token made. Each `dam agenda -o json` row carries
+token cannot see is not `blocked`. A task's row carries `days_until_due` and `days_until_deadline`,
+whole days from today in the person's zone, negative once past, and every row carries
+`children_open`, its children that are tasks not done, counted whatever the filter lists; a child the
+token cannot see is not counted. The day counts and `children_open` cannot be selected or sorted by. `dam show`,
+`dam new` and `dam edit` carry `category`, `overdue` and the two day counts, but not `blocked` or
+`children_open`. A grant with `--own` lists only events the token made. Each `dam agenda -o json` row carries
 the event's `category` and `attendees`, and its `organizer`, `location` and `conference` when it has them. An
 object outside the token's grants answers like a missing one: left out of lists, and exit 4, rule
 `no_such_object`, when named.

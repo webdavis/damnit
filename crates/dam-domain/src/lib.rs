@@ -51,9 +51,9 @@ pub use query::query_table;
 pub use recurrence::{Anchor, Freq, Recurrence, Rule, RuleError, roll_forward};
 pub use select::{
     Command, Condition, Context, DateTest, DefaultsError, FieldType, Filter, FilterError,
-    FilterTable, Fix, Has, Holds, NameFault, Order, Problem, Scope, SelectField, Sort, TableValue,
-    WindowEdge, WorkedOut, chain_to_itself, closest_field, date_to_set, date_to_set_shapes,
-    filter_name_fault, scope, select_field, select_fields, worked_out,
+    FilterTable, Fix, Has, Holds, NameFault, OpenChildren, Order, Problem, Scope, SelectField,
+    Sort, TableValue, WindowEdge, WorkedOut, chain_to_itself, closest_field, date_to_set,
+    date_to_set_shapes, filter_name_fault, scope, select_field, select_fields, worked_out,
 };
 pub use weekday::{parse_weekday, weekday_text};
 pub use when::{Date, Timestamp, When, WhenError};

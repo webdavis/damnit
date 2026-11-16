@@ -25,7 +25,8 @@
       },
       "category": {},
       "overdue": false,
-      "blocked": false
+      "blocked": false,
+      "children_open": 0
     },
     {
       "oid": "1111111111111111111111111111111111111111",
@@ -57,7 +58,9 @@
         "context": "errand"
       },
       "overdue": true,
-      "blocked": false
+      "blocked": false,
+      "days_until_due": "<days>",
+      "children_open": 0
     },
     {
       "oid": "4444444444444444444444444444444444444444",
@@ -92,7 +95,8 @@
       },
       "category": {
         "effort": "deep"
-      }
+      },
+      "children_open": 0
     },
     {
       "oid": "3333333333333333333333333333333333333333",
@@ -123,7 +127,8 @@
         "at": "<now>",
         "channel": "local"
       },
-      "category": {}
+      "category": {},
+      "children_open": 0
     }
   ]
 }

@@ -1,4 +1,4 @@
-use dam_domain::Oid;
+use dam_domain::{Oid, OpenChildren};
 
 use super::edit_request::Edited;
 use super::run_time::RunTime;
@@ -44,11 +44,12 @@ impl Dam<'_> {
             unit: "tasks",
             total: Some(listed.len()),
         });
+        let children = self.open_children()?;
         for (looked_at, oid) in listed.iter().enumerate() {
             if run_time.ran_out() || self.interruption.requested() {
                 break;
             }
-            if let Some(called) = self.listed_hook_on(hook, oid)? {
+            if let Some(called) = self.listed_hook_on(hook, oid, &children)? {
                 self.count(&mut run, oid, called)?;
             }
             progress.advance(looked_at + 1);
@@ -89,11 +90,16 @@ impl Dam<'_> {
         Ok(())
     }
 
-    fn listed_hook_on(&self, hook: HookEvent, oid: &Oid) -> Result<Option<Edited>, UseCaseError> {
+    fn listed_hook_on(
+        &self,
+        hook: HookEvent,
+        oid: &Oid,
+        children: &OpenChildren,
+    ) -> Result<Option<Edited>, UseCaseError> {
         let Some(task) = self.store.get(oid)? else {
             return Ok(Some(Edited::Nothing));
         };
-        let task = self.handed(task)?;
+        let task = self.handed(task, children)?;
         let answer = match hook {
             HookEvent::TaskPulled => {
                 let Some(remote) = self.tracking_remote(oid)? else {

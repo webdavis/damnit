@@ -1,6 +1,8 @@
 use std::collections::BTreeSet;
 
-use dam_domain::{Categories, Context, Date, Object, Oid, Path, WorkedOut, worked_out};
+use dam_domain::{
+    Categories, Context, Date, Object, Oid, OpenChildren, Path, WorkedOut, worked_out,
+};
 use jiff::Zoned;
 
 use crate::errors::UseCaseError;
@@ -11,6 +13,7 @@ struct Worked<'a> {
     now: &'a Zoned,
     categories: &'a Categories,
     open: &'a BTreeSet<Oid>,
+    children: &'a OpenChildren,
     owner: &'a str,
 }
 
@@ -42,17 +45,31 @@ impl Context for Worked<'_> {
     fn author(&self, _: &Oid) -> &str {
         self.owner
     }
+
+    fn open_children(&self, parent: &Oid) -> usize {
+        self.children.of_parent(parent)
+    }
 }
 
 impl Dam<'_> {
     pub fn worked_out_from_object(&self, object: &Object) -> WorkedOut {
         WorkedOut {
             blocked: None,
-            ..self.worked_out_among(object, &BTreeSet::new())
+            children_open: None,
+            ..self.worked_out_among(object, &BTreeSet::new(), &OpenChildren::default())
         }
     }
 
-    pub(crate) fn handed(&self, object: Object) -> Result<Handed, UseCaseError> {
+    pub(crate) fn open_children(&self) -> Result<OpenChildren, UseCaseError> {
+        let seen = self.seen_within(&Path::root())?;
+        Ok(OpenChildren::of(seen.iter().filter_map(Object::as_task)))
+    }
+
+    pub(crate) fn handed(
+        &self,
+        object: Object,
+        children: &OpenChildren,
+    ) -> Result<Handed, UseCaseError> {
         let mut open = BTreeSet::new();
         for dependency in &object.base().depends {
             if let Some(Object::Task(task)) = self.seen_object(dependency)?
@@ -61,7 +78,7 @@ impl Dam<'_> {
                 open.insert(task.base.oid);
             }
         }
-        let worked_out = self.worked_out_among(&object, &open);
+        let worked_out = self.worked_out_among(&object, &open, children);
         Ok(Handed { object, worked_out })
     }
 
@@ -69,19 +86,27 @@ impl Dam<'_> {
         &self,
         objects: &[Object],
     ) -> Result<Vec<WorkedOut>, UseCaseError> {
-        let open = open_tasks(&self.seen_within(&Path::root())?);
+        let seen = self.seen_within(&Path::root())?;
+        let open = open_tasks(&seen);
+        let children = OpenChildren::of(seen.iter().filter_map(Object::as_task));
         Ok(objects
             .iter()
-            .map(|o| self.worked_out_among(o, &open))
+            .map(|o| self.worked_out_among(o, &open, &children))
             .collect())
     }
 
-    fn worked_out_among(&self, object: &Object, open: &BTreeSet<Oid>) -> WorkedOut {
+    fn worked_out_among(
+        &self,
+        object: &Object,
+        open: &BTreeSet<Oid>,
+        children: &OpenChildren,
+    ) -> WorkedOut {
         let now = self.clock.now().to_zoned(self.clock.zone());
         let worked = Worked {
             now: &now,
             categories: self.config.categories_at(&object.base().path),
             open,
+            children,
             owner: self.config.owner_name(),
         };
         worked_out(object, &worked)

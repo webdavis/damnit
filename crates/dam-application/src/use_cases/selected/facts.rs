@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use dam_domain::{Author, Categories, Context, Date, Filter, Object, Oid, Origin};
+use dam_domain::{Author, Categories, Context, Date, Filter, Object, Oid, OpenChildren, Origin};
 use jiff::Zoned;
 
 use super::pulled::{BeyondPulled, Pulled};
@@ -12,6 +12,7 @@ pub(crate) struct Facts<'a> {
     now: Zoned,
     categories: &'a Categories,
     open: BTreeSet<Oid>,
+    children: OpenChildren,
     origins: BTreeMap<Oid, Origin>,
     owner: &'a str,
     saved: Saved,
@@ -36,6 +37,7 @@ impl<'a> Dam<'a> {
             now: self.clock.now().to_zoned(self.clock.zone()),
             categories,
             open,
+            children: OpenChildren::of(seen.iter().filter_map(Object::as_task)),
             origins: self.origins()?,
             owner: self.config.owner_name(),
             saved,
@@ -103,5 +105,9 @@ impl Context for Facts<'_> {
             Some(Author::Token(token)) => &token.name,
             Some(Author::Owner) | None => self.owner,
         }
+    }
+
+    fn open_children(&self, parent: &Oid) -> usize {
+        self.children.of_parent(parent)
     }
 }
