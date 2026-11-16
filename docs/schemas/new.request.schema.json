@@ -21,7 +21,11 @@
     },
     "path": {
       "type": "string",
-      "description": "A path such as work/clients/. Default: the root."
+      "description": "A path such as work/clients/, starting from the project the command runs in. Default: the project, or the root outside one."
+    },
+    "global": {
+      "type": "boolean",
+      "description": "Read path from the root, not from the project the command runs in."
     },
     "parent": {
       "type": "string",

@@ -22,6 +22,7 @@ mod remote;
 mod restore;
 mod revert;
 mod rm;
+pub(crate) mod scoped;
 mod sent;
 mod settled;
 mod show;

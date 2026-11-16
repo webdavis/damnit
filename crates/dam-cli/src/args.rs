@@ -8,6 +8,7 @@ mod new;
 mod planning;
 mod reading;
 mod remotes;
+mod scope;
 mod staging;
 mod test;
 mod tokens;
@@ -29,6 +30,7 @@ pub(crate) use reading::{
 pub(crate) use remotes::{
     PullArgs, PushArgs, RemoteArgs, RemoteCommand, ResolveArgs, SyncArgs, SyncCommand,
 };
+pub(crate) use scope::ScopeArgs;
 pub(crate) use staging::{
     AddArgs, CommitArgs, DiffArgs, ResetArgs, RestoreArgs, RevertArgs, ShowArgs, StatusArgs,
 };

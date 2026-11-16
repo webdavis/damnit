@@ -76,6 +76,8 @@ A project's `.dam.lua` comes with the repository, so dam runs it locked: no `os`
 functions, with a cap on time and memory. It may hold one key, `path`. A key that belongs to a
 person, such as `owner`, `remote` or `token`, is refused; it belongs in `config.lua`.
 
+Inside the folder, `path` is where `dam new` starts a task's `--path`.
+
 ## Filters
 
 A filter takes `query`, `match`, or both. A filter with neither is an error. `dam ls <name>` and

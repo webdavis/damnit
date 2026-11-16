@@ -67,6 +67,10 @@ impl Path {
         Some(Path(format!("{}{rest}", to.0)))
     }
 
+    pub fn under(&self, place: &Path) -> Path {
+        Path(format!("{}{}", place.0, self.0))
+    }
+
     pub fn depth(&self) -> usize {
         self.0.matches('/').count()
     }

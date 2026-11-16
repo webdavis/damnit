@@ -109,3 +109,14 @@ fn rebase_is_none_outside_the_folder_even_when_a_name_shares_its_prefix() {
     let path = Path::parse("ab/c").unwrap();
     assert_eq!(path.rebase(&Path::parse("a").unwrap(), &Path::root()), None);
 }
+
+#[test]
+fn a_path_under_another_starts_from_it() {
+    let project = Path::parse("damnit/").unwrap();
+    assert_eq!(
+        Path::parse("cli/").unwrap().under(&project),
+        Path::parse("damnit/cli/").unwrap()
+    );
+    assert_eq!(Path::root().under(&project), project);
+    assert_eq!(project.under(&Path::root()), project);
+}
