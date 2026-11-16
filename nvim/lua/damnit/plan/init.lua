@@ -60,6 +60,13 @@ end
 ---@return damnit.Feature
 function M.new(app, show)
   local source = { name = "plan", view = SECTIONS, segments = segments, keys = keys(app.say) }
+  app.keys:everywhere({
+    lhs = "gp",
+    desc = "open the week plan",
+    run = function()
+      show(source, vim.fn.getcwd())
+    end,
+  })
   return {
     commands = {
       plan = function(_, cmd)

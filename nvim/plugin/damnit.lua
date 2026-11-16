@@ -1,4 +1,6 @@
 vim.keymap.set("n", "<Plug>(dam-today)", "<Cmd>Dam today<CR>")
+vim.keymap.set("n", "<Plug>(dam-agenda)", "<Cmd>Dam agenda<CR>")
+vim.keymap.set("n", "<Plug>(dam-plan)", "<Cmd>Dam plan<CR>")
 vim.keymap.set("n", "<Plug>(dam-capture)", "<Cmd>Dam capture<CR>")
 vim.keymap.set("x", "<Plug>(dam-capture)", ":Dam capture<CR>", { silent = true })
 
