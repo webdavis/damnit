@@ -17,7 +17,12 @@ pub struct FakeProgress {
 
 impl Progress for FakeProgress {
     fn start(&self, step: Step<'_>) {
-        let started = Said::Started(format!("{} {}", step.doing, step.unit), step.total);
+        let at = step
+            .remote
+            .map(|remote| format!("@{remote}"))
+            .unwrap_or_default();
+        let said = format!("{}{at}: {} {}", step.name, step.doing, step.unit);
+        let started = Said::Started(said, step.total);
         self.said.borrow_mut().push(started);
     }
 

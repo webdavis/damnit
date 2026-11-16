@@ -16,6 +16,8 @@ const REDRAW_EVERY: Duration = Duration::from_millis(100);
 const CLEAR_THE_LINE: &str = "\r\x1b[2K";
 
 struct Running {
+    name: String,
+    remote: Option<String>,
     doing: String,
     did: String,
     unit: String,
@@ -29,6 +31,8 @@ impl Running {
     fn said(&self, stage: Stage, format: Format) -> String {
         let seconds = SystemClock.now().duration_since(self.started).as_secs();
         let moment = Moment {
+            name: &self.name,
+            remote: self.remote.as_deref(),
             doing: &self.doing,
             did: &self.did,
             unit: &self.unit,
@@ -110,6 +114,8 @@ impl Progress for ProgressOnStandardError {
         }
         self.finish();
         let running = Running {
+            name: step.name.to_string(),
+            remote: step.remote.map(str::to_string),
             doing: step.doing.to_string(),
             did: step.did.to_string(),
             unit: step.unit.to_string(),

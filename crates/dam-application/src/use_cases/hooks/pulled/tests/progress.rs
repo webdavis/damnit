@@ -34,9 +34,12 @@ fn the_hook_run_is_a_step_counted_task_by_task_that_finishes() {
     assert_eq!(
         said,
         [
-            Said::Started("pulling from todoist ".into(), None),
+            Said::Started("pull@todoist: pulling from todoist ".into(), None),
             Said::Finished,
-            Said::Started("running task_pulled tasks".into(), Some(4)),
+            Said::Started(
+                "task_pulled@todoist: running task_pulled tasks".into(),
+                Some(4)
+            ),
             Said::Advanced(1),
             Said::Advanced(2),
             Said::Advanced(3),

@@ -3,7 +3,7 @@ use crate::remote::PullOutcome;
 use crate::testing::{Said, Scenario, answering, pulling, remotes_launched_by};
 
 fn pulling_from_todoist() -> Said {
-    Said::Started("pulling from todoist ".into(), None)
+    Said::Started("pull@todoist: pulling from todoist ".into(), None)
 }
 
 #[test]

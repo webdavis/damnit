@@ -64,6 +64,8 @@ impl Dam<'_> {
         let owners = self.access.token().is_none();
         let progress = self.shown_progress();
         progress.start(Step {
+            name: HookEvent::TaskPulled.as_str(),
+            remote: Some(&remote.0),
             doing: "running task_pulled",
             did: "ran task_pulled",
             unit: "tasks",

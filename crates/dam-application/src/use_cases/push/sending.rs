@@ -19,6 +19,8 @@ impl Dam<'_> {
             return send_in_waves(helper, removals, mutations, record, progress);
         }
         progress.start(Step {
+            name: "push",
+            remote: Some(&remote.0),
             doing: &format!("sending to {}", remote.0),
             did: &format!("sent to {}", remote.0),
             unit: "changes",

@@ -33,6 +33,8 @@ fn resolved(
         return source.resolve(spec);
     };
     progress.start(Step {
+        name: "credential",
+        remote: Some(&remote.0),
         doing: &format!("reading {} {name} from secrets.lua", remote.0),
         did: &format!("read {} {name} from secrets.lua", remote.0),
         unit: "",

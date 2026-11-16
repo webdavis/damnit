@@ -6,6 +6,8 @@ const SPINNER: [char; 10] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '�
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Moment<'a> {
+    pub(crate) name: &'a str,
+    pub(crate) remote: Option<&'a str>,
     pub(crate) doing: &'a str,
     pub(crate) did: &'a str,
     pub(crate) unit: &'a str,
@@ -60,13 +62,17 @@ fn record(moment: &Moment<'_>, stage: Stage) -> serde_json::Value {
         Stage::Failed => "failed",
         Stage::Started | Stage::Running(_) => "started",
     };
-    json!({
-        "step": moment.doing,
+    let mut record = json!({
+        "step": moment.name,
         "stage": stage,
         "done": moment.done,
         "total": moment.total,
         "seconds": moment.seconds,
-    })
+    });
+    if let Some(remote) = moment.remote {
+        record["remote"] = json!(remote);
+    }
+    record
 }
 
 fn grouped(n: usize) -> String {

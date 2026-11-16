@@ -107,7 +107,10 @@ fn a_credential_computed_by_a_function_is_a_step_and_a_literal_is_not() {
     assert_eq!(
         *progress.said.borrow(),
         [
-            Said::Started("reading todoist api_token from secrets.lua ".into(), None),
+            Said::Started(
+                "credential@todoist: reading todoist api_token from secrets.lua ".into(),
+                None
+            ),
             Said::Finished,
         ]
     );
