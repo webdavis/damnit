@@ -1,0 +1,15 @@
+{
+  "remotes": [
+    {
+      "remote": "fake",
+      "created": 1,
+      "updated": 0,
+      "unchanged": 0,
+      "conflicts": 0,
+      "removed_upstream": 0,
+      "creates_matched": 0,
+      "values_kept": 0,
+      "deletes_confirmed": 0
+    }
+  ]
+}

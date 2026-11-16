@@ -1,0 +1,216 @@
+{
+  "staged": [
+    {
+      "oid": "<id-1>",
+      "op": "create",
+      "fields": [
+        "subject"
+      ],
+      "kind": "task",
+      "subject": "water the plants",
+      "path": "",
+      "labels": [],
+      "done": false,
+      "completed_at": null,
+      "priority": 4,
+      "due": null,
+      "from": null,
+      "key_id": null,
+      "channel": null,
+      "author": "owner",
+      "details": {
+        "meta": {},
+        "host": "<host>",
+        "dir": "<dir>",
+        "repo": null,
+        "branch": null,
+        "at": "<now>",
+        "channel": "local"
+      }
+    }
+  ],
+  "unstaged": [
+    {
+      "oid": "2222222222222222222222222222222222222222",
+      "op": "update",
+      "fields": [
+        "subject"
+      ],
+      "kind": "task",
+      "subject": "call mom back",
+      "path": "",
+      "labels": [],
+      "done": false,
+      "completed_at": null,
+      "priority": 4,
+      "due": null,
+      "from": null,
+      "key_id": null,
+      "channel": null,
+      "author": "owner",
+      "details": null
+    }
+  ],
+  "waiting": [
+    {
+      "hash": "<id-2>",
+      "item": "new",
+      "oid": "<id-2>",
+      "op": "create",
+      "fields": [
+        "subject"
+      ],
+      "kind": "task",
+      "subject": "call the plumber",
+      "path": "",
+      "labels": [],
+      "done": false,
+      "completed_at": null,
+      "priority": 4,
+      "due": null,
+      "from": "tool",
+      "key_id": "BBBBBBBBBBBB",
+      "channel": "local",
+      "author": "tool",
+      "details": {
+        "meta": {},
+        "host": "<host>",
+        "dir": "<dir>",
+        "repo": null,
+        "branch": null,
+        "at": "<now>",
+        "channel": "local"
+      },
+      "created": "<now>",
+      "age": 0
+    }
+  ],
+  "sets": [
+    {
+      "set": "<id-3>",
+      "from": "tool",
+      "count": 2,
+      "created": "<now>",
+      "age": 0,
+      "items": [
+        {
+          "hash": "<id-4>",
+          "item": "change",
+          "oid": "2222222222222222222222222222222222222222",
+          "op": "update",
+          "fields": [
+            "priority"
+          ],
+          "kind": "task",
+          "subject": "call mom",
+          "path": "",
+          "labels": [],
+          "done": false,
+          "completed_at": null,
+          "priority": 1,
+          "due": null,
+          "from": "tool",
+          "key_id": "BBBBBBBBBBBB",
+          "channel": "local",
+          "author": "tool",
+          "details": {
+            "meta": {},
+            "host": "<host>",
+            "dir": "<dir>",
+            "repo": null,
+            "branch": null,
+            "at": "<now>",
+            "channel": "local"
+          },
+          "created": "<now>",
+          "age": 0
+        },
+        {
+          "hash": "<id-5>",
+          "item": "change",
+          "oid": "<id-6>",
+          "op": "update",
+          "fields": [
+            "priority"
+          ],
+          "kind": "task",
+          "subject": "pay rent",
+          "path": "",
+          "labels": [],
+          "done": false,
+          "completed_at": null,
+          "priority": 1,
+          "due": null,
+          "from": "tool",
+          "key_id": "BBBBBBBBBBBB",
+          "channel": "local",
+          "author": "tool",
+          "details": {
+            "meta": {},
+            "host": "<host>",
+            "dir": "<dir>",
+            "repo": null,
+            "branch": null,
+            "at": "<now>",
+            "channel": "local"
+          },
+          "created": "<now>",
+          "age": 0
+        }
+      ]
+    }
+  ],
+  "conflicts": [
+    {
+      "oid": "1111111111111111111111111111111111111111",
+      "remote": "fake",
+      "ours": {
+        "oid": "1111111111111111111111111111111111111111",
+        "kind": "task",
+        "subject": "buy soy milk",
+        "body": "",
+        "path": "home/",
+        "labels": [
+          "errand"
+        ],
+        "depends": [],
+        "reminders": [],
+        "task": {
+          "done": false,
+          "priority": 2,
+          "due": "2026-09-25"
+        }
+      },
+      "theirs": {
+        "oid": "1111111111111111111111111111111111111111",
+        "kind": "task",
+        "subject": "buy rice milk",
+        "body": "",
+        "path": "",
+        "labels": [],
+        "depends": [],
+        "reminders": [],
+        "task": {
+          "done": false,
+          "priority": 4
+        }
+      }
+    }
+  ],
+  "notices": [],
+  "unpushed": [
+    {
+      "remote": "fake",
+      "commits": 2,
+      "commit_ids": [
+        "<id-7>",
+        "<id-8>"
+      ],
+      "oids": [
+        "<id-6>",
+        "1111111111111111111111111111111111111111"
+      ]
+    }
+  ],
+  "warnings": []
+}
