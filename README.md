@@ -808,6 +808,7 @@ waiting item or set and `x` declines it after asking; `c` commits; `P` pushes; `
 opens the task; `r` reads it again. `:Dam commit [message]`, `:Dam push [remote]` and
 `:Dam pull [remote]` do the same from anywhere; `:Dam cancel` stops a slow push or pull. A
 conflict is settled with `dam resolve` in a terminal.
+A push or pull shows each step dam reports as a Neovim progress message while it runs.
 
 With lazy.nvim from a checkout:
 

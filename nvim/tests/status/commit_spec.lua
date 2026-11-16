@@ -51,20 +51,26 @@ return {
     assert(vim.deep_equal(sent, { "commit", "-m", "tidy the week" }), vim.inspect(sent))
   end,
 
-  [":Dam push and :Dam pull name the remote"] = function()
+  [":Dam push and :Dam pull name the remote and show progress"] = function()
     local _, fake = status.defined()
     vim.cmd("Dam push fake")
     vim.cmd("Dam pull fake")
-    assert(vim.deep_equal(status.sent(fake, "push"), { "push", "fake" }), vim.inspect(status.sent(fake, "push")))
-    assert(vim.deep_equal(status.sent(fake, "pull"), { "pull", "fake" }), vim.inspect(status.sent(fake, "pull")))
+    assert(
+      vim.deep_equal(status.sent(fake, "push"), { "push", "fake", "--progress" }),
+      vim.inspect(status.sent(fake, "push"))
+    )
+    assert(
+      vim.deep_equal(status.sent(fake, "pull"), { "pull", "fake", "--progress" }),
+      vim.inspect(status.sent(fake, "pull"))
+    )
   end,
 
-  ["P pushes and F pulls through the queue"] = function()
+  ["P sends dam push --progress and F dam pull --progress through the queue"] = function()
     local _, fake = status.opened()
     cancelled_by_dam_cancel(fake, "P", "push")
     cancelled_by_dam_cancel(fake, "F", "pull")
-    assert(vim.deep_equal(fake.of("push")[1].argv, { "dam", "push", "-o", "json" }))
-    assert(vim.deep_equal(fake.of("pull")[1].argv, { "dam", "pull", "-o", "json" }))
+    assert(vim.deep_equal(fake.of("push")[1].argv, { "dam", "push", "--progress", "-o", "json" }))
+    assert(vim.deep_equal(fake.of("pull")[1].argv, { "dam", "pull", "--progress", "-o", "json" }))
   end,
 
   ["a push says what each remote took"] = function()
