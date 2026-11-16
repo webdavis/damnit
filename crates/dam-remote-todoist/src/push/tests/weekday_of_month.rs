@@ -85,9 +85,15 @@ fn a_change_that_leaves_the_rule_and_due_alone_is_sent() {
 #[test]
 fn a_rule_goes_out_in_todoists_words_or_as_dam_writes_it_starting_on_the_due_date() {
     for (rule, sent) in [
-        ("every week on mon,fri", "every mon, fri starting 4 Dec 2026"),
+        (
+            "every week on mon,fri",
+            "every mon, fri starting 4 Dec 2026",
+        ),
         ("every month on 1,15", "every 1, 15 starting 4 Dec 2026"),
-        ("every 2 weeks on fri", "every other fri starting 4 Dec 2026"),
+        (
+            "every 2 weeks on fri",
+            "every other fri starting 4 Dec 2026",
+        ),
         (
             "every 2 weeks on mon,fri",
             "every 2 weeks on mon,fri starting 4 Dec 2026",

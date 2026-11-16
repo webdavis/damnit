@@ -10,7 +10,11 @@ fn sent_due(op: &str, due: Option<&str>) -> serde_json::Value {
     let api = FakeTodoist::new(sync_body());
     let m = with_fields(mutation(op, 1, remote_id, Some(object)), &["due"]);
     assert!(push(&api, vec![m], &mut |_| {}).unwrap().results[0].ok());
-    let command = if op == "create" { "item_add" } else { "item_update" };
+    let command = if op == "create" {
+        "item_add"
+    } else {
+        "item_update"
+    };
     api.recorded.borrow().command(command)["args"]["due"].clone()
 }
 
