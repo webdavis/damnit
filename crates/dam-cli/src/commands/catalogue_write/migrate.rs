@@ -34,6 +34,7 @@ pub(super) fn migrate(
     report(&Migrated::of(
         &changes,
         config.owner_name(),
+        dam,
         places,
         migration.update_config,
     ))

@@ -305,7 +305,8 @@ of one oid, and change the whole set or nothing:
 are a set even when one comes in; when none come in, nothing changes. `--preview` prints the
 changes and writes nothing; it works on one oid too. `--expect N` refuses, changing nothing, unless
 the set holds N objects. With `-` or `--filter`, `dam mv` takes its path from `--path`. The changes land unstaged, so `dam restore <oid>...` throws them away. The
-answer is `docs/schemas/changes.schema.json`.
+answer is `docs/schemas/changes.schema.json`. Each change carries every field it names in `fields`
+with the value it would have, as `dam show -o json` prints it.
 
 `dam new --preview` answers the same changes document for the one create, and a project task
 `--project` would create, and writes nothing.

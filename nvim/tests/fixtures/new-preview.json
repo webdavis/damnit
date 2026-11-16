@@ -28,7 +28,11 @@
       "key_id": null,
       "channel": null,
       "author": "owner",
-      "details": null
+      "details": null,
+      "parent": null,
+      "category": {
+        "context": "errand"
+      }
     }
   ]
 }

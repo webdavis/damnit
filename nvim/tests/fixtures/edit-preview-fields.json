@@ -1,0 +1,38 @@
+{
+  "preview": true,
+  "count": 1,
+  "oids": [
+    "<id-1>"
+  ],
+  "changes": [
+    {
+      "oid": "<id-1>",
+      "op": "update",
+      "fields": [
+        "labels",
+        "deadline",
+        "estimate"
+      ],
+      "kind": "task",
+      "subject": "pay rent",
+      "path": "",
+      "labels": [
+        "errand"
+      ],
+      "done": false,
+      "completed_at": null,
+      "priority": 4,
+      "due": "2026-09-30",
+      "from": null,
+      "key_id": null,
+      "channel": null,
+      "author": "owner",
+      "details": null,
+      "category": {
+        "context": "errand"
+      },
+      "deadline": "2026-12-04",
+      "estimate": 45
+    }
+  ]
+}

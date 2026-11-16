@@ -180,7 +180,8 @@ and each change waits as its own item. Ids from `-` are a set even when one come
 `--preview` to see the changes without sending anything, then run again with `--expect N` so the run
 refuses if the set changed since. A request carries `oid` as a string or an array, or `filter`,
 beside `preview` and `expect`. The answer is `changes.schema.json`: `count` and `oids` are
-the set, and each change in `changes` carries its `item` and `answer`. `dam new --preview` answers
+the set, and each change in `changes` carries its `item`, its `answer`, and every field it names in
+`fields` with the value it would have, as `dam show -o json` prints it. `dam new --preview` answers
 the same document for the item it would send, and sends nothing.
 
 Add `--as-one` to make the whole set wait as one set of items instead. The answer's `set` is its

@@ -59,7 +59,7 @@ fn selector(ctx: &Context, oids: &[String], set: &SetArgs) -> Result<Selector, C
 }
 
 pub(crate) fn report_set(ctx: &Context, changes: &SetChanges) -> Result<Report, CliError> {
-    report(&SetView::of(changes, ctx.config.owner_name()))
+    report(&SetView::of(changes, ctx.config.owner_name(), &ctx.dam()))
 }
 
 pub(crate) fn report_preview(
@@ -80,6 +80,7 @@ pub(crate) fn report_preview(
     report_set(ctx, &previewed)
 }
 
+mod after_values;
 mod confirm;
 mod view;
 

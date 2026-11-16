@@ -35,6 +35,21 @@ fn every_answer_matches_the_published_changes_schema() {
             &["edit", &oids[0], "--due", "2026-11-20", "--preview"],
         )
         .unwrap(),
+        dam(
+            &ctx,
+            &[
+                "edit",
+                &oids[1],
+                "--estimate",
+                "30",
+                "--deadline",
+                "2026-12-04",
+                "--body",
+                "b",
+                "--preview",
+            ],
+        )
+        .unwrap(),
         dam(&ctx, &["done", "--filter", "garden"]).unwrap(),
         dam(&ctx, &["rm", &oids[0], &oids[1]]).unwrap(),
         dam(
