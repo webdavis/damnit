@@ -12,6 +12,7 @@ function M.setup(opts)
   running = require("damnit.kernel.app").new(options, require("damnit.kernel.process"))
   require("damnit.command").define(running, {
     require("damnit.messages").new(running),
+    require("damnit.list").new(running),
   })
   return running
 end

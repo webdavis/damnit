@@ -1,0 +1,61 @@
+local buffer = require("damnit.list.buffer")
+
+local M = {}
+
+local HIGHLIGHTS = { DamOverdue = "DiagnosticError", DamBlocked = "DiagnosticWarn", DamDone = "Comment" }
+
+---@param app damnit.App
+local function open_task(app)
+  return function(oid)
+    app.say:info((":Dam task %s will open this task once the task buffer is built"):format(oid))
+  end
+end
+
+---@param app damnit.App
+---@return string[]
+local function filter_names(app)
+  local names
+  app.dam:run({ args = { "filter", "list" }, cwd = vim.fn.getcwd(), key = "filter names" }, function(answer)
+    names = answer and vim.tbl_map(function(filter)
+      return filter.name
+    end, answer.filters) or {}
+  end)
+  vim.wait(app.options.timeout_ms, function()
+    return names ~= nil
+  end, 10)
+  return names or {}
+end
+
+---@param app damnit.App
+---@return fun(arglead: string): string[]
+local function view_names(app)
+  return function(arglead)
+    local names = vim.list_extend(vim.tbl_keys(app.options.views), filter_names(app))
+    names = vim.tbl_filter(function(name)
+      return vim.startswith(name, arglead)
+    end, vim.fn.uniq(vim.fn.sort(names)))
+    return names
+  end
+end
+
+---@param app damnit.App
+---@return damnit.Feature
+function M.new(app)
+  for group, link in pairs(HIGHLIGHTS) do
+    vim.api.nvim_set_hl(0, group, { link = link, default = true })
+  end
+  local lists = buffer.new(app, open_task(app))
+  return {
+    open = function(view, cwd, smods)
+      lists:open(view, cwd, smods)
+    end,
+    commands = {
+      list = function(args, cmd)
+        lists:open(args[1], vim.fn.getcwd(), cmd.smods)
+      end,
+    },
+    complete = { list = view_names(app) },
+  }
+end
+
+return M
