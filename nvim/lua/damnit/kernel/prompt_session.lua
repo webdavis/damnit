@@ -38,7 +38,8 @@ function Session:text()
   return table.concat(vim.api.nvim_buf_get_lines(self.buf, 0, -1, false), " ")
 end
 
-function Session:close()
+---@param sent? boolean
+function Session:close(sent)
   if self.closed then
     return
   end
@@ -49,8 +50,14 @@ function Session:close()
   end
   vim.cmd.stopinsert()
   if self.spec.closed then
-    self.spec.closed()
+    self.spec.closed(sent == true)
   end
+end
+
+---@param text string
+---@return boolean
+function Session:blank(text)
+  return vim.trim(text) == "" and not self.spec.reads_blank
 end
 
 function Session:clear()
@@ -64,7 +71,7 @@ function Session:changed()
   end
   local text = self:text()
   local col = vim.api.nvim_win_get_cursor(self.win)[2]
-  if vim.trim(text) == "" or words.unfinished(text, col, self.spec.flags or {}) then
+  if self:blank(text) or words.unfinished(text, col, self.spec.flags or {}) then
     return self:clear()
   end
   self.judge:soon(text)
@@ -73,7 +80,7 @@ end
 ---@param stay boolean
 function Session:submit(stay)
   local text = self:text()
-  if vim.trim(text) == "" then
+  if self:blank(text) then
     return stay or self:close()
   end
   self.judge:now(text, function(refused)
@@ -89,7 +96,7 @@ function Session:submit(stay)
       self:clear()
       self:prefill()
     else
-      self:close()
+      self:close(true)
     end
     self.spec.submit(text)
   end)

@@ -20,6 +20,8 @@ end
 
 local INPUT_HEIGHT = 3
 
+---@alias damnit.Anchor integer|"cursor"|{ top: integer } above a window's bottom line, at the cursor, or over a window's top
+
 local function at_cursor()
   local textoff = vim.fn.getwininfo(vim.api.nvim_get_current_win())[1].textoff
   local below = vim.api.nvim_win_get_height(0) - vim.fn.winline() >= INPUT_HEIGHT
@@ -35,6 +37,10 @@ end
 local function placed(anchor)
   if anchor == "cursor" then
     return at_cursor()
+  end
+  if type(anchor) == "table" and vim.api.nvim_win_is_valid(anchor.top) then
+    local width = math.max(vim.api.nvim_win_get_width(anchor.top) - 2, 20)
+    return { relative = "win", win = anchor.top, anchor = "NW", row = 0, col = 0, width = width }
   end
   if anchor and vim.api.nvim_win_is_valid(anchor) then
     local width = math.max(vim.api.nvim_win_get_width(anchor) - 2, 20)
@@ -54,7 +60,7 @@ end
 
 ---@param buf integer
 ---@param title string
----@param anchor? integer|"cursor"
+---@param anchor? damnit.Anchor
 ---@return integer win
 function M.input(buf, title, anchor)
   return vim.api.nvim_open_win(
