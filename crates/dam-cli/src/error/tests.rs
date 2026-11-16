@@ -1,6 +1,6 @@
 use super::*;
 use crate::editor::EditorError;
-use dam_domain::{Blockers, Oid, QueryError};
+use dam_domain::{Blockers, Oid};
 
 fn oid(byte: u8) -> Oid {
     Oid::generate(&mut |x: &mut [u8]| x.fill(byte))
@@ -140,16 +140,6 @@ fn every_kind_the_readme_lists_is_one_dam_reports() {
     for kind in &kinds {
         assert!(sentence.contains(kind.as_str()), "{sentence} lacks {kind}");
     }
-}
-
-#[test]
-fn a_query_dam_cannot_read_exits_two_and_is_of_kind_parse() {
-    let error = CliError::UseCase(UseCaseError::Query(QueryError::MissingOperator(
-        "due:tomorrow".into(),
-    )));
-    assert_eq!(error.exit_code(), 2);
-    assert_eq!(error.document()["error"]["kind"], "parse");
-    assert_eq!(error.to_string(), "expected & or | before due:tomorrow");
 }
 
 #[test]

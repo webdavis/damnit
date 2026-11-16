@@ -1,6 +1,5 @@
 use super::*;
 use dam_application::Refusal;
-use dam_domain::QueryError;
 
 fn text(error: UseCaseError) -> String {
     UseCaseText(&error).to_string()
@@ -59,14 +58,6 @@ fn text_that_is_not_an_oid_asks_for_four_hex_characters() {
     assert_eq!(
         text(UseCaseError::NotAnOid("f5".into())),
         "\"f5\" is not an oid; give at least 4 hex characters"
-    );
-}
-
-#[test]
-fn a_query_error_reads_as_the_query_says_it() {
-    assert_eq!(
-        text(UseCaseError::Query(QueryError::Unclosed)),
-        "a ( has no matching )"
     );
 }
 

@@ -6,7 +6,7 @@ use crate::select::{Command, Filter, FilterTable, Has, TableValue, scope, select
 use term_text::{negated_text, term_texts};
 
 pub fn query_table(text: &str, categories: &Categories) -> Option<FilterTable> {
-    let expr = parse(text, categories).ok()?;
+    let expr = parse(text, categories)?;
     let mut table = table_of(&normal(expr, false))?;
     add_defaults(&mut table);
     let filter = Filter::read(&table).ok()?;

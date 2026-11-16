@@ -6,9 +6,7 @@ mod retry;
 pub use filter_error::FilterError;
 pub use retry::Retry;
 
-use dam_domain::{
-    Blockers, CommitId, Date, LabelViolation, Oid, Path, Permission, QueryError, Tracked,
-};
+use dam_domain::{Blockers, CommitId, Date, LabelViolation, Oid, Path, Permission, Tracked};
 
 use crate::access::TokenRefusal;
 use crate::config::HookEvent;
@@ -125,7 +123,6 @@ pub enum UseCaseError {
     Credential(CredentialError),
     Filter(FilterError),
     Parse(String),
-    Query(QueryError),
     Select(crate::use_cases::selected::SelectError),
     NotAnOid(String),
     Schedule(ScheduleError),

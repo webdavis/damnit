@@ -27,9 +27,7 @@ impl CliError {
             CliError::UseCase(UseCaseError::Filter(_)) => "filter",
             CliError::UseCase(UseCaseError::Schedule(_)) => "scheduler",
             CliError::Editor(_) => KIND_OF_AN_EDITOR_FAILURE_NO_DOCUMENT_CARRIES,
-            CliError::UseCase(UseCaseError::Parse(_))
-            | CliError::UseCase(UseCaseError::Query(_))
-            | CliError::Config(_) => "parse",
+            CliError::UseCase(UseCaseError::Parse(_)) | CliError::Config(_) => "parse",
             CliError::Usage(_)
             | CliError::CommandLine(_)
             | CliError::Selection(_)

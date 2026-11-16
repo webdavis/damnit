@@ -112,7 +112,6 @@ impl fmt::Display for UseCaseText<'_> {
             }
             UseCaseError::Filter(e) => write!(f, "{}", FilterText(e)),
             UseCaseError::Parse(s) => write!(f, "{s}"),
-            UseCaseError::Query(e) => write!(f, "{e}"),
             UseCaseError::Select(e) => write!(
                 f,
                 "{}",

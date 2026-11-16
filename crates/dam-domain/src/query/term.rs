@@ -1,74 +1,66 @@
-use super::parse::QueryError;
 use super::{DateSel, EstimateSel, Term};
 use crate::{Categories, Kind, Oid, Path, Priority, Transparency, parse_minutes};
 
-pub(super) fn term(word: &str, categories: &Categories) -> Result<Term, QueryError> {
+pub(super) fn term(word: &str, categories: &Categories) -> Option<Term> {
     if let Some(label) = word.strip_prefix('@') {
-        return Ok(Term::Label(label.to_string()));
+        return Some(Term::Label(label.to_string()));
     }
     if let Some(n) = word.strip_prefix('p').and_then(|n| n.parse::<u8>().ok()) {
-        return Priority::new(n)
-            .map(Term::Priority)
-            .map_err(|_| bad("priority", word));
+        return Priority::new(n).ok().map(Term::Priority);
     }
     let (key, value) = match word.split_once(':') {
-        Some((_, "")) => return Err(QueryError::Unexpected(word.to_string())),
+        Some((_, "")) => return None,
         Some(kv) => kv,
         None => {
             return match word {
-                "done" => Ok(Term::Done),
-                "overdue" => Ok(Term::Overdue),
-                other => Err(QueryError::Unexpected(other.to_string())),
+                "done" => Some(Term::Done),
+                "overdue" => Some(Term::Overdue),
+                _ => None,
             };
         }
     };
-    Ok(match key {
+    Some(match key {
         "kind" => Term::Kind(match value {
             "task" => Kind::Task,
             "event" => Kind::Event,
-            _ => return Err(bad(key, value)),
+            _ => return None,
         }),
-        "due" => Term::Due(date_sel(key, value)?),
-        "deadline" => Term::Deadline(date_sel(key, value)?),
-        "focus" => Term::Focus(date_sel(key, value)?),
-        "completed" | "completed_at" => Term::Completed(date_sel(key, value)?),
-        "estimate" => Term::Estimate(estimate_sel(value).ok_or_else(|| bad(key, value))?),
-        "start" => Term::Start(date_sel(key, value)?),
-        "path" => Term::Path(Path::parse(value).map_err(|_| bad(key, value))?),
+        "due" => Term::Due(date_sel(value)?),
+        "deadline" => Term::Deadline(date_sel(value)?),
+        "focus" => Term::Focus(date_sel(value)?),
+        "completed" | "completed_at" => Term::Completed(date_sel(value)?),
+        "estimate" => Term::Estimate(estimate_sel(value)?),
+        "start" => Term::Start(date_sel(value)?),
+        "path" => Term::Path(Path::parse(value).ok()?),
         "label" | "labels" => Term::Label(value.to_string()),
         "priority" => Term::Priority(
             value
                 .parse::<u8>()
                 .ok()
-                .and_then(|n| Priority::new(n).ok())
-                .ok_or_else(|| bad(key, value))?,
+                .and_then(|n| Priority::new(n).ok())?,
         ),
         "transparency" => Term::Transparency(match value {
             "busy" => Transparency::Busy,
             "free" => Transparency::Free,
-            _ => return Err(bad(key, value)),
+            _ => return None,
         }),
-        "attached" => Term::Attached(Oid::parse(value).map_err(|_| bad(key, value))?),
+        "attached" => Term::Attached(Oid::parse(value).ok()?),
         "subject" => Term::Subject(value.to_string()),
         name => category_value(name, value, categories)?,
     })
 }
 
-fn category_value(name: &str, value: &str, categories: &Categories) -> Result<Term, QueryError> {
-    let category = categories
-        .category_of_name(name)
-        .ok_or_else(|| QueryError::UnknownCategory(name.to_string()))?;
-    if !category.values.iter().any(|v| v == value) {
-        return Err(QueryError::NotAValue {
-            category: name.to_string(),
-            value: value.to_string(),
-        });
-    }
-    Ok(Term::Label(value.to_string()))
+fn category_value(name: &str, value: &str, categories: &Categories) -> Option<Term> {
+    let category = categories.category_of_name(name)?;
+    category
+        .values
+        .iter()
+        .any(|v| v == value)
+        .then(|| Term::Label(value.to_string()))
 }
 
-fn date_sel(key: &str, value: &str) -> Result<DateSel, QueryError> {
-    Ok(match value {
+fn date_sel(value: &str) -> Option<DateSel> {
+    Some(match value {
         "today" => DateSel::Today,
         "tomorrow" => DateSel::Tomorrow,
         "yesterday" => DateSel::Yesterday,
@@ -77,11 +69,11 @@ fn date_sel(key: &str, value: &str) -> Result<DateSel, QueryError> {
         "none" => DateSel::None,
         v => {
             if let Some(d) = v.strip_prefix("before:") {
-                DateSel::Before(d.parse().map_err(|_| bad(key, value))?)
+                DateSel::Before(d.parse().ok()?)
             } else if let Some(d) = v.strip_prefix("after:") {
-                DateSel::After(d.parse().map_err(|_| bad(key, value))?)
+                DateSel::After(d.parse().ok()?)
             } else {
-                DateSel::On(v.parse().map_err(|_| bad(key, value))?)
+                DateSel::On(v.parse().ok()?)
             }
         }
     })
@@ -97,12 +89,5 @@ fn estimate_sel(value: &str) -> Option<EstimateSel> {
         "max" => Some(EstimateSel::Max(minutes)),
         "min" => Some(EstimateSel::Min(minutes)),
         _ => None,
-    }
-}
-
-fn bad(key: &str, value: &str) -> QueryError {
-    QueryError::BadValue {
-        key: key.to_string(),
-        value: value.to_string(),
     }
 }

@@ -1,7 +1,5 @@
-use jiff::tz::TimeZone;
-
 use super::fake::Fake;
-use super::fixture::{TODAY, attached_to, categories, objects};
+use super::fixture::{attached_to, categories, objects};
 use super::tables::{one, table};
 use crate::select::{Command, Filter, FilterTable, scope};
 
@@ -30,29 +28,27 @@ fn same_objects(old: &str, fields: &[(String, String)], any: &[Fields]) {
         categories: categories(),
         ..Fake::at("2026-09-18T12:00[UTC]")
     };
-    let expr = crate::parse_query(old, &categories()).unwrap();
     let pairs: Vec<(&str, &str)> = fields
         .iter()
         .map(|(k, v)| (k.as_str(), v.as_str()))
         .collect();
-    let filter = Filter::read(&build(&pairs, any)).unwrap();
-    filter.check(&fake.categories).unwrap();
-    let scope = scope(&filter, Command::List).unwrap();
+    let paired = Filter::read(&build(&pairs, any)).unwrap();
+    paired.check(&fake.categories).unwrap();
+    let paired_scope = scope(&paired, Command::List).unwrap();
     let translated = crate::query_table(old, &categories()).expect(old);
     let translated = Filter::read(&translated).unwrap();
     translated.check(&fake.categories).unwrap();
-    let translated_scope = crate::select::scope(&translated, Command::List).unwrap();
+    let translated_scope = scope(&translated, Command::List).unwrap();
     for object in objects() {
-        let was = crate::matches(&expr, &object, TODAY, &TimeZone::UTC);
-        let now = scope.admits(&object) && filter.matches(&object, &fake);
-        assert_eq!(was, now, "{old} on {object:?}");
-        let written = translated_scope.admits(&object) && translated.matches(&object, &fake);
-        assert_eq!(was, written, "{old} written as a table, on {object:?}");
+        let paired_lists = paired_scope.admits(&object) && paired.matches(&object, &fake);
+        let translated_lists =
+            translated_scope.admits(&object) && translated.matches(&object, &fake);
+        assert_eq!(paired_lists, translated_lists, "{old} on {object:?}");
     }
 }
 
 #[test]
-fn every_real_query_lists_the_same_objects_with_dates_kept_in_the_persons_zone() {
+fn every_real_query_reads_as_a_table_that_lists_what_its_paired_table_lists() {
     let attached = attached_to();
     let cases: Vec<(&str, Vec<(&str, &str)>)> = vec![
         (
@@ -154,7 +150,7 @@ fn every_real_query_lists_the_same_objects_with_dates_kept_in_the_persons_zone()
 }
 
 #[test]
-fn every_real_or_query_lists_the_same_objects_through_any() {
+fn every_real_or_query_reads_as_a_table_whose_any_lists_what_its_pair_lists() {
     let today_or_late: [Fields; 2] = [&[("due", "today")], &[("overdue", "true")]];
     same_objects("due:today | overdue", &with(&ALL, &[]), &today_or_late);
     let open = with(&ANY_KIND, &[("done", "false")]);
