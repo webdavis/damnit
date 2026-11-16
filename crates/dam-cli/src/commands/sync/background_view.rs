@@ -66,7 +66,7 @@ fn row(kind: BackgroundStep, change: Change) -> StepRow {
     }
 }
 
-fn every(interval: Duration) -> String {
+pub(crate) fn every(interval: Duration) -> String {
     match interval.as_secs() {
         s if s % 3600 == 0 => format!("{}h", s / 3600),
         s if s % 60 == 0 => format!("{}m", s / 60),

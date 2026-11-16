@@ -21,6 +21,7 @@ pub(crate) enum CheckName {
     Credentials,
     Pushes,
     Parents,
+    Sync,
 }
 
 impl CheckName {
@@ -32,6 +33,7 @@ impl CheckName {
             CheckName::Credentials => "credentials",
             CheckName::Pushes => "pushes",
             CheckName::Parents => "parents",
+            CheckName::Sync => "sync",
         }
     }
 }

@@ -15,6 +15,7 @@ mod sync_view;
 mod view;
 
 use background_view::BackgroundSynced;
+pub(crate) use background_view::every;
 use failure_reason::failure_reason;
 use pull_view::{PullRow, Pulled};
 use sync_view::Synced;

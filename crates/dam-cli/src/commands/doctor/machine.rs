@@ -4,9 +4,10 @@ use std::path::Path;
 use super::store_reading::{self, Store};
 use dam_adapters::{LuaConfigFile, OpenError};
 use dam_application::{
-    Config, ConfigError, HelperError, HelperLauncher, Progress, RemoteCapabilities, RemoteConfig,
-    Step, waited_on,
+    BackgroundSync, Config, ConfigError, HelperError, HelperLauncher, Progress, RemoteCapabilities,
+    RemoteConfig, RunRecords, Step, waited_on,
 };
+use jiff::Timestamp;
 
 pub(super) struct Answer {
     pub(super) remote: RemoteConfig,
@@ -21,6 +22,9 @@ pub(crate) struct Machine<'a> {
     config: OnceCell<Result<Config, ConfigError>>,
     store: OnceCell<Result<Store, OpenError>>,
     answers: OnceCell<Option<Vec<Answer>>>,
+    pub(super) background: Box<dyn BackgroundSync>,
+    pub(super) run_records: Box<dyn RunRecords>,
+    pub(super) now: Timestamp,
 }
 
 impl<'a> Machine<'a> {
@@ -38,6 +42,33 @@ impl<'a> Machine<'a> {
             config: OnceCell::new(),
             store: OnceCell::new(),
             answers: OnceCell::new(),
+            background: dam_adapters::no_background_sync(),
+            run_records: dam_adapters::no_run_records(),
+            now: Timestamp::now(),
+        }
+    }
+
+    pub(crate) fn here(
+        config_file: &'a LuaConfigFile,
+        store_path: &'a Path,
+        launcher: &'a dyn HelperLauncher,
+        progress: &'a dyn Progress,
+    ) -> Machine<'a> {
+        Machine::new(config_file, store_path, launcher, progress).watching(
+            dam_adapters::background_sync_for_store(store_path),
+            dam_adapters::run_records_for_store(store_path),
+        )
+    }
+
+    pub(crate) fn watching(
+        self,
+        background: Box<dyn BackgroundSync>,
+        run_records: Box<dyn RunRecords>,
+    ) -> Machine<'a> {
+        Machine {
+            background,
+            run_records,
+            ..self
         }
     }
 

@@ -7,6 +7,7 @@ mod machine;
 mod parents;
 mod pushes;
 mod store_reading;
+mod sync;
 #[cfg(test)]
 mod tests;
 
@@ -25,13 +26,14 @@ const SETUP: Heading = Heading {
 
 type Run = fn(&Machine) -> Vec<Check>;
 
-const CHECKS: [(CheckName, Run); 6] = [
+const CHECKS: [(CheckName, Run); 7] = [
     (CheckName::Config, config_check::check),
     (CheckName::Database, database::check),
     (CheckName::Helpers, helpers::check),
     (CheckName::Credentials, credentials::check),
     (CheckName::Pushes, pushes::check),
     (CheckName::Parents, parents::check),
+    (CheckName::Sync, sync::check),
 ];
 
 pub(crate) struct Asked<'a> {

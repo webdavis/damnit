@@ -80,7 +80,7 @@ pub enum Change {
     Already,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ScheduleError {
     NoScheduler { crontab_line: String },
     Failed(String),

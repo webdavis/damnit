@@ -42,6 +42,8 @@ fn a_machine_set_up_well_reads_every_check() {
             "  ✓ pushes: 1 remote: 1 ok",
             "    ✓ fake: nothing owed",
             "  ✓ parents: dam knows every object's parent",
+            "  ✓ sync: 1 remote: 1 ok",
+            "    ✓ fake: off, every 15m, never run",
             "",
             "Needs attention",
             "  ✓ nothing needs attention",
@@ -81,6 +83,7 @@ fn a_helper_that_did_not_answer_leaves_its_credentials_unchecked() {
             ("credentials", "ok"),
             ("pushes", "ok"),
             ("parents", "ok"),
+            ("sync", "ok"),
         ]
     );
 }

@@ -88,7 +88,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         let launcher = ProcessLauncher::from_env(interrupt.clone());
         let progress = context::progress_without_a_context(&config_file, asked, format);
         let machine =
-            commands::doctor::Machine::new(&config_file, &store_path, &launcher, &progress);
+            commands::doctor::Machine::here(&config_file, &store_path, &launcher, &progress);
         return commands::doctor::print(checks, &machine, format, color);
     }
     config_file.ends_in_lua()?;
