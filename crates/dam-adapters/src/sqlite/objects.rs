@@ -92,6 +92,20 @@ impl ObjectRepository for SqliteStore {
             .map(|j| object_from_json(&j))
             .transpose()
     }
+
+    fn settle_committed_parent(&self, oid: &Oid, parent: &Oid) -> Result<(), StoreError> {
+        let Some(mut committed) = self.committed(oid)? else {
+            return Ok(());
+        };
+        committed.base_mut().parent = Some(parent.clone());
+        self.conn
+            .execute(
+                "UPDATE committed SET json = ?2 WHERE oid = ?1",
+                params![oid.as_str(), object_to_json(&committed)?],
+            )
+            .map(|_| ())
+            .map_err(sql)
+    }
 }
 
 #[cfg(test)]
