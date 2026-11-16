@@ -7,7 +7,7 @@ use dam_adapters::{Interrupt, LuaConfigFile, SqliteStore, SystemClock};
 use dam_application::{
     Access, BackgroundSync, Clock, Config, ConfigFile, CredentialSource, Dam, FilterFunctions,
     HelperLauncher, Hooks, Invocation, LoadedConfig, Randomness, Remotes, RunRecords, SettingsFile,
-    Store,
+    Store, TaskTemplates,
 };
 
 use crate::caller::{authenticated, caller};
@@ -40,6 +40,7 @@ pub(crate) struct Context {
     pub(crate) background: Box<dyn BackgroundSync>,
     pub(crate) run_records: Box<dyn RunRecords>,
     pub(crate) invocation: Invocation,
+    pub(crate) templates: Box<dyn TaskTemplates>,
 }
 
 impl Context {
@@ -63,6 +64,7 @@ impl Context {
         let access = caller(holder, now, meta);
         let loaded = LoadedConfig { config, ..loaded };
         let opened = reading::Opened {
+            templates: reading::own_templates(&config_file),
             config_file: Box::new(config_file.clone()),
             settings_file: Box::new(config_file),
             loaded,
@@ -74,6 +76,10 @@ impl Context {
             invocation,
         };
         Ok(Context::assembled(opened, format, interrupt))
+    }
+
+    pub(crate) fn with_templates(self, templates: Box<dyn TaskTemplates>) -> Context {
+        Context { templates, ..self }
     }
 
     pub(crate) fn dam(&self) -> Dam<'_> {

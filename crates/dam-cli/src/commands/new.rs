@@ -96,5 +96,7 @@ pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
     .map(|answer| with_caller_id(answer, id.as_ref()))
 }
 
+pub(crate) mod templated;
+
 #[cfg(test)]
 mod tests;

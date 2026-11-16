@@ -125,6 +125,8 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         let report = commands::catalogue::run(&config, cli.command)?;
         return output::print(format, color, &report);
     }
+    let standing = run.standing();
+    let templates = Box::new(run.templates(&standing));
     let ctx = Context::open(
         config_file,
         presented_token,
@@ -133,10 +135,11 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         asked,
         interrupt,
         context::invocation_of(&config_path, &store_path),
-    )?;
+    )?
+    .with_templates(templates);
     let report = match cli.command {
         Command::Init(args) => commands::init::run(&ctx, args, (&run).into())?,
-        command => commands::scoped::dispatch_in(&ctx, command, run.standing())?,
+        command => commands::scoped::dispatch_in(&ctx, command, standing)?,
     };
     output::print(format, color, &report)
 }

@@ -359,3 +359,40 @@ return {
   },
 }
 ```
+
+## Templates
+
+A template is one file that a new task can start from: `dam new --template bug "crash on pull"`.
+Your own templates are in the `templates` folder beside `config.lua`, one file per template named
+`<name>.lua`. A project's templates are in `.damtemplates/<name>.lua` at the project's top folder.
+Inside a project, dam reads the project's template of that name first, then your own.
+
+A template returns a table with any of `body`, `labels`, `priority`, `due`, `deadline` and `path`.
+Any other key is refused. The subject always comes from the command line. `due` and `deadline`
+take what `--due` and `--deadline` take, and `path` starts from the project, as `--path` does.
+Each flag you give replaces the template's value: `--labels` replaces the template's labels.
+
+Your own template is full Lua, like `config.lua`:
+
+```lua
+-- templates/weekly.lua
+return {
+  labels = { "review" },
+  priority = 2,
+  due = "fri",
+  body = "Week " .. os.date("%V") .. ": what shipped, what slipped",
+}
+```
+
+A project's template comes with the repository, so dam reads it locked, as it reads `.dam.lua`.
+A text that holds a control character is refused, except a new line or a tab in `body`. dam
+never quotes the file's text in the error.
+
+```lua
+-- .damtemplates/bug.lua
+return {
+  path = "bugs/",
+  labels = { "bug" },
+  body = "Steps to reproduce:\n\nExpected:\n\nActual:",
+}
+```

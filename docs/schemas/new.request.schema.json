@@ -74,6 +74,11 @@
       "pattern": "^[^\\r\\n]*$",
       "description": "The caller's own id; a repeat with the same id changes the same object."
     },
+    "template": {
+      "type": "string",
+      "pattern": "^[^/\\\\\\u0000-\\u001f\\u007f]+$",
+      "description": "Start from this template: the project's .damtemplates/NAME.lua, else templates/NAME.lua beside config.lua. Each other key given replaces the template's value."
+    },
     "meta": {
       "type": "object",
       "additionalProperties": {

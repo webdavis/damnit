@@ -74,6 +74,13 @@ pub(crate) struct NewArgs {
                 One line, up to 200 characters; not damnit's oid"
     )]
     pub(crate) id: Option<CallerId>,
+    #[arg(
+        long,
+        value_name = "NAME",
+        help = "Start from the template NAME: the project's .damtemplates/NAME.lua, \
+                else templates/NAME.lua beside config.lua. Each flag given replaces its value"
+    )]
+    pub(crate) template: Option<String>,
     #[command(flatten)]
     pub(crate) scope: ScopeArgs,
 }

@@ -18,6 +18,7 @@ fn args(subject: &str) -> NewArgs {
         end: None,
         id: None,
         parent: None,
+        template: None,
         scope: Default::default(),
     }
 }

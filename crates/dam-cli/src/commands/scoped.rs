@@ -2,6 +2,7 @@ use dam_domain::Path;
 
 use crate::args::Command;
 use crate::commands::dispatch_a_verb_that_opens_the_store;
+use crate::commands::new::templated::from_template;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
@@ -15,6 +16,13 @@ pub(crate) fn dispatch_in(
     standing: Standing,
 ) -> Result<Report, CliError> {
     crate::gate::admit(ctx.access.as_ref(), &command)?;
+    let command = match command {
+        Command::New(a) => {
+            let to_the_owner = ctx.access.token().is_none();
+            Command::New(from_template(ctx.templates.as_ref(), a, to_the_owner)?)
+        }
+        other => other,
+    };
     let command = match command {
         Command::New(mut a) if a.parent.is_none() || a.path != Path::root() => {
             let place = standing.place(&a.scope)?;
@@ -51,5 +59,7 @@ pub(crate) fn dispatch_in(
 mod listing_tests;
 #[cfg(test)]
 mod project_created_tests;
+#[cfg(test)]
+mod template_tests;
 #[cfg(test)]
 mod tests;
