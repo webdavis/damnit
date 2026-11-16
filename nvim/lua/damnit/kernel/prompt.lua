@@ -12,19 +12,21 @@ local M = {}
 ---@field title string
 ---@field prefill string
 ---@field after? string
----@field read fun(text: string, done: fun(answer: string, refused: boolean)): damnit.Handle
+---@field read fun(text: string, done: fun(answer: string, refused: boolean|damnit.Error, below?: string[])): damnit.Handle
 ---@field submit fun(text: string)
 ---@field complete? fun(line: string, col: integer): integer, damnit.Candidate[]
 ---@field anchor? integer|"cursor"
 ---@field read_first? boolean
+---@field flags? damnit.Flag[] the command's flags; a word at the cursor that begins one is not read yet
 
 ---@class damnit.Prompts
 ---@field open fun(self, spec: damnit.PromptSpec)
 
 ---@param queue damnit.Queue
+---@param say damnit.Say keeps the refusal of a line sent with <CR> for :Dam messages
 ---@return damnit.Prompts
-function M.new(queue)
-  return setmetatable({ queue = queue, histories = {} }, Prompts)
+function M.new(queue, say)
+  return setmetatable({ queue = queue, say = say, histories = {} }, Prompts)
 end
 
 local function completion(buf, complete)
@@ -64,13 +66,14 @@ function Prompts:open(spec)
   local win = float.input(buf, spec.title, spec.anchor)
   vim.bo[buf].filetype = "damprompt"
   self.histories[spec.title] = self.histories[spec.title] or {}
-  local show = function(answer, refused)
-    float.footer(win, answer, refused and "DiagnosticError" or "FloatFooter")
+  local show = function(answer, refused, below)
+    float.footer(win, answer, refused and "DiagnosticError" or "FloatFooter", below)
   end
   local session = prompt_session.new({
     win = win,
     buf = buf,
     spec = spec,
+    say = self.say,
     entries = self.histories[spec.title],
     judge = judge.new(self.queue, "prompt " .. buf, spec.read, show),
   })

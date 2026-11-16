@@ -2,7 +2,8 @@ local prompt = require("helpers.prompt")
 local wait_for = require("helpers.buffer").wait_for
 
 local function opened(spec, keys)
-  local prompts = require("damnit.kernel.prompt").new(require("damnit.kernel.queue").new())
+  local prompts =
+    require("damnit.kernel.prompt").new(require("damnit.kernel.queue").new(), require("damnit.kernel.say").new())
   local seen = { reads = {}, submitted = {}, cancelled = 0 }
   local full = vim.tbl_extend("keep", spec or {}, {
     title = "dam new",
@@ -87,7 +88,7 @@ return {
     assert(#seen.submitted == 0 and prompt.window(), vim.inspect(seen))
   end,
 
-  ["an answer too long for the footer is shown whole under the line, and the float grows to hold it"] = function()
+  ["an answer too long for the footer is shown once, whole under the line with the footer empty"] = function()
     local long = string.rep("dam cannot read this ", 8)
     opened({
       read = function(text, done)
@@ -95,18 +96,18 @@ return {
         return { cancel = function() end }
       end,
     }, "buy --due long")
-    prompt.footer_reads(long)
     local win = assert(prompt.window())
     local buf = vim.api.nvim_win_get_buf(win)
-    local below = {}
-    for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(buf, -1, 0, -1, { details = true })) do
-      for _, line in ipairs(mark[4].virt_lines or {}) do
-        table.insert(below, line[1][1])
-        assert(line[1][2] == "DiagnosticError", vim.inspect(line))
-      end
+    local below = prompt.below
+    wait_for(function()
+      return #below() > 0
+    end)
+    for _, line in ipairs(prompt.below_chunks()) do
+      assert(line[1][2] == "DiagnosticError", vim.inspect(line))
     end
-    assert(vim.trim(table.concat(below, " ")) == vim.trim(long), vim.inspect(below))
-    assert(vim.api.nvim_win_get_height(win) == 1 + #below, vim.api.nvim_win_get_height(win))
+    assert(vim.trim(table.concat(below(), " ")) == vim.trim(long), vim.inspect(below()))
+    assert(prompt.footer() == "", prompt.footer())
+    assert(vim.api.nvim_win_get_height(win) == 1 + #below(), vim.api.nvim_win_get_height(win))
     prompt.more("<C-u>buy")
     prompt.footer_reads("short")
     assert(vim.api.nvim_win_get_height(win) == 1 and #vim.api.nvim_buf_get_extmarks(buf, -1, 0, -1, {}) == 0)

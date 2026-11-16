@@ -74,6 +74,19 @@ end
 ---@param line string
 ---@param col integer bytes before the cursor
 ---@param flags damnit.Flag[]
+---@return boolean the word holding the cursor begins a flag name but is none of the command's flags
+function M.unfinished(line, col, flags)
+  for _, token in ipairs((argv.tokens(line))) do
+    if token.from - 1 <= col and col <= token.from - 1 + #token.text then
+      return #flags > 0 and vim.startswith(token.text, "--") and flag_named(flags, token.text) == nil
+    end
+  end
+  return false
+end
+
+---@param line string
+---@param col integer bytes before the cursor
+---@param flags damnit.Flag[]
 ---@param vocab damnit.Vocab
 ---@return integer start, damnit.Candidate[] candidates
 function M.at(line, col, flags, vocab)

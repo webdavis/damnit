@@ -29,7 +29,7 @@ function M.new(app, prompts)
   end
 
   function quickadd.send(text, cwd, landing)
-    app.dam:write({ args = new_line.args(text), cwd = cwd }, function(answer)
+    app.dam:write({ args = new_line.args(text, app.vocab:flags("new")), cwd = cwd }, function(answer)
       if answer then
         told(answer, landing)
       end
@@ -38,10 +38,10 @@ function M.new(app, prompts)
 
   local function read(cwd)
     return function(text, done)
-      local args = vim.list_extend(new_line.args(text), { "--preview" })
+      local args = vim.list_extend(new_line.args(text, app.vocab:flags("new")), { "--preview" })
       return app.dam:run({ args = args, cwd = cwd }, function(answer, err)
         if err then
-          return done(err.message, true)
+          return done(err.message, err)
         end
         done(new_line.reading(answer), false)
       end)
@@ -54,6 +54,7 @@ function M.new(app, prompts)
       anchor = anchor,
       prefill = "",
       after = after,
+      flags = app.vocab:flags("new"),
       read = read(cwd),
       submit = function(text)
         quickadd.send(text, cwd, landing)

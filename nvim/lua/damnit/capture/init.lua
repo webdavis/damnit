@@ -25,7 +25,7 @@ end
 ---@param app damnit.App
 ---@return damnit.Feature
 function M.new(app)
-  local prompts = require("damnit.kernel.prompt").new(app.queue)
+  local prompts = require("damnit.kernel.prompt").new(app.queue, app.say)
 
   local function send(args, cwd)
     app.dam:write({ args = args, cwd = cwd }, function(answer)
@@ -37,10 +37,10 @@ function M.new(app)
 
   local function read(cwd)
     return function(line, done)
-      local args = vim.list_extend(new_line.args(line), { "--preview" })
+      local args = vim.list_extend(new_line.args(line, app.vocab:flags("new")), { "--preview" })
       return app.dam:run({ args = args, cwd = cwd }, function(answer, err)
         if err then
-          return done(err.message, true)
+          return done(err.message, err)
         end
         done(new_line.reading(answer), false)
       end)
@@ -56,7 +56,7 @@ function M.new(app)
       after = capture.place and (" --body " .. text.quoted(capture.place)) or "",
       read = read(capture.cwd),
       submit = function(line)
-        send(new_line.args(line), capture.cwd)
+        send(new_line.args(line, app.vocab:flags("new")), capture.cwd)
       end,
       complete = function(line, col)
         return words.at(line, col, app.vocab:flags("new"), app.vocab:words(capture.cwd))

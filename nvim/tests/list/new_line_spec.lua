@@ -5,9 +5,27 @@ local function same(got, want)
   assert(vim.deep_equal(got, want), vim.inspect(got))
 end
 
+local FLAGS = {
+  { name = "--due", value = true, help = "" },
+  { name = "--labels", value = true, help = "" },
+  { name = "--recurrence", value = true, help = "" },
+  { name = "--parent", value = true, help = "" },
+}
+
 return {
+  ["a value of several words needs no quotes"] = function()
+    same(new_line.args("call the bank --due next fri --labels home", FLAGS), {
+      "new",
+      "call the bank",
+      "--due",
+      "next fri",
+      "--labels",
+      "home",
+    })
+  end,
+
   ["the words before the first flag are dam new's one subject"] = function()
-    same(new_line.args("buy oat milk --due fri --labels errand"), {
+    same(new_line.args("buy oat milk --due fri --labels errand", FLAGS), {
       "new",
       "buy oat milk",
       "--due",
@@ -18,7 +36,7 @@ return {
   end,
 
   ["quotes hold a value's spaces"] = function()
-    same(new_line.args([[buy "oat milk" --recurrence 'every 2 weeks']]), {
+    same(new_line.args([[buy "oat milk" --recurrence 'every 2 weeks']], FLAGS), {
       "new",
       "buy oat milk",
       "--recurrence",
@@ -27,7 +45,7 @@ return {
   end,
 
   ["a line with no subject sends none, so dam says it is missing"] = function()
-    same(new_line.args("--parent 1111111"), { "new", "--parent", "1111111" })
+    same(new_line.args("--parent 1111111", FLAGS), { "new", "--parent", "1111111" })
   end,
 
   ["the reading is dam's subject, due, labels and path"] = function()

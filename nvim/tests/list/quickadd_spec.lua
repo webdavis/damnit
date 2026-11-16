@@ -59,9 +59,8 @@ return {
     fake.reply("new", fixtures.refusal("error-new-preview-due.json", EXIT_USAGE))
     prompt.type(":Dam new<CR>buy oat milk --due the twelfth of never")
     local message = fixtures.decoded("error-new-preview-due.json").error.message
-    prompt.footer_reads(message)
-    local _, group = prompt.footer()
-    assert(group == "DiagnosticError", group)
+    prompt.below_reads(message)
+    assert(prompt.below_chunks()[1][1][2] == "DiagnosticError", vim.inspect(prompt.below_chunks()))
     prompt.more("<CR>")
     vim.wait(50)
     assert(#sent(fake, false) == 0 and prompt.window(), vim.inspect(fake.of("new")))

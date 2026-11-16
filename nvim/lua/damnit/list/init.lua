@@ -35,7 +35,7 @@ end
 ---@param open_task fun(oid: string, cwd: string)
 ---@return damnit.Feature
 function M.new(app, open_task)
-  local quickadd = require("damnit.list.quickadd").new(app, require("damnit.kernel.prompt").new(app.queue))
+  local quickadd = require("damnit.list.quickadd").new(app, require("damnit.kernel.prompt").new(app.queue, app.say))
   local lists
   lists = buffer.new(
     app,
