@@ -129,7 +129,7 @@ fn a_category_created_and_removed_inside_a_project_changes_its_file_alone() {
 }
 
 #[test]
-fn a_project_category_sharing_a_label_with_yours_is_refused_and_nothing_is_written() {
+fn a_project_category_sharing_a_label_with_yours_is_written_and_sets_yours_aside_here() {
     let mut m = machine();
     m.config.categories = dam_domain::Categories::new(vec![dam_domain::Category {
         name: "effort".into(),
@@ -137,12 +137,27 @@ fn a_project_category_sharing_a_label_with_yours_is_refused_and_nothing_is_writt
         exclusive: false,
     }])
     .unwrap();
-    let refused = m.category(CategoryCommand::Create {
-        name: "size".into(),
-        values: "small,large".into(),
-        exclusive: false,
-        global: false,
-    });
-    assert!(refused.is_err());
-    assert_eq!(m.project_text(), PROJECT_TEXT);
+    let created = m
+        .category(CategoryCommand::Create {
+            name: "size".into(),
+            values: "small,large".into(),
+            exclusive: false,
+            global: false,
+        })
+        .unwrap();
+    assert_eq!(created.data["sets_aside"], serde_json::json!(["effort"]));
+    let schema = include_str!("../../../../../docs/schemas/category-create.schema.json");
+    let schema: serde_json::Value = serde_json::from_str(schema).unwrap();
+    assert!(
+        jsonschema::is_valid(&schema, &created.data),
+        "{}",
+        created.data
+    );
+    assert_eq!(
+        created.human,
+        "created category size: small, large in .dam.lua\n\
+         your category effort is set aside inside this project"
+    );
+    assert_ne!(m.project_text(), PROJECT_TEXT);
+    assert!(m.personal.written.borrow().is_empty());
 }

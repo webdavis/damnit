@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/category-list.schema.json",
   "title": "dam category list answer",
-  "description": "What dam category list prints with -o. An exclusive category lets an object carry one of its values.",
+  "description": "What dam category list prints with -o. An exclusive category lets an object carry one of its values. Inside a project the project's categories come first, then yours in force, then yours set aside.",
   "type": "object",
   "required": [
     "categories"
@@ -31,6 +31,14 @@
           },
           "exclusive": {
             "type": "boolean"
+          },
+          "project": {
+            "description": "The category comes from the project's .dam.lua. Present only when true.",
+            "const": true
+          },
+          "set_aside": {
+            "description": "Your category shares a name or a label with one of the project's, so it is not in force inside this project. Present only when true.",
+            "const": true
           }
         }
       }

@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
+mod within;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Category {
     pub name: String,
@@ -123,3 +125,5 @@ impl std::error::Error for LabelViolation {}
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod within_tests;

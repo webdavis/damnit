@@ -13,9 +13,8 @@ pub(super) fn create(
     config: &Config,
     file: &dyn SettingsFile,
     named: &str,
-    name: &str,
-    values: &str,
-    exclusive: bool,
+    yours: &Categories,
+    (name, values, exclusive): (&str, &str, bool),
 ) -> Result<Report, CliError> {
     let values_key = setting_key("category", name, "values")?;
     let exists = || {
@@ -32,12 +31,13 @@ pub(super) fn create(
         .filter(|value| !value.is_empty())
         .map(str::to_string)
         .collect();
-    let mut categories = config.categories.all().to_vec();
-    categories.push(Category {
+    let made = Category {
         name: name.to_string(),
         values: values.clone(),
         exclusive,
-    });
+    };
+    let mut categories = config.categories.all().to_vec();
+    categories.push(made.clone());
     Categories::new(categories).map_err(|error| match error {
         CategoryError::EmptyCategory(_) => CliError::Usage(format!(
             "category {name} needs at least one label in --values"
@@ -58,8 +58,14 @@ pub(super) fn create(
             &SettingValue::Flag(true),
         )?;
     }
+    let made = Categories::new(vec![made]).unwrap_or_default();
+    let sets_aside = yours
+        .set_aside_by(&made)
+        .into_iter()
+        .map(|(yours, _)| yours);
     report(&CategoryCreated {
         name,
+        sets_aside: sets_aside.collect(),
         values: &values,
         exclusive,
         file: named,

@@ -9,17 +9,24 @@ pub(super) struct CategoryCreated<'a> {
     pub(super) values: &'a [String],
     pub(super) exclusive: bool,
     pub(super) file: &'a str,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub(super) sets_aside: Vec<&'a str>,
 }
 
 impl View for CategoryCreated<'_> {
     fn human(&self) -> Human {
         let exclusive = if self.exclusive { " (exclusive)" } else { "" };
-        Human::Lines(vec![format!(
+        let created = format!(
             "created category {}: {}{exclusive}{}",
             self.name,
             self.values.join(", "),
             in_project(self.file)
-        )])
+        );
+        let aside = self
+            .sets_aside
+            .iter()
+            .map(|yours| format!("your category {yours} is set aside inside this project"));
+        Human::Lines([created].into_iter().chain(aside).collect())
     }
 }
 

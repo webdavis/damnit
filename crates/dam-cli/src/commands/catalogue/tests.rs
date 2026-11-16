@@ -35,7 +35,7 @@ fn a_category_line_names_the_values_and_whether_it_holds_one() {
         },
     ])
     .unwrap();
-    let report = run_category(&config, CategoryCommand::List).unwrap();
+    let report = run_category(&config, CategoryCommand::List, None).unwrap();
     assert_eq!(
         report.human,
         "effort   exclusive  light, deep\ncontext  any        home"
@@ -92,7 +92,9 @@ fn a_function_filter_shows_its_kind_and_any_query_but_never_its_source() {
 fn nothing_declared_is_an_empty_list_rather_than_a_failure() {
     let config = config();
     assert_eq!(
-        run_category(&config, CategoryCommand::List).unwrap().data,
+        run_category(&config, CategoryCommand::List, None)
+            .unwrap()
+            .data,
         serde_json::json!({"categories": []})
     );
     assert_eq!(
@@ -100,7 +102,9 @@ fn nothing_declared_is_an_empty_list_rather_than_a_failure() {
         serde_json::json!({"filters": []})
     );
     assert_eq!(
-        run_category(&config, CategoryCommand::List).unwrap().human,
+        run_category(&config, CategoryCommand::List, None)
+            .unwrap()
+            .human,
         "no categories declared"
     );
     assert_eq!(

@@ -23,9 +23,8 @@ fn the_answers_match_their_schemas() {
         &Config::default(),
         &file,
         "config.lua",
-        "effort",
-        "light",
-        true,
+        &Categories::default(),
+        ("effort", "light", true),
     )
     .unwrap();
     let removed = remove(

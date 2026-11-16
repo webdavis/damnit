@@ -36,9 +36,8 @@ fn creating_an_exclusive_category_writes_its_values_and_the_flag() {
         &Config::default(),
         &file,
         "config.lua",
-        "effort",
-        "light, deep",
-        true,
+        &Categories::default(),
+        ("effort", "light, deep", true),
     )
     .unwrap();
     assert_eq!(
@@ -65,9 +64,8 @@ fn a_category_that_is_not_exclusive_writes_only_its_values() {
         &Config::default(),
         &file,
         "config.lua",
-        "place",
-        "home,work",
-        false,
+        &Categories::default(),
+        ("place", "home,work", false),
     )
     .unwrap();
     assert_eq!(
@@ -109,7 +107,13 @@ fn the_rules_of_the_config_reader_refuse_a_category_and_nothing_is_written() {
     ];
     for (name, values, refused) in cases {
         assert_eq!(
-            refusal(create(&effort(), &file, "config.lua", name, values, false)),
+            refusal(create(
+                &effort(),
+                &file,
+                "config.lua",
+                &Categories::default(),
+                (name, values, false)
+            )),
             refused
         );
     }
