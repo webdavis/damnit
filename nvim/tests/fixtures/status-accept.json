@@ -1,0 +1,32 @@
+{
+  "staged": [
+    {
+      "oid": "<id-1>",
+      "op": "create",
+      "fields": [
+        "subject"
+      ],
+      "kind": "task",
+      "subject": "call the plumber",
+      "path": "",
+      "labels": [],
+      "done": false,
+      "completed_at": null,
+      "priority": 4,
+      "due": null,
+      "from": "tool",
+      "key_id": "BBBBBBBBBBBB",
+      "channel": "local",
+      "author": "tool",
+      "details": {
+        "meta": {},
+        "host": "<host>",
+        "dir": "<dir>",
+        "repo": null,
+        "branch": null,
+        "at": "<now>",
+        "channel": "local"
+      }
+    }
+  ]
+}

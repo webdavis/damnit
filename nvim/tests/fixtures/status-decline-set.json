@@ -1,0 +1,23 @@
+{
+  "set": "<id-1>",
+  "items": [
+    {
+      "hash": "<id-2>",
+      "outcome": "declined",
+      "at": "<now>",
+      "oid": "2222222222222222222222222222222222222222",
+      "item": "change",
+      "subject": "call mom",
+      "from": "tool"
+    },
+    {
+      "hash": "<id-3>",
+      "outcome": "declined",
+      "at": "<now>",
+      "oid": "<id-4>",
+      "item": "change",
+      "subject": "pay rent",
+      "from": "tool"
+    }
+  ]
+}

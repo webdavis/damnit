@@ -1,0 +1,9 @@
+{
+  "hash": "<id-1>",
+  "outcome": "declined",
+  "at": "<now>",
+  "oid": "<id-1>",
+  "item": "new",
+  "subject": "order the tiles",
+  "from": "tool"
+}

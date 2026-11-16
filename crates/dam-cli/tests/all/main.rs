@@ -71,6 +71,7 @@ mod list_request;
 mod lua_page_example;
 mod new_id;
 mod nvim_fixtures;
+mod nvim_status_fixtures;
 mod nvim_task_fixtures;
 mod object_author;
 mod output_flag;

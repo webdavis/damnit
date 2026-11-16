@@ -1,0 +1,17 @@
+{
+  "staged": [],
+  "unstaged": [],
+  "waiting": [],
+  "sets": [],
+  "conflicts": [],
+  "notices": [],
+  "unpushed": [
+    {
+      "remote": "fake",
+      "commits": 0,
+      "commit_ids": [],
+      "oids": []
+    }
+  ],
+  "warnings": []
+}
