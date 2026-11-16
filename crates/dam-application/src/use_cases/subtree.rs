@@ -3,6 +3,7 @@ use dam_domain::{Base, Object, Oid, Path};
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::ObjectRepository;
 use crate::use_cases::load::load;
+use crate::use_cases::parents::{keep_parents_in_step, placed};
 
 pub(crate) fn children(
     objects: &dyn ObjectRepository,
@@ -68,24 +69,31 @@ pub(crate) fn replace_carrying_folder(
     before: &Object,
     after: &Object,
 ) -> Result<(), UseCaseError> {
+    let mut moved = Vec::new();
     if let (Some(from), Some(to)) = (before.base().owned_folder(), after.base().owned_folder())
         && from != to
     {
-        move_folder(objects, &from, &to)?;
+        moved.extend(move_folder(objects, &from, &to)?);
     }
-    objects.put(after)?;
-    Ok(())
+    objects.put(&placed(objects, Some(before), after.clone())?)?;
+    keep_parents_in_step(objects, &moved)
 }
 
-fn move_folder(objects: &dyn ObjectRepository, from: &Path, to: &Path) -> Result<(), UseCaseError> {
+fn move_folder(
+    objects: &dyn ObjectRepository,
+    from: &Path,
+    to: &Path,
+) -> Result<Vec<Oid>, UseCaseError> {
+    let mut moved = Vec::new();
     for mut object in objects.all()? {
         let Some(rebased) = object.base().path.rebase(from, to) else {
             continue;
         };
         object.base_mut().path = rebased;
         objects.put(&object)?;
+        moved.push(object.oid().clone());
     }
-    Ok(())
+    Ok(moved)
 }
 
 #[cfg(test)]

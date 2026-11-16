@@ -3,6 +3,7 @@ use dam_domain::{Author, Authored, Change, Item, ItemHash, Object, Outcome};
 use super::refusal::ItemRefusal;
 use crate::errors::UseCaseError;
 use crate::service::Dam;
+use crate::use_cases::parents::with_nearest_parent;
 use crate::use_cases::remove::{ItemAndTask, RemovePlan};
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -47,8 +48,9 @@ impl Dam<'_> {
         let hash = &item.hash;
         let change = match &item.change {
             Change::Create { after } => {
-                self.store.put(after)?;
-                Some(item.change.clone())
+                let after = with_nearest_parent(self.store, after.clone())?;
+                self.store.put(&after)?;
+                Some(Change::Create { after })
             }
             Change::Update { before, after } => self.apply_change(item, before, after, on_clash)?,
             Change::Delete { before } => return self.take_removal(item, before, on_clash),

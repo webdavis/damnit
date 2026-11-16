@@ -17,7 +17,7 @@ fn sent_hash(landed: Landed) -> ItemHash {
     }
 }
 
-fn dentist(s: &Scenario) -> ItemHash {
+pub(super) fn dentist(s: &Scenario) -> ItemHash {
     let tool = holder(vec![allowed(&[TaskCreate], None)]);
     let dam = Dam {
         access: &tool,
@@ -38,7 +38,7 @@ fn dentist(s: &Scenario) -> ItemHash {
     )
 }
 
-fn retitled_by_tool(s: &Scenario, subject: &str) -> ItemHash {
+pub(super) fn retitled_by_tool(s: &Scenario, subject: &str) -> ItemHash {
     let tool = holder(vec![allowed(&[TaskChange], None)]);
     let dam = Dam {
         access: &tool,
@@ -154,5 +154,6 @@ fn a_prefix_names_a_waiting_item_and_an_object_verb_refuses_it() {
 }
 
 mod blocked_after_merge;
+mod parents;
 mod removal_clash;
 mod removal_follow_ons;

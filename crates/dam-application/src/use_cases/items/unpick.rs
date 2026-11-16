@@ -3,6 +3,7 @@ use dam_domain::{Author, Change, Field, Item, Object, Oid, Outcome, changed_fiel
 use super::refusal::ItemRefusal;
 use crate::errors::UseCaseError;
 use crate::service::Dam;
+use crate::use_cases::parents::put_earlier_copy;
 
 impl Dam<'_> {
     pub(crate) fn unpick(&self, oid: &Oid) -> Result<Vec<Oid>, UseCaseError> {
@@ -24,13 +25,12 @@ impl Dam<'_> {
             (Change::Update { before, after }, Some(working)) => {
                 if let Some(committed) = self.store.committed(oid)? {
                     let fields = still_as_the_item_left_them(before, after, &working);
-                    self.store
-                        .put(&merge_fields(&working, &committed, &fields))?;
+                    put_earlier_copy(self.store, &merge_fields(&working, &committed, &fields))?;
                 }
             }
             (Change::Delete { .. }, None) => {
                 if let Some(committed) = self.store.committed(oid)? {
-                    self.store.put(&committed)?;
+                    put_earlier_copy(self.store, &committed)?;
                 }
             }
             _ => {}

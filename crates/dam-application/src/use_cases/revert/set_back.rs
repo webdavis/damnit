@@ -4,6 +4,7 @@ use dam_domain::{
 
 use crate::errors::UseCaseError;
 use crate::ports::ObjectRepository;
+use crate::use_cases::parents::put_earlier_copy;
 use crate::use_cases::remove::plan_for;
 
 type Split = (Vec<Field>, Vec<Field>);
@@ -35,7 +36,7 @@ fn update(
     }
     let (back, kept): Split = fields.into_iter().partition(|f| f.same(&working, after));
     if !back.is_empty() {
-        objects.put(&merge_fields(&working, before, &back))?;
+        put_earlier_copy(objects, &merge_fields(&working, before, &back))?;
     }
     Ok((back, kept))
 }
@@ -50,7 +51,7 @@ fn whole_object(
     if working != after {
         return Ok((Vec::new(), fields));
     }
-    objects.put(before)?;
+    put_earlier_copy(objects, before)?;
     Ok((fields, Vec::new()))
 }
 
@@ -77,7 +78,7 @@ fn delete(
     if working.is_some() {
         return Ok((Vec::new(), fields));
     }
-    objects.put(before)?;
+    put_earlier_copy(objects, before)?;
     Ok((fields, Vec::new()))
 }
 
