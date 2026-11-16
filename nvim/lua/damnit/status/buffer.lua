@@ -9,7 +9,8 @@ local Status = vim.tbl_extend(
   {},
   require("damnit.status.keys"),
   require("damnit.status.confirms"),
-  require("damnit.status.refusals")
+  require("damnit.status.refusals"),
+  require("damnit.status.details")
 )
 Status.__index = Status
 
@@ -19,7 +20,7 @@ local M = {}
 ---@param writes damnit.StatusWrites
 ---@param open_task fun(oid: string, cwd: string)
 function M.new(app, writes, open_task)
-  local status = setmetatable({ app = app, writes = writes, open_task = open_task, targets = {} }, Status)
+  local status = setmetatable({ app = app, writes = writes, open_task = open_task, targets = {}, shown = {} }, Status)
   status.group = vim.api.nvim_create_augroup("damnit.status", { clear = true })
   vim.api.nvim_create_autocmd("User", {
     group = status.group,
@@ -41,7 +42,7 @@ end
 
 function Status:read()
   local buf = self.buf
-  self.app.dam:run({ args = { "status" }, cwd = self.cwd, key = NAME }, function(answer, err)
+  self.app.dam:run({ args = { "status", "--full" }, cwd = self.cwd, key = NAME }, function(answer, err)
     if err then
       return self.app.say:error(err)
     end
@@ -70,6 +71,7 @@ function Status:draw()
   local window = { winbar = self.app.screen.bar(winbar.chunks(self.answer)), wrap = false }
   self.width = self.app.screen:text_width(buf)
   local lines, marks, targets = sections.render(self.answer, self.width)
+  vim.list_extend(marks, self:detail_marks(targets))
   folds.redraw(buf, fold_lines(#lines, targets), function()
     self.app.screen:window(buf, vim.tbl_extend("error", window, folds.window))
     self.app.screen:draw(buf, lines, marks)

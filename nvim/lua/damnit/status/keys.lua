@@ -50,6 +50,9 @@ function Keys:bind(buf)
       act("a", "accept the waiting item or set"),
       act("dd", "decline the waiting item or set, after the confirm float"),
       act("U", "set the change back to its last commit, after the confirm float"),
+      call("=", "show or hide what the row changes, or every row's on a header", function()
+        self:toggle_details()
+      end),
       call("cc", "commit the stage", function()
         self.writes.commit(self.cwd)
       end),
