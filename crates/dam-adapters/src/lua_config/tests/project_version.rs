@@ -43,3 +43,12 @@ fn a_minimum_that_is_not_a_version_is_refused_without_quoting_it() {
         );
     }
 }
+
+#[test]
+fn the_minimum_is_kept_for_dam_config_list() {
+    let folder = ProjectFolder::with("return { minimum_dam = '0.1.0', path = 'a/' }");
+    assert_eq!(
+        folder.read_as("0.2.0").unwrap().minimum_dam.as_deref(),
+        Some("0.1.0")
+    );
+}

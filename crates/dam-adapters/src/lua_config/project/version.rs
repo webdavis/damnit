@@ -7,15 +7,15 @@ pub(super) fn needs_no_newer_dam(
     file: &Path,
     table: &Table,
     this_dam: &str,
-) -> Result<(), ConfigError> {
+) -> Result<Option<String>, ConfigError> {
     let needs = match table.raw_get::<Value>("minimum_dam") {
-        Ok(Value::Nil) => return Ok(()),
+        Ok(Value::Nil) => return Ok(None),
         Ok(Value::String(text)) => text.to_string_lossy(),
         _ => return Err(not_a_version(file)),
     };
     let wanted = version(&needs).ok_or_else(|| not_a_version(file))?;
     match version(this_dam).is_some_and(|this| this >= wanted) {
-        true => Ok(()),
+        true => Ok(Some(needs)),
         false => Err(ConfigError::NeedsANewerDam {
             file: file.to_path_buf(),
             needs,

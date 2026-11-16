@@ -86,3 +86,47 @@ fn a_remote_lists_the_paths_it_never_receives() {
         listed.human
     );
 }
+
+#[test]
+fn inside_a_project_the_list_shows_every_project_setting_marked_as_the_projects() {
+    let (_root, file) = no_config();
+    let inside = Standing::Inside(Project {
+        folder: "/work/damnit".into(),
+        settings: ProjectSettings {
+            path: "damnit/".into(),
+            minimum_dam: Some("0.2.0".into()),
+            new_task: dam_application::TaskTemplate {
+                labels: Some(vec!["cli".into()]),
+                priority: Some(dam_domain::Priority::new(2).unwrap()),
+                due: Some("friday".into()),
+                ..Default::default()
+            },
+            required: vec![dam_application::RequiredField::Due],
+            ls: Some("open".into()),
+            filters: vec![dam_application::FilterConfig {
+                name: "open".into(),
+                rule: dam_application::FilterRule::Query("label:cli".into()),
+            }],
+        },
+    });
+    let listed = run(&file, &inside).unwrap();
+    let project = &listed.data["project"];
+    assert_eq!(project["minimum_dam"], "0.2.0");
+    assert_eq!(project["new_task"]["labels"][0], "cli");
+    assert_eq!(project["new_task"]["priority"], 2);
+    assert_eq!(project["new_task"]["due"], "friday");
+    assert!(project["new_task"]["deadline"].is_null());
+    assert_eq!(project["required"][0], "due");
+    assert_eq!(project["ls"], "open");
+    assert_eq!(project["filter"]["open"]["query"], "label:cli");
+    for row in [
+        "0.2.0 (from the project)",
+        "cli (from the project)",
+        "friday (from the project)",
+        "due (from the project)",
+        "open (from the project)",
+        "label:cli (from the project)",
+    ] {
+        assert!(listed.human.contains(row), "{row}: {}", listed.human);
+    }
+}

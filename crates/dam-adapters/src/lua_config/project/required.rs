@@ -19,12 +19,13 @@ pub(super) fn required(file: &Path, root: &StrictMap) -> Result<Vec<RequiredFiel
 }
 
 fn field(name: &str) -> Option<RequiredField> {
-    Some(match name {
-        "due" => RequiredField::Due,
-        "labels" => RequiredField::Labels,
-        "priority" => RequiredField::Priority,
-        "body" => RequiredField::Body,
-        "deadline" => RequiredField::Deadline,
-        _ => return None,
-    })
+    [
+        RequiredField::Due,
+        RequiredField::Labels,
+        RequiredField::Priority,
+        RequiredField::Body,
+        RequiredField::Deadline,
+    ]
+    .into_iter()
+    .find(|field| field.name() == name)
 }

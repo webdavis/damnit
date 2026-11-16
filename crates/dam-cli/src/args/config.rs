@@ -10,7 +10,7 @@ pub(crate) struct ConfigArgs {
 pub(crate) enum ConfigCommand {
     #[command(
         about = "List where the config files are and every setting dam is using, its own defaults marked, never a secret",
-        after_help = "It runs the top-level code of secrets.lua and calls no credential function.\n\nExamples:\n  dam config list\n  dam config list --json"
+        after_help = "It runs the top-level code of secrets.lua and calls no credential function.\nInside a project it also lists each setting from .dam.lua, marked as the project's.\n\nExamples:\n  dam config list\n  dam config list --json"
     )]
     List,
     #[command(

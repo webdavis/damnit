@@ -246,6 +246,7 @@ dam config: after_help = Examples:
   dam config validate
 dam config list: about = List where the config files are and every setting dam is using, its own defaults marked, never a secret
 dam config list: after_help = It runs the top-level code of secrets.lua and calls no credential function.
+Inside a project it also lists each setting from .dam.lua, marked as the project's.
 
 Examples:
   dam config list
