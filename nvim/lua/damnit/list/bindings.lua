@@ -16,8 +16,7 @@ function Bindings:bind(buf)
       group = "every window",
       run = function()
         local list = self.shown[buf]
-        local row = (list.arranged or {})[vim.api.nvim_win_get_cursor(0)[1]]
-        local oid = row and row.object and row.object.oid
+        local oid = self:object_oid(buf)
         if not oid then
           return self.app.say:warn("no task on this line to open")
         end
@@ -38,8 +37,7 @@ function Bindings:bind(buf)
   vim.list_extend(
     specs,
     self.app.keys:for_task(buf, "task rows", function()
-      local context = self:context(buf)
-      return context.oid or nil, context.cwd
+      return self:object_oid(buf), self.shown[buf].call.cwd
     end)
   )
   vim.list_extend(specs, self:filter_keys(buf))
@@ -52,6 +50,13 @@ function Bindings:bind(buf)
       self.shown[buf] = nil
     end,
   })
+end
+
+---@param buf integer
+---@return string|nil oid the object on the cursor's row, an event or a readonly row too
+function Bindings:object_oid(buf)
+  local row = (self.shown[buf].arranged or {})[vim.api.nvim_win_get_cursor(0)[1]]
+  return row and row.object and row.object.oid or nil
 end
 
 ---@param buf integer
