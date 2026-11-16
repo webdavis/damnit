@@ -5,6 +5,7 @@
 ---@field timeout_ms integer
 ---@field sidebar { side: "left"|"right", width: integer }
 ---@field handoff { host: "auto"|"rex"|"clipboard" }
+---@field signs { overdue: string, blocked: string, changed: string, staged: string, waiting: string }
 
 ---@class damnit.App
 ---@field options damnit.Options
