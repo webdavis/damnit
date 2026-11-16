@@ -101,6 +101,7 @@ character anywhere in the file, a wrong type or an unknown key refuses the file.
 | `ls` | a query such as `"@cli & p1"` | what `dam ls` shows when no query is given, narrowed to the project; a query you give replaces it |
 | `filter` | `<name> = { query = ".." }`, never a function | saved filters for `dam ls` and `dam agenda`, found before your own of the same name; `dam filter list` marks them as the project's |
 | `category` | `<name> = { values = { .. }, exclusive = true }`, as in `config.lua` | label categories for `dam new` and the queries you type there, beside your own; one that shares a name or a label with yours refuses the file, and `ls` and `filter` may name only these |
+| `sections` | names such as `{ "bugs", "features" }`, each one path segment | `dam init` creates each as a task under `path` when it is missing |
 | `minimum_dam` | a version such as `"0.3.0"` | an older `dam` refuses the file before it reads any other key |
 
 Inside the folder, `path` is where `dam new` starts a task's `--path`, and `dam ls`, `dam agenda`

@@ -13,6 +13,7 @@ pub(super) struct ProjectEntry {
     ls: Option<String>,
     filter: BTreeMap<String, FilterEntry>,
     category: BTreeMap<String, CategoryEntry>,
+    sections: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -70,6 +71,7 @@ impl ProjectEntry {
                     (category.name.clone(), entry)
                 })
                 .collect(),
+            sections: settings.sections.clone(),
         }
     }
 
@@ -107,6 +109,8 @@ impl ProjectEntry {
                 Some(category.exclusive.to_string()),
             ));
         }
+        let sections = (!self.sections.is_empty()).then(|| self.sections.join(", "));
+        rows.push(("sections".into(), sections));
         rows.into_iter()
             .filter_map(|(key, value)| Some((key, format!("{} (from the project)", value?))))
             .collect()

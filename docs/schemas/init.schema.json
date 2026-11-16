@@ -2,15 +2,24 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/init.schema.json",
   "title": "dam init answer",
-  "description": "What dam init prints with --json or --toon: the project file, the path it sets, whether it wrote the file, the task it created, and how many tasks were already under the path when it joined a place that was there.",
+  "description": "What dam init prints with --json or --toon: the project file, the path it sets, whether it wrote the file, the task it created, how many tasks were already under the path when it joined a place that was there, and each standard section it created. Where .dam.lua was already there, path is null when nothing was missing.",
   "type": "object",
-  "required": ["file", "path", "created", "task", "tasks_already_there"],
+  "required": ["file", "path", "created", "task", "tasks_already_there", "sections_created"],
   "additionalProperties": false,
   "properties": {
     "file": { "type": "string" },
     "path": { "type": ["string", "null"] },
     "created": { "type": "boolean" },
     "task": { "type": ["string", "null"] },
-    "tasks_already_there": { "type": ["integer", "null"], "minimum": 0 }
+    "tasks_already_there": { "type": ["integer", "null"], "minimum": 0 },
+    "sections_created": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "task"],
+        "additionalProperties": false,
+        "properties": { "name": { "type": "string" }, "task": { "type": "string" } }
+      }
+    }
   }
 }

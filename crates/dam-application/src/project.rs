@@ -19,6 +19,7 @@ pub struct ProjectSettings {
     pub ls: Option<String>,
     pub filters: Vec<FilterConfig>,
     pub categories: Categories,
+    pub sections: Vec<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

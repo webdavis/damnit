@@ -16,7 +16,8 @@ pub(crate) struct InitArgs {
 pub(crate) const INIT_HELP: &str =
     "It writes .dam.lua, which says where this project's tasks go, and creates
 the task that holds that path as a working change when no object holds it yet.
-Run again where .dam.lua exists, it changes nothing.
+Where .dam.lua exists, as in a clone, it creates what is missing: the project's task and each
+section the file names. When nothing is missing it changes nothing.
 It refuses inside another project's folder.
 
 Examples:

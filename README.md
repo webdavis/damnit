@@ -315,8 +315,9 @@ return { path = "app/" }
 ```
 
 `--path` names the path; the default is the folder's name. Commit `.dam.lua` so every clone shares
-it. When the path is already there, `dam init` joins it and says how many tasks it holds. Run
-again, `dam init` changes nothing. Inside another project's folder it makes a project of
+it. When the path is already there, `dam init` joins it and says how many tasks it holds. Where
+`.dam.lua` is already there, as in a fresh clone, `dam init` creates what is missing, the project's
+task and each of its `sections`, and says what it created; when nothing is missing it changes nothing. Inside another project's folder it makes a project of
 its own: the nearest `.dam.lua` at or above where you stand is the one `dam` follows.
 `docs/schemas/init.schema.json` is its `--json` schema.
 
@@ -355,7 +356,9 @@ only your `config.lua`.
 `category = { area = { values = { "ui", "db" }, exclusive = true } }` adds label categories, as
 `config.lua` writes them, to `dam new` and the queries you type there; `dam edit` covers everything
 and keeps to yours. A project category that shares a name or a label with one of yours refuses the
-file. A query in `.dam.lua` may name only the project's own categories. With
+file. A query in `.dam.lua` may name only the project's own categories.
+`sections = { "bugs", "features" }` names standard sections that `dam init` creates under the path.
+With
 `minimum_dam = "0.3.0"` an older `dam` refuses the file and names the version it needs.
 
 `dam new --template bug "crash on pull"` starts the task from a template: the project's

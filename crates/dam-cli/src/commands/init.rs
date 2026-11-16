@@ -10,7 +10,7 @@ use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
 use crate::project_scope::RunFolders;
-use crate::view::{Human, View, report};
+use crate::view::report;
 
 pub(crate) struct Here<'a> {
     pub(crate) folder: &'a FsPath,
@@ -33,39 +33,13 @@ struct Initialized {
     created: bool,
     task: Option<String>,
     tasks_already_there: Option<usize>,
-}
-
-impl View for Initialized {
-    fn human(&self) -> Human {
-        let text = match (&self.path, &self.task, self.tasks_already_there) {
-            (None, ..) => format!(
-                "{} already makes this folder a project; nothing changed",
-                self.file
-            ),
-            (Some(path), Some(task), _) => {
-                format!("wrote {} with path {path}\ncreated task {task}", self.file)
-            }
-            (Some(path), None, Some(there)) => format!(
-                "wrote {file} with path {path}\n{path} was already there, with {there} {tasks} under it; this folder now shares that place. To use another place, change path in {file}",
-                file = self.file,
-                tasks = if there == 1 { "task" } else { "tasks" },
-            ),
-            (Some(path), None, None) => format!("wrote {} with path {path}", self.file),
-        };
-        Human::Lines(text.lines().map(String::from).collect())
-    }
+    sections_created: Vec<completed::SectionCreated>,
 }
 
 pub(crate) fn run(ctx: &Context, args: InitArgs, here: Here) -> Result<Report, CliError> {
     let file = here.folder.join(PROJECT_FILE);
     if file.is_file() {
-        return report(&Initialized {
-            file: file.display().to_string(),
-            path: None,
-            created: false,
-            task: None,
-            tasks_already_there: None,
-        });
+        return completed::completed(ctx, &file);
     }
     if here.folder == here.personal_config {
         return Err(CliError::Usage(format!(
@@ -93,6 +67,7 @@ pub(crate) fn run(ctx: &Context, args: InitArgs, here: Here) -> Result<Report, C
         created: true,
         task,
         tasks_already_there,
+        sections_created: Vec::new(),
     })
 }
 
@@ -141,6 +116,9 @@ fn created(ctx: &Context, path: &Path) -> Result<String, CliError> {
     })?;
     Ok(landed.oid().short().to_string())
 }
+
+mod completed;
+mod told;
 
 #[cfg(test)]
 mod tests;
