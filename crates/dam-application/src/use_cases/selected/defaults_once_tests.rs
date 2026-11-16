@@ -120,5 +120,5 @@ fn done_and_agenda_with_a_filter_work_out_their_own_defaults_once() {
             &zone,
         )
         .unwrap();
-    assert_eq!(met.len(), 1);
+    assert_eq!(met.events.len(), 1);
 }

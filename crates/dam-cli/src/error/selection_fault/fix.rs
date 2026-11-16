@@ -6,8 +6,7 @@ pub(super) fn dropped_or_moved(error: &DefaultsError) -> &'static str {
         DefaultsError::KindContradicts { .. } => "kind",
         DefaultsError::DoneContradicts { .. } => "done",
         DefaultsError::BothKinds { event_field, .. } => event_field,
-        DefaultsError::TaskFieldInAgenda { field }
-        | DefaultsError::EventFieldInHookRun { field } => field,
+        DefaultsError::EventFieldInHookRun { field } => field,
     }
 }
 
@@ -46,10 +45,8 @@ pub(super) fn corrected(error: &SelectError, typed: &FilterTable) -> FilterTable
             move_to_any(&mut t, task_field);
             move_to_any(&mut t, event_field);
         }
-        SelectError::Defaults(
-            DefaultsError::TaskFieldInAgenda { .. } | DefaultsError::EventFieldInHookRun { .. },
-        )
-        | SelectError::Sort(_) => {}
+        SelectError::Defaults(DefaultsError::EventFieldInHookRun { .. }) | SelectError::Sort(_) => {
+        }
         SelectError::Defaults(e) => remove(&mut t, dropped_or_moved(e)),
     }
     t

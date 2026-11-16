@@ -20,10 +20,11 @@ Examples:
   dam list --path work/ --any labels=urgent --any due=..today";
 
 pub(crate) const AGENDA_HELP: &str =
-    "The selection flags narrow the events in the window, as they do for dam list.
+    "The selection flags narrow the events in the window, as they do for dam list. --kind any adds the tasks not done whose due falls on a day of the window, and --kind task lists those tasks alone.
 
 Examples:
   dam agenda --to today
+  dam agenda --kind any --from week --to week
   dam agenda --from week+1 --to week+1 --labels work
   dam agenda --response not:declined --to now+4h";
 

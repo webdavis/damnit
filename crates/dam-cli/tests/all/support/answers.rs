@@ -124,10 +124,13 @@ pub fn answers(command: &str) -> Option<Vec<serde_json::Value>> {
             run(&sb, &every_task_field);
             vec![json_of(&sb, &["list", "--kind", "any", "--done", "any"])]
         }
-        "agenda" => vec![json_of(
-            &fixture::seeded(),
-            &["agenda", "--from", "2026-09-25"],
-        )],
+        "agenda" => vec![
+            json_of(&fixture::seeded(), &["agenda", "--from", "2026-09-25"]),
+            json_of(
+                &fixture::seeded(),
+                &["agenda", "--kind", "any", "--from", "2026-09-25"],
+            ),
+        ],
         "reminders" => vec![json_of(
             &fixture::seeded(),
             &["reminders", "--from", "2026-09-25"],

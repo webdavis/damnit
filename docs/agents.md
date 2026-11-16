@@ -267,6 +267,7 @@ dam list --due ..today -o json
 dam list --author not:owner -o json
 dam show <oid> -o json
 dam agenda -o json
+dam agenda --kind any -o json
 dam reminders -o json
 dam label list -o json
 dam path list -o json
@@ -282,7 +283,9 @@ whole days from today in the person's zone, negative once past, and every row ca
 token cannot see is not counted. The day counts and `children_open` cannot be selected or sorted by. `dam show`,
 `dam new` and `dam edit` carry `category`, `overdue` and the two day counts, but not `blocked` or
 `children_open`. A grant with `--own` lists only events the token made. Each `dam agenda -o json` row carries
-the event's `category` and `attendees`, and its `organizer`, `location` and `conference` when it has them. An
+the event's `category` and `attendees`, and its `organizer`, `location` and `conference` when it has them.
+`dam agenda --kind any` adds `tasks`, the tasks not done whose due falls on a day of the window, by
+day, each row as `dam list` prints it. An
 object outside the token's grants answers like a missing one: left out of lists, and exit 4, rule
 `no_such_object`, when named.
 

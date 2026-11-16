@@ -166,10 +166,8 @@ fn narrowed_reads_need_one_of_their_permissions_in_any_grant() {
     assert_eq!(admit(&events, &command("list")), Ok(()));
     assert_eq!(admit(&events, &command("agenda")), Ok(()));
     assert_eq!(admit(&events, &command("reminders")), Ok(()));
-    assert_eq!(
-        admit(&allowing(&[Permission::TaskRead]), &command("agenda")),
-        Err(Refusal::NotPermitted(Permission::EventRead))
-    );
+    let tasks = allowing(&[Permission::TaskRead]);
+    assert_eq!(admit(&tasks, &command("agenda")), Ok(()));
     assert_eq!(
         admit(&allowing(&[Permission::RemotePull]), &command("push")),
         Err(Refusal::NotPermitted(Permission::RemotePush))

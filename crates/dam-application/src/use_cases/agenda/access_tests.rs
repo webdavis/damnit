@@ -41,6 +41,7 @@ fn a_token_sees_no_meeting_outside_its_grants() {
             &TimeZone::UTC,
         )
         .unwrap()
+        .events
         .into_iter()
         .map(|s| s.event.base.subject)
         .collect();

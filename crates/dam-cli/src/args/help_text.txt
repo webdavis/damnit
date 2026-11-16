@@ -187,10 +187,11 @@ dam list offset: help = Skip the first N rows
 dam list global: help = Reach every task, not only the project this folder is in; a path starts from the root
 dam list project: help = Work in the project at PATH, such as pns/hooks/, from any folder
 dam agenda: about = Show events over a window, each with whether it holds time
-dam agenda: after_help = The selection flags narrow the events in the window, as they do for dam list.
+dam agenda: after_help = The selection flags narrow the events in the window, as they do for dam list. --kind any adds the tasks not done whose due falls on a day of the window, and --kind task lists those tasks alone.
 
 Examples:
   dam agenda --to today
+  dam agenda --kind any --from week --to week
   dam agenda --from week+1 --to week+1 --labels work
   dam agenda --response not:declined --to now+4h
 dam agenda kind: help = One of task, event, any; a,b for either

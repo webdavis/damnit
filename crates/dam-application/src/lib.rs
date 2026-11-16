@@ -55,7 +55,7 @@ pub use tokens::{
     NewToken, Standing, TokenConfig, TokenFault, TokenName, TokenTerms, TokenWarning, Tokens,
     disable_shared_values,
 };
-pub use use_cases::agenda::{Scheduled, Window};
+pub use use_cases::agenda::{Agenda, Due, Scheduled, Window};
 pub use use_cases::background::{BackgroundReport, BackgroundRequest, BackgroundStep};
 pub use use_cases::complete::{CompletePlan, Completed};
 pub use use_cases::each::{Selector, SetChange, SetChanges, SetRun};

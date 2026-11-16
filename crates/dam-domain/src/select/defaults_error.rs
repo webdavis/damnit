@@ -12,9 +12,6 @@ pub enum DefaultsError {
         task_field: &'static str,
         event_field: &'static str,
     },
-    TaskFieldInAgenda {
-        field: &'static str,
-    },
     EventFieldInHookRun {
         field: &'static str,
     },
@@ -33,9 +30,7 @@ impl DefaultsError {
             DefaultsError::KindContradicts { .. } => Fix::Drop(KIND.key),
             DefaultsError::DoneContradicts { .. } => Fix::Drop(DONE.key),
             DefaultsError::BothKinds { .. } => Fix::UseAny,
-            DefaultsError::TaskFieldInAgenda { .. } | DefaultsError::EventFieldInHookRun { .. } => {
-                Fix::UseList
-            }
+            DefaultsError::EventFieldInHookRun { .. } => Fix::UseList,
         }
     }
 }

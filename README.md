@@ -634,8 +634,10 @@ made in dam is listed at its stored occurrence only. With no flags the window ru
 hours later. `--from` and `--to` take a day, an instant or an anchor such as `today+7`, `week+1` or
 `now+2h`; a day or period as `--to` counts whole, so `--to today` runs to midnight, and an instant
 there is not included. The selection flags of `dam list`, such as `--labels work` or
-`--filter NAME`, narrow the events, and `--request` reads them as JSON. Keys are only ever added,
-never renamed or retyped.
+`--filter NAME`, narrow the events, and `--request` reads them as JSON. `--kind any` adds
+`tasks`: the tasks not done whose due falls on a day of the window in the local zone, by day, each
+as `dam list` prints it. `--kind task` lists those tasks alone. Keys are only ever added, never
+renamed or retyped.
 
 `--max-age <remote>=<duration>` makes the answer depend on that remote being fresh. When its last
 successful pull is older than the duration, or it has never pulled, `agenda` prints nothing on

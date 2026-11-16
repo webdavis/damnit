@@ -2,13 +2,25 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/webdavis/damnit/docs/schemas/agenda.schema.json",
   "title": "dam agenda answer",
-  "description": "What dam agenda prints with -o: the events in the window, earliest first. An all-day event has dates for start and end.",
+  "description": "What dam agenda prints with -o: the events in the window, earliest first, and with --kind task or any the tasks not done whose due falls on a day of the window, by day. An all-day event has dates for start and end.",
   "type": "object",
   "required": [
     "events"
   ],
   "additionalProperties": false,
   "properties": {
+    "tasks": {
+      "description": "Present when --kind task or any, or a task field, asks for tasks; in the order dam list gives within each day.",
+      "type": "array",
+      "items": {
+        "$ref": "object.schema.json",
+        "properties": {
+          "kind": {
+            "const": "task"
+          }
+        }
+      }
+    },
     "events": {
       "type": "array",
       "items": {
