@@ -27,7 +27,7 @@ impl Dam<'_> {
         Ok(members)
     }
 
-    pub(crate) fn waiting_sets(&self) -> Result<Vec<ItemHash>, UseCaseError> {
+    pub fn waiting_sets(&self) -> Result<Vec<ItemHash>, UseCaseError> {
         let mut sets: Vec<ItemHash> = Vec::new();
         for item in self.store.items()? {
             if item.is_waiting()
@@ -39,6 +39,15 @@ impl Dam<'_> {
             }
         }
         Ok(sets)
+    }
+
+    pub fn set_items(&self, set: &ItemHash) -> Result<Vec<Item>, UseCaseError> {
+        self.waiting_set(set)?;
+        Ok(self
+            .waiting_items()?
+            .into_iter()
+            .filter(|item| item.set.as_ref() == Some(set))
+            .collect())
     }
 
     pub(crate) fn take_set(

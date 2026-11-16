@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/show-set.schema.json",
+  "title": "dam show answer for a waiting set",
+  "description": "What dam show <set hash> prints in a data format: the set's hash and each waiting item in it, shaped as in dam status.",
+  "type": "object",
+  "required": ["set", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "set": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "items": { "type": "array", "items": { "$ref": "status.schema.json#/$defs/waiting" } }
+  }
+}

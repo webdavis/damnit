@@ -8,7 +8,7 @@ use crate::context::Context;
 use crate::view::{Line, display};
 
 #[derive(Serialize)]
-pub(super) struct ItemRow<'a> {
+pub(crate) struct ItemRow<'a> {
     #[serde(serialize_with = "display")]
     hash: &'a ItemHash,
     item: &'static str,
@@ -24,7 +24,7 @@ pub(super) struct ItemRow<'a> {
 }
 
 impl<'a> ItemRow<'a> {
-    pub(super) fn new(item: &'a Item, now: Timestamp, full: bool) -> ItemRow<'a> {
+    pub(crate) fn new(item: &'a Item, now: Timestamp, full: bool) -> ItemRow<'a> {
         ItemRow {
             hash: &item.hash,
             item: item.kind().as_str(),
@@ -36,14 +36,14 @@ impl<'a> ItemRow<'a> {
         }
     }
 
-    pub(super) fn removing(self, plan: Option<&'a RemovePlan>) -> ItemRow<'a> {
+    pub(crate) fn removing(self, plan: Option<&'a RemovePlan>) -> ItemRow<'a> {
         ItemRow {
             removes: plan.map(FollowOns::of),
             ..self
         }
     }
 
-    pub(super) fn told(self, ctx: &'a Context, item: &'a Item) -> ItemRow<'a> {
+    pub(crate) fn told(self, ctx: &'a Context, item: &'a Item) -> ItemRow<'a> {
         let details = visible(
             ctx.access.as_ref(),
             Some(&item.author),
@@ -55,7 +55,7 @@ impl<'a> ItemRow<'a> {
         }
     }
 
-    pub(super) fn lines(&self, owner: &str) -> Vec<Line> {
+    pub(crate) fn lines(&self, owner: &str) -> Vec<Line> {
         let target = self.target;
         let id = if target == self.hash.oid() {
             self.hash.short().to_string()
@@ -70,7 +70,7 @@ impl<'a> ItemRow<'a> {
     }
 }
 
-fn age(seconds: i64) -> String {
+pub(super) fn age(seconds: i64) -> String {
     const MINUTE: i64 = 60;
     const HOUR: i64 = 60 * MINUTE;
     const DAY: i64 = 24 * HOUR;

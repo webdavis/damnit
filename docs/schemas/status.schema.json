@@ -4,12 +4,13 @@
   "title": "dam status document",
   "description": "What dam status prints with --json or --toon. A token sees staged with stage:read, unstaged with working:read, its own waiting items, and other senders' waiting items with pending:read.",
   "type": "object",
-  "required": ["staged", "unstaged", "waiting", "conflicts", "notices", "unpushed", "warnings"],
+  "required": ["staged", "unstaged", "waiting", "sets", "conflicts", "notices", "unpushed", "warnings"],
   "additionalProperties": false,
   "properties": {
     "staged": { "type": "array", "items": { "$ref": "#/$defs/change" } },
     "unstaged": { "type": "array", "items": { "$ref": "#/$defs/change" } },
     "waiting": { "type": "array", "items": { "$ref": "#/$defs/waiting" } },
+    "sets": { "type": "array", "items": { "$ref": "#/$defs/set" } },
     "conflicts": { "type": "array", "items": { "type": "object" } },
     "notices": {
       "type": "array",
@@ -117,6 +118,20 @@
         "channel": { "enum": ["local", "mcp", null] },
         "author": { "type": "string" },
         "details": { "anyOf": [{ "type": "null" }, { "$ref": "object.schema.json#/$defs/details" }] }
+      }
+    },
+    "set": {
+      "description": "Items a token sent with --as-one, waiting as one set: dam add <set> takes them all or none and dam rm <set> declines them all. A token sees a set it sent or one whose every item it may see.",
+      "type": "object",
+      "required": ["set", "from", "count", "created", "age", "items"],
+      "additionalProperties": false,
+      "properties": {
+        "set": { "$ref": "#/$defs/id" },
+        "from": { "type": "string" },
+        "count": { "type": "integer", "minimum": 1 },
+        "created": { "type": "string", "format": "date-time" },
+        "age": { "type": "integer", "minimum": 0 },
+        "items": { "type": "array", "items": { "$ref": "#/$defs/waiting" } }
       }
     },
     "waiting": {
