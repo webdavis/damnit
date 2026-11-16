@@ -321,6 +321,11 @@ the answer carries `project_created`, its `oid` and `path`.
 `dam config list` inside a project shows the project's `.dam.lua` and its `path`, marked
 `(from the project)`; with `--json` they are under `project`.
 
+When `.dam.lua` does not load, `dam new`, `dam ls`, `dam agenda` and `dam reminders` print the error
+and refuse, since they cannot tell where a task belongs; `--global` and `--project` do not read the
+file. Every other command carries on with one warning on standard error, and `dam doctor config`
+reports it.
+
 ## The rules it keeps
 
 - A task with open children or open dependencies is not done until they are; `--force` overrides,

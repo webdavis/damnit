@@ -111,3 +111,20 @@ fn a_token_is_checked_on_the_path_the_project_fills_in() {
     assert_eq!(refused.to_string(), "the token does not allow task:create");
     assert!(paths(&elsewhere).is_empty());
 }
+
+#[test]
+fn other_commands_carry_on_past_an_unreadable_project_file_with_one_warning() {
+    let ctx = context();
+    let unreadable = || {
+        Standing::Unreadable(dam_application::ConfigError::NotATable {
+            path: "/work/damnit/.dam.lua".into(),
+            returned: "a number".into(),
+        })
+    };
+    let warning = unreadable().warning().unwrap();
+    let logged = dispatch_in(&ctx, Command::Log, unreadable()).unwrap();
+    assert_eq!(logged.standard_error_lines, [warning]);
+    let refused = dispatch_in(&ctx, Command::New(new_args("x", "")), unreadable());
+    assert!(matches!(refused, Err(crate::error::CliError::Config(_))));
+    assert!(paths(&ctx).is_empty());
+}

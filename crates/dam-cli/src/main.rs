@@ -75,6 +75,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
     let meta = cli.meta.into_iter().collect();
     gate::refuse_any_token_to_an_owner_only_verb(presented_token.is_some(), &cli.command)?;
     let store_path = cli.store.unwrap_or_else(dam_adapters::default_store_path);
+    let run = RunFolders::of_this_run(&config_path)?;
     if let Command::Test(args) = &cli.command {
         let launcher = ProcessLauncher::from_env(interrupt.clone());
         let progress = context::progress_without_a_context(&config_file, asked, format);
@@ -90,7 +91,8 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         let launcher = ProcessLauncher::from_env(interrupt.clone());
         let progress = context::progress_without_a_context(&config_file, asked, format);
         let machine =
-            commands::doctor::Machine::here(&config_file, &store_path, &launcher, &progress);
+            commands::doctor::Machine::here(&config_file, &store_path, &launcher, &progress)
+                .within(run.standing());
         return commands::doctor::print(checks, &machine, format, color);
     }
     config_file.ends_in_lua()?;
@@ -98,8 +100,7 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         return group_help::print(group);
     }
     if let Command::Config(ConfigArgs { command: Some(c) }) = cli.command {
-        let standing = RunFolders::of_this_run(&config_path)?.standing();
-        let listed = commands::config::run(&config_file, c, &standing)?;
+        let listed = commands::config::run(&config_file, c, &run.standing())?;
         return output::print(format, color, &listed);
     }
     if presented_token.is_none() {
@@ -133,15 +134,8 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         interrupt,
         context::invocation_of(&config_path, &store_path),
     )?;
-    let run = RunFolders::of_this_run(&config_path)?;
     let report = match cli.command {
-        Command::Init(args) => {
-            let here = commands::init::Here {
-                folder: &run.folder,
-                personal_config: &run.personal_config,
-            };
-            commands::init::run(&ctx, args, here)?
-        }
+        Command::Init(args) => commands::init::run(&ctx, args, (&run).into())?,
         command => commands::scoped::dispatch_in(&ctx, command, run.standing())?,
     };
     output::print(format, color, &report)
