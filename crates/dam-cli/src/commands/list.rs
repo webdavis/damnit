@@ -55,6 +55,8 @@ fn listed(ctx: &Context, args: &ListArgs) -> Result<(Listed, Option<BeyondPulled
 }
 
 mod beyond_pulled;
+#[cfg(test)]
+mod days_and_children_tests;
 
 #[cfg(test)]
 mod order_tests;

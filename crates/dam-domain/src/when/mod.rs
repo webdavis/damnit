@@ -28,6 +28,13 @@ impl When {
         }
     }
 
+    pub fn day_in(&self, zone: &jiff::tz::TimeZone) -> Date {
+        match self {
+            When::Day(d) => *d,
+            When::At(z) => z.with_time_zone(zone.clone()).date(),
+        }
+    }
+
     pub fn is_all_day(&self) -> bool {
         matches!(self, When::Day(_))
     }

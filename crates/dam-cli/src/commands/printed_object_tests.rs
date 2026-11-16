@@ -35,7 +35,12 @@ fn printed(ctx: &Context, words: &[&str]) -> Value {
 fn assert_worked_out(data: &Value, category: Value, overdue: bool) {
     assert_eq!(data["category"], category, "{data}");
     assert_eq!(data["overdue"], overdue, "{data}");
+    assert!(
+        data["days_until_due"].as_i64().is_some_and(|days| days < 0),
+        "{data}"
+    );
     assert!(data.get("blocked").is_none(), "{data}");
+    assert!(data.get("children_open").is_none(), "{data}");
 }
 
 #[test]

@@ -77,6 +77,9 @@ fn an_event_has_a_category_and_neither_overdue_nor_blocked() {
             category: BTreeMap::from([("area".to_string(), vec!["ui".to_string()])]),
             overdue: None,
             blocked: None,
+            days_until_due: None,
+            days_until_deadline: None,
+            children_open: Some(0),
         }
     );
 }

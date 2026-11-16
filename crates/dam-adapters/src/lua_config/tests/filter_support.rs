@@ -165,6 +165,9 @@ pub(super) fn handed(object: &Object) -> Handed {
             category: Default::default(),
             overdue: task.then_some(true),
             blocked: task.then_some(false),
+            days_until_due: task.then_some(-2),
+            days_until_deadline: task.then_some(3),
+            children_open: Some(0),
         },
     }
 }

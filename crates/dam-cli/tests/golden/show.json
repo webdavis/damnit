@@ -27,5 +27,6 @@
   "category": {
     "context": "errand"
   },
-  "overdue": true
+  "overdue": true,
+  "days_until_due": "<days>"
 }

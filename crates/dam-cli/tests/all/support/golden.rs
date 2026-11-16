@@ -51,6 +51,12 @@ pub fn normalize(text: &str, seeded: &[String]) -> String {
     let mut i = 0;
     while i < bytes.len() {
         let at_word_start = i == 0 || !bytes[i - 1].is_ascii_alphanumeric();
+        if let Some((key, len)) = day_count(&text[i..]) {
+            out.push_str(&text[i..i + key]);
+            out.push_str("\"<days>\"");
+            i += len;
+            continue;
+        }
         if at_word_start {
             if let Some(len) = clock_time_len(&text[i..]) {
                 out.push_str("<now>");
@@ -113,4 +119,14 @@ fn clock_time_len(s: &str) -> Option<usize> {
     let minute = rest.get(..6)?;
     let is_clock = minute.starts_with(' ') && minute[1..].parse::<jiff::civil::Time>().is_ok();
     (is_clock && (date == today || date == today.yesterday().ok()?)).then_some(16)
+}
+
+fn day_count(s: &str) -> Option<(usize, usize)> {
+    let key = ["\"days_until_due\": ", "\"days_until_deadline\": "]
+        .into_iter()
+        .find(|key| s.starts_with(key))?
+        .len();
+    let rest = s[key..].strip_prefix('-').unwrap_or(&s[key..]);
+    let digits = rest.bytes().take_while(u8::is_ascii_digit).count();
+    (digits > 0).then_some((key, s.len() - rest.len() + digits))
 }

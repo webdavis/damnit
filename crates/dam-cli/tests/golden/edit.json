@@ -20,5 +20,7 @@
   "category": {
     "context": "home"
   },
-  "overdue": true
+  "overdue": true,
+  "days_until_due": "<days>",
+  "days_until_deadline": "<days>"
 }

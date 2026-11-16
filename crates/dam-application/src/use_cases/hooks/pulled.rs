@@ -1,4 +1,4 @@
-use dam_domain::{CommitId, Object, Oid};
+use dam_domain::{CommitId, Object, Oid, OpenChildren};
 
 use super::edit_request::Edited;
 use crate::access::Owner;
@@ -78,6 +78,7 @@ impl Dam<'_> {
             total: Some(pulled.len()),
         });
         let mut first_error = None;
+        let children = as_owner.open_children()?;
         for task in pulled {
             if run_time.ran_out() || self.interruption.requested() {
                 break;
@@ -86,7 +87,7 @@ impl Dam<'_> {
                 remote: remote.clone(),
                 change: task.change,
             };
-            match as_owner.pulled_hook_on(task, &pull)? {
+            match as_owner.pulled_hook_on(task, &pull, &children)? {
                 Edited::Nothing => {}
                 Edited::Changed => run.changed += 1,
                 Edited::Failed(failure) => {
@@ -110,12 +111,19 @@ impl Dam<'_> {
         Ok(Some((run, first_error)))
     }
 
-    fn pulled_hook_on(&self, task: &PulledTask, pull: &Pull) -> Result<Edited, UseCaseError> {
+    fn pulled_hook_on(
+        &self,
+        task: &PulledTask,
+        pull: &Pull,
+        children: &OpenChildren,
+    ) -> Result<Edited, UseCaseError> {
         let Some(now) = self.store.get(&task.oid)? else {
             return Ok(Edited::Nothing);
         };
-        let now = self.handed(now)?;
-        let before = task.before.clone().map(|b| self.handed(b)).transpose()?;
+        let now = self.handed(now, children)?;
+        let before = (task.before.clone())
+            .map(|b| self.handed(b, children))
+            .transpose()?;
         match self.hooks.pulled(&now, before.as_ref(), pull) {
             Ok(None) => Ok(Edited::Nothing),
             Ok(Some(request)) => self.hook_edit(&task.oid, &request),

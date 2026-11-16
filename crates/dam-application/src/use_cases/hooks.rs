@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use dam_domain::{Object, Oid, Task};
+use dam_domain::{Object, Oid, OpenChildren, Task};
 
 use crate::config::{HookEvent, OnFailure};
 use crate::errors::{Refusal, UseCaseError};
@@ -22,7 +22,9 @@ impl Dam<'_> {
         }
         let before = tasks_by_oid(self.store)?;
         let produced = work()?;
-        for (oid, after) in tasks_by_oid(self.store)? {
+        let after = tasks_by_oid(self.store)?;
+        let children = OpenChildren::of(after.values());
+        for (oid, after) in after {
             let earlier = before.get(&oid);
             if earlier == Some(&after) {
                 continue;
@@ -35,14 +37,19 @@ impl Dam<'_> {
                 }
                 Some(_) => HookEvent::TaskChanged,
             };
-            self.run_hook(event, Object::Task(after))?;
+            self.run_hook(event, Object::Task(after), &children)?;
         }
         Ok(produced)
     }
 
-    fn run_hook(&self, event: HookEvent, task: Object) -> Result<(), UseCaseError> {
+    fn run_hook(
+        &self,
+        event: HookEvent,
+        task: Object,
+        children: &OpenChildren,
+    ) -> Result<(), UseCaseError> {
         let oid = task.oid().clone();
-        self.run_one_hook(event, task)?;
+        self.run_one_hook(event, task, children)?;
         let Some(project) = self.project_hooks else {
             return Ok(());
         };
@@ -53,16 +60,21 @@ impl Dam<'_> {
                 project_hooks: None,
                 ..*self
             }
-            .run_one_hook(event, now),
+            .run_one_hook(event, now, children),
             _ => Ok(()),
         }
     }
 
-    fn run_one_hook(&self, event: HookEvent, task: Object) -> Result<(), UseCaseError> {
+    fn run_one_hook(
+        &self,
+        event: HookEvent,
+        task: Object,
+        children: &OpenChildren,
+    ) -> Result<(), UseCaseError> {
         let Some(hook) = self.config.hook(event) else {
             return Ok(());
         };
-        let task = self.handed(task)?;
+        let task = self.handed(task, children)?;
         let histories = LogByObject::new(self);
         let step = Step {
             name: event.as_str(),

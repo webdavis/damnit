@@ -6,7 +6,7 @@ use crate::config::Config;
 use crate::testing::{Scenario, task_in};
 
 #[test]
-fn an_object_alone_gives_its_category_and_overdue_and_leaves_blocked_unread() {
+fn an_object_alone_gives_its_category_overdue_and_days_and_leaves_blocked_and_children_unread() {
     let s = Scenario::default().configured(Config {
         categories: Categories::new(vec![Category {
             name: "effort".into(),
@@ -27,4 +27,6 @@ fn an_object_alone_gives_its_category_and_overdue_and_leaves_blocked_unread() {
     );
     assert_eq!(worked.overdue, Some(true));
     assert_eq!(worked.blocked, None);
+    assert_eq!(worked.children_open, None);
+    assert!(worked.days_until_due.is_some_and(|days| days < 0));
 }

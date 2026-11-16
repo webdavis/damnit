@@ -3,7 +3,9 @@ use dam_domain::Permission::TaskRead;
 
 use crate::config::Config;
 use crate::service::Dam;
-use crate::testing::{FakeFilterFunctions, Scenario, allowed, holder, saved_function, task_in};
+use crate::testing::{
+    FakeFilterFunctions, Scenario, allowed, holder, oid, saved_function, task_in,
+};
 
 fn laundry_waits_on_report() -> Scenario {
     let mut s = Scenario::default().configured(Config {
@@ -45,4 +47,20 @@ fn a_dependency_a_token_cannot_see_does_not_block_what_match_is_handed() {
     };
     dam.list_saved("slipping").unwrap();
     assert_eq!(laundry_blocked(&s), Some(false));
+}
+
+#[test]
+fn match_is_handed_the_open_children_of_each_object() {
+    let s = laundry_waits_on_report();
+    let mut fold = task_in(3, "fold", "home");
+    fold.base.parent = Some(oid(2));
+    s.committed(Object::Task(fold));
+    s.dam().list_saved("slipping").unwrap();
+    let handed = s.fixture.filter_functions.handed.borrow();
+    let (_, worked_out) = handed
+        .iter()
+        .rev()
+        .find(|(subject, _)| subject == "laundry")
+        .unwrap();
+    assert_eq!(worked_out.children_open, Some(1));
 }

@@ -22,7 +22,9 @@
         "context": "errand"
       },
       "overdue": true,
-      "blocked": false
+      "blocked": false,
+      "days_until_due": "<days>",
+      "children_open": 0
     }
   ]
 }

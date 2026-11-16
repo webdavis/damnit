@@ -248,8 +248,11 @@ and `none` when the field is empty. `--any FIELD=VALUE` holds when any of the `-
 `--offset N` keep a slice of them.
 A value dam cannot read exits 2 and names the shapes the field takes and the command to run.
 Under `-o json`, each row also carries `category`, the label of each group it holds, and a task's
-`overdue` and `blocked`, read the same way the flags of those names select. `dam show`, `dam new`
-and `dam edit` carry `category` and `overdue`.
+`overdue` and `blocked`, read the same way the flags of those names select, `days_until_due` and
+`days_until_deadline`, whole days from today, negative once past, and `children_open`, its children
+that are tasks not done, whatever the filter lists. `dam show`, `dam new` and `dam edit` carry
+`category`, `overdue` and the two day counts. The day counts and `children_open` cannot be selected
+or sorted by.
 
     dam list --labels bug,ui --due ..today
     dam list --sort priority,due:desc --limit 10
