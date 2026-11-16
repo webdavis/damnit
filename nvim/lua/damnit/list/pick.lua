@@ -25,7 +25,9 @@ end
 ---@param cwd string
 ---@return damnit.ViewChoice[]
 local function choices(app, cwd)
-  local all = { { name = "today", note = "built in" } }
+  local all = vim.tbl_map(function(name)
+    return { name = name, note = "built in" }
+  end, { "today", "agenda", "plan" })
   local names = vim.tbl_keys(app.options.views)
   table.sort(names)
   for _, name in ipairs(names) do
@@ -70,9 +72,13 @@ function M.new(app, lists, open_task)
         return choice.name .. " · " .. choice.note
       end,
     }, function(choice)
-      if choice then
-        lists:open(choice.name, cwd, smods, choice.note == "built in" and view.TODAY or nil)
+      if not choice then
+        return
       end
+      if choice.note == "built in" and choice.name ~= "today" then
+        return vim.cmd({ cmd = "Dam", args = { choice.name }, mods = smods })
+      end
+      lists:open(choice.name, cwd, smods, choice.note == "built in" and view.TODAY or nil)
     end)
   end
 

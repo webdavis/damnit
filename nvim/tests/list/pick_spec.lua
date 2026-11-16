@@ -18,7 +18,8 @@ local function defined(options)
     table.insert(opened, { oid = oid, cwd = cwd })
   end)
   local log = require("damnit.log").new(app, function() end)
-  require("damnit.command").define(app, { list, require("damnit.status").new(app, function() end, log.open), log })
+  local status = require("damnit.status").new(app, function() end, log.open)
+  require("damnit.command").define(app, { list, status, log, require("damnit.agenda").new(app, list.show) })
   return fake, opened
 end
 
@@ -43,7 +44,9 @@ local function list_read(fake, count)
   end)
 end
 
-local VIEWS = { "today · built in", "all · view in your options", "today · saved filter" }
+local BUILT_IN = { "today · built in", "agenda · built in", "plan · built in" }
+local VIEWS = vim.list_extend(vim.list_slice(BUILT_IN), { "all · view in your options", "today · saved filter" })
+local EVERY = vim.list_extend(vim.list_slice(BUILT_IN), { "today · saved filter" })
 
 return {
   [":Dam pick offers today, the views in the options and dam's saved filters"] = function()
@@ -94,7 +97,7 @@ return {
     local offered = choosing(nil, function()
       buffer.feed("go")
     end)
-    assert(vim.deep_equal(offered.texts, { VIEWS[1], VIEWS[3] }), vim.inspect(offered.texts))
+    assert(vim.deep_equal(offered.texts, EVERY), vim.inspect(offered.texts))
   end,
 
   ["go in the status window offers every view"] = function()
@@ -106,7 +109,7 @@ return {
     local offered = choosing(nil, function()
       buffer.feed("go")
     end)
-    assert(vim.deep_equal(offered.texts, { VIEWS[1], VIEWS[3] }), vim.inspect(offered.texts))
+    assert(vim.deep_equal(offered.texts, EVERY), vim.inspect(offered.texts))
   end,
 
   ["go in the log window offers every view"] = function()
@@ -118,6 +121,17 @@ return {
     local offered = choosing(nil, function()
       buffer.feed("go")
     end)
-    assert(vim.deep_equal(offered.texts, { VIEWS[1], VIEWS[3] }), vim.inspect(offered.texts))
+    assert(vim.deep_equal(offered.texts, EVERY), vim.inspect(offered.texts))
+  end,
+
+  ["choosing the agenda opens it"] = function()
+    local fake = defined()
+    fake.reply("agenda", fixtures.answer("agenda-next-week.json"))
+    choosing("agenda · built in", function()
+      vim.cmd("Dam pick")
+    end)
+    buffer.wait_for(function()
+      return vim.api.nvim_buf_get_name(0) == "dam://agenda"
+    end)
   end,
 }
