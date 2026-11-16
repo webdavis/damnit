@@ -8,6 +8,8 @@ local M = {}
 ---@field section string
 ---@field id? string
 ---@field oid? string
+---@field details? damnit.StatusChange[] what = shows under the row, each with before and after
+---@field named? boolean
 
 local OP_GROUPS = { create = "DamAdded", update = "DamChanged", delete = "DamRemoved" }
 
@@ -26,7 +28,7 @@ local function changes(section)
         shape = "change",
         left = { { change.op }, { change.subject } },
         right = { { change.path }, { fields, "DamMeta" } },
-        target = { kind = "change", section = section, id = change.oid, oid = change.oid },
+        target = { kind = "change", section = section, id = change.oid, oid = change.oid, details = { change } },
         group = OP_GROUPS[change.op],
       }
     end, doc[section])
@@ -60,10 +62,11 @@ local function waiting(doc)
       section = "waiting",
       id = item.hash,
       oid = item.oid,
+      details = { item },
     })
   end, doc.waiting)
   for _, set in ipairs(doc.sets) do
-    local target = { kind = "set", section = "waiting", id = set.set }
+    local target = { kind = "set", section = "waiting", id = set.set, details = set.items, named = true }
     table.insert(rows, sent(("set of %d"):format(set.count), "", set.from, set.age, target))
   end
   return rows

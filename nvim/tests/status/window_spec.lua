@@ -7,7 +7,7 @@ return {
     local _, fake = status.opened()
     assert(vim.api.nvim_buf_get_name(0) == "dam://status", vim.api.nvim_buf_get_name(0))
     assert(vim.bo.filetype == "damstatus", vim.bo.filetype)
-    assert(vim.deep_equal(fake.of("status")[1].argv, { "dam", "status", "-o", "json" }))
+    assert(vim.deep_equal(fake.of("status")[1].argv, { "dam", "status", "--full", "-o", "json" }))
     assert(buffer.lines()[1] == "Conflicts (1)", vim.inspect(buffer.lines()))
   end,
 
