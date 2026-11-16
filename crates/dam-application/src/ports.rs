@@ -1,5 +1,6 @@
 mod answers;
 mod attempts;
+mod background_sync;
 mod config_file;
 mod days;
 mod environment;
@@ -20,6 +21,7 @@ mod store;
 
 pub use answers::AnswerRepository;
 pub use attempts::{Attempt, AttemptRepository, Attempts, Declared};
+pub use background_sync::{BackgroundJob, BackgroundSync, Change, ScheduleError, label_of};
 pub use config_file::{
     ByHand, ConfigError, ConfigFile, EditFault, EditedTable, Expected, LoadedConfig, Misread,
     Place, SecretsTightened, Uneditable,

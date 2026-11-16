@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>dam-sync.todoist</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/dam/bin/dam</string>
+    <string>--quiet</string>
+    <string>--config</string>
+    <string>/home/someone/config.lua</string>
+    <string>--store</string>
+    <string>/home/someone/dam.db</string>
+    <string>sync</string>
+    <string>run</string>
+    <string>todoist</string>
+    <string>--when-due</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/usr/bin:/bin</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StartInterval</key>
+  <integer>60</integer>
+</dict>
+</plist>

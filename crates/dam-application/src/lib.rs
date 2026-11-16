@@ -24,17 +24,17 @@ pub use dam_domain::{
 };
 pub use errors::{FilterError, Refusal, Retry, UseCaseError};
 pub use ports::{
-    AcceptedKindsRepository, AnswerRepository, Attempt, AttemptRepository, Attempts, ByHand, Clock,
-    CommitRepository, ComputeFailure, ConfigError, ConfigFile, Conflict, ConflictRepository,
-    CredentialError, CredentialSource, DayRepository, Declared, DroppedBecause, EditFault,
-    EditRequest, EditRequests, EditedTable, Expected, FilterFunctions, FollowOn,
-    FollowOnRepository, FunctionFailure, FunctionFault, HelperError, HelperLauncher, Histories,
-    History, HookEdits, HookFailure, HookMarkRepository, HookWarnings, Hooks, IdRepository,
-    Interruption, ItemRepository, LoadedConfig, Misread, MissingTask, NoProgress, Notice,
-    NoticeRepository, ObjectRepository, ObjectState, OriginRepository, Place, Progress, Pull,
-    PulledChange, Randomness, RemoteHelper, RemoteName, RemoteNameError, RemoteTrackingRepository,
-    SecretsTightened, SettingChange, SettingsFile, StageRepository, Step, Store, StoreError,
-    Transactional, Uneditable, waited_on,
+    AcceptedKindsRepository, AnswerRepository, Attempt, AttemptRepository, Attempts, BackgroundJob,
+    BackgroundSync, ByHand, Change, Clock, CommitRepository, ComputeFailure, ConfigError,
+    ConfigFile, Conflict, ConflictRepository, CredentialError, CredentialSource, DayRepository,
+    Declared, DroppedBecause, EditFault, EditRequest, EditRequests, EditedTable, Expected,
+    FilterFunctions, FollowOn, FollowOnRepository, FunctionFailure, FunctionFault, HelperError,
+    HelperLauncher, Histories, History, HookEdits, HookFailure, HookMarkRepository, HookWarnings,
+    Hooks, IdRepository, Interruption, ItemRepository, LoadedConfig, Misread, MissingTask,
+    NoProgress, Notice, NoticeRepository, ObjectRepository, ObjectState, OriginRepository, Place,
+    Progress, Pull, PulledChange, Randomness, RemoteHelper, RemoteName, RemoteNameError,
+    RemoteTrackingRepository, ScheduleError, SecretsTightened, SettingChange, SettingsFile,
+    StageRepository, Step, Store, StoreError, Transactional, Uneditable, label_of, waited_on,
 };
 pub use project::{PROJECT_FILE, Project, ProjectFolders, ProjectSettings, find_project};
 pub use remote::{
