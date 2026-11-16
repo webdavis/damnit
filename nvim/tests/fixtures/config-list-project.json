@@ -1,0 +1,88 @@
+{
+  "config": "<sandbox>/config.lua",
+  "secrets": "<sandbox>/secrets.lua",
+  "project": {
+    "file": "<sandbox>/app/.dam.lua",
+    "path": "app/",
+    "minimum_dam": null,
+    "new_task": {
+      "labels": null,
+      "priority": null,
+      "due": null,
+      "deadline": null
+    },
+    "required": [],
+    "list": null,
+    "filter": {},
+    "category": {},
+    "sections": [],
+    "branch_label": false,
+    "hooks": false,
+    "hooks_changed": false,
+    "hooks_from": "default",
+    "done_children": null
+  },
+  "settings": {
+    "owner": {
+      "value": "owner",
+      "default": true
+    },
+    "done": {
+      "interactive": {
+        "value": false,
+        "default": true
+      }
+    },
+    "progress": {
+      "value": true,
+      "default": true
+    },
+    "confirm_above": {
+      "value": null,
+      "default": true
+    },
+    "project": {
+      "hooks": {
+        "value": false,
+        "default": true
+      }
+    },
+    "remote": {
+      "fake": {
+        "url": {
+          "value": "fake::",
+          "default": false
+        },
+        "deadline": {
+          "value": "60s",
+          "default": true
+        },
+        "sync": {
+          "interval": {
+            "value": "15m",
+            "default": true
+          },
+          "allowed": {
+            "value": true,
+            "default": true
+          }
+        },
+        "path": {
+          "value": null,
+          "default": true
+        },
+        "except": {
+          "value": null,
+          "default": true
+        },
+        "credential": {
+          "api_token": {
+            "hidden": true,
+            "function": false
+          }
+        }
+      }
+    }
+  },
+  "warnings": []
+}
