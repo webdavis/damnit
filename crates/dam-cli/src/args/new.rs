@@ -1,6 +1,7 @@
 use clap::Args;
 use dam_domain::{CallerId, Kind, Path, Priority};
 
+use super::ScopeArgs;
 use super::values::{caller_id_arg, kind_arg, path_arg, priority_arg};
 
 #[derive(Args, Debug)]
@@ -24,7 +25,8 @@ pub(crate) struct NewArgs {
         default_value = "",
         hide_default_value = true,
         value_parser = path_arg,
-        help = "Put it under PATH, such as work/clients/. Default: the root"
+        help = "Put it under PATH, such as work/clients/, starting from the project you are in. \
+                Default: the project, or the root outside one"
     )]
     pub(crate) path: Path,
     #[arg(long, help = "Put it in the object with this oid or prefix")]
@@ -72,4 +74,6 @@ pub(crate) struct NewArgs {
                 One line, up to 200 characters; not damnit's oid"
     )]
     pub(crate) id: Option<CallerId>,
+    #[command(flatten)]
+    pub(crate) scope: ScopeArgs,
 }

@@ -13,6 +13,7 @@ mod layout;
 mod output;
 mod paint;
 mod progress;
+mod project_scope;
 mod prompt;
 mod request;
 mod started_by_hook;
@@ -27,6 +28,7 @@ use crate::caller::{authenticated, caller};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Format;
+use crate::project_scope::RunFolders;
 
 fn main() {
     let interrupt = Interrupt::default();
@@ -129,19 +131,16 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         interrupt,
         context::invocation_of(&config_path, &store_path),
     )?;
+    let run = RunFolders::of_this_run(&config_path)?;
     let report = match cli.command {
         Command::Init(args) => {
-            let folder = std::env::current_dir()?;
-            let beside_config = config_path.parent().unwrap_or(&config_path);
-            let personal_config =
-                std::fs::canonicalize(beside_config).unwrap_or_else(|_| beside_config.into());
             let here = commands::init::Here {
-                folder: &folder,
-                personal_config: &personal_config,
+                folder: &run.folder,
+                personal_config: &run.personal_config,
             };
             commands::init::run(&ctx, args, here)?
         }
-        command => commands::dispatch_a_verb_that_opens_the_store(&ctx, command)?,
+        command => commands::scoped::dispatch_in(&ctx, command, run.standing())?,
     };
     output::print(format, color, &report)
 }

@@ -23,6 +23,15 @@ dam token create agent --allow task:read --allow task:create --allow task:change
 
 `--paths` limits the token to objects under that path, so each task the token sends needs a
 `--path` under it. The README's Tokens section lists every permission and grant key.
+
+The project comes from the folder `dam` runs in, so a tool or agent that runs `dam` inside a
+project folder gets that project, the same as a person does. A tool that wants every task passes
+`--global`. The nearest `.dam.lua` at or above the folder is the project, and a project inside
+another uses only its own file.
+
+In a folder that holds `.dam.lua`, `dam new --path` starts from the project's path, and the
+token is checked on the full path. `--global`, or `"global": true` in a request, starts it from
+the root.
 When a template renders `secrets.lua`, the template writes the token's table with the value
 `dam token create` printed.
 

@@ -299,6 +299,10 @@ again, `dam init` changes nothing. Inside another project's folder it makes a pr
 its own: the nearest `.dam.lua` at or above where you stand is the one `dam` follows.
 `docs/schemas/init.schema.json` is its `--json` schema.
 
+Inside a project, `dam new` puts the task under the project's path: `dam new "x" --path cli/` in a
+project at `app/` lands at `app/cli/`. With `--parent` and no `--path` the task goes where its
+parent is. `--global` reads `--path` from the root.
+
 ## The rules it keeps
 
 - A task with open children or open dependencies is not done until they are; `--force` overrides,
