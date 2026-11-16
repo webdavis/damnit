@@ -27,6 +27,7 @@ use std::fs::DirBuilder;
 use std::os::unix::fs::DirBuilderExt;
 use std::path::Path;
 
+use dam_application::{NoProgress, Progress};
 use rusqlite::{Connection, OpenFlags};
 
 const BUSY_TIMEOUT_MS: u64 = 5000;
@@ -49,6 +50,10 @@ pub enum OpenError {
 
 impl SqliteStore {
     pub fn open(path: &Path) -> Result<SqliteStore, OpenError> {
+        SqliteStore::open_reporting(path, &NoProgress)
+    }
+
+    pub fn open_reporting(path: &Path, progress: &dyn Progress) -> Result<SqliteStore, OpenError> {
         if let Some(dir) = path.parent() {
             DirBuilder::new()
                 .recursive(true)
@@ -60,14 +65,14 @@ impl SqliteStore {
         let flags = OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_NO_MUTEX;
         let mut conn = Connection::open_with_flags(path, flags)
             .map_err(|e| OpenError::Sqlite(e.to_string()))?;
-        prepare(&mut conn, Backing::File)?;
+        prepare(&mut conn, Backing::File, progress)?;
         Ok(SqliteStore { conn })
     }
 
     pub fn in_memory() -> Result<SqliteStore, OpenError> {
         let mut conn =
             Connection::open_in_memory().map_err(|e| OpenError::Sqlite(e.to_string()))?;
-        prepare(&mut conn, Backing::MemoryWhichNeverRunsWal)?;
+        prepare(&mut conn, Backing::MemoryWhichNeverRunsWal, &NoProgress)?;
         Ok(SqliteStore { conn })
     }
 }
@@ -78,7 +83,11 @@ enum Backing {
     MemoryWhichNeverRunsWal,
 }
 
-fn prepare(conn: &mut Connection, backing: Backing) -> Result<(), OpenError> {
+fn prepare(
+    conn: &mut Connection,
+    backing: Backing,
+    progress: &dyn Progress,
+) -> Result<(), OpenError> {
     conn.busy_timeout(std::time::Duration::from_millis(BUSY_TIMEOUT_MS))
         .map_err(|e| OpenError::Sqlite(e.to_string()))?;
     let mode: String = conn
@@ -99,8 +108,7 @@ fn prepare(conn: &mut Connection, backing: Backing) -> Result<(), OpenError> {
             supported: migrations::VERSION,
         });
     }
-    migrations::migrate_above_user_version_in_one_transaction(conn)
-        .map_err(|e| OpenError::Sqlite(e.to_string()))
+    migrations::upgrade(conn, progress).map_err(|e| OpenError::Sqlite(e.to_string()))
 }
 
 impl fmt::Display for OpenError {

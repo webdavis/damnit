@@ -51,12 +51,12 @@ impl Context {
         let config = loaded.config;
         let now = SystemClock.now();
         let holder = authenticated(&config, presented_token, now, meta)?;
-        let store = SqliteStore::open(store_path)?;
+        let progress = progress_for(&config, asked, format, std::io::stderr().is_terminal());
+        let store = SqliteStore::open_reporting(store_path, &progress)?;
         let holder = holder.map(|h| h.knowing_what_it_made(&store)).transpose()?;
         let access = caller(holder, now, meta);
         let (prompt, editor) =
             terminal_pair_for_a_human_and_refusals_for_a_machine(format, interrupt);
-        let progress = progress_for(&config, asked, format, std::io::stderr().is_terminal());
         Ok(Context {
             store: Box::new(store),
             config,
