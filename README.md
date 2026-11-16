@@ -318,6 +318,17 @@ through `dam edit --due`, and `--no-due` clears it.
 
 A slow step shows a progress line on standard error when it is a terminal. `--progress` shows it
 even when it is not, as one start and one finished record per step; `--no-progress` hides it.
+These steps report progress:
+
+- reading a credential that a function in `secrets.lua` computes
+- waiting for each remote's answer in a pull
+- sending changes to each remote in a push
+- the `task_new`, `task_changed`, `task_done` and `task_pulled` hooks
+- signing in to each remote in `dam test credentials`
+- each helper check in `dam doctor`
+- upgrading the store on the first run after a new version
+
+A wait the remote asks for to slow down shows as the pull or push step it belongs to.
 
 Every time under `--json` and `--toon` is RFC 3339 with its offset, such as
 `2026-09-25T09:00:00-04:00`, and every all-day date is a plain `YYYY-MM-DD`.
