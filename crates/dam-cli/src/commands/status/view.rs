@@ -4,6 +4,7 @@ use serde::Serialize;
 
 use super::notices::NoticeRow;
 use super::rows::{ChangeRow, ConflictRow};
+use super::sets::SetRow;
 use super::waiting::ItemRow;
 use crate::layout::counted;
 use crate::view::{Human, Line, View, displays};
@@ -13,6 +14,7 @@ pub(super) struct StatusView<'a> {
     pub(super) staged: Vec<ChangeRow<'a>>,
     pub(super) unstaged: Vec<ChangeRow<'a>>,
     pub(super) waiting: Vec<ItemRow<'a>>,
+    pub(super) sets: Vec<SetRow<'a>>,
     pub(super) conflicts: Vec<ConflictRow<'a>>,
     pub(super) notices: Vec<NoticeRow<'a>>,
     pub(super) unpushed: Vec<UnpushedRow<'a>>,
@@ -64,9 +66,14 @@ impl View for StatusView<'_> {
         };
         section("Staged:", changes(&self.staged));
         let waiting = self.waiting.iter().flat_map(|r| r.lines(self.owner));
+        let sets = self.sets.iter().map(SetRow::line);
         section(
             "Not staged:",
-            changes(&self.unstaged).into_iter().chain(waiting).collect(),
+            changes(&self.unstaged)
+                .into_iter()
+                .chain(waiting)
+                .chain(sets)
+                .collect(),
         );
         section(
             "Conflicts:",

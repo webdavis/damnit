@@ -30,7 +30,7 @@ fn as_one_from_the_owner_is_a_usage_problem() {
     assert!(refused.to_string().contains("--as-one"));
 }
 
-fn a_waiting_set() -> (Context, String, String) {
+pub(super) fn a_waiting_set() -> (Context, String, String) {
     let (mut ctx, _) = three_tasks();
     dam(&ctx, &["add", "-A"]).unwrap();
     dam(&ctx, &["commit", "-m", "start"]).unwrap();

@@ -12,20 +12,35 @@ use crate::view::report;
 
 mod notices;
 mod rows;
+mod sets;
 mod view;
 mod waiting;
 
 use notices::NoticeRow;
 use rows::ConflictRow;
 pub(crate) use rows::{ChangeRow, DetailsView, the_owner_to, visible};
+use sets::SetRow;
 use view::{DiffView, StatusView, UnpushedRow};
-use waiting::ItemRow;
+pub(crate) use waiting::ItemRow;
 
 pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliError> {
     let remotes: Vec<_> = ctx.config.remotes.iter().map(|r| r.name.clone()).collect();
     let s = ctx.dam().status(&remotes)?;
     let shown = |permission| may(ctx.access.as_ref(), permission);
     let owners = ctx.access.token().is_none();
+    let now = ctx.clock.now();
+    let row = |item| {
+        ItemRow::new(item, now, args.full)
+            .told(ctx, item)
+            .removing(s.removal_plans.get(&item.hash))
+    };
+    let sets = ctx.dam().waiting_sets()?;
+    let in_set = |set| -> Vec<_> {
+        s.waiting
+            .iter()
+            .filter(|item| item.set.as_ref() == Some(set))
+            .collect()
+    };
     let warnings = token_warnings(&ctx.config.tokens).map(|w| format!("warning: {w}"));
     report(&StatusView {
         staged: authored_rows(ctx, &s.staged, args.full).collect(),
@@ -33,10 +48,15 @@ pub(crate) fn run_status(ctx: &Context, args: StatusArgs) -> Result<Report, CliE
         waiting: s
             .waiting
             .iter()
-            .map(|item| {
-                ItemRow::new(item, ctx.clock.now(), args.full)
-                    .told(ctx, item)
-                    .removing(s.removal_plans.get(&item.hash))
+            .filter(|item| item.set.is_none())
+            .map(row)
+            .collect(),
+        sets: sets
+            .iter()
+            .filter_map(|set| {
+                let members = in_set(set);
+                let rows = members.iter().map(|item| row(item)).collect();
+                SetRow::new(set, &members, rows, now)
             })
             .collect(),
         conflicts: only_if(

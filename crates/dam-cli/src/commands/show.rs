@@ -1,4 +1,4 @@
-use dam_application::{Refusal, UseCaseError};
+use dam_application::{Named, Refusal, UseCaseError};
 use dam_domain::{Object, Permission};
 use serde::Serialize;
 
@@ -12,8 +12,12 @@ use crate::gate::may;
 use crate::layout::table;
 use crate::output::{Report, object_cells};
 use crate::view::{Human, View, report, wire};
+use set::show_set;
 
 pub(crate) fn run_show(ctx: &Context, args: ShowArgs) -> Result<Report, CliError> {
+    if let Ok(Named::Set(set)) = ctx.dam().resolve_named(&args.id) {
+        return show_set(ctx, &set);
+    }
     if let Some(object) = working_object_named(ctx, &args.id)? {
         let id = ctx.dam().caller_id(object.oid())?;
         let authorship = Authorship::read(ctx)?;
@@ -96,6 +100,8 @@ impl View for ShownCommit<'_> {
         Human::Lines(human)
     }
 }
+
+mod set;
 
 #[cfg(test)]
 mod tests;

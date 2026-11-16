@@ -2,6 +2,8 @@ mod as_one;
 mod confirm;
 mod requests;
 mod schema;
+mod set_listing;
+mod set_schemas;
 mod verbs;
 
 use clap::Parser;
