@@ -38,7 +38,11 @@ pub(crate) fn dispatch_in(
             a.place = standing.place(&a.scope)?;
             Command::Reminders(a)
         }
-        other => other,
+        other => {
+            let mut answer = dispatch_a_verb_that_opens_the_store(ctx, other)?;
+            answer.standard_error_lines.extend(standing.warning());
+            return Ok(answer);
+        }
     };
     dispatch_a_verb_that_opens_the_store(ctx, command)
 }

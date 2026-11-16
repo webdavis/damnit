@@ -78,6 +78,8 @@ person, such as `owner`, `remote` or `token`, is refused; it belongs in `config.
 
 Inside the folder, `path` is where `dam new` starts a task's `--path`, and `dam ls`, `dam agenda`
 and `dam reminders` list only what is under it.
+A `.dam.lua` that does not load stops those four commands unless `--global` or `--project` is given;
+the others warn and carry on. dam never quotes the file's text in the error.
 
 ## Filters
 

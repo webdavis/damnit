@@ -2,6 +2,7 @@ use std::cell::OnceCell;
 use std::path::Path;
 
 use super::store_reading::{self, Store};
+use crate::project_scope::Standing;
 use dam_adapters::{LuaConfigFile, OpenError};
 use dam_application::{
     BackgroundSync, Config, ConfigError, HelperError, HelperLauncher, Progress, RemoteCapabilities,
@@ -25,6 +26,7 @@ pub(crate) struct Machine<'a> {
     pub(super) background: Box<dyn BackgroundSync>,
     pub(super) run_records: Box<dyn RunRecords>,
     pub(super) now: Timestamp,
+    pub(super) standing: Standing,
 }
 
 impl<'a> Machine<'a> {
@@ -45,6 +47,7 @@ impl<'a> Machine<'a> {
             background: dam_adapters::no_background_sync(),
             run_records: dam_adapters::no_run_records(),
             now: Timestamp::now(),
+            standing: Standing::Outside,
         }
     }
 
@@ -70,6 +73,10 @@ impl<'a> Machine<'a> {
             run_records,
             ..self
         }
+    }
+
+    pub(crate) fn within(self, standing: Standing) -> Machine<'a> {
+        Machine { standing, ..self }
     }
 
     pub(super) fn config(&self) -> &Result<Config, ConfigError> {

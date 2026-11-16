@@ -1,5 +1,6 @@
 mod helpers;
 mod parents;
+mod project_file;
 mod pushes;
 mod report;
 mod store_read_first;

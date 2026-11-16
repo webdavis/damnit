@@ -9,11 +9,21 @@ use crate::args::InitArgs;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
+use crate::project_scope::RunFolders;
 use crate::view::{Human, View, report};
 
 pub(crate) struct Here<'a> {
     pub(crate) folder: &'a FsPath,
     pub(crate) personal_config: &'a FsPath,
+}
+
+impl<'a> From<&'a RunFolders> for Here<'a> {
+    fn from(run: &'a RunFolders) -> Here<'a> {
+        Here {
+            folder: &run.folder,
+            personal_config: &run.personal_config,
+        }
+    }
 }
 
 #[derive(Serialize)]

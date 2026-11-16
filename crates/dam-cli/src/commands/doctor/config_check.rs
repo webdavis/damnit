@@ -4,6 +4,7 @@ use crate::args::CheckName;
 use crate::commands::check_report::{Check, ConfigFiles, Outcome};
 use crate::commands::token_warnings::token_warnings;
 use crate::error::ConfigReason;
+use crate::project_scope::Standing;
 use dam_application::ConfigError;
 
 fn fix(error: &ConfigError) -> &'static str {
@@ -38,7 +39,18 @@ pub(super) fn check(machine: &Machine) -> Vec<Check> {
             }
         }
     };
-    vec![check.reading(files)]
+    let project = match &machine.standing {
+        Standing::Unreadable(error) => Some(
+            Check::of(
+                CheckName::Config,
+                Outcome::Issue,
+                ConfigReason(error).to_string(),
+            )
+            .advising(fix(error)),
+        ),
+        _ => None,
+    };
+    [check.reading(files)].into_iter().chain(project).collect()
 }
 
 fn said(files: &ConfigFiles) -> (Outcome, String) {
