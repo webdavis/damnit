@@ -13,6 +13,7 @@ mod path;
 mod priority;
 mod query;
 mod recurrence;
+mod select;
 mod vocabulary;
 mod weekday;
 mod when;
@@ -49,5 +50,6 @@ pub use query::{
     parse as parse_query,
 };
 pub use recurrence::{Anchor, Freq, Recurrence, Rule, RuleError, roll_forward};
+pub use select::{Context, DateTest};
 pub use weekday::{parse_weekday, weekday_text};
 pub use when::{Date, Timestamp, When, WhenError};
