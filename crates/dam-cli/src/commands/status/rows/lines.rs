@@ -28,14 +28,15 @@ impl ChangeRow<'_> {
         let lead = format!("{indent}changed  {id}  ");
         let mut minus = vec![format!("{lead}-{}", before.base().subject)];
         minus.extend(cells(before, &fields));
-        minus.extend(path_cell(before));
+        let parent_alone = before.base().path == after.base().path && fields.contains(&Field::Path);
+        minus.extend(placed_cell(before, parent_alone));
         minus.push(sender);
         minus.extend_from_slice(tail);
         let pad = " ".repeat(lead.chars().count());
         let mut plus = vec![format!("{pad}+{}", after.base().subject)];
         plus.extend(cells(after, &fields));
         if fields.contains(&Field::Path) {
-            plus.extend(path_cell(after));
+            plus.extend(placed_cell(after, parent_alone));
         }
         vec![
             Line::Removed(minus.join("  ")),
@@ -47,4 +48,16 @@ impl ChangeRow<'_> {
 fn path_cell(object: &Object) -> Option<String> {
     let path = object.base().path.as_str();
     (!path.is_empty()).then(|| path.to_string())
+}
+
+fn placed_cell(object: &Object, with_parent: bool) -> Option<String> {
+    let path = path_cell(object);
+    match (with_parent, &object.base().parent) {
+        (true, Some(parent)) => Some(format!(
+            "{} in {}",
+            path.unwrap_or_default(),
+            parent.short()
+        )),
+        _ => path,
+    }
 }
