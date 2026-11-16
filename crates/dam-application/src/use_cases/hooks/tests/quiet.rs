@@ -32,6 +32,7 @@ fn a_new_event_runs_no_hook() {
     let s = every_hook();
     s.dam()
         .new_event(NewEvent {
+            parent: None,
             subject: "dentist".into(),
             path: Path::root(),
             start: When::Day(date(2026, 9, 18)),

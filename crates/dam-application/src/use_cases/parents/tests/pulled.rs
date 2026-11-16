@@ -52,7 +52,9 @@ fn a_pull_does_not_wipe_a_local_parent() {
 fn a_restored_object_takes_the_holder_of_its_committed_path() {
     let s = errands();
     s.committed(Object::Task(task_in(2, "milk", "Home/errands")));
-    s.dam().relocate(&oid(2), &Path::root()).unwrap();
+    s.dam()
+        .relocate(&oid(2), Some(&Path::root()), None)
+        .unwrap();
     s.dam().restore(&[oid(2)]).unwrap();
     assert_eq!(parent_of(&s, &oid(2)), Some(oid(1)));
 }

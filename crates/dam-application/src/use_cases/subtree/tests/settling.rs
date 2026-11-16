@@ -31,7 +31,7 @@ fn removing_the_only_possible_parent_moves_its_unsettled_content_up() {
 fn moving_the_only_possible_parent_carries_and_settles_its_unsettled_content() {
     let s = one_errands_holding_an_unsettled_task();
     s.dam()
-        .relocate(&oid(1), &Path::parse("Work").unwrap())
+        .relocate(&oid(1), Some(&Path::parse("Work").unwrap()), None)
         .unwrap();
     assert_eq!(s.path_of(&oid(3)), "Work/errands/");
     assert_eq!(parent_of(&s, &oid(3)), Some(oid(1)));

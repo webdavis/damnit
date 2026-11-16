@@ -46,6 +46,7 @@ pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
                 .ok_or_else(|| CliError::Usage("--kind event needs --start and --end".into()))?,
         )?;
         ctx.dam().new_event(NewEvent {
+            parent: None,
             subject: args.subject,
             path: args.path,
             start,
@@ -72,6 +73,7 @@ pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
             .map(|d| deadline_flag(ctx, d))
             .transpose()?;
         ctx.dam().new_task(NewTask {
+            parent: None,
             subject: args.subject,
             path: args.path,
             priority,

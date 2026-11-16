@@ -19,6 +19,7 @@ fn added_dentist(s: &Scenario) -> ItemHash {
     };
     let landed = dam
         .new_task(NewTask {
+            parent: None,
             subject: "call the dentist".into(),
             path: Path::parse("inbox").unwrap(),
             priority: Priority::default(),

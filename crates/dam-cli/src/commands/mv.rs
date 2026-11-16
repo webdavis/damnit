@@ -6,7 +6,7 @@ use crate::view::{ObjectRow, report};
 
 pub(crate) fn run(ctx: &Context, args: MvArgs) -> Result<Report, CliError> {
     let oid = ctx.dam().resolve_object(&args.oid)?;
-    ctx.dam().relocate(&oid, &args.path)?;
+    ctx.dam().relocate(&oid, Some(&args.path), None)?;
     let object = ctx
         .store
         .get(&oid)?

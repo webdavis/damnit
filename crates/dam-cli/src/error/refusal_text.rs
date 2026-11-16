@@ -8,7 +8,7 @@ use super::commit_text::{not_in_commit, pulled_commit};
 use super::hook_text::HookText;
 use super::item_text::ItemText;
 use super::token_text::TokenText;
-use parent_text::parent_not_known;
+use parent_text::{parent_not_known, path_outside_parent, several_hold_the_path};
 
 pub(crate) struct RefusalText<'a>(pub(crate) &'a Refusal);
 
@@ -161,6 +161,16 @@ impl fmt::Display for RefusalText<'_> {
                 folder,
                 held_by_a_remote,
             } => parent_not_known(f, oid, unsettled, namesakes, folder, *held_by_a_remote),
+            Refusal::PathOutsideParent {
+                parent,
+                folder,
+                path,
+            } => path_outside_parent(f, parent, folder, path),
+            Refusal::SeveralHoldThePath {
+                namesakes,
+                folder,
+                retry,
+            } => several_hold_the_path(f, namesakes, folder, retry),
         }
     }
 }

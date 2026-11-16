@@ -2,7 +2,8 @@ use super::*;
 use crate::testing::{FaultyStore, Scenario, oid, task_in};
 
 fn mv(s: &Scenario, byte: u8, to: &str) -> Result<(), UseCaseError> {
-    s.dam().relocate(&oid(byte), &Path::parse(to).unwrap())
+    s.dam()
+        .relocate(&oid(byte), Some(&Path::parse(to).unwrap()), None)
 }
 
 #[test]
@@ -83,6 +84,8 @@ fn mv_that_fails_between_parent_and_child_moves_neither() {
     let store = FaultyStore::new(s.store);
     let dam = s.fixture.dam(&store);
     store.assert_unchanged_when_any_write_fails(|| {
-        dam.relocate(&oid(1), &Path::parse("b").unwrap())
+        dam.relocate(&oid(1), Some(&Path::parse("b").unwrap()), None)
     });
 }
+
+mod parent;

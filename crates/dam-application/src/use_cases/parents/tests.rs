@@ -24,6 +24,7 @@ fn errands() -> Scenario {
 
 fn new_task(path: &str, id: Option<&str>) -> NewTask {
     NewTask {
+        parent: None,
         subject: "milk".into(),
         path: Path::parse(path).unwrap(),
         priority: Priority::default(),
@@ -47,18 +48,6 @@ fn a_new_task_takes_the_object_that_holds_its_path_as_parent() {
 }
 
 #[test]
-fn a_new_task_under_two_same_named_objects_has_no_parent() {
-    let s = errands();
-    s.filed(task_in(9, "errands", "Home"));
-    let milk = s
-        .dam()
-        .new_task(new_task("Home/errands", None))
-        .unwrap()
-        .written();
-    assert_eq!(parent_of(&s, milk.oid()), None);
-}
-
-#[test]
 fn restating_a_task_by_id_into_a_folder_takes_its_holder_as_parent() {
     let s = errands();
     let dam = s.dam();
@@ -75,7 +64,7 @@ fn a_move_sets_the_parent_of_the_object_and_of_its_contents() {
     s.filed(task_in(2, "milk", ""))
         .filed(task_in(3, "oat", "milk"));
     s.dam()
-        .relocate(&oid(2), &Path::parse("Home/errands").unwrap())
+        .relocate(&oid(2), Some(&Path::parse("Home/errands").unwrap()), None)
         .unwrap();
     assert_eq!(s.path_of(&oid(3)), "Home/errands/milk/");
     assert_eq!(parent_of(&s, &oid(2)), Some(oid(1)));

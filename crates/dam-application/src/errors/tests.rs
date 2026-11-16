@@ -3,18 +3,16 @@ use dam_domain::{Blockers, LabelViolation, Tracked};
 
 use crate::testing::oid;
 
-fn commit_id() -> dam_domain::CommitId {
-    dam_domain::CommitId::generate(&mut |b: &mut [u8]| b.fill(9))
-}
-
+mod commit_samples;
 mod hook_samples;
 mod item_samples;
 mod parent_samples;
+use commit_samples::commit_samples;
 use hook_samples::hook_samples;
 use item_samples::item_samples;
 use parent_samples::parent_samples;
 
-const HAND_COUNTED_RULES: usize = 51;
+const HAND_COUNTED_RULES: usize = 53;
 
 fn hand_numbered_slot(refusal: &Refusal) -> usize {
     match refusal {
@@ -69,6 +67,8 @@ fn hand_numbered_slot(refusal: &Refusal) -> usize {
         Refusal::HookRefused(_) => 48,
         Refusal::StartedByHook(_) => 49,
         Refusal::ParentNotKnown { .. } => 50,
+        Refusal::PathOutsideParent { .. } => 51,
+        Refusal::SeveralHoldThePath { .. } => 52,
     }
 }
 
@@ -136,13 +136,9 @@ fn one_sample_of_every_refusal() -> Vec<Refusal> {
         Refusal::NotGrantable("config:change".into()),
         Refusal::NoSuchToken("tool".into()),
         Refusal::NoSuchSetting("nope".into()),
-        Refusal::PulledCommit(commit_id()),
-        Refusal::NotInCommit {
-            commit: commit_id(),
-            text: "abab".into(),
-        },
     ]
     .into_iter()
+    .chain(commit_samples())
     .chain(hook_samples())
     .chain(parent_samples())
     .chain(item_samples().into_iter().map(Refusal::Item))

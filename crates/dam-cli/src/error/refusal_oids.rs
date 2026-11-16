@@ -23,13 +23,15 @@ pub(super) fn refusal_oids(refusal: &Refusal) -> Vec<String> {
             .chain(namesakes)
             .map(named)
             .collect(),
+        Refusal::SeveralHoldThePath { namesakes, .. } => namesakes.iter().map(named).collect(),
         Refusal::NotATask(oid)
         | Refusal::NotAnEvent(oid)
         | Refusal::MoveInsideItself(oid)
         | Refusal::SubjectNamesNoFolder(oid)
         | Refusal::NotCompleted(oid)
         | Refusal::NotCommitted(oid)
-        | Refusal::NoConflict(oid) => vec![named(oid)],
+        | Refusal::NoConflict(oid)
+        | Refusal::PathOutsideParent { parent: oid, .. } => vec![named(oid)],
         Refusal::Labels(_)
         | Refusal::UnknownCategory(_)
         | Refusal::NotACategoryValue { .. }

@@ -18,6 +18,7 @@ fn dentist_from_tool(s: &Scenario) -> ItemHash {
         ..s.dam()
     };
     let task = NewTask {
+        parent: None,
         subject: "call the dentist".into(),
         path: Path::root(),
         priority: Priority::default(),

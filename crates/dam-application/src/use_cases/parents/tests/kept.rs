@@ -40,7 +40,7 @@ fn a_pull_that_leaves_the_path_alone_keeps_a_parent_its_namesakes_would_hide() {
 fn a_move_finds_the_parent_again() {
     let s = milk_under_the_second_of_two_errands();
     s.dam()
-        .relocate(&oid(2), &Path::parse("Home").unwrap())
+        .relocate(&oid(2), Some(&Path::parse("Home").unwrap()), None)
         .unwrap();
     assert_eq!(parent_of(&s, &oid(2)), Some(oid(5)));
 }
