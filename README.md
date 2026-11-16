@@ -789,9 +789,10 @@ require("damnit").setup({
 A table is keyed like the flags of `dam list` and sent as `dam list --request -`; a text names
 a saved filter.
 
-A row shows its checkbox, priority and subject, with dam's labels, category, `waits on`,
-estimate, deadline and due in columns at the right; the left-most columns drop first in a narrow
-window. The winbar names the view, the project and the counts. `!` marks an overdue row and `~` a
+A row shows its checkbox, priority and subject, with dam's labels, category, folder, `waits on`,
+estimate, deadline and due in columns at the right. The folder shows when the rows hold more than
+one. A narrow window drops `waits on`, the deadline, the category, the folder, the estimate and the
+labels, in that order; the due stays. The winbar names the view, the project and the counts. `!` marks an overdue row and `~` a
 blocked one; the `signs` option changes them, such as `signs = { overdue = "x" }`.
 A list open in two windows fits its columns to the narrower one.
 

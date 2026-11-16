@@ -85,11 +85,15 @@ return {
     assert(row:find("2030%-11%-16$"), row)
   end,
 
-  ["at 80 columns the narrower columns drop and the due stays"] = function()
-    opened()
+  ["at 80 columns the labels, path and estimate stay while waits on, the deadline and the category drop"] = function()
+    local answer = fixtures.decoded("list-columns.json")
+    table.remove(answer.objects, 2)
+    opened({ code = 0, stdout = vim.json.encode(answer), stderr = "" })
     local screen = table.concat(rows_on_screen(), "\n")
-    assert(not screen:find("#urgent", 1, true) and not screen:find("effort=deep", 1, true), screen)
-    assert(screen:find("2030-11-18", 1, true), screen)
+    assert(grid.row(2):find("#urgent", 1, true), screen)
+    assert(grid.row(3):find("plan the offsite/  30m  2030%-11%-18$"), screen)
+    assert(not screen:find("deadline", 1, true) and not screen:find("effort=deep", 1, true), screen)
+    assert(not screen:find("waits on", 1, true), screen)
   end,
 
   ["a narrower window drops the category and keeps the due at its last column"] = function()
@@ -112,7 +116,7 @@ return {
   ["a long subject ends in an ellipsis and its due still ends at the last column"] = function()
     opened(with_a_long_subject())
     local rows = rows_on_screen()
-    assert(rows[3]:find("too long to sit beside… 45m  deadline 2030%-11%-20  2030%-11%-16$"), rows[3])
+    assert(rows[3]:find("too long to sit beside its columns a subjec… 45m  2030%-11%-16$"), rows[3])
     local starts = {}
     for _, row in ipairs(rows) do
       if row:find(DATE .. "$") then
