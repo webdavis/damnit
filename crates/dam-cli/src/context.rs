@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::ffi::OsString;
+use std::io::IsTerminal;
 use std::path::Path;
 
 use dam_adapters::{Interrupt, OsRandom, ProcessLauncher, SqliteStore, SystemClock};
@@ -13,6 +14,7 @@ use crate::editor::{EditorSession, EnvEditor};
 use crate::error::CliError;
 pub(crate) use crate::hook_warnings::HookWarningsOnStandardError;
 use crate::output::Format;
+use crate::progress::{Asked, ProgressOnStandardError, shown};
 use crate::prompt::{Prompt, RefusingPrompt, TerminalPrompt};
 
 pub(crate) struct Context {
@@ -31,7 +33,7 @@ pub(crate) struct Context {
     pub(crate) tz: jiff::tz::TimeZone,
     pub(crate) changed_by_hook: ChangedByHook,
     pub(crate) interrupt: Interrupt,
-    pub(crate) hook_progress: HookProgressOnStandardError,
+    pub(crate) progress: ProgressOnStandardError,
     pub(crate) hook_warnings: HookWarningsOnStandardError,
 }
 
@@ -42,6 +44,7 @@ impl Context {
         presented_token: Option<OsString>,
         meta: &BTreeMap<String, String>,
         format: Format,
+        asked: Asked,
         interrupt: &Interrupt,
     ) -> Result<Context, CliError> {
         let loaded = config_file.load()?;
@@ -53,6 +56,7 @@ impl Context {
         let access = caller(holder, now, meta);
         let (prompt, editor) =
             terminal_pair_for_a_human_and_refusals_for_a_machine(format, interrupt);
+        let progress = progress_for(&config, asked, format, std::io::stderr().is_terminal());
         Ok(Context {
             store: Box::new(store),
             config,
@@ -69,7 +73,7 @@ impl Context {
             tz: jiff::tz::TimeZone::system(),
             changed_by_hook: ChangedByHook::default(),
             interrupt: interrupt.clone(),
-            hook_progress: HookProgressOnStandardError::for_format(format),
+            progress,
             hook_warnings: HookWarningsOnStandardError::for_format(format),
         })
     }
@@ -84,7 +88,7 @@ impl Context {
             filter_functions: self.filter_functions.as_ref(),
             hooks: self.hooks.as_ref(),
             hook_warnings: &self.hook_warnings,
-            hook_progress: &self.hook_progress,
+            progress: &self.progress,
             edit_requests: self,
             hook_edits: &self.changed_by_hook,
             interruption: &self.interrupt,
@@ -97,6 +101,19 @@ impl Context {
             credentials: self.credentials.as_ref(),
         }
     }
+}
+
+pub(crate) fn progress_for(
+    config: &Config,
+    asked: Asked,
+    format: Format,
+    terminal: bool,
+) -> ProgressOnStandardError {
+    let asked = Asked {
+        setting: config.progress(),
+        ..asked
+    };
+    ProgressOnStandardError::new(shown(asked, terminal), format)
 }
 
 pub(crate) fn terminal_pair_for_a_human_and_refusals_for_a_machine(
@@ -114,7 +131,7 @@ pub(crate) fn terminal_pair_for_a_human_and_refusals_for_a_machine(
 
 mod changed_by_hook;
 mod edit_requests;
-mod hook_progress;
+#[cfg(test)]
+mod tests;
 
 pub(crate) use changed_by_hook::ChangedByHook;
-pub(crate) use hook_progress::HookProgressOnStandardError;

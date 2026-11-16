@@ -11,6 +11,7 @@ mod ids;
 mod items;
 mod notices;
 mod origins;
+mod progress;
 mod pulled;
 mod repositories;
 mod store;
@@ -28,13 +29,12 @@ pub use follow_ons::{FollowOn, FollowOnRepository, ObjectState};
 pub use helper::{
     ComputeFailure, CredentialError, CredentialSource, HelperError, HelperLauncher, RemoteHelper,
 };
-pub use hooks::{
-    EditRequest, EditRequests, HookEdits, HookFailure, HookProgress, HookWarnings, Hooks,
-};
+pub use hooks::{EditRequest, EditRequests, HookEdits, HookFailure, HookWarnings, Hooks};
 pub use ids::IdRepository;
 pub use items::ItemRepository;
 pub use notices::{DroppedBecause, MissingTask, Notice, NoticeRepository};
 pub use origins::OriginRepository;
+pub use progress::{Progress, Step};
 pub use pulled::{Pull, PulledChange};
 pub use repositories::Store;
 pub use store::{

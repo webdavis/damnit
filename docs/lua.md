@@ -221,10 +221,10 @@ Later failures of that pull are counted, not printed.
 After 60 seconds of one pull's run, dam calls the hook for no more tasks and counts them in
 `not_reached`.
 Ctrl-C stops the hook and keeps the pull and the changes the hook made; the command exits 3.
-After two seconds of one pull's run, dam says once on standard error, in plain text and unless
-a token's command caused the pull:
+While the run goes, a terminal shows its progress on standard error, unless a token's command
+caused the pull. The line stays when the run ends:
 
-    dam: running task_pulled for 40 tasks
+    ✓ ran task_pulled  40 of 40 tasks  3s
 
 When a pull's run failed on a task or did not reach one, `dam status` keeps one notice for that
 remote, also when a token's command caused the pull:
