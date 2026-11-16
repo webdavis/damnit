@@ -27,6 +27,8 @@ pub(crate) struct NewArgs {
         help = "Put it under PATH, such as work/clients/. Default: the root"
     )]
     pub(crate) path: Path,
+    #[arg(long, help = "Put it in the object with this oid or prefix")]
+    pub(crate) parent: Option<String>,
     #[arg(
         long,
         help = "Set the due date: a date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM"

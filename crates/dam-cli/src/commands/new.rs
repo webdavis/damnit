@@ -30,6 +30,11 @@ impl View for Created<'_> {
 pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
     let labels: BTreeSet<String> = args.labels.into_iter().collect();
     let id = args.id.clone();
+    let parent = args
+        .parent
+        .as_deref()
+        .map(|text| ctx.dam().resolve_object(text))
+        .transpose()?;
     let landed = if args.kind == Kind::Event {
         let start = when_flag(
             ctx,
@@ -46,7 +51,7 @@ pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
                 .ok_or_else(|| CliError::Usage("--kind event needs --start and --end".into()))?,
         )?;
         ctx.dam().new_event(NewEvent {
-            parent: None,
+            parent: parent.clone(),
             subject: args.subject,
             path: args.path,
             start,
@@ -73,7 +78,7 @@ pub(crate) fn run(ctx: &Context, args: NewArgs) -> Result<Report, CliError> {
             .map(|d| deadline_flag(ctx, d))
             .transpose()?;
         ctx.dam().new_task(NewTask {
-            parent: None,
+            parent,
             subject: args.subject,
             path: args.path,
             priority,

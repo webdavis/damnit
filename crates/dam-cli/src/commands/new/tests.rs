@@ -17,6 +17,7 @@ fn args(subject: &str) -> NewArgs {
         start: None,
         end: None,
         id: None,
+        parent: None,
     }
 }
 
@@ -100,4 +101,33 @@ fn a_bad_date_is_a_usage_error() {
         ),
         Err(CliError::Usage(_))
     ));
+}
+
+#[test]
+fn a_task_given_a_parent_prefix_lands_in_that_objects_folder() {
+    let ctx = context();
+    let errands = dam_domain::Oid::generate(&mut |x: &mut [u8]| x.fill(2));
+    ctx.store
+        .put(&Object::Task(dam_domain::Task::new(
+            errands.clone(),
+            "errands",
+        )))
+        .unwrap();
+    run(
+        &ctx,
+        NewArgs {
+            parent: Some("0202".into()),
+            ..args("milk")
+        },
+    )
+    .unwrap();
+    let milk = ctx
+        .store
+        .all()
+        .unwrap()
+        .into_iter()
+        .find(|o| o.base().subject == "milk")
+        .unwrap();
+    assert_eq!(milk.base().path.as_str(), "errands/");
+    assert_eq!(milk.base().parent, Some(errands));
 }

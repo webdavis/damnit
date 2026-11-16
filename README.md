@@ -207,6 +207,10 @@ Every verb that takes an oid takes it whole or as a prefix of at least 4 hex cha
 one object in the working layer. An object only the history holds, such as one you removed, takes
 its full oid.
 
+`--parent <oid>` on `dam new` and `dam mv` puts the object in that object, and its path defaults to
+that object's folder. When two objects of the same name hold a path, `dam new` and `dam mv` to it
+are refused, rule `several_hold_the_path`, until `--parent` names one.
+
 `dam edit <oid> -e` opens the object as a TOML template in `$VISUAL`, else `$EDITOR`, else `vi`: a
 comment header naming the oid and kind, then one `key = value` line per field, where an empty
 string means none. Emptying an optional field clears it, a key the object's kind does not have is

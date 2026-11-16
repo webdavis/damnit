@@ -44,7 +44,9 @@ pub(crate) struct MvArgs {
     #[arg(help = "Pick the object by oid, or by a prefix of 4 or more hex characters")]
     pub(crate) oid: String,
     #[arg(value_parser = path_arg, help = "Move it under PATH, such as work/clients/")]
-    pub(crate) path: Path,
+    pub(crate) path: Option<Path>,
+    #[arg(long, help = "Put it in the object with this oid or prefix")]
+    pub(crate) parent: Option<String>,
 }
 
 #[derive(Args, Debug)]
