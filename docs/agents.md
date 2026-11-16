@@ -58,6 +58,10 @@ The document's keys are the flags without their dashes, plus `subject`. Only glo
 `edit.request.schema.json`, `done.request.schema.json` and `rm.request.schema.json` cover the other
 writing commands.
 
+`--template <name>` (request key `template`) starts the task from the project's
+`.damtemplates/<name>.lua`, else `templates/<name>.lua` beside `config.lua`. Each other flag replaces
+the template's value. The token's permissions are checked on the task the template makes.
+
 `--parent <oid>` files the task in that object, at its folder or at a `--path` inside it; a path
 outside it is refused, rule `path_outside_parent`. When two objects of the same name hold the
 `--path`, `dam new` is refused until `--parent` names one: rule `several_hold_the_path` when the

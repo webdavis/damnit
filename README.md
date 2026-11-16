@@ -321,6 +321,12 @@ the answer carries `project_created`, its `oid` and `path`.
 `dam config list` inside a project shows the project's `.dam.lua` and its `path`, marked
 `(from the project)`; with `--json` they are under `project`.
 
+`dam new --template bug "crash on pull"` starts the task from a template: the project's
+`.damtemplates/bug.lua` first, then `templates/bug.lua` beside your `config.lua`. Each flag you give
+replaces the template's value, and `--labels` replaces its labels. A name found in neither is
+refused with the names that exist; a token is told only that the name is not there. See
+`docs/lua.md` for what a template holds.
+
 When `.dam.lua` does not load, `dam new`, `dam ls`, `dam agenda` and `dam reminders` print the error
 and refuse, since they cannot tell where a task belongs; `--global` and `--project` do not read the
 file. Every other command carries on with one warning on standard error, and `dam doctor config`

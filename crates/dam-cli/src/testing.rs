@@ -19,11 +19,13 @@ mod remote_helpers;
 mod run_records;
 mod scheduler;
 mod scripted;
+mod templates;
 pub(crate) use config_file::FakeConfigFile;
 pub(crate) use remote_helpers::{EchoLauncher, MissingCredentials};
 pub(crate) use run_records::MemoryRunRecords;
 pub(crate) use scheduler::RecordingScheduler;
 pub(crate) use scripted::{Save, ScriptedEditor, ScriptedPrompt};
+pub(crate) use templates::FakeTemplates;
 
 pub(crate) fn context() -> Context {
     Context {
@@ -69,6 +71,7 @@ pub(crate) fn context() -> Context {
             store: "/home/someone/dam.db".into(),
             search_path: "/usr/bin:/bin".into(),
         },
+        templates: Box::new(FakeTemplates::default()),
     }
 }
 
