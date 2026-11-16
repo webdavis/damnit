@@ -31,12 +31,23 @@ pub(crate) fn run_pull(ctx: &Context, args: PullArgs) -> Result<Report, CliError
 }
 
 pub(crate) fn run_sync(ctx: &Context, args: SyncArgs) -> Result<Report, CliError> {
-    let Some(SyncCommand::Run { remote }) = args.command else {
+    let Some(SyncCommand::Run {
+        remote,
+        when_due,
+        interval,
+    }) = args.command
+    else {
         return Err(CliError::Internal(
             "dam sync alone prints help before the store opens".into(),
         ));
     };
-    report(&Synced::new(&ctx.dam().sync_now(ctx.remotes(), &remote)?))
+    if !when_due {
+        return report(&Synced::new(&ctx.dam().sync_now(ctx.remotes(), &remote)?));
+    }
+    match ctx.dam().sync_when_due(ctx.remotes(), &remote, interval)? {
+        Some(synced) => report(&Synced::new(&synced)),
+        None => Ok(Report::nothing()),
+    }
 }
 
 pub(crate) fn run_resolve(ctx: &Context, args: ResolveArgs) -> Result<Report, CliError> {

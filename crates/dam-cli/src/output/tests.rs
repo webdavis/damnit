@@ -83,3 +83,13 @@ fn quiet_shows_nothing_for_a_human_but_keeps_a_requested_document() {
     );
     assert_eq!(Format::of(false, false).quieted(false), Format::Human);
 }
+
+#[test]
+fn a_report_of_nothing_prints_nothing_in_any_format() {
+    for format in [Format::Human, Format::Json, Format::Toon] {
+        assert_eq!(
+            shown(format, false, None, &Report::nothing()).unwrap(),
+            None
+        );
+    }
+}
