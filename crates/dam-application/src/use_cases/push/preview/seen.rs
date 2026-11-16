@@ -1,11 +1,10 @@
-use dam_domain::{Object, Oid, Permission, Subject};
+use dam_domain::{Oid, Permission, Subject};
 
 use super::PlannedPush;
 use crate::errors::UseCaseError;
 use crate::remote::RemoteMutation;
 use crate::service::Dam;
-
-const HELD_BY_WHAT_YOU_CANNOT_SEE: &str = "held until a task you cannot see is settled";
+use crate::use_cases::push::sight::HELD_BY_WHAT_YOU_CANNOT_SEE;
 
 impl Dam<'_> {
     pub(super) fn as_seen_plan(&self, plan: PlannedPush) -> Result<PlannedPush, UseCaseError> {
@@ -80,29 +79,5 @@ impl Dam<'_> {
             }
         }
         Ok(seen)
-    }
-
-    fn any_hidden(&self, oids: &[Oid]) -> Result<bool, UseCaseError> {
-        for oid in oids {
-            let working = self.store.get(oid)?;
-            let committed = self.store.committed(oid)?;
-            let hidden_in =
-                |object: &Option<Object>| object.as_ref().is_some_and(|o| !self.access.sees(o));
-            if (working.is_none() && committed.is_none())
-                || hidden_in(&working)
-                || hidden_in(&committed)
-            {
-                return Ok(true);
-            }
-        }
-        Ok(false)
-    }
-
-    fn reads(&self, oid: &Oid) -> Result<bool, UseCaseError> {
-        let object: Option<Object> = match self.store.get(oid)? {
-            Some(object) => Some(object),
-            None => self.store.committed(oid)?,
-        };
-        Ok(object.is_some_and(|o| self.access.sees(&o)))
     }
 }

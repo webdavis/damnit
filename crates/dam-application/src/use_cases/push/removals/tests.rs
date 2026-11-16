@@ -29,9 +29,9 @@ fn a_wave_with_nothing_to_send_holds_the_removals_that_wait_on_each_other() {
     let wave = removals.wave(vec![removal(1), removal(2)]);
     assert!(wave.ready.is_empty());
     assert!(wave.waiting.is_empty());
-    let held: Vec<_> = wave.held.iter().map(|(oid, _)| oid.clone()).collect();
+    let held: Vec<_> = wave.held.iter().map(|hold| hold.oid.clone()).collect();
     assert_eq!(held, vec![oid(1), oid(2)]);
-    assert!(wave.held.iter().all(|(_, why)| !why.is_empty()));
+    assert!(wave.held.iter().all(|hold| !hold.why.is_empty()));
 }
 
 fn removing_1_with(held: dam_domain::Task) -> Removals {
@@ -56,6 +56,9 @@ fn held_why(removals: &mut Removals) -> Vec<(dam_domain::Oid, String)> {
     let wave = removals.wave(vec![removal(1)]);
     assert!(wave.ready.is_empty());
     wave.held
+        .into_iter()
+        .map(|hold| (hold.oid, hold.why))
+        .collect()
 }
 
 const PLACE_NOT_KNOWN: &str = "is not known upstream; run: dam pull, then dam push";
@@ -98,7 +101,8 @@ fn a_removal_with_no_last_seen_copy_is_held_until_a_pull() {
     removals.removing.insert(oid(1));
     let wave = removals.wave(vec![removal(1)]);
     assert!(wave.ready.is_empty());
-    let (held, why) = &wave.held[0];
-    assert_eq!(held, &oid(1));
+    let hold = &wave.held[0];
+    assert_eq!(hold.oid, oid(1));
+    let why = &hold.why;
     assert!(why.ends_with("run: dam pull, then dam push"), "{why}");
 }

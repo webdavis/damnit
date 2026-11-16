@@ -194,6 +194,14 @@ If your token may push, `dam push --preview [remote]` shows what a push would se
 listing only the objects you may read, and contacts nothing. In a data format it answers
 `push-preview.schema.json`.
 
+`dam push` names and counts only the objects you may read: `sent`, `succeeded`, `skipped` and
+`held` leave the others out, and `failed` lists only yours. A remote's own
+words for a refusal reach you only when your token reads every task and event; otherwise the reason
+reads `refused by the remote; ask the owner to run dam status for the reason`. An object counts as
+yours only when you may read both its working copy and its last committed one. When a change you cannot see failed or was held, the answer
+says `some changes you cannot see did not go through; ask the owner to run dam status`, and in a
+data format carries `"unseen_failed": true`. `dam sync run` answers the same way.
+
 ## Taking your task back
 
 `dam rm --id <id>` takes back the task you sent with `dam new --id <id>`. Pass the same

@@ -143,4 +143,6 @@ mod sync_view_tests;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
+mod unseen_view_tests;
+#[cfg(test)]
 mod view_tests;
