@@ -1,6 +1,6 @@
-local M = {}
+local confirm_lines = require("damnit.kernel.confirm_lines")
 
-local PRINTED_AFTER = { subject = true, path = true, labels = true, done = true, priority = true, due = true }
+local M = {}
 
 local function categories(category)
   local words = {}
@@ -13,7 +13,7 @@ local function categories(category)
   return words
 end
 
-local BEFORE = {
+local READ = {
   subject = function(object)
     return object.subject
   end,
@@ -31,23 +31,14 @@ local BEFORE = {
   end,
 }
 
-local function shown(value)
-  if value == nil or value == "" or (type(value) == "table" and #value == 0) then
-    return "none"
-  end
-  if type(value) == "boolean" then
-    return value and "yes" or "no"
-  end
-  return type(value) == "table" and table.concat(value, ",") or tostring(value)
-end
-
 local function before(object, field)
-  local read = BEFORE[field]
-  return shown(read and read(object) or (object.task or {})[field])
+  local read = READ[field]
+  return confirm_lines.value(read and read(object) or (object.task or object.event or {})[field])
 end
 
 local function after(change, field)
-  return PRINTED_AFTER[field] and shown(change[field]) or "changed"
+  local read = READ[field]
+  return confirm_lines.value(read and read(change) or change[field])
 end
 
 local function changes_by_oid(answer)

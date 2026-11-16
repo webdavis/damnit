@@ -12,9 +12,22 @@ local function groups(marks)
 end
 
 return {
-  ["each change of a preview is a row: op, subject and fields, aligned"] = function()
+  ["each change of a preview is a row: op, subject and each field with the value it would have"] = function()
     local lines = lines_of.changes(fixtures.decoded("done-preview.json"))
-    same(lines, { "update  call mom  done", "update  pay rent  done", "", "2 of 2 would change" })
+    same(lines, { "update  call mom  done → yes", "update  pay rent  done → yes", "", "2 of 2 would change" })
+  end,
+
+  ["every field dam names shows dam's value for it"] = function()
+    local lines = lines_of.changes(fixtures.decoded("edit-preview-fields.json"))
+    same(lines[1], "update  pay rent  labels → errand, deadline → 2026-12-04, estimate → 45")
+  end,
+
+  ["a row wider than the float is cut to fit"] = function()
+    local columns = vim.o.columns
+    vim.o.columns = 40
+    local lines = lines_of.changes(fixtures.decoded("edit-preview-fields.json"))
+    vim.o.columns = columns
+    same(lines[1], "update  pay rent  labels → errand…")
   end,
 
   ["the count line is DamRemoved when the preview removes"] = function()

@@ -20,6 +20,35 @@ local function padded(text, width)
   return text .. (" "):rep(width - vim.fn.strdisplaywidth(text))
 end
 
+local function cut(text, width)
+  if vim.fn.strdisplaywidth(text) <= width then
+    return text
+  end
+  local chars = vim.fn.strchars(text)
+  while chars > 0 and vim.fn.strdisplaywidth(vim.fn.strcharpart(text, 0, chars)) > width - 1 do
+    chars = chars - 1
+  end
+  return vim.fn.strcharpart(text, 0, chars) .. "…"
+end
+
+---@param value any a field's value as dam prints it in JSON
+---@return string
+function M.value(value)
+  if value == nil or value == "" or (type(value) == "table" and next(value) == nil) then
+    return "none"
+  end
+  if type(value) == "boolean" then
+    return value and "yes" or "no"
+  end
+  if type(value) ~= "table" then
+    return tostring(value)
+  end
+  if vim.islist(value) then
+    return table.concat(vim.tbl_map(M.value, value), ",")
+  end
+  return M.value(value.day or value.title or value.email or value.url)
+end
+
 ---@param rows damnit.ConfirmRow[]
 ---@param summary string
 ---@param removes boolean
@@ -30,7 +59,8 @@ function M.rows(rows, summary, removes)
   for n, row in ipairs(rows) do
     local detail = row.detail or ""
     local subject = detail == "" and row.subject or padded(row.subject, subject_width)
-    lines[n] = vim.trim(padded(row.op, op_width) .. "  " .. subject .. (detail == "" and "" or "  " .. detail))
+    local line = vim.trim(padded(row.op, op_width) .. "  " .. subject .. (detail == "" and "" or "  " .. detail))
+    lines[n] = cut(line, vim.o.columns - 6)
     if OP_GROUPS[row.op] then
       table.insert(marks, { line = n - 1, col = 0, end_col = #row.op, group = OP_GROUPS[row.op] })
     end
@@ -50,7 +80,10 @@ function M.changes(answer, verb)
   local removes = false
   local rows = vim.tbl_map(function(change)
     removes = removes or change.op == "delete"
-    return { op = change.op, subject = change.subject, detail = table.concat(change.fields, ", ") }
+    local afters = vim.tbl_map(function(field)
+      return field .. " → " .. M.value(change[field])
+    end, change.fields)
+    return { op = change.op, subject = change.subject, detail = table.concat(afters, ", ") }
   end, answer.changes)
   return M.rows(rows, ("%d of %d %s"):format(#answer.changes, answer.count, verb or "would change"), removes)
 end
