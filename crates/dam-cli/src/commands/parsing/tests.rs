@@ -31,18 +31,55 @@ fn a_deadline_already_past_is_read_rather_than_refused() {
 }
 
 #[test]
-fn an_unreadable_word_is_a_usage_refusal_naming_the_forms() {
+fn a_value_that_is_not_one_day_or_instant_is_refused_naming_the_forms_to_set() {
     let ctx = context();
-    for error in [
-        when_flag(&ctx, "due", "someday").unwrap_err(),
-        deadline_flag(&ctx, "someday").unwrap_err(),
+    for text in [
+        "someday",
+        "2026-11",
+        "week",
+        "today..fri",
+        "on:thu",
+        "none",
+        "not:today",
     ] {
-        assert_eq!(error.exit_code(), 2);
-        let said = error.to_string();
-        for form in ["today", "next <weekday>", "in <n> days", "YYYY-MM-DD"] {
-            assert!(said.contains(form), "{said}");
+        for error in [
+            when_flag(&ctx, "end", text).unwrap_err(),
+            day_flag(&ctx, "end", text).unwrap_err(),
+        ] {
+            assert_eq!(error.exit_code(), 2);
+            let said = error.to_string();
+            assert!(
+                said.contains(&format!("--end cannot be {text:?}")),
+                "{said}"
+            );
+            assert!(said.contains("one day or instant"), "{said}");
+            for form in ["2026-11-20", "today+3", "now+2h", "tomorrow", "in 3 days"] {
+                assert!(said.contains(form), "{said}");
+            }
+            assert!(said.contains("--end today"), "{said}");
         }
     }
+}
+
+#[test]
+fn today_with_a_count_and_now_with_a_length_set_a_day_and_an_instant() {
+    let ctx = context();
+    assert_eq!(
+        when_flag(&ctx, "due", "today+1").unwrap(),
+        When::Day(date(2026, 9, 19))
+    );
+    assert_eq!(deadline_flag(&ctx, "today-1").unwrap(), date(2026, 9, 17));
+    assert_eq!(
+        day_flag(&ctx, "focus", "today+2").unwrap(),
+        date(2026, 9, 20)
+    );
+    let When::At(at) = when_flag(&ctx, "start", "now+90m").unwrap() else {
+        panic!("not an instant")
+    };
+    assert_eq!(
+        at.timestamp(),
+        ctx.clock.now() + jiff::SignedDuration::from_mins(90)
+    );
 }
 
 #[test]

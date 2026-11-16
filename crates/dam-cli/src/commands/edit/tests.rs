@@ -119,3 +119,22 @@ fn undone_on_an_open_task_is_refused_by_dams_own_rule() {
     assert_eq!(err.exit_code(), 4);
     assert!(err.to_string().contains(oid(1).short()), "{err}");
 }
+
+#[test]
+fn a_date_is_set_by_today_with_a_count_and_a_period_is_refused() {
+    let ctx = context();
+    ctx.store
+        .put(&Object::Task(Task::new(oid(1), "milk")))
+        .unwrap();
+    let due = |text: &str| EditArgs {
+        due: Some(text.into()),
+        ..args(&oid(1))
+    };
+    run(&ctx, due("today+3")).unwrap();
+    let t = ctx.store.get(&oid(1)).unwrap().unwrap();
+    assert_eq!(
+        t.as_task().unwrap().due,
+        Some(dam_domain::When::Day(jiff::civil::date(2026, 9, 21)))
+    );
+    assert!(matches!(run(&ctx, due("2026-11")), Err(CliError::Usage(_))));
+}

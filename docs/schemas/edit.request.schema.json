@@ -58,14 +58,14 @@
     },
     "due": {
       "type": "string",
-      "description": "A date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
+      "description": "One day or instant: a date word, today+N, now+LENGTH, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
     },
     "no_due": {
       "type": "boolean"
     },
     "deadline": {
       "type": "string",
-      "description": "A date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
+      "description": "One day or instant: a date word, today+N, now+LENGTH, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
     },
     "no_deadline": {
       "type": "boolean"
@@ -118,11 +118,11 @@
     },
     "start": {
       "type": "string",
-      "description": "A date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
+      "description": "One day or instant: a date word, today+N, now+LENGTH, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
     },
     "end": {
       "type": "string",
-      "description": "A date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
+      "description": "One day or instant: a date word, today+N, now+LENGTH, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
     },
     "location": {
       "type": "string"
@@ -148,7 +148,7 @@
     },
     "focus": {
       "type": "string",
-      "description": "A date word or YYYY-MM-DD."
+      "description": "One day: a date word, today+N or YYYY-MM-DD."
     },
     "category": {
       "description": "A label group's label, as GROUP=LABEL, such as effort=deep: an object of group to label, or an array of GROUP=LABEL for several labels of one group. A label of none takes the group's label off.",

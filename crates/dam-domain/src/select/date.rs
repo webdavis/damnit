@@ -55,6 +55,13 @@ impl DateTest {
         }
     }
 
+    pub(crate) fn one_moment(&self) -> Option<&Moment> {
+        match &self.0 {
+            Shape::At(moment) if moment.is_one_day_or_instant() => Some(moment),
+            _ => None,
+        }
+    }
+
     pub fn is_one_day_or_instant(&self) -> bool {
         matches!(&self.0, Shape::At(m) if m.is_one_day_or_instant())
     }

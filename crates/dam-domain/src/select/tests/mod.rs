@@ -17,6 +17,7 @@ mod objects;
 mod on_days;
 mod saved_defaults;
 mod saved_names;
+mod set_dates;
 mod sorts;
 mod spans;
 mod table_under;
