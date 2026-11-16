@@ -3,6 +3,8 @@ use clap::Parser;
 use super::run;
 use crate::args::hook::{HookCommand, HookRunArgs};
 use crate::args::{Cli, Command};
+use dam_application::{HookConfig, HookEvent};
+
 use crate::testing::context;
 
 fn hook_run_args(words: &[&str]) -> HookRunArgs {
@@ -32,5 +34,21 @@ fn a_bad_selection_value_names_hook_run_and_its_hook_in_the_command_to_run() {
         err.to_string()
             .ends_with("; run dam hook run task_new --due today"),
         "{err}"
+    );
+}
+
+#[test]
+fn an_event_field_hidden_from_help_still_parses_into_the_refusal_naming_list() {
+    let mut ctx = context();
+    ctx.config.hooks.push(HookConfig {
+        event: HookEvent::TaskNew,
+        on_failure: None,
+        file: "hooks/task_new.lua".into(),
+    });
+    let err = run(&ctx, hook_run_args(&["task_new", "--start", "today"])).unwrap_err();
+    assert_eq!(err.exit_code(), 2);
+    assert_eq!(
+        err.to_string(),
+        "--start holds only for events, and a hook runs over tasks; run dam list --start today"
     );
 }
