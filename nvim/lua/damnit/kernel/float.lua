@@ -18,25 +18,29 @@ local function wrapped(text, width)
   return lines
 end
 
-local INPUT_HEIGHT = 3
+local BORDER = 2
 
 ---@alias damnit.Anchor integer|"cursor"|{ top: integer } above a window's bottom line, at the cursor, or over a window's top
 
-local function at_cursor()
-  local textoff = vim.fn.getwininfo(vim.api.nvim_get_current_win())[1].textoff
-  local below = vim.api.nvim_win_get_height(0) - vim.fn.winline() >= INPUT_HEIGHT
+local function at_cursor(height)
+  local info = vim.fn.getwininfo(vim.api.nvim_get_current_win())[1]
+  local textoff = info.textoff
+  local under = info.height - vim.fn.winline() - BORDER
+  local over = vim.fn.winline() - 1 - BORDER
+  local below = under >= height or under >= over
   return {
     relative = "cursor",
     anchor = below and "NW" or "SW",
     row = below and 1 or 0,
     col = textoff - vim.fn.wincol() + 1,
     width = math.max(vim.api.nvim_win_get_width(0) - textoff - 2, 20),
+    height = math.max(math.min(height, below and under or over), 1),
   }
 end
 
 local function placed(anchor)
   if anchor == "cursor" then
-    return at_cursor()
+    return at_cursor(1)
   end
   if type(anchor) == "table" and vim.api.nvim_win_is_valid(anchor.top) then
     local width = math.max(vim.api.nvim_win_get_width(anchor.top) - 2, 20)
@@ -128,6 +132,35 @@ function M.footer(win, text, group, more)
   end
   local footer = (text == "" or long) and "" or { { padded(text), group } }
   vim.api.nvim_win_set_config(win, { footer = footer, footer_pos = "right", height = 1 + #below })
+end
+
+---@param buf integer
+---@param card { title: string, footer: string[][], width: integer }
+---@return integer win
+function M.card(buf, card)
+  local lines = vim.api.nvim_buf_line_count(buf)
+  local win = vim.api.nvim_open_win(
+    buf,
+    false,
+    vim.tbl_extend("force", at_cursor(lines), {
+      width = card.width,
+      style = "minimal",
+      border = "rounded",
+      title = padded(card.title),
+      title_pos = "left",
+      footer = card.footer,
+      footer_pos = "right",
+      hide = true,
+    })
+  )
+  vim.wo[win].wrap = true
+  vim.wo[win].linebreak = true
+  local wrapped_height = vim.api.nvim_win_text_height(win, {}).all
+  vim.api.nvim_win_set_config(
+    win,
+    vim.tbl_extend("force", at_cursor(wrapped_height), { width = card.width, hide = false })
+  )
+  return win
 end
 
 return M

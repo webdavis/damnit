@@ -1,3 +1,5 @@
+local days = require("damnit.kernel.days")
+
 local M = {}
 
 local ORDER = { "labels", "category", "path", "busy", "waits", "estimate", "deadline", "days", "due" }
@@ -26,16 +28,6 @@ local function in_category(object)
   end
   table.sort(words)
   return words, taken
-end
-
-local function days_words(days)
-  if type(days) ~= "number" then
-    return nil
-  end
-  if days < 0 then
-    return -days .. "d late"
-  end
-  return ({ [0] = "today", [1] = "tomorrow" })[days] or ("in " .. days .. "d")
 end
 
 local function waits_on(object, subjects)
@@ -71,7 +63,7 @@ local function cells_of(object, subjects)
     waits = { waits_on(object, subjects), "DamMeta" },
     estimate = { task.estimate and (task.estimate .. "m"), "DamMeta" },
     deadline = { task.deadline and ("deadline " .. task.deadline), "DamDue" },
-    days = { days_words(object.days_until_due), "DamMeta" },
+    days = { days.words(object.days_until_due), "DamMeta" },
     due = { due, object.overdue and "DamOverdue" or "DamDue" },
   }
 end
