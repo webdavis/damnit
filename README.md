@@ -850,13 +850,18 @@ with what changed; an emptied line clears that field. dam reads each value and s
 when it refuses one.
 
 `:Dam` or `:Dam status` shows what `dam status` shows in the window's folder: conflicts, waiting
-items and sets, unstaged and staged changes, unpushed commits, notices and warnings. Its keys:
+items and sets, unstaged and staged changes, unpushed commits, notices and warnings, then the
+last three commits under Recent. Its keys:
 `s` stages a change, or everything on the Unstaged or Waiting header; `S` stages everything; `u`
 unstages; `a` accepts a waiting item or set and `dd` declines it after a float; `U` sets a change
 back to its last commit after a float; `cc` commits; `P` shows what a push would send, then
-pushes; `F` pulls; `<CR>` opens the task; `r` reads it again. `:Dam commit [message]`, `:Dam push [remote]` and
+pushes; `F` pulls; `=` shows each field a row changes, before and after, under it (on a header,
+for the whole section); `<CR>` opens the task, or the log at a Recent commit; `r` reads it again. `:Dam commit [message]`, `:Dam push [remote]` and
 `:Dam pull [remote]` do the same from anywhere; `:Dam cancel` stops a slow push or pull. A
 conflict is settled with `dam resolve` in a terminal.
+`:Dam log`, or `gL` in any dam window, lists the commits `dam log` prints. `<CR>` shows a
+commit's changes under it; `R` reverts it after a float: its changes come back as working changes
+and the status window opens.
 A push or pull shows each step dam reports as a Neovim progress message while it runs.
 Every open list and status window reads again when Neovim gains focus, so what an agent or a
 background sync wrote while you were away is on screen.
