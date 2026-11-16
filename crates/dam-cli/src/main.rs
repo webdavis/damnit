@@ -129,7 +129,20 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         asked,
         interrupt,
     )?;
-    let report = commands::dispatch_a_verb_that_opens_the_store(&ctx, cli.command)?;
+    let report = match cli.command {
+        Command::Init(args) => {
+            let folder = std::env::current_dir()?;
+            let beside_config = config_path.parent().unwrap_or(&config_path);
+            let personal_config =
+                std::fs::canonicalize(beside_config).unwrap_or_else(|_| beside_config.into());
+            let here = commands::init::Here {
+                folder: &folder,
+                personal_config: &personal_config,
+            };
+            commands::init::run(&ctx, args, here)?
+        }
+        command => commands::dispatch_a_verb_that_opens_the_store(&ctx, command)?,
+    };
     output::print(format, color, &report)
 }
 

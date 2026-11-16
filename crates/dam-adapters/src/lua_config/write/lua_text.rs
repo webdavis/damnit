@@ -3,7 +3,7 @@ const KEYWORDS: [&str; 22] = [
     "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while",
 ];
 
-pub(super) fn string_literal(text: &str) -> String {
+pub(in crate::lua_config) fn string_literal(text: &str) -> String {
     let mut quoted = String::with_capacity(text.len() + 2);
     quoted.push('"');
     for c in text.chars() {

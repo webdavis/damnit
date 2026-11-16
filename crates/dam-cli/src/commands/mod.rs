@@ -12,6 +12,7 @@ mod done;
 pub(crate) mod edit;
 mod follow_ons;
 mod hooked;
+pub(crate) mod init;
 mod ls;
 mod mv;
 mod new;
@@ -76,7 +77,11 @@ fn run_a_verb(ctx: &Context, command: Command) -> Result<Report, CliError> {
         Command::Sync(a) => sync::run_sync(ctx, a),
         Command::Category(a) => catalogue_write::run_category(ctx, a.command),
         Command::Filter(a) => catalogue_write::run_filter(ctx, a.command),
-        Command::Token(_) | Command::Config(_) | Command::Doctor(_) | Command::Test(_) => {
+        Command::Init(_)
+        | Command::Token(_)
+        | Command::Config(_)
+        | Command::Doctor(_)
+        | Command::Test(_) => {
             unreachable!("answered before the store")
         }
     }

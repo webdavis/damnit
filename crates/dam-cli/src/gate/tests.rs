@@ -82,6 +82,10 @@ fn a_token_holding_every_permission_still_cannot_write_the_owners_layers() {
         Err(Refusal::NotOpenToTokens("remote add"))
     );
     assert_eq!(
+        admit(&everything, &command("init")),
+        Err(Refusal::NotOpenToTokens("init"))
+    );
+    assert_eq!(
         admit(&everything, &command("resolve abcd --ours")),
         Err(Refusal::NotOpenToTokens("resolve"))
     );

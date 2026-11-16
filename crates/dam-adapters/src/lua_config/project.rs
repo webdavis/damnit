@@ -1,4 +1,5 @@
 mod locked;
+mod written;
 
 use std::path::Path;
 
@@ -12,6 +13,7 @@ use super::evaluate::{
 use super::shape::described;
 use super::strict::StrictMap;
 use locked::locked_lua;
+pub use written::{FileSystemProjectFolders, write_project_file};
 
 const PROJECT_SETTINGS: [&str; 1] = ["path"];
 const PERSONAL_SETTINGS: [&str; 5] = ["owner", "remote", "token", "schema", "project_hooks"];

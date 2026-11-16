@@ -267,6 +267,21 @@ day's record with the JSON or TOON document on stdin, or in the file `--request`
 start of today until now: each one's `at`, its `anchor` (the due time or start) and
 `minutes_before`, all times RFC 3339. `docs/schemas/reminders.schema.json` is its schema.
 
+## Projects
+
+`dam init` makes the folder it runs in a project. It writes `.dam.lua` there, which holds where the
+project's tasks go, and creates the task that holds that path when nothing holds it yet:
+
+```lua
+return { path = "app/" }
+```
+
+`--path` names the path; the default is the folder's name. Commit `.dam.lua` so every clone shares
+it. When the path is already there, `dam init` joins it and says how many tasks it holds. Run
+again, `dam init` changes nothing. Inside another project's folder it makes a project of
+its own: the nearest `.dam.lua` at or above where you stand is the one `dam` follows.
+`docs/schemas/init.schema.json` is its `--json` schema.
+
 ## The rules it keeps
 
 - A task with open children or open dependencies is not done until they are; `--force` overrides,

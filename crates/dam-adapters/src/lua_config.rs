@@ -24,7 +24,7 @@ mod write;
 pub use create::STARTER_CONFIG;
 pub use file::LuaConfigFile;
 pub use functions::history_document;
-pub use project::read_project_file;
+pub use project::{FileSystemProjectFolders, read_project_file, write_project_file};
 
 #[cfg(test)]
 mod tests;

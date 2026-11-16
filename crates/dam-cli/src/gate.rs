@@ -17,6 +17,7 @@ pub(crate) enum Need {
 pub(crate) fn need(command: &Command) -> Need {
     use Permission::*;
     match command {
+        Command::Init(_) => Need::OwnerOnly("init"),
         Command::New(_) => Need::NarrowedFrom(&[TaskCreate, EventCreate]),
         Command::Done(_) => Need::NarrowedFrom(&[TaskComplete]),
         Command::Edit(a) if a.editor => Need::OwnerOnly("edit -e"),

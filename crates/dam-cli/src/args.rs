@@ -3,6 +3,7 @@ mod dispositions;
 mod doctor;
 mod editing;
 mod global_flags;
+mod init;
 mod new;
 mod planning;
 mod reading;
@@ -19,6 +20,7 @@ pub(crate) use config::{ConfigArgs, ConfigCommand};
 pub(crate) use doctor::{CheckName, DoctorArgs};
 pub(crate) use editing::EditArgs;
 pub(crate) use global_flags::Cli;
+pub(crate) use init::InitArgs;
 pub(crate) use new::NewArgs;
 pub(crate) use planning::{DayArgs, DayCommand, RemindersArgs};
 pub(crate) use reading::{
@@ -36,6 +38,11 @@ pub(crate) use writing::{DoneArgs, MvArgs, RmArgs};
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum Command {
+    #[command(
+        about = "Make this folder a project: write .dam.lua and create the project's task",
+        after_help = init::INIT_HELP
+    )]
+    Init(InitArgs),
     #[command(about = "Create a task, or an event with --kind event")]
     New(NewArgs),
     #[command(about = "Mark a task done")]
@@ -54,17 +61,7 @@ pub(crate) enum Command {
     Restore(RestoreArgs),
     #[command(
         about = "Set back what a commit changed, as working changes to review",
-        after_help = "Each field the commit changed goes back to its value before the commit.
-A field changed again since is kept as it is and named.
-A task the commit created is removed only when nothing about it changed since.
-A task the commit removed comes back as it was.
-It stages and commits nothing: read it with dam diff, then dam add and dam commit it.
-It refuses a commit that dam pull made.
-
-Examples:
-  dam revert 1a2b3c4
-  dam revert 1a2b3c4 5d6e7f8
-  dam revert 1a2b3c4 --json"
+        after_help = staging::REVERT_HELP
     )]
     Revert(RevertArgs),
     #[command(about = "Record the stage as a commit")]
