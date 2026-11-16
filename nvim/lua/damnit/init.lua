@@ -34,6 +34,7 @@ function M.setup(opts)
     require("damnit.messages").new(running),
     list,
     require("damnit.agenda").new(running, list.show),
+    require("damnit.plan").new(running, list.show),
     task,
     status,
     log,
