@@ -1,0 +1,13 @@
+{
+  "answer": "changed",
+  "hash": "<id-1>",
+  "oid": "<id-2>",
+  "item": "change",
+  "kind": "task",
+  "subject": "plant the tomatoes",
+  "path": "home/",
+  "from": "tool",
+  "key_id": "BBBBBBBBBBBB",
+  "channel": "local",
+  "created": "<now>"
+}

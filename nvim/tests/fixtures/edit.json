@@ -1,0 +1,25 @@
+{
+  "oid": "<id-1>",
+  "kind": "task",
+  "subject": "plant the tomatoes",
+  "body": "loosen the soil\nwater after",
+  "path": "home/",
+  "labels": [
+    "deep",
+    "garden"
+  ],
+  "depends": [],
+  "reminders": [],
+  "recurrence": "every week",
+  "task": {
+    "done": false,
+    "priority": 2,
+    "due": "2026-10-01",
+    "deadline": "2026-09-30",
+    "estimate": 45
+  },
+  "category": {
+    "effort": "deep"
+  },
+  "overdue": true
+}

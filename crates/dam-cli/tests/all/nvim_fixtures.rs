@@ -12,7 +12,7 @@ use support::schema::assert_matches_schema;
 const EXIT_USAGE: i32 = 2;
 const EXIT_REFUSED: i32 = 4;
 
-fn assert_fixture(name: &str, text: &str) {
+pub(crate) fn assert_fixture(name: &str, text: &str) {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../nvim/tests/fixtures")
         .join(name);
@@ -33,7 +33,7 @@ fn assert_fixture(name: &str, text: &str) {
     );
 }
 
-fn answer(sb: &Sandbox, args: &[&str], schema: &str) -> String {
+pub(crate) fn answer(sb: &Sandbox, args: &[&str], schema: &str) -> String {
     let out = sb.output(args);
     assert!(out.status.success(), "{args:?}: {out:?}");
     let text = String::from_utf8(out.stdout).unwrap();
@@ -49,7 +49,7 @@ fn fed_answer(sb: &Sandbox, args: &[&str], request: &str) -> String {
     text
 }
 
-fn error_document(out: Output, code: i32) -> String {
+pub(crate) fn error_document(out: Output, code: i32) -> String {
     assert_eq!(out.status.code(), Some(code), "{out:?}");
     let text = String::from_utf8(out.stderr).unwrap();
     assert_matches_schema(&serde_json::from_str(&text).unwrap(), "error.schema.json");

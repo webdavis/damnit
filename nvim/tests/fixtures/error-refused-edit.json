@@ -1,0 +1,8 @@
+{
+  "error": {
+    "kind": "refused",
+    "rule": "exclusive_label",
+    "message": "category \"effort\" allows one value, got deep, light",
+    "oids": []
+  }
+}
