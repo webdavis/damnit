@@ -1,7 +1,7 @@
 use dam_adapters::LuaConfigFile;
 use dam_application::{
-    ConfigFile, CredentialSource, HelperError, HelperLauncher, LoadedConfig, Refusal, RemoteConfig,
-    Secret, UseCaseError, resolve_credentials,
+    ConfigFile, CredentialSource, HelperError, HelperLauncher, LoadedConfig, NoProgress, Refusal,
+    RemoteConfig, Secret, UseCaseError, resolve_credentials,
 };
 
 use crate::args::CheckName;
@@ -58,7 +58,8 @@ fn signed_in(
         return found(Outcome::Warning, format!("{helper} cannot test a login"))
             .advising(format!("update {helper}"));
     }
-    let resolved = match resolve_credentials(source, remote, &capabilities.credentials) {
+    let resolved = match resolve_credentials(source, remote, &capabilities.credentials, &NoProgress)
+    {
         Ok(resolved) => resolved,
         Err(UseCaseError::Refused(Refusal::MissingCredential { name, .. })) => {
             let remote = &remote.name.0;

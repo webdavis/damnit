@@ -6,7 +6,6 @@ use crate::ports::{RemoteHelper, RemoteName};
 use crate::remote::{RemoteCapabilities, RemoteMutation};
 use crate::service::{Dam, Remotes};
 use crate::use_cases::atomically::atomically;
-use crate::use_cases::connect::connect;
 
 #[derive(Debug)]
 pub struct PushReport {
@@ -30,7 +29,7 @@ impl Dam<'_> {
         let targets = self.remotes_permitting(Permission::RemotePush, remote)?;
         let mut reports = Vec::with_capacity(targets.len());
         for target in targets {
-            let (mut helper, caps) = connect(remotes, self.store, self.access, target)?;
+            let (mut helper, caps) = self.connect(remotes, target)?;
             let mut report = self.push_one(helper.as_mut(), &caps, target)?;
             report.held = report.held.filter(|n| *n == 0 || sees_conflicts);
             reports.push(report);
@@ -100,9 +99,7 @@ impl Dam<'_> {
         let record = |ready: &[RemoteMutation]| {
             record_before_the_call(self.store, &remote.name, ready, &attempting)
         };
-        let mut sent = self.sending(&remote.name, mutations.len(), |progress| {
-            send_in_waves(helper, removals, mutations, &record, progress)
-        })?;
+        let mut sent = self.sending(helper, &remote.name, removals, mutations, &record)?;
         sent.skipped = skipped;
         sent.settlement.held = held;
         sent.settlement.dropped = dropped;
@@ -146,7 +143,7 @@ use mutations::{Plan, plan};
 use owed::{changes_to_send, follow_ups};
 use refiles::Refiles;
 use removals::Removals;
-use waves::{Sent, send_in_waves};
+use waves::Sent;
 
 #[cfg(test)]
 mod tests;

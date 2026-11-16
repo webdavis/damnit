@@ -12,3 +12,12 @@ pub trait Progress {
     fn finish(&self);
     fn fail(&self);
 }
+
+pub struct NoProgress;
+
+impl Progress for NoProgress {
+    fn start(&self, _: Step<'_>) {}
+    fn advance(&self, _: usize) {}
+    fn finish(&self) {}
+    fn fail(&self) {}
+}

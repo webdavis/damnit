@@ -7,7 +7,6 @@ use crate::errors::UseCaseError;
 use crate::ports::{RemoteHelper, RemoteName};
 use crate::remote::{PullOutcome, RemoteCapabilities};
 use crate::service::{Dam, Remotes};
-use crate::use_cases::connect::connect;
 use crate::use_cases::hooks::pulled::{PulledHookRun, PulledTask};
 use crate::use_cases::waiting::Words;
 
@@ -50,7 +49,7 @@ impl Dam<'_> {
     ) -> Result<Vec<PullReport>, UseCaseError> {
         let mut reports = Vec::new();
         for target in self.remotes_permitting(Permission::RemotePull, remote)? {
-            let (mut helper, caps) = connect(remotes, self.store, self.access, target)?;
+            let (mut helper, caps) = self.connect(remotes, target)?;
             let since = self.store.sync_token(&target.name)?;
             let words = Words {
                 doing: &format!("pulling from {}", target.name.0),
