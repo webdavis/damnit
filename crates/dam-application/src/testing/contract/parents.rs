@@ -34,6 +34,28 @@ pub fn parent_repository_contract(store: &dyn Store) {
     assert_eq!(store.log().unwrap()[0].changes, vec![created], "commit");
     assert_eq!(store.committed(&oid(2)).unwrap(), Some(held.clone()));
 
+    let mut unsettled = held.clone();
+    unsettled.base_mut().parent = None;
+    store
+        .commit(&CommitRecord {
+            id: commit_id(2),
+            message: "unsettle".into(),
+            pulled: false,
+            at: Timestamp::UNIX_EPOCH,
+            changes: vec![Authored::by_owner(Change::Update {
+                before: held.clone(),
+                after: unsettled,
+            })],
+        })
+        .unwrap();
+    store.settle_committed_parent(&oid(2), &oid(1)).unwrap();
+    assert_eq!(
+        store.committed(&oid(2)).unwrap(),
+        Some(held.clone()),
+        "settled in the committed layer"
+    );
+    assert_eq!(store.log().unwrap().len(), 2, "settling makes no commit");
+
     store.set_remote_snapshot(&here, &held).unwrap();
     assert_eq!(
         store.remote_snapshot(&here, &oid(2)).unwrap(),

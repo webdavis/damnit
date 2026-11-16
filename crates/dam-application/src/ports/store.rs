@@ -74,6 +74,7 @@ pub trait ObjectRepository: Transactional {
     fn put(&self, object: &Object) -> Result<(), StoreError>;
     fn delete(&self, oid: &Oid) -> Result<(), StoreError>;
     fn committed(&self, oid: &Oid) -> Result<Option<Object>, StoreError>;
+    fn settle_committed_parent(&self, oid: &Oid, parent: &Oid) -> Result<(), StoreError>;
 }
 
 pub trait StageRepository {

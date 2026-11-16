@@ -117,6 +117,10 @@ impl ObjectRepository for FaultyStore {
     fn committed(&self, oid: &Oid) -> Result<Option<Object>, StoreError> {
         self.inner.committed(oid)
     }
+    fn settle_committed_parent(&self, oid: &Oid, parent: &Oid) -> Result<(), StoreError> {
+        self.write()?;
+        self.inner.settle_committed_parent(oid, parent)
+    }
 }
 
 impl Transactional for FaultyStore {

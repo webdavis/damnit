@@ -90,6 +90,12 @@ impl ObjectRepository for MemoryStore {
     fn committed(&self, oid: &Oid) -> Result<Option<Object>, StoreError> {
         Ok(self.0.borrow().committed.get(oid).cloned())
     }
+    fn settle_committed_parent(&self, oid: &Oid, parent: &Oid) -> Result<(), StoreError> {
+        if let Some(committed) = self.0.borrow_mut().committed.get_mut(oid) {
+            committed.base_mut().parent = Some(parent.clone());
+        }
+        Ok(())
+    }
 }
 
 impl StageRepository for MemoryStore {
