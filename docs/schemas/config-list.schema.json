@@ -12,7 +12,7 @@
     "project": {
       "description": "Inside a project, its .dam.lua and every setting it holds, all from the project; null outside one or when the file does not load.",
       "type": ["object", "null"],
-      "required": ["file", "path", "minimum_dam", "new_task", "required", "ls", "filter", "category", "sections", "branch_label", "hooks", "hooks_from"],
+      "required": ["file", "path", "minimum_dam", "new_task", "required", "ls", "filter", "category", "sections", "branch_label", "hooks", "hooks_from", "done_children"],
       "additionalProperties": false,
       "properties": {
         "file": { "type": "string" },
@@ -58,7 +58,8 @@
         "sections": { "type": "array", "items": { "type": "string" } },
         "branch_label": { "type": "boolean" },
         "hooks": { "type": "boolean", "description": "Whether this project's .damhooks/ hooks run." },
-        "hooks_from": { "enum": ["this clone", "config.lua", "default"], "description": "Where that switch comes from: this clone's own record, project.hooks in config.lua, or neither." }
+        "hooks_from": { "enum": ["this clone", "config.lua", "default"], "description": "Where that switch comes from: this clone's own record, project.hooks in config.lua, or neither." },
+        "done_children": { "type": ["string", "null"], "description": "What dam done --force does with open children of a task under path: up, keep or into:<name>; null when unset." }
       }
     },
     "settings": { "$ref": "#/$defs/part" },

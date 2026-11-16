@@ -2,7 +2,7 @@ mod find;
 
 use std::path::PathBuf;
 
-use dam_domain::Categories;
+use dam_domain::{Categories, ChildDisposition};
 
 use crate::{FilterConfig, TaskTemplate};
 
@@ -21,6 +21,7 @@ pub struct ProjectSettings {
     pub categories: Categories,
     pub sections: Vec<String>,
     pub branch_label: bool,
+    pub done_children: Option<ChildDisposition>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

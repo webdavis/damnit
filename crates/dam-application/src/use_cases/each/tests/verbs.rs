@@ -13,7 +13,7 @@ fn done_completes_every_object_in_the_set() {
     let s = work_and_home();
     let out = s
         .dam()
-        .complete_each(&query("path:work/"), Force::No, &untracked, run())
+        .complete_each(&query("path:work/"), &|_| Force::No, &untracked, run())
         .unwrap();
     assert_eq!(out.changes.len(), 2);
     for byte in [1, 2] {
@@ -29,7 +29,7 @@ fn done_on_a_set_holding_an_event_changes_nothing() {
     let before = s.store.clone();
     assert_eq!(
         s.dam()
-            .complete_each(&named(&[1, 4]), Force::No, &untracked, run()),
+            .complete_each(&named(&[1, 4]), &|_| Force::No, &untracked, run()),
         Err(UseCaseError::Refused(Refusal::NotATask(oid(4))))
     );
     assert_eq!(s.store, before);

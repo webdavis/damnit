@@ -59,6 +59,8 @@ pub(super) fn args(oid: &Oid, force: bool, interactive: bool) -> DoneArgs {
         interactive,
         children: None,
         depends: None,
+        scope: Default::default(),
+        project_children: None,
     }
 }
 

@@ -17,6 +17,7 @@ pub(super) struct ProjectEntry {
     branch_label: bool,
     hooks: bool,
     hooks_from: &'static str,
+    done_children: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -78,6 +79,7 @@ impl ProjectEntry {
             branch_label: settings.branch_label,
             hooks: false,
             hooks_from: "default",
+            done_children: settings.done_children.as_ref().map(|d| d.words()),
         }
     }
 
@@ -132,6 +134,7 @@ impl ProjectEntry {
         rows.push(("sections".into(), sections));
         let branch_label = self.branch_label.then(|| "true".to_string());
         rows.push(("branch_label".into(), branch_label));
+        rows.push(("done_children".into(), self.done_children.clone()));
         rows.into_iter()
             .filter_map(|(key, value)| Some((key, format!("{} (from the project)", value?))))
             .collect()

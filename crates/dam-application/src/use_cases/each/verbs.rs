@@ -23,12 +23,12 @@ impl Dam<'_> {
     pub fn complete_each(
         &self,
         selector: &Selector,
-        force: Force,
+        force: &dyn Fn(&Oid) -> Force,
         tracked: &dyn Fn(&Oid) -> Tracked,
         run: SetRun,
     ) -> Result<SetChanges, UseCaseError> {
         self.each(selector, run, true, |oid| {
-            let (_, landed) = self.complete_in_place(oid, force.clone(), tracked(oid))?;
+            let (_, landed) = self.complete_in_place(oid, force(oid), tracked(oid))?;
             Ok(sent(landed))
         })
     }

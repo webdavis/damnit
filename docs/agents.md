@@ -165,7 +165,8 @@ dam done <oid>
 stays until the owner adds or declines the removal. Both answer as the next section shows.
 
 A token cannot run `dam mv`, `dam done --force`, or `dam edit --focus`. Each exits 4, rule
-`not_open_to_tokens`.
+`not_open_to_tokens`. A project's `done_children` changes only what `dam done --force` does with
+open children, never what a token may do.
 
 `dam edit`, `dam done` and `dam rm` also take several oids, `--query TEXT` or `--filter NAME`. The
 set holds only the objects your grants let you see, and each change waits as its own item. Add
