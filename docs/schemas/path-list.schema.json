@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/path-list.schema.json",
+  "title": "dam path list answer",
+  "description": "What dam path list prints with -o: every path that holds a task or event in scope, done ones included, and each of its parent paths, sorted by path. The root is not listed. Inside a project only the project's path and those under it are listed; a token counts only the objects it may read.",
+  "type": "object",
+  "required": [
+    "paths"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "paths": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "count"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "description": "Written as dam prints an object's path, ending in /.",
+            "type": "string"
+          },
+          "count": {
+            "description": "How many objects sit at or under the path.",
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    }
+  }
+}

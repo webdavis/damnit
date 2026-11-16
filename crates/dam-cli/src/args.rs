@@ -25,7 +25,7 @@ pub(crate) use config::{ConfigArgs, ConfigCommand};
 pub(crate) use doctor::{CheckName, DoctorArgs};
 pub(crate) use editing::{EditArgs, FieldArgs};
 pub(crate) use global_flags::Cli;
-pub(crate) use in_use::{LabelArgs, LabelCommand};
+pub(crate) use in_use::{LabelArgs, LabelCommand, PathArgs, PathCommand};
 pub(crate) use init::InitArgs;
 pub(crate) use new::NewArgs;
 pub(crate) use planning::{DayArgs, DayCommand, RemindersArgs};
@@ -97,6 +97,8 @@ pub(crate) enum Command {
     Category(CategoryArgs),
     #[command(about = "List the labels in use")]
     Label(LabelArgs),
+    #[command(about = "List the paths in use")]
+    Path(PathArgs),
     #[command(about = "List, create and remove the saved filters config.lua declares")]
     Filter(FilterArgs),
     #[command(about = "List the hooks in the hooks folder, or run one over listed tasks")]

@@ -142,6 +142,7 @@ pub fn answers(command: &str) -> Option<Vec<serde_json::Value>> {
         "category list" => vec![json_of(&fixture::seeded(), &["category", "list"])],
         "filter list" => vec![json_of(&fixture::seeded(), &["filter", "list"])],
         "label list" => vec![json_of(&fixture::seeded(), &["label", "list"])],
+        "path list" => vec![json_of(&fixture::seeded(), &["path", "list"])],
         "remote add" => vec![json_of(
             &Sandbox::new(),
             &["remote", "add", "cal", "gcal::primary"],
