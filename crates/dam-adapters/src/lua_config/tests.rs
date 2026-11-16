@@ -30,6 +30,8 @@ mod secrets_file;
 mod secrets_kept;
 mod secrets_names_withheld;
 mod settings_refusals;
+mod settings_set;
+mod settings_set_refusals;
 mod support;
 mod template;
 mod token_tables;

@@ -92,7 +92,7 @@ impl LuaConfigFile {
         self.settings_kept(text).map(|(config, _, _)| config)
     }
 
-    fn settings_kept(
+    pub(super) fn settings_kept(
         &self,
         text: Option<&str>,
     ) -> Result<(Config, Lua, Option<Table>), ConfigError> {
