@@ -2,6 +2,7 @@ mod accepting;
 mod edits;
 mod events;
 mod failures;
+mod progress;
 mod quiet;
 
 use std::path::PathBuf;

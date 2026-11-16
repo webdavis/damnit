@@ -7,6 +7,7 @@ use crate::errors::{Refusal, UseCaseError};
 use crate::ports::{HookFailure, ObjectRepository};
 use crate::service::Dam;
 use crate::use_cases::list::log_by_object::LogByObject;
+use crate::use_cases::waiting::Words;
 use edit_request::Edited;
 
 impl Dam<'_> {
@@ -43,7 +44,11 @@ impl Dam<'_> {
             return Ok(());
         };
         let histories = LogByObject::new(self);
-        let ran = self.hooks.run(event, &task, &histories);
+        let words = Words {
+            doing: &format!("running {}", event.as_str()),
+            did: &format!("ran {}", event.as_str()),
+        };
+        let ran = self.waiting_on(words, || self.hooks.run(event, &task, &histories));
         histories.unread()?;
         let failure = match ran {
             Ok(None) => return Ok(()),
