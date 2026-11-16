@@ -9,10 +9,11 @@ use dam_application::{Clock, Progress, Step};
 use dam_domain::Timestamp;
 
 use super::line::{Moment, Stage, line};
+use super::no_flicker::{FIRST_FRAME_AFTER_MS, leaves_a_line};
 use super::shown::Shown;
 use crate::output::Format;
 
-const REDRAW_EVERY: Duration = Duration::from_millis(100);
+const REDRAW_EVERY: Duration = Duration::from_millis(FIRST_FRAME_AFTER_MS);
 const CLEAR_THE_LINE: &str = "\r\x1b[2K";
 
 struct Running {
@@ -28,6 +29,11 @@ struct Running {
 }
 
 impl Running {
+    fn age_ms(&self) -> u64 {
+        let age = SystemClock.now().duration_since(self.started).as_millis();
+        u64::try_from(age.max(0)).unwrap_or(u64::MAX)
+    }
+
     fn said(&self, stage: Stage, format: Format) -> String {
         let seconds = SystemClock.now().duration_since(self.started).as_secs();
         let moment = Moment {
@@ -100,7 +106,9 @@ impl ProgressOnStandardError {
         };
         let ended = step.said(stage, self.format);
         match self.shown {
-            Shown::Animated if step.drawn => eprintln!("{CLEAR_THE_LINE}{ended}"),
+            Shown::Animated if leaves_a_line(step.age_ms(), step.drawn) => {
+                eprintln!("{CLEAR_THE_LINE}{ended}")
+            }
             Shown::Animated => {}
             _ => eprintln!("{ended}"),
         }

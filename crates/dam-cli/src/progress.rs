@@ -1,4 +1,5 @@
 mod line;
+mod no_flicker;
 mod on_standard_error;
 mod shown;
 
