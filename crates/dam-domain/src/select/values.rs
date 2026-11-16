@@ -6,6 +6,7 @@ pub(crate) enum Values {
     Has(Vec<Item>),
 }
 
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum Item {
     Text(String),
     Number(i64),
@@ -13,6 +14,15 @@ pub(crate) enum Item {
     Id(Oid),
     Path(Path),
     Yes(bool),
+}
+
+impl Item {
+    pub(crate) fn folded(self) -> Item {
+        match self {
+            Item::Text(text) => Item::Text(text.to_lowercase()),
+            item => item,
+        }
+    }
 }
 
 impl Values {

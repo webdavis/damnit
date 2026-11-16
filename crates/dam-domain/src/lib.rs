@@ -52,8 +52,8 @@ pub use query::{
 pub use recurrence::{Anchor, Freq, Recurrence, Rule, RuleError, roll_forward};
 pub use select::{
     Command, Condition, Context, DateTest, DefaultsError, FieldType, Filter, FilterError,
-    FilterTable, Fix, Has, Holds, Problem, Scope, SelectField, TableValue, closest_field, scope,
-    select_field, select_fields,
+    FilterTable, Fix, Has, Holds, Order, Problem, Scope, SelectField, Sort, TableValue,
+    closest_field, scope, select_field, select_fields,
 };
 pub use weekday::{parse_weekday, weekday_text};
 pub use when::{Date, Timestamp, When, WhenError};

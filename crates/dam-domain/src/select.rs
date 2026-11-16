@@ -9,8 +9,10 @@ mod fields;
 mod filter;
 mod moment;
 mod on_day;
+mod order;
 mod read_value;
 mod readers;
+mod sort;
 mod stretch;
 mod table;
 mod values;
@@ -25,6 +27,8 @@ pub use error::{FilterError, Problem};
 pub use field::{FieldType, Has, Holds, SelectField};
 pub use fields::{select_field, select_fields};
 pub use filter::Filter;
+pub use order::Order;
+pub use sort::Sort;
 pub use table::{FilterTable, TableValue};
 
 #[cfg(test)]
