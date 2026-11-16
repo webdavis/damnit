@@ -12,7 +12,7 @@ local SOURCES = {
     args = { "filter", "list" },
     read = function(answer)
       return each(answer.filters, function(filter)
-        return { word = filter.name, menu = "saved filter" }
+        return { word = filter.name, menu = "saved filter", table = filter.table }
       end)
     end,
   },
