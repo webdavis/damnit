@@ -3,6 +3,7 @@ mod parents;
 mod pushes;
 mod report;
 mod store_read_first;
+mod sync;
 
 use std::cell::RefCell;
 use std::path::PathBuf;

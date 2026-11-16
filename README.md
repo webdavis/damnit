@@ -72,7 +72,7 @@ It prints one row per check, then what needs attention, and creates no file.
 It changes no file that exists, and the report names each file it created.
 `dam doctor --fix <check>...` creates only what the named checks cover.
 `dam doctor <check>...` runs only the named checks: `config`, `database`, `helpers`, `credentials`,
-`pushes` and `parents`.
+`pushes`, `parents` and `sync`.
 Its `config` check reads both files in full and lists each token warning under its row.
 That row may quote an error raised in `secrets.lua`. Elsewhere only a credential function's own
 error reaches you, and only when you run the command without `DAM_TOKEN`.
@@ -84,7 +84,9 @@ credential function.
 Its `pushes` check warns of changes still owed to a remote, or sent without an answer.
 Its `parents` check lists each object that sits under two same-named objects and does not know
 which one is its parent.
-`helpers`, `credentials` and `pushes` list one row for each remote under their own row.
+Its `sync` check says whether background sync runs now, starts at login, how often, and how its
+last run ended. A failed last run, or an enabled remote not run for three intervals, is an issue.
+`helpers`, `credentials`, `pushes` and `sync` list one row for each remote under their own row.
 `dam doctor` exits 1 when a check finds an issue.
 `docs/schemas/doctor.schema.json` is the schema of its `--json` answer.
 `dam config validate` prints what `dam doctor config` prints, with `command` set to

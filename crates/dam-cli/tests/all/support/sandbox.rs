@@ -18,6 +18,7 @@ impl Sandbox {
         };
         sandbox.write_config_files();
         sandbox.install_helper("fake", include_str!("../../fake_helper.sh"));
+        sandbox.install_schedulers_that_hold_nothing();
         sandbox
     }
 
@@ -62,6 +63,7 @@ impl Sandbox {
                 self.dir.path().join("rate-limit-next-push"),
             )
             .env("HOME", self.dir.path())
+            .env_remove("XDG_RUNTIME_DIR")
             .env("XDG_CONFIG_HOME", self.dir.path().join("config"))
             .env("XDG_DATA_HOME", self.dir.path().join("data"))
             .env("XDG_STATE_HOME", self.dir.path().join("state"))

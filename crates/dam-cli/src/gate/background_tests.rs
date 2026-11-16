@@ -19,3 +19,12 @@ fn a_token_may_not_start_stop_enable_or_disable_background_sync() {
         );
     }
 }
+
+#[test]
+fn a_token_may_not_run_dam_doctor_sync() {
+    let command = Cli::try_parse_from(["dam", "doctor", "sync"])
+        .unwrap()
+        .command;
+    let refused = refuse_any_token_to_an_owner_only_verb(true, &command);
+    assert_eq!(refused, Err(Refusal::NotOpenToTokens("doctor")));
+}

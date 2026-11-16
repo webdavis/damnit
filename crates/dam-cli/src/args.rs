@@ -117,6 +117,7 @@ It changes no file that exists. With checks named, it creates only what those ch
 Examples:
   dam doctor
   dam doctor config
+  dam doctor sync
   dam doctor --json
   dam doctor --fix
   dam doctor --fix database"

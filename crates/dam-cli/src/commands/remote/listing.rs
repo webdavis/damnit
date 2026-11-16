@@ -82,7 +82,7 @@ fn when_phrase(verb: &str, at: Option<Timestamp>, now: Timestamp) -> String {
     }
 }
 
-fn ago_to_one_unit_and_never_in_the_future(now: Timestamp, then: Timestamp) -> String {
+pub(crate) fn ago_to_one_unit_and_never_in_the_future(now: Timestamp, then: Timestamp) -> String {
     const MINUTE: i64 = 60;
     const HOUR: i64 = 60 * MINUTE;
     const DAY: i64 = 24 * HOUR;
