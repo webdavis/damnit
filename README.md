@@ -301,7 +301,17 @@ its own: the nearest `.dam.lua` at or above where you stand is the one `dam` fol
 
 Inside a project, `dam new` puts the task under the project's path: `dam new "x" --path cli/` in a
 project at `app/` lands at `app/cli/`. With `--parent` and no `--path` the task goes where its
-parent is. `--global` reads `--path` from the root.
+parent is.
+
+The nearest `.dam.lua` at or above the folder decides the project; a project inside another uses
+only its own file.
+
+`dam ls`, `dam agenda` and `dam reminders` list only the project there: `dam ls` in that project
+shows what `dam ls 'path:app/'` shows elsewhere, and a `path:` you type starts from the project. A
+saved filter keeps its own query and is narrowed to the project. Listings print full paths.
+`--global` on these four commands reaches every task and reads a path from the root. `status`,
+`push`, `pull`, `log`, `show`, `edit`, `done`, `mv` and `rm` always cover everything, and a path
+given to `dam mv` is a full path.
 
 ## The rules it keeps
 

@@ -22,7 +22,9 @@ pub(crate) fn run_agenda(ctx: &Context, args: AgendaArgs) -> Result<Report, CliE
         .map(|(remote, age)| (remote.0.clone(), *age))
         .collect();
     ctx.dam().require_fresh(&bounds)?;
-    let found = ctx.dam().agenda(args.query.as_deref(), window, &ctx.tz)?;
+    let found = ctx
+        .dam()
+        .agenda(args.query.as_deref(), &args.place, window, &ctx.tz)?;
     report(&Agenda {
         events: found.iter().map(|s| AgendaEvent::new(s, &ctx.tz)).collect(),
         zone: &ctx.tz,

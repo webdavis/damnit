@@ -2,6 +2,9 @@ use std::time::Duration;
 
 use clap::{Args, Subcommand};
 use dam_application::RemoteName;
+use dam_domain::Path;
+
+use super::ScopeArgs;
 
 use super::values::max_age_arg;
 
@@ -16,6 +19,10 @@ pub(crate) struct LsArgs {
         help = "List what you made, what tokens made, or all of it"
     )]
     pub(crate) by: AuthorKind,
+    #[command(flatten)]
+    pub(crate) scope: ScopeArgs,
+    #[arg(skip)]
+    pub(crate) place: Path,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
@@ -25,7 +32,7 @@ pub(crate) enum AuthorKind {
     All,
 }
 
-#[derive(Args, Debug)]
+#[derive(Args, Debug, Default)]
 pub(crate) struct AgendaArgs {
     #[arg(help = "Narrow the events by a query or saved filter, read the way `ls` reads one")]
     pub(crate) query: Option<String>,
@@ -46,6 +53,10 @@ pub(crate) struct AgendaArgs {
         help = "Refuse when REMOTE last pulled over DURATION ago, such as 15m. Repeatable"
     )]
     pub(crate) max_age: Vec<(RemoteName, Duration)>,
+    #[command(flatten)]
+    pub(crate) scope: ScopeArgs,
+    #[arg(skip)]
+    pub(crate) place: Path,
 }
 
 #[derive(Args, Debug)]

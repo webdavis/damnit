@@ -24,6 +24,8 @@ fn ls_filters_by_query_and_by_saved_filter() {
         super::run_ls(
             &ctx,
             LsArgs {
+                scope: Default::default(),
+                place: Default::default(),
                 query: None,
                 by: AuthorKind::All
             }
@@ -39,6 +41,8 @@ fn ls_filters_by_query_and_by_saved_filter() {
         super::run_ls(
             &ctx,
             LsArgs {
+                scope: Default::default(),
+                place: Default::default(),
                 by: AuthorKind::All,
                 query: Some("due:today".into())
             }
@@ -53,6 +57,8 @@ fn ls_filters_by_query_and_by_saved_filter() {
     let saved = super::run_ls(
         &ctx,
         LsArgs {
+            scope: Default::default(),
+            place: Default::default(),
             by: AuthorKind::All,
             query: Some("now".into()),
         },
@@ -74,6 +80,8 @@ fn a_value_of_another_category_is_refused_and_names_both() {
     let err = super::run_ls(
         &ctx,
         LsArgs {
+            scope: Default::default(),
+            place: Default::default(),
             by: AuthorKind::All,
             query: Some("effort:home".into()),
         },
@@ -89,6 +97,8 @@ fn an_undeclared_category_key_is_refused_and_names_the_key() {
     let err = super::run_ls(
         &ctx,
         LsArgs {
+            scope: Default::default(),
+            place: Default::default(),
             by: AuthorKind::All,
             query: Some("mood:happy".into()),
         },

@@ -18,10 +18,9 @@ fn standup() -> Event {
 
 fn args(from: Option<&str>, to: Option<&str>) -> AgendaArgs {
     AgendaArgs {
-        query: None,
         from: from.map(str::to_string),
         to: to.map(str::to_string),
-        max_age: vec![],
+        ..AgendaArgs::default()
     }
 }
 

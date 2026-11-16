@@ -11,7 +11,7 @@ pub(crate) fn run_ls(ctx: &Context, args: LsArgs) -> Result<Report, CliError> {
     let authorship = Authorship::read(ctx)?;
     let objects: Vec<Object> = ctx
         .dam()
-        .list(args.query.as_deref())?
+        .list_within(args.query.as_deref(), &args.place)?
         .into_iter()
         .filter(|o| authorship.by(args.by, o))
         .collect();

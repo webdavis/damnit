@@ -51,6 +51,8 @@ fn an_agenda_row_names_the_people_place_and_link_of_its_meeting() {
     let ctx = context();
     ctx.store.put(&Object::Event(design_review())).unwrap();
     let args = AgendaArgs {
+        scope: Default::default(),
+        place: Default::default(),
         query: None,
         from: None,
         to: None,

@@ -24,6 +24,7 @@ fn run(s: &Scenario, query: Option<&str>, from: &str, to: &str) -> Vec<Scheduled
     s.dam()
         .agenda(
             query,
+            &dam_domain::Path::root(),
             Window {
                 from: at(from),
                 to: at(to),
@@ -142,7 +143,10 @@ fn an_all_day_event_runs_midnight_to_midnight_in_the_zone_given() {
         to: at("2026-09-27T00:00:00Z"),
     };
     let zone = TimeZone::fixed(jiff::tz::offset(-4));
-    let found = s.dam().agenda(None, window, &zone).unwrap();
+    let found = s
+        .dam()
+        .agenda(None, &dam_domain::Path::root(), window, &zone)
+        .unwrap();
     assert_eq!(
         (found[0].start, found[0].end),
         (at("2026-09-25T04:00:00Z"), at("2026-09-26T04:00:00Z"))

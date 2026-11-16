@@ -25,7 +25,7 @@ fn a_token_hears_no_reminder_of_an_object_outside_its_grants() {
         to: "2027-01-01T00:00:00Z".parse().unwrap(),
     };
     let heard: Vec<String> = dam
-        .due_reminders(window, &TimeZone::UTC)
+        .due_reminders(&dam_domain::Path::root(), window, &TimeZone::UTC)
         .unwrap()
         .into_iter()
         .map(|r| r.subject)

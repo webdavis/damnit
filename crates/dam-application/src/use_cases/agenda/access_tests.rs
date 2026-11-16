@@ -33,7 +33,7 @@ fn a_token_sees_no_meeting_outside_its_grants() {
         to: "2026-09-26T00:00:00Z".parse().unwrap(),
     };
     let seen: Vec<String> = dam
-        .agenda(None, window, &TimeZone::UTC)
+        .agenda(None, &dam_domain::Path::root(), window, &TimeZone::UTC)
         .unwrap()
         .into_iter()
         .map(|s| s.event.base.subject)

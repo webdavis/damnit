@@ -24,6 +24,8 @@ fn reminders_list_the_ones_that_fall_due_in_the_window_in_the_published_shape() 
     let ctx = context();
     ctx.store.put(&reminded_task()).unwrap();
     let args = RemindersArgs {
+        scope: Default::default(),
+        place: Default::default(),
         from: Some("2026-01-02T09:00".into()),
         to: Some("2026-01-02T10:00".into()),
     };

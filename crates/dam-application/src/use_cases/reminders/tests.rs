@@ -33,7 +33,7 @@ fn due_between(s: &Scenario, from: &str, to: &str) -> Vec<(String, Timestamp)> {
         to: at(to),
     };
     s.dam()
-        .due_reminders(window, &TimeZone::UTC)
+        .due_reminders(&dam_domain::Path::root(), window, &TimeZone::UTC)
         .unwrap()
         .into_iter()
         .map(|r| (r.subject, r.at))
