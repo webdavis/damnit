@@ -191,6 +191,7 @@ dam remote add url: help = Point it at a helper URL, such as todoist:: or gcal::
 dam remote list: about = List configured remotes
 dam push: about = Send unpushed commits to a remote, or to every remote
 dam push remote: help = Push to this remote alone. Default: every remote
+dam push preview: help = Show what a push would send, hold and skip; start no helper and write nothing
 dam pull: about = Fetch and merge from a remote, or from every remote
 dam pull remote: help = Pull from this remote alone. Default: every remote
 dam resolve: about = Settle a conflict for one object

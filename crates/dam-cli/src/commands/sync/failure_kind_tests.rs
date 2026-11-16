@@ -38,7 +38,14 @@ fn with_remote(credentials: Vec<CredentialSpec>) -> Context {
 fn a_push_to_a_remote_whose_helper_is_not_installed_fails_as_a_helper_error() {
     let mut ctx = with_remote(vec![]);
     ctx.launcher = Box::new(Uninstalled);
-    let error = run_push(&ctx, PushArgs { remote: None }).unwrap_err();
+    let error = run_push(
+        &ctx,
+        PushArgs {
+            remote: None,
+            preview: false,
+        },
+    )
+    .unwrap_err();
     assert_eq!(error.document()["error"]["kind"], "helper");
 }
 
@@ -48,6 +55,13 @@ fn a_push_whose_credential_resolves_to_nothing_fails_as_a_credential_error() {
         remote: RemoteName("t".into()),
         name: "api_token".into(),
     }]);
-    let error = run_push(&ctx, PushArgs { remote: None }).unwrap_err();
+    let error = run_push(
+        &ctx,
+        PushArgs {
+            remote: None,
+            preview: false,
+        },
+    )
+    .unwrap_err();
     assert_eq!(error.document()["error"]["kind"], "credential");
 }

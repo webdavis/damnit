@@ -100,6 +100,11 @@ Examples:
 pub(crate) struct PushArgs {
     #[arg(help = "Push to this remote alone. Default: every remote")]
     pub(crate) remote: Option<String>,
+    #[arg(
+        long,
+        help = "Show what a push would send, hold and skip; start no helper and write nothing"
+    )]
+    pub(crate) preview: bool,
 }
 
 #[derive(Args, Debug)]

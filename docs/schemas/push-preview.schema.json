@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/push-preview.schema.json",
+  "title": "dam push --preview document",
+  "description": "What dam push --preview prints in a data format: for each remote, what a push would send, hold and skip. It starts no helper and writes nothing. A token sees only the objects it may read.",
+  "type": "object",
+  "required": ["preview", "remotes"],
+  "additionalProperties": false,
+  "properties": {
+    "preview": { "const": true },
+    "remotes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["remote", "known", "mutations", "held", "skipped"],
+        "additionalProperties": false,
+        "properties": {
+          "remote": { "type": "string" },
+          "known": { "type": "boolean", "description": "False until dam has contacted the remote since upgrading: run dam pull <remote>. The lists are then empty." },
+          "mutations": {
+            "type": "array",
+            "description": "What a push would send, in the order it would send it.",
+            "items": {
+              "type": "object",
+              "required": ["op", "oid", "subject", "container"],
+              "additionalProperties": false,
+              "properties": {
+                "op": { "enum": ["create", "update", "delete"] },
+                "oid": { "type": "string" },
+                "subject": { "type": ["string", "null"] },
+                "container": { "type": ["string", "null"], "description": "The remote's id for the container it is filed under, or the short oid of a container created in the same push." }
+              }
+            }
+          },
+          "held": {
+            "type": "array",
+            "description": "What a push would hold back, with the notice it would leave.",
+            "items": {
+              "type": "object",
+              "required": ["oid", "why"],
+              "additionalProperties": false,
+              "properties": { "oid": { "type": "string" }, "why": { "type": "string" } }
+            }
+          },
+          "conflicted": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Objects held by a conflict; left out unless you may read conflicts."
+          },
+          "skipped": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["oid", "because"],
+              "additionalProperties": false,
+              "properties": {
+                "oid": { "type": "string" },
+                "because": { "enum": ["outside_path", "excepted", "kind_not_taken", "no_field_it_takes", "never_sent"] }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
