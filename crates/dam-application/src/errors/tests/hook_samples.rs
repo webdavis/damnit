@@ -13,5 +13,6 @@ pub(super) fn hook_samples() -> Vec<Refusal> {
             },
         }),
         Refusal::StartedByHook("task_new".into()),
+        Refusal::HookNotDeclared(HookEvent::TaskPulled),
     ]
 }

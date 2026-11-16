@@ -1,6 +1,6 @@
+use crate::testing::SlowHooks;
 use dam_domain::Permission::RemotePull;
 
-use super::slow::SlowHooks;
 use super::*;
 use crate::access::Access;
 use crate::service::Dam;

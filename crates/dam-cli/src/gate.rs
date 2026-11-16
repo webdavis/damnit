@@ -1,6 +1,8 @@
 use dam_application::{Access, Refusal};
 use dam_domain::{Permission, Subject};
 
+use crate::args::hook::HookCommand;
+
 use crate::args::{
     CategoryCommand, Command, ConfigCommand, FilterCommand, RemoteCommand, SyncCommand,
     TokenCommand,
@@ -48,7 +50,8 @@ pub(crate) fn need(command: &Command) -> Need {
         Command::Show(_) => Need::NarrowedFrom(&[TaskRead, EventRead, HistoryRead]),
         Command::Hook(a) => match a.command {
             None => Need::Open,
-            Some(crate::args::hook::HookCommand::List) => Need::OwnerOnly("hook list"),
+            Some(HookCommand::List) => Need::OwnerOnly("hook list"),
+            Some(HookCommand::Run(_)) => Need::OwnerOnly("hook run"),
         },
         Command::Remote(a) => match a.command {
             RemoteCommand::Add { .. } => Need::OwnerOnly("remote add"),

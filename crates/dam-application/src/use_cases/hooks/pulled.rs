@@ -127,10 +127,9 @@ impl Dam<'_> {
 
 mod committed;
 mod notice;
-mod run_time;
 
+use super::run_time::RunTime;
 use committed::BeforeTheHook;
-use run_time::RunTime;
 
 #[cfg(test)]
 mod tests;

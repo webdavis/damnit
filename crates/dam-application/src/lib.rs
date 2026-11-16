@@ -55,6 +55,7 @@ pub use use_cases::agenda::{Scheduled, Window};
 pub use use_cases::background::{BackgroundReport, BackgroundRequest, BackgroundStep};
 pub use use_cases::complete::{CompletePlan, Completed};
 pub use use_cases::edit::{EditFields, apply};
+pub use use_cases::hooks::listed::ListedHookRun;
 pub use use_cases::hooks::pulled::PulledHookRun;
 pub use use_cases::items::accept::{Added, AddedRemoval};
 pub use use_cases::items::land::{Answer, Landed, Sent};

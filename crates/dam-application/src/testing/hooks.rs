@@ -67,11 +67,16 @@ impl FakeHooks {
 #[derive(Default)]
 pub struct FakeHookWarnings {
     pub warned: RefCell<Vec<HookFailure>>,
+    pub dropped: RefCell<Vec<HookFailure>>,
 }
 
 impl HookWarnings for FakeHookWarnings {
     fn warn(&self, failure: &HookFailure) {
         self.warned.borrow_mut().push(failure.clone());
+    }
+
+    fn warn_change_dropped(&self, failure: &HookFailure) {
+        self.dropped.borrow_mut().push(failure.clone());
     }
 }
 

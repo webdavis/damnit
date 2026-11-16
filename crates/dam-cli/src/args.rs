@@ -89,7 +89,7 @@ pub(crate) enum Command {
     Category(CategoryArgs),
     #[command(about = "List, create and remove the saved filters config.lua declares")]
     Filter(FilterArgs),
-    #[command(about = "Read the hooks in the hooks folder")]
+    #[command(about = "List the hooks in the hooks folder, or run one over listed tasks")]
     Hook(hook::HookArgs),
     #[command(about = "Manage remotes")]
     Remote(RemoteArgs),

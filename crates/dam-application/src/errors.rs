@@ -11,6 +11,7 @@ use dam_domain::{
 };
 
 use crate::access::TokenRefusal;
+use crate::config::HookEvent;
 use crate::ports::{CredentialError, HelperError, HookFailure, ScheduleError, StoreError};
 use crate::use_cases::items::refusal::ItemRefusal;
 
@@ -75,6 +76,7 @@ pub enum Refusal {
     NoSuchSetting(String),
     HookRefused(HookFailure),
     StartedByHook(String),
+    HookNotDeclared(HookEvent),
     Item(ItemRefusal),
     PulledCommit(CommitId),
     NotInCommit {

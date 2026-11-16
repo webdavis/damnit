@@ -1,6 +1,6 @@
-use super::slow::SlowHooks;
 use super::*;
 use crate::service::Dam;
+use crate::testing::SlowHooks;
 
 fn four_tasks() -> PullOutcome {
     PullOutcome {

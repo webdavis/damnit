@@ -6,7 +6,11 @@ use crate::gate::{Need, admit, need, refuse_any_token_to_an_owner_only_verb};
 
 #[test]
 fn only_the_owner_lists_or_runs_hooks_whatever_a_token_holds() {
-    for (line, verb) in [("hook list", "hook list")] {
+    for (line, verb) in [
+        ("hook list", "hook list"),
+        ("hook run task_new", "hook run"),
+        ("hook run task_pulled due:today", "hook run"),
+    ] {
         assert_eq!(admit(&Owner, &command(line)), Ok(()), "{line}");
         for token in [
             holding(vec![]),

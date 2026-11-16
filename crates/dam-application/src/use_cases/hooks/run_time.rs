@@ -3,7 +3,7 @@ use jiff::SignedDuration;
 
 use crate::ports::Clock;
 
-const ONE_PULLS_HOOK_RUN: SignedDuration = SignedDuration::from_secs(60);
+const ONE_HOOK_RUN: SignedDuration = SignedDuration::from_secs(60);
 
 pub(super) struct RunTime<'a> {
     clock: &'a dyn Clock,
@@ -19,7 +19,7 @@ impl RunTime<'_> {
     }
 
     pub(super) fn ran_out(&self) -> bool {
-        self.spent() >= ONE_PULLS_HOOK_RUN
+        self.spent() >= ONE_HOOK_RUN
     }
 
     fn spent(&self) -> SignedDuration {
