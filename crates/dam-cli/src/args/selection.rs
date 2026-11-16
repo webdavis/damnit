@@ -1,5 +1,5 @@
 use clap::{Arg, ArgAction, ArgMatches, Args, Command, FromArgMatches};
-use dam_domain::{FilterTable, SelectField, TableValue, select_fields};
+use dam_domain::{FilterTable, Has, SelectField, TableValue, select_field, select_fields};
 
 mod any;
 mod help_line;
@@ -72,6 +72,14 @@ impl FromArgMatches for SelectArgs {
     }
 }
 
+pub(crate) fn shown_for(kind: Has) -> impl FnMut(Arg) -> Arg {
+    move |arg| {
+        let has = select_field(arg.get_id().as_str()).map(|f| f.has);
+        let other_kind = has.is_some_and(|has| has != Has::Both && has != kind);
+        arg.hide(other_kind)
+    }
+}
+
 fn typed(matches: &ArgMatches, key: &str) -> Option<TableValue> {
     let mut texts: Vec<String> = matches.get_many::<String>(key)?.cloned().collect();
     Some(match texts.len() {
@@ -93,6 +101,8 @@ fn field_arg(field: &'static SelectField) -> Arg {
     }
 }
 
+#[cfg(test)]
+mod kind_help_tests;
 #[cfg(test)]
 mod place_tests;
 #[cfg(test)]

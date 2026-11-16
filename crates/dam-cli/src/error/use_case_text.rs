@@ -8,6 +8,7 @@ use dam_application::{
 use super::Fault;
 use super::filter_text::FilterText;
 use super::refusal_text::RefusalText;
+use super::selection_fault::LIST;
 
 pub(crate) struct UseCaseText<'a>(pub(crate) &'a UseCaseError);
 
@@ -119,7 +120,7 @@ impl fmt::Display for UseCaseText<'_> {
                     error: e.clone(),
                     typed: Default::default(),
                     sort: Vec::new(),
-                    verb: "dam list".into(),
+                    verb: LIST.into(),
                 }
             ),
             UseCaseError::Schedule(ScheduleError::Failed(why)) => {

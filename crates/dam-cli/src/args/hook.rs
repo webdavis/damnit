@@ -1,5 +1,6 @@
 use clap::{Args, Subcommand, ValueEnum};
 use dam_application::HookEvent;
+use dam_domain::Has;
 
 use super::selection::SelectArgs;
 
@@ -35,6 +36,7 @@ Examples:
 }
 
 #[derive(Args, Debug)]
+#[command(mut_args = super::selection::shown_for(Has::Task))]
 pub(crate) struct HookRunArgs {
     #[arg(value_enum, help = "Name the hook to run by its event")]
     pub(crate) hook: HookName,
