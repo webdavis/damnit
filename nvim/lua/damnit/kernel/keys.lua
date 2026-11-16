@@ -10,17 +10,35 @@ function M.new(screen)
 end
 
 ---@param specs damnit.KeySpec[]
----@return string[]
+---@return string[] each group's heading, then its keys indented under it
 function M.help_lines(specs)
-  return vim.tbl_map(function(spec)
-    return spec.lhs .. "  " .. spec.desc
-  end, specs)
+  local order, grouped = {}, {}
+  for _, spec in ipairs(specs) do
+    local group = spec.group or "every window"
+    if not grouped[group] then
+      grouped[group] = {}
+      table.insert(order, group)
+    end
+    table.insert(grouped[group], "  " .. spec.lhs .. "  " .. spec.desc)
+  end
+  local lines = {}
+  for _, group in ipairs(order) do
+    table.insert(lines, group)
+    vim.list_extend(lines, grouped[group])
+  end
+  return lines
 end
 
 function Keys:help(specs)
   local lines = M.help_lines(specs)
   local buf = self.screen:scratch("dam://keys", "damkeys")
-  self.screen:draw(buf, lines, {})
+  local headings = {}
+  for n, line in ipairs(lines) do
+    if not vim.startswith(line, " ") then
+      table.insert(headings, { line = n - 1, col = 0, end_col = #line, group = "DamHeader" })
+    end
+  end
+  self.screen:draw(buf, lines, headings)
   local width = math.max(unpack(vim.tbl_map(vim.fn.strdisplaywidth, lines)))
   local win = vim.api.nvim_open_win(buf, true, {
     relative = "editor",
@@ -50,6 +68,7 @@ function Keys:bind(buf, specs)
   table.insert(all, {
     lhs = "g?",
     desc = "list these keys",
+    group = "every window",
     run = function()
       self:help(all)
     end,
