@@ -9,6 +9,7 @@ use crate::remote::{PullOutcome, RemoteCapabilities};
 use crate::service::{Dam, Remotes};
 use crate::use_cases::connect::connect;
 use crate::use_cases::hooks::pulled::{PulledHookRun, PulledTask};
+use crate::use_cases::waiting::Words;
 
 mod adopt;
 mod cancelled;
@@ -51,7 +52,11 @@ impl Dam<'_> {
         for target in self.remotes_permitting(Permission::RemotePull, remote)? {
             let (mut helper, caps) = connect(remotes, self.store, self.access, target)?;
             let since = self.store.sync_token(&target.name)?;
-            let response = helper.pull(since.as_deref())?;
+            let words = Words {
+                doing: &format!("pulling from {}", target.name.0),
+                did: &format!("pulled from {}", target.name.0),
+            };
+            let response = self.waiting_on(words, || helper.pull(since.as_deref()))?;
             let (mut report, pulled) =
                 self.apply_pulled(target, &caps, helper.as_ref(), response)?;
             if since.is_some() {
