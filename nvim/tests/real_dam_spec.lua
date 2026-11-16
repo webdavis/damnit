@@ -82,7 +82,35 @@ local function staged_and_committed_in_status(sandbox)
   end, 20000)
 end
 
+local function listed_in_a_project(sandbox)
+  local app = real_app()
+  require("damnit.command").define(app, { require("damnit.list").new(app) })
+  local project = vim.fs.joinpath(sandbox, "garden")
+  vim.fn.mkdir(project, "p")
+  local init = helper.call(app, { args = { "init" }, cwd = project }, "write")
+  wait_for(function()
+    return init.done
+  end, 20000)
+  assert(not init.err, vim.inspect(init.err))
+  made(app, { "new", "plant the tomatoes", "--due", "2026-09-25", "--labels", "seeds" }, project)
+  vim.cmd.lcd(project)
+  vim.cmd("Dam list")
+  wait_for(function()
+    return vim.wo.winbar:find("garden/", 1, true) ~= nil and #buffer.lines() == 1
+  end, 20000)
+  local row = require("helpers.grid").row(2)
+  assert(row:find("^! %[ %] plant the tomatoes +#seeds  2026%-09%-25$"), row)
+  assert(require("helpers.grid").row(1):find(" default · garden/ · 1 task · 1 overdue", 1, true))
+end
+
 return {
+  ["in a project :Dam list shows the project in the winbar and the due at the window's right edge"] = function()
+    if vim.fn.executable(dam_bin) ~= 1 then
+      return ("no dam at %s; build it with cargo build -p damnit or set DAM_BIN"):format(dam_bin)
+    end
+    in_sandbox(listed_in_a_project)
+  end,
+
   ["writing a changed due line in the task buffer changes what dam show prints"] = function()
     if vim.fn.executable(dam_bin) ~= 1 then
       return ("no dam at %s; build it with cargo build -p damnit or set DAM_BIN"):format(dam_bin)
@@ -140,7 +168,7 @@ return {
         return #buffer.lines() == 3
       end, 20000)
       local lines = buffer.lines()
-      local expected = { "[ ] plant the tomatoes 2026-09-25", "  [ ] buy stakes", "[ ] pay rent 2026-09-30" }
+      local expected = { "[ ] plant the tomatoes", "  [ ] buy stakes", "[ ] pay rent" }
       assert(vim.deep_equal(lines, expected), vim.inspect(lines))
     end)
   end,

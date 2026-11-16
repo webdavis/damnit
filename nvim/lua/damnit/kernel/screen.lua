@@ -73,6 +73,8 @@ function M.bar(chunks)
   end, chunks))
 end
 
+Screen.bar = M.bar
+
 local function look_now(buf)
   for _, win in ipairs(vim.fn.win_findbuf(buf)) do
     for name, value in pairs(vim.b[buf].damnit_window or {}) do

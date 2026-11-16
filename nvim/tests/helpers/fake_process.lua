@@ -10,8 +10,13 @@ end
 
 ---@return table
 function M.new()
-  local fake =
-    { calls = {}, replies = { ["--version"] = { code = 0, stdout = fixtures.read("version.txt"), stderr = "" } } }
+  local fake = {
+    calls = {},
+    replies = {
+      ["--version"] = { code = 0, stdout = fixtures.read("version.txt"), stderr = "" },
+      config = fixtures.answer("config-list.json"),
+    },
+  }
 
   function fake.reply(verb, reply)
     fake.replies[verb] = reply

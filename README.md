@@ -780,6 +780,12 @@ require("damnit").setup({
 A table is keyed like the flags of `dam list` and sent as `dam list --request -`; a text names
 a saved filter.
 
+A row shows its checkbox, priority and subject, with dam's labels, category, `waits on`,
+estimate, deadline and due in columns at the right; the left-most columns drop first in a narrow
+window. The winbar names the view, the project and the counts. `!` marks an overdue row and `~` a
+blocked one; the `signs` option changes them, such as `signs = { overdue = "x" }`.
+A list open in two windows fits its columns to the narrower one.
+
 `:Dam task <oid>`, or `<CR>` on a row of the list, opens the task as `dam show` prints it: one
 `field: value` line each, then `---` and the body. Change a line and `:w` sends `dam edit`
 with what changed; an emptied line clears that field. dam reads each value and shows its error
