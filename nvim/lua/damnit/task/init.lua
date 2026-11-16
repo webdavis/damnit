@@ -12,9 +12,11 @@ local function source_folder()
 end
 
 ---@param app damnit.App
+---@param peek? damnit.Peek
 ---@return damnit.Feature
-function M.new(app)
+function M.new(app, peek)
   local tasks = buffer.new(app)
+  require("damnit.task.related").attach(app, tasks, peek)
   local function open(oid, cwd, smods)
     tasks:open(oid, cwd, smods)
   end

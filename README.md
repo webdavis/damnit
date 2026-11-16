@@ -852,6 +852,8 @@ when it refuses one.
 
 `K` on a row of a list or the status window shows that task as `dam show` prints it in a float;
 `K` again enters it, `q` closes it and `<CR>` opens the task.
+In a task buffer `K` does the same for the oid under the cursor, `gd` opens it, and `gO` puts the
+parent, children and dependencies in the location list.
 
 `:Dam` or `:Dam status` shows what `dam status` shows in the window's folder: conflicts, waiting
 items and sets, unstaged and staged changes, unpushed commits, notices and warnings, then the
