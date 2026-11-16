@@ -71,6 +71,8 @@ treats `nil` as false. Any other value is an error.
 `task` is a copy, so writing to it changes nothing. `dam.history(task)` returns that object's
 changes. A filter function cannot read other objects or change anything.
 
+`dam test filters` runs every saved filter once and names the first object a `match` fails on.
+
 A token caller has `match` run only over the objects it may read. For a token without
 `history:read` on everything, `dam.history` raises an error.
 

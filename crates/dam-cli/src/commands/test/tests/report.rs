@@ -1,3 +1,5 @@
+use crate::args::PartName;
+
 use super::{Files, Helpers, MARKER, attention_of, json, rows_of};
 
 const REFUSED: &str = "did not sign in: fake answered 401: token <api_token> is not valid";
@@ -14,7 +16,7 @@ fn mixed() -> Files {
 
 #[test]
 fn several_remotes_report_one_row_each_with_the_worst_on_the_part() {
-    let report = mixed().report(&Helpers::default(), &[]);
+    let report = mixed().report(&Helpers::default(), &[PartName::Credentials]);
     assert_eq!(
         rows_of(&report),
         [
@@ -64,7 +66,7 @@ fn the_json_is_the_doctor_shape_with_command_test() {
     assert_matches_the_published_schema(&document);
 }
 
-fn assert_matches_the_published_schema(document: &serde_json::Value) {
+pub(super) fn assert_matches_the_published_schema(document: &serde_json::Value) {
     let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../docs/schemas/");
     let read = |name: &str| -> serde_json::Value {
         serde_json::from_str(&std::fs::read_to_string(format!("{folder}{name}")).unwrap()).unwrap()

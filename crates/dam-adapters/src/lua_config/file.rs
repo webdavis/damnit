@@ -15,6 +15,7 @@ use super::token::read_tokens;
 
 const FUNCTION_LIMIT: Duration = Duration::from_secs(5);
 
+#[derive(Clone)]
 pub struct LuaConfigFile {
     config: PathBuf,
     function_limit: Duration,

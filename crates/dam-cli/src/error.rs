@@ -10,7 +10,7 @@ mod config_text;
 mod conversions;
 mod document;
 mod edit_text;
-mod filter_text;
+pub(crate) mod filter_text;
 mod given_key;
 mod given_prefix;
 mod hook_text;

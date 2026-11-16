@@ -3,10 +3,10 @@ use std::ffi::OsString;
 use std::io::IsTerminal;
 use std::path::Path;
 
-use dam_adapters::{Interrupt, OsRandom, ProcessLauncher, SqliteStore, SystemClock};
+use dam_adapters::{Interrupt, SqliteStore, SystemClock};
 use dam_application::{
     Access, Clock, Config, ConfigFile, CredentialSource, Dam, FilterFunctions, HelperLauncher,
-    Hooks, Randomness, Remotes, Store,
+    Hooks, LoadedConfig, Randomness, Remotes, Store,
 };
 
 use crate::caller::{authenticated, caller};
@@ -55,27 +55,15 @@ impl Context {
         let store = SqliteStore::open_reporting(store_path, &progress)?;
         let holder = holder.map(|h| h.knowing_what_it_made(&store)).transpose()?;
         let access = caller(holder, now, meta);
-        let (prompt, editor) =
-            terminal_pair_for_a_human_and_refusals_for_a_machine(format, interrupt);
-        Ok(Context {
-            store: Box::new(store),
-            config,
-            access,
+        let loaded = LoadedConfig { config, ..loaded };
+        let opened = reading::Opened {
             config_file,
-            clock: Box::new(SystemClock),
-            random: Box::new(OsRandom),
-            launcher: Box::new(ProcessLauncher::from_env(interrupt.clone())),
-            credentials: loaded.credentials,
-            filter_functions: loaded.filter_functions,
-            hooks: loaded.hooks,
-            editor,
-            prompt,
-            tz: jiff::tz::TimeZone::system(),
-            changed_by_hook: ChangedByHook::default(),
-            interrupt: interrupt.clone(),
+            loaded,
+            store: Box::new(store),
+            access,
             progress,
-            hook_warnings: HookWarningsOnStandardError::for_format(format),
-        })
+        };
+        Ok(Context::assembled(opened, format, interrupt))
     }
 
     pub(crate) fn dam(&self) -> Dam<'_> {
@@ -141,6 +129,7 @@ pub(crate) fn terminal_pair_for_a_human_and_refusals_for_a_machine(
 
 mod changed_by_hook;
 mod edit_requests;
+mod reading;
 #[cfg(test)]
 mod tests;
 

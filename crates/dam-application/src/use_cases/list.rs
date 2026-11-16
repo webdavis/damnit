@@ -2,11 +2,23 @@ use std::cmp::Ordering;
 
 use dam_domain::{Date, Object, QueryError, Timestamp, matches, parse_query};
 
+use crate::config::FilterConfig;
 use crate::errors::{Refusal, UseCaseError};
 use crate::service::Dam;
 
 impl Dam<'_> {
     pub fn list(&self, query: Option<&str>) -> Result<Vec<Object>, UseCaseError> {
+        let (filter, out) = self.narrowed(query)?;
+        match filter.filter(|f| f.rule.runs_a_function()) {
+            Some(filter) => self.kept_by_function(&filter.name, out),
+            None => Ok(out),
+        }
+    }
+
+    fn narrowed(
+        &self,
+        query: Option<&str>,
+    ) -> Result<(Option<&FilterConfig>, Vec<Object>), UseCaseError> {
         let config = self.config;
         let filter = query.and_then(|q| config.filter(q));
         let text = match filter {
@@ -29,10 +41,7 @@ impl Dam<'_> {
             .filter(|o| expr.as_ref().is_none_or(|e| matches(e, o, today, &zone)))
             .collect();
         out.sort_by(|a, b| order(a, b, today));
-        match filter.filter(|f| f.rule.runs_a_function()) {
-            Some(filter) => self.kept_by_function(&filter.name, out),
-            None => Ok(out),
-        }
+        Ok((filter, out))
     }
 }
 
@@ -81,6 +90,7 @@ fn order(a: &Object, b: &Object, today: Date) -> Ordering {
 
 mod by_function;
 pub(crate) mod log_by_object;
+pub(crate) mod trial;
 
 #[cfg(test)]
 mod access_tests;
@@ -93,3 +103,6 @@ mod history_reads_tests;
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod trial_tests;

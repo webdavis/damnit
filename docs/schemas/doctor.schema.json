@@ -31,7 +31,7 @@
       "required": ["name", "result", "detail", "advice", "rows"],
       "additionalProperties": false,
       "properties": {
-        "name": { "type": "string", "enum": ["config", "database", "helpers", "credentials", "pushes", "parents"], "description": "The check, by the name dam doctor takes, or the part, by the name dam test takes." },
+        "name": { "type": "string", "enum": ["config", "database", "helpers", "credentials", "pushes", "parents", "filters"], "description": "The check, by the name dam doctor takes, or the part, by the name dam test takes." },
         "result": { "type": "string", "enum": ["ok", "warning", "issue", "not_run"], "description": "What the check found; not_run when it could not run." },
         "detail": { "type": "string", "description": "What the check found, in words." },
         "advice": { "type": ["string", "null"], "description": "What to do next, or null." },
@@ -50,9 +50,9 @@
       "required": ["name", "result", "detail", "advice"],
       "additionalProperties": false,
       "properties": {
-        "name": { "type": "string", "description": "The remote this row is about." },
-        "result": { "type": "string", "enum": ["ok", "warning", "issue", "not_run"], "description": "What the check found for this remote." },
-        "detail": { "type": "string", "description": "What the check found for this remote, in words." },
+        "name": { "type": "string", "description": "The remote or saved filter this row is about." },
+        "result": { "type": "string", "enum": ["ok", "warning", "issue", "not_run"], "description": "What the check found for this remote or filter." },
+        "detail": { "type": "string", "description": "What the check found for this remote or filter, in words." },
         "advice": { "type": ["string", "null"], "description": "What to do next, or null." }
       }
     }
