@@ -4,7 +4,8 @@ use std::path::Path;
 use super::store_reading::{self, Store};
 use dam_adapters::{LuaConfigFile, OpenError};
 use dam_application::{
-    Config, ConfigError, HelperError, HelperLauncher, RemoteCapabilities, RemoteConfig,
+    Config, ConfigError, HelperError, HelperLauncher, Progress, RemoteCapabilities, RemoteConfig,
+    Step, waited_on,
 };
 
 pub(super) struct Answer {
@@ -16,6 +17,7 @@ pub(crate) struct Machine<'a> {
     pub(super) config_file: &'a LuaConfigFile,
     pub(super) store_path: &'a Path,
     launcher: &'a dyn HelperLauncher,
+    progress: &'a dyn Progress,
     config: OnceCell<Result<Config, ConfigError>>,
     store: OnceCell<Result<Store, OpenError>>,
     answers: OnceCell<Option<Vec<Answer>>>,
@@ -26,11 +28,13 @@ impl<'a> Machine<'a> {
         config_file: &'a LuaConfigFile,
         store_path: &'a Path,
         launcher: &'a dyn HelperLauncher,
+        progress: &'a dyn Progress,
     ) -> Machine<'a> {
         Machine {
             config_file,
             store_path,
             launcher,
+            progress,
             config: OnceCell::new(),
             store: OnceCell::new(),
             answers: OnceCell::new(),
@@ -60,10 +64,19 @@ impl<'a> Machine<'a> {
     }
 
     fn ask(&self, remote: &RemoteConfig) -> Answer {
-        let capabilities = self
-            .launcher
-            .launch(remote, &[])
-            .and_then(|mut helper| helper.capabilities());
+        let step = Step {
+            name: "check",
+            remote: Some(&remote.name.0),
+            doing: &format!("checking {}", remote.name.0),
+            did: &format!("checked {}", remote.name.0),
+            unit: "",
+            total: None,
+        };
+        let capabilities = waited_on(self.progress, step, || {
+            self.launcher
+                .launch(remote, &[])
+                .and_then(|mut helper| helper.capabilities())
+        });
         Answer {
             remote: remote.clone(),
             capabilities,

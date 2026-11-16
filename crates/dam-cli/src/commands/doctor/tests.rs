@@ -10,8 +10,8 @@ use std::path::PathBuf;
 use dam_adapters::LuaConfigFile;
 use dam_application::testing::{ScriptedHelper, task_caps};
 use dam_application::{
-    HelperError, HelperLauncher, PullOutcome, RemoteCapabilities, RemoteConfig, RemoteHelper,
-    Secret,
+    HelperError, HelperLauncher, NoProgress, PullOutcome, RemoteCapabilities, RemoteConfig,
+    RemoteHelper, Secret,
 };
 use tempfile::TempDir;
 
@@ -77,7 +77,7 @@ impl Files {
 
     fn report(&self, launcher: &Helpers, names: &[CheckName]) -> CheckReport {
         let store = self.store_path();
-        let machine = Machine::new(&self.config, &store, launcher);
+        let machine = Machine::new(&self.config, &store, launcher, &NoProgress);
         CheckReport::new("doctor", SETUP, checks(names, &machine))
     }
 }
