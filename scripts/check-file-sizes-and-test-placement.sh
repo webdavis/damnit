@@ -31,4 +31,13 @@ for one_program in crates/{dam-cli,dam-adapters,dam-remote-gcal,dam-remote-todoi
     fi
   done < <(git ls-files "$one_program/*.rs")
 done
+while IFS= read -r f; do
+  code=$(grep -cvE '^[[:space:]]*(--.*)?$' "$f" || true)
+  limit=150
+  if [[ "$f" == *_spec.lua ]]; then
+    limit=200
+    if [[ "$f" != nvim/tests/* ]]; then echo "SPEC OUTSIDE nvim/tests: $f"; fail=1; fi
+  fi
+  if [ "$code" -gt "$limit" ]; then echo "OVER $limit CODE LINES: $f ($code)"; fail=1; fi
+done < <(git ls-files 'nvim/*.lua')
 exit "$fail"
