@@ -45,13 +45,15 @@ impl ProjectSettings {
     }
 
     pub fn filtered(&self, query: Option<String>) -> Option<String> {
-        let filter = query.as_deref().and_then(|name| {
-            self.filters
-                .iter()
-                .find(|filter| filter.name == name)
-                .and_then(|filter| filter.rule.query())
-        });
+        let filter = query.as_deref().and_then(|name| self.filter_query(name));
         filter.map(String::from).or(query)
+    }
+
+    pub fn filter_query(&self, name: &str) -> Option<&str> {
+        self.filters
+            .iter()
+            .find(|filter| filter.name == name)
+            .and_then(|filter| filter.rule.query())
     }
 }
 

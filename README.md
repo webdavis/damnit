@@ -340,10 +340,15 @@ only its own file.
 `dam ls`, `dam agenda` and `dam reminders` list only the project there: `dam ls` in that project
 shows what `dam ls 'path:app/'` shows elsewhere, and a `path:` you type starts from the project. A
 saved filter keeps its own query and is narrowed to the project. Listings print full paths.
-`--global` on these four commands reaches every task and reads a path from the root. `status`,
-`push`, `pull`, `log`, `show`, `edit`, `done`, `mv` and `rm` always cover everything: their
-`--query` is not narrowed to the project. Only the path `dam mv` moves objects to starts from the
-project, with `--global` and `--project` as on `dam new`.
+`--global` on these four commands reaches every task and reads a path from the root.
+
+`dam edit`, `dam done`, `dam mv` and `dam rm` with `--query` or `--filter` change only what `dam ls`
+lists there: the project's tasks, its filters found before yours, its categories in the query.
+`--global` picks from every task with your own filters and categories; `--project <path>` picks
+that project's. Oids are never narrowed: `dam done 98d8` works on any task from anywhere. When
+`.dam.lua` does not load, a `--query` or `--filter` run is refused unless `--global` or `--project`
+is given. On `dam mv`, `--global` and `--project` also decide where the destination path starts.
+`status`, `push`, `pull`, `log` and `show` always cover everything.
 
 `--project <path>` on those four commands works from any folder, in a project or not, and stands in
 for the project you are in: `dam ls --project pns/hooks/`, `dam new "x" --project pns/ --path cli/`.
@@ -362,8 +367,8 @@ commands run inside the project without `--global` or `--project`.
 `new_task = { labels = { "app" }, priority = 2 }` fills what a flag and the template leave unset.
 With `required = { "due" }`, `dam new` refuses a task without a due date and names `--due`.
 `ls = "p1"` is what `dam ls` shows there when you give no query.
-`filter = { hot = { query = "p1" } }` is found before your own filter named `hot` in `dam ls` and
-`dam agenda`, and
+`filter = { hot = { query = "p1" } }` is found before your own filter named `hot` in `dam ls`,
+`dam agenda` and the `--filter` of `dam edit`, `dam done`, `dam mv` and `dam rm`, and
 `dam filter list` there marks it `(the project's)`. Inside a project, `dam filter create|remove`
 and `dam category create|remove` change `.dam.lua`, and `--global` changes your `config.lua`.
 `category = { area = { values = { "ui", "db" }, exclusive = true } }` adds label categories, as

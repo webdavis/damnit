@@ -12,6 +12,7 @@ use crate::output::Report;
 use crate::project_scope::Standing;
 
 mod branch_label;
+mod bulk;
 mod categories;
 mod project_created;
 
@@ -42,6 +43,7 @@ pub(crate) fn dispatch_in(
         }
         other => other,
     };
+    let command = bulk::narrowing(command, &standing)?;
     let command = match command {
         Command::New(mut a) if a.parent.is_none() || a.path != Path::root() => {
             let place = standing.place(&a.scope)?;
@@ -104,6 +106,8 @@ pub(crate) fn dispatch_in(
     dispatch_a_verb_that_opens_the_store(ctx, command)
 }
 
+#[cfg(test)]
+mod bulk_tests;
 #[cfg(test)]
 mod listing_tests;
 #[cfg(test)]

@@ -4,6 +4,7 @@ mod preview;
 mod selection;
 mod tokens;
 mod verbs;
+mod within;
 
 use dam_domain::{Object, Oid};
 
@@ -35,7 +36,7 @@ fn named(bytes: &[u8]) -> Selector {
 }
 
 fn query(text: &str) -> Selector {
-    Selector::Query(text.into())
+    Selector::Query(text.into(), dam_domain::Path::root())
 }
 
 fn retitled(subject: &str) -> EditFields {

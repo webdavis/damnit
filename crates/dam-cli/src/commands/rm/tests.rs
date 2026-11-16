@@ -22,6 +22,7 @@ fn removing_a_parent_moves_its_child_up_and_says_so() {
             oid: vec![oid(1).as_str().into()],
             set: Default::default(),
             id: None,
+            scope: Default::default(),
         },
     )
     .unwrap();

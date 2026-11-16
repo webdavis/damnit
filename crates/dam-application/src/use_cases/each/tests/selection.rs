@@ -49,7 +49,7 @@ fn a_query_never_reads_a_word_as_a_filter_name() {
 #[test]
 fn a_filter_selects_by_its_saved_query() {
     let s = work_and_home();
-    let filter = Selector::Filter("home".into());
+    let filter = Selector::Filter("home".into(), dam_domain::Path::root());
     let out = s.dam().edit_each(&filter, retitled("x"), run()).unwrap();
     assert_eq!(out.oids, oids(&[3]));
 }
@@ -57,7 +57,7 @@ fn a_filter_selects_by_its_saved_query() {
 #[test]
 fn an_unknown_filter_is_refused() {
     let s = work_and_home();
-    let filter = Selector::Filter("nope".into());
+    let filter = Selector::Filter("nope".into(), dam_domain::Path::root());
     assert_eq!(
         s.dam().edit_each(&filter, retitled("x"), run()),
         Err(UseCaseError::Refused(Refusal::NoSuchFilter("nope".into())))

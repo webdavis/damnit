@@ -20,7 +20,10 @@ fn edit_flags(sb: &Sandbox) -> Vec<String> {
     own_flags(sb, &["edit"])
         .into_iter()
         .filter(|flag| {
-            !["editor", "query", "filter", "preview", "expect", "as_one"].contains(&flag.as_str())
+            ![
+                "editor", "query", "filter", "preview", "expect", "as_one", "global", "project",
+            ]
+            .contains(&flag.as_str())
         })
         .collect()
 }

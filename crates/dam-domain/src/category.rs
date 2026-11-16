@@ -13,7 +13,7 @@ pub struct Category {
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Categories(Vec<Category>);
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum CategoryError {
     DuplicateValue {
         value: String,
