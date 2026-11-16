@@ -1,7 +1,7 @@
 use dam_protocol::WireObject;
 use serde::Serialize;
 
-use crate::map::api_priority;
+use crate::map::{api_priority, todoist_due, zone_name};
 use crate::rule_words::with_start;
 
 const COMMAND_ORDINALS_IN_ONE_HEX_DIGIT: usize = 16;
@@ -106,14 +106,7 @@ pub fn item_args(object: &WireObject, write: ItemWrite) -> Args {
     if want("due") || want("recurrence") {
         args.insert(
             "due".into(),
-            match (&object.recurrence, &task.due) {
-                (Some(rule), due) => serde_json::json!({
-                    "string": due.as_deref().map_or_else(|| rule.clone(), |d| with_start(rule, d)),
-                    "lang": "en",
-                }),
-                (None, Some(date)) => serde_json::json!({ "date": date }),
-                (None, None) => serde_json::Value::Null,
-            },
+            due(object.recurrence.as_deref(), task.due.as_deref()),
         );
     }
     if want("deadline") {
@@ -128,6 +121,23 @@ pub fn item_args(object: &WireObject, write: ItemWrite) -> Args {
         }
     }
     args
+}
+
+fn due(rule: Option<&str>, due: Option<&str>) -> serde_json::Value {
+    match (rule, due) {
+        (Some(rule), due) => {
+            let mut sent = serde_json::json!({
+                "string": due.map_or_else(|| rule.to_string(), |d| with_start(rule, d)),
+                "lang": "en",
+            });
+            if let Some(zone) = due.and_then(zone_name) {
+                sent["timezone"] = zone.into();
+            }
+            sent
+        }
+        (None, Some(date)) => todoist_due(date),
+        (None, None) => serde_json::Value::Null,
+    }
 }
 
 #[cfg(test)]

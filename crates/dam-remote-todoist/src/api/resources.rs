@@ -101,6 +101,8 @@ pub struct Due {
     pub is_recurring: bool,
     #[serde(default)]
     pub string: String,
+    #[serde(default)]
+    pub timezone: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

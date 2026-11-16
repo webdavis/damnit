@@ -1,6 +1,6 @@
 use dam_protocol::{WireObject, WireTask};
 
-use super::{RemoteId, Tree, dam_priority};
+use super::{RemoteId, Tree, dam_due, dam_priority};
 use crate::api::{Item, Project, Section};
 use crate::rule_words::from_todoist;
 
@@ -75,7 +75,10 @@ pub fn item_to_wire(t: &Tree, i: &Item) -> Option<WireObject> {
         done: i.checked,
         completed_at: i.completed_at.clone().filter(|_| i.checked),
         priority: dam_priority(i.priority),
-        due: i.due.as_ref().map(|d| d.date.clone()),
+        due: i
+            .due
+            .as_ref()
+            .map(|d| dam_due(d, &jiff::tz::TimeZone::system())),
         deadline: i.deadline.as_ref().map(|d| d.date.clone()),
         event: None,
         estimate: None,
