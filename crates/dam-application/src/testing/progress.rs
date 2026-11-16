@@ -7,6 +7,7 @@ pub enum Said {
     Started(String, Option<usize>),
     Advanced(usize),
     Finished,
+    Failed,
 }
 
 #[derive(Default)]
@@ -16,7 +17,7 @@ pub struct FakeProgress {
 
 impl Progress for FakeProgress {
     fn start(&self, step: Step<'_>) {
-        let started = Said::Started(format!("{} {}", step.name, step.unit), step.total);
+        let started = Said::Started(format!("{} {}", step.doing, step.unit), step.total);
         self.said.borrow_mut().push(started);
     }
 
@@ -26,5 +27,9 @@ impl Progress for FakeProgress {
 
     fn finish(&self) {
         self.said.borrow_mut().push(Said::Finished);
+    }
+
+    fn fail(&self) {
+        self.said.borrow_mut().push(Said::Failed);
     }
 }

@@ -3,7 +3,8 @@ use crate::output::Format;
 
 fn moment(done: usize, seconds: u64) -> Moment<'static> {
     Moment {
-        name: "task_pulled",
+        doing: "running task_pulled",
+        did: "ran task_pulled",
         unit: "tasks",
         done,
         total: Some(2000),
@@ -39,13 +40,52 @@ fn a_started_record_in_plain_text_has_no_mark() {
 fn a_finished_record_under_json_is_one_line_with_name_count_total_and_seconds() {
     assert_eq!(
         line(&moment(2000, 14), Stage::Finished, Format::Json),
-        r#"{"step":"task_pulled","stage":"finished","done":2000,"total":2000,"seconds":14}"#
+        r#"{"step":"running task_pulled","stage":"finished","done":2000,"total":2000,"seconds":14}"#
     );
 }
 
 #[test]
 fn a_record_under_toon_is_the_toon_form() {
     let record = line(&moment(3, 1), Stage::Started, Format::Toon);
-    assert!(record.contains("step: task_pulled"), "{record}");
+    assert!(record.contains("step: running task_pulled"), "{record}");
     assert!(record.contains("stage: started"), "{record}");
+}
+
+fn waiting(seconds: u64) -> Moment<'static> {
+    Moment {
+        doing: "pulling from todoist",
+        did: "pulled from todoist",
+        unit: "",
+        done: 0,
+        total: None,
+        seconds,
+    }
+}
+
+#[test]
+fn a_step_without_a_unit_says_its_own_words_and_the_time_only() {
+    assert_eq!(
+        line(&waiting(3), Stage::Running(0), Format::Human),
+        "⠋ pulling from todoist  3s"
+    );
+    assert_eq!(
+        line(&waiting(3), Stage::Finished, Format::Human),
+        "✓ pulled from todoist  3s"
+    );
+}
+
+#[test]
+fn a_failed_step_is_crossed_and_keeps_the_words_of_the_wait() {
+    assert_eq!(
+        line(&waiting(2), Stage::Failed, Format::Human),
+        "✗ pulling from todoist failed  2s"
+    );
+}
+
+#[test]
+fn a_failed_record_says_failed() {
+    assert_eq!(
+        line(&waiting(2), Stage::Failed, Format::Json),
+        r#"{"step":"pulling from todoist","stage":"failed","done":0,"total":null,"seconds":2}"#
+    );
 }

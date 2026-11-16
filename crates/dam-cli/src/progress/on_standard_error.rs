@@ -16,18 +16,21 @@ const REDRAW_EVERY: Duration = Duration::from_millis(100);
 const CLEAR_THE_LINE: &str = "\r\x1b[2K";
 
 struct Running {
-    name: String,
+    doing: String,
+    did: String,
     unit: String,
     total: Option<usize>,
     done: usize,
     started: Timestamp,
+    drawn: bool,
 }
 
 impl Running {
     fn said(&self, stage: Stage, format: Format) -> String {
         let seconds = SystemClock.now().duration_since(self.started).as_secs();
         let moment = Moment {
-            name: &self.name,
+            doing: &self.doing,
+            did: &self.did,
             unit: &self.unit,
             done: self.done,
             total: self.total,
@@ -67,15 +70,36 @@ impl ProgressOnStandardError {
         let format = self.format;
         std::thread::spawn(move || {
             let mut frame = 0;
-            while drawing.load(Ordering::SeqCst) {
-                if let Some(step) = running.lock().unwrap().as_ref() {
+            loop {
+                std::thread::park_timeout(REDRAW_EVERY);
+                if !drawing.load(Ordering::SeqCst) {
+                    break;
+                }
+                if let Some(step) = running.lock().unwrap().as_mut() {
                     let drawn = step.said(Stage::Running(frame), format);
                     let _ = write!(std::io::stderr(), "{CLEAR_THE_LINE}{drawn}");
+                    step.drawn = true;
                 }
                 frame += 1;
-                std::thread::sleep(REDRAW_EVERY);
             }
         })
+    }
+
+    fn end(&self, stage: Stage) {
+        self.drawing.store(false, Ordering::SeqCst);
+        if let Some(drawer) = self.drawer.lock().unwrap().take() {
+            drawer.thread().unpark();
+            let _ = drawer.join();
+        }
+        let Some(step) = self.running.lock().unwrap().take() else {
+            return;
+        };
+        let ended = step.said(stage, self.format);
+        match self.shown {
+            Shown::Animated if step.drawn => eprintln!("{CLEAR_THE_LINE}{ended}"),
+            Shown::Animated => {}
+            _ => eprintln!("{ended}"),
+        }
     }
 }
 
@@ -86,11 +110,13 @@ impl Progress for ProgressOnStandardError {
         }
         self.finish();
         let running = Running {
-            name: step.name.to_string(),
+            doing: step.doing.to_string(),
+            did: step.did.to_string(),
             unit: step.unit.to_string(),
             total: step.total,
             done: 0,
             started: SystemClock.now(),
+            drawn: false,
         };
         if self.shown == Shown::Records {
             eprintln!("{}", running.said(Stage::Started, self.format));
@@ -109,18 +135,11 @@ impl Progress for ProgressOnStandardError {
     }
 
     fn finish(&self) {
-        self.drawing.store(false, Ordering::SeqCst);
-        if let Some(drawer) = self.drawer.lock().unwrap().take() {
-            let _ = drawer.join();
-        }
-        let Some(step) = self.running.lock().unwrap().take() else {
-            return;
-        };
-        let finished = step.said(Stage::Finished, self.format);
-        match self.shown {
-            Shown::Animated => eprintln!("{CLEAR_THE_LINE}{finished}"),
-            _ => eprintln!("{finished}"),
-        }
+        self.end(Stage::Finished);
+    }
+
+    fn fail(&self) {
+        self.end(Stage::Failed);
     }
 }
 

@@ -64,7 +64,8 @@ impl Dam<'_> {
         let owners = self.access.token().is_none();
         let progress: &dyn Progress = if owners { self.progress } else { &Unseen };
         progress.start(Step {
-            name: HookEvent::TaskPulled.as_str(),
+            doing: "running task_pulled",
+            did: "ran task_pulled",
             unit: "tasks",
             total: Some(pulled.len()),
         });
@@ -123,6 +124,7 @@ impl Progress for Unseen {
     fn start(&self, _: Step<'_>) {}
     fn advance(&self, _: usize) {}
     fn finish(&self) {}
+    fn fail(&self) {}
 }
 
 mod committed;
