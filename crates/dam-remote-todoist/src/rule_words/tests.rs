@@ -1,5 +1,7 @@
 use super::{Unheld, from_todoist, to_todoist};
 
+mod days;
+
 #[test]
 fn a_weekday_of_the_month_is_sent_in_todoists_words() {
     for (dam, todoist) in [
@@ -23,10 +25,9 @@ fn a_weekday_of_the_month_is_sent_in_todoists_words() {
 #[test]
 fn a_rule_without_a_weekday_of_the_month_is_sent_as_written() {
     for rule in [
-        "every 2 weeks on mon",
-        "every month on 1,15",
+        "every 2 weeks on mon,fri",
+        "every 3 weeks on fri",
         "every day until 2026-12-31",
-        "every other week",
     ] {
         assert_eq!(to_todoist(rule), Ok(rule.to_string()));
     }
@@ -64,8 +65,19 @@ fn every_rule_dam_sends_reads_back_as_the_same_rule() {
         "every month on 1mon,3mon",
         "every month on -1fri,1mon",
         "every! month on 1Tuesday until 2027-01-31",
-        "every 2 weeks on mon",
+        "every week on mon,fri",
+        "every week on fri",
+        "every! week on Monday,Friday until 2027-01-31",
         "every month on 1,15",
+        "every month on 2,15,27",
+        "every! month on 31 until 2027-01-31",
+        "every 2 weeks on fri",
+        "every! 2 weeks on Friday until 2027-06-30",
+        "every 2 weeks on mon,fri",
+        "every 3 weeks on fri",
+        "every 2 months on 1,15",
+        "every 3 days",
+        "every year",
     ] {
         assert_eq!(from_todoist(&to_todoist(rule).unwrap()), rule);
     }

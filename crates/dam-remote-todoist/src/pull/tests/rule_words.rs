@@ -30,3 +30,18 @@ fn a_weekday_of_the_month_in_todoists_words_comes_in_as_the_dam_rule() {
         Some("every last workday")
     );
 }
+
+#[test]
+fn weekdays_month_days_and_every_other_in_todoists_words_come_in_as_the_dam_rule() {
+    for (todoist, dam) in [
+        ("every mon, fri", "every week on mon,fri"),
+        ("every 1, 15", "every month on 1,15"),
+        (
+            "every! other fri until 2027-06-30",
+            "every! 2 weeks on fri until 2027-06-30",
+        ),
+        ("every other month", "every 2 months"),
+    ] {
+        assert_eq!(pulled_rule(todoist).as_deref(), Some(dam), "{todoist}");
+    }
+}

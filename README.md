@@ -202,12 +202,25 @@ it with `dam done <oid>` or `dam rm <oid>`.
 A push goes the other way. An object at the top level becomes a project. One level down it becomes
 a task in that project, or a section when something lives under it or arrives under it in the same
 push. Deeper levels name existing parent tasks by their text, and a path naming no Todoist project
-fails that one object. A rule on a weekday of the month goes in Todoist's words, `every month on
-1tue,-1fri` as `every 1st tue, last fri`; one with an interval of more months, or counted back past
-the last weekday such as `-2fri`, fails that one object. A change counts as pushed only when Todoist accepts every command it became.
+fails that one object. A change counts as pushed only when Todoist accepts every command it became.
 A rate limit stops the whole push and says how long Todoist asked to wait; any other failure stays
 with the object it happened on. An error Todoist sends back is cut to one line of at most 500
 characters before `dam status` shows it.
+
+A repeat rule goes to Todoist as text, in Todoist's documented words where it has them, and comes
+back as the same rule:
+
+| dam | Todoist |
+| --- | --- |
+| `every week on mon,fri` | `every mon, fri` |
+| `every month on 1,15` | `every 1, 15` |
+| `every 2 weeks on fri` | `every other fri` |
+| `every month on 1tue,-1fri` | `every 1st tue, last fri` |
+
+`every!` and `until DATE` stay as they are. Every other rule is sent as dam writes it, such as
+`every 3 days`, `every 2 weeks on mon,fri`, `every 2 months on 1,15` and `every year`. A rule with
+more months between weekdays of the month, such as `every 2 months on 1tue`, or counted back past
+the last weekday, such as `-2fri`, fails that one object.
 
 ## Every day
 
