@@ -88,6 +88,7 @@ impl Context {
             run_records,
             invocation,
             templates,
+            project_hooks: None,
         }
     }
 }
