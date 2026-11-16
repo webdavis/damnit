@@ -335,7 +335,7 @@ day's record with the JSON or TOON document on stdin, or in the file `--request`
 
 `dam reminders` lists the reminders that fall due between `--from` and `--to`, by default from the
 start of today until now: each one's `at`, its `anchor` (the due time or start) and
-`minutes_before`, all times RFC 3339. `docs/schemas/reminders.schema.json` is its schema.
+`minutes_before`, all times RFC 3339. `--from` and `--to` take what they take in `dam agenda`. `docs/schemas/reminders.schema.json` is its schema.
 
 ## Projects
 

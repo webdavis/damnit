@@ -4,7 +4,7 @@ use jiff::tz::TimeZone;
 use serde::Serialize;
 
 use crate::args::RemindersArgs;
-use crate::commands::parsing::when_flag;
+use crate::commands::window_edge::{Side, edge};
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::{Report, local_time};
@@ -20,19 +20,15 @@ pub(crate) fn run_reminders(ctx: &Context, args: RemindersArgs) -> Result<Report
 }
 
 fn window(ctx: &Context, args: &RemindersArgs) -> Result<Window, CliError> {
-    let instant = |flag: &str, text: Option<&str>| -> Result<Option<Timestamp>, CliError> {
-        text.map(|text| {
-            when_flag(ctx, flag, text)?
-                .instant(&ctx.tz)
-                .ok_or_else(|| CliError::Usage(format!("--{flag}: {text} is outside the calendar")))
-        })
-        .transpose()
+    let read = |flag: &str, text: Option<&str>, side| {
+        text.map(|text| edge(ctx, "dam reminders", flag, text, side))
+            .transpose()
     };
     let start_of_today = ctx.clock.today().to_zoned(ctx.tz.clone()).ok();
-    let from = instant("from", args.from.as_deref())?
+    let from = read("from", args.from.as_deref(), Side::Opens)?
         .or(start_of_today.map(|z| z.timestamp()))
         .unwrap_or(Timestamp::UNIX_EPOCH);
-    let to = instant("to", args.to.as_deref())?.unwrap_or_else(|| ctx.clock.now());
+    let to = read("to", args.to.as_deref(), Side::Closes)?.unwrap_or_else(|| ctx.clock.now());
     if to <= from {
         return Err(CliError::Usage("--to must be later than --from".into()));
     }
@@ -97,3 +93,5 @@ impl View for Due<'_> {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod window_tests;
