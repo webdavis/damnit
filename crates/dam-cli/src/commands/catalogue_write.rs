@@ -35,7 +35,11 @@ pub(super) fn run_category(ctx: &Context, command: CategoryCommand) -> Result<Re
             file,
             migrate::Migration {
                 map: &map,
-                run: SetRun { preview, expect },
+                run: SetRun {
+                    preview,
+                    expect,
+                    as_one: false,
+                },
                 update_config,
             },
         ),

@@ -25,6 +25,7 @@ pub(crate) fn set_of(
     let run = SetRun {
         preview: set.preview,
         expect: set.expect,
+        as_one: false,
     };
     let run = confirmed(ctx, &selector, run)?;
     Ok((selector, run))

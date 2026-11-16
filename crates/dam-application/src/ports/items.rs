@@ -7,4 +7,5 @@ pub trait ItemRepository {
     fn item(&self, hash: &ItemHash) -> Result<Option<Item>, StoreError>;
     fn items(&self) -> Result<Vec<Item>, StoreError>;
     fn settle(&self, hash: &ItemHash, outcome: Outcome) -> Result<(), StoreError>;
+    fn put_in_set(&self, hash: &ItemHash, set: &ItemHash) -> Result<(), StoreError>;
 }

@@ -31,6 +31,15 @@ impl ItemRepository for MemoryStore {
         }
         Ok(())
     }
+
+    fn put_in_set(&self, hash: &ItemHash, set: &ItemHash) -> Result<(), StoreError> {
+        for item in self.0.borrow_mut().items.iter_mut() {
+            if item.hash == *hash {
+                item.set = Some(set.clone());
+            }
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]

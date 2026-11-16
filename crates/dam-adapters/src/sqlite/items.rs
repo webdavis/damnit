@@ -72,6 +72,16 @@ impl ItemRepository for SqliteStore {
             .map(|_| ())
             .map_err(sql)
     }
+
+    fn put_in_set(&self, hash: &ItemHash, set: &ItemHash) -> Result<(), StoreError> {
+        self.conn
+            .execute(
+                "UPDATE items SET set_hash = ?2 WHERE hash = ?1",
+                params![hash.as_str(), set.as_str()],
+            )
+            .map(|_| ())
+            .map_err(sql)
+    }
 }
 
 struct Raw {

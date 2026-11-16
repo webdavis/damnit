@@ -46,6 +46,7 @@ fn a_preview_answers_the_changes_and_writes_nothing() {
     let before = s.store.clone();
     let run = SetRun {
         preview: true,
+        as_one: false,
         expect: None,
     };
     let out = s
@@ -62,6 +63,7 @@ fn an_expected_count_that_differs_refuses_and_changes_nothing() {
     let s = scenario(vec![labelled(1, &["quick"]), labelled(2, &["quick"])]);
     let run = SetRun {
         preview: false,
+        as_one: false,
         expect: Some(1),
     };
     assert_eq!(

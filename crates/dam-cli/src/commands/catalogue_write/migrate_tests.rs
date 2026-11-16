@@ -121,6 +121,7 @@ fn a_preview_with_update_config_shows_what_the_config_would_become_and_writes_no
     let file = FakeSettingsFile::default();
     let run = SetRun {
         preview: true,
+        as_one: false,
         expect: None,
     };
     let report = migrating(&ctx, &file, &["quick=light"], run, true).unwrap();

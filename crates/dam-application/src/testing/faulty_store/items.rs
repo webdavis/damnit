@@ -18,4 +18,8 @@ impl ItemRepository for FaultyStore {
         self.write()?;
         self.inner.settle(hash, outcome)
     }
+    fn put_in_set(&self, hash: &ItemHash, set: &ItemHash) -> Result<(), StoreError> {
+        self.write()?;
+        self.inner.put_in_set(hash, set)
+    }
 }

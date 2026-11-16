@@ -54,4 +54,8 @@ pub fn item_repository_contract(items: &dyn ItemRepository) {
         2,
         "a settled item is kept, never forgotten"
     );
+
+    let set = ItemHash::new(oid(8));
+    items.put_in_set(&created.hash, &set).unwrap();
+    assert_eq!(items.item(&created.hash).unwrap().unwrap().set, Some(set));
 }
