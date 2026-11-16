@@ -5,11 +5,13 @@ use super::{allowing, command, holding};
 use crate::gate::admit;
 
 #[test]
-fn only_the_owner_creates_or_removes_a_filter() {
+fn only_the_owner_creates_or_removes_a_filter_or_a_category() {
     let everything = allowing(&Permission::ALL);
     for (line, verb) in [
         ("filter create f --query due:today", "filter create"),
         ("filter remove f", "filter remove"),
+        ("category create c --values a", "category create"),
+        ("category remove c", "category remove"),
     ] {
         assert_eq!(admit(&Owner, &command(line)), Ok(()), "{line}");
         assert_eq!(

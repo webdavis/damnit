@@ -85,7 +85,7 @@ Examples:
     Reminders(RemindersArgs),
     #[command(about = "Read and record the day's plan, proposals, decisions and task states")]
     Day(DayArgs),
-    #[command(about = "Read the label categories config.lua declares")]
+    #[command(about = "List, create and remove the label categories config.lua declares")]
     Category(CategoryArgs),
     #[command(about = "List, create and remove the saved filters config.lua declares")]
     Filter(FilterArgs),

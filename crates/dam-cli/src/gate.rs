@@ -2,7 +2,8 @@ use dam_application::{Access, Refusal};
 use dam_domain::{Permission, Subject};
 
 use crate::args::{
-    Command, ConfigCommand, FilterCommand, RemoteCommand, SyncCommand, TokenCommand,
+    CategoryCommand, Command, ConfigCommand, FilterCommand, RemoteCommand, SyncCommand,
+    TokenCommand,
 };
 
 #[derive(Debug, PartialEq, Eq)]
@@ -30,7 +31,11 @@ pub(crate) fn need(command: &Command) -> Need {
         Command::Log => Need::Whole(&[HistoryRead]),
         Command::Status(_) => Need::Open,
         Command::Diff(_) => Need::Whole(&[WorkingRead, StageRead]),
-        Command::Category(_) => Need::Whole(&[ConfigRead]),
+        Command::Category(a) => match a.command {
+            CategoryCommand::List => Need::Whole(&[ConfigRead]),
+            CategoryCommand::Create { .. } => Need::OwnerOnly("category create"),
+            CategoryCommand::Remove { .. } => Need::OwnerOnly("category remove"),
+        },
         Command::Filter(a) => match a.command {
             FilterCommand::List => Need::Whole(&[ConfigRead]),
             FilterCommand::Create { .. } => Need::OwnerOnly("filter create"),

@@ -74,12 +74,9 @@ fn run_a_verb(ctx: &Context, command: Command) -> Result<Report, CliError> {
         Command::Pull(a) => sync::run_pull(ctx, a),
         Command::Resolve(a) => sync::run_resolve(ctx, a),
         Command::Sync(a) => sync::run_sync(ctx, a),
+        Command::Category(a) => catalogue_write::run_category(ctx, a.command),
         Command::Filter(a) => catalogue_write::run_filter(ctx, a.command),
-        Command::Category(_)
-        | Command::Token(_)
-        | Command::Config(_)
-        | Command::Doctor(_)
-        | Command::Test(_) => {
+        Command::Token(_) | Command::Config(_) | Command::Doctor(_) | Command::Test(_) => {
             unreachable!("answered before the store")
         }
     }

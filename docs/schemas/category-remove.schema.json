@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/webdavis/damnit/docs/schemas/category-remove.schema.json",
+  "title": "dam category remove answer",
+  "description": "What dam category remove prints with --json or --toon: the category it removed from config.lua and how many tasks keep its labels as free labels.",
+  "type": "object",
+  "required": ["name", "tasks_keeping_labels"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "type": "string" },
+    "tasks_keeping_labels": { "type": "integer", "minimum": 0 }
+  }
+}

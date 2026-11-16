@@ -303,7 +303,9 @@ inside them `\"` is a quote and `\\` a backslash. Saved filters live under `filt
 under `--json`, an empty array when nothing is declared.
 
 `dam filter create <name> --query '<query>'` saves a filter, and `dam filter remove <name>`
-removes one. A filter with a `match` function is changed by hand in `config.lua`.
+removes one. `dam category create <name> --values a,b --exclusive` and `dam category remove <name>`
+do the same for a category. A removed category's labels stay on tasks as free labels. A filter
+with a `match` function is changed by hand in `config.lua`.
 
 ## Hooks
 
@@ -515,7 +517,7 @@ added gets a removal item. It answers `withdrawn`, `waiting`, `declined` or `not
 exit 0. Your own `dam rm --id` removes your task, or answers `nothing`.
 
 A token cannot run `mv`, `add`, `reset`, `restore`, `commit`, `remote add`, `resolve`, `day`,
-`config`, `token`, or `filter create` or `filter remove`, or set `--focus`.
+`config`, `token`, or `create` or `remove` under `filter` and `category`, or set `--focus`.
 
 An unknown permission is skipped. An unknown key, or a reserved name such as `config:change`,
 disables the token, and so does sharing a value with another token. A `schema` above 1 disables
