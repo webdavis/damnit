@@ -20,6 +20,7 @@ fn status_separates_staged_unstaged_and_notices() {
         AddArgs {
             oids: vec![],
             all: true,
+            preview: false,
         },
     )
     .unwrap();
@@ -99,6 +100,7 @@ fn diff_shows_working_or_staged() {
         AddArgs {
             oids: vec![],
             all: true,
+            preview: false,
         },
     )
     .unwrap();
@@ -165,6 +167,7 @@ fn status_reports_conflicts_and_unpushed_commits() {
         AddArgs {
             oids: vec![],
             all: true,
+            preview: false,
         },
     )
     .unwrap();

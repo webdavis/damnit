@@ -33,6 +33,7 @@ fn commit_records_the_stage_and_log_lists_it_newest_first() {
         AddArgs {
             oids: vec![],
             all: true,
+            preview: false,
         },
     )
     .unwrap();
@@ -78,6 +79,7 @@ fn log_prints_commit_times_in_local_time_like_ls() {
         AddArgs {
             oids: vec![],
             all: true,
+            preview: false,
         },
     )
     .unwrap();
@@ -111,6 +113,7 @@ fn log_names_the_hook_that_changed_a_task() {
         AddArgs {
             oids: vec![],
             all: true,
+            preview: false,
         },
     )
     .unwrap();

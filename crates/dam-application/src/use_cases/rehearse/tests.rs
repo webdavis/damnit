@@ -94,3 +94,32 @@ fn a_token_sees_the_changes_to_what_it_sees() {
         .unwrap();
     assert_eq!(rehearsed.changes.len(), 1);
 }
+
+#[test]
+fn a_rehearsed_add_takes_no_item_and_runs_no_hook() {
+    let s = hooked();
+    let token = holder(vec![allowed(&[TaskRead, TaskCreate], None)]);
+    let by_token = Dam {
+        access: &token,
+        ..s.dam()
+    };
+    by_token.new_task(milk("home")).unwrap();
+    let before = s.store.clone();
+    let rehearsed = s.dam().rehearse(|dam| dam.add_all()).unwrap();
+    assert_eq!(rehearsed.ran.staged.len(), 2);
+    assert_eq!(s.store, before);
+    assert!(s.fixture.hooks.ran().is_empty());
+}
+
+#[test]
+fn the_same_add_run_for_real_runs_the_hook() {
+    let s = hooked();
+    let token = holder(vec![allowed(&[TaskRead, TaskCreate], None)]);
+    let by_token = Dam {
+        access: &token,
+        ..s.dam()
+    };
+    by_token.new_task(milk("home")).unwrap();
+    s.dam().add_all().unwrap();
+    assert_eq!(s.fixture.hooks.ran().len(), 1);
+}
