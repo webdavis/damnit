@@ -101,8 +101,8 @@ end
 local function category_of(text, n)
   local category = {}
   for _, word in ipairs(list_of(text)) do
-    local group, label = word:match("^([^=%s]+)%s*=%s*([^=%s]+)$")
-    if not group then
+    local group, label = word:match("^([^=]-)%s*=%s*([^=]+)$")
+    if not group or group == "" then
       return nil, ("line %d: category %q is not group=label, such as effort=deep"):format(n, word)
     end
     category[group] = category[group] or {}
