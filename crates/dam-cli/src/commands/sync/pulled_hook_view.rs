@@ -2,6 +2,7 @@ use dam_application::PulledHookRun;
 use dam_domain::CommitId;
 use serde::Serialize;
 
+use crate::style::Mark;
 use crate::view::optional_display;
 
 #[derive(Serialize)]
@@ -25,6 +26,13 @@ impl PulledHookRow {
             failed: run.failed,
             not_reached: run.not_reached,
             commit: run.commit.clone(),
+        }
+    }
+
+    pub(super) fn mark(&self) -> Mark {
+        match self.failed {
+            0 => Mark::Good,
+            _ => Mark::Warn,
         }
     }
 

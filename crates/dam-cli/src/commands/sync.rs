@@ -44,6 +44,8 @@ mod failure_kind_tests;
 #[cfg(test)]
 mod pull_counts_tests;
 #[cfg(test)]
+mod pull_text_tests;
+#[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod view_tests;
