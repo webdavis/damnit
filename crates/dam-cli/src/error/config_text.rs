@@ -9,6 +9,10 @@ use project::project_text;
 
 mod project;
 
+pub(crate) fn config_text(error: &ConfigError) -> String {
+    ConfigText(error).to_string()
+}
+
 pub(super) struct ConfigText<'a>(pub(super) &'a ConfigError);
 
 pub(crate) struct ConfigReason<'a>(pub(crate) &'a ConfigError);

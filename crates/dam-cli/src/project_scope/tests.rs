@@ -111,3 +111,29 @@ fn global_with_project_is_a_usage_conflict_on_every_scoped_command() {
         assert_eq!(refused.kind(), clap::error::ErrorKind::ArgumentConflict);
     }
 }
+
+#[test]
+fn an_unreadable_project_file_gives_one_warning_line_that_never_quotes_it() {
+    let root = folder_holding(Some("return { path = 'secret-text' "));
+    let warning = standing_in(&root).warning().unwrap();
+    assert!(warning.starts_with("dam: warning: "), "{warning}");
+    assert!(warning.ends_with("; run dam doctor config"), "{warning}");
+    assert_eq!(warning.lines().count(), 1);
+    assert!(!warning.contains("secret-text"), "{warning}");
+    let readable = folder_holding(Some(r#"return { path = "damnit" }"#));
+    assert_eq!(standing_in(&readable).warning(), None);
+    assert_eq!(standing_in(&folder_holding(None)).warning(), None);
+}
+
+#[test]
+fn the_warning_for_a_file_holding_an_escape_sequence_holds_no_control_character() {
+    let root = folder_holding(Some(
+        "return { [\"\\27[2J\"] = 1, path = \"\\27]0;evil\\7\" }",
+    ));
+    let warning = standing_in(&root).warning().unwrap();
+    assert!(!warning.chars().any(char::is_control), "{warning:?}");
+    assert!(
+        !warning.contains("evil") && !warning.contains("[2J"),
+        "{warning}"
+    );
+}

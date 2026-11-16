@@ -98,7 +98,9 @@ fn run(cli: Cli, format: Format, interrupt: &Interrupt) -> Result<(), CliError> 
         return group_help::print(group);
     }
     if let Command::Config(ConfigArgs { command: Some(c) }) = cli.command {
-        return output::print(format, color, &commands::config::run(&config_file, c)?);
+        let standing = RunFolders::of_this_run(&config_path)?.standing();
+        let listed = commands::config::run(&config_file, c, &standing)?;
+        return output::print(format, color, &listed);
     }
     if presented_token.is_none() {
         first_run::create_the_owners_config_when_missing(&config_file, &config_path, format);
