@@ -80,12 +80,14 @@ return {
   ["the days words show only when dam's answer holds days_until_due"] = function()
     local words = {}
     for _, days in ipairs({ -2, -1, 0, 1, 3 }) do
-      local layout = columns.layout({ { object = task("a", {}, { days_until_due = days }), depth = 0 } })
+      local layout = columns.layout({ { object = task("a", { days_until_due = days }), depth = 0 } })
       table.insert(words, vim.trim(texts(layout, 1, { "days" })))
     end
     assert(vim.deep_equal(words, { "2d late", "1d late", "today", "tomorrow", "in 3d" }), vim.inspect(words))
     local without = columns.layout({ { object = task("a", {}, { due = "2026-11-16" }), depth = 0 } })
     assert(without.widths.days == 0, vim.inspect(without.widths))
+    local scrubbed = columns.layout({ { object = task("a", { days_until_due = "<days>" }), depth = 0 } })
+    assert(scrubbed.widths.days == 0, vim.inspect(scrubbed.widths))
   end,
 
   ["an event's start sits in the due column"] = function()

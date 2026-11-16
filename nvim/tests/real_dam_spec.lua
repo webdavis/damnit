@@ -26,6 +26,13 @@ local function in_sandbox(run)
   assert(ok, err)
 end
 
+local function with_real_dam(run)
+  if vim.fn.executable(dam_bin) ~= 1 then
+    return ("no dam at %s; build it with cargo build -p damnit or set DAM_BIN"):format(dam_bin)
+  end
+  in_sandbox(run)
+end
+
 local function real_app()
   local options = require("damnit.kernel.options").resolve({ dam = dam_bin })
   return require("damnit.kernel.app").new(options, require("damnit.kernel.process"))
@@ -99,23 +106,17 @@ local function listed_in_a_project(sandbox)
     return vim.wo.winbar:find("garden/", 1, true) ~= nil and #buffer.lines() == 1
   end, 20000)
   local row = require("helpers.grid").row(2)
-  assert(row:find("^! %[ %] plant the tomatoes +#seeds  2026%-09%-25$"), row)
+  assert(row:find("^! %[ %] plant the tomatoes +#seeds  %d+d late  2026%-09%-25$"), row)
   assert(require("helpers.grid").row(1):find(" default · garden/ · 1 task · 1 overdue", 1, true))
 end
 
 return {
   ["in a project :Dam list shows the project in the winbar and the due at the window's right edge"] = function()
-    if vim.fn.executable(dam_bin) ~= 1 then
-      return ("no dam at %s; build it with cargo build -p damnit or set DAM_BIN"):format(dam_bin)
-    end
-    in_sandbox(listed_in_a_project)
+    return with_real_dam(listed_in_a_project)
   end,
 
   ["writing a changed due line in the task buffer changes what dam show prints"] = function()
-    if vim.fn.executable(dam_bin) ~= 1 then
-      return ("no dam at %s; build it with cargo build -p damnit or set DAM_BIN"):format(dam_bin)
-    end
-    in_sandbox(function(sandbox)
+    return with_real_dam(function(sandbox)
       local oid = task_buffer(sandbox, "2026-09-25")
       vim.api.nvim_buf_set_lines(0, 1, 2, false, { "due: 2026-10-01" })
       vim.cmd.write()
@@ -128,10 +129,7 @@ return {
   end,
 
   ["a refused write in the task buffer keeps it modified and shows dam's message"] = function()
-    if vim.fn.executable(dam_bin) ~= 1 then
-      return ("no dam at %s; build it with cargo build -p damnit or set DAM_BIN"):format(dam_bin)
-    end
-    in_sandbox(function(sandbox)
+    return with_real_dam(function(sandbox)
       local oid = task_buffer(sandbox, "2026-09-25")
       local notes = buffer.capture_notes()
       vim.api.nvim_buf_set_lines(0, 1, 2, false, { "due: the twelfth of never" })
@@ -146,17 +144,11 @@ return {
   end,
 
   ["status shows a change made with dam new; s stages it and c commits it, and the section empties"] = function()
-    if vim.fn.executable(dam_bin) ~= 1 then
-      return ("no dam at %s; build it with cargo build -p damnit or set DAM_BIN"):format(dam_bin)
-    end
-    in_sandbox(staged_and_committed_in_status)
+    return with_real_dam(staged_and_committed_in_status)
   end,
 
   ["a task made with dam new appears in :Dam list, its child indented under it"] = function()
-    if vim.fn.executable(dam_bin) ~= 1 then
-      return ("no dam at %s; build it with cargo build -p damnit or set DAM_BIN"):format(dam_bin)
-    end
-    in_sandbox(function(sandbox)
+    return with_real_dam(function(sandbox)
       local app = real_app()
       require("damnit.command").define(app, { require("damnit.list").new(app) })
       local parent = made(app, { "new", "plant the tomatoes", "--due", "2026-09-25" }, sandbox)
@@ -173,11 +165,24 @@ return {
     end)
   end,
 
+  ["a row shows how many days until its due, as dam counts them"] = function()
+    return with_real_dam(function(sandbox)
+      local app = real_app()
+      require("damnit.command").define(app, { require("damnit.list").new(app) })
+      made(app, { "new", "sow beans", "--due", "today+3" }, sandbox)
+      made(app, { "new", "water seedlings", "--due", "today-2" }, sandbox)
+      vim.cmd.lcd(sandbox)
+      vim.cmd("Dam list")
+      wait_for(function()
+        return #buffer.lines() == 2
+      end, 20000)
+      local rows = require("helpers.grid").row(2) .. "\n" .. require("helpers.grid").row(3)
+      assert(rows:find("sow beans +in 3d ") and rows:find("water seedlings +2d late "), rows)
+    end)
+  end,
+
   ["the client runs the real dam list and reads an empty list"] = function()
-    if vim.fn.executable(dam_bin) ~= 1 then
-      return ("no dam at %s; build it with cargo build -p damnit or set DAM_BIN"):format(dam_bin)
-    end
-    in_sandbox(function(sandbox)
+    return with_real_dam(function(sandbox)
       local got = helper.call(real_app(), { args = { "list" }, cwd = sandbox })
       wait_for(function()
         return got.done
