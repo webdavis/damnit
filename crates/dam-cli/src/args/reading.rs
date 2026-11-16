@@ -6,6 +6,7 @@ use dam_domain::Path;
 
 use super::ScopeArgs;
 use super::selection::SelectArgs;
+use super::selection::ordering::OrderArgs;
 
 use super::values::max_age_arg;
 
@@ -13,6 +14,8 @@ use super::values::max_age_arg;
 pub(crate) struct ListArgs {
     #[command(flatten)]
     pub(crate) selection: SelectArgs,
+    #[command(flatten)]
+    pub(crate) order: OrderArgs,
     #[command(flatten)]
     pub(crate) scope: ScopeArgs,
     #[arg(skip)]

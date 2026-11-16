@@ -225,9 +225,12 @@ characters before `dam status` shows it.
 repeats and each must hold. A comma list holds when any of its values does, `not:` when none does,
 and `none` when the field is empty. `--any FIELD=VALUE` holds when any of the `--any` flags does.
 `--done any` and `--kind any` lift the defaults, and a field only events have lists events.
+`--sort FIELD[:desc]` orders the rows by any field, empty values last; `--limit N` and
+`--offset N` keep a slice of them.
 A value dam cannot read exits 2 and names the shapes the field takes and the command to run.
 
     dam list --labels bug,ui --due ..today
+    dam list --sort priority,due:desc --limit 10
     dam list --done --completed-at week
     dam list --path work/ --any labels=urgent --any due=..today
     dam list --filter today --author not:owner

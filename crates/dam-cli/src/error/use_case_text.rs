@@ -118,6 +118,7 @@ impl fmt::Display for UseCaseText<'_> {
                 Fault {
                     error: e.clone(),
                     typed: Default::default(),
+                    sort: Vec::new(),
                 }
             ),
             UseCaseError::Schedule(ScheduleError::Failed(why)) => {

@@ -2,7 +2,7 @@ use dam_domain::FilterTable;
 
 use crate::args::selection::flag_of;
 
-pub(super) fn command_line(t: &FilterTable) -> String {
+pub(super) fn command_line(t: &FilterTable, sort: &[String]) -> String {
     let mut words = vec!["dam".to_string(), "list".to_string()];
     for (key, value) in &t.fields {
         for text in value.texts() {
@@ -15,6 +15,10 @@ pub(super) fn command_line(t: &FilterTable) -> String {
             words.push("--any".into());
             words.push(quoted(&format!("{}={text}", flag_of(key))));
         }
+    }
+    for text in sort {
+        words.push("--sort".into());
+        words.push(quoted(text));
     }
     words.join(" ")
 }
