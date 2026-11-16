@@ -22,3 +22,6 @@ size:
 
 last-seen:
     @scripts/check-remote-snapshot-readers.sh
+
+test-speed:
+    DAM_TESTS_RUN_ALONE_ON_AN_IDLE_MACHINE=1 cargo test --workspace --all-targets --locked -- --test-threads=1
