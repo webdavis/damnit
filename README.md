@@ -268,8 +268,10 @@ start of today until now: each one's `at`, its `anchor` (the due time or start) 
 
 `|` or, `&` and, `!` not, parentheses group. `@label`, `pN`, `key:value`, where a key is a
 field's JSON key such as `labels:` or `attached:`; any other key is a category and the value must
-be one of its values. Saved filters live under `filter.<name>` in `config.lua` and run by name.
-A filter holds query text, a Lua `match` function, or both. `docs/lua.md` describes `match`.
+be one of its values. Double quotes keep spaces in a value, as in `path:"kitchen remodel/"`;
+inside them `\"` is a quote and `\\` a backslash. Saved filters live under `filter.<name>` in
+`config.lua` and run by name. A filter holds query text, a Lua `match` function, or both.
+`docs/lua.md` describes `match`.
 
 `dam filter list` prints the saved filters with their kind, `query` or `function`, and
 `dam category list` prints the label categories with their values and whether each is exclusive:

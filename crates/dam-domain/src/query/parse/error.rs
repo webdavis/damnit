@@ -10,6 +10,7 @@ pub enum QueryError {
     EndsEarly,
     BadValue { key: String, value: String },
     Unclosed,
+    UnclosedQuote(String),
     TooDeep,
     UnknownCategory(String),
     NotAValue { category: String, value: String },
@@ -24,6 +25,7 @@ impl fmt::Display for QueryError {
             QueryError::EndsEarly => f.write_str("the query ends where a term was expected"),
             QueryError::BadValue { key, value } => write!(f, "{key}: cannot read {value:?}"),
             QueryError::Unclosed => f.write_str("a ( has no matching )"),
+            QueryError::UnclosedQuote(t) => write!(f, "the quote in {t} is not closed"),
             QueryError::TooDeep => write!(
                 f,
                 "the query nests deeper than {MAX_RECURSIVE_DESCENT_DEPTH}"

@@ -138,4 +138,6 @@ mod completed_tests;
 #[cfg(test)]
 mod field_name_terms_tests;
 #[cfg(test)]
+mod quoted_value_tests;
+#[cfg(test)]
 mod tests;
