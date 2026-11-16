@@ -157,6 +157,18 @@ Examples:
   dam config get remote.todoist
   dam config get remote.todoist --json
 dam config get key: help = Name the setting by the key dam config list shows, such as remote.todoist.deadline
+dam config set: about = Write one setting into config.lua, keeping the rest of the file as it is
+dam config set: after_help = A list takes its items separated by commas. A secret, a function or a hook is refused.
+
+Examples:
+  dam config set remote.todoist.deadline 15m
+  dam config set category.priority.values high,low
+dam config set key: help = Name the setting by the key dam config list shows, such as remote.todoist.deadline
+dam config set value: help = The value, read as that setting's type
+dam config unset: about = Remove one setting from config.lua, keeping the rest of the file as it is
+dam config unset: after_help = Examples:
+  dam config unset remote.todoist.deadline
+dam config unset key: help = Name the setting by the key dam config list shows, such as remote.todoist.deadline
 dam config print-default: about = Print the starter config.lua a first run writes, without writing a file
 dam config print-default: after_help = Examples:
   dam config print-default

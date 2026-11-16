@@ -58,6 +58,10 @@ credential function. What that code prints is dropped, except through `io.open("
 `io.popen` or `os.execute`. Their errors and warnings quote nothing from `secrets.lua` but a token's
 name. Both warn of a token dam ignores or holds disabled, and `dam doctor` says why.
 
+`dam config set <key> <value>` writes one setting into `config.lua`, and `dam config unset <key>`
+removes it. The rest of the file stays as you wrote it. A list takes its items separated by commas.
+A secret, a function and a table built in code are refused, with the line to write by hand.
+
 `dam config print-default` prints the starter `config.lua` a first run writes, and writes no file.
 `dam config` alone prints the help of these commands.
 

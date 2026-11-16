@@ -3,6 +3,7 @@ mod hook_settings;
 mod listing;
 mod match_function;
 mod print_default;
+mod set;
 mod setting;
 mod settings;
 mod token_settings;
@@ -18,9 +19,14 @@ pub(crate) fn run(file: &LuaConfigFile, command: ConfigCommand) -> Result<Report
     match command {
         ConfigCommand::List => listing::run(file),
         ConfigCommand::Get { key } => get::run(file, &key),
+        ConfigCommand::Set { key, value } => set::run(file, &key, Some(&value)),
+        ConfigCommand::Unset { key } => set::run(file, &key, None),
         ConfigCommand::PrintDefault => print_default::run(),
         ConfigCommand::Validate => Err(CliError::Internal(
             "dam config validate is answered as dam doctor config".into(),
         )),
     }
 }
+
+#[cfg(test)]
+mod set_tests;
