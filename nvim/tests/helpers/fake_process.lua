@@ -28,9 +28,21 @@ function M.new()
     end, fake.calls)
   end
 
-  function fake.release(call, reply)
+  function fake.line(call, line)
     vim.schedule(function()
-      call.on_exit(reply or call.reply)
+      call.on_line(line)
+    end)
+  end
+
+  function fake.release(call, reply)
+    reply = reply or call.reply
+    if call.on_line then
+      for _, line in ipairs(vim.split(vim.trim(reply.stderr or ""), "\n", { plain = true, trimempty = true })) do
+        fake.line(call, line)
+      end
+    end
+    vim.schedule(function()
+      call.on_exit(reply)
     end)
   end
 
@@ -40,7 +52,15 @@ function M.new()
       if type(reply) == "function" then
         reply = reply(argv)
       end
-      local call = { argv = argv, cwd = opts.cwd, stdin = opts.stdin, reply = reply, on_exit = on_exit, killed = false }
+      local call = {
+        argv = argv,
+        cwd = opts.cwd,
+        stdin = opts.stdin,
+        reply = reply,
+        on_exit = on_exit,
+        on_line = opts.on_line,
+        killed = false,
+      }
       table.insert(fake.calls, call)
       if not reply.hold then
         fake.release(call)

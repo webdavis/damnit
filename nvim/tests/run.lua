@@ -23,6 +23,8 @@ local function cases_of(path)
   return cases, names
 end
 
+vim.o.messagesopt = "wait:0,history:500"
+
 local notify = vim.notify
 
 local function closed_floats()

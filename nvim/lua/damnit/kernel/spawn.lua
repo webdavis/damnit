@@ -2,13 +2,13 @@ local errors = require("damnit.kernel.error")
 
 local M = {}
 
----@alias damnit.Spawn fun(args: string[], cwd: string, stdin: string|nil, on_exit: fun(exit: damnit.Exit, err: damnit.Error|nil)): damnit.Handle
+---@alias damnit.Spawn fun(args: string[], opts: damnit.ProcessOptions, on_exit: fun(exit: damnit.Exit, err: damnit.Error|nil)): damnit.Handle
 
 ---@param options damnit.Options
 ---@param process { run: fun(argv: string[], opts: table, on_exit: fun(exit: damnit.Exit)): damnit.Process }
 ---@return damnit.Spawn
 function M.new(options, process)
-  return function(args, cwd, stdin, on_exit)
+  return function(args, opts, on_exit)
     local timer = assert(vim.uv.new_timer())
     local settled = false
     local function settle()
@@ -21,7 +21,14 @@ function M.new(options, process)
       return true
     end
     local argv = vim.list_extend({ options.dam }, args)
-    local running = process.run(argv, { cwd = cwd, stdin = stdin }, function(exit)
+    local on_line = opts.on_line
+      and function(line)
+        if not settled then
+          opts.on_line(line)
+        end
+      end
+    local process_opts = { cwd = opts.cwd, stdin = opts.stdin, on_line = on_line }
+    local running = process.run(argv, process_opts, function(exit)
       if settle() then
         on_exit(exit, exit.missing and errors.missing(options.dam) or nil)
       end
