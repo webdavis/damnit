@@ -41,24 +41,31 @@ pub fn project_to_wire(t: &Tree, p: &Project) -> WireObject {
         .as_deref()
         .and_then(|pid| t.project_path(pid))
         .unwrap_or_default();
-    wire(
+    let mut w = wire(
         RemoteId::Project(p.id.clone()).to_string(),
         &p.name,
         "",
         path,
         plain(p.is_archived),
-    )
+    );
+    w.container_remote_id = p
+        .parent_id
+        .clone()
+        .map(|id| RemoteId::Project(id).to_string());
+    w
 }
 
 pub fn section_to_wire(t: &Tree, s: &Section) -> WireObject {
     let path = t.project_path(&s.project_id).unwrap_or_default();
-    wire(
+    let mut w = wire(
         RemoteId::Section(s.id.clone()).to_string(),
         &s.name,
         "",
         path,
         plain(false),
-    )
+    );
+    w.container_remote_id = Some(RemoteId::Project(s.project_id.clone()).to_string());
+    w
 }
 
 pub fn item_to_wire(t: &Tree, i: &Item) -> Option<WireObject> {
@@ -81,10 +88,19 @@ pub fn item_to_wire(t: &Tree, i: &Item) -> Option<WireObject> {
         task,
     );
     w.labels = i.labels.clone();
+    w.container_remote_id = Some(nearest_container(i).to_string());
     w.recurrence = i
         .due
         .as_ref()
         .filter(|d| d.is_recurring)
         .map(|d| d.string.clone());
     Some(w)
+}
+
+fn nearest_container(i: &Item) -> RemoteId {
+    match (&i.parent_id, &i.section_id) {
+        (Some(parent), _) => RemoteId::Item(parent.clone()),
+        (None, Some(section)) => RemoteId::Section(section.clone()),
+        (None, None) => RemoteId::Project(i.project_id.clone()),
+    }
 }
