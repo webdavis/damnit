@@ -38,11 +38,16 @@ function ChangeKeys:press(buf, key)
   if #oids == 0 then
     return self.app.say:warn(key .. " acts on task rows; this line holds no task")
   end
-  local answer
-  repeating.start(function()
-    self:act(buf, key, oids, nil, function(text)
-      answer = text
-    end)
+  local answer, handle
+  handle = repeating.start(function()
+    self:act(buf, key, oids, nil, {
+      answered = function(text)
+        answer = text
+      end,
+      closed = function()
+        handle.rearm()
+      end,
+    })
   end, function(again)
     local here = vim.api.nvim_get_current_buf()
     if not self.shown[here] or (actions.prompt(key) and not answer) then

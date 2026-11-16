@@ -52,6 +52,19 @@ fn the_change_preview_fixtures_are_what_the_change_keys_read() {
         "edit-preview.json",
         &fed_answer(&sb, &due, &three, "changes.schema.json"),
     );
+    let one = [
+        "edit",
+        &mom,
+        "--due",
+        "2026-11-20",
+        "--preview",
+        "-o",
+        "json",
+    ];
+    assert_fixture(
+        "edit-preview-one.json",
+        &answer(&sb, &one, "changes.schema.json"),
+    );
     let moved = ["mv", &rent, "--path", "work/", "--preview", "-o", "json"];
     assert_fixture(
         "mv-preview.json",

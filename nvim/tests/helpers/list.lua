@@ -10,7 +10,7 @@ local EXIT_USAGE = 2
 
 local ANSWERS = {
   done = { "done.json", "done-preview.json", "done-preview.json" },
-  edit = { "edit.json", "edit-many.json", "edit-preview.json" },
+  edit = { "edit.json", "edit-many.json", "edit-preview.json", "edit-preview-one.json" },
   mv = { "mv.json", "edit-many.json", "mv-preview.json" },
   rm = { "rm.json", "rm.json", "rm-preview.json" },
   restore = { "restore.json", "restore.json", "restore-preview.json" },
@@ -20,7 +20,7 @@ local ANSWERS = {
 local function answering(names)
   return function(argv)
     if vim.tbl_contains(argv, "--preview") then
-      return fixtures.answer(names[3])
+      return fixtures.answer(not vim.tbl_contains(argv, "-") and names[4] or names[3])
     end
     return fixtures.answer(vim.tbl_contains(argv, "-") and names[2] or names[1])
   end

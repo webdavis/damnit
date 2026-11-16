@@ -48,6 +48,9 @@ function Session:close()
     vim.api.nvim_win_close(self.win, true)
   end
   vim.cmd.stopinsert()
+  if self.spec.closed then
+    self.spec.closed()
+  end
 end
 
 function Session:clear()
