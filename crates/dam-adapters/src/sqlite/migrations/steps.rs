@@ -98,7 +98,11 @@ pub(super) const V15: &str = r#"
 DELETE FROM notices WHERE json_extract(json, '$.kind') = 'pull_failed';
 "#;
 
-pub(super) const BATCHES: [(u32, &str); 15] = [
+pub(super) const V17: &str = r#"
+CREATE TABLE hook_marks (oid TEXT PRIMARY KEY, event TEXT NOT NULL);
+"#;
+
+pub(super) const BATCHES: [(u32, &str); 16] = [
     (1, V1),
     (2, V2),
     (3, V3),
@@ -114,4 +118,5 @@ pub(super) const BATCHES: [(u32, &str); 15] = [
     (13, V13),
     (14, V14),
     (15, V15),
+    (17, V17),
 ];

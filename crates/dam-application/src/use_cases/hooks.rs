@@ -58,6 +58,7 @@ impl Dam<'_> {
             Ok(Some(request)) => match self.hook_edit(task.oid(), &request)? {
                 Edited::Nothing => return Ok(()),
                 Edited::Changed => {
+                    self.store.mark_hooked(task.oid(), event)?;
                     self.hook_edits.edited(event, task.oid());
                     return Ok(());
                 }
@@ -87,6 +88,7 @@ fn tasks_by_oid(objects: &dyn ObjectRepository) -> Result<BTreeMap<Oid, Task>, U
         .collect())
 }
 
+mod details;
 mod edit_request;
 pub(crate) mod pulled;
 

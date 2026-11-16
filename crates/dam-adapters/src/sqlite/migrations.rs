@@ -6,7 +6,7 @@ mod steps;
 
 use steps::*;
 
-pub(super) const VERSION: u32 = 16;
+pub(super) const VERSION: u32 = 17;
 const PARENTS_FILLED: u32 = 16;
 
 const UPGRADING: Step<'static> = Step {

@@ -32,6 +32,7 @@ struct Inner {
     items: Vec<Item>,
     follow_ons: BTreeMap<ItemHash, Vec<crate::ports::FollowOn>>,
     ids: BTreeMap<IdKey, Oid>,
+    hook_marks: BTreeMap<Oid, crate::config::HookEvent>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -128,6 +129,7 @@ mod attempts;
 mod commits;
 mod days;
 mod follow_ons;
+mod hook_marks;
 mod ids;
 mod items;
 mod origins;

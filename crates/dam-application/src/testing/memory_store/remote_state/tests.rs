@@ -63,3 +63,8 @@ fn it_keeps_the_attempt_repository_contract() {
 fn it_keeps_the_origin_repository_contract() {
     contract::origin_repository_contract(&MemoryStore::new());
 }
+
+#[test]
+fn it_keeps_the_hook_mark_repository_contract() {
+    contract::hook_mark_repository_contract(&MemoryStore::new());
+}

@@ -20,7 +20,7 @@ fn json(o: &Object) -> String {
 
 pub(super) fn version_fifteen_store() -> Connection {
     let conn = Connection::open_in_memory().unwrap();
-    for (_, batch) in BATCHES {
+    for (_, batch) in BATCHES.into_iter().filter(|(version, _)| *version <= 15) {
         conn.execute_batch(batch).unwrap();
     }
     conn.pragma_update(None, "user_version", 15u32).unwrap();

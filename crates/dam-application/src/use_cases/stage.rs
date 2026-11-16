@@ -96,7 +96,8 @@ impl Dam<'_> {
             };
             match Change::between(base, self.store.get(oid)?) {
                 Some(change) => {
-                    let authored = Authored::by_owner(change).with_details(self.access.details());
+                    let details = self.staging_details(change.oid())?;
+                    let authored = Authored::by_owner(change).with_details(details.as_ref());
                     self.store.put_staged(authored.clone())?;
                     staged.push(authored);
                 }

@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use dam_domain::{Authored, Change, Channel, CommitId, Details, Object, Oid};
+use dam_domain::{Authored, Change, CommitId, Object, Oid};
 
 use crate::config::HookEvent;
 use crate::errors::UseCaseError;
@@ -52,7 +52,7 @@ impl Dam<'_> {
         if changes.is_empty() {
             return Ok(None);
         }
-        let details = self.hook_details();
+        let details = self.hook_details(HookEvent::TaskPulled);
         let entries = changes
             .into_iter()
             .map(|change| Authored::by_owner(change).with_details(Some(&details)));
@@ -60,24 +60,5 @@ impl Dam<'_> {
         let commit = record(self.clock, self.random, message, entries.collect());
         self.store.commit(&commit)?;
         Ok(Some(commit.id))
-    }
-
-    fn hook_details(&self) -> Details {
-        let owners = self
-            .access
-            .details()
-            .filter(|_| self.access.token().is_none());
-        let mut details = owners.cloned().unwrap_or_else(|| Details {
-            meta: BTreeMap::new(),
-            host: None,
-            dir: None,
-            repo: None,
-            branch: None,
-            at: self.clock.now(),
-            channel: Channel::Local,
-        });
-        let hook = HookEvent::TaskPulled.as_str().to_string();
-        details.meta.insert("hook".to_string(), hook);
-        details
     }
 }

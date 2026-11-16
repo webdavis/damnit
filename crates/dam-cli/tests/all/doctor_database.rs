@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use support::doctor::listing;
 use support::sandbox::Sandbox;
 
-const SUPPORTED: u32 = 16;
+const SUPPORTED: u32 = dam_adapters::SqliteStore::SCHEMA_VERSION;
 
 fn store(sb: &Sandbox) -> PathBuf {
     sb.dir.path().join("dam.db")
