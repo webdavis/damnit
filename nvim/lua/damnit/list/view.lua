@@ -64,6 +64,24 @@ function M.flags(request)
   return table.concat(words, " ")
 end
 
+---@param view string|damnit.ViewSpec|damnit.ViewSpec[]|nil
+---@param views table<string, string|damnit.ViewSpec>
+---@param saved table<string, table> each saved filter's table, by name
+---@return string|nil flags the view's conditions as dam list's flags, nil for a view of sections
+function M.conditions(view, views, saved)
+  local spec = type(view) == "string" and (views[view] or view) or view
+  if spec == nil then
+    return ""
+  end
+  if type(spec) == "string" then
+    return saved[spec] and M.flags(saved[spec]) or ("--filter " .. spec)
+  end
+  if vim.islist(spec) and #spec > 0 then
+    return nil
+  end
+  return M.flags(spec)
+end
+
 ---@class damnit.ListPart
 ---@field title? string
 ---@field args string[]

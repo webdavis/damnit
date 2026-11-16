@@ -62,4 +62,15 @@ return {
     local got = view.flags({ subject = 'fix "login" loop', any = { { labels = "urgent" }, { due = "..today" } } })
     assert(got == [[--any labels=urgent --any due=..today --subject "fix \"login\" loop"]], got)
   end,
+
+  ["a view's conditions as flags: none for the default, a saved filter's table, a view table, nil for sections"] = function()
+    local views = { week = { due = "..today+7" }, now = "today", today = view.TODAY }
+    local saved = { today = { due = "..today" } }
+    assert(view.conditions(nil, views, saved) == "")
+    assert(view.conditions("week", views, saved) == "--due ..today+7")
+    assert(view.conditions("now", views, saved) == "--due ..today")
+    assert(view.conditions("unknown", views, saved) == "--filter unknown")
+    assert(view.conditions(view.TODAY, views, saved) == nil)
+    assert(view.conditions("today", views, saved) == nil)
+  end,
 }
