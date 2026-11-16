@@ -9,7 +9,8 @@ local Lists = vim.tbl_extend(
   require("damnit.list.bindings"),
   require("damnit.list.landing"),
   require("damnit.list.change_keys"),
-  require("damnit.list.edits")
+  require("damnit.list.edits"),
+  require("damnit.list.filterbar")
 )
 Lists.__index = Lists
 

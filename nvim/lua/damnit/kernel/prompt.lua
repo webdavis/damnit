@@ -15,9 +15,10 @@ local M = {}
 ---@field read fun(text: string, done: fun(answer: string, refused: boolean|damnit.Error, below?: string[])): damnit.Handle
 ---@field submit fun(text: string)
 ---@field complete? fun(line: string, col: integer): integer, damnit.Candidate[]
----@field anchor? integer|"cursor"
+---@field anchor? damnit.Anchor
 ---@field read_first? boolean
----@field closed? fun() runs once the prompt closes, sent or not
+---@field closed? fun(sent: boolean) runs once the prompt closes
+---@field reads_blank? boolean an empty line is read and sent like any other
 ---@field flags? damnit.Flag[] the command's flags; a word at the cursor that begins one is not read yet
 
 ---@class damnit.Prompts

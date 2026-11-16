@@ -53,6 +53,13 @@ function M.new(app, open_task)
         lists:open(args[1], vim.fn.getcwd(), cmd.smods)
       end,
       new = new_keys.command(quickadd, lists),
+      filter = function()
+        local buf = vim.api.nvim_get_current_buf()
+        if not lists.shown[buf] then
+          return app.say:warn("the filter bar changes a list; open one with :Dam list first")
+        end
+        lists:filter(buf)
+      end,
       today = function(_, cmd)
         lists:open("today", vim.fn.getcwd(), cmd.smods, views.TODAY)
       end,

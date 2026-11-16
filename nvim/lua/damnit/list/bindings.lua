@@ -41,6 +41,7 @@ function Bindings:bind(buf)
       return context.oid or nil, context.cwd
     end)
   )
+  vim.list_extend(specs, self:filter_keys(buf))
   self.app.keys:bind(buf, vim.list_extend(specs, self.more_keys and self.more_keys(buf) or {}))
   vim.api.nvim_create_autocmd("BufWipeout", {
     group = self.group,
