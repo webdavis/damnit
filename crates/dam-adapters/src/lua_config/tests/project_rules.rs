@@ -1,4 +1,6 @@
-use dam_application::{ConfigError, ProjectRuleFault, RequiredField, TaskTemplate};
+use dam_application::{
+    ConfigError, FilterConfig, FilterRule, ProjectRuleFault, RequiredField, TaskTemplate,
+};
 use dam_domain::Priority;
 
 use super::project_support::ProjectFolder;
@@ -95,4 +97,34 @@ fn a_default_listing_that_is_not_a_query_is_refused_naming_only_the_file() {
         })
     );
     refused_as_misshapen("return { path = 'a/', ls = 3 }", "ls");
+}
+
+#[test]
+fn the_projects_filters_are_read_as_queries() {
+    let folder =
+        ProjectFolder::with("return { path = 'a/', filter = { mine = { query = 'p1' } } }");
+    assert_eq!(
+        folder.read().unwrap().filters,
+        [FilterConfig {
+            name: "mine".into(),
+            rule: FilterRule::Query("p1".into()),
+        }]
+    );
+}
+
+#[test]
+fn a_filter_that_holds_a_function_is_refused_as_not_a_query() {
+    let folder = ProjectFolder::with(
+        "return { path = 'a/', filter = { mine = { match = function() return true end } } }",
+    );
+    assert_eq!(
+        folder.read(),
+        Err(ConfigError::ProjectRule {
+            file: folder.file(),
+            key: "filter",
+            fault: ProjectRuleFault::FilterIsAFunction,
+        })
+    );
+    refused_as_misshapen("return { path = 'a/', filter = { mine = 'p1' } }", "filter");
+    refused_as_misshapen("return { path = 'a/', filter = { mine = {} } }", "filter");
 }

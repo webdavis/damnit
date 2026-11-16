@@ -1,4 +1,5 @@
 mod control;
+mod filters;
 mod listing;
 mod locked;
 mod new_task;
@@ -24,7 +25,14 @@ use locked::locked_lua;
 pub(super) use template::read_project_template;
 pub use written::{FileSystemProjectFolders, write_project_file};
 
-const PROJECT_SETTINGS: [&str; 5] = ["path", "minimum_dam", "new_task", "required", "ls"];
+const PROJECT_SETTINGS: [&str; 6] = [
+    "path",
+    "minimum_dam",
+    "new_task",
+    "required",
+    "ls",
+    "filter",
+];
 const PERSONAL_SETTINGS: [&str; 9] = [
     "owner",
     "remote",
@@ -83,5 +91,6 @@ pub fn read_project_file(file: &Path, this_dam: &str) -> Result<ProjectSettings,
         new_task: new_task::new_task(file, &root)?,
         required: required::required(file, &root)?,
         ls: listing::listing(file, &root)?,
+        filters: filters::filters(file, &root)?,
     })
 }
