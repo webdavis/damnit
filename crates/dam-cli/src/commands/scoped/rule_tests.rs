@@ -9,7 +9,7 @@ use crate::args::{Command, NewArgs};
 use crate::context::Context;
 use crate::project_scope::Standing;
 
-pub(super) fn inside(settings: ProjectSettings) -> Standing {
+pub(crate) fn inside(settings: ProjectSettings) -> Standing {
     Standing::Inside(Project {
         folder: "/work/app".into(),
         settings: ProjectSettings {

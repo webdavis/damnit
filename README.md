@@ -250,6 +250,9 @@ changing nothing, unless the set holds N objects. With `--query` or `--filter`, 
 path from `--path`. The changes land unstaged, so `dam restore <oid>...` throws them away. The
 answer is `docs/schemas/changes.schema.json`.
 
+`dam new --preview` answers the same changes document for the one create, and a project task
+`--project` would create, and writes nothing.
+
 `dam edit <oid> --no-done` reopens a task you completed by mistake, and
 `dam restore <oid>...` throws a working change away, back to the last commit and out of the stage.
 

@@ -37,6 +37,10 @@ pub(crate) fn dispatch_in(
         Command::New(mut a) if a.parent.is_none() || a.path != Path::root() => {
             let place = standing.place(&a.scope)?;
             let created = match &a.scope.project {
+                Some(project) if a.preview => {
+                    a.hold = Some(project.clone());
+                    None
+                }
                 Some(project) => ctx.dam().hold_project(project)?,
                 None => None,
             };
@@ -79,6 +83,8 @@ pub(crate) fn dispatch_in(
 mod listing_tests;
 #[cfg(test)]
 mod mv_tests;
+#[cfg(test)]
+mod preview_tests;
 #[cfg(test)]
 mod project_created_tests;
 #[cfg(test)]

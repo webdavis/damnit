@@ -40,6 +40,10 @@
       "type": "string",
       "description": "A date word, YYYY-MM-DD or YYYY-MM-DDTHH:MM."
     },
+    "preview": {
+      "type": "boolean",
+      "description": "Answer the change and write nothing."
+    },
     "priority": {
       "type": "integer",
       "minimum": 1,

@@ -22,6 +22,7 @@ pub(crate) mod placement;
 pub(crate) mod prefix;
 pub(crate) mod pull;
 pub(crate) mod push;
+pub(crate) mod rehearse;
 pub(crate) mod relocate;
 pub(crate) mod reminders;
 pub(crate) mod remote_access;

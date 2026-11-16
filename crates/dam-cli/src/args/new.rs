@@ -81,6 +81,10 @@ pub(crate) struct NewArgs {
                 else templates/NAME.lua beside config.lua. Each flag given replaces its value"
     )]
     pub(crate) template: Option<String>,
+    #[arg(long, help = "Show the change and write nothing")]
+    pub(crate) preview: bool,
+    #[arg(skip)]
+    pub(crate) hold: Option<Path>,
     #[command(flatten)]
     pub(crate) scope: ScopeArgs,
 }

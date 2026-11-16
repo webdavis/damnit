@@ -1,7 +1,7 @@
 use crate::errors::{Refusal, UseCaseError};
 use crate::ports::Transactional;
 
-pub(super) fn rehearsed<T>(
+pub(crate) fn rehearsed<T>(
     transaction: &dyn Transactional,
     work: impl FnOnce() -> Result<T, UseCaseError>,
 ) -> Result<T, UseCaseError> {
