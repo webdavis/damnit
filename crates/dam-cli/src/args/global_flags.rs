@@ -59,6 +59,15 @@ pub(crate) struct Cli {
     #[arg(
         long,
         global = true,
+        conflicts_with_all = ["no_progress", "quiet"],
+        help = "Show the progress of slow steps on stderr, even when it is not a terminal"
+    )]
+    pub(crate) progress: bool,
+    #[arg(long, global = true, help = "Hide the progress of slow steps")]
+    pub(crate) no_progress: bool,
+    #[arg(
+        long,
+        global = true,
         value_name = "KEY=VALUE",
         value_parser = values::meta_arg,
         help = "State a detail of this request, such as session=abc123, kept with each change it makes. Repeatable"

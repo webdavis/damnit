@@ -310,6 +310,9 @@ through `dam edit --due`, and `--no-due` clears it.
 
 `--quiet` (`-q`) prints only errors; under `--json` or `--toon` the answer still prints.
 
+A slow step shows a progress line on standard error when it is a terminal. `--progress` shows it
+even when it is not, as one start and one finished record per step; `--no-progress` hides it.
+
 Every time under `--json` and `--toon` is RFC 3339 with its offset, such as
 `2026-09-25T09:00:00-04:00`, and every all-day date is a plain `YYYY-MM-DD`.
 

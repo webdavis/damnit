@@ -182,3 +182,20 @@ fn quiet_is_global_with_a_short_q() {
     assert!(Cli::try_parse_from(["dam", "ls", "--quiet"]).unwrap().quiet);
     assert!(Cli::try_parse_from(["dam", "-q", "pull"]).unwrap().quiet);
 }
+
+#[test]
+fn progress_and_no_progress_are_global_and_refuse_each_other_and_quiet() {
+    assert!(
+        Cli::try_parse_from(["dam", "pull", "--progress"])
+            .unwrap()
+            .progress
+    );
+    assert!(
+        Cli::try_parse_from(["dam", "--no-progress", "pull"])
+            .unwrap()
+            .no_progress
+    );
+    for both in [["--progress", "--no-progress"], ["--progress", "--quiet"]] {
+        assert!(Cli::try_parse_from(["dam", "pull", both[0], both[1]]).is_err());
+    }
+}
