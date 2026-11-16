@@ -5,6 +5,8 @@ dam config: help = Read the config from FILE; secrets.lua beside it holds the se
 dam store: help = Open the store at FILE. Default: ${XDG_DATA_HOME:-~/.local/share}/dam/dam.db
 dam no_color: help = Print without color; color is also off under NO_COLOR or when not a terminal
 dam quiet: help = Print only errors; --json and --toon still print their answer
+dam progress: help = Show the progress of slow steps on stderr, even when it is not a terminal
+dam no_progress: help = Hide the progress of slow steps
 dam meta: help = State a detail of this request, such as session=abc123, kept with each change it makes. Repeatable
 dam request: help = Read the request from FILE, or stdin when FILE is -, as JSON or TOON keyed by the command's flags
 dam new: about = Create a task, or an event with --kind event

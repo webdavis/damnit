@@ -11,6 +11,7 @@ mod hook_warnings;
 mod layout;
 mod output;
 mod paint;
+mod progress;
 mod prompt;
 mod request;
 mod started_by_hook;
