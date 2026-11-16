@@ -27,6 +27,14 @@ function M.setup(opts)
   return running
 end
 
+---@return damnit.App
+function M.app()
+  if not running then
+    M.setup({})
+  end
+  return running
+end
+
 ---@return damnit.Statusline
 local function statusline_feature()
   if not statusline then

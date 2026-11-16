@@ -1,0 +1,87 @@
+{
+  "version": "0.2.0",
+  "command": "doctor",
+  "checks": [
+    {
+      "name": "config",
+      "result": "ok",
+      "detail": "both files are valid",
+      "advice": null,
+      "rows": [],
+      "config": "<sandbox>/config.lua",
+      "secrets": "<sandbox>/secrets.lua",
+      "warnings": []
+    },
+    {
+      "name": "database",
+      "result": "ok",
+      "detail": "none yet",
+      "advice": "dam doctor --fix creates it",
+      "rows": []
+    },
+    {
+      "name": "helpers",
+      "result": "ok",
+      "detail": "1 remote: 1 ok",
+      "advice": null,
+      "rows": [
+        {
+          "name": "fake",
+          "result": "ok",
+          "detail": "dam-remote-fake answered",
+          "advice": null
+        }
+      ]
+    },
+    {
+      "name": "credentials",
+      "result": "ok",
+      "detail": "1 remote: 1 ok",
+      "advice": null,
+      "rows": [
+        {
+          "name": "fake",
+          "result": "ok",
+          "detail": "has its credential, not tested",
+          "advice": "run dam test credentials"
+        }
+      ]
+    },
+    {
+      "name": "pushes",
+      "result": "ok",
+      "detail": "1 remote: 1 ok",
+      "advice": null,
+      "rows": [
+        {
+          "name": "fake",
+          "result": "ok",
+          "detail": "nothing owed",
+          "advice": null
+        }
+      ]
+    },
+    {
+      "name": "parents",
+      "result": "ok",
+      "detail": "dam knows every object's parent",
+      "advice": null,
+      "rows": []
+    },
+    {
+      "name": "sync",
+      "result": "ok",
+      "detail": "1 remote: 1 ok",
+      "advice": null,
+      "rows": [
+        {
+          "name": "fake",
+          "result": "ok",
+          "detail": "off, every 15m, never run",
+          "advice": null
+        }
+      ]
+    }
+  ],
+  "needs_attention": []
+}
