@@ -3,6 +3,7 @@ use dam_domain::Oid;
 use serde::Serialize;
 
 use crate::args::RestoreArgs;
+use crate::commands::each::report_preview;
 use crate::context::Context;
 use crate::error::CliError;
 use crate::output::Report;
@@ -28,6 +29,10 @@ pub(crate) fn run(ctx: &Context, args: RestoreArgs) -> Result<Report, CliError> 
         .iter()
         .map(|text| ctx.dam().resolve_object(text))
         .collect::<Result<Vec<Oid>, _>>()?;
+    if args.preview {
+        let rehearsed = ctx.dam().rehearse(|dam| dam.restore(&oids))?;
+        return report_preview(ctx, rehearsed.changes, None);
+    }
     let restored = ctx.dam().restore(&oids)?;
     let ids = |changed: bool| {
         restored
@@ -50,5 +55,7 @@ fn line(r: &Restored) -> String {
     }
 }
 
+#[cfg(test)]
+mod preview_tests;
 #[cfg(test)]
 mod tests;

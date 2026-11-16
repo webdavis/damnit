@@ -254,7 +254,8 @@ answer is `docs/schemas/changes.schema.json`.
 `--project` would create, and writes nothing.
 
 `dam edit <oid> --no-done` reopens a task you completed by mistake, and
-`dam restore <oid>...` throws a working change away, back to the last commit and out of the stage.
+`dam restore <oid>...` throws a working change away, back to the last commit and out of the stage;
+`--preview` shows what it would throw away and writes nothing.
 
 `dam revert <commit> [<oid>...]` sets back what a commit changed, or only the named objects' part.
 Each field goes back to its value before the commit; a field changed again since is kept and named.

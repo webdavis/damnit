@@ -21,6 +21,7 @@ fn committed_task(ctx: &Context, b: u8) -> Oid {
 fn args(oids: &[&Oid]) -> RestoreArgs {
     RestoreArgs {
         oids: oids.iter().map(|o| o.as_str().to_string()).collect(),
+        preview: false,
     }
 }
 
@@ -71,6 +72,7 @@ fn a_removed_object_takes_its_full_oid_and_the_prefix_refusal_says_so() {
         &ctx,
         RestoreArgs {
             oids: vec![id.short().to_string()],
+            preview: false,
         },
     )
     .unwrap_err();

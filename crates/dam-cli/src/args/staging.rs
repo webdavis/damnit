@@ -24,6 +24,8 @@ pub(crate) struct ResetArgs {
 pub(crate) struct RestoreArgs {
     #[arg(required = true, help = "Set back these objects, by oid or prefix")]
     pub(crate) oids: Vec<String>,
+    #[arg(long, help = "Show what would be thrown away and write nothing")]
+    pub(crate) preview: bool,
 }
 
 #[derive(Args, Debug)]
