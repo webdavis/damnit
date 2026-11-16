@@ -12,6 +12,7 @@ local M = {}
 ---@field buf integer
 ---@field spec damnit.PromptSpec
 ---@field judge damnit.Judge
+---@field asking? boolean another window asks something for the prompt, which stays open meanwhile
 
 ---@param fields { win: integer, buf: integer, spec: damnit.PromptSpec, say: damnit.Say, entries: string[], judge: damnit.Judge }
 ---@return damnit.PromptSession

@@ -49,6 +49,11 @@ function M.bind(session)
   for lhs, run in pairs(insert_keys(session)) do
     vim.keymap.set("i", lhs, run, opts)
   end
+  for lhs, run in pairs(session.spec.keys or {}) do
+    vim.keymap.set("i", lhs, function()
+      run(session)
+    end, opts)
+  end
   for _, lhs in ipairs({ "<Esc>", "q", "<C-c>" }) do
     vim.keymap.set("n", lhs, function()
       session:close()
@@ -59,9 +64,10 @@ function M.bind(session)
   end, opts)
   vim.api.nvim_create_autocmd("WinLeave", {
     buffer = session.buf,
-    once = true,
     callback = function()
-      session:close()
+      if not session.asking then
+        session:close()
+      end
     end,
   })
 end
