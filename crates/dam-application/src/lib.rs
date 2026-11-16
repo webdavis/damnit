@@ -56,6 +56,7 @@ pub use tokens::{
 pub use use_cases::agenda::{Scheduled, Window};
 pub use use_cases::background::{BackgroundReport, BackgroundRequest, BackgroundStep};
 pub use use_cases::complete::{CompletePlan, Completed};
+pub use use_cases::each::{Selector, SetChange, SetChanges, SetRun};
 pub use use_cases::edit::{EditFields, apply};
 pub use use_cases::hooks::listed::ListedHookRun;
 pub use use_cases::hooks::pulled::PulledHookRun;

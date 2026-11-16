@@ -44,6 +44,8 @@ impl Refusal {
             Refusal::ParentNotKnown { .. } => "parent_not_known",
             Refusal::PathOutsideParent { .. } => "path_outside_parent",
             Refusal::SeveralHoldThePath { .. } => "several_hold_the_path",
+            Refusal::NoSuchFilter(_) => "no_such_filter",
+            Refusal::CountMismatch { .. } => "count_mismatch",
         }
     }
 }

@@ -37,7 +37,7 @@ pub struct NewEvent {
 impl Dam<'_> {
     pub fn new_task(&self, input: NewTask) -> Result<Landed, UseCaseError> {
         atomically(self.store, || {
-            self.entering(None, || {
+            self.entering(&[], || {
                 let oid = Oid::generate(&mut |b| self.random.fill(b));
                 let mut task = Task::new(oid, input.subject);
                 task.base.labels = input.labels;

@@ -26,49 +26,58 @@ impl Dam<'_> {
         tracked: Tracked,
     ) -> Result<(Completed, Landed), UseCaseError> {
         atomically(self.store, || {
-            self.entering(Some(oid), || {
-                if matches!(force, Force::With(_)) && self.access.token().is_some() {
-                    return Err(Refusal::NotOpenToTokens("done --force").into());
-                }
-                let plan = self.plan_complete(oid)?;
-                if !plan.blockers.is_empty() {
-                    match force {
-                        Force::No => {
-                            return Err(Refusal::Blocked {
-                                oid: oid.clone(),
-                                blockers: plan.blockers,
-                            }
-                            .into());
-                        }
-                        Force::With(d) => {
-                            apply_dispositions(self.store, self.random, oid, &plan.blockers, d)?
-                        }
-                    }
-                }
-                let before = load_task(self.store, oid)?;
-                let mut task = before.clone();
-                let outcome = match next_due_if_recurring(&task, self.clock.today(), tracked)? {
-                    Some(next) => {
-                        task.due = Some(When::Day(next));
-                        Completed::RolledForward { next_due: next }
-                    }
-                    None => {
-                        if !task.completion.is_done() {
-                            task.completion = Completion::Done {
-                                at: Some(self.clock.now()),
-                            };
-                        }
-                        Completed::Done
-                    }
-                };
-                let landed = self.put_or_send(
-                    Permission::TaskComplete,
-                    Some(&Object::Task(before)),
-                    Object::Task(task),
-                )?;
-                Ok((outcome, landed))
+            self.entering(std::slice::from_ref(oid), || {
+                self.complete_in_place(oid, force, tracked)
             })
         })
+    }
+
+    pub(crate) fn complete_in_place(
+        &self,
+        oid: &Oid,
+        force: Force,
+        tracked: Tracked,
+    ) -> Result<(Completed, Landed), UseCaseError> {
+        if matches!(force, Force::With(_)) && self.access.token().is_some() {
+            return Err(Refusal::NotOpenToTokens("done --force").into());
+        }
+        let plan = self.plan_complete(oid)?;
+        if !plan.blockers.is_empty() {
+            match force {
+                Force::No => {
+                    return Err(Refusal::Blocked {
+                        oid: oid.clone(),
+                        blockers: plan.blockers,
+                    }
+                    .into());
+                }
+                Force::With(d) => {
+                    apply_dispositions(self.store, self.random, oid, &plan.blockers, d)?
+                }
+            }
+        }
+        let before = load_task(self.store, oid)?;
+        let mut task = before.clone();
+        let outcome = match next_due_if_recurring(&task, self.clock.today(), tracked)? {
+            Some(next) => {
+                task.due = Some(When::Day(next));
+                Completed::RolledForward { next_due: next }
+            }
+            None => {
+                if !task.completion.is_done() {
+                    task.completion = Completion::Done {
+                        at: Some(self.clock.now()),
+                    };
+                }
+                Completed::Done
+            }
+        };
+        let landed = self.put_or_send(
+            Permission::TaskComplete,
+            Some(&Object::Task(before)),
+            Object::Task(task),
+        )?;
+        Ok((outcome, landed))
     }
 }
 

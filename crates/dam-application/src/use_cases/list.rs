@@ -17,6 +17,23 @@ impl Dam<'_> {
         place: &Path,
     ) -> Result<Vec<Object>, UseCaseError> {
         let (filter, out) = self.narrowed(query, place)?;
+        self.kept(filter, out)
+    }
+
+    pub(crate) fn list_matching(
+        &self,
+        text: Option<&str>,
+        filter: Option<&FilterConfig>,
+    ) -> Result<Vec<Object>, UseCaseError> {
+        let out = self.matching(text, filter, &Path::root())?;
+        self.kept(filter, out)
+    }
+
+    fn kept(
+        &self,
+        filter: Option<&FilterConfig>,
+        out: Vec<Object>,
+    ) -> Result<Vec<Object>, UseCaseError> {
         match filter.filter(|f| f.rule.runs_a_function()) {
             Some(filter) => self.kept_by_function(&filter.name, out),
             None => Ok(out),
@@ -28,12 +45,21 @@ impl Dam<'_> {
         query: Option<&str>,
         place: &Path,
     ) -> Result<(Option<&FilterConfig>, Vec<Object>), UseCaseError> {
-        let config = self.config;
-        let filter = query.and_then(|q| config.filter(q));
+        let filter = query.and_then(|q| self.config.filter(q));
         let text = match filter {
             Some(filter) => filter.rule.query(),
             None => query,
         };
+        Ok((filter, self.matching(text, filter, place)?))
+    }
+
+    fn matching(
+        &self,
+        text: Option<&str>,
+        filter: Option<&FilterConfig>,
+        place: &Path,
+    ) -> Result<Vec<Object>, UseCaseError> {
+        let config = self.config;
         let expr = text
             .map(|text| parse_query(text, &config.categories).map_err(query_error))
             .transpose()?
@@ -54,7 +80,7 @@ impl Dam<'_> {
             .filter(|o| expr.as_ref().is_none_or(|e| matches(e, o, today, &zone)))
             .collect();
         out.sort_by(|a, b| order(a, b, today));
-        Ok((filter, out))
+        Ok(out)
     }
 }
 

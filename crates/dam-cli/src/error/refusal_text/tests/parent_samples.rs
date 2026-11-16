@@ -53,5 +53,16 @@ pub(super) fn parent_refusals_with_their_text() -> Vec<(Refusal, &'static str)> 
             Refusal::SyncNotAllowed("todoist".into()),
             "remote.todoist.sync.allowed is false; run dam config set remote.todoist.sync.allowed true to allow background sync",
         ),
+        (
+            Refusal::NoSuchFilter("today".into()),
+            "no saved filter named \"today\"; dam filter list shows the filters",
+        ),
+        (
+            Refusal::CountMismatch {
+                expected: 12,
+                count: 3,
+            },
+            "the set holds 3, not the 12 --expect names, so nothing changed; add --preview to see the set",
+        ),
     ]
 }

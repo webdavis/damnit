@@ -148,7 +148,9 @@
         "not_in_commit",
         "parent_not_known",
         "path_outside_parent",
-        "several_hold_the_path"
+        "several_hold_the_path",
+        "no_such_filter",
+        "count_mismatch"
       ]
     },
     "tokenRule": {

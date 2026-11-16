@@ -12,7 +12,7 @@ pub use fields::{EditFields, apply};
 impl Dam<'_> {
     pub fn edit(&self, oid: &Oid, fields: EditFields) -> Result<Landed, UseCaseError> {
         atomically(self.store, || {
-            self.entering(None, || self.edit_in_place(oid, fields))
+            self.entering(&[], || self.edit_in_place(oid, fields))
         })
     }
 
