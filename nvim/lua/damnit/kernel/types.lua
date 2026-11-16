@@ -65,6 +65,8 @@
 ---@field lhs string
 ---@field desc string
 ---@field run fun()
+---@field mode? string|string[]
+---@field group? string the heading g? lists it under
 
 ---@class damnit.Keys
 ---@field bind fun(self, buf: integer, specs: damnit.KeySpec[])

@@ -20,6 +20,23 @@ function Landing:context(buf)
 end
 
 ---@param buf integer
+---@param oid string|nil
+---@param line integer where the cursor goes when the oid left the view
+function Landing:keep_cursor(buf, oid, line)
+  table.insert(self.shown[buf].waiting, function(oids)
+    local row = math.min(line, vim.api.nvim_buf_line_count(buf))
+    for at, listed in pairs(oids) do
+      if oid and listed == oid then
+        row = at
+      end
+    end
+    for _, win in ipairs(vim.fn.win_findbuf(buf)) do
+      vim.api.nvim_win_set_cursor(win, { row, 0 })
+    end
+  end)
+end
+
+---@param buf integer
 ---@param oid string
 ---@param done fun(found: boolean)
 function Landing:land_on(buf, oid, done)

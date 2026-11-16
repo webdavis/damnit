@@ -66,11 +66,24 @@ end
 ---@param key string
 ---@param oids string[]
 ---@param answer? string the prompt's text
+---@param flags_of? fun(command: string): damnit.Flag[] each command's flags, to read the answer
 ---@return damnit.Batch
-function M.batch(key, oids, answer)
+function M.batch(key, oids, answer, flags_of)
   local action = ACTIONS[key]
-  local flags = answer and argv.words(answer) or vim.list_slice(action.flags or {})
+  local flags = answer and argv.args(answer, flags_of and flags_of(action.command) or {})
+    or vim.list_slice(action.flags or {})
   return { command = action.command, oids = oids, flags = flags }
+end
+
+local SAID = { done = "done", add = "staged", rm = "removed", restore = "set back", mv = "moved", edit = "changed" }
+
+---@param key string
+---@param count integer
+---@return string
+function M.said(key, count)
+  local action = ACTIONS[key]
+  local word = key == "X" and "reopened" or SAID[action.command]
+  return ("dam: %d %s"):format(count, word)
 end
 
 ---@param key string
