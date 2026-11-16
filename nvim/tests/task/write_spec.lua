@@ -102,9 +102,10 @@ return {
     local notes = buffer.capture_notes()
     vim.cmd.write()
     buffer.wait_for(function()
-      return #notes > 0
+      return #vim.diagnostic.get(0) > 0
     end)
-    assert(notes[1].text:find("allows one value", 1, true), vim.inspect(notes))
+    assert(vim.diagnostic.get(0)[1].message:find("allows one value", 1, true), vim.inspect(vim.diagnostic.get(0)))
+    assert(#notes == 0, vim.inspect(notes))
     assert(vim.bo.modified, "no longer modified")
     assert(buffer.lines()[6] == "category: effort=deep, effort=light", vim.inspect(buffer.lines()))
   end,
