@@ -41,11 +41,11 @@ fn a_missing_helper_dam_ships_names_its_install_command_and_another_says_it_is_i
     };
     assert_eq!(
         missing("dam-remote-todoist"),
-        "dam-remote-todoist was not found on PATH; install it with: cargo install --git https://github.com/webdavis/damnit dam-remote-todoist"
+        "dam-remote-todoist was not found on PATH; install it with: cargo install --git https://github.com/webdavis/damnit damnit-remote-todoist"
     );
     assert_eq!(
         missing("dam-remote-gcal"),
-        "dam-remote-gcal was not found on PATH; install it with: cargo install --git https://github.com/webdavis/damnit dam-remote-gcal"
+        "dam-remote-gcal was not found on PATH; install it with: cargo install --git https://github.com/webdavis/damnit damnit-remote-gcal"
     );
     assert_eq!(
         missing("dam-remote-other"),

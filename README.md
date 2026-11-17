@@ -7,7 +7,7 @@ files: a working layer you edit, a stage you `add` to, commits you `push` to a r
 ## Install
 
     cargo install --git https://github.com/webdavis/damnit damnit
-    cargo install --git https://github.com/webdavis/damnit dam-remote-todoist
+    cargo install --git https://github.com/webdavis/damnit damnit-remote-todoist
 
 `dam` finds a remote helper the way git does: a `dam-remote-<name>` binary on `PATH`. Each remote's
 helper is its own install: `dam-remote-todoist` for Todoist, and `dam-remote-gcal` for
@@ -138,7 +138,7 @@ neither, `dam` refuses and prints the crontab line to add by hand. `docs/schemas
 
 ## Google Calendar
 
-    cargo install --git https://github.com/webdavis/damnit dam-remote-gcal
+    cargo install --git https://github.com/webdavis/damnit damnit-remote-gcal
 
 That installs `dam-remote-gcal`, which dam runs, and `dam-gcal-sign-in`, which you run once.
 

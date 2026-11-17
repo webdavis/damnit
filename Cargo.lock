@@ -361,37 +361,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dam-remote-gcal"
-version = "0.1.0"
-dependencies = [
- "dam-helper",
- "dam-protocol",
- "getrandom 0.3.4",
- "jiff",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
- "ureq",
-]
-
-[[package]]
-name = "dam-remote-todoist"
-version = "0.1.0"
-dependencies = [
- "dam-adapters",
- "dam-application",
- "dam-domain",
- "dam-helper",
- "dam-protocol",
- "jiff",
- "serde",
- "serde_json",
- "tempfile",
- "ureq",
-]
-
-[[package]]
 name = "dam-toml"
 version = "0.1.0"
 dependencies = [
@@ -417,6 +386,37 @@ dependencies = [
  "toml",
  "toon-format",
  "yaml-rust2",
+]
+
+[[package]]
+name = "damnit-remote-gcal"
+version = "0.1.0"
+dependencies = [
+ "dam-helper",
+ "dam-protocol",
+ "getrandom 0.3.4",
+ "jiff",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "ureq",
+]
+
+[[package]]
+name = "damnit-remote-todoist"
+version = "0.1.0"
+dependencies = [
+ "dam-adapters",
+ "dam-application",
+ "dam-domain",
+ "dam-helper",
+ "dam-protocol",
+ "jiff",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "ureq",
 ]
 
 [[package]]

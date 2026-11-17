@@ -12,7 +12,10 @@ use super::selection_fault::LIST;
 
 pub(crate) struct UseCaseText<'a>(pub(crate) &'a UseCaseError);
 
-const SHIPPED_HELPERS: [&str; 2] = ["dam-remote-todoist", "dam-remote-gcal"];
+const SHIPPED_HELPERS: [(&str, &str); 2] = [
+    ("dam-remote-todoist", "damnit-remote-todoist"),
+    ("dam-remote-gcal", "damnit-remote-gcal"),
+];
 
 impl fmt::Display for UseCaseText<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -24,14 +27,15 @@ impl fmt::Display for UseCaseText<'_> {
             UseCaseError::Store(StoreError::Failed(why)) => write!(f, "storage: {why}"),
             UseCaseError::Helper(HelperError::NotFound { helper }) => {
                 write!(f, "{helper} was not found on PATH; ")?;
-                if SHIPPED_HELPERS.contains(&helper.as_str()) {
-                    let repository = env!("CARGO_PKG_REPOSITORY");
-                    write!(
-                        f,
-                        "install it with: cargo install --git {repository} {helper}"
-                    )
-                } else {
-                    write!(f, "a remote's helper is installed on its own")
+                match SHIPPED_HELPERS.iter().find(|(binary, _)| binary == helper) {
+                    Some((_, package)) => {
+                        let repository = env!("CARGO_PKG_REPOSITORY");
+                        write!(
+                            f,
+                            "install it with: cargo install --git {repository} {package}"
+                        )
+                    }
+                    None => write!(f, "a remote's helper is installed on its own"),
                 }
             }
             UseCaseError::Helper(HelperError::Protocol(s)) => {
